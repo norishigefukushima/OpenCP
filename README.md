@@ -10,7 +10,7 @@ Filter
   Gaussian IIR filter  
 
 ######edge preserving filter  
-  *bilateral filter and its fast implimentations or variants*
+  *bilateral filter and its fast implimentations or variants*  
       *sepalable filter  
       *bilateral grid  
       *realtime O(1) birateral filter  
