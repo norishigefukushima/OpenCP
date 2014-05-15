@@ -6,9 +6,10 @@ library for computational photography
 Filter
 ------
 ###implemented and parallerized
-######edge preserving filter  
-  Gaussian IIR filter  
 ######filter   
+  Gaussian IIR filter  
+
+######edge preserving filter  
   *bilateral filter and its fast implimentations or variants*
       *sepalable filter  
       *bilateral grid  
@@ -37,17 +38,6 @@ Filter
   guided upsample  
   hqx  
   
-
-**Application**
------------
-  +denoise
-  +flash/non flash
-  +up sample
-  +HDR
-  +Haze remove
-  +depth map refinement
-  +optical flow refinement  
-  
 **implimented but not optimized**  
 
 *filter*
@@ -55,7 +45,15 @@ Filter
   adaptive maniforld  
 
 
-  
+**Application**
+-----------
+  +denoise  
+  +flash/non flash  
+  +up sample  
+  +HDR  
+  +Haze remove  
+  +depth map refinement  
+  +optical flow refinement    
 
 References
 ----------
