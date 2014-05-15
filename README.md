@@ -5,20 +5,20 @@ library for computational photography
 
 Filter
 ------
-**implemented and parallerized**  
-*edge preserving filter*  
+###implemented and parallerized
+######edge preserving filter  
   Gaussian IIR filter  
-*filter*  
-  bilateral filter and its fast implimentations or variant
-    *sepalable filter  
-    *bilateral grid  
-    *realtime O(1) birateral filter  
-    *joint bilateral filter  
-    *trilateral filter  
-    *dual bilateral filter
-    *weighted (joint) bilateral filter
+######filter   
+  *bilateral filter and its fast implimentations or variants*
+      *sepalable filter  
+      *bilateral grid  
+      *realtime O(1) birateral filter  
+      *joint bilateral filter  
+      *trilateral filter  
+      *dual bilateral filter  
+      *weighted (joint) bilateral filter  
     
-  cost volume filter  
+  *cost volume filters*
    *3D birateral filter  
    *3D guided filter    
   
@@ -30,9 +30,9 @@ Filter
   weighted mode filter  
   constant time median filter  
   joint nearest filter
-*segmentation*  
+######segmentation  
   SLIC  
-*upsample*
+######upsample
   joint bilateral upsample  
   guided upsample  
   hqx  
