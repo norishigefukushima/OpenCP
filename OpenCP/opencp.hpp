@@ -58,3 +58,53 @@ using namespace cv;
 //merge two images into one image with some options.
 void patchBlendImage(Mat& src1, Mat& src2, Mat& dest, Scalar linecolor=CV_RGB(0,0,0), int linewidth = 2, int direction = 0);
 
+// utility functions
+
+enum
+{
+	TIME_AUTO=0,
+	TIME_NSEC,
+	TIME_MSEC,
+	TIME_SEC,
+	TIME_MIN,
+	TIME_HOUR,
+	TIME_DAY
+};
+class CalcTime
+{
+	int64 pre;
+	string mes;
+
+	int timeMode;
+
+	double cTime;
+	bool _isShow;
+
+	int autoMode;
+	int autoTimeMode();
+	vector<string> lap_mes;
+public:
+	
+	void start();
+	void setMode(int mode);
+	void setMessage(string src);
+	void restart();
+	double getTime();
+	void show();
+	void show(string message);
+	void lap(string message);
+	void init(string message, int mode, bool isShow);
+
+	CalcTime(string message, int mode=TIME_AUTO, bool isShow=true);
+	CalcTime();
+
+	~CalcTime();
+};
+
+//image processing
+//convert a BGR color image into a continued one channel data: ex BGRBGRBGR... BBBB...GGGG....RRRR....
+void cvtColorBGR2PLANE(const Mat& src, Mat& dest);
+
+//slic
+void SLIC(Mat& src, Mat& dest, unsigned int regionSize, float regularization, int minRegionSize, int max_iteration);
+void SLICBase(Mat& src, Mat& dest, unsigned int regionSize, float regularization, unsigned int minRegionSize, int max_iteration);
