@@ -1,7 +1,11 @@
 OpenCP
 ======
-
 library for computational photography
+
+Todo
+----
+* update type of the destination of the SLIC. mean image? mesh? 
+* port various filters from my library.
 
 Filter
 ------
