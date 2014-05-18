@@ -21,11 +21,7 @@ void guiSLICTest(Mat& src)
 		{
 			CalcTime t("slic all");
 			SLIC(src, dest,rs,reg*255, mrs,iter);
-		}
-		cout<<endl<<endl;
-		{
-			CalcTime t("slic base");
-			SLICBase(src, dest2,rs,reg*255, mrs,iter);
+			//SLICBase(src, dest2,rs,reg*255, mrs,iter);
 		}
 
 		//std::cout<<"comp "<<calcPSNR(dest,dest2)<<std::endl;
