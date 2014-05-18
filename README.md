@@ -32,7 +32,7 @@ Filter
   constant time median filter  
   joint nearest filter
 ######segmentation  
-  SLIC  
+  SLIC  (forked from VLFeat(http://www.vlfeat.org/). The code, which is optimized by SSE and Intel TBB, is more efficient than the VLFeat.)
 ######upsample
   joint bilateral upsample  
   guided upsample  
