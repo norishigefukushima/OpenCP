@@ -19,6 +19,9 @@
     <Filter Include="ソース ファイル\util">
       <UniqueIdentifier>{a8d6d5ad-3a54-49d1-b714-38aaf9b46b00}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\test">
+      <UniqueIdentifier>{ca14c9b4-ec47-4a17-8a96-330b29dbcc64}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -39,9 +42,21 @@
     <ClCompile Include="slic2.cpp">
       <Filter>ソース ファイル\imgproc</Filter>
     </ClCompile>
+    <ClCompile Include="slic\SLICTest.cpp">
+      <Filter>ソース ファイル\test</Filter>
+    </ClCompile>
+    <ClCompile Include="alphaBlend.cpp">
+      <Filter>ソース ファイル\imgproc</Filter>
+    </ClCompile>
+    <ClCompile Include="matInfo.cpp">
+      <Filter>ソース ファイル\util</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="opencp.hpp">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="test.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

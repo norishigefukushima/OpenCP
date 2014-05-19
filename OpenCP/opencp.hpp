@@ -52,13 +52,16 @@ using namespace cv;
 #pragma comment(lib, "opencv_calib3d"CV_VERSION_NUMBER".lib")
 #endif
 
-
 //Draw fuction
 
 //merge two images into one image with some options.
 void patchBlendImage(Mat& src1, Mat& src2, Mat& dest, Scalar linecolor=CV_RGB(0,0,0), int linewidth = 2, int direction = 0);
 
 // utility functions
+void alphaBlend(const Mat& src1, const Mat& src2, const Mat& alpha, Mat& dest);
+void alphaBlend(const Mat& src1, const Mat& src2, double alpha, Mat& dest);
+void guiAlphaBlend(const Mat& src1, const Mat& src2);
+void showMatInfo(InputArray src_, string name);
 
 enum
 {
@@ -108,3 +111,4 @@ void cvtColorBGR2PLANE(const Mat& src, Mat& dest);
 //slic
 void SLIC(Mat& src, Mat& segment, int regionSize, float regularization, float minRegionRatio, int max_iteration);
 void drawSLIC(Mat& src, Mat& segment, Mat& dest, bool isLine=true, Scalar line_color=Scalar(0,0,255));
+void SLICBase(Mat& src, Mat& segment, int regionSize, float regularization, float minRegionRatio, int max_iteration);
