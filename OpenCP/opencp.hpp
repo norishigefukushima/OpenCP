@@ -106,5 +106,5 @@ public:
 void cvtColorBGR2PLANE(const Mat& src, Mat& dest);
 
 //slic
-void SLIC(Mat& src, Mat& dest, unsigned int regionSize, float regularization, int minRegionSize, int max_iteration);
-void SLICBase(Mat& src, Mat& dest, unsigned int regionSize, float regularization, unsigned int minRegionSize, int max_iteration);
+void SLIC(Mat& src, Mat& segment, int regionSize, float regularization, float minRegionRatio, int max_iteration);
+void drawSLIC(Mat& src, Mat& segment, Mat& dest, bool isLine=true, Scalar line_color=Scalar(0,0,255));

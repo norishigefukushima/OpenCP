@@ -14,15 +14,15 @@ using namespace cv;
 #include "opencp.hpp"
 
 void slic_segment_base (int* segmentation,
-	float const * image,
-	unsigned int width,
-	unsigned int height,
-	unsigned int numChannels,
-	unsigned int regionSize,
-	float regularization,
-	unsigned int minRegionSize,
-	unsigned int const maxNumIterations
-	)
+						float const * image,
+						unsigned int width,
+						unsigned int height,
+						unsigned int numChannels,
+						unsigned int regionSize,
+						float regularization,
+						unsigned int minRegionSize,
+						unsigned int const maxNumIterations
+						)
 {
 	int i, x, y, u, v, k, region ;
 	unsigned int iter ;
@@ -48,7 +48,7 @@ void slic_segment_base (int* segmentation,
 #define atEdgeMap(x,y) edgeMap[(x)+(y)*width]
 
 	{
-		CalcTime t("edge");
+		//CalcTime t("edge");
 		edgeMap = (float*)calloc(numPixels, sizeof(float)) ;
 		masses = (unsigned int*)malloc(sizeof(unsigned int) * numPixels) ;
 		centers = (float*)malloc(sizeof(float) * (2 + numChannels) * numRegions) ;
@@ -68,7 +68,7 @@ void slic_segment_base (int* segmentation,
 	}
 
 	{
-		CalcTime t("kmean init");
+		//CalcTime t("kmean init");
 		/* initialize K-means centers */
 		i = 0 ;
 		for (v = 0 ; v < (signed)numRegionsY ; ++v) {
@@ -110,20 +110,21 @@ void slic_segment_base (int* segmentation,
 	{
 
 		/* run k-means iterations */
-		CalcTime t("iter kmn");
-		const float iregionSize = 1.0/(float)regionSize;
+		//CalcTime t("iter kmn");
+		const float iregionSize = 1.f/(float)regionSize;
 		for (iter = 0 ; iter < maxNumIterations ; ++iter)
 		{	
-			float factor = regularization / (regionSize * regionSize) ;
-			float energy = 0 ;
+			float factor = regularization / (float)(regionSize * regionSize) ;
+			float energy = 0.f ;
 
 			/* assign pixels to centers */
 			for (y = 0 ; y < (signed)height ; ++y)
 			{
 				for (x = 0 ; x < (signed)width ; ++x)
 				{
-					int u = floor((float)x * iregionSize - 0.5f) ;
-					int v = floor((float)y * iregionSize - 0.5f) ;
+
+					int u = cvFloor((float)x * iregionSize - 0.5f) ;
+					int v = cvFloor((float)y * iregionSize - 0.5f) ;
 					/*int u = floor((float)x /regionSize - 0.5f) ;
 					int v = floor((float)y /regionSize - 0.5f) ;*/
 					int up, vp ;
@@ -211,7 +212,7 @@ void slic_segment_base (int* segmentation,
 
 	/* elimiate small regions */
 	{
-		CalcTime t("Post");
+		//CalcTime t("Post");
 		int* cleaned = (int*)calloc(numPixels, sizeof(int)) ;
 		unsigned int * segment = (unsigned int*)malloc(sizeof(unsigned int) * numPixels) ;
 		unsigned int segmentSize ;
@@ -284,7 +285,7 @@ void slic_segment_base (int* segmentation,
 	}
 }
 
-class slic_segmentInvorker : public cv::ParallelLoopBody
+class SLIC_segmentInvorker : public cv::ParallelLoopBody
 {
 private:
 	int width;
@@ -296,13 +297,13 @@ private:
 	int numRegionsY;
 
 	float* energy;
-	float* image;
+	const float* image;
 	float* centers;
 	int* segmentation;
 
 public:
 
-	slic_segmentInvorker(float* energy_, float* image_, float* centers_, int* segmentation_, int width_, int height_, int numChannels_, float iregionSize_, float factor_, int numRegionsX_, int numRegionsY_)
+	SLIC_segmentInvorker(float* energy_, const float* image_, float* centers_, int* segmentation_, int width_, int height_, int numChannels_, float iregionSize_, float factor_, int numRegionsX_, int numRegionsY_)
 		:energy(energy_), image(image_), centers(centers_), segmentation(segmentation_), width(width_), height(height_), numChannels(numChannels_), iregionSize(iregionSize_), factor(factor_), numRegionsX(numRegionsX_), numRegionsY(numRegionsY_)
 	{
 		;
@@ -314,19 +315,21 @@ public:
 		if(numChannels==3)
 		{
 			const int cindex= 6;
+			const int imstep = width*height;
+			const int imstep2 = imstep*2;
 			/* assign pixels to centers */
 			for (int y = r.start ; y < r.end ; ++y)
 			{
-				float* im0 = (float*)(image + (y)*width+ (0)*width*height);
-				float* im1 = (float*)(image + (y)*width+ (1)*width*height);
-				float* im2 = (float*)(image + (y)*width+ (2)*width*height);
+				float* im0 = (float*)(image + (y)*width);
+				float* im1 = (float*)(image + (y)*width+imstep);
+				float* im2 = (float*)(image + (y)*width+imstep2);
 				float* eng = energy + (y)*width;
 				int* seg = &segmentation[y * width];
 
-				const int v = floor((float)y * iregionSize - 0.5f) ;
+				const int v = cvFloor((float)y * iregionSize - 0.5f) ;
 				for (int x = 0 ; x < width ; ++x)
 				{
-					const int u = floor((float)x * iregionSize - 0.5f) ;
+					const int u = cvFloor((float)x * iregionSize - 0.5f) ;
 
 					int up, vp ;
 					float minDistance = FLT_MAX;
@@ -387,8 +390,8 @@ public:
 				float* eng = energy + (y)*width;
 				for (int x = 0 ; x < width ; ++x)
 				{
-					int u = floor((float)x * iregionSize - 0.5f) ;
-					int v = floor((float)y * iregionSize - 0.5f) ;
+					int u = cvFloor((float)x * iregionSize - 0.5f) ;
+					int v = cvFloor((float)y * iregionSize - 0.5f) ;
 					/*int u = floor((float)x /regionSize - 0.5f) ;
 					int v = floor((float)y /regionSize - 0.5f) ;*/
 					int up, vp ;
@@ -476,23 +479,486 @@ float sum_32f(Mat& src)
 	return ret;
 }
 
-void slic_segment (int* segmentation,
-	float const * image,
-	int width,
-	int height,
-	int numChannels,
-	unsigned int regionSize,
-	float regularization,
-	unsigned int minRegionSize,
-	unsigned int const maxNumIterations
-	)
+int getMax_int32(int* src, int size)
 {
-	int i, x, y, u, v, k, region ;
-	unsigned int iter ;
-	unsigned int const numRegionsX = (unsigned int) ceil((double) width / regionSize) ;
-	unsigned int const numRegionsY = (unsigned int) ceil((double) height / regionSize) ;
-	const unsigned int numRegions = numRegionsX * numRegionsY ;
-	unsigned int const numPixels = width * height ;
+	int* s = src;
+	int ssestep = 64;
+	int ssesize = size/ssestep;
+	int rem = size - ssestep*ssesize;
+	__m128i maxval = _mm_set1_epi32(0);
+	for(int i=ssesize;i--;)
+	{
+		//__m128i v = 
+		//	_mm_max_epi32(
+		//	_mm_max_epi32(
+		//	_mm_max_epi32(_mm_load_si128((const __m128i*)s  ), _mm_load_si128((const __m128i*)s+4)),
+		//	_mm_max_epi32(_mm_load_si128((const __m128i*)s+8), _mm_load_si128((const __m128i*)s+12))
+		//	),
+		//	_mm_max_epi32(
+		//	_mm_max_epi32(_mm_load_si128((const __m128i*)s+16), _mm_load_si128((const __m128i*)s+20)),
+		//	_mm_max_epi32(_mm_load_si128((const __m128i*)s+24), _mm_load_si128((const __m128i*)s+28))
+		//	)
+		//	)
+		//	;
+
+		__m128i v = 
+			_mm_max_epi32(
+			_mm_max_epi32(
+			_mm_max_epi32(_mm_load_si128((const __m128i*)s  ), _mm_stream_load_si128((__m128i*)s+4)),
+			_mm_max_epi32(_mm_stream_load_si128((__m128i*)s+8), _mm_stream_load_si128((__m128i*)s+12))
+			),
+			_mm_max_epi32(
+			_mm_max_epi32(_mm_stream_load_si128((__m128i*)s+16), _mm_stream_load_si128((__m128i*)s+20)),
+			_mm_max_epi32(_mm_stream_load_si128((__m128i*)s+24), _mm_stream_load_si128((__m128i*)s+28))
+			)
+			)
+			;
+
+		//__m128i v = 
+		//	_mm_max_epi32(
+		//	_mm_max_epi32(
+		//	_mm_max_epi32(
+		//	_mm_max_epi32(_mm_load_si128((const __m128i*)s  ), _mm_stream_load_si128((__m128i*)s+4)),
+		//	_mm_max_epi32(_mm_stream_load_si128((__m128i*)s+8), _mm_stream_load_si128((__m128i*)s+12))
+		//	),
+		//	_mm_max_epi32(
+		//	_mm_max_epi32(_mm_stream_load_si128((__m128i*)s+16), _mm_stream_load_si128((__m128i*)s+20)),
+		//	_mm_max_epi32(_mm_stream_load_si128((__m128i*)s+24), _mm_stream_load_si128((__m128i*)s+28))
+		//	)
+		//	),
+		//	_mm_max_epi32(
+		//	_mm_max_epi32(
+		//	_mm_max_epi32(_mm_stream_load_si128((__m128i*)s+32), _mm_stream_load_si128((__m128i*)s+36)),
+		//	_mm_max_epi32(_mm_stream_load_si128((__m128i*)s+40), _mm_stream_load_si128((__m128i*)s+44))
+		//	),
+		//	_mm_max_epi32(
+		//	_mm_max_epi32(_mm_stream_load_si128((__m128i*)s+48), _mm_stream_load_si128((__m128i*)s+52)),
+		//	_mm_max_epi32(_mm_stream_load_si128((__m128i*)s+56), _mm_stream_load_si128((__m128i*)s+60))
+		//	)
+		//	)
+		//	)
+		;
+
+		maxval = _mm_max_epi32(maxval,   v);
+
+
+		s+=ssestep;
+	}
+
+	int CV_DECL_ALIGNED(16) buf[4];
+	_mm_store_si128((__m128i*)buf, maxval);
+
+	int ret = max(max(buf[0],buf[1]) , max(buf[1], buf[2]));
+
+	for(int i=rem;i--;)
+	{
+		ret = max(ret,*s);
+		s++;
+	}
+	return ret;
+}
+
+int getMax_int32(Mat& src)
+{
+	return getMax_int32(src.ptr<int>(0), src.size().area());
+}
+
+void drawSLIC(Mat& src, Mat& segment, Mat& dest, bool isLine, Scalar line_color)
+{
+	if(dest.empty() || dest.size()!=src.size()) dest=Mat::zeros(src.size(),src.type());
+	else dest.setTo(0);
+
+	int maxseg = getMax_int32(segment)+1;	
+
+	Mat numsegmentM = Mat::zeros(Size(maxseg,1),CV_32S);
+	Mat valsegmentM = Mat::zeros(Size(maxseg,1),CV_32SC3);
+	Mat ucharsegmentM = Mat::zeros(Size(maxseg,1),CV_8UC3);
+
+	int* numsegment = numsegmentM.ptr<int>(0);
+	int* valsegment = valsegmentM.ptr<int>(0);
+	uchar* ucharsegment = ucharsegmentM.ptr<uchar>(0);
+
+	int width = src.cols;
+	int height = src.rows;
+
+	if(src.channels()==3)
+	{
+		for (int y = 0 ; y < height ; ++y)
+		{
+
+			uchar* im = src.ptr<uchar>(y);
+			uchar* d = dest.ptr<uchar>(y);
+			int * seg = segment.ptr<int>(y);
+			for (int x = 0 ; x < width ; ++x)
+			{
+				const int idx = *seg++;
+
+				numsegment[idx]++;
+				valsegment[3*idx  ]+=im[0];
+				valsegment[3*idx+1]+=im[1];
+				valsegment[3*idx+2]+=im[2];
+
+				im+=3;
+			}
+		}
+		for(int i=maxseg;i--;)
+		{
+			if(numsegment[i]!=0)
+			{
+				float div = 1.0/numsegment[i];
+				ucharsegment[3*i  ]= cvRound(valsegment[3*i  ]*div);
+				ucharsegment[3*i+1]= cvRound(valsegment[3*i+1]*div);
+				ucharsegment[3*i+2]= cvRound(valsegment[3*i+2]*div);
+			}	
+		}
+		for (int y = 0 ; y < height ; ++y)
+		{
+
+			uchar* im = dest.ptr<uchar>(y);
+			int * seg = segment.ptr<int>(y);
+			for (int x = 0 ; x < width ; ++x)
+			{
+				const int idx = *seg++;
+
+				numsegment[idx]++;
+				im[0]=ucharsegment[3*idx  ];
+				im[1]=ucharsegment[3*idx+1];
+				im[2]=ucharsegment[3*idx+2];
+
+				im+=3;
+			}
+		}
+	}
+	else if(src.channels()==1)
+	{
+		for (int y = 0 ; y < height ; ++y)
+		{
+			uchar* im = src.ptr<uchar>(y);
+			int * seg = segment.ptr<int>(y);
+			for (int x = 0 ; x < width ; ++x)
+			{
+				const int idx = *seg++;
+				numsegment[idx]++;
+				valsegment[idx]+=im[0];
+
+				im++;
+			}
+		}
+		for(int i=maxseg;i--;)
+		{
+			if(numsegment[i]!=0)
+			{
+				float div = 1.0/numsegment[i];
+				ucharsegment[i]= cvRound(valsegment[i]*div);
+			}			
+		}
+		for (int y = 0 ; y < height ; ++y)
+		{
+
+			uchar* im = dest.ptr<uchar>(y);
+			int * seg = segment.ptr<int>(y);
+			for (int x = 0 ; x < width ; ++x)
+			{
+				const int idx = *seg++;
+
+				numsegment[idx]++;
+				im[0]=ucharsegment[idx];
+				im++;
+			}
+		}
+	}
+	if(isLine)
+	{
+		int* t=segment.ptr<int>(0);
+		uchar* d = dest.ptr<uchar>(0);
+		uchar b =(uchar)line_color.val[0];
+		uchar g =(uchar)line_color.val[1];
+		uchar r =(uchar)line_color.val[2];
+		if(src.channels()==1)
+		{
+			for(int i=0;i<src.size().area()-src.cols;i++)
+			{
+				if(t[i]!=t[i+1])d[i]=b;
+				if(t[i]!=t[i+src.cols])d[i]=b;
+			}
+			for(int i=src.size().area()-src.cols;i<src.size().area()-1;i++)
+			{
+				if(t[i]!=t[i+1])d[i]=b;
+			}
+		}
+		else
+		{
+			for(int i=0;i<src.size().area()-src.cols;i++)
+			{
+				if(t[i]!=t[i+1]){ d[3*i]=b; d[3*i+1]=g; d[3*i+2]=r;}
+				if(t[i]!=t[i+src.cols]) { d[3*i]=b; d[3*i+1]=g; d[3*i+2]=r;}
+			}
+			for(int i=src.size().area()-src.cols;i<src.size().area()-1;i++)
+			{
+				if(t[i]!=t[i+1]){ d[3*i]=b; d[3*i+1]=g; d[3*i+2]=r;}
+			}
+		}
+	}
+}
+
+
+/*
+base for class SLIC_computeCentersInvorker
+
+void computeCenters(Mat& massesm, Mat& centerm, const float* image, int* segmentation, int numChannels, int width, int height, int numRegions)
+{
+	int cstep = (numChannels==3) ? 6 :3;
+
+	int const numPixels = width * height ;
+	massesm.setTo(0);
+	centerm.setTo(0);
+
+	unsigned int * masses = (unsigned int*)massesm.ptr<int>(0);
+	float* centers = centerm.ptr<float>(0) ;
+
+	if(numChannels==3)
+	{
+		const int step = width;
+
+		float* im0 = (float*)(image + (0)*width+ (0)*numPixels);
+		float* im1 = (float*)(image + (0)*width+ (1)*numPixels);
+		float* im2 = (float*)(image + (0)*width+ (2)*numPixels);
+		for (int y = 0 ; y < height ; ++y)
+		{
+			int * seg = &segmentation[(y)*width]; 
+			for (int x = 0 ; x < width ; ++x)
+			{
+				int region = *seg++;
+				masses[region]++ ;
+				float* c = &centers[region * cstep];
+				c[0] += x ;
+				c[1] += y ;
+				c[2] += im0[x] ;
+				c[3] += im1[x];
+				c[4] += im2[x];
+			}
+			im0+=step;
+			im1+=step;
+			im2+=step;
+		}
+
+		for (int region = 0 ; region <numRegions ; ++region)
+		{
+			float mass = 1.f / MAX((float)masses[region], 1e-8) ;
+
+			float* c = &centers[cstep * region];
+			_mm_storeu_ps(c, _mm_mul_ps(_mm_loadu_ps(c), _mm_set1_ps(mass)));
+
+			//c[0]*= mass;
+			//c[1]*= mass;
+			//c[2]*= mass;
+			//c[3]*= mass;
+			c[4]*= mass;
+			//c[5]*= mass;
+		}
+	}
+	else if(numChannels==1)
+	{
+		for (int y = 0 ; y < height ; ++y)
+		{
+			float* im0 = (float*)(image + (y)*width);
+			for (int x = 0 ; x < width ; ++x)
+			{
+				int pixel = x + y * width ;
+				int region = segmentation[pixel] ;
+				masses[region] ++ ;
+				centers[region * cstep + 0] += x ;
+				centers[region * cstep + 1] += y ;
+				centers[region * cstep + 2] += *im0++ ;
+			}
+		}
+
+		for (int region = 0 ; region <numRegions ; ++region)
+		{
+			float mass = 1.f / MAX((float)masses[region], 1e-8) ;
+
+			float* c = &centers[cstep * region];
+			c[0]*= mass;
+			c[1]*= mass;
+			c[2]*= mass;
+		}
+	}
+}
+*/
+
+class SLIC_computeCentersInvorker : public cv::ParallelLoopBody
+{
+private:
+	const float* image;
+	const int* segmentation;
+
+	int width;
+	int height;
+	int numChannels;
+	int segment_max;
+	int nstrips;
+
+	Vector<Mat> cmat;
+	Vector<Mat> mmat;
+	float** centerP;
+	int** massesP;
+
+	Mat* centerMat;
+public:
+
+	SLIC_computeCentersInvorker(const float* image_, const int* segmentation_, Mat& centers_, int width_, int height_, int numChannels_, int segment_max_, int nstrips_)
+		:image(image_), centerMat(&centers_), segmentation(segmentation_), width(width_), height(height_), numChannels(numChannels_), segment_max(segment_max_), nstrips(nstrips_)
+	{
+		int cstep = (numChannels==3) ? 6 :3;
+		cmat.resize(nstrips);
+		mmat.resize(nstrips);
+		centerP = new float*[nstrips];
+		massesP = new int*[nstrips];
+
+		for(int i=0;i<nstrips;i++)
+		{
+			cmat[i] = Mat::zeros(Size(segment_max,1),CV_MAKETYPE(CV_32F,cstep));
+			centerP[i] = cmat[i].ptr<float>(0);
+
+			mmat[i] = Mat::zeros(Size(segment_max,1),CV_32S);
+			massesP[i]= mmat[i].ptr<int>(0);
+		/*Mat* a = (Mat*)(&cmat[idx]);
+		*a = Mat::zeros(Size(segment_max,1),CV_MAKETYPE(CV_32F,cstep));*/
+		}
+	}
+	~SLIC_computeCentersInvorker()
+	{
+		int cstep = (numChannels==3) ? 6 :3;
+
+		cmat[0].copyTo(*centerMat);
+		for(int i=1;i<nstrips;i++)
+		{
+			add(*centerMat, cmat[i], *centerMat);
+			add(mmat[0],mmat[i],mmat[0]);
+			/*float* d = centerMat->ptr<float>(0);
+			float* s = cmat[i].ptr<float>(0);
+			for(int j=0;j<segment_max;j++)
+			{
+				d[6*j  ]+=s[6*j  ];
+				d[6*j+1]+=s[6*j+1];
+				d[6*j+2]+=s[6*j+2];
+				d[6*j+3]+=s[6*j+3];
+				d[6*j+4]+=s[6*j+4];
+				d[6*j+5]+=s[6*j+5];
+			}*/
+		}
+
+		int* masses = massesP[0];
+		float* center = centerMat->ptr<float>(0);
+		
+		if(numChannels==3)
+		{
+			for (int region = 0 ; region < segment_max ; region++)
+			{
+				float mass = 1.f / MAX((float)masses[region], 1e-8) ;
+
+				float* c = center + cstep * region;
+				_mm_storeu_ps(c, _mm_mul_ps(_mm_loadu_ps(c), _mm_set1_ps(mass)));
+
+				/*c[0]*= mass;
+				c[1]*= mass;
+				c[2]*= mass;
+				c[3]*= mass;*/
+				c[4]*= mass;
+				//c[5]*= mass;
+			}
+		}
+		else
+		{
+			for (int region = 0 ; region <segment_max ; ++region)
+			{
+				float mass = 1.f / MAX((float)masses[region], 1e-8) ;
+
+				float* c = &center[cstep * region];
+				c[0]*= mass;
+				c[1]*= mass;
+				c[2]*= mass;
+			}
+		}
+		delete[] centerP;
+		delete[] massesP;
+	}
+
+
+	virtual void operator()( const cv::Range &r ) const 
+	{
+		int cstep = (numChannels==3) ? 6 :3;
+		int const numPixels = width * height ;
+		const int thread_id = cvRound((double)r.start/double(height) * nstrips);
+		
+		float* center=centerP[thread_id]; 
+		int* masses = massesP[thread_id];
+		
+		if(numChannels==3)
+		{
+			const int step = width;
+
+			float* im0 = (float*)(image + (r.start)*width+ (0)*numPixels);
+			float* im1 = (float*)(image + (r.start)*width+ (1)*numPixels);
+			float* im2 = (float*)(image + (r.start)*width+ (2)*numPixels);
+
+			for (int y = r.start ; y < r.end ; y++)
+			{
+				int * seg = (int*)(segmentation + (y)*width); 
+				for (int x = 0 ; x < width ; ++x)
+				{
+					int region = *seg++;
+					masses[region]++;
+					float* c = &center[region * cstep];
+					c[0] += x ;
+					c[1] += y ;
+					c[2] += im0[x];
+					c[3] += im1[x];
+					c[4] += im2[x];
+				}
+				im0+=step;
+				im1+=step;
+				im2+=step;
+			}
+		}
+		else if(numChannels==1)
+		{
+			float* im0 = (float*)(image + (r.start)*width+ (0)*numPixels);
+			for (int y = r.start ; y < r.end ; ++y)
+			{
+				float* im0 = (float*)(image + (y)*width);
+				for (int x = 0 ; x < width ; ++x)
+				{
+					int pixel = x + y * width ;
+					int region = segmentation[pixel] ;
+					masses[region] ++ ;
+					center[region * cstep + 0] += x ;
+					center[region * cstep + 1] += y ;
+					center[region * cstep + 2] += *im0++ ;
+				}
+			}
+		}
+	}
+};
+
+void slic_segment (int* segmentation,
+				   float const * image,
+				   int width,
+				   int height,
+				   int numChannels,
+				   unsigned int regionSize,
+				   float regularization,
+				   unsigned int minRegionSize,
+				   int const maxNumIterations
+				   )
+{
+	const int threadnum = getNumThreads();
+	int i, x, y, u, v, k;
+	int iter ;
+	int const numRegionsX = (unsigned int) ceil((double) width / regionSize) ;
+	int const numRegionsY = (unsigned int) ceil((double) height / regionSize) ;
+	const int numRegions = numRegionsX * numRegionsY ;
+	int const numPixels = width * height ;
 	Mat en(Size(width,height),CV_32F);
 	Mat centerm;
 	int cstep; 
@@ -506,15 +972,16 @@ void slic_segment (int* segmentation,
 		centerm = Mat::zeros(Size(numRegions,1),CV_MAKETYPE(CV_32F,3));
 		cstep = 3;
 	}
-
-
 	float* centers = centerm.ptr<float>(0) ;
+
+	Mat massesm(Size(numPixels,1),CV_32S);
+	unsigned int * masses = (unsigned int*)massesm.ptr<int>(0);
+
 	Mat eMap = Mat::zeros(Size(numPixels,1),CV_32F);
 	float * edgeMap = eMap.ptr<float>(0);
 	float previousEnergy = FLT_MAX;//VL_INFINITY_F ;
 	float startingEnergy ;
-	Mat massesm(Size(numPixels,1),CV_32S);
-	unsigned int * masses = (unsigned int*)massesm.ptr<int>(0);
+
 
 	assert(segmentation) ;
 	assert(image) ;
@@ -577,9 +1044,9 @@ void slic_segment (int* segmentation,
 		/* initialize K-means centers */
 		i = 0 ;
 		float* c = &centers[0];
-		for (v = 0 ; v < (signed)numRegionsY ; ++v)
+		for (v = 0 ; v < numRegionsY ; ++v)
 		{
-			for (u = 0 ; u < (signed)numRegionsX ; ++u)
+			for (u = 0 ; u < numRegionsX ; ++u)
 			{
 				int xp ;
 				int yp ;
@@ -594,9 +1061,9 @@ void slic_segment (int* segmentation,
 				y = MAX(MIN(y, (signed)height-1),0) ;
 
 				/* search in a 3x3 neighbourhood the smallest edge response */
-				for (yp = MAX(0, y-1) ; yp <= MIN((signed)height-1, y+1) ; ++ yp)
+				for (yp = MAX(0, y-1) ; yp <= MIN(height-1, y+1) ; ++ yp)
 				{
-					for (xp = MAX(0, x-1) ; xp <= MIN((signed)width-1, x+1) ; ++ xp)
+					for (xp = MAX(0, x-1) ; xp <= MIN(width-1, x+1) ; ++ xp)
 					{
 						float thisEdgeValue = atEdgeMap(xp,yp) ;
 						if (thisEdgeValue < minEdgeValue) {
@@ -629,16 +1096,16 @@ void slic_segment (int* segmentation,
 	{
 		/* run k-means iterations */
 		//CalcTime t("iter kmn");
-		const float iregionSize = 1.0/(float)regionSize;
+		const float iregionSize = 1.f/(float)regionSize;
 
-		float factor = regularization / (regionSize * regionSize) ;
+		float factor = regularization / (float)(regionSize * regionSize) ;
 		for (iter = 0 ; iter < maxNumIterations ; ++iter)
 		{	
-			float energy=0.f;
-			slic_segmentInvorker body(en.ptr<float>(0),(float*)image,centers,segmentation,width,height,numChannels,iregionSize,factor,numRegionsX,numRegionsY);
+			//CalcTime t("loop");
+			SLIC_segmentInvorker body(en.ptr<float>(0), (float*)image, centers, segmentation, width, height, numChannels, iregionSize,factor,numRegionsX,numRegionsY);
 			cv::parallel_for_(Range(0, height), body);
 
-			energy =sum_32f(en);
+			float energy=energy =sum_32f(en);
 			//Scalar v = sum(en);
 			//energy = v[0];
 			//energy =sum_hadd_32f(en);
@@ -656,57 +1123,14 @@ void slic_segment (int* segmentation,
 			previousEnergy = energy ;
 
 			/* recompute centers */
-			massesm.setTo(0);
-			centerm.setTo(0);
-			if(numChannels==3)
+			//need scope for destructor
 			{
-				for (y = 0 ; y < height ; ++y)
-				{
-					float* im0 = (float*)(image + (y)*width+ (0)*numPixels);
-					float* im1 = (float*)(image + (y)*width+ (1)*numPixels);
-					float* im2 = (float*)(image + (y)*width+ (2)*numPixels);
-					int * seg = &segmentation[(y)*width]; 
-					for (x = 0 ; x < width ; ++x)
-					{
-						int region = *seg++;
-						masses[region]++ ;
-						float* c = &centers[region * cstep];
-						c[0] += x ;
-						c[1] += y ;
-						c[2] += *im0++ ;
-						c[3] += *im1++;
-						c[4] += *im2++;
-					}
-				}
-			}
-			else if(numChannels==1)
-			{
-				for (y = 0 ; y < height ; ++y)
-				{
-					float* im0 = (float*)(image + (y)*width);
-					for (x = 0 ; x < width ; ++x)
-					{
-						int pixel = x + y * width ;
-						int region = segmentation[pixel] ;
-						masses[region] ++ ;
-						centers[region * cstep + 0] += x ;
-						centers[region * cstep + 1] += y ;
-						centers[region * cstep + 2] += *im0++ ;
-					}
-				}
-			}
+				//computeCenters(massesm, centerm, image,segmentation,numChannels,width,height,numRegions);
 
-			for (region = 0 ; region < (signed)numRegions ; ++region)
-			{
-				float mass = 1.f / MAX(masses[region], 1e-8) ;
-				for (i = (cstep) * region ;
-					i < (signed)(cstep) * (region + 1) ;
-					++i) 
-				{
-					centers[i] *= mass ;
-				}
+				SLIC_computeCentersInvorker body2(image, segmentation, centerm, width, height, numChannels, numRegions, threadnum);
+				cv::parallel_for_(Range(0, height), body2, threadnum);
 			}
-
+			
 		}
 	}
 	/* elimiate small regions */
@@ -714,7 +1138,8 @@ void slic_segment (int* segmentation,
 		//CalcTime t("Post");
 		massesm.setTo(0);
 		int* cleaned = massesm.ptr<int>(0);
-		unsigned int * segment = (unsigned int*)malloc(sizeof(unsigned int) * numPixels) ;
+
+		unsigned int * segment = (unsigned int*)fastMalloc(sizeof(unsigned int) * numPixels) ;
 		unsigned int segmentSize ;
 		unsigned int label ;
 		unsigned int cleanedLabel ;
@@ -776,68 +1201,70 @@ void slic_segment (int* segmentation,
 			}
 
 			/* change label to cleanedLabel if the semgent is too small */
-			if (segmentSize < minRegionSize) {
-				while (segmentSize > 0) {
+			if (segmentSize < minRegionSize)
+			{
+				while (segmentSize > 0)
+				{
 					cleaned[segment[--segmentSize]] = cleanedLabel ;
 				}
 			}
 		}
+
 		/* restore base 0 indexing of the regions */
-		//for (pixel = 0 ; pixel < (signed)numPixels ; ++pixel) cleaned[pixel] -- ;
-		subtract(massesm,1,massesm);
+		//subtract(massesm,1,massesm);// cleaned = messes.ptr<int>(0);
+		//memcpy(segmentation, cleaned, numPixels * sizeof(int)) ;
 
-		memcpy(segmentation, cleaned, numPixels * sizeof(int)) ;
-		free(segment) ;
+		int ssesize = numPixels/4;
+		int rem = numPixels - ssesize*4;
+		int* d = segmentation;
+		int* s = cleaned;
+		const __m128i ones = _mm_set1_epi32(1);
+		for(int i=0;i<ssesize;i++)
+		{
+			__m128i ms = _mm_loadu_si128((const __m128i*)s);
+			_mm_storeu_si128((__m128i*)d, _mm_sub_epi32(ms,ones));
+			d+=4;
+			s+=4;
+		}
+		for(int i=0;i<rem;i++)
+		{
+			*d = *s-1;
+			*s++;
+			*d++;
+		}
+		fastFree(segment) ;
 	}
 }
 
-
-void SLIC(Mat& src, Mat& dest, unsigned int regionSize, float regularization, int minRegionSize, int max_iteration)
+void SLIC(Mat& src, Mat& segment, int regionSize, float regularization, float minRegionRatio, int max_iteration)
 {
-	if(dest.empty()||dest.size()!=src.size())dest=Mat::zeros(src.size(),CV_8U);
-	else dest.setTo(0);
+	regionSize = max(4,regionSize);
 	Mat input,input_;
 	if(src.channels()==3)
 		cvtColorBGR2PLANE(src,input_);
 	else
 		input_ = src;
 
-	input_.convertTo(input,CV_32F);
-	Mat temp = Mat::zeros(src.size(),CV_32S);
+	input_.convertTo(input,CV_32F,1.f/255.f);
+	segment = Mat::zeros(src.size(),CV_32S);
 	int maxiter = max_iteration;
 
-	//slic_segment_base((int*)temp.data, (float*)input.data,src.cols,src.rows,src.channels(),regionSize,regularization,minRegionSize,maxiter);
-	slic_segment((int*)temp.data, (float*)input.data,src.cols,src.rows,src.channels(),regionSize,regularization,(unsigned int)minRegionSize,maxiter);
-
-	int* t=temp.ptr<int>(0);
-	uchar* d = dest.ptr<uchar>(0);
-	for(int i=0;i<temp.size().area()-temp.cols;i++)
-	{
-		if(t[i]!=t[i+1])d[i]=255;
-		if(t[i]!=t[i+temp.cols])d[i]=255;
-	}
+	int minRegionSize = minRegionRatio*(regionSize*regionSize);
+	slic_segment((int*)segment.data, (float*)input.data, src.cols, src.rows, src.channels(), regionSize, regularization, minRegionSize, maxiter);
 }
 
-void SLICBase(Mat& src, Mat& dest, unsigned int regionSize, float regularization, unsigned int minRegionSize, int max_iteration)
+void SLICBase(Mat& src, Mat& segment,int regionSize, float regularization, float minRegionRatio, int max_iteration)
 {
-	if(dest.empty()||dest.size()!=src.size())dest=Mat::zeros(src.size(),CV_8U);
-	else dest.setTo(0);
+	regionSize = max(4,regionSize);
 	Mat input,input_;
 	if(src.channels()==3)
 		cvtColorBGR2PLANE(src,input_);
 	else
 		input_ = src;
 
-	input_.convertTo(input,CV_32F);
-	Mat temp = Mat::zeros(src.size(),CV_32S);
+	input_.convertTo(input,CV_32F,1.f/255.f);
+	segment = Mat::zeros(src.size(),CV_32S);
 	int maxiter = max_iteration;
-	slic_segment_base((int*)temp.data, (float*)input.data, src.cols, src.rows, src.channels(),regionSize,regularization,minRegionSize, maxiter);
-
-	int* t=temp.ptr<int>(0);
-	uchar* d = dest.ptr<uchar>(0);
-	for(int i=0;i<temp.size().area()-temp.cols;i++)
-	{
-		if(t[i]!=t[i+1])d[i]=255;
-		if(t[i]!=t[i+temp.cols])d[i]=255;
-	}
+	int minRegionSize = minRegionRatio*(regionSize*regionSize);
+	slic_segment_base((int*)segment.data, (float*)input.data, src.cols, src.rows, src.channels(),regionSize,regularization,minRegionSize, maxiter);
 }

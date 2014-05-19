@@ -36,6 +36,9 @@
     <ClCompile Include="timer.cpp">
       <Filter>ソース ファイル\util</Filter>
     </ClCompile>
+    <ClCompile Include="slic2.cpp">
+      <Filter>ソース ファイル\imgproc</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="opencp.hpp">

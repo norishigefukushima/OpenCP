@@ -143,6 +143,7 @@
     <ClCompile Include="draw.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="slic.cpp" />
+    <ClCompile Include="slic2.cpp" />
     <ClCompile Include="timer.cpp" />
   </ItemGroup>
   <ItemGroup>
