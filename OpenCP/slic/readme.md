@@ -22,3 +22,4 @@ Documents: SLIC (Simple Linear Iterative Clustering)
 Example
 -------
 ![SLIC](SLIC_screenshot.png "screenshot")
+![SLIC2](SLIC_screenshot2.png "screenshot2")
