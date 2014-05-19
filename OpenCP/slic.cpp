@@ -1,4 +1,3 @@
-
 #include <opencv2/core/internal.hpp>
 
 #include <stdlib.h>
@@ -9,8 +8,6 @@
 #include <limits>
 #include <math.h>
 
-using namespace std;
-using namespace cv;
 #include "opencp.hpp"
 
 void slic_segment_base (int* segmentation,

@@ -14,18 +14,16 @@ void guiSLICTest(Mat& src)
 	int iter = 10; createTrackbar("iteration",wname,&iter,1000);
 	int key = 0;
 	Mat seg;
-
+	
 	while(key!='q')
 	{
 		Mat show;
 		{
 			CalcTime t("slic all");
-			//SLIC(src, seg, rs, reg/100.0, mrs/100.0,iter);
-			SLICBase(src, seg, rs, reg/100.0, mrs/100.0,iter);
-			
+			SLIC(src, seg, rs, reg/100.0, mrs/100.0,iter);
 		}
-
 		drawSLIC(src,seg,dest,true,Scalar(255,255,0));
+		
 		patchBlendImage(src,dest, show, Scalar(255,255,255));
 		imshow(wname,show);
 		key = waitKey(1);
