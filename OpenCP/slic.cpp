@@ -111,7 +111,7 @@ void slic_segment_base (int* segmentation,
 		const float iregionSize = 1.f/(float)regionSize;
 		for (iter = 0 ; iter < maxNumIterations ; ++iter)
 		{	
-			float factor = regularization / (float)(regionSize * regionSize) ;
+			float factor = regularization;
 			float energy = 0.f ;
 
 			/* assign pixels to centers */
@@ -194,7 +194,7 @@ void slic_segment_base (int* segmentation,
 
 			for (region = 0 ; region < (signed)numRegions ; ++region)
 			{
-				float mass = MAX(masses[region], 1e-8) ;
+				float mass = (float)MAX(masses[region], 1e-8) ;
 				for (i = (2 + numChannels) * region ;
 					i < (signed)(2 + numChannels) * (region + 1) ;
 					++i) {
@@ -351,8 +351,10 @@ public:
 							float* c = &centers[cindex * region];
 							const float centerx = (float)x-(c[0]);
 							const float centery = (float)y-(c[1]);
+							//ds in Eq(1) 
 							const float spatial = centerx*centerx + centery*centery;
 #ifdef CV_SSE3
+							//dc in Eq(1) 
 							__m128 s2 = _mm_loadu_ps((c+2));
 							s2 = _mm_sub_ps(s1,s2);
 							s2 = _mm_mul_ps(s2,s2);
@@ -365,9 +367,15 @@ public:
 							appearance += (z[1] - c[3]) * (z[1] - c[3]) ;
 							appearance += (z[2] - c[4]) * (z[2] - c[4]) ;
 #endif
+							
+							float cc = appearance;
 							appearance += factor * spatial ;
+							
+							
+
 							if (minDistance > appearance)
 							{
+//								std::cout<<cc<<","<<spatial<<","<<factor<<std::endl;
 								minDistance = appearance;
 								*seg = (int)region ;
 							}
@@ -602,7 +610,7 @@ void drawSLIC(Mat& src, Mat& segment, Mat& dest, bool isLine, Scalar line_color)
 		{
 			if(numsegment[i]!=0)
 			{
-				float div = 1.0/numsegment[i];
+				float div = 1.f/(float)numsegment[i];
 				ucharsegment[3*i  ]= cvRound(valsegment[3*i  ]*div);
 				ucharsegment[3*i+1]= cvRound(valsegment[3*i+1]*div);
 				ucharsegment[3*i+2]= cvRound(valsegment[3*i+2]*div);
@@ -645,7 +653,7 @@ void drawSLIC(Mat& src, Mat& segment, Mat& dest, bool isLine, Scalar line_color)
 		{
 			if(numsegment[i]!=0)
 			{
-				float div = 1.0/numsegment[i];
+				float div = 1.f/(float)numsegment[i];
 				ucharsegment[i]= cvRound(valsegment[i]*div);
 			}			
 		}
@@ -852,24 +860,24 @@ public:
 		{
 			for (int region = 0 ; region < segment_max ; region++)
 			{
-				float mass = 1.f / MAX((float)masses[region], 1e-8) ;
+				float mass = 1.f / (float)MAX(masses[region], 1e-8) ;
 
 				float* c = center + cstep * region;
 				_mm_storeu_ps(c, _mm_mul_ps(_mm_loadu_ps(c), _mm_set1_ps(mass)));
+				//c[0]*= mass;//sse intrinsics set this value
+				//c[1]*= mass;//sse intrinsics set this value
+				//c[2]*= mass;//sse intrinsics set this value
+				//c[3]*= mass;//sse intrinsics set this value
 
-				/*c[0]*= mass;
-				c[1]*= mass;
-				c[2]*= mass;
-				c[3]*= mass;*/
 				c[4]*= mass;
-				//c[5]*= mass;
+				//c[5]*= mass;no use
 			}
 		}
 		else
 		{
 			for (int region = 0 ; region <segment_max ; ++region)
 			{
-				float mass = 1.f / MAX((float)masses[region], 1e-8) ;
+				float mass = 1.f / (float)MAX(masses[region], 1e-8) ;
 
 				float* c = &center[cstep * region];
 				c[0]*= mass;
@@ -989,9 +997,9 @@ void slic_segment (int* segmentation,
 	assert(regularization >= 0) ;
 
 	{
+		//the edge computation can be parallerized, but the part is not bottle neck.
 		//CalcTime t("edge");
-		/* compute edge map (gradient strength) */
-
+		//compute edge map (gradient strength)
 		if(numChannels==3)
 		{
 			for (y = 1 ; y < (signed)height-1 ; ++y)
@@ -1095,7 +1103,7 @@ void slic_segment (int* segmentation,
 		//CalcTime t("iter kmn");
 		const float iregionSize = 1.f/(float)regionSize;
 
-		float factor = regularization / (float)(regionSize * regionSize) ;
+		float factor = regularization;
 		for (iter = 0 ; iter < maxNumIterations ; ++iter)
 		{	
 			//CalcTime t("loop");
@@ -1235,6 +1243,8 @@ void slic_segment (int* segmentation,
 
 void SLIC(Mat& src, Mat& segment, int regionSize, float regularization, float minRegionRatio, int max_iteration)
 {
+	//regionSize = S in the paper
+
 	regionSize = max(4,regionSize);
 	Mat input,input_;
 	if(src.channels()==3)
@@ -1242,12 +1252,14 @@ void SLIC(Mat& src, Mat& segment, int regionSize, float regularization, float mi
 	else
 		input_ = src;
 
-	input_.convertTo(input,CV_32F,1.f/255.f);
+	input_.convertTo(input,CV_32F);
 	segment = Mat::zeros(src.size(),CV_32S);
 	int maxiter = max_iteration;
 
-	int minRegionSize = minRegionRatio*(regionSize*regionSize);
-	slic_segment((int*)segment.data, (float*)input.data, src.cols, src.rows, src.channels(), regionSize, regularization, minRegionSize, maxiter);
+	int minRegionSize = (int)(minRegionRatio*(regionSize*regionSize));
+	float reg = (regularization*regularization)/(float)(regionSize*regionSize);
+	
+	slic_segment((int*)segment.data, (float*)input.data, src.cols, src.rows, src.channels(), regionSize, reg, minRegionSize, maxiter);
 }
 
 void SLICBase(Mat& src, Mat& segment,int regionSize, float regularization, float minRegionRatio, int max_iteration)
@@ -1259,9 +1271,10 @@ void SLICBase(Mat& src, Mat& segment,int regionSize, float regularization, float
 	else
 		input_ = src;
 
-	input_.convertTo(input,CV_32F,1.f/255.f);
+	input_.convertTo(input,CV_32F,1.0/255.0);
 	segment = Mat::zeros(src.size(),CV_32S);
 	int maxiter = max_iteration;
-	int minRegionSize = minRegionRatio*(regionSize*regionSize);
-	slic_segment_base((int*)segment.data, (float*)input.data, src.cols, src.rows, src.channels(),regionSize,regularization,minRegionSize, maxiter);
+	int minRegionSize = (int)(minRegionRatio*(regionSize*regionSize));
+	float reg = regularization* regionSize;
+	slic_segment_base((int*)segment.data, (float*)input.data, src.cols, src.rows, src.channels(),regionSize,reg,minRegionSize, maxiter);
 }
