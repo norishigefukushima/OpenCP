@@ -1,5 +1,5 @@
-Documents: SLIC (Simple Linear Iterative Clustering) 
-=========
+Documents: Birateral Filter
+===========================
 
 **void SLIC(Mat& src, Mat& segment, int regionSize, float regularization, float minRegionRatio, int max_iteration)**  
 * Mat& src: input image.  
