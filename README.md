@@ -5,7 +5,8 @@ library for computational photography
 Todo
 ----
 ** port various filters from my library.**  
-* bilateral filter  
+* bilateral filter 
+~~add slowest birateral filter5/20~~
 ~~* update type of the destination of the SLIC. mean image? mesh? 5/19~~
 
 
