@@ -26,8 +26,6 @@ void guiSLICTest(Mat& src)
 		}
 		drawSLIC(src,seg,dest,true,Scalar(255,255,0));
 		
-		
-		
 		Mat dest2;
 		SLIC(lab, seg, S*2, m, mrs/100.0,iter);
 		drawSLIC(src,seg,dest2,true,Scalar(255,255,0));

@@ -112,3 +112,6 @@ void cvtColorBGR2PLANE(const Mat& src, Mat& dest);
 void SLIC(Mat& src, Mat& segment, int regionSize, float regularization, float minRegionRatio, int max_iteration);
 void drawSLIC(Mat& src, Mat& segment, Mat& dest, bool isLine=true, Scalar line_color=Scalar(0,0,255));
 void SLICBase(Mat& src, Mat& segment, int regionSize, float regularization, float minRegionRatio, int max_iteration);
+
+//bilateral filters
+void bilateralFilterSlowest(const Mat& src, Mat& dest, int d, double sigma_color, double sigma_space);

@@ -140,6 +140,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="alphaBlend.cpp" />
+    <ClCompile Include="bilateralFilter.cpp" />
+    <ClCompile Include="birateralFilter\birateralFilterTest.cpp" />
     <ClCompile Include="color.cpp" />
     <ClCompile Include="draw.cpp" />
     <ClCompile Include="main.cpp" />
