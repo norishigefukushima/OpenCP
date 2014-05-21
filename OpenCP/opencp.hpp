@@ -105,8 +105,11 @@ public:
 };
 
 //image processing
-//convert a BGR color image into a continued one channel data: ex BGRBGRBGR... BBBB...GGGG....RRRR....
+//convert a BGR color image into a continued one channel data: ex BGRBGRBGR... -> BBBB...(image size), GGGG....(image size), RRRR....(image size).
 void cvtColorBGR2PLANE(const Mat& src, Mat& dest);
+
+//convert a BGR color image into a skipped one channel data: ex BGRBGRBGR... -> BBBB...(cols size), GGGG....(cols size), RRRR....(cols size),BBBB...(cols size), GGGG....(cols size), RRRR....(cols size),...
+void splitBGRLineInterleave( const Mat& src, Mat& dest);
 
 //slic
 void SLIC(const Mat& src, Mat& segment, int regionSize, float regularization, float minRegionRatio, int max_iteration);
@@ -114,6 +117,18 @@ void drawSLIC(const Mat& src, Mat& segment, Mat& dest, bool isLine=true, Scalar 
 void SLICBase(Mat& src, Mat& segment, int regionSize, float regularization, float minRegionRatio, int max_iteration);
 
 //bilateral filters
+
+enum
+{
+	BILATERAL_DEFAULT = 0,
+	BILATERAL_CIRCLE = 0,
+	BILATERAL_RECT ,
+	BILATERAL_SEPARABLE,
+	BILATERAL_ORDER2,//underconstruction
+	BILATERAL_ORDER2_SEPARABLE//underconstruction
+};
+
+void bilateralFilter(const Mat& src, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method=BILATERAL_DEFAULT, int borderType=cv::BORDER_REPLICATE);
 
 //just for comparison
 void bilateralFilterSlowest(const Mat& src, Mat& dest, int d, double sigma_color, double sigma_space);

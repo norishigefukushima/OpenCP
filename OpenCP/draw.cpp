@@ -8,7 +8,7 @@ void setTriangleMask(Mat& src)
 	for(int j=0;j<src.rows;j++)
 	{
 		T* s = src.ptr<T>(j);
-		int v = j*aspect;
+		int v = (int)(j*aspect);
 		memset(s,1,(sizeof(T)*src.cols-v));
 	}
 }
