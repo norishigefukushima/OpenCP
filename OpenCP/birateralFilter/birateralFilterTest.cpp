@@ -18,8 +18,8 @@ void guiBirateralFilterTest(Mat& src)
 	while(key!='q')
 	{
 		cout<<"r:"<<r<<endl;
-		float sigma_color = color/10.0;
-		float sigma_space = space/10.0;
+		double sigma_color = color/10.0;
+		double sigma_space = space/10.0;
 		int d = 2*r+1;
 
 		{

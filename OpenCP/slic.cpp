@@ -568,7 +568,7 @@ int getMax_int32(Mat& src)
 	return getMax_int32(src.ptr<int>(0), src.size().area());
 }
 
-void drawSLIC(Mat& src, Mat& segment, Mat& dest, bool isLine, Scalar line_color)
+void drawSLIC(const Mat& src, Mat& segment, Mat& dest, bool isLine, Scalar line_color)
 {
 	if(dest.empty() || dest.size()!=src.size()) dest=Mat::zeros(src.size(),src.type());
 	else dest.setTo(0);
@@ -591,7 +591,7 @@ void drawSLIC(Mat& src, Mat& segment, Mat& dest, bool isLine, Scalar line_color)
 		for (int y = 0 ; y < height ; ++y)
 		{
 
-			uchar* im = src.ptr<uchar>(y);
+			uchar* im = (uchar*)src.ptr<uchar>(y);
 			uchar* d = dest.ptr<uchar>(y);
 			int * seg = segment.ptr<int>(y);
 			for (int x = 0 ; x < width ; ++x)
@@ -638,7 +638,7 @@ void drawSLIC(Mat& src, Mat& segment, Mat& dest, bool isLine, Scalar line_color)
 	{
 		for (int y = 0 ; y < height ; ++y)
 		{
-			uchar* im = src.ptr<uchar>(y);
+			uchar* im = (uchar*)src.ptr<uchar>(y);
 			int * seg = segment.ptr<int>(y);
 			for (int x = 0 ; x < width ; ++x)
 			{
@@ -1241,7 +1241,7 @@ void slic_segment (int* segmentation,
 	}
 }
 
-void SLIC(Mat& src, Mat& segment, int regionSize, float regularization, float minRegionRatio, int max_iteration)
+void SLIC(const Mat& src, Mat& segment, int regionSize, float regularization, float minRegionRatio, int max_iteration)
 {
 	//regionSize = S in the paper
 

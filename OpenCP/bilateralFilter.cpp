@@ -1,6 +1,5 @@
 #include "opencp.hpp"
 
-//for comparison
 void bilateralFilterSlowest(const Mat& src, Mat& dest, int d, double sigma_color, double sigma_space)
 {
 	Mat srcd;src.convertTo(srcd,CV_64F);
