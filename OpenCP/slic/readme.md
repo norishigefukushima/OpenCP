@@ -1,7 +1,7 @@
 Documents: SLIC (Simple Linear Iterative Clustering) 
 =========
 
-SLIC is a fast segmentation function.   
+SLIC is a fast segmentation function. The function of SLIC is called, and then drawSLIC could be called for rendering.   
 **void SLIC(const Mat& src, Mat& segment, int regionSize, float regularization, float minRegionRatio, int max_iteration)**  
 * Mat& src: input image.  
 * Nat& segment: segmentimage image(CV_32S). Each pixel has integer value for labeling.
@@ -26,7 +26,7 @@ Example
 ![SLIC2](SLIC_screenshot2.png "screenshot2")
 
 Documents: Blending
------
+-------------------
 This is a alpha blending functions.  
 **void alphaBlend(const Mat& src1, const Mat& src2, double alpha, Mat& dest)**    
 **void alphaBlend(const Mat& src1, const Mat& src2, const Mat& alpha, Mat& dest)**  
@@ -41,18 +41,30 @@ various test for interactive alpha blending.
 * q: quit  
 * f: flip alpha value  
 
+Example  
+-------
+
+![alphablend](alpha_blend.png "ab")
+![guialphablend](gui_alpha_blend.png "gab")
+
+
 merging or blending two image into an image like triangular matrix. The function is used for SLIC demo.  
 **void patchBlendImage(Mat& src1, Mat& src2, Mat& dest, Scalar linecolor=CV_RGB(0,0,0), int linewidth = 2, int direction = 0)**  
+
+Example  
+-------
 
 
 showing information of class Mat for debugging.  
 **void showMatInfo(InputArray src_, string name)**  
 
-Documents: Color  
+
+Documents: Color   
+----------------
 **void cvtColorBGR2PLANE(const Mat& src, Mat& dest)**  
 
 Documents: Utility functions  
-
+----------------------------
     class CalcTime
     {
 	int64 pre;
