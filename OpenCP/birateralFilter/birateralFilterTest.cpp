@@ -26,24 +26,25 @@ void guiBirateralFilterTest(Mat& src)
 		
 		if(sw==0)
 		{
-			CalcTime t("birateral filter: slowest");
-			bilateralFilterSlowest(src, dest, d, sigma_color, sigma_space);
-		}
-		else if(sw==1)
-		{
 			CalcTime t("birateral filter: opencv");
 			bilateralFilter(src, dest, d, sigma_color, sigma_space);
 		}
-		if(sw==2)
+		if(sw==1)
 		{
 			CalcTime t("birateral filter: fastest opencp implimentation");
 			bilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space,BILATERAL_DEFAULT);
 		}
-		if(sw==3)
+		if(sw==2)
 		{
 			CalcTime t("birateral filter: fastest: sepalable approximation of opencp");
 			bilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space,BILATERAL_SEPARABLE);
 		}
+		if(sw==3)
+		{
+			CalcTime t("birateral filter: fastest: sepalable approximation of opencp");
+			bilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space,BILATERAL_SLOWEST);
+		}
+
 		alphaBlend(src, dest,a/100.0, show);
 		imshow(wname,show);
 		key = waitKey(1);

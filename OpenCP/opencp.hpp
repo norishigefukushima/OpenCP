@@ -125,11 +125,10 @@ enum
 	BILATERAL_RECT ,
 	BILATERAL_SEPARABLE,
 	BILATERAL_ORDER2,//underconstruction
-	BILATERAL_ORDER2_SEPARABLE//underconstruction
+	BILATERAL_ORDER2_SEPARABLE,//underconstruction
+	BILATERAL_SLOWEST// for just comparison.
 };
 
 void bilateralFilter(const Mat& src, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method=BILATERAL_DEFAULT, int borderType=cv::BORDER_REPLICATE);
 
-//just for comparison
-void bilateralFilterSlowest(const Mat& src, Mat& dest, int d, double sigma_color, double sigma_space);
 

@@ -1,11 +1,13 @@
 #include "opencp.hpp"
 #include <opencv2/core/internal.hpp>
 
-void bilateralFilterSlowest(const Mat& src, Mat& dest, int d, double sigma_color, double sigma_space)
+void bilateralFilterSlowest(const Mat& src, Mat& dest, Size kernel, double sigma_color, double sigma_space)
 {
 	Mat srcd;src.convertTo(srcd,CV_64F);
 	Mat destd = Mat::zeros(src.size(),CV_MAKETYPE(CV_64F,src.channels()));
-	const int r = d/2;
+	const int r = max(kernel.width,kernel.height)/2;
+	const int hr = kernel.width/2;
+	const int vr = kernel.height/2;
 	int channels = src.channels();
 	if(channels==1)
 	{
@@ -15,9 +17,9 @@ void bilateralFilterSlowest(const Mat& src, Mat& dest, int d, double sigma_color
 			{
 				double sum = 0.0;
 				double coeff = 0.0;
-				for(int l=-r;l<=r;l++)
+				for(int l=-vr;l<=vr;l++)
 				{
-					for(int k=-r;k<=r;k++)
+					for(int k=-hr;k<=hr;k++)
 					{
 						if(sqrt(l*l+k*k)<=r && i+k>=0 && i+k<src.cols && j+l>=0 && j+l<src.rows )
 						{
@@ -42,9 +44,9 @@ void bilateralFilterSlowest(const Mat& src, Mat& dest, int d, double sigma_color
 				double sumg = 0.0;
 				double sumr = 0.0;
 				double coeff = 0.0;
-				for(int l=-r;l<=r;l++)
+				for(int l=-vr;l<=vr;l++)
 				{
-					for(int k=-r;k<=r;k++)
+					for(int k=-hr;k<=hr;k++)
 					{
 						if(sqrt(l*l+k*k)<=r && i+k>=0 && i+k<src.cols && j+l>=0 && j+l<src.rows )
 						{
@@ -3996,6 +3998,10 @@ void bilateralFilter(const Mat& src, Mat& dst, Size kernelSize, double sigma_col
 			else
 				bilateralFilterORDER2_32f(src,dst,kernelSize,sigma_color,sigma_space,borderType);
 		}
+	}
+	else if(BILATERAL_SLOWEST)
+	{
+		bilateralFilterSlowest(src,dst,kernelSize,sigma_color,sigma_space);
 	}
 }
 
