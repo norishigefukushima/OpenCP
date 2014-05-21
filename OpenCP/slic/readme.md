@@ -1,7 +1,8 @@
 Documents: SLIC (Simple Linear Iterative Clustering) 
 =========
 
-**void SLIC(Mat& src, Mat& segment, int regionSize, float regularization, float minRegionRatio, int max_iteration)**  
+SLIC is a fast segmentation function.   
+**void SLIC(const Mat& src, Mat& segment, int regionSize, float regularization, float minRegionRatio, int max_iteration)**  
 * Mat& src: input image.  
 * Nat& segment: segmentimage image(CV_32S). Each pixel has integer value for labeling.
 * int regionSize: nominal size of the regions( parameter S in the refernece paper).   
@@ -9,7 +10,7 @@ Documents: SLIC (Simple Linear Iterative Clustering)
 * int minRegionRatio: ratio of minimum size of a segment for regionSize*regionSize for threshoding minimum regions.   
 * int max_iteration: number of max interations.  
 
-**void drawSLIC(Mat& src, Mat& segment, Mat& dest, bool isLine, Scalar line_color)**
+**void drawSLIC(const Mat& src, Mat& segment, Mat& dest, bool isLine, Scalar line_color)**
 * Mat& src: input image.  
 * Nat& dest: segmenttation result from the SLIC function.
 * bool isLine: draw line or not between segments.
@@ -24,24 +25,36 @@ Example
 ![SLIC](SLIC_screenshot.png "screenshot")
 ![SLIC2](SLIC_screenshot2.png "screenshot2")
 
+Documents: Blending
+-----
+This is a alpha blending functions.  
 **void alphaBlend(const Mat& src1, const Mat& src2, double alpha, Mat& dest)**    
-
 **void alphaBlend(const Mat& src1, const Mat& src2, const Mat& alpha, Mat& dest)**  
+* Mat& src1: input image1.  
+* Mat& src2: input image2.  
+* Mat or double alpha: alpha channel map, and values are set from 0 to 1. if the value is scalar, src mat are blended a constant value.  If the type of alpha map is CV_8U or uchar, values are set from 0 to 255.
+* Mat& dest: destination image.  
 
+various test for interactive alpha blending.  
 **void guiAlphaBlend(const Mat& src1, const Mat& src2)**  
 *keyboard short cut*  
 * q: quit  
 * f: flip alpha value  
 
-**void showMatInfo(InputArray src_, string name)**  
-
-**void cvtColorBGR2PLANE(const Mat& src, Mat& dest)**  
-
+merging or blending two image into an image like triangular matrix. The function is used for SLIC demo.  
 **void patchBlendImage(Mat& src1, Mat& src2, Mat& dest, Scalar linecolor=CV_RGB(0,0,0), int linewidth = 2, int direction = 0)**  
 
 
-class CalcTime
-{
+showing information of class Mat for debugging.  
+**void showMatInfo(InputArray src_, string name)**  
+
+Documents: Color  
+**void cvtColorBGR2PLANE(const Mat& src, Mat& dest)**  
+
+Documents: Utility functions  
+
+    class CalcTime
+    {
 	int64 pre;
 	string mes;
 
@@ -53,7 +66,7 @@ class CalcTime
 	int autoMode;
 	int autoTimeMode();
 	vector<string> lap_mes;
-public:
+    public:
 
 	void start();
 	void setMode(int mode);
@@ -69,4 +82,4 @@ public:
 	CalcTime();
 
 	~CalcTime();
-};
+    };
