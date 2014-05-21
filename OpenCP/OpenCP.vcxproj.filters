@@ -54,6 +54,9 @@
     <ClCompile Include="birateralFilter\birateralFilterTest.cpp">
       <Filter>ソース ファイル\test</Filter>
     </ClCompile>
+    <ClCompile Include="stat.cpp">
+      <Filter>ソース ファイル\util</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="opencp.hpp">

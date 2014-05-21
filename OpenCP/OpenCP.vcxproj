@@ -148,6 +148,7 @@
     <ClCompile Include="matInfo.cpp" />
     <ClCompile Include="slic.cpp" />
     <ClCompile Include="slic\SLICTest.cpp" />
+    <ClCompile Include="stat.cpp" />
     <ClCompile Include="timer.cpp" />
   </ItemGroup>
   <ItemGroup>

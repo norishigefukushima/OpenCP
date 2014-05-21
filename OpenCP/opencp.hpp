@@ -56,11 +56,11 @@ using namespace cv;
 
 //merge two images into one image with some options.
 void patchBlendImage(Mat& src1, Mat& src2, Mat& dest, Scalar linecolor=CV_RGB(0,0,0), int linewidth = 2, int direction = 0);
-
-// utility functions
 void alphaBlend(const Mat& src1, const Mat& src2, const Mat& alpha, Mat& dest);
 void alphaBlend(const Mat& src1, const Mat& src2, double alpha, Mat& dest);
 void guiAlphaBlend(const Mat& src1, const Mat& src2);
+
+// utility functions
 void showMatInfo(InputArray src_, string name);
 
 enum
@@ -102,6 +102,25 @@ public:
 	CalcTime();
 
 	~CalcTime();
+};
+
+class Stat 
+{
+public:
+	Vector<double> data;
+	int num_data;
+	Stat();
+	~Stat();
+	double getMin();
+	double getMax();
+	double getMean();
+	double getStd();
+	double getMedian();
+
+	void push_back(double val);
+
+	void clear();
+	void show();
 };
 
 //image processing
