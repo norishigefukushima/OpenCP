@@ -23,11 +23,6 @@ The *method* has following options:　　
     BILATERAL_SLOWEST// non-parallel and un-effective implimentation for just comparison.    
     };
     
-*Reference*
-1. Tomasi, Carlo, and Roberto Manduchi. "Bilateral filtering for gray and color images," Proc. IEEE International Conference on Computer Vision (ICCV), 1998.  
-2. Pham, Tuan Q., and Lucas J. Van Vliet. "Separable bilateral filtering for fast video preprocessing," IEEE International Conference on Multimedia and Expo (ICME) 2005.  
-
-
 Example
 -------
 Computational time for a 1M pixel (1024 * 1024) and color image with following methods:  
@@ -43,3 +38,7 @@ each median value in 10 times trials is plotted.
 
 
 
+Reference
+---------
+1. Tomasi, Carlo, and Roberto Manduchi. "Bilateral filtering for gray and color images," Proc. IEEE International Conference on Computer Vision (ICCV), 1998.  
+2. Pham, Tuan Q., and Lucas J. Van Vliet. "Separable bilateral filtering for fast video preprocessing," IEEE International Conference on Multimedia and Expo (ICME) 2005.  
