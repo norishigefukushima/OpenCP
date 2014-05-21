@@ -32,7 +32,7 @@ Computational time for a 1M pixel (1024 * 1024) and color image with following m
 * SLOWEST  
 
 each median value in 10 times trials is plotted.  
-**Tested on Dual CPU of Intel Xeon X5690 3.47Ghz (12 core * HT), 64bit OS, Visual Studio 2012's compiler*  
+**Tested on Dual CPU of Intel Xeon X5690 3.47Ghz (12 core * HT), 64bit OS, Visual Studio 2012's compiler**  
 
 ![birateral](birateral_time.png "birateraltime")
 
