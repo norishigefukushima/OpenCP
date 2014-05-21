@@ -1,25 +1,45 @@
 Documents: Birateral Filter
 ===========================
 
-**void SLIC(Mat& src, Mat& segment, int regionSize, float regularization, float minRegionRatio, int max_iteration)**  
+**void bilateralFilter(const Mat& src, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method, int borderType**
 * Mat& src: input image.  
-* Nat& segment: segmentimage image(CV_32S). Each pixel has integer value for labeling.
-* int regionSize: nominal size of the regions( parameter S in the refernece paper).   
-* float regularzation: a trade-off between appearance and spatial terms (parameter m in the refernece paper).
-* int minRegionRatio: ratio of minimum size of a segment for regionSize*regionSize for threshoding minimum regions.   
-* int max_iteration: number of max interations.  
+* Nat& dst: filtered image.  
+* Size kernelSize: kernel size.  
+* double sigma_color: Gaussian sigma for color weight.  
+* double sigma_space: Gaussian sigma for color weight.  
+* int method: switch for various implimentations (default is BILATERAL_DEFAULT).   
+* int borderType: boundary copying function (default is cv::BORDER_REPLICATE).  
 
-**void drawSLIC(Mat& src, Mat& segment, Mat& dest, bool isLine, Scalar line_color)**
-* Mat& src: input image.  
-* Nat& dest: segmenttation result from the SLIC function.
-* bool isLine: draw line or not between segments.
-* Scalar line_color: line color.
 
+The *method* has following options:　　
+
+    enum{
+    BILATERAL_DEFAULT = 0, //default is circle type.
+    BILATERAL_CIRCLE = 0, //kernel shape is circlar from. If a support pixel (q) in a kernel has a large distance |p-q|^2 > r^2, coefficient is forcibly 0.(p is a center pixe.)
+    BILATERAL_RECT , //kernel shape is squre or reqtangler type. 
+    BILATERAL_SEPARABLE,// sepalable implimentation of ref. 2.
+    BILATERAL_ORDER2,//exponential function is approxmated by Taylor expansion(underconstruction)
+    BILATERAL_ORDER2_SEPARABLE,// spalable implimentation of  ORDER2(underconstruction)
+    BILATERAL_SLOWEST// non-parallel and un-effective implimentation for just comparison.    
+    };
+    
 *Reference*
-* Radhakrishna Achanta, Appu Shaji, Kevin Smith, Aurelien Lucchi, Pascal Fua, and Sabine Süsstrunk, SLIC Superpixels Compared to State-of-the-art Superpixel Methods, IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 34, num. 11, p. 2274 - 2282, May 2012.
-* Author's Webpage: http://ivrg.epfl.ch/research/superpixels
+1. Tomasi, Carlo, and Roberto Manduchi. "Bilateral filtering for gray and color images," Proc. IEEE International Conference on Computer Vision (ICCV), 1998.  
+2. Pham, Tuan Q., and Lucas J. Van Vliet. "Separable bilateral filtering for fast video preprocessing," IEEE International Conference on Multimedia and Expo (ICME) 2005.  
+
 
 Example
 -------
-![SLIC](SLIC_screenshot.png "screenshot")
-![SLIC2](SLIC_screenshot2.png "screenshot2")
+Computational time for a 1M pixel (1024 * 1024) and color image with following methods:  
+* OpenCV implimentation  
+* BILATERAL_DEFAULT  
+* SEPARABLE  
+* SLOWEST  
+
+each median value in 10 times trials is plotted.  
+**Tested on Dual CPU of Intel Xeon X5690 3.47Ghz (12 core * HT), 64bit OS, Visual Studio 2012's compiler*  
+
+![birateral](birateral_time.png "birateraltime")
+
+
+
