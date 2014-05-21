@@ -6,6 +6,7 @@ Todo
 ----
 ** port various filters from my library.**  
 * bilateral filter   
+~~add massively parallel implimentaion of birateral filter 5/21~~  
 ~~add slowest birateral filter5/20~~  
 ~~* update type of the destination of the SLIC. mean image? mesh? 5/19~~
 
