@@ -57,14 +57,21 @@ Example
 
 showing information of class Mat for debugging.  
 **void showMatInfo(InputArray src_, string name)**  
-
+The function prints out size, num. of channles, and depth of Mat infomation. Also, the mean, min, max value of matrix in each channel.  
 
 Documents: Color   
 ----------------
 **void cvtColorBGR2PLANE(const Mat& src, Mat& dest)**  
 
+**void splitBGRLineInterleave( const Mat& src, Mat& dest)**  
+src.cols%16==0   
+
+
+
 Documents: Utility functions  
 ----------------------------
+timer class  
+
     class CalcTime
     {
 	int64 pre;
@@ -79,7 +86,6 @@ Documents: Utility functions
 	int autoTimeMode();
 	vector<string> lap_mes;
     public:
-
 	void start();
 	void setMode(int mode);
 	void setMessage(string src);
@@ -92,6 +98,29 @@ Documents: Utility functions
 
 	CalcTime(string message, int mode=TIME_AUTO, bool isShow=true);
 	CalcTime();
-
 	~CalcTime();
+    };
+
+How to use  
+
+
+show stats 
+
+    class Stat 
+    {
+    public:
+	Vector<double> data;
+	int num_data;
+	Stat();
+	~Stat();
+	double getMin();
+	double getMax();
+	double getMean();
+	double getStd();
+	double getMedian();
+
+	void push_back(double val);
+
+	void clear();
+	void show();
     };
