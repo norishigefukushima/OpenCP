@@ -54,6 +54,7 @@ left upper: non flash,  right down: flash
 left upper: result of birateral filter,  right down: result of joint birateral filter  
 
 
+
 Reference
 ---------
 1. Tomasi, Carlo, and Roberto Manduchi. "Bilateral filtering for gray and color images," Proc. IEEE International Conference on Computer Vision (ICCV), 1998.  
