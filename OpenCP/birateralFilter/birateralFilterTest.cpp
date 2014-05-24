@@ -9,11 +9,11 @@ void guiBirateralFilterTest(Mat& src)
 	string wname = "birateral filter";
 	namedWindow(wname);
 
-	int a=50;createTrackbar("a",wname,&a,100);
-	int sw = 0; createTrackbar("switch",wname,&sw, 3);
-	int r = 5; createTrackbar("r",wname,&r,200);
-	int space = 10; createTrackbar("space",wname,&space,2000);
-	int color = 30; createTrackbar("color",wname,&color,2550);
+	int a=0;createTrackbar("a",wname,&a,100);
+	int sw = 0; createTrackbar("switch",wname,&sw, 4);
+	int r = 20; createTrackbar("r",wname,&r,200);
+	int space = 300; createTrackbar("space",wname,&space,2000);
+	int color = 500; createTrackbar("color",wname,&color,2550);
 	int key = 0;
 	Mat show;
 
@@ -30,19 +30,24 @@ void guiBirateralFilterTest(Mat& src)
 			CalcTime t("birateral filter: opencv");
 			bilateralFilter(src, dest, d, sigma_color, sigma_space);
 		}
-		if(sw==1)
+		else if(sw==1)
 		{
 			CalcTime t("birateral filter: fastest opencp implimentation");
-			bilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space,BILATERAL_DEFAULT);
+			bilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space,BILATERAL_CIRCLE);
 		}
-		if(sw==2)
+		else if(sw==2)
+		{
+			CalcTime t("birateral filter: fastest opencp implimentation with rectangle kernel");
+			bilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space,BILATERAL_RECTANGLE);
+		}
+		else if(sw==3)
 		{
 			CalcTime t("birateral filter: fastest: sepalable approximation of opencp");
 			bilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space,BILATERAL_SEPARABLE);
 		}
-		if(sw==3)
+		else if(sw==4)
 		{
-			CalcTime t("birateral filter: fastest: sepalable approximation of opencp");
+			CalcTime t("birateral filter: slowest: non-parallel and inefficient implimentation");
 			bilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space,BILATERAL_SLOWEST);
 		}
 

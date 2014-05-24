@@ -3921,7 +3921,6 @@ void bilateralFilterSP_8u( const Mat& src, Mat& dst, Size kernelSize, double sig
 	else bilateralFilter_8u(src, dst, Size(kernelSize.width,1), sigma_color, sigma_space, borderType );
 	if(kernelSize.width>1) 
 		bilateralFilter_8u(dst, dst, Size(1,kernelSize.height), sigma_color, sigma_space, borderType );
-	//jointBilateralFilter_8u(dst,src,dst,Size(1,kernelSize.height),sigma_color, sigma_space, borderType);
 }
 
 void bilateralFilterSP_8u( const Mat& src, Mat& dst, int d, double sigma_color, double sigma_space, int borderType )
@@ -3935,7 +3934,6 @@ void bilateralFilterSP_32f( const Mat& src, Mat& dst, Size kernelSize, double si
 	else bilateralFilter_32f(src, dst, Size(kernelSize.width,1), sigma_color, sigma_space, borderType );
 
 	if(kernelSize.width>1) 
-		//	jointBilateralFilter_8u(dst,src,dst,Size(1,kernelSize.height),sigma_color, sigma_space, borderType);
 		bilateralFilter_32f(dst, dst, Size(1,kernelSize.height), sigma_color, sigma_space, borderType );
 }
 
@@ -4010,7 +4008,6 @@ void weightedBilateralFilterSP_8u( const Mat& src, Mat& weight, Mat& dst, Size k
 	Mat dst2 = dst.clone();
 	weightedBilateralFilter_8u( src, weight, dst2, Size(kernelSize.width,1), sigma_color, sigma_space, borderType );
 	weightedBilateralFilter_8u( dst2, weight, dst, Size(1,kernelSize.width), sigma_color, sigma_space, borderType );
-	//weightedJointBilateralFilter_8u(dst, weight,src, dst, Size(1,kernelSize.height), sigma_color, sigma_space, borderType );
 }
 
 void weightedBilateralFilterSP_32f( const Mat& src, Mat& weight, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int borderType )
@@ -4018,7 +4015,6 @@ void weightedBilateralFilterSP_32f( const Mat& src, Mat& weight, Mat& dst, Size 
 	Mat dst2 = dst.clone();
 	weightedBilateralFilter_32f( src, weight, dst2, Size(kernelSize.width,1), sigma_color, sigma_space, borderType );
 	weightedBilateralFilter_32f( dst2, weight, dst, Size(1,kernelSize.width), sigma_color, sigma_space, borderType );
-	//weightedJointBilateralFilter_8u(dst, weight,src, dst, Size(1,kernelSize.height), sigma_color, sigma_space, borderType );
 }
 
 void weightedBilateralFilter(const Mat& src, Mat& weight, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method, int borderType)
