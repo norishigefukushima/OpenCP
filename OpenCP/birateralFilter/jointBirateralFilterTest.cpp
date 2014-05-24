@@ -10,7 +10,7 @@ void guiJointBirateralFilterTest(Mat& src, Mat& guide)
 	namedWindow(wname);
 
 	int a=0;createTrackbar("a",wname,&a,100);
-	int sw = 0; createTrackbar("switch",wname,&sw, 1);
+	int sw = 1; createTrackbar("switch",wname,&sw, 2);
 	int r = 20; createTrackbar("r",wname,&r,200);
 	int space = 200; createTrackbar("space",wname,&space,2000);
 	int color = 300; createTrackbar("color",wname,&color,2550);
@@ -27,12 +27,17 @@ void guiJointBirateralFilterTest(Mat& src, Mat& guide)
 		
 		if(sw==0)
 		{
-			CalcTime t("birateral filter: opencv");
-			jointBilateralFilter(src, guide, dest, Size(d,d), sigma_color, sigma_space);
+			CalcTime t("birateral filter");
+			bilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space);
 		}
 		if(sw==1)
 		{
-			CalcTime t("birateral filter: fastest opencp implimentation");
+			CalcTime t("joint birateral filter");
+			jointBilateralFilter(src, guide, dest, Size(d,d), sigma_color, sigma_space);
+		}
+		if(sw==2)
+		{
+			CalcTime t("invalid joiont");
 			jointBilateralFilter(guide, src, dest, Size(d,d), sigma_color, sigma_space);
 		}
 
