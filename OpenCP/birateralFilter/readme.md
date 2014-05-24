@@ -1,7 +1,7 @@
 Documents: Birateral Filter
 ===========================
 
-**void bilateralFilter(const Mat& src, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method, int borderType**
+**void bilateralFilter(const Mat& src, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method, int borderType)**
 * Mat& src: input image.  
 * Nat& dst: filtered image.  
 * Size kernelSize: kernel size.  
@@ -23,8 +23,16 @@ The *method* has following options:　　
     BILATERAL_SLOWEST// non-parallel and un-effective implimentation for just comparison.    
     };
     
-Example
--------
+
+**void jointBilateralFilter(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method, int borderType)**  
+* Mat& src: filtering target image.    
+* Nat& guide: guidance image for joint birateral filtering.    
+* Other argements are same as the birateral filter function.  
+
+The function is implimentation of papers[3,4]. Paper[3] calls this filter as joint birateral filter, and paper[4] calls this filter cross birateral filter.  
+
+Example of birateral filter
+---------------------------
 Computational time for a 1M pixel (1024 * 1024) and color image with following methods:  
 * OpenCV implimentation  
 * BILATERAL_DEFAULT  
@@ -36,9 +44,19 @@ each median value in 10 times trials is plotted.
 
 ![birateral](birateral_time.png "birateraltime")
 
+Example of joint birateral filter: flash-no-flash photography  
+---------------------------------
+
+![jbirateralinput](fnof.png "flash")  
+left upper: non flash,  right down: flash  
+
+![jbirateral](jointbirateralfilter.png "jointbirateral")  
+left upper: result of birateral filter,  right down: result of joint birateral filter  
 
 
 Reference
 ---------
 1. Tomasi, Carlo, and Roberto Manduchi. "Bilateral filtering for gray and color images," Proc. IEEE International Conference on Computer Vision (ICCV), 1998.  
-2. Pham, Tuan Q., and Lucas J. Van Vliet. "Separable bilateral filtering for fast video preprocessing," IEEE International Conference on Multimedia and Expo (ICME) 2005.  
+2. Pham, Tuan Q., and Lucas J. Van Vliet. "Separable bilateral filtering for fast video preprocessing," IEEE International Conference on Multimedia and Expo (ICME) 2005.
+3. G. Petschnigg, R. Szeliski, M. Agrawala, M. Cohen, H. Hoppe, and K. Toyama, "Digital photography with flash and no-flash image pairs," ACM transactions on graphics (TOG), vol. 23, no. 3, pp. 664-672, Aug. 2004.
+4. E. Eisemann and F. Durand, "Flash photography enhancement via intrinsic relighting," ACM transactions on graphics (TOG), vol. 23, no. 3, pp. 673-678, Aug. 2004.
