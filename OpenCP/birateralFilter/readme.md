@@ -44,7 +44,7 @@ each median value in 10 times trials is plotted.
 
 ![birateral](birateral_time.png "birateraltime")
 
-Example of joint birateral filter
+Example of joint birateral filter: flash-no-flash photography  
 ---------------------------------
 ![jbirateral](jointbirateralfilter.png "jointbirateral")  
 
