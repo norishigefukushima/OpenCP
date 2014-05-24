@@ -142,10 +142,13 @@
     <ClCompile Include="alphaBlend.cpp" />
     <ClCompile Include="bilateralFilter.cpp" />
     <ClCompile Include="birateralFilter\birateralFilterTest.cpp" />
+    <ClCompile Include="birateralFilter\jointBirateralFilterTest.cpp" />
     <ClCompile Include="color.cpp" />
     <ClCompile Include="draw.cpp" />
+    <ClCompile Include="jointBirateralFilter.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="matInfo.cpp" />
+    <ClCompile Include="noise.cpp" />
     <ClCompile Include="slic.cpp" />
     <ClCompile Include="slic\SLICTest.cpp" />
     <ClCompile Include="stat.cpp" />

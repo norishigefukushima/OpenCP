@@ -57,6 +57,15 @@
     <ClCompile Include="stat.cpp">
       <Filter>ソース ファイル\util</Filter>
     </ClCompile>
+    <ClCompile Include="jointBirateralFilter.cpp">
+      <Filter>ソース ファイル\imgproc</Filter>
+    </ClCompile>
+    <ClCompile Include="noise.cpp">
+      <Filter>ソース ファイル\util</Filter>
+    </ClCompile>
+    <ClCompile Include="birateralFilter\jointBirateralFilterTest.cpp">
+      <Filter>ソース ファイル\test</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="opencp.hpp">

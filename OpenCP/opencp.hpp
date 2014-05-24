@@ -123,6 +123,8 @@ public:
 	void show();
 };
 
+void addNoise(Mat&src, Mat& dest, double sigma, double solt_papper_rate=0.0);
+
 //image processing
 //convert a BGR color image into a continued one channel data: ex BGRBGRBGR... -> BBBB...(image size), GGGG....(image size), RRRR....(image size).
 void cvtColorBGR2PLANE(const Mat& src, Mat& dest);
@@ -137,11 +139,12 @@ void SLICBase(Mat& src, Mat& segment, int regionSize, float regularization, floa
 
 //bilateral filters
 
+
 enum
 {
 	BILATERAL_DEFAULT = 0,
 	BILATERAL_CIRCLE = 0,
-	BILATERAL_RECT ,
+	BILATERAL_RECTANGLE,
 	BILATERAL_SEPARABLE,
 	BILATERAL_ORDER2,//underconstruction
 	BILATERAL_ORDER2_SEPARABLE,//underconstruction
@@ -149,5 +152,7 @@ enum
 };
 
 void bilateralFilter(const Mat& src, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method=BILATERAL_DEFAULT, int borderType=cv::BORDER_REPLICATE);
+
+void jointBilateralFilter(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method=BILATERAL_DEFAULT, int borderType=cv::BORDER_REPLICATE);
 
 

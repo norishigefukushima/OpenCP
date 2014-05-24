@@ -3559,7 +3559,7 @@ void bilateralFilter_32f( const Mat& src, Mat& dst, Size kernelSize, double sigm
 	Mat(dest(Rect(0,0,dst.cols,dst.rows))).copyTo(dst);
 }
 
-void bilateralFilterRect_32f( const Mat& src, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int borderType )
+void bilateralFilterRectangle_32f( const Mat& src, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int borderType )
 {
 	if(kernelSize.width==0 || kernelSize.height==0){ src.copyTo(dst);return;}
 	int cn = src.channels();
@@ -3834,7 +3834,7 @@ void bilateralFilter_8u( const Mat& src, Mat& dst, Size kernelSize, double sigma
 }
 
 
-void bilateralFilterRect_8u( const Mat& src, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int borderType )
+void bilateralFilterRectangle_8u( const Mat& src, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int borderType )
 {
 	if(kernelSize.width==0 || kernelSize.height==0){ src.copyTo(dst);return;}
 	int cn = src.channels();
@@ -3959,15 +3959,15 @@ void bilateralFilter(const Mat& src, Mat& dst, Size kernelSize, double sigma_col
 			bilateralFilter_32f(src,dst,kernelSize,sigma_color,sigma_space,borderType);
 		}
 	}
-	else if(method==BILATERAL_RECT)
+	else if(method==BILATERAL_RECTANGLE)
 	{
 		if(src.type()==CV_MAKE_TYPE(CV_8U,src.channels()))
 		{
-			bilateralFilterRect_8u(src,dst,kernelSize,sigma_color,sigma_space,borderType);
+			bilateralFilterRectangle_8u(src,dst,kernelSize,sigma_color,sigma_space,borderType);
 		}
 		else if(src.type()==CV_MAKE_TYPE(CV_32F,src.channels()))
 		{
-			bilateralFilterRect_32f(src,dst,kernelSize,sigma_color,sigma_space,borderType);
+			bilateralFilterRectangle_32f(src,dst,kernelSize,sigma_color,sigma_space,borderType);
 		}
 	}
 	else if(method==BILATERAL_SEPARABLE)
