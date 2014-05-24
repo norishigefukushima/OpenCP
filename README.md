@@ -51,9 +51,12 @@ Filter
 **implimented but not optimized**  
 
 *filter*
+  constant time O(1) birateral filter
   L0 Smoothing  
+  Weighted least squre (WLS) smoothing
+  Gaussian KD-Tree
+  Permutohedral Lattice
   adaptive maniforld  
-
 
 **Application**
 -----------
