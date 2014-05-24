@@ -46,7 +46,12 @@ each median value in 10 times trials is plotted.
 
 Example of joint birateral filter: flash-no-flash photography  
 ---------------------------------
+
+![jbirateralinput](fnof.png "flash")  
+left upper: non flash,  right down: flash  
+
 ![jbirateral](jointbirateralfilter.png "jointbirateral")  
+left upper: result of birateral filter,  right down: result of joint birateral filter  
 
 
 Reference
