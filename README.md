@@ -6,7 +6,7 @@ Todo
 ----
 ** port various filters from my library.**  
 * bilateral filter 
-*   joint birateral filter does not have rect kernel implimentation.
+*   joint birateral filter does not have rect kernel implimentation.  
 ~~add joint birateral filter 5/24~~  
 ~~add massively parallel implimentaion of birateral filter 5/21~~  
 ~~add slowest birateral filter5/20~~  
@@ -51,12 +51,12 @@ Filter
 **implimented but not optimized**  
 
 *filter*
-  constant time O(1) birateral filter
+  constant time O(1) birateral filter  
   L0 Smoothing  
-  Weighted least squre (WLS) smoothing
-  Gaussian KD-Tree
-  Permutohedral Lattice
-  adaptive maniforld  
+  Weighted least squre (WLS) smoothing  
+  Gaussian KD-Tree  
+  Permutohedral Lattice  
+  adaptive maniforld    
 
 **Application**
 -----------
