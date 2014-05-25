@@ -7,7 +7,7 @@ Documents: Utility functions
 * double sigma: sigma for Gaussian noise  
 * double solt_peppar_rate: rate of solt-and-peppar noise  
 
-
+**class  CalcTime**
 timer class  
 
     class CalcTime
@@ -42,6 +42,7 @@ timer class
 How to use  
 
 
+**class Stat **
 show stats 
 
     class Stat 
