@@ -142,6 +142,7 @@
     <ClCompile Include="alphaBlend.cpp" />
     <ClCompile Include="bilateralFilter.cpp" />
     <ClCompile Include="binalyWeightedRangeFilter.cpp" />
+    <ClCompile Include="birateralFilter\binalyWeightedRangeFilterTest.cpp" />
     <ClCompile Include="birateralFilter\birateralFilterTest.cpp" />
     <ClCompile Include="birateralFilter\jointBirateralFilterTest.cpp" />
     <ClCompile Include="color.cpp" />

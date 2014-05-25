@@ -53,4 +53,18 @@ void patchBlendImage(Mat& src1, Mat& src2, Mat& dest, Scalar linecolor, int line
 		s1.copyTo(dest,mask);
 		line(dest,Point(src1.cols-1,0),Point(0,src1.rows-1),linecolor,linewidth);
 	}
+	if(direction==2)
+	{
+		s2.copyTo(dest);
+		flip(mask,mask,0);
+		s1.copyTo(dest,mask);
+		line(dest,Point(0,0),Point(src1.cols-1,src1.rows-1),linecolor,linewidth);
+	}
+	if(direction==3)
+	{
+		s2.copyTo(dest);
+		s1.copyTo(dest,mask);
+		flip(mask,mask,0);
+		line(dest,Point(0,0),Point(src1.cols-1,src1.rows-1),linecolor,linewidth);
+	}
 }

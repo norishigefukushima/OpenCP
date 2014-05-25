@@ -2206,7 +2206,6 @@ void jointBinalyWeightedRangeFilterSP_32f( const Mat& src, const Mat& guide, Mat
 }
 
 
-
 void jointBinalyWeightedRangeFilter(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, float threshold, int method, int borderType)
 {
 	if(dst.empty())dst.create(src.size(),src.type());

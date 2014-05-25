@@ -4,7 +4,7 @@
 
 int main(int argc, char** argv)
 {
-	Mat src = imread("lenna.png");
+	Mat src = imread("img/lenna.png");
 	Mat mega;
 	
 
@@ -16,8 +16,9 @@ int main(int argc, char** argv)
 
 	Mat flash = imread("img/cave-flash.png");
 	Mat noflash = imread("img/cave-noflash.png");
-
+	Mat disparity = imread("img/teddy_disp1.png",0);
 	//guiJointBirateralFilterTest(noflash,flash);
-	guibinalyWeightedRangeFilterTest(noflash,flash);
+	guiBinalyWeightedRangeFilterTest(disparity);
+	guiJointBinalyWeightedRangeFilterTest(noflash,flash);
 	return 0;
 }
