@@ -5,8 +5,10 @@ library for computational photography
 Todo
 ----
 ** port various filters from my library.**  
-* bilateral filter 
-*   joint birateral filter does not have rect kernel implimentation.  
+* bilateral filter approxmations  
+* joint birateral filter does not have rect kernel implimentation.  ?
+* stereo matching depth for joint binary weighted range filter.  
+~~add weighted binary range filter5/25~~  
 ~~add joint birateral filter 5/24~~  
 ~~add massively parallel implimentaion of birateral filter 5/21~~  
 ~~add slowest birateral filter5/20~~  
