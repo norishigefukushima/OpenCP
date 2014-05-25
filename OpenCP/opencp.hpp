@@ -146,13 +146,14 @@ enum
 	BILATERAL_CIRCLE = 0,
 	BILATERAL_RECTANGLE,
 	BILATERAL_SEPARABLE,
+	BILATERAL_SLOWEST,// for just comparison.
 	BILATERAL_ORDER2,//underconstruction
-	BILATERAL_ORDER2_SEPARABLE,//underconstruction
-	BILATERAL_SLOWEST// for just comparison.
+	BILATERAL_ORDER2_SEPARABLE//underconstruction
 };
 
 void bilateralFilter(const Mat& src, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method=BILATERAL_DEFAULT, int borderType=cv::BORDER_REPLICATE);
-
 void jointBilateralFilter(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method=BILATERAL_DEFAULT, int borderType=cv::BORDER_REPLICATE);
 
 
+void binalyWeightedRangeFilter(const Mat& src, Mat& dst, Size kernelSize, float threshold, int method=BILATERAL_DEFAULT, int borderType=cv::BORDER_REPLICATE);
+void jointBinalyWeightedRangeFilter(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, float threshold, int method=BILATERAL_DEFAULT, int borderType=cv::BORDER_REPLICATE);

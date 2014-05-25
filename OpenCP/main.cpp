@@ -2,7 +2,6 @@
 #include "test.hpp"
 
 
-
 int main(int argc, char** argv)
 {
 	Mat src = imread("lenna.png");
@@ -17,7 +16,8 @@ int main(int argc, char** argv)
 
 	Mat flash = imread("img/cave-flash.png");
 	Mat noflash = imread("img/cave-noflash.png");
-	guiJointBirateralFilterTest(noflash,flash);
 
+	//guiJointBirateralFilterTest(noflash,flash);
+	guibinalyWeightedRangeFilterTest(noflash,flash);
 	return 0;
 }

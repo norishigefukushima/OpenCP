@@ -37,8 +37,51 @@ void guiJointBirateralFilterTest(Mat& src, Mat& guide)
 		}
 		if(sw==2)
 		{
-			CalcTime t("invalid joiont");
+			CalcTime t("invalid joint");
 			jointBilateralFilter(guide, src, dest, Size(d,d), sigma_color, sigma_space);
+		}
+
+		patchBlendImage(src,dest,dest,Scalar(255,255,255));
+		alphaBlend(src, dest,a/100.0, show);
+		imshow(wname,show);
+		key = waitKey(1);
+	}
+}
+
+void guibinalyWeightedRangeFilterTest(Mat& src, Mat& guide)
+{
+	Mat dest,dest2;
+
+	string wname = "joint binary weighted range filter";
+	namedWindow(wname);
+
+	int a=0;createTrackbar("a",wname,&a,100);
+	int sw = 1; createTrackbar("switch",wname,&sw, 2);
+	int r = 20; createTrackbar("r",wname,&r,200);
+	int color = 300; createTrackbar("color",wname,&color,2550);
+	int key = 0;
+	Mat show;
+
+	while(key!='q')
+	{
+		cout<<"r="<<r<<": "<<"please change 'sw' for changing the type of implimentations."<<endl;
+		double sigma_color = color/10.0;
+		int d = 2*r+1;
+
+		if(sw==0)
+		{
+			CalcTime t("binary weighted range filter");
+			binalyWeightedRangeFilter(src, dest, Size(d,d), sigma_color);
+		}
+		if(sw==1)
+		{
+			CalcTime t("joint binary weighted range filter");
+			jointBinalyWeightedRangeFilter(src, guide, dest, Size(d,d), sigma_color);
+		}
+		if(sw==2)
+		{
+			CalcTime t("invalid joint");
+			jointBinalyWeightedRangeFilter(guide, src, dest, Size(d,d), sigma_color);
 		}
 
 		patchBlendImage(src,dest,dest,Scalar(255,255,255));

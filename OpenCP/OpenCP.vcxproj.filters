@@ -66,6 +66,9 @@
     <ClCompile Include="birateralFilter\jointBirateralFilterTest.cpp">
       <Filter>ソース ファイル\test</Filter>
     </ClCompile>
+    <ClCompile Include="binalyWeightedRangeFilter.cpp">
+      <Filter>ソース ファイル\imgproc</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="opencp.hpp">

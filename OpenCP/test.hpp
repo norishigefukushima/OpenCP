@@ -6,3 +6,4 @@ void guiBirateralFilterTest(Mat& src);
 void timeBirateralTest(Mat& src);
 
 void guiJointBirateralFilterTest(Mat& src, Mat& guide);
+void guibinalyWeightedRangeFilterTest(Mat& src, Mat& guide);
