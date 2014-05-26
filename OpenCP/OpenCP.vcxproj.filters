@@ -22,6 +22,9 @@
     <Filter Include="ソース ファイル\test">
       <UniqueIdentifier>{ca14c9b4-ec47-4a17-8a96-330b29dbcc64}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\filter">
+      <UniqueIdentifier>{20f00ae6-0839-445f-aaa7-48897c787316}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -48,17 +51,11 @@
     <ClCompile Include="matInfo.cpp">
       <Filter>ソース ファイル\util</Filter>
     </ClCompile>
-    <ClCompile Include="bilateralFilter.cpp">
-      <Filter>ソース ファイル\imgproc</Filter>
-    </ClCompile>
     <ClCompile Include="birateralFilter\birateralFilterTest.cpp">
       <Filter>ソース ファイル\test</Filter>
     </ClCompile>
     <ClCompile Include="stat.cpp">
       <Filter>ソース ファイル\util</Filter>
-    </ClCompile>
-    <ClCompile Include="jointBirateralFilter.cpp">
-      <Filter>ソース ファイル\imgproc</Filter>
     </ClCompile>
     <ClCompile Include="noise.cpp">
       <Filter>ソース ファイル\util</Filter>
@@ -66,11 +63,20 @@
     <ClCompile Include="birateralFilter\jointBirateralFilterTest.cpp">
       <Filter>ソース ファイル\test</Filter>
     </ClCompile>
-    <ClCompile Include="binalyWeightedRangeFilter.cpp">
-      <Filter>ソース ファイル\imgproc</Filter>
-    </ClCompile>
     <ClCompile Include="birateralFilter\binalyWeightedRangeFilterTest.cpp">
       <Filter>ソース ファイル\test</Filter>
+    </ClCompile>
+    <ClCompile Include="bilateralFilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="binalyWeightedRangeFilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="jointBirateralFilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="nonLocalMeans.cpp">
+      <Filter>ソース ファイル\filter</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

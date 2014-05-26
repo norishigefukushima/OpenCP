@@ -151,6 +151,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="matInfo.cpp" />
     <ClCompile Include="noise.cpp" />
+    <ClCompile Include="nonLocalMeans.cpp" />
     <ClCompile Include="slic.cpp" />
     <ClCompile Include="slic\SLICTest.cpp" />
     <ClCompile Include="stat.cpp" />

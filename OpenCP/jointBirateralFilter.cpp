@@ -3001,7 +3001,7 @@ void jointBilateralFilter_32f( const Mat& src, const Mat& guide, Mat& dst, Size 
 	Mat(dest(Rect(0,0,dst.cols,dst.rows))).copyTo(dst);
 }
 
-void jointBilateralFilter_8u( const Mat& src, const Mat& guide, Mat& dst, Size kernelSize , double sigma_color, double sigma_space, int borderType )
+void jointBilateralFilter_8u( const Mat& src, const Mat& guide, Mat& dst, Size kernelSize , double sigma_color, double sigma_space, int borderType,  )
 {
 	if(kernelSize.width==0 || kernelSize.height==0){ src.copyTo(dst);return;}
 	int cn = src.channels();
@@ -3131,7 +3131,6 @@ void jointBilateralFilter(const Mat& src, const Mat& guide, Mat& dst, Size kerne
 		}
 		else
 		{
-			//cout<<"use to 32f type to filter\n "<<endl;
 			Mat srcf,guidef,dstf;
 
 			src.convertTo(srcf,CV_32F);
