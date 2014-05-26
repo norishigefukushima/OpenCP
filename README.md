@@ -10,7 +10,7 @@ Todo
 * add dxt thresholding demo  
 * 
 * stereo matching depth for joint binary weighted range filter.    
-~~ * add joint birateral filter to rect kernel implimentation. 5/26~~  
+~~add joint birateral filter to rect kernel implimentation. 5/26~~  
 ~~add weighted binary range filter5/25~~    
 ~~add joint birateral filter 5/24~~    
 ~~add massively parallel implimentaion of birateral filter 5/21~~    
@@ -20,7 +20,7 @@ Todo
 
 Filter
 ------
-###implemented and parallerized
+###implemented and parallelized
 ######filter   
   Gaussian IIR filter  
 
@@ -56,6 +56,7 @@ Filter
 **implimented but not optimized**  
 
 *filter*  
+  recursive birateral filter
   constant time O(1) birateral filter  
   L0 Smoothing  
   Weighted least squre (WLS) smoothing  
