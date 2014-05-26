@@ -18,7 +18,9 @@ int main(int argc, char** argv)
 	Mat noflash = imread("img/cave-noflash.png");
 	Mat disparity = imread("img/teddy_disp1.png",0);
 	//guiJointBirateralFilterTest(noflash,flash);
-	guiBinalyWeightedRangeFilterTest(disparity);
-	guiJointBinalyWeightedRangeFilterTest(noflash,flash);
+	//guiBinalyWeightedRangeFilterTest(disparity);
+	//guiJointBinalyWeightedRangeFilterTest(noflash,flash);
+
+	guiNonLocalMeansTest(src);
 	return 0;
 }

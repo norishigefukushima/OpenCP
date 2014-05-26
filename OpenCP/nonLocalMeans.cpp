@@ -757,8 +757,6 @@ public:
 
 void nonLocalMeansFilterBase(Mat& src, Mat& dest, int templeteWindowSize, int searchWindowSize, double h, double sigma)
 {
-	CV_Assert(templeteWindowSize>searchWindowSize);
-	
 	if(dest.empty())dest=Mat::zeros(src.size(),src.type());
 
 	const int tr = templeteWindowSize>>1;
@@ -820,8 +818,6 @@ void nonLocalMeansFilterBase(Mat& src, Mat& dest, int templeteWindowSize, int se
 
 void nonLocalMeansFilter_SSE(Mat& src, Mat& dest, int templeteWindowSize, int searchWindowSize, double h, double sigma)
 {
-	CV_Assert(templeteWindowSize>searchWindowSize);
-	
 	if(dest.empty())dest=Mat::zeros(src.size(),src.type());
 
 	const int tr = templeteWindowSize>>1;

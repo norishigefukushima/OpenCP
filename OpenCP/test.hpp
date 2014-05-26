@@ -9,3 +9,5 @@ void guiJointBirateralFilterTest(Mat& src, Mat& guide);
 
 void guiBinalyWeightedRangeFilterTest(Mat& src);
 void guiJointBinalyWeightedRangeFilterTest(Mat& src, Mat& guide);
+
+void guiNonLocalMeansTest(Mat& src);

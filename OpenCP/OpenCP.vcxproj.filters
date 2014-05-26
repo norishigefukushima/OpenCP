@@ -78,6 +78,9 @@
     <ClCompile Include="nonLocalMeans.cpp">
       <Filter>ソース ファイル\filter</Filter>
     </ClCompile>
+    <ClCompile Include="nonlocalmeans\nonLocalMeansTest.cpp">
+      <Filter>ソース ファイル\test</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="opencp.hpp">
