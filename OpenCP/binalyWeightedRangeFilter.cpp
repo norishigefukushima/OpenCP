@@ -2126,9 +2126,9 @@ void binalyWeightedRangeFilter(const Mat& src, Mat& dst, int kernelSize, float t
 void binalyWeightedRangeFilter(const Mat& src, Mat& dst, Size kernelSize, float threshold, int method, int borderType)
 {
 	if(dst.empty())dst.create(src.size(),src.type());
-	CV_Assert(method!=BILATERAL_SLOWEST);
+	CV_Assert(method!=FILTER_SLOWEST);
 
-	if(method==BILATERAL_CIRCLE)
+	if(method==FILTER_CIRCLE)
 	{
 		if(src.type()==CV_MAKE_TYPE(CV_8U,src.channels()))
 		{
@@ -2149,7 +2149,7 @@ void binalyWeightedRangeFilter(const Mat& src, Mat& dst, Size kernelSize, float 
 
 		}
 	}
-	else if(method==BILATERAL_RECTANGLE)
+	else if(method==FILTER_RECTANGLE)
 	{
 		if(src.type()==CV_MAKE_TYPE(CV_8U,src.channels()))
 		{
@@ -2170,7 +2170,7 @@ void binalyWeightedRangeFilter(const Mat& src, Mat& dst, Size kernelSize, float 
 
 		}
 	}
-	else if(method==BILATERAL_SEPARABLE)
+	else if(method==FILTER_SEPARABLE)
 	{
 		if(src.type()==CV_MAKE_TYPE(CV_8U,src.channels()))
 		{
@@ -2209,10 +2209,10 @@ void jointBinalyWeightedRangeFilterSP_32f( const Mat& src, const Mat& guide, Mat
 void jointBinalyWeightedRangeFilter(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, float threshold, int method, int borderType)
 {
 	if(dst.empty())dst.create(src.size(),src.type());
-	CV_Assert(method!=BILATERAL_SLOWEST);
+	CV_Assert(method!=FILTER_SLOWEST);
 
 
-	if(method==BILATERAL_CIRCLE)
+	if(method==FILTER_CIRCLE)
 	{
 		if(src.type()==CV_MAKE_TYPE(CV_8U,src.channels()))
 		{
@@ -2223,7 +2223,7 @@ void jointBinalyWeightedRangeFilter(const Mat& src, const Mat& guide, Mat& dst, 
 			jointBinalyWeightedRangeFilter_32f(src,guide,dst,kernelSize,threshold,borderType);
 		}
 	}
-	else if(method==BILATERAL_SEPARABLE)
+	else if(method==FILTER_SEPARABLE)
 	{
 		if(src.type()==CV_MAKE_TYPE(CV_8U,src.channels()))
 		{

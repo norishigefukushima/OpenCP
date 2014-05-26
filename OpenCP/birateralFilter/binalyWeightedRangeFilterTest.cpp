@@ -31,7 +31,7 @@ void guiBinalyWeightedRangeFilterTest(Mat& src)
 		a.convertTo(dest2,CV_32F);
 		{
 			CalcTime t("binary weighted range filter 32f");
-			binalyWeightedRangeFilter(dest2, dest2, Size(d,d), sigma_color,BILATERAL_RECTANGLE);
+			binalyWeightedRangeFilter(dest2, dest2, Size(d,d), sigma_color,FILTER_RECTANGLE);
 			//binalyWeightedRangeFilter(dest2, dest2, Size(d,d), sigma_color,BILATERAL_SEPARABLE);
 		}
 		

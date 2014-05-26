@@ -910,7 +910,7 @@ void nonLocalMeansFilter(Mat& src, Mat& dest, int templeteWindowSize, int search
 {
 	CV_Assert(FILTER_CIRCLE);
 	CV_Assert(FILTER_SEPARABLE);
-
+	if(sigma<1.0) sigma = h;
 
 	if(method==FILTER_SLOWEST)
 	{

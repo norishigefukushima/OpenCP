@@ -142,11 +142,6 @@ void SLICBase(Mat& src, Mat& segment, int regionSize, float regularization, floa
 
 enum
 {
-	BILATERAL_DEFAULT = 0,
-	BILATERAL_CIRCLE,
-	BILATERAL_RECTANGLE,
-	BILATERAL_SEPARABLE,
-	BILATERAL_SLOWEST,// for just comparison.
 	BILATERAL_ORDER2,//underconstruction
 	BILATERAL_ORDER2_SEPARABLE//underconstruction
 };
@@ -160,11 +155,11 @@ enum
 	FILTER_SLOWEST,// for just comparison.
 };
 
-void bilateralFilter(const Mat& src, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method=BILATERAL_DEFAULT, int borderType=cv::BORDER_REPLICATE);
-void jointBilateralFilter(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method=BILATERAL_DEFAULT, int borderType=cv::BORDER_REPLICATE);
+void bilateralFilter(const Mat& src, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method=FILTER_DEFAULT, int borderType=cv::BORDER_REPLICATE);
+void jointBilateralFilter(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method=FILTER_DEFAULT, int borderType=cv::BORDER_REPLICATE);
 
 
-void binalyWeightedRangeFilter(const Mat& src, Mat& dst, Size kernelSize, float threshold, int method=BILATERAL_DEFAULT, int borderType=cv::BORDER_REPLICATE);
-void jointBinalyWeightedRangeFilter(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, float threshold, int method=BILATERAL_DEFAULT, int borderType=cv::BORDER_REPLICATE);
+void binalyWeightedRangeFilter(const Mat& src, Mat& dst, Size kernelSize, float threshold, int method=FILTER_DEFAULT, int borderType=cv::BORDER_REPLICATE);
+void jointBinalyWeightedRangeFilter(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, float threshold, int method=FILTER_DEFAULT, int borderType=cv::BORDER_REPLICATE);
 
-void nonLocalMeansFilter(Mat& src, Mat& dest, int templeteWindowSize, int searchWindowSize, double h, double sigma, int method);
+void nonLocalMeansFilter(Mat& src, Mat& dest, int templeteWindowSize, int searchWindowSize, double h, double sigma=-1.0, int method=FILTER_DEFAULT);

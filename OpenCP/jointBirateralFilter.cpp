@@ -3235,7 +3235,7 @@ void weightedJointBilateralFilterSP_32f( const Mat& src, Mat& weightMap, const M
 void weightedJointBilateralFilter(const Mat& src, Mat& weightMap,const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method, int borderType)
 {
 	if(dst.empty())dst.create(src.size(),src.type());
-	if(method==BILATERAL_CIRCLE)
+	if(method==FILTER_CIRCLE)
 	{
 		if(src.type()==CV_MAKE_TYPE(CV_8U,src.channels()))
 		{
@@ -3246,7 +3246,7 @@ void weightedJointBilateralFilter(const Mat& src, Mat& weightMap,const Mat& guid
 			weightedJointBilateralFilter_32f(src,weightMap,guide,dst,kernelSize,sigma_color,sigma_space,borderType);
 		}
 	}
-	else if(method==BILATERAL_SEPARABLE)
+	else if(method==FILTER_SEPARABLE)
 	{
 		if(src.type()==CV_MAKE_TYPE(CV_8U,src.channels()))
 		{

@@ -33,22 +33,22 @@ void guiBirateralFilterTest(Mat& src)
 		else if(sw==1)
 		{
 			CalcTime t("birateral filter: fastest opencp implimentation");
-			bilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space,BILATERAL_CIRCLE);
+			bilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space,FILTER_CIRCLE);
 		}
 		else if(sw==2)
 		{
 			CalcTime t("birateral filter: fastest opencp implimentation with rectangle kernel");
-			bilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space,BILATERAL_RECTANGLE);
+			bilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space,FILTER_RECTANGLE);
 		}
 		else if(sw==3)
 		{
 			CalcTime t("birateral filter: fastest: sepalable approximation of opencp");
-			bilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space,BILATERAL_SEPARABLE);
+			bilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space,FILTER_SEPARABLE);
 		}
 		else if(sw==4)
 		{
 			CalcTime t("birateral filter: slowest: non-parallel and inefficient implimentation");
-			bilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space,BILATERAL_SLOWEST);
+			bilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space, FILTER_SLOWEST);
 		}
 
 		alphaBlend(src, dest,a/100.0, show);
@@ -91,7 +91,7 @@ void timeBirateralTest(Mat& src)
 			for(int i=0;i<iteration;i++)
 			{
 				CalcTime t("time",TIME_SEC,false);
-				bilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space, BILATERAL_DEFAULT);
+				bilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space, FILTER_DEFAULT);
 				st.push_back(t.getTime());
 			}
 			time_opencp=st.getMedian();
@@ -102,7 +102,7 @@ void timeBirateralTest(Mat& src)
 			for(int i=0;i<iteration;i++)
 			{
 				CalcTime t("time",TIME_SEC,false);
-				bilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space, BILATERAL_SEPARABLE);
+				bilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space, FILTER_SEPARABLE);
 				st.push_back(t.getTime());
 			}
 			time_opencp_sp=st.getMedian();
@@ -113,7 +113,7 @@ void timeBirateralTest(Mat& src)
 			for(int i=0;i<iteration;i++)
 			{
 				CalcTime t("time",TIME_SEC,false);
-				bilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space, BILATERAL_SLOWEST);
+				bilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space, FILTER_SLOWEST);
 				st.push_back(t.getTime());
 			}
 			time_opencp_sl=st.getMedian();

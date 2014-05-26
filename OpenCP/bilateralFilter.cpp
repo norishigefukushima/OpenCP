@@ -3946,7 +3946,7 @@ void bilateralFilter(const Mat& src, Mat& dst, Size kernelSize, double sigma_col
 {
 	if(dst.empty())dst.create(src.size(),src.type());
 
-	if(method==BILATERAL_CIRCLE)
+	if(method== FILTER_CIRCLE)
 	{
 		if(src.type()==CV_MAKE_TYPE(CV_8U,src.channels()))
 		{
@@ -3957,7 +3957,7 @@ void bilateralFilter(const Mat& src, Mat& dst, Size kernelSize, double sigma_col
 			bilateralFilter_32f(src,dst,kernelSize,sigma_color,sigma_space,borderType);
 		}
 	}
-	else if(method==BILATERAL_RECTANGLE)
+	else if(method== FILTER_RECTANGLE)
 	{
 		if(src.type()==CV_MAKE_TYPE(CV_8U,src.channels()))
 		{
@@ -3968,7 +3968,7 @@ void bilateralFilter(const Mat& src, Mat& dst, Size kernelSize, double sigma_col
 			bilateralFilterRectangle_32f(src,dst,kernelSize,sigma_color,sigma_space,borderType);
 		}
 	}
-	else if(method==BILATERAL_SEPARABLE)
+	else if(method== FILTER_SEPARABLE)
 	{
 		if(src.type()==CV_MAKE_TYPE(CV_8U,src.channels()))
 		{
@@ -3997,7 +3997,7 @@ void bilateralFilter(const Mat& src, Mat& dst, Size kernelSize, double sigma_col
 				bilateralFilterORDER2_32f(src,dst,kernelSize,sigma_color,sigma_space,borderType);
 		}
 	}
-	else if(BILATERAL_SLOWEST)
+	else if(FILTER_SLOWEST)
 	{
 		bilateralFilterSlowest(src,dst,kernelSize,sigma_color,sigma_space);
 	}
@@ -4020,7 +4020,7 @@ void weightedBilateralFilterSP_32f( const Mat& src, Mat& weight, Mat& dst, Size 
 void weightedBilateralFilter(const Mat& src, Mat& weight, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method, int borderType)
 {
 	if(dst.empty())dst.create(src.size(),src.type());
-	if(method==BILATERAL_CIRCLE)
+	if(method==FILTER_CIRCLE)
 	{
 		if(src.type()==CV_MAKE_TYPE(CV_8U,src.channels()))
 		{
@@ -4031,7 +4031,7 @@ void weightedBilateralFilter(const Mat& src, Mat& weight, Mat& dst, Size kernelS
 			weightedBilateralFilter_32f(src,weight,dst,kernelSize,sigma_color,sigma_space,borderType);
 		}
 	}
-	else if(method==BILATERAL_SEPARABLE)
+	else if(method==FILTER_SEPARABLE)
 	{
 		if(src.type()==CV_MAKE_TYPE(CV_8U,src.channels()))
 		{
@@ -4063,7 +4063,7 @@ void bilateralWeightMapSP_32f( const Mat& src, Mat& dst, Size kernelSize, double
 void bilateralWeightMap(const Mat& src, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method, int borderType)
 {
 	if(dst.empty())dst.create(src.size(),CV_32F);
-	if(method==BILATERAL_CIRCLE)
+	if(method==FILTER_CIRCLE)
 	{
 		if(src.type()==CV_MAKE_TYPE(CV_8U,src.channels()))
 		{
@@ -4074,7 +4074,7 @@ void bilateralWeightMap(const Mat& src, Mat& dst, Size kernelSize, double sigma_
 			bilateralWeightMap_32f(src,dst,kernelSize,sigma_color,sigma_space,borderType);
 		}
 	}
-	else if(method==BILATERAL_SEPARABLE)
+	else if(method==FILTER_SEPARABLE)
 	{
 		if(src.type()==CV_MAKE_TYPE(CV_8U,src.channels()))
 		{
