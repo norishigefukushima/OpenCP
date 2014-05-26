@@ -55,7 +55,7 @@ Filter
   
 **implimented but not optimized**  
 
-*filter*
+*filter*  
   constant time O(1) birateral filter  
   L0 Smoothing  
   Weighted least squre (WLS) smoothing  
