@@ -1,4 +1,4 @@
-Documents: Birateral Filter
+Documents: Bilateral Filter
 ===========================
 
 **void bilateralFilter(const Mat& src, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method, int borderType)**
@@ -16,7 +16,7 @@ The *method* has following options:　　
     enum{
     FILTER_DEFAULT = 0, //default is circle type.
     FILTER_CIRCLE = 0, //kernel shape is circlar from. If a support pixel (q) in a kernel has a large distance |p-q|^2 > r^2, coefficient is forcibly 0.(p is a center pixe.)
-    FILTER_RECT , //kernel shape is squre or reqtangler type. 
+    FILTER_RECTANGLE , //kernel shape is squre or reqtangler type. 
     FILTER_SEPARABLE,// sepalable implimentation of ref. 2.
     FILTER_SLOWEST// non-parallel and un-effective implimentation for just comparison.    
     };
