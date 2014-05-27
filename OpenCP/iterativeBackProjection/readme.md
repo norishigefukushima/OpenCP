@@ -1,5 +1,5 @@
-Documents: non-local means filter
-=================================
+Documents: iterative back projection
+====================================
 
 void iterativeBackProjectionDeblurGaussian(const Mat& src, Mat& dest, const Size ksize, const double sigma, const double lambda, const int iteration)
 * Mat& src: input image.  
