@@ -70,7 +70,7 @@ Filter
   Permutohedral Lattice  
   adaptive maniforld    
 
-**Application**
+**Example of Applications**
 -----------
   + denoise   
   + deblur  
