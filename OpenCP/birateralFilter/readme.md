@@ -14,15 +14,17 @@ Documents: Birateral Filter
 The *method* has following options:　　
 
     enum{
-    BILATERAL_DEFAULT = 0, //default is circle type.
-    BILATERAL_CIRCLE = 0, //kernel shape is circlar from. If a support pixel (q) in a kernel has a large distance |p-q|^2 > r^2, coefficient is forcibly 0.(p is a center pixe.)
-    BILATERAL_RECT , //kernel shape is squre or reqtangler type. 
-    BILATERAL_SEPARABLE,// sepalable implimentation of ref. 2.
-    BILATERAL_ORDER2,//exponential function is approxmated by Taylor expansion(underconstruction)
-    BILATERAL_ORDER2_SEPARABLE,// spalable implimentation of  ORDER2(underconstruction)
-    BILATERAL_SLOWEST// non-parallel and un-effective implimentation for just comparison.    
+    FILTER_DEFAULT = 0, //default is circle type.
+    FILTER_CIRCLE = 0, //kernel shape is circlar from. If a support pixel (q) in a kernel has a large distance |p-q|^2 > r^2, coefficient is forcibly 0.(p is a center pixe.)
+    FILTER_RECT , //kernel shape is squre or reqtangler type. 
+    FILTER_SEPARABLE,// sepalable implimentation of ref. 2.
+    FILTER_SLOWEST// non-parallel and un-effective implimentation for just comparison.    
     };
     
+    enum{
+    BILATERAL_ORDER2=10,//exponential function is approxmated by Taylor expansion(underconstruction)
+    BILATERAL_ORDER2_SEPARABLE,// spalable implimentation of  ORDER2(underconstruction)
+    };
 
 **void jointBilateralFilter(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method, int borderType)**  
 * Mat& src: filtering target image.    
