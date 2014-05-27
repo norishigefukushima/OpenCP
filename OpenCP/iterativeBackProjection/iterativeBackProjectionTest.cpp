@@ -42,7 +42,7 @@ void guiIterativeBackProjectionTest(Mat& src)
 		if(sw==1)
 		{
 			CalcTime t("ibp bilateral");
-			iterativeBackProjectionDeblurBirateral(blurred, dest, Size(d,d), color_sigma, r_sigma/10.0,lambda, iter);
+			iterativeBackProjectionDeblurBilateral(blurred, dest, Size(d,d), color_sigma, r_sigma/10.0,lambda, iter);
 		}
 
 //		cout<<"before:"<<PSNR(src,noise)<<endl;

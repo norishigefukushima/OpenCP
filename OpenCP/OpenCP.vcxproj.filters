@@ -87,6 +87,12 @@
     <ClCompile Include="iterativeBackProjection\iterativeBackProjectionTest.cpp">
       <Filter>ソース ファイル\test</Filter>
     </ClCompile>
+    <ClCompile Include="detailEnhancement.cpp">
+      <Filter>ソース ファイル\imgproc</Filter>
+    </ClCompile>
+    <ClCompile Include="detailEnhancement\detailEnhancementTest.cpp">
+      <Filter>ソース ファイル\test</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="opencp.hpp">

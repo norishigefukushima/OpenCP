@@ -1,5 +1,5 @@
-Documents: iterative back projection
-====================================
+Documents: detail enhancement
+=================================
 
 void iterativeBackProjectionDeblurGaussian(const Mat& src, Mat& dest, const Size ksize, const double sigma, const double lambda, const int iteration)
 * Mat& src: input image.  
@@ -20,8 +20,8 @@ void iterativeBackProjectionDeblurBirateral(const Mat& src, Mat& dest, const Siz
 
 Example of iterative birateral back projection for debluring     
 ------------------------------------------------------------
-![ibp](iterativeBackprojection.png "ibp")  
-iterative back projection  (Gaussian filter)  
+![debf](Detail_Enhancement.png "debf")  
+detail enhancement bilateral filter.
 
 ![bibp](ibpBirateral.png "bibp")  
 iterative back projection  (Birateral filter)  
@@ -29,4 +29,4 @@ iterative back projection  (Birateral filter)
 Reference
 ---------
 1. M. Irani, and S. Peleg. "Improving resolution by image registration," CVGIP: Graphical models and image processing 53(3), pp. 231-239, 1991.  
-2. S. Dai, M. Han, Y. Wu, Y. Gong, "Bilateral Back-Projection for Single Image Super Resolution," In Proc. IEEE International Conference on Multimedia and Expo (ICME), pp. 1039-1042, July 2007.  
+2. S. Dai, M. Han, Y. Wu, Y. Gong, "Bilateral Back-Projection for Single Image Super Resolution," In Proc. IEEE International Conference on Multimedia and Expo 2012 (ICME), pp. 1039-1042, July 2007.  

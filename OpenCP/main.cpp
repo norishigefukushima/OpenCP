@@ -26,6 +26,7 @@ int main(int argc, char** argv)
 
 	//guiNonLocalMeansTest(src);
 
-	guiIterativeBackProjectionTest(src);
+	//guiIterativeBackProjectionTest(src);
+	guiDetailEnhancement(src);
 	return 0;
 }

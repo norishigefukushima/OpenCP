@@ -41,7 +41,7 @@ void iterativeBackProjectionDeblurGaussian(const Mat& src, Mat& dest, const Size
 	destf.convertTo(dest,CV_8UC3);
 }
 
-void iterativeBackProjectionDeblurBirateral(const Mat& src, Mat& dest, const Size ksize, const double sigma_color, const double sigma_space, const double lambda, const int iteration)
+void iterativeBackProjectionDeblurBilateral(const Mat& src, Mat& dest, const Size ksize, const double sigma_color, const double sigma_space, const double lambda, const int iteration)
 {
 	Mat srcf;
 	Mat destf;
