@@ -3156,7 +3156,7 @@ void jointBilateralFilter(const Mat& src, const Mat& guide, Mat& dst, Size kerne
 	if(dst.empty()) dst.create(src.size(),src.type());
 	if(dst.type()!=src.type()) dst = Mat::zeros(src.size(),src.type());
 
-	if(method==FILTER_CIRCLE)
+	if(method==FILTER_CIRCLE || method==FILTER_DEFAULT)
 	{
 		if(src.depth()==CV_8U)
 		{

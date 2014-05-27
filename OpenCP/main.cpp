@@ -4,14 +4,17 @@
 
 int main(int argc, char** argv)
 {
-	Mat src = imread("img/lenna.png");
+	//Mat src = imread("img/lenna.png");
+	Mat src = imread("img/teddy_view1.png");
+	//Mat src = imread("img/teddy_view1.png");
+	
 	Mat mega;
 	
 
 	//guiSLICTest(src);
 	//guiBirateralFilterTest(src);
 
-	resize(src,mega,Size(1024,1024));
+	//resize(src,mega,Size(1024,1024));
 	//timeBirateralTest(mega);
 
 	Mat flash = imread("img/cave-flash.png");
@@ -21,6 +24,8 @@ int main(int argc, char** argv)
 	//guiBinalyWeightedRangeFilterTest(disparity);
 	//guiJointBinalyWeightedRangeFilterTest(noflash,flash);
 
-	guiNonLocalMeansTest(src);
+	//guiNonLocalMeansTest(src);
+
+	guiIterativeBackProjectionTest(src);
 	return 0;
 }

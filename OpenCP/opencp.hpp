@@ -61,7 +61,7 @@ void alphaBlend(const Mat& src1, const Mat& src2, double alpha, Mat& dest);
 void guiAlphaBlend(const Mat& src1, const Mat& src2);
 
 // utility functions
-void showMatInfo(InputArray src_, string name);
+void showMatInfo(InputArray src_, string name="Mat");
 
 enum
 {
@@ -163,3 +163,6 @@ void binalyWeightedRangeFilter(const Mat& src, Mat& dst, Size kernelSize, float 
 void jointBinalyWeightedRangeFilter(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, float threshold, int method=FILTER_DEFAULT, int borderType=cv::BORDER_REPLICATE);
 
 void nonLocalMeansFilter(Mat& src, Mat& dest, int templeteWindowSize, int searchWindowSize, double h, double sigma=-1.0, int method=FILTER_DEFAULT);
+
+void iterativeBackProjectionDeblurGaussian(const Mat& src, Mat& dest, const Size ksize, const double sigma, const double lambda, const int iteration);
+void iterativeBackProjectionDeblurBirateral(const Mat& src, Mat& dest, const Size ksize, const double sigma_color, const double sigma_space, const double lambda, const int iteration);

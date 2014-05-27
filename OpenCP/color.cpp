@@ -310,18 +310,19 @@ void splitBGRLineInterleave_32fcast( const Mat& src, Mat& dest)
 
 void splitBGRLineInterleave( const Mat& src, Mat& dest)
 {
-	CV_Assert(src.cols%16==0);
-
 	if(src.type()==CV_MAKE_TYPE(CV_8U,3))
 	{
+		CV_Assert(src.cols%16==0);
 		splitBGRLineInterleave_8u(src,dest);
 	}
 	else if(src.type()==CV_MAKE_TYPE(CV_32F,3))
 	{
+		CV_Assert(src.cols%4==0);
 		splitBGRLineInterleave_32f(src,dest);
 	}
 	else
 	{
+		CV_Assert(src.cols%4==0);
 		splitBGRLineInterleave_32fcast(src,dest);
 	}
 }

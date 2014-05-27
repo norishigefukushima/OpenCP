@@ -81,6 +81,12 @@
     <ClCompile Include="nonlocalmeans\nonLocalMeansTest.cpp">
       <Filter>ソース ファイル\test</Filter>
     </ClCompile>
+    <ClCompile Include="iterativeBackProjection.cpp">
+      <Filter>ソース ファイル\imgproc</Filter>
+    </ClCompile>
+    <ClCompile Include="iiterativeBackProjection\iterativeBackProjectionTest.cpp">
+      <Filter>ソース ファイル\test</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="opencp.hpp">
