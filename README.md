@@ -8,8 +8,10 @@ Todo
 * bilateral filter approxmations   
 * add denoising demo  
 * add dxt thresholding demo  
+* add demo for iterative back projection  
 * 
 * stereo matching depth for joint binary weighted range filter.    
+~~add iterative back projection for debluring~~  
 ~~add joint birateral filter to rect kernel implimentation. 5/26~~  
 ~~add weighted binary range filter5/25~~    
 ~~add joint birateral filter 5/24~~    
