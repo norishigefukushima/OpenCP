@@ -21,7 +21,10 @@ void iterativeBackProjectionDeblurBirateral(const Mat& src, Mat& dest, const Siz
 Example of iterative birateral back projection for debluring     
 ------------------------------------------------------------
 ![ibp](iterativeBackprojection.png "ibp")  
-   
+iterative back projection  (Gaussian filter)  
+
+![bibp](ibpBirateral.png "bibp")  
+iterative back projection  (Birateral filter filter)  
 
 Reference
 ---------

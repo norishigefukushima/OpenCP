@@ -84,7 +84,7 @@
     <ClCompile Include="iterativeBackProjection.cpp">
       <Filter>ソース ファイル\imgproc</Filter>
     </ClCompile>
-    <ClCompile Include="iiterativeBackProjection\iterativeBackProjectionTest.cpp">
+    <ClCompile Include="iterativeBackProjection\iterativeBackProjectionTest.cpp">
       <Filter>ソース ファイル\test</Filter>
     </ClCompile>
   </ItemGroup>

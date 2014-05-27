@@ -74,6 +74,7 @@ void iterativeBackProjectionDeblurBirateral(const Mat& src, Mat& dest, const Siz
 		
 		//imshow("a",subf);
 		multiply(subf,Scalar(lambda,lambda,lambda),subf);
+		
 		add(destf,subf,destf);
 		//destf += ((float)lambda)*subf;
 

@@ -17,7 +17,7 @@ void guiIterativeBackProjectionTest(Mat& src)
 	int r_sigma = 20; createTrackbar("r_sigma",wname,&r_sigma,2000);
 	int r = 4; createTrackbar("r",wname,&r,100);
 	int iter = 5;createTrackbar("iteration",wname,&iter,100);
-	int l = 10.0;createTrackbar("lambda",wname,&l,10);
+	int l = 10; createTrackbar("lambda",wname,&l,10);
 	
 	int cs = 80; createTrackbar("cs",wname,&cs,2550);
 	//int noise_s = 100; createTrackbar("noise",wname,&noise_s,2550);
