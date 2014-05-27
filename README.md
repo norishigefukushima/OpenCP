@@ -68,13 +68,22 @@ Filter
 
 **Application**
 -----------
-  +denoise  
-  +flash/non flash  
-  +up sample  
-  +HDR  
-  +Haze remove  
-  +depth map refinement  
-  +optical flow refinement    
+  + denoise   
+  + deblur  
+  + up-sample/single image super resolution  
+  + flash/non flash photograpy  
+  + HDR  
+  + colorization  
+  + detail enhancement  
+  + stylization, abstruction  
+  + pencil sketche  
+  + up-sample for pixel art, depth map  
+  + removing coding noise  
+  + blur regeneration  
+  + Haze remove  
+  + depth map estimation/refinement  
+  + optical flow estimation/refinement      
+  + alpha matting  
 
 References
 ----------
