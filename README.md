@@ -9,9 +9,11 @@ Todo
 * add denoising demo  
 * add dxt thresholding demo  
 * add demo for iterative back projection for super resolution  
+* add detail enhancement document
 * 
 * stereo matching depth for joint binary weighted range filter.    
 * need floating birateral filter without LUT for back projection.  
+~~add detail ehnancement5/28~~  
 ~~add birateral iterative back projection for debluring5/27~~  
 ~~add iterative back projection for debluring5/26~~  
 ~~add joint birateral filter to rect kernel implimentation. 5/26~~    
