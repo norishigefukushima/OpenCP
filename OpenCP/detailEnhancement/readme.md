@@ -18,8 +18,8 @@ void iterativeBackProjectionDeblurBirateral(const Mat& src, Mat& dest, const Siz
 * const double lambda: update factor.   
 * const int iteration: number of iteration.  
 
-Example of iterative birateral back projection for debluring     
-------------------------------------------------------------
+Example of detail enhancement
+-----------------------------
 ![debf](Detail_Enhancement.png "debf")  
 detail enhancement bilateral filter.
 
