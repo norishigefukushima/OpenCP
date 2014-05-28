@@ -11,6 +11,7 @@ Todo
 * add demo for iterative back projection for super resolution  
 * add detail enhancement document
 * add recursive birateral filter for gray, more efficient implimentaion  
+* add domain transform filter  
 * stereo matching depth for joint binary weighted range filter.    
 * 
 * need floating birateral filter without LUT for back projection.  
