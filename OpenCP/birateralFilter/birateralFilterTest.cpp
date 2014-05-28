@@ -28,7 +28,8 @@ void guiBirateralFilterTest(Mat& src)
 		if(sw==0)
 		{
 			CalcTime t("birateral filter: opencv");
-			bilateralFilter(src, dest, d, sigma_color, sigma_space);
+			//bilateralFilter(src, dest, d, sigma_color, sigma_space);
+			recursiveBilateralFilter(src, dest, sigma_color, sigma_space);
 		}
 		else if(sw==1)
 		{

@@ -11,7 +11,8 @@ void detailEnhancementBilateral(Mat& src, Mat& dest, int d, float sigma_color, f
 
 		Mat epf;
 
-		bilateralFilter(v[0],epf,Size(d,d),sigma_color,sigma_space);
+		//bilateralFilter(v[0],epf,Size(d,d),sigma_color,sigma_space);
+		recursiveBilateralFilter(v[0],epf,sigma_color,sigma_space);
 
 		subtract(v[0],epf, epf);
 		addWeighted(v[0],1.0,epf, boost,0, v[0]);

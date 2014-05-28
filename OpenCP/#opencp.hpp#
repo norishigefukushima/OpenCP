@@ -142,7 +142,7 @@ void SLICBase(Mat& src, Mat& segment, int regionSize, float regularization, floa
 
 enum
 {
-	BILATERAL_ORDER2,//underconstruction
+	BILATERAL_ORDER2=10,//underconstruction
 	BILATERAL_ORDER2_SEPARABLE//underconstruction
 };
 
@@ -157,10 +157,6 @@ enum
 
 void bilateralFilter(const Mat& src, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method=FILTER_DEFAULT, int borderType=cv::BORDER_REPLICATE);
 void jointBilateralFilter(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method=FILTER_DEFAULT, int borderType=cv::BORDER_REPLICATE);
-
-void recursiveBilateralFilter(Mat& src, Mat& dest, double sigma_range, double sigma_spatial);
-
-void recursiveBilateralFilter(Mat& src, Mat& dest, double sigma_spatial,double sigma_range);
 
 
 void binalyWeightedRangeFilter(const Mat& src, Mat& dst, Size kernelSize, float threshold, int method=FILTER_DEFAULT, int borderType=cv::BORDER_REPLICATE);

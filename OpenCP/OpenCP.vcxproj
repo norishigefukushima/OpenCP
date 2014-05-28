@@ -157,6 +157,7 @@
     <ClCompile Include="noise.cpp" />
     <ClCompile Include="nonLocalMeans.cpp" />
     <ClCompile Include="nonlocalmeans\nonLocalMeansTest.cpp" />
+    <ClCompile Include="recursiveBilateralFilter.cpp" />
     <ClCompile Include="slic.cpp" />
     <ClCompile Include="slic\SLICTest.cpp" />
     <ClCompile Include="stat.cpp" />

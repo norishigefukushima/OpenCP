@@ -93,6 +93,9 @@
     <ClCompile Include="detailEnhancement\detailEnhancementTest.cpp">
       <Filter>ソース ファイル\test</Filter>
     </ClCompile>
+    <ClCompile Include="recursiveBilateralFilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="opencp.hpp">
