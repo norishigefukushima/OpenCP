@@ -12,8 +12,9 @@ Todo
 * add detail enhancement document
 * add recursive birateral filter for gray, more efficient implimentaion  
 * add domain transform filter  
-* stereo matching depth for joint binary weighted range filter.    
 * 
+* stereo matching depth for joint binary weighted range filter.    
+* need sse implimmentation cvtColorBGRA2BGR,cvtColorBGR2BGRA  
 * need floating birateral filter without LUT for back projection.  
 ~~add recursive birateral filter 5/28~~  
 ~~add detail ehnancement 5/28~~  
