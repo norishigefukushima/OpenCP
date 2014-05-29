@@ -60,6 +60,9 @@ void alphaBlend(const Mat& src1, const Mat& src2, const Mat& alpha, Mat& dest);
 void alphaBlend(const Mat& src1, const Mat& src2, double alpha, Mat& dest);
 void guiAlphaBlend(const Mat& src1, const Mat& src2);
 
+//sse utils
+void memcpy_float_sse(float* dest, float* src, const int size);
+
 // utility functions
 void showMatInfo(InputArray src_, string name="Mat");
 
@@ -128,6 +131,11 @@ void addNoise(Mat&src, Mat& dest, double sigma, double solt_papper_rate=0.0);
 //image processing
 //convert a BGR color image into a continued one channel data: ex BGRBGRBGR... -> BBBB...(image size), GGGG....(image size), RRRR....(image size).
 void cvtColorBGR2PLANE(const Mat& src, Mat& dest);
+void cvtColorPLANE2BGR(const Mat& src, Mat& dest);
+
+void cvtColorBGRA2BGR(Mat& src, Mat& dest);
+void cvtColorBGR2BGRA(Mat& src, Mat& dest, const uchar alpha=255);
+
 
 //convert a BGR color image into a skipped one channel data: ex BGRBGRBGR... -> BBBB...(cols size), GGGG....(cols size), RRRR....(cols size),BBBB...(cols size), GGGG....(cols size), RRRR....(cols size),...
 void splitBGRLineInterleave( const Mat& src, Mat& dest);
@@ -158,9 +166,27 @@ enum
 void bilateralFilter(const Mat& src, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method=FILTER_DEFAULT, int borderType=cv::BORDER_REPLICATE);
 void jointBilateralFilter(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method=FILTER_DEFAULT, int borderType=cv::BORDER_REPLICATE);
 
-void recursiveBilateralFilter(Mat& src, Mat& dest, double sigma_range, double sigma_spatial);
+void recursiveBilateralFilter(Mat& src, Mat& dest, float sigma_range, float sigma_spatial, int method=0);
+class RecursiveBilateralFilter
+{
+private:
+	Mat bgra;
 
-void recursiveBilateralFilter(Mat& src, Mat& dest, double sigma_spatial,double sigma_range);
+	Mat texture;//texture is joint signal
+	Mat destf; 
+	Mat temp; 
+	Mat tempw;
+
+	Size size;
+public:
+	void setColorLUTGaussian(float* lut, float sigma);
+	void setColorLUTLaplacian(float* lut, float sigma);
+	void init(Size size_);
+	RecursiveBilateralFilter(Size size);
+	RecursiveBilateralFilter();
+	~RecursiveBilateralFilter();
+	void operator()(Mat& src, Mat& dest, float sigma_range, float sigma_spatial);
+};
 
 
 void binalyWeightedRangeFilter(const Mat& src, Mat& dst, Size kernelSize, float threshold, int method=FILTER_DEFAULT, int borderType=cv::BORDER_REPLICATE);

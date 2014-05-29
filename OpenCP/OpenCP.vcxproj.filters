@@ -96,6 +96,9 @@
     <ClCompile Include="recursiveBilateralFilter.cpp">
       <Filter>ソース ファイル\filter</Filter>
     </ClCompile>
+    <ClCompile Include="sse_util.cpp">
+      <Filter>ソース ファイル\util</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="opencp.hpp">

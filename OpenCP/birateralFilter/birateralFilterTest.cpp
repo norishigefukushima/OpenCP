@@ -2,6 +2,8 @@
 #include <fstream>
 using namespace std;
 
+#include <opencv2/core/internal.hpp>
+
 void guiBirateralFilterTest(Mat& src)
 {
 	Mat dest,dest2;
@@ -17,11 +19,12 @@ void guiBirateralFilterTest(Mat& src)
 	int key = 0;
 	Mat show;
 
+	RecursiveBilateralFilter rbf(src.size());
 	while(key!='q')
 	{
-		cout<<"r="<<r<<": "<<"please change 'sw' for changing the type of implimentations."<<endl;
-		double sigma_color = color/10.0;
-		double sigma_space = space/10.0;
+		//cout<<"r="<<r<<": "<<"please change 'sw' for changing the type of implimentations."<<endl;
+		float sigma_color = color/10.f;
+		float sigma_space = space/10.f;
 		int d = 2*r+1;
 
 		
@@ -29,22 +32,31 @@ void guiBirateralFilterTest(Mat& src)
 		{
 			CalcTime t("birateral filter: opencv");
 			//bilateralFilter(src, dest, d, sigma_color, sigma_space);
-			recursiveBilateralFilter(src, dest, sigma_color, sigma_space);
+			recursiveBilateralFilter(src, dest, sigma_color, sigma_space,0);
 		}
 		else if(sw==1)
 		{
 			CalcTime t("birateral filter: fastest opencp implimentation");
-			bilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space,FILTER_CIRCLE);
+			
+			recursiveBilateralFilter(src, dest, sigma_color, sigma_space,1);
+
+			//bilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space,FILTER_CIRCLE);
 		}
 		else if(sw==2)
 		{
 			CalcTime t("birateral filter: fastest opencp implimentation with rectangle kernel");
-			bilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space,FILTER_RECTANGLE);
+			rbf(src, dest, sigma_color, sigma_space);
+			//recursiveBilateralFilter(src, dest2, sigma_color, sigma_space,0);
+			//recursiveBilateralFilter(src, dest, sigma_color, sigma_space,1);
+			//cout<<norm(dest,dest2)<<endl;
+			//bilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space,FILTER_RECTANGLE);
+			
 		}
 		else if(sw==3)
 		{
 			CalcTime t("birateral filter: fastest: sepalable approximation of opencp");
 			bilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space,FILTER_SEPARABLE);
+
 		}
 		else if(sw==4)
 		{

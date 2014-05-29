@@ -300,6 +300,155 @@ void splitBGRLineInterleave_32f( const Mat& src, Mat& dest)
 	}
 }
 
+
+template <class T>
+void cvtColorPLANE2BGR_(const Mat& src, Mat& dest, int depth)
+{
+	int width = src.cols;
+	int height = src.rows/3;
+	T* b = (T*)src.ptr<T>(0);
+	T* g = (T*)src.ptr<T>(height);
+	T* r = (T*)src.ptr<T>(2*height);
+
+	Mat B(height, width, src.type(),b);
+	Mat G(height, width, src.type(),g);
+	Mat R(height, width, src.type(),r);
+	vector<Mat> v(3);
+	v[0]=B;
+	v[1]=G;
+	v[2]=R;
+	merge(v,dest);
+}
+
+void cvtColorPLANE2BGR_8u_align(const Mat& src, Mat& dest)
+{
+	int width = src.cols;
+	int height = src.rows/3;
+
+	if(dest.empty()) dest.create(Size(width,height),CV_8UC3);
+	else if(width!=dest.cols || height!=dest.rows) dest.create(Size(width,height),CV_8UC3);
+	else if(dest.type()!=CV_8UC3) dest.create(Size(width,height),CV_8UC3);
+
+	uchar* B = (uchar*)src.ptr<uchar>(0);
+	uchar* G = (uchar*)src.ptr<uchar>(height);
+	uchar* R = (uchar*)src.ptr<uchar>(2*height);
+
+	uchar* D = (uchar*)dest.ptr<uchar>(0);
+
+	int ssecount = width*height*3/48;
+
+	const __m128i mask1 = _mm_setr_epi8(0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10, 5);
+	const __m128i mask2 = _mm_setr_epi8(5, 0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10);
+	const __m128i mask3 = _mm_setr_epi8(10, 5, 0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15);
+	const __m128i bmask1 = _mm_setr_epi8(0,255,255,0,255,255,0,255,255,0,255,255,0,255,255,0);
+	const __m128i bmask2 = _mm_setr_epi8(255,255,0,255,255,0,255,255,0,255,255,0,255,255,0,255);
+
+	for(int i=ssecount;i--;)
+	{
+		__m128i a = _mm_load_si128((const __m128i*)B);
+		__m128i b = _mm_load_si128((const __m128i*)G);
+		__m128i c = _mm_load_si128((const __m128i*)R);
+
+		a = _mm_shuffle_epi8(a,mask1);
+		b = _mm_shuffle_epi8(b,mask2);
+		c = _mm_shuffle_epi8(c,mask3);
+		_mm_stream_si128((__m128i*)(D),_mm_blendv_epi8(c,_mm_blendv_epi8(a,b,bmask1),bmask2));
+		_mm_stream_si128((__m128i*)(D+16),_mm_blendv_epi8(b,_mm_blendv_epi8(a,c,bmask2),bmask1));		
+		_mm_stream_si128((__m128i*)(D+32),_mm_blendv_epi8(c,_mm_blendv_epi8(b,a,bmask2),bmask1));
+
+		D+=48;
+		B+=16;
+		G+=16;
+		R+=16;
+	}
+}
+
+void cvtColorPLANE2BGR_8u(const Mat& src, Mat& dest)
+{
+	int width = src.cols;
+	int height = src.rows/3;
+
+	if(dest.empty()) dest.create(Size(width,height),CV_8UC3);
+	else if(width!=dest.cols || height!=dest.rows) dest.create(Size(width,height),CV_8UC3);
+	else if(dest.type()!=CV_8UC3) dest.create(Size(width,height),CV_8UC3);
+
+	uchar* B = (uchar*)src.ptr<uchar>(0);
+	uchar* G = (uchar*)src.ptr<uchar>(height);
+	uchar* R = (uchar*)src.ptr<uchar>(2*height);
+
+	uchar* D = (uchar*)dest.ptr<uchar>(0);
+
+	int ssecount = width*height*3/48;
+	int rem = width*height*3-ssecount*48;
+
+	const __m128i mask1 = _mm_setr_epi8(0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10, 5);
+	const __m128i mask2 = _mm_setr_epi8(5, 0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10);
+	const __m128i mask3 = _mm_setr_epi8(10, 5, 0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15);
+	const __m128i bmask1 = _mm_setr_epi8(0,255,255,0,255,255,0,255,255,0,255,255,0,255,255,0);
+	const __m128i bmask2 = _mm_setr_epi8(255,255,0,255,255,0,255,255,0,255,255,0,255,255,0,255);
+
+	for(int i=ssecount;i--;)
+	{
+		__m128i a = _mm_loadu_si128((const __m128i*)B);
+		__m128i b = _mm_loadu_si128((const __m128i*)G);
+		__m128i c = _mm_loadu_si128((const __m128i*)R);
+
+		a = _mm_shuffle_epi8(a,mask1);
+		b = _mm_shuffle_epi8(b,mask2);
+		c = _mm_shuffle_epi8(c,mask3);
+
+		_mm_storeu_si128((__m128i*)(D),_mm_blendv_epi8(c,_mm_blendv_epi8(a,b,bmask1),bmask2));
+		_mm_storeu_si128((__m128i*)(D+16),_mm_blendv_epi8(b,_mm_blendv_epi8(a,c,bmask2),bmask1));		
+		_mm_storeu_si128((__m128i*)(D+32),_mm_blendv_epi8(c,_mm_blendv_epi8(b,a,bmask2),bmask1));
+
+		D+=48;
+		B+=16;
+		G+=16;
+		R+=16;
+	}
+	for(int i=rem;i--;)
+	{
+		D[0]=*B;
+		D[1]=*G;
+		D[2]=*R;
+		D+=3;
+		B++,G++,R++;
+	}
+}
+
+void cvtColorPLANE2BGR(const Mat& src, Mat& dest)
+{
+	if(src.depth()==CV_8U)
+	{
+		//cvtColorPLANE2BGR_<uchar>(src, dest, CV_8U);	
+		if(src.cols%16==0)
+			cvtColorPLANE2BGR_8u_align(src, dest);	
+		else
+			cvtColorPLANE2BGR_8u(src, dest);	
+	}
+	else if(src.depth()==CV_16U)
+	{
+		cvtColorPLANE2BGR_<ushort>(src, dest, CV_16U);
+	}
+	if(src.depth()==CV_16S)
+	{
+		cvtColorPLANE2BGR_<short>(src, dest, CV_16S);
+	}
+	if(src.depth()==CV_32S)
+	{
+		cvtColorPLANE2BGR_<int>(src, dest, CV_32S);
+	}
+	if(src.depth()==CV_32F)
+	{
+		cvtColorPLANE2BGR_<float>(src, dest, CV_32F);
+	}
+	if(src.depth()==CV_64F)
+	{
+		cvtColorPLANE2BGR_<double>(src, dest, CV_64F);
+	}
+}
+
+
 void splitBGRLineInterleave_32fcast( const Mat& src, Mat& dest)
 {
 	Mat a,b;
@@ -324,5 +473,40 @@ void splitBGRLineInterleave( const Mat& src, Mat& dest)
 	{
 		CV_Assert(src.cols%4==0);
 		splitBGRLineInterleave_32fcast(src,dest);
+	}
+}
+
+
+void cvtColorBGR2BGRA(Mat& src, Mat& dest, const uchar alpha)
+{
+	if(dest.empty())dest.create(src.size(),CV_8UC4);
+
+	int size = src.size().area();
+	uchar* s = src.ptr<uchar>(0);
+	uchar* d = dest.ptr<uchar>(0);
+	
+	for(int i=0;i<size;i++)
+	{
+		*d++ = *s++;
+		*d++ = *s++;
+		*d++ = *s++;
+		*d++ = alpha;
+	}
+}
+
+void cvtColorBGRA2BGR(Mat& src, Mat& dest)
+{
+	if(dest.empty())dest.create(src.size(),CV_8UC3);
+
+	int size = src.size().area();
+	uchar* s = src.ptr<uchar>(0);
+	uchar* d = dest.ptr<uchar>(0);
+	
+	for(int i=0;i<size;i++)
+	{
+		*d++ = *s++;
+		*d++ = *s++;
+		*d++ = *s++;
+		*s++;
 	}
 }

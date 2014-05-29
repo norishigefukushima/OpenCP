@@ -15,7 +15,11 @@ void eraseBoundary(Mat& src, int step)
 }
 int main(int argc, char** argv)
 {
-	Mat src = imread("img/lenna.png");
+	//Mat src = imread("img/lenna.png");
+
+	Mat src = imread("img/flower.png");
+
+	
 	//Mat src = imread("img/kodim22.png");
 	//Mat src = imread("img/teddy_view1.png");
 	
