@@ -25,12 +25,12 @@ int main(int argc, char** argv)
 	
 	eraseBoundary(src,10);
 	Mat mega;
-	
+	resize(src,mega,Size(1024,1024));
 
 	//guiSLICTest(src);
-	guiBirateralFilterTest(src);
+	guiBirateralFilterTest(mega);
 
-	//resize(src,mega,Size(1024,1024));
+	
 	//timeBirateralTest(mega);
 
 	Mat flash = imread("img/cave-flash.png");
