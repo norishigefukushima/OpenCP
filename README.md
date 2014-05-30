@@ -10,7 +10,8 @@ Todo
 * add dxt thresholding demo  
 * add demo for iterative back projection for super resolution  
 * add detail enhancement document
-* add recursive birateral filter for gray, more efficient implimentaion, line by line chatching  
+* add weighted birateral filter and joint birateral filter, but some implimentation is not same as non weighted version.  
+* add recursive birateral filter for gray, more efficient implimentaion, line by line chatching    
 * add domain transform filter  
 * 
 * stereo matching depth for joint binary weighted range filter.    
