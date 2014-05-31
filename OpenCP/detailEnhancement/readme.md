@@ -21,9 +21,7 @@ Example of detail enhancement
 ![debf](Detail_Enhancement.png "debf")  
 detail enhancement bilateral filter.
 
-![bibp](ibpBirateral.png "bibp")  
-iterative back projection  (Birateral filter)  
-
 Reference
 ---------
 
+R. Fattal, M. Agrawala, and S. Rusinkiewicz, "Multiscale shape and detail enhancement from multi-light image collections," ACM Transactions on Graphics, 26(3), Aug. 2007
