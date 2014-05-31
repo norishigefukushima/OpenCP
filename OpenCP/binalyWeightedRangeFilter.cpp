@@ -1948,7 +1948,7 @@ void binalyWeightedRangeFilter_8u( const Mat& src, Mat& dst, Size kernelSize, uc
 	Mat(dest(Rect(0,0,dst.cols,dst.rows))).copyTo(dst);
 }
 
-void jointBinalyWeightedRangeFilter_8u( const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, uchar threshold, int borderType )
+void jointBinalyWeightedRangeFilter_8u( const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, uchar threshold, int borderType, bool isRectangle )
 {
 	if(kernelSize.width==0 || kernelSize.height==0){ src.copyTo(dst);return;}
 	int cn = src.channels();
@@ -2007,15 +2007,31 @@ void jointBinalyWeightedRangeFilter_8u( const Mat& src, const Mat& guide, Mat& d
 	int* space_ofsj = &_space_ofsj[0];
 
 	// initialize space-related bilateral filter coefficients
-	for( i = -radiusV, maxk = 0; i <= radiusV; i++ )
+	if(isRectangle)
 	{
-		for(j = -radiusH ;j <= radiusH; j++ )
+		// initialize space-related bilateral filter coefficients
+		for( i = -radiusV, maxk = 0; i <= radiusV; i++ )
 		{
-			double r = std::sqrt((double)i*i + (double)j*j);
-			if( r > max(radiusV,radiusH) )
-				continue;
-			space_ofs[maxk] = (int)(i*temp.cols*cn + j);
-			space_ofsj[maxk++] = (int)(i*gim.cols*cng + j);
+			for(j = -radiusH ;j <= radiusH; j++ )
+			{
+				double r = std::sqrt((double)i*i + (double)j*j);
+				//space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
+				space_ofs[maxk++] = (int)(i*temp.cols*cn + j);
+			}
+		}
+	}
+	else
+	{
+		for( i = -radiusV, maxk = 0; i <= radiusV; i++ )
+		{
+			for(j = -radiusH ;j <= radiusH; j++ )
+			{
+				double r = std::sqrt((double)i*i + (double)j*j);
+				if( r > max(radiusV,radiusH) )
+					continue;
+				space_ofs[maxk] = (int)(i*temp.cols*cn + j);
+				space_ofsj[maxk++] = (int)(i*gim.cols*cng + j);
+			}
 		}
 	}
 
@@ -2025,8 +2041,7 @@ void jointBinalyWeightedRangeFilter_8u( const Mat& src, const Mat& guide, Mat& d
 	Mat(dest(Rect(0,0,dst.cols,dst.rows))).copyTo(dst);
 }
 
-
-void jointBinalyWeightedRangeFilter_32f( const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, float threshold, int borderType )
+void jointBinalyWeightedRangeFilter_32f( const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, float threshold, int borderType, bool isRectangle )
 {
 	if(kernelSize.width==0 || kernelSize.height==0){ src.copyTo(dst);return;}
 	int cn = src.channels();
@@ -2083,16 +2098,32 @@ void jointBinalyWeightedRangeFilter_32f( const Mat& src, const Mat& guide, Mat& 
 	vector<int> _space_ofsj(kernelSize.area()+1);
 	int* space_ofsj = &_space_ofsj[0];
 	// initialize space-related bilateral filter coefficients
-	for( i = -radiusV, maxk = 0; i <= radiusV; i++ )
+	if(isRectangle)
 	{
-		for(j = -radiusH ;j <= radiusH; j++ )
+		// initialize space-related bilateral filter coefficients
+		for( i = -radiusV, maxk = 0; i <= radiusV; i++ )
 		{
-			double r = std::sqrt((double)i*i + (double)j*j);
-			if( r > max(radiusV,radiusH) )
-				continue;
-			//space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-			space_ofs[maxk] = (int)(i*temp.cols*cn + j);
-			space_ofsj[maxk++] = (int)(i*gim.cols*cng + j);
+			for(j = -radiusH ;j <= radiusH; j++ )
+			{
+				double r = std::sqrt((double)i*i + (double)j*j);
+				//space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
+				space_ofs[maxk++] = (int)(i*temp.cols*cn + j);
+			}
+		}
+	}
+	else
+	{
+		for( i = -radiusV, maxk = 0; i <= radiusV; i++ )
+		{
+			for(j = -radiusH ;j <= radiusH; j++ )
+			{
+				double r = std::sqrt((double)i*i + (double)j*j);
+				if( r > max(radiusV,radiusH) )
+					continue;
+				//space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
+				space_ofs[maxk] = (int)(i*temp.cols*cn + j);
+				space_ofsj[maxk++] = (int)(i*gim.cols*cng + j);
+			}
 		}
 	}
 
@@ -2101,6 +2132,7 @@ void jointBinalyWeightedRangeFilter_32f( const Mat& src, const Mat& guide, Mat& 
 	parallel_for_(Range(0, size.height), body);
 	Mat(dest(Rect(0,0,dst.cols,dst.rows))).copyTo(dst);
 }
+
 void binalyWeightedRangeFilterSP_8u( const Mat& src, Mat& dst, Size kernelSize, uchar threshold, int borderType )
 {
 	if(kernelSize.width<=1) src.copyTo(dst);
@@ -2109,6 +2141,7 @@ void binalyWeightedRangeFilterSP_8u( const Mat& src, Mat& dst, Size kernelSize, 
 	if(kernelSize.width>1) 
 		binalyWeightedRangeFilter_8u(dst, dst, Size(1,kernelSize.height), threshold, borderType,false );
 }
+
 void binalyWeightedRangeFilterSP_32f( const Mat& src, Mat& dst, Size kernelSize, float threshold, int borderType )
 {
 	if(kernelSize.width<=1) src.copyTo(dst);
@@ -2191,20 +2224,20 @@ void jointBinalyWeightedRangeFilter(const Mat& src, const Mat& guide, Mat& dst, 
 void jointBinalyWeightedRangeFilterSP_8u( const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, uchar threshold, int borderType )
 {
 	if(kernelSize.width<=1) src.copyTo(dst);
-	else jointBinalyWeightedRangeFilter_8u(src, guide,dst, Size(kernelSize.width,1), threshold, borderType );
+	else jointBinalyWeightedRangeFilter_8u(src, guide,dst, Size(kernelSize.width,1), threshold, borderType,false);
 
 	if(kernelSize.width>1) 
-		jointBinalyWeightedRangeFilter_8u(dst, guide, dst, Size(1,kernelSize.height), threshold, borderType );
+		jointBinalyWeightedRangeFilter_8u(dst, guide, dst, Size(1,kernelSize.height), threshold, borderType,false);
 }
+
 void jointBinalyWeightedRangeFilterSP_32f( const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, float threshold, int borderType )
 {
 	if(kernelSize.width<=1) src.copyTo(dst);
-	else jointBinalyWeightedRangeFilter_32f(src, guide, dst, Size(kernelSize.width,1), threshold, borderType );
+	else jointBinalyWeightedRangeFilter_32f(src, guide, dst, Size(kernelSize.width,1), threshold, borderType,false);
 
 	if(kernelSize.width>1) 
-		jointBinalyWeightedRangeFilter_32f(dst, guide, dst, Size(1,kernelSize.height), threshold, borderType );
+		jointBinalyWeightedRangeFilter_32f(dst, guide, dst, Size(1,kernelSize.height), threshold, borderType,false);
 }
-
 
 void jointBinalyWeightedRangeFilter(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, float threshold, int method, int borderType)
 {
@@ -2216,11 +2249,33 @@ void jointBinalyWeightedRangeFilter(const Mat& src, const Mat& guide, Mat& dst, 
 	{
 		if(src.type()==CV_MAKE_TYPE(CV_8U,src.channels()))
 		{
-			jointBinalyWeightedRangeFilter_8u(src,guide,dst,kernelSize,(uchar)threshold,borderType);
+			jointBinalyWeightedRangeFilter_8u(src,guide,dst,kernelSize,(uchar)threshold,borderType,false);
 		}
 		else if(src.type()==CV_MAKE_TYPE(CV_32F,src.channels()))
 		{
-			jointBinalyWeightedRangeFilter_32f(src,guide,dst,kernelSize,threshold,borderType);
+			jointBinalyWeightedRangeFilter_32f(src,guide,dst,kernelSize,threshold,borderType, false);
+		}
+	}
+	else if(method==FILTER_RECTANGLE)
+	{
+		if(src.type()==CV_MAKE_TYPE(CV_8U,src.channels()))
+		{
+			jointBinalyWeightedRangeFilter_8u(src,guide,dst,kernelSize,(uchar)threshold,borderType, true);
+		}
+		if(src.type()==CV_MAKE_TYPE(CV_16S,src.channels()))
+		{
+			Mat srcf,guidef;
+			Mat destf(src.size(),CV_32F);
+			src.convertTo(srcf,CV_32F);
+			guide.convertTo(guidef,CV_32F);
+
+			jointBinalyWeightedRangeFilter_32f(srcf,guidef,destf,kernelSize,threshold,borderType, true);
+			destf.convertTo(dst,CV_16S);
+		}
+		else if(src.type()==CV_MAKE_TYPE(CV_32F,src.channels()))
+		{
+			jointBinalyWeightedRangeFilter_32f(src,guide,dst,kernelSize,threshold,borderType, true);
+
 		}
 	}
 	else if(method==FILTER_SEPARABLE)

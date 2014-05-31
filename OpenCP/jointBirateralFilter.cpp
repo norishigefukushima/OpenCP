@@ -2669,7 +2669,7 @@ private:
 	float *space_weight, *color_weight;
 };
 
-void weightedJointBilateralFilter_32f( const Mat& src, Mat& weight, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int borderType )
+void weightedJointBilateralFilter_32f( const Mat& src, Mat& weight, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int borderType, bool isRectangle )
 {
 	if(kernelSize.width<=1 && kernelSize.height<=1){ src.copyTo(dst);return;}
 
@@ -2759,19 +2759,38 @@ void weightedJointBilateralFilter_32f( const Mat& src, Mat& weight, const Mat& g
 		color_weight[i] = (float)std::exp(i*i*gauss_color_coeff);
 
 	// initialize space-related bilateral filter coefficients
-	for( i = -radiusV, maxk = 0; i <= radiusV; i++ )
+	// initialize space-related bilateral filter coefficients
+	if(isRectangle)
 	{
-		j = -radiusH;
-
-		for( ;j <= radiusH; j++ )
+		for( i = -radiusV, maxk = 0; i <= radiusV; i++ )
 		{
-			double r = std::sqrt((double)i*i + (double)j*j);
-			if( r > max(radiusV,radiusH) )
-				continue;
-			space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-			space_ofs[maxk] = (int)(i*temp.cols*cn + j);
-			space_w_ofs[maxk] = (int)(i*tempw.cols   + j);
-			space_guide_ofs[maxk++] = (int)(i*tempg.cols*cng + j);
+			j = -radiusH;
+
+			for( ;j <= radiusH; j++ )
+			{
+				double r = std::sqrt((double)i*i + (double)j*j);
+				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
+				space_ofs[maxk] = (int)(i*temp.cols*cn + j);
+				space_guide_ofs[maxk++] = (int)(i*tempg.cols*cng + j);
+			}
+		}
+	}
+	else
+	{
+		for( i = -radiusV, maxk = 0; i <= radiusV; i++ )
+		{
+			j = -radiusH;
+
+			for( ;j <= radiusH; j++ )
+			{
+				double r = std::sqrt((double)i*i + (double)j*j);
+				if( r > max(radiusV,radiusH) )
+					continue;
+				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
+				space_ofs[maxk] = (int)(i*temp.cols*cn + j);
+				space_w_ofs[maxk] = (int)(i*tempw.cols   + j);
+				space_guide_ofs[maxk++] = (int)(i*tempg.cols*cng + j);
+			}
 		}
 	}
 
@@ -2781,7 +2800,7 @@ void weightedJointBilateralFilter_32f( const Mat& src, Mat& weight, const Mat& g
 	Mat(dest(Rect(0,0,dst.cols,dst.rows))).copyTo(dst);
 }
 
-void weightedJointBilateralFilter_8u( const Mat& src, Mat& weight, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int borderType )
+void weightedJointBilateralFilter_8u( const Mat& src, Mat& weight, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int borderType, bool isRectangle )
 {
 	if(kernelSize.width<=1 && kernelSize.height<=1){ src.copyTo(dst);return;}
 
@@ -2878,19 +2897,38 @@ void weightedJointBilateralFilter_8u( const Mat& src, Mat& weight, const Mat& gu
 
 	double gauss_space_coeff = -0.5/(sigma_space*sigma_space);
 	// initialize space-related bilateral filter coefficients
-	for( i = -radiusV, maxk = 0; i <= radiusV; i++ )
+	// initialize space-related bilateral filter coefficients
+	if(isRectangle)
 	{
-		j = -radiusH;
-
-		for( ;j <= radiusH; j++ )
+		for( i = -radiusV, maxk = 0; i <= radiusV; i++ )
 		{
-			double r = std::sqrt((double)i*i + (double)j*j);
-			if( r > max(radiusV,radiusH) )
-				continue;
-			space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-			space_ofs[maxk] = (int)(i*temp.cols*cn + j);
-			space_w_ofs[maxk] = (int)(i*tempw.cols   + j);
-			space_guide_ofs[maxk++] = (int)(i*tempg.cols*cng + j);
+			j = -radiusH;
+
+			for( ;j <= radiusH; j++ )
+			{
+				double r = std::sqrt((double)i*i + (double)j*j);
+				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
+				space_ofs[maxk] = (int)(i*temp.cols*cn + j);
+				space_guide_ofs[maxk++] = (int)(i*tempg.cols*cng + j);
+			}
+		}
+	}
+	else
+	{
+		for( i = -radiusV, maxk = 0; i <= radiusV; i++ )
+		{
+			j = -radiusH;
+
+			for( ;j <= radiusH; j++ )
+			{
+				double r = std::sqrt((double)i*i + (double)j*j);
+				if( r > max(radiusV,radiusH) )
+					continue;
+				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
+				space_ofs[maxk] = (int)(i*temp.cols*cn + j);
+				space_w_ofs[maxk] = (int)(i*tempw.cols   + j);
+				space_guide_ofs[maxk++] = (int)(i*tempg.cols*cng + j);
+			}
 		}
 	}
 
@@ -2974,7 +3012,6 @@ void jointBilateralFilter_32f( const Mat& src, const Mat& guide, Mat& dst, Size 
 	int* space_guide_ofs = &_space_guide_ofs[0];
 
 	// initialize color-related bilateral filter coefficients
-
 	for( i = 0; i < color_range*cng; i++ )
 		color_weight[i] = (float)std::exp(i*i*gauss_color_coeff);
 
@@ -3223,27 +3260,41 @@ void jointBilateralFilter(const Mat& src, const Mat& guide, Mat& dst, int d, dou
 
 void weightedJointBilateralFilterSP_8u( const Mat& src, Mat& weightMap, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int borderType )
 {
-	weightedJointBilateralFilter_8u(src, weightMap, guide, dst, Size(kernelSize.width,1), sigma_color, sigma_space, borderType );
-	weightedJointBilateralFilter_8u(dst, weightMap, guide, dst, Size(1,kernelSize.height), sigma_color, sigma_space, borderType );
+	weightedJointBilateralFilter_8u(src, weightMap, guide, dst, Size(kernelSize.width,1), sigma_color, sigma_space, borderType, true );
+	weightedJointBilateralFilter_8u(dst, weightMap, guide, dst, Size(1,kernelSize.height), sigma_color, sigma_space, borderType, true );
 }
 
 void weightedJointBilateralFilterSP_32f( const Mat& src, Mat& weightMap, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int borderType )
 {
-	weightedJointBilateralFilter_32f(src, weightMap, guide, dst, Size(kernelSize.width,1), sigma_color, sigma_space, borderType );
-	weightedJointBilateralFilter_32f(dst, weightMap, guide, dst, Size(1,kernelSize.height), sigma_color, sigma_space, borderType );
+	weightedJointBilateralFilter_32f(src, weightMap, guide, dst, Size(kernelSize.width,1), sigma_color, sigma_space, borderType, true );
+	weightedJointBilateralFilter_32f(dst, weightMap, guide, dst, Size(1,kernelSize.height), sigma_color, sigma_space, borderType, true );
 }
+
 void weightedJointBilateralFilter(const Mat& src, Mat& weightMap,const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method, int borderType)
 {
 	if(dst.empty())dst.create(src.size(),src.type());
-	if(method==FILTER_CIRCLE)
+	CV_Assert(method!=FILTER_SLOWEST);
+
+	if(method==FILTER_CIRCLE || method==FILTER_DEFAULT)
 	{
 		if(src.type()==CV_MAKE_TYPE(CV_8U,src.channels()))
 		{
-			weightedJointBilateralFilter_8u(src,weightMap,guide,dst,kernelSize,sigma_color,sigma_space,borderType);
+			weightedJointBilateralFilter_8u(src,weightMap,guide,dst,kernelSize,sigma_color,sigma_space,borderType,false);
 		}
 		else if(src.type()==CV_MAKE_TYPE(CV_32F,src.channels()))
 		{
-			weightedJointBilateralFilter_32f(src,weightMap,guide,dst,kernelSize,sigma_color,sigma_space,borderType);
+			weightedJointBilateralFilter_32f(src,weightMap,guide,dst,kernelSize,sigma_color,sigma_space,borderType,false);
+		}
+	}
+	else if(method==FILTER_RECTANGLE)
+	{
+		if(src.type()==CV_MAKE_TYPE(CV_8U,src.channels()))
+		{
+			weightedJointBilateralFilter_8u(src,weightMap,guide,dst,kernelSize,sigma_color,sigma_space,borderType,true);
+		}
+		else if(src.type()==CV_MAKE_TYPE(CV_32F,src.channels()))
+		{
+			weightedJointBilateralFilter_32f(src,weightMap,guide,dst,kernelSize,sigma_color,sigma_space,borderType,true);
 		}
 	}
 	else if(method==FILTER_SEPARABLE)
