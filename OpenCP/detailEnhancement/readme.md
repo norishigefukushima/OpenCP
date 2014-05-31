@@ -1,7 +1,7 @@
 Documents: detail enhancement
 =================================
 
-    **void detailEnhancementBilateral(Mat& src, Mat& dest, int d, float sigma_color, float sigma_space, float boost, int color)**
+**void detailEnhancementBilateral(Mat& src, Mat& dest, int d, float sigma_color, float sigma_space, float boost, int color)**
 * Mat& src: input image.  
 * Mat& dst: filtered image.  
 * const Size ksize: size of filtering kernel.  
