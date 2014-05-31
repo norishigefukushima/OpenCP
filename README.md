@@ -16,7 +16,7 @@ Todo
 * 
 * stereo matching depth for joint binary weighted range filter.    
 * need sse implimmentation cvtColorBGRA2BGR,cvtColorBGR2BGRA  
-* need floating birateral filter without LUT for back projection.  
+* need a floating birateral filter without LUT or quantization for back projection.  
 ~~add recursive birateral filter 5/28~~  
 ~~add detail ehnancement 5/28~~  
 ~~add birateral iterative back projection for debluring5/27~~  
@@ -26,7 +26,7 @@ Todo
 ~~add joint birateral filter 5/24~~    
 ~~add massively parallel implimentaion of birateral filter 5/21~~    
 ~~add slowest birateral filter5/20~~  
-~~* update type of the destination of the SLIC. mean image? mesh? 5/19~~
+~~update type of the destination of the SLIC. mean image? mesh? 5/19~~
 
 
 Filter
