@@ -9,14 +9,14 @@ Todo
 * add denoising demo  
 * add dxt thresholding demo  
 * add demo for iterative back projection for super resolution  
-* add detail enhancement document
-* add weighted birateral filter and joint birateral filter, but some implimentation is not same as non weighted version.  
 * add recursive birateral filter for gray, more efficient implimentaion, line by line chatching    
 * add domain transform filter  
+* write detail enhancement document
 * 
-* stereo matching depth for joint binary weighted range filter.    
+* need stereo matching/cost filter for joint filtering.    
 * need sse implimmentation cvtColorBGRA2BGR,cvtColorBGR2BGRA  
 * need a floating birateral filter without LUT or quantization for back projection.  
+~~add weighted birateral filter and joint birateral filter, but some implimentation is not same as non weighted version.5/31~~
 ~~add recursive birateral filter 5/28~~  
 ~~add detail ehnancement 5/28~~  
 ~~add birateral iterative back projection for debluring5/27~~  
