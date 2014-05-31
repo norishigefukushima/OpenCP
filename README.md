@@ -12,6 +12,7 @@ Todo
 * add recursive birateral filter for gray, more efficient implimentaion, line by line chatching    
 * add domain transform filter  
 * write detail enhancement document
+* add detail enhancement class.  
 * 
 * need stereo matching/cost filter for joint filtering.    
 * need sse implimmentation cvtColorBGRA2BGR,cvtColorBGR2BGRA  
