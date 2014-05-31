@@ -26,5 +26,4 @@ iterative back projection  (Birateral filter)
 
 Reference
 ---------
-1. M. Irani, and S. Peleg. "Improving resolution by image registration," CVGIP: Graphical models and image processing 53(3), pp. 231-239, 1991.  
-2. S. Dai, M. Han, Y. Wu, Y. Gong, "Bilateral Back-Projection for Single Image Super Resolution," In Proc. IEEE International Conference on Multimedia and Expo 2012 (ICME), pp. 1039-1042, July 2007.  
+
