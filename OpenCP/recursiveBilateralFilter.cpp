@@ -7,92 +7,6 @@ using namespace std;
 
 #define QX_DEF_PADDING					10
 
-inline void qx_sort_increase_using_histogram(int*id,unsigned char*image,int len)
-{
-	int histogram[UCHAR_MAX+1];
-	int nr_bin=UCHAR_MAX+1;
-	memset(histogram,0,sizeof(int)*nr_bin);
-	for(int i=0;i<len;i++)
-	{
-		histogram[image[i]]++;
-	}
-	int nr_hitted_prev=histogram[0];
-	histogram[0]=0;
-	for(int k=1;k<nr_bin;k++)
-	{
-		int nr_hitted=histogram[k];
-		histogram[k]=nr_hitted_prev+histogram[k-1];
-		nr_hitted_prev=nr_hitted;
-	}
-	for(int i=0;i<len;i++)
-	{
-		unsigned char dist=image[i];
-		int index=histogram[dist]++;
-		id[index]=i;
-	}
-}
-inline double *get_color_weighted_table(double sigma_range,int len)
-{
-	double *table_color,*color_table_x; int y;
-	table_color=new double [len];
-	color_table_x=&table_color[0];
-	for(y=0;y<len;y++) (*color_table_x++)=exp(-double(y*y)/(2*sigma_range*sigma_range));
-	return(table_color);
-}
-inline void color_weighted_table_update(double *table_color,double dist_color,int len)
-{
-	double *color_table_x; int y;
-	color_table_x=&table_color[0];
-	for(y=0;y<len;y++) (*color_table_x++)=exp(-double(y*y)/(2*dist_color*dist_color));
-}
-
-inline void vec_min_val(float &min_val,float *in,int len)
-{
-	min_val=in[0];
-	for(int i=1;i<len;i++) if(in[i]<min_val) min_val=in[i];	
-}
-inline void vec_min_val(unsigned char &min_val,unsigned char *in,int len)
-{
-	min_val=in[0];
-	for(int i=1;i<len;i++) if(in[i]<min_val) min_val=in[i];	
-}
-inline void vec_max_val(float &max_val,float *in,int len)
-{
-	max_val=in[0];
-	for(int i=1;i<len;i++) if(in[i]>max_val) max_val=in[i];	
-}
-inline void vec_max_val(unsigned char &max_val,unsigned char *in,int len)
-{
-	max_val=in[0];
-	for(int i=1;i<len;i++) if(in[i]>max_val) max_val=in[i];	
-}
-inline void down_sample_1(unsigned char **out,unsigned char **in,int h,int w,int scale_exp)
-{
-	int y,x; int ho,wo; unsigned char *out_y,*in_x;
-	ho=(h>>scale_exp); wo=(w>>scale_exp); 
-	for(y=0;y<ho;y++)
-	{
-		out_y=&out[y][0]; in_x=in[y<<scale_exp];
-		for(x=0;x<wo;x++) *out_y++=in_x[x<<scale_exp];
-	}
-}
-inline void down_sample_1(float**out,float**in,int h,int w,int scale_exp)
-{
-	int y,x; int ho,wo; float *out_y,*in_x;
-	ho=(h>>scale_exp); wo=(w>>scale_exp); 
-	for(y=0;y<ho;y++)
-	{
-		out_y=&out[y][0]; in_x=in[y<<scale_exp];
-		for(x=0;x<wo;x++) *out_y++=in_x[x<<scale_exp];
-	}
-}
-inline double qx_linear_interpolate_xy(double **image,double x,double y,int h,int w)
-{
-	int x0,xt,y0,yt; double dx,dy,dx1,dy1,d00,d0t,dt0,dtt;
-	x0=int(x); xt=min(x0+1,w-1); y0=int(y); yt=min(y0+1,h-1);
-	dx=x-x0; dy=y-y0; dx1=1-dx; dy1=1-dy; d00=dx1*dy1; d0t=dx*dy1; dt0=dx1*dy; dtt=dx*dy;
-	return(d00*image[y0][x0]+d0t*image[y0][xt]+dt0*image[yt][x0]+dtt*image[yt][xt]);
-}
 /*memory*/
 inline double *** qx_allocd_3(int n,int r,int c,int padding=QX_DEF_PADDING)
 {
@@ -325,15 +239,6 @@ inline void qx_freed_4(double ****p)
 		p=NULL;
 	}
 }
-
-/*
-inline int qx_compute_color_difference(unsigned char a[3],unsigned char b[3])
-{
-unsigned char dr=abs(a[0]-b[0]);
-unsigned char dg=abs(a[1]-b[1]);
-unsigned char db=abs(a[2]-b[2]);
-return(((dr<<1)+dg+db)>>2);
-}*/
 
 
 void gradient_domain_recursive_bilateral_filter_(double***out,double***in,unsigned char***texture,double sigma_spatial,double sigma_range,int h,int w,double***temp,double***temp_2w)
@@ -1117,7 +1022,7 @@ void recursive_bilateral_filter_interleave_sse(Mat& src, Mat& dest, float sigma_
 	cvtColorBGRA2BGR(bgra,dest);
 }
 
-void recursive_bilateral_filter_interleave(Mat& src, Mat& dest, float sigma_range, float sigma_spatial)
+void recursive_bilateral_filter_interleave_non_sse(Mat& src, Mat& dest, float sigma_range, float sigma_spatial)
 {
 #define distance ((abs(tcr-tpr)+abs(tcg-tpg)+abs(tcb-tpb))*0.333f+0.5f)
 	const int w = src.cols;
@@ -1345,236 +1250,6 @@ void recursive_bilateral_filter_interleave(Mat& src, Mat& dest, float sigma_rang
 		memcpy_float_sse(ypf,ycf,w);//factor
 		//memcpy(ypy,ycy,sizeof(float)*w*3);
 		//memcpy(ypf,ycf,sizeof(float)*w);//factor
-	}	
-
-	destf.convertTo(dest,src.type(),1.0,0.5);
-}
-
-void recursive_bilateral_filter_interleave_texture_8u(Mat& src, Mat& dest, float sigma_range, float sigma_spatial)
-{
-	const int w = src.cols;
-	const int h = src.rows;
-
-	Mat texture = src;//texture is joint signal
-
-	Mat destf; src.convertTo(destf, CV_MAKETYPE(CV_32F,src.channels()));
-	Mat temp = Mat::zeros(src.size(), CV_MAKETYPE(CV_32F,src.channels()));
-
-	Mat temp_factor = Mat::zeros(src.size(), CV_32F);
-	Mat dest_factor  = Mat::zeros(src.size(), CV_32F);
-
-	Mat tempw = Mat::zeros(Size(w,2), CV_MAKETYPE(CV_32F,src.channels()));
-	Mat temp_factor_buffw = Mat::zeros(Size(w,2),CV_32F);
-
-	float CV_DECL_ALIGNED(16) range_table[UCHAR_MAX+1];//compute a lookup table
-	setColorLUTGaussian(range_table,sigma_range);
-
-	float alpha=exp(-sqrt(2.f)/(sigma_spatial));//filter kernel size
-	float inv_alpha_=1.f-alpha;
-
-	for(int y=0;y<h;y++)//horizontal filtering
-	{
-		float ypr,ypg,ypb,ycr,ycg,ycb;
-		float fp,fc;//factor
-		float* temp_x=temp.ptr<float>(y);
-		float* in_x = destf.ptr<float>(y);//dest is copy (float) of src;
-
-		//y previous
-		temp_x[0]=ypr=in_x[0]; 
-		temp_x[1]=ypg=in_x[1]; 
-		temp_x[2]=ypb=in_x[2];
-
-		unsigned char*texture_x=texture.ptr<uchar>(y);
-		//texture previous
-		uchar tpr=texture_x[0];
-		uchar tpg=texture_x[1];
-		uchar tpb=texture_x[2];
-
-		float*temp_factor_x=temp_factor.ptr<float>(y);//factor
-		temp_factor_x[0]=fp=1.f; 
-
-		for(int x=1;x<w;x++) //from left to right
-		{
-			uchar tcr = texture_x[3*x+0];
-			uchar tcg = texture_x[3*x+1];
-			uchar tcb = texture_x[3*x+2];
-			const unsigned char dr=abs(tcr-tpr);
-			const unsigned char dg=abs(tcg-tpg);
-			const unsigned char db=abs(tcb-tpb);
-			tpr=tcr; tpg=tcg; tpb=tcb;//texture update
-
-			//int range_dist=(((dr<<1)+dg+db)>>2);
-			int range_dist=((dr+(dg<<1)+db)>>2);
-			float weight=range_table[range_dist];
-
-			float alpha_=weight*alpha;
-			temp_x[3*x+0] = ycr = inv_alpha_*(in_x[3*x+0])+alpha_*ypr;
-			temp_x[3*x+1] = ycg = inv_alpha_*(in_x[3*x+1])+alpha_*ypg; 
-			temp_x[3*x+2] = ycb = inv_alpha_*(in_x[3*x+2])+alpha_*ypb;//update temp buffer
-			ypr=ycr; ypg=ycg; ypb=ycb;// y update
-
-			temp_factor_x[x]=fc=inv_alpha_+alpha_*fp;//factor
-			fp=fc;
-		}
-
-		temp_x[3*(w-1)+0]=0.5f*((temp_x[3*(w-1)+0])+(in_x[3*(w-1)+0])); 
-		temp_x[3*(w-1)+1]=0.5f*((temp_x[3*(w-1)+1])+(in_x[3*(w-1)+1])); 
-		temp_x[3*(w-1)+2]=0.5f*((temp_x[3*(w-1)+2])+(in_x[3*(w-1)+2]));
-
-		tpr=texture_x[3*(w-1)+0]; tpg=texture_x[3*(w-1)+1]; tpb=texture_x[3*(w-1)+2];
-		ypr=in_x[3*(w-1)+0]; ypg=in_x[3*(w-1)+1]; ypb=in_x[3*(w-1)+2];
-
-		temp_factor_x[w-1]=0.5f*((temp_factor_x[w-1])+1.f);//factor
-		fp=1;
-
-		for(int x=w-2;x>=0;x--) //from right to left
-		{
-			uchar tcr = texture_x[3*x+0];
-			uchar tcg = texture_x[3*x+1];
-			uchar tcb = texture_x[3*x+2];
-			const unsigned char dr=abs(tcr-tpr);
-			const unsigned char dg=abs(tcg-tpg);
-			const unsigned char db=abs(tcb-tpb);
-
-			//int range_dist=(((dr<<1)+dg+db)>>2);
-			int range_dist=((dr+(dg<<1)+db)>>2);
-			float weight=range_table[range_dist];
-			float alpha_=weight*alpha;
-
-			ycr=inv_alpha_*(in_x[3*x+0])+alpha_*ypr; 
-			ycg=inv_alpha_*(in_x[3*x+1])+alpha_*ypg; 
-			ycb=inv_alpha_*(in_x[3*x+2])+alpha_*ypb;
-
-			temp_x[3*x+0]=0.5f*((temp_x[3*x+0])+ycr);
-			temp_x[3*x+1]=0.5f*((temp_x[3*x+1])+ycg);
-			temp_x[3*x+2]=0.5f*((temp_x[3*x+2])+ycb);
-			tpr=tcr; tpg=tcg; tpb=tcb;
-			ypr=ycr; ypg=ycg; ypb=ycb;
-
-			fc=inv_alpha_+alpha_*fp;//factor
-			temp_factor_x[x]=0.5f*((temp_factor_x[x])+fc);
-			fp=fc;
-		}
-	}
-
-	//horizontal filter is end.
-	//now, filtering target is Mat temp and dividing factor is temp_factor
-
-	//in = temp
-	//in_factor temp_factor
-	alpha=exp(-sqrt(2.f)/(sigma_spatial));//filter kernel size virtical
-	inv_alpha_=1.f-alpha;
-
-	float*ycy,*ypy,*xcy;
-	unsigned char*tcy,*tpy;
-	float *ycf,*ypf,*xcf;
-
-	memcpy(destf.ptr<float>(0),temp.ptr<float>(0),sizeof(float)*w*3);//copy from top buffer
-	memcpy(dest_factor.ptr<float>(0),temp_factor.ptr<float>(0),sizeof(float)*w);//copy from top buffer
-	for(int y=1;y<h;y++)
-	{
-		tpy=texture.ptr<uchar>(y-1);
-		tcy=texture.ptr<uchar>(y);
-
-		xcy=temp.ptr<float>(y);
-		ypy=destf.ptr<float>(y-1);
-		ycy=destf.ptr<float>(y);
-
-		xcf=temp_factor.ptr<float>(y);
-		ypf=dest_factor.ptr<float>(y-1);
-		ycf=dest_factor.ptr<float>(y);
-
-		for(int x=0;x<w;x++)
-		{
-			unsigned char dr=abs((tcy[3*x+0])-(tpy[3*x+0]));
-			unsigned char dg=abs((tcy[3*x+1])-(tpy[3*x+1]));
-			unsigned char db=abs((tcy[3*x+2])-(tpy[3*x+2]));
-
-			//int range_dist=(((dr<<1)+dg+db)>>2);
-			int range_dist=((dr+(dg<<1)+db)>>2);
-
-			float weight=range_table[range_dist];
-			float alpha_=weight*alpha;
-
-			ycy[3*x+0]=inv_alpha_*(xcy[3*x+0])+alpha_*(ypy[3*x+0]);
-			ycy[3*x+1]=inv_alpha_*(xcy[3*x+1])+alpha_*(ypy[3*x+1]);
-			ycy[3*x+2]=inv_alpha_*(xcy[3*x+2])+alpha_*(ypy[3*x+2]);
-
-			ycf[x]=inv_alpha_*(xcf[x])+alpha_*(ypf[x]);
-		}
-	}
-
-	int h1=h-1;
-	ycf=temp_factor_buffw.ptr<float>(0);
-	ypf=temp_factor_buffw.ptr<float>(1);
-
-	memcpy(ypf,temp_factor.ptr<float>(h1),sizeof(float)*w);// copy from bottom line.
-
-	float* factor_h1 = dest_factor.ptr<float>(h1);
-	for(int x=0;x<w;x++)
-	{
-		factor_h1[x]=0.5f*(factor_h1[x]+ypf[x]);
-	}
-
-	ycy=tempw.ptr<float>(0);
-	ypy=tempw.ptr<float>(1);
-	memcpy(ypy,temp.ptr<float>(h1),sizeof(float)*w*3);
-
-	//output final line
-	{
-		float* out_h1 = destf.ptr<float>(h1);
-		for(int x=0;x<w;x++)
-		{
-			out_h1[3*x+0]=0.5f*(out_h1[3*x+0]+ypy[3*x+0])/factor_h1[x];
-			out_h1[3*x+1]=0.5f*(out_h1[3*x+1]+ypy[3*x+1])/factor_h1[x];
-			out_h1[3*x+2]=0.5f*(out_h1[3*x+2]+ypy[3*x+2])/factor_h1[x];	
-		}
-	}
-
-	//
-	for(int y=h1-1;y>=0;y--)
-	{
-		tpy=texture.ptr<uchar>(y+1);
-		tcy=texture.ptr<uchar>(y);
-		xcy=temp.ptr<float>(y);
-		float*ycy_=ycy;
-		float*ypy_=ypy;
-		float*out_= destf.ptr<float>(y);
-
-		xcf=temp_factor.ptr<float>(y);//factor
-		float* ycf_=ycf;
-		float* ypf_=ypf;
-
-		float* factor_=dest_factor.ptr<float>(y);
-
-		for(int x=0;x<w;x++)
-		{
-			unsigned char dr=abs((tcy[3*x+0])-(tpy[3*x+0]));
-			unsigned char dg=abs((tcy[3*x+1])-(tpy[3*x+1]));
-			unsigned char db=abs((tcy[3*x+2])-(tpy[3*x+2]));
-			//int range_dist=(((dr<<1)+dg+db)>>2);
-			int range_dist=((dr+(dg<<1)+db)>>2);
-			float weight=range_table[range_dist];
-			float alpha_=weight*alpha;
-
-			float fcc=inv_alpha_*(xcf[x])+alpha_*(ypf_[x]);//factor
-			ycf_[x]=fcc;
-			factor_[x]=0.5f*(factor_[x]+fcc); 
-
-			float ycc=inv_alpha_*(xcy[3*x+0])+alpha_*(ypy_[3*x+0]);
-			ycy_[3*x+0]=ycc;
-			out_[3*x+0]=0.5f*(out_[3*x+0]+ycc)/(factor_[x]); 
-
-			ycc=inv_alpha_*(xcy[3*x+1])+alpha_*(ypy_[3*x+1]);
-			ycy_[3*x+1]=ycc;
-			out_[3*x+1]=0.5f*(out_[3*x+1]+ycc)/(factor_[x]); 
-
-			ycc=inv_alpha_*(xcy[3*x+2])+alpha_*(ypy_[3*x+2]);
-			ycy_[3*x+2]=ycc;
-			out_[3*x+2]=0.5f*(out_[3*x+2]+ycc)/(factor_[x]); 
-		}
-		memcpy(ypy,ycy,sizeof(float)*w*3);
-		memcpy(ypf,ycf,sizeof(float)*w);//factor
 	}	
 
 	destf.convertTo(dest,src.type(),1.0,0.5);
@@ -1878,7 +1553,6 @@ void recursive_bilateral_filter_non_sse(Mat& src, Mat& dest, float sigma_range, 
 	destf.convertTo(temp8u,src.type(),1.0,0.5);
 	cvtColorPLANE2BGR(temp8u,dest);
 }
-
 
 void recursive_bilateral_filter_sse_vonly(Mat& src, Mat& dest, float sigma_range, float sigma_spatial)
 {
@@ -2266,12 +1940,15 @@ void recursive_bilateral_filter_sse_vonly(Mat& src, Mat& dest, float sigma_range
 
 void recursiveBilateralFilter(Mat& src, Mat& dest, float sigma_range, float sigma_spatial, int method)
 {
+	//sse for vertical parallerization
 	if(method==0) recursive_bilateral_filter_sse_vonly(src, dest, sigma_range, sigma_spatial);
+	//sse for color image vectorization (homoginious coordinate)
 	if(method==1) recursive_bilateral_filter_interleave_sse(src, dest, sigma_range, sigma_spatial);
-	//if(method==1) recursive_bilateral_filter_interleave_sse_before(src, dest, sigma_range, sigma_spatial);
-	//if(method==1) recursive_bilateral_filter_non_sse(src, dest, sigma_range, sigma_spatial);
-	if(method==2) recursive_bilateral_filter_interleave_sse(src, dest, sigma_range, sigma_spatial);
-	//if(method==3) recursive_bilateral_filter_interleave_texture_8u(src, dest, sigma_range, sigma_spatial);
+	//base for 0
+	if(method==2) recursive_bilateral_filter_non_sse(src, dest, sigma_range, sigma_spatial);
+	//base for 1
+	if(method==3) recursive_bilateral_filter_interleave_non_sse(src, dest, sigma_range, sigma_spatial);
+	//base code of this file
 	if(method==4) recursive_bilateral_filter_base(src, dest, sigma_range, sigma_spatial);
 }
 
@@ -2333,7 +2010,6 @@ void RecursiveBilateralFilter::operator()(const Mat& src, const Mat& guide, Mat&
 
 	Mat texture;//texture is joint signal
 	Mat bgra;
-
 
 	cvtColorBGR2BGRA(src, bgra,1);
 	bgra.convertTo(destf,CV_32F);
