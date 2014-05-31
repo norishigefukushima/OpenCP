@@ -1,22 +1,20 @@
 Documents: detail enhancement
 =================================
 
-void iterativeBackProjectionDeblurGaussian(const Mat& src, Mat& dest, const Size ksize, const double sigma, const double lambda, const int iteration)
+    **void detailEnhancementBilateral(Mat& src, Mat& dest, int d, float sigma_color, float sigma_space, float boost, int color)**
 * Mat& src: input image.  
-* Nat& dst: filtered image.  
+* Mat& dst: filtered image.  
 * const Size ksize: size of filtering kernel.  
-* const double sigma: sigma of space in Gaussinan filtering for Gussian blur degration and and Gaussian back Projection.    
-* const double lambda: update factor.   
-* const int iteration: number of iteration.  
+* const float sigma_color: sigma of color in bilateral filtering.    
+* const float sigma_space: sigma of space in bilateral filtering.    
+* const float boost: boosting factor.   
+* const int color: color channel for using boosting.
 
-void iterativeBackProjectionDeblurBirateral(const Mat& src, Mat& dest, const Size ksize, const double sigma_color, const double sigma_space, const double lambda, const int iteration)
-* Mat& src: input image.  
-* Nat& dst: filtered image.  
-* const Size ksize: size of filtering kernel.
-* const double sigma_color: sigma of color of birateral filter for back Projection.    
-* const double sigma: sigma of space for Gussian blur degration and and sigma space of birateral back Projection.    
-* const double lambda: update factor.   
-* const int iteration: number of iteration.  
+        enum
+        {
+        	PROCESS_LAB=0,
+        	PROCESS_BGR
+        };
 
 Example of detail enhancement
 -----------------------------
