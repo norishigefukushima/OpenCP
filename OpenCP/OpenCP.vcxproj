@@ -147,6 +147,7 @@
     <ClCompile Include="birateralFilter\birateralFilterTest.cpp" />
     <ClCompile Include="birateralFilter\jointBirateralFilterTest.cpp" />
     <ClCompile Include="color.cpp" />
+    <ClCompile Include="denoise\denoiseTest.cpp" />
     <ClCompile Include="detailEnhancement.cpp" />
     <ClCompile Include="detailEnhancement\detailEnhancementTest.cpp" />
     <ClCompile Include="draw.cpp" />

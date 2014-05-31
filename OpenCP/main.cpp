@@ -29,7 +29,7 @@ int main(int argc, char** argv)
 
 	//guiSLICTest(src);
 	//guiBilateralFilterTest(mega);
-	guiRecursiveBilateralFilterTest(mega);
+	//guiRecursiveBilateralFilterTest(mega);
 
 	
 	//timeBirateralTest(mega);
@@ -44,6 +44,9 @@ int main(int argc, char** argv)
 	//guiNonLocalMeansTest(src);
 
 	//guiIterativeBackProjectionTest(src);
-	guiDetailEnhancement(src);
+
+	//application 
+	//guiDetailEnhancement(src);
+	guiDenoiseTest(src);
 	return 0;
 }

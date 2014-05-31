@@ -99,6 +99,9 @@
     <ClCompile Include="sse_util.cpp">
       <Filter>ソース ファイル\util</Filter>
     </ClCompile>
+    <ClCompile Include="denoise\denoiseTest.cpp">
+      <Filter>ソース ファイル\test</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="opencp.hpp">

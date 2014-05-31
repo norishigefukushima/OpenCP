@@ -13,5 +13,9 @@ void guiJointBinalyWeightedRangeFilterTest(Mat& src, Mat& guide);
 
 void guiNonLocalMeansTest(Mat& src);
 
+
 void guiIterativeBackProjectionTest(Mat& src);
+
+//for application
 void guiDetailEnhancement(Mat& src);
+void guiDenoiseTest(Mat& src);

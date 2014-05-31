@@ -3979,6 +3979,7 @@ void bilateralFilter(const Mat& src, Mat& dst, Size kernelSize, double sigma_col
 			bilateralFilterSP_32f(src,dst,kernelSize,sigma_color,sigma_space,borderType);
 		}
 	}
+	/*
 	else if(method==BILATERAL_ORDER2)
 	{
 
@@ -3996,7 +3997,7 @@ void bilateralFilter(const Mat& src, Mat& dst, Size kernelSize, double sigma_col
 			else
 				bilateralFilterORDER2_32f(src,dst,kernelSize,sigma_color,sigma_space,borderType);
 		}
-	}
+	}*/
 	else if(FILTER_SLOWEST)
 	{
 		bilateralFilterSlowest(src,dst,kernelSize,sigma_color,sigma_space);
