@@ -2324,7 +2324,7 @@ RecursiveBilateralFilter::~RecursiveBilateralFilter()
 	;
 }
 
-void RecursiveBilateralFilter::operator()(Mat& src, Mat& dest, float sigma_range, float sigma_spatial)
+void RecursiveBilateralFilter::operator()(const Mat& src, const Mat& guide, Mat& dest, float sigma_range, float sigma_spatial)
 {
 	if(src.size().area()!=size.area())init(src.size());
 
@@ -2334,9 +2334,18 @@ void RecursiveBilateralFilter::operator()(Mat& src, Mat& dest, float sigma_range
 	Mat texture;//texture is joint signal
 	Mat bgra;
 
+
 	cvtColorBGR2BGRA(src, bgra,1);
 	bgra.convertTo(destf,CV_32F);
-	destf.copyTo(texture);
+	if(src.data==guide.data)
+	{
+		destf.copyTo(texture);
+	}
+	else
+	{
+		cvtColorBGR2BGRA(guide, bgra,1);
+		bgra.convertTo(texture,CV_32F);
+	}
 
 	float CV_DECL_ALIGNED(16) range_table[UCHAR_MAX+1];//compute a lookup table
 	setColorLUTGaussian(range_table,sigma_range);
@@ -2480,4 +2489,9 @@ void RecursiveBilateralFilter::operator()(Mat& src, Mat& dest, float sigma_range
 
 	destf.convertTo(bgra,src.type(),1.0,0.5);
 	cvtColorBGRA2BGR(bgra,dest);
+}
+
+void RecursiveBilateralFilter::operator()(const Mat& src, Mat& dest, float sigma_range, float sigma_spatial)
+{
+	operator()(src,src,dest,sigma_range,sigma_spatial);
 }

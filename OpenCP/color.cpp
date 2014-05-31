@@ -477,12 +477,12 @@ void splitBGRLineInterleave( const Mat& src, Mat& dest)
 }
 
 
-void cvtColorBGR2BGRA(Mat& src, Mat& dest, const uchar alpha)
+void cvtColorBGR2BGRA(const Mat& src, Mat& dest, const uchar alpha)
 {
 	if(dest.empty())dest.create(src.size(),CV_8UC4);
 
 	int size = src.size().area();
-	uchar* s = src.ptr<uchar>(0);
+	uchar* s = (uchar*)src.ptr<uchar>(0);
 	uchar* d = dest.ptr<uchar>(0);
 	
 	for(int i=0;i<size;i++)
@@ -494,12 +494,12 @@ void cvtColorBGR2BGRA(Mat& src, Mat& dest, const uchar alpha)
 	}
 }
 
-void cvtColorBGRA2BGR(Mat& src, Mat& dest)
+void cvtColorBGRA2BGR(const Mat& src, Mat& dest)
 {
 	if(dest.empty())dest.create(src.size(),CV_8UC3);
 
 	int size = src.size().area();
-	uchar* s = src.ptr<uchar>(0);
+	uchar* s = (uchar*)src.ptr<uchar>(0);
 	uchar* d = dest.ptr<uchar>(0);
 	
 	for(int i=0;i<size;i++)

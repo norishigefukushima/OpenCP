@@ -133,8 +133,8 @@ void addNoise(Mat&src, Mat& dest, double sigma, double solt_papper_rate=0.0);
 void cvtColorBGR2PLANE(const Mat& src, Mat& dest);
 void cvtColorPLANE2BGR(const Mat& src, Mat& dest);
 
-void cvtColorBGRA2BGR(Mat& src, Mat& dest);
-void cvtColorBGR2BGRA(Mat& src, Mat& dest, const uchar alpha=255);
+void cvtColorBGRA2BGR(const Mat& src, Mat& dest);
+void cvtColorBGR2BGRA(const Mat& src, Mat& dest, const uchar alpha=255);
 
 
 //convert a BGR color image into a skipped one channel data: ex BGRBGRBGR... -> BBBB...(cols size), GGGG....(cols size), RRRR....(cols size),BBBB...(cols size), GGGG....(cols size), RRRR....(cols size),...
@@ -188,7 +188,8 @@ public:
 	RecursiveBilateralFilter(Size size);
 	RecursiveBilateralFilter();
 	~RecursiveBilateralFilter();
-	void operator()(Mat& src, Mat& dest, float sigma_range, float sigma_spatial);
+	void operator()(const Mat& src, Mat& dest, float sigma_range, float sigma_spatial);
+	void operator()(const Mat& src, const Mat& guide, Mat& dest, float sigma_range, float sigma_spatial);
 };
 
 

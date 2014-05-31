@@ -28,7 +28,8 @@ int main(int argc, char** argv)
 	resize(src,mega,Size(1024,1024));
 
 	//guiSLICTest(src);
-	guiBirateralFilterTest(mega);
+	//guiBilateralFilterTest(mega);
+	guiRecursiveBilateralFilterTest(mega);
 
 	
 	//timeBirateralTest(mega);

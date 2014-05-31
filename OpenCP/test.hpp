@@ -2,8 +2,9 @@
 
 void guiSLICTest(Mat& src);
 
-void guiBirateralFilterTest(Mat& src);
+void guiBilateralFilterTest(Mat& src);
 void timeBirateralTest(Mat& src);
+void guiRecursiveBilateralFilterTest(Mat& src);
 
 void guiJointBirateralFilterTest(Mat& src, Mat& guide);
 
