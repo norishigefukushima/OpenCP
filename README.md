@@ -6,6 +6,11 @@ Todo
 ----
 ** port various filters from my library.**  
 * bilateral filter approxmations   
+  * ~~separable~~
+  + bilateral grid
+  + constant time O(1) bilateral
+  + real-time O(1) bilateral
+* 
 * add denoising demo  
 * add dxt thresholding demo  
 * add demo for iterative back projection for super resolution  
