@@ -140,6 +140,10 @@ void cvtColorBGR2BGRA(const Mat& src, Mat& dest, const uchar alpha=255);
 //convert a BGR color image into a skipped one channel data: ex BGRBGRBGR... -> BBBB...(cols size), GGGG....(cols size), RRRR....(cols size),BBBB...(cols size), GGGG....(cols size), RRRR....(cols size),...
 void splitBGRLineInterleave( const Mat& src, Mat& dest);
 
+//split by number of grid
+void mergeFromGrid(vector<Mat>& src, Mat& dest, Size grid, int borderRadius);
+void splitToGrid(const Mat& src, vector<Mat>& dest, Size grid, int borderRadius);
+
 //slic
 void SLIC(const Mat& src, Mat& segment, int regionSize, float regularization, float minRegionRatio, int max_iteration);
 void drawSLIC(const Mat& src, Mat& segment, Mat& dest, bool isLine=true, Scalar line_color=Scalar(0,0,255));
@@ -168,6 +172,10 @@ void jointBilateralFilter(const Mat& src, const Mat& guide, Mat& dst, Size kerne
 
 void weightedBilateralFilter(const Mat& src, Mat& weight, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method, int borderType=cv::BORDER_REPLICATE);
 void weightedJointBilateralFilter(const Mat& src, Mat& weightMap,const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method, int borderType);
+
+void guidedFilter(const Mat& src,  Mat& dest, const int radius,const float eps);
+void guidedFilter(const Mat& src, const Mat& guidance, Mat& dest, const int radius,const float eps);
+void guidedFilter_matlabconverted(Mat& src, Mat& joint,Mat& dest,const int radius,const double eps);
 
 void recursiveBilateralFilter(Mat& src, Mat& dest, float sigma_range, float sigma_spatial, int method=0);
 class RecursiveBilateralFilter

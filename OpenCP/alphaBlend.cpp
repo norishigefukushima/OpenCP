@@ -365,12 +365,16 @@ static void alphaBtest(Mat& src1, Mat& src2)
 }
 */
 
+
 void guiAlphaBlend(const Mat& src1, const Mat& src2)
 {
 	showMatInfo(src1,"src1");
 	cout<<endl;
 	showMatInfo(src2,"src2");
 
+	double minv,maxv;
+	minMaxLoc(src1, &minv, &maxv);
+	bool isNormirized = (maxv<=1.0 &&minv>=0.0) ? true:false;
 	Mat s1,s2;
 
 	if(src1.depth()==CV_8U || src1.depth()==CV_32F)
@@ -401,19 +405,27 @@ void guiAlphaBlend(const Mat& src1, const Mat& src2)
 		addWeighted(s1,1.0-a/100.0,s2,a/100.0,0.0,show);
 
 		if(show.depth()==CV_8U)
+		{
 			imshow("alphaBlend",show);
+		}
 		else
 		{
-			double minv,maxv;
-			minMaxLoc(show, &minv, &maxv);
-
-			Mat s;
-			if(maxv<=255)
-				show.convertTo(s,CV_8U);
+			if(isNormirized)
+			{
+				imshow("alphaBlend",show);
+			}
 			else
-				show.convertTo(s,CV_8U,255/maxv);
+			{
+				minMaxLoc(show, &minv, &maxv);
 
-			imshow("alphaBlend",s);
+				Mat s;
+				if(maxv<=255)
+					show.convertTo(s,CV_8U);
+				else
+					show.convertTo(s,CV_8U,255/maxv);
+
+				imshow("alphaBlend",s);
+			}
 		}
 		key = waitKey(1);
 		if(key=='f')

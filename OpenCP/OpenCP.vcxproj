@@ -151,6 +151,7 @@
     <ClCompile Include="detailEnhancement.cpp" />
     <ClCompile Include="detailEnhancement\detailEnhancementTest.cpp" />
     <ClCompile Include="draw.cpp" />
+    <ClCompile Include="guidedFilter.cpp" />
     <ClCompile Include="iterativeBackProjection.cpp" />
     <ClCompile Include="iterativeBackProjection\iterativeBackProjectionTest.cpp" />
     <ClCompile Include="jointBirateralFilter.cpp" />
@@ -164,6 +165,7 @@
     <ClCompile Include="slic\SLICTest.cpp" />
     <ClCompile Include="sse_util.cpp" />
     <ClCompile Include="stat.cpp" />
+    <ClCompile Include="stencil.cpp" />
     <ClCompile Include="timer.cpp" />
   </ItemGroup>
   <ItemGroup>

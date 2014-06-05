@@ -47,6 +47,7 @@ int main(int argc, char** argv)
 
 	//application 
 	//guiDetailEnhancement(src);
+	guiGuidedFilterTest(src);
 	guiDenoiseTest(src);
 	return 0;
 }
