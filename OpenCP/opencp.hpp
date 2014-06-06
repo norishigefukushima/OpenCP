@@ -66,6 +66,33 @@ void memcpy_float_sse(float* dest, float* src, const int size);
 // utility functions
 void showMatInfo(InputArray src_, string name="Mat");
 
+class ConsoleImage
+{
+private:
+	int count;
+	string windowName;
+	std::vector<std::string> strings;
+	bool isLineNumber;
+public:
+	void setIsLineNumber(bool isLine = true);
+	bool getIsLineNumber();
+	cv::Mat show;
+
+	void init(Size size, string wname);
+	ConsoleImage();
+	ConsoleImage(cv::Size size, string wname = "console");
+	~ConsoleImage();
+
+	void printData();
+	void clear();
+
+	void operator()(string src);
+	void operator()(const char *format, ...);
+	void operator()(cv::Scalar color, const char *format, ...);
+
+	void flush(bool isClear=true);
+};
+
 enum
 {
 	TIME_AUTO=0,
@@ -216,3 +243,6 @@ enum
 };
 
 void detailEnhancementBilateral(Mat& src, Mat& dest, int d, float sigma_color, float sigma_space, float boost, int color=PROCESS_LAB);
+
+
+void guidedFilterSrc1GuidanceN_(const Mat& src, const Mat& guidance, Mat& dest, const int radius,const float eps);

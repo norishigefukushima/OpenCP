@@ -16,8 +16,9 @@ void eraseBoundary(Mat& src, int step)
 int main(int argc, char** argv)
 {
 	//Mat src = imread("img/lenna.png");
-
-	Mat src = imread("img/flower.png");
+	Mat src = imread("top-new.jpg");
+	
+	//Mat src = imread("img/flower.png");
 
 	
 	//Mat src = imread("img/kodim22.png");
@@ -32,6 +33,8 @@ int main(int argc, char** argv)
 	//guiRecursiveBilateralFilterTest(mega);
 
 	
+	Mat feather = imread("img/feathering/toy-mask.png");
+	Mat guide = imread("img/feathering/toy.png");
 	//timeBirateralTest(mega);
 
 	Mat flash = imread("img/cave-flash.png");
@@ -47,7 +50,7 @@ int main(int argc, char** argv)
 
 	//application 
 	//guiDetailEnhancement(src);
-	guiGuidedFilterTest(src);
+	guiGuidedFilterTest(guide);
 	guiDenoiseTest(src);
 	return 0;
 }

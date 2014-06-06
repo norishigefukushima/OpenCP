@@ -75,8 +75,10 @@ void guiDenoiseTest(Mat& src)
 void makevec(Mat& gray, Mat& color)
 {
 	Mat src;
-	color.create(gray.size(),CV_8UC3);
+	int channel = 9;
+	color.create(gray.size(),CV_8UC(channel));
 	copyMakeBorder(gray,src,1,1,1,1,BORDER_REPLICATE);
+	//copyMakeBorder(gray,src,0,0,0,0,BORDER_REPLICATE);
 
 	for(int j=0;j<gray.rows;j++)
 	{
@@ -85,15 +87,19 @@ void makevec(Mat& gray, Mat& color)
 
 		for(int i=0;i<gray.cols;i++)
 		{
-			/*d[3*i+0]=s[i+src.rows];
-			d[3*i+1]=s[i-src.rows-1];
-			d[3*i+2]=s[i-src.rows+1];*/
-			d[3*i+0]=s[i-1];
-			d[3*i+1]=s[i-1];
-			d[3*i+2]=s[i+1];
+			d[channel*i+0]=s[i];
+			d[channel*i+1]=s[i-1];
+			d[channel*i+2]=s[i+1];
+
+			d[channel*i+3]=s[i-src.cols];
+			d[channel*i+4]=s[i-src.cols-1];
+			d[channel*i+5]=s[i-src.cols+1];
+
+			d[channel*i+6]=s[i+src.cols];
+			d[channel*i+7]=s[i+src.cols-1];
+			d[channel*i+8]=s[i+src.cols+1];
 		}
-	}
-	
+	}	
 }
 
 void guiGuidedFilterTest(Mat& src_)
@@ -121,6 +127,7 @@ void guiGuidedFilterTest(Mat& src_)
 
 	Mat guide;
 	
+	ConsoleImage ci(Size(640,480));
 	while(key!='q')
 	{
 		float sigma_color = sigma_color10/10.f;
@@ -130,18 +137,21 @@ void guiGuidedFilterTest(Mat& src_)
 
 		Mat noise;
 		addNoise(src,noise,noise_s10/10.0);
-		
+		Mat feather = imread("img/feathering/toy-mask.png",0);
+		makevec(noise,guide);
 		if(sw==0)
 		{
 			CalcTime t("bilateral filter");
 			guidedFilter(noise,dest,r,sigma_color*sigma_color);
+			//guidedFilter(feather,src,dest,r,sigma_color*sigma_color);
 		}
 		else if(sw==1)
-		{
-			makevec(noise,guide);
+		{	
 			CalcTime t("bilateral filter: separable ");
 			//GaussianBlur(noise,dest,Size(d,d),sigma_space);
-			guidedFilter(noise,guide,dest,r,sigma_color*sigma_color);
+			//guidedFilter(noise,guide,dest,r,sigma_color*sigma_color);
+			guidedFilterSrc1GuidanceN_(noise,guide,dest,r,sigma_color*sigma_color);
+			//guidedFilterSrc1GuidanceN_(feather,guide,dest,r,sigma_color*sigma_color);
 			//bilateralFilter(noise,dest,Size(d,d),sigma_color,sigma_space,FILTER_SEPARABLE);
 		}
 		else if(sw==2)
@@ -151,11 +161,14 @@ void guiGuidedFilterTest(Mat& src_)
 			bilateralFilter(noise,dest,Size(d,d),sigma_color,sigma_space = 0.33333f*r,FILTER_SEPARABLE);
 		}
 
+		ci(format("before: %f",PSNR(src,noise)));
+		ci(format("filter: %f",PSNR(src,dest)));
+		
+		
+		ci.flush();
+		
 
-		cout<<"before:"<<PSNR(src,noise)<<endl;
-		cout<<"filter:"<<PSNR(src,dest)<<endl<<endl;
-
-		patchBlendImage(noise,dest,dest,Scalar(255,255,255));
+		//patchBlendImage(noise,dest,dest,Scalar(255,255,255));
 		alphaBlend(src, dest,a/100.0, show);
 		cv::imshow(wname,show);
 		key = waitKey(1);

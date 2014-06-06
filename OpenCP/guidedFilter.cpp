@@ -860,6 +860,163 @@ void cvt8u32f(const Mat& src, Mat& dest)
 	}
 }
 
+
+void guidedFilterSrc1GuidanceN_(const Mat& src, const Mat& guidance, Mat& dest, const int radius,const float eps)
+{
+	int debug = 0;
+	
+	int channels = guidance.channels();
+	vector<Mat> I(channels);
+	vector<Mat> If(channels);
+
+	split(guidance,I);
+
+	const Size ksize(2*radius+1,2*radius+1);
+	const Point PT(-1,-1);
+	const float e=eps;
+	const Size imsize = src.size();
+	const int size = src.size().area();
+	const double div = 1.0/ksize.area();
+
+	Mat temp(imsize,CV_32F);
+
+	for(int i=0;i<channels;i++)
+		If[i].create(imsize,CV_32F);
+
+
+	if(src.type()==CV_8U)
+	{		
+		cvt8u32f( src,temp,1.f);
+		for(int i=0;i<channels;i++)
+			cvt8u32f( I[i],If[i],1.f);	
+	}
+	else
+	{
+		src.convertTo(temp,CV_32F,1.f);
+		for(int i=0;i<channels;i++)
+			I[i].convertTo(If[i],CV_32F,1.f);
+	}
+	
+	vector<Mat> mean_I_vec(channels);
+	for(int i=0;i<channels;i++)
+	{
+		mean_I_vec[i].create(imsize,CV_32F);
+		boxFilter(If[i],mean_I_vec[i],CV_32F,ksize,PT,true,BORDER_TYPE);
+	}
+
+	Mat mean_p(imsize,CV_32F);
+	boxFilter(temp,mean_p,CV_32F,ksize,PT,true,BORDER_TYPE);
+
+	vector<Mat> mean_Ip_vec(channels);
+	for(int i=0;i<channels;i++)
+	{
+		mean_Ip_vec[i].create(imsize,CV_32F);
+		multiply(If[i],temp,mean_Ip_vec[i]);//Ir*p
+		boxFilter(mean_Ip_vec[i],mean_Ip_vec[i],CV_32F,ksize,PT,true,BORDER_TYPE);
+	}
+
+	//cout<<"covariance computation"<<endl;
+
+	vector<Mat> cov_Ip_vec(channels);
+	for(int i=0;i<channels;i++)
+	{
+		cov_Ip_vec[i]=mean_Ip_vec[i];
+		multiply(mean_I_vec[i],mean_p,temp);
+		cov_Ip_vec[i]-=temp;
+	}
+	
+	//cout<<"variance computation"<<endl;
+
+	//getCovImage();
+	//ココからスプリット
+	vector<Mat> var_I_vec(channels*channels);
+	for(int j=0;j<channels;j++)
+	{
+		for(int i=0;i<channels;i++)
+		{
+			int idx = channels*j+i;
+			multiply(If[i],If[j],temp);
+			boxFilter(temp,var_I_vec[idx],CV_32F,ksize,PT,true,BORDER_TYPE);
+			multiply(mean_I_vec[i],mean_I_vec[j],temp);
+			var_I_vec[idx]-=temp;
+		}
+	}
+
+	
+	for(int j=0;j<channels;j++)
+	{
+		for(int i=0;i<channels;i++)
+		{
+			if(i==j)
+			{
+				int idx = channels*j+i;
+				var_I_vec[idx]+=e;
+			}
+		}
+	}
+
+	{
+		Mat sigmaEps = Mat::zeros(channels,channels,CV_32F);
+
+		//CalcTime t("cov");
+		for(int i=0;i<size;i++)
+		{
+			for(int n=0;n<channels*channels;n++)
+			{
+				sigmaEps.at<float>(n)=var_I_vec[n].at<float>(i);
+			}
+
+			Mat inv = sigmaEps.inv(cv::DECOMP_LU);
+
+			//reuse for buffer
+			Mat vec = Mat::zeros(channels,1,CV_32F);
+
+			for(int m=0;m<channels;m++)
+			{
+				for(int n=0;n<channels;n++)
+				{
+					int idx = channels*m+n;
+					vec.at<float>(n) += inv.at<float>(m,n)*cov_Ip_vec[n].at<float>(i);
+				}
+			}
+
+			for(int n=0;n<channels;n++)
+				cov_Ip_vec[n].at<float>(i)=vec.at<float>(n);
+
+		}
+	}
+	
+	vector<Mat> a_vec(channels);
+	for(int i=0;i<channels;i++)
+	{
+		a_vec[i]=cov_Ip_vec[i];
+		multiply(a_vec[i],mean_I_vec[i],mean_I_vec[i]);//break mean_I_r;
+	}
+
+	
+
+	Mat mean_vec = Mat::zeros(mean_p.size(),CV_32F);
+	for(int i=0;i<channels;i++)
+	{
+		mean_vec+=mean_I_vec[i];
+	}
+	mean_p-=mean_vec;
+	
+	
+	Mat b = mean_p;
+	
+	boxFilter(b,temp,CV_32F,ksize,PT,true,BORDER_TYPE);
+	for(int i=0;i<channels;i++)
+	{
+		boxFilter(a_vec[i],a_vec[i],CV_32F,ksize,PT,true,BORDER_TYPE);//break a_r
+		multiply(a_vec[i],If[i],a_vec[i]);
+		temp+=a_vec[i];
+	}
+	temp.convertTo(dest,src.type());
+}
+
+
+
 static void guidedFilterSrc1Guidance3_(const Mat& src, const Mat& guidance, Mat& dest, const int radius,const float eps)
 {
 	if(src.channels()!=1 && guidance.channels()!=3)
@@ -1087,13 +1244,13 @@ void guidedFilterSrc1Guidance1SSE_(const Mat& src, const Mat& joint, Mat& dest,c
 
 	if(src.type()==CV_8U)
 	{
-		cvt8u32f(src,sf,1.f/255.f);
-		cvt8u32f(joint,jf,1.f/255.f);
+		cvt8u32f(src,sf);
+		cvt8u32f(joint,jf);
 	}
 	else
 	{
-		src.convertTo(sf,CV_32F,1.0/255.0);
-		joint.convertTo(jf,CV_32F,1.0/255.0);
+		src.convertTo(sf,CV_32F);
+		joint.convertTo(jf,CV_32F);
 	}
 
 	{
@@ -1171,7 +1328,6 @@ void guidedFilterSrc1Guidance1SSE_(const Mat& src, const Mat& joint, Mat& dest,c
 		float* s2=jf.ptr<float>(0);
 		float* s3=x3.ptr<float>(0);
 
-		const __m128 ms3 = _mm_set1_ps(255.f);
 		for(int i=ssesize;i--;)
 		{
 			__m128 ms1 = _mm_load_ps(s1);
@@ -1181,14 +1337,13 @@ void guidedFilterSrc1Guidance1SSE_(const Mat& src, const Mat& joint, Mat& dest,c
 			ms2 = _mm_load_ps(s3);
 			ms1 = _mm_sub_ps(ms1,ms2);
 
-			ms2 = _mm_mul_ps(ms1,ms3);
-			_mm_store_ps(s1,ms2);
+			_mm_store_ps(s1,ms1);
 
 			s1+=4,s2+=4,s3+=4;
 		}
 		for(int i=0;i<nn;i++)
 		{
-			*s1 = 255.f * ((*s1 * *s2) - * s3 );
+			*s1 =  ((*s1 * *s2) - * s3 );
 			s1++,s2++,s3++;
 		}
 	}

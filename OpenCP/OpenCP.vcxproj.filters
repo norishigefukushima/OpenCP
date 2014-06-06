@@ -108,6 +108,9 @@
     <ClCompile Include="stencil.cpp">
       <Filter>ソース ファイル\util</Filter>
     </ClCompile>
+    <ClCompile Include="consoleImage.cpp">
+      <Filter>ソース ファイル\util</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="opencp.hpp">
