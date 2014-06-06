@@ -176,13 +176,15 @@ void splitToGrid(const Mat& src, vector<Mat>& dest, Size grid, int borderRadius)
 	}
 }
 
+using namespace std;
 template <class T>
-void mergeFromGrid_(vector<Mat>& src, Mat& dest, Size grid, int borderRadius)
-{
-	const int width = (src[0].cols-2*borderRadius)*grid.width;
-	const int height = (src[0].rows-2*borderRadius)*grid.height;
+void mergeFromGrid_(vector<Mat>& src, Size beforeSize, Mat& dest, Size grid, int borderRadius)
+{	
+	const int width = beforeSize.width;
+	const int height = beforeSize.height;
+
 	const int channels = src[0].channels();
-	const int step = width*channels;
+	
 
 	if(dest.empty()) dest.create(Size(width,height),src[0].type());
 	else if(dest.cols!=width ||dest.rows!=height) dest.create(Size(width,height),src[0].type());
@@ -196,14 +198,24 @@ void mergeFromGrid_(vector<Mat>& src, Mat& dest, Size grid, int borderRadius)
 	const int gwidth = src[0].cols-2*borderRadius;
 	const int gheight = src[0].rows-2*borderRadius;
 	const int gwstep = gwidth*channels;
-	const int ghstep = gheight*step;
+	
 
 	const int bwidth = src[0].cols;
 	const int bwstep = bwidth*channels;
 
 	const int soffset = channels*borderRadius;
 	//copy
-	T* dptr = (T*)dest.ptr<T>(0);
+	
+
+
+	
+	Mat dbuff = Mat::zeros(Size(beforeSize.width+beforeSize.width%grid.width,
+		beforeSize.height+beforeSize.height%grid.height),src[0].type());
+
+	T* dptr = (T*)dbuff.ptr<T>(0);
+	const int step = dbuff.cols*channels;
+	const int ghstep = gheight*step;
+
 	for(int j=0;j<gnumheight;j++)
 	{
 		for(int i=0;i<gnumwidth;i++)
@@ -215,6 +227,7 @@ void mergeFromGrid_(vector<Mat>& src, Mat& dest, Size grid, int borderRadius)
 			for(int k=0;k<gheight;k++)
 			{
 				memcpy(dst, ss, sizeof(T)*gwstep);
+				//memset(dst, 128, sizeof(T)*gwstep);
 				ss+=bwstep;
 				dst+=step;
 			}
@@ -233,6 +246,8 @@ void mergeFromGrid_(vector<Mat>& src, Mat& dest, Size grid, int borderRadius)
 		//	}	
 		//}
 	}
+	
+	Mat(dbuff(Rect(0,0,beforeSize.width, beforeSize.height))).copyTo(dest);
 }
 
 void mergeFromGrid_8u(vector<Mat>& src, Mat& dest, Size grid, int borderRadius)
@@ -299,28 +314,28 @@ void mergeFromGrid_8u(vector<Mat>& src, Mat& dest, Size grid, int borderRadius)
 	}
 }
 
-void mergeFromGrid(vector<Mat>& src, Mat& dest, Size grid, int borderRadius)
+void mergeFromGrid(vector<Mat>& src,  Size beforeSize, Mat& dest, Size grid, int borderRadius)
 {
 	int depth = src[0].depth();
 	if(depth==CV_8U)
 	{
-		//mergeFromGrid_<uchar>(src,dest,grid,borderRadius);
+		//mergeFromGrid_<uchar>(src,beforeSize,dest,grid,borderRadius);
 		mergeFromGrid_8u(src,dest,grid,borderRadius);
 	}
 	else if(depth==CV_16U)
 	{
-		mergeFromGrid_<ushort>(src,dest,grid,borderRadius);
+		mergeFromGrid_<ushort>(src,beforeSize,dest,grid,borderRadius);
 	}
 	else if(depth==CV_16S)
 	{
-		mergeFromGrid_<short>(src,dest,grid,borderRadius);
+		mergeFromGrid_<short>(src,beforeSize,dest,grid,borderRadius);
 	}
 	else if(depth==CV_32F)
 	{
-		mergeFromGrid_<float>(src,dest,grid,borderRadius);
+		mergeFromGrid_<float>(src,beforeSize,dest,grid,borderRadius);
 	}
 	else if(depth==CV_64F)
 	{
-		mergeFromGrid_<double>(src,dest,grid,borderRadius);
+		mergeFromGrid_<double>(src,beforeSize,dest,grid,borderRadius);
 	}
 }

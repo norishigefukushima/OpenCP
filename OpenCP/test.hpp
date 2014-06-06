@@ -9,6 +9,7 @@ void guiRecursiveBilateralFilterTest(Mat& src);
 void guiJointBirateralFilterTest(Mat& src, Mat& guide);
 
 void guiGuidedFilterTest(Mat& src);
+void timeGuidedFilterTest(Mat& src);
 
 void guiBinalyWeightedRangeFilterTest(Mat& src);
 void guiJointBinalyWeightedRangeFilterTest(Mat& src, Mat& guide);

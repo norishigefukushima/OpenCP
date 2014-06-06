@@ -510,3 +510,46 @@ void cvtColorBGRA2BGR(const Mat& src, Mat& dest)
 		*s++;
 	}
 }
+
+
+void makemultichannel(Mat& gray, Mat& color)
+{
+	Mat src;
+	int channel = 9;
+	color.create(gray.size(),CV_8UC(channel));
+	copyMakeBorder(gray,src,1,1,1,1,BORDER_REPLICATE);
+	//copyMakeBorder(gray,src,0,0,0,0,BORDER_REPLICATE);
+
+	for(int j=0;j<gray.rows;j++)
+	{
+		uchar* s = src.ptr(j+1);s++;
+		uchar* d = color.ptr(j);
+
+		for(int i=0;i<gray.cols;i++)
+		{
+			//d[channel*i+0]=s[i];
+			//d[channel*i+1]=s[i-1];
+			//d[channel*i+2]=s[i+1];
+
+			//d[channel*i+3]=s[i-src.cols];
+			//d[channel*i+4]=s[i-src.cols-1];
+			//d[channel*i+5]=s[i-src.cols+1];
+
+			//d[channel*i+6]=s[i+src.cols];
+			//d[channel*i+7]=s[i+src.cols-1];
+			//d[channel*i+8]=s[i+src.cols+1];
+
+			d[channel*i+0]=s[i];
+			d[channel*i+1]=abs(s[i]-s[i-1]);
+			d[channel*i+2]=abs(s[i]-s[i+1]);
+
+			d[channel*i+3]=abs(s[i]-s[i-src.cols]);
+			d[channel*i+4]=abs(s[i]-s[i-src.cols-1]);
+			d[channel*i+5]=abs(s[i]-s[i-src.cols+1]);
+
+			d[channel*i+6]=abs(s[i]-s[i+src.cols]);
+			d[channel*i+7]=abs(s[i]-s[i+src.cols-1]);
+			d[channel*i+8]=abs(s[i]-s[i+src.cols+1]);
+		}
+	}	
+}

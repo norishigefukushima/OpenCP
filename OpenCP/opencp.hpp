@@ -156,6 +156,12 @@ public:
 void addNoise(Mat&src, Mat& dest, double sigma, double solt_papper_rate=0.0);
 
 //image processing
+
+//bit convert
+void cvt32f8u(const Mat& src, Mat& dest);
+void cvt8u32f(const Mat& src, Mat& dest, const float amp);
+void cvt8u32f(const Mat& src, Mat& dest);
+
 //convert a BGR color image into a continued one channel data: ex BGRBGRBGR... -> BBBB...(image size), GGGG....(image size), RRRR....(image size).
 void cvtColorBGR2PLANE(const Mat& src, Mat& dest);
 void cvtColorPLANE2BGR(const Mat& src, Mat& dest);
@@ -168,7 +174,7 @@ void cvtColorBGR2BGRA(const Mat& src, Mat& dest, const uchar alpha=255);
 void splitBGRLineInterleave( const Mat& src, Mat& dest);
 
 //split by number of grid
-void mergeFromGrid(vector<Mat>& src, Mat& dest, Size grid, int borderRadius);
+void mergeFromGrid(vector<Mat>& src, Size beforeSize, Mat& dest, Size grid, int borderRadius);
 void splitToGrid(const Mat& src, vector<Mat>& dest, Size grid, int borderRadius);
 
 //slic
@@ -202,7 +208,10 @@ void weightedJointBilateralFilter(const Mat& src, Mat& weightMap,const Mat& guid
 
 void guidedFilter(const Mat& src,  Mat& dest, const int radius,const float eps);
 void guidedFilter(const Mat& src, const Mat& guidance, Mat& dest, const int radius,const float eps);
-void guidedFilter_matlabconverted(Mat& src, Mat& joint,Mat& dest,const int radius,const double eps);
+
+void guidedFilterMultiCore(const Mat& src, Mat& dest, int r,float eps);
+void guidedFilterMultiCore(const Mat& src, const Mat& guide, Mat& dest, int r,float eps);
+
 
 void recursiveBilateralFilter(Mat& src, Mat& dest, float sigma_range, float sigma_spatial, int method=0);
 class RecursiveBilateralFilter
@@ -243,6 +252,3 @@ enum
 };
 
 void detailEnhancementBilateral(Mat& src, Mat& dest, int d, float sigma_color, float sigma_space, float boost, int color=PROCESS_LAB);
-
-
-void guidedFilterSrc1GuidanceN_(const Mat& src, const Mat& guidance, Mat& dest, const int radius,const float eps);
