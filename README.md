@@ -16,11 +16,14 @@ Todo
 * add domain transform filter  
 * write detail enhancement document
 * add detail enhancement class.  
+* add test for guided filter.  
+* add test for stencil.  
 * 
 * need stereo matching/cost filter for joint filtering.    
 * need sse implimmentation cvtColorBGRA2BGR,cvtColorBGR2BGRA  
 * need a floating birateral filter without LUT or quantization for back projection.  
 * 
+~~add guided filter 6/5~~  
 ~~add denoising demo5/31~~  
 ~~add weighted birateral filter and joint birateral filter, but some implimentation is not same as non weighted version.5/31~~
 ~~add recursive birateral filter 5/28~~  
