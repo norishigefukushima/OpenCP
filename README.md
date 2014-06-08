@@ -11,16 +11,15 @@ Todo
   + constant time O(1) bilateral
   + real-time O(1) bilateral
 * add dxt thresholding for denoising
-* add demo for iterative back projection for super resolution  
+* add super resolution demo for iterative back projection.   
 * add recursive birateral filter for gray, more efficient implimentaion, line by line chatching    
 * add domain transform filter  
+  * add test for domain transform filter.  
+  * add other implimentation of domain transform filter  
 * write detail enhancement document
 * add detail enhancement class.  
-* add test for guided filter.  
-* add test for domain transform filter.  
-* add other implimentation of domain transform filter  
-* add test for stencil.  
-* 
+
+* add test for stencil and parallel filtering.  
 * need stereo matching/cost filter for joint filtering.    
 * need sse implimmentation cvtColorBGRA2BGR,cvtColorBGR2BGRA  
 * need a floating birateral filter without LUT or quantization for back projection.  
