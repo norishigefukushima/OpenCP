@@ -70,5 +70,3 @@ void guiDenoiseTest(Mat& src)
 		key = waitKey(1);
 	}
 }
-
-

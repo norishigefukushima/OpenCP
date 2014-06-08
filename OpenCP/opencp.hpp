@@ -93,6 +93,8 @@ public:
 	void flush(bool isClear=true);
 };
 
+
+
 enum
 {
 	TIME_AUTO=0,
@@ -174,8 +176,8 @@ void cvtColorBGR2BGRA(const Mat& src, Mat& dest, const uchar alpha=255);
 void splitBGRLineInterleave( const Mat& src, Mat& dest);
 
 //split by number of grid
-void mergeFromGrid(vector<Mat>& src, Size beforeSize, Mat& dest, Size grid, int borderRadius);
-void splitToGrid(const Mat& src, vector<Mat>& dest, Size grid, int borderRadius);
+void mergeFromGrid(Vector<Mat>& src, Size beforeSize, Mat& dest, Size grid, int borderRadius);
+void splitToGrid(const Mat& src, Vector<Mat>& dest, Size grid, int borderRadius);
 
 //slic
 void SLIC(const Mat& src, Mat& segment, int regionSize, float regularization, float minRegionRatio, int max_iteration);
@@ -209,9 +211,19 @@ void weightedJointBilateralFilter(const Mat& src, Mat& weightMap,const Mat& guid
 void guidedFilter(const Mat& src,  Mat& dest, const int radius,const float eps);
 void guidedFilter(const Mat& src, const Mat& guidance, Mat& dest, const int radius,const float eps);
 
-void guidedFilterMultiCore(const Mat& src, Mat& dest, int r,float eps);
-void guidedFilterMultiCore(const Mat& src, const Mat& guide, Mat& dest, int r,float eps);
+void guidedFilterMultiCore(const Mat& src, Mat& dest, int r,float eps, int numcore=0);
+void guidedFilterMultiCore(const Mat& src, const Mat& guide, Mat& dest, int r,float eps,int numcore=0);
 
+
+typedef enum
+{
+	DTF_RF=0,//Recursive Filtering
+	DTF_NC=1,//Normalized Convolution
+	DTF_IC=1,//Interpolated Convolution
+
+}DTF_METHOD;
+
+void domainTransformFilter(cv::Mat& img, cv::Mat& out, double sigma_s, double sigma_r, int maxiter, int method=DTF_RF);
 
 void recursiveBilateralFilter(Mat& src, Mat& dest, float sigma_range, float sigma_spatial, int method=0);
 class RecursiveBilateralFilter

@@ -117,6 +117,9 @@
     <ClCompile Include="guidedFilter\guidedFilterTest.cpp">
       <Filter>ソース ファイル\test</Filter>
     </ClCompile>
+    <ClCompile Include="domainTransformFilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="opencp.hpp">

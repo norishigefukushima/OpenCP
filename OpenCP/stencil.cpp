@@ -1,7 +1,7 @@
 #include "opencp.hpp"
 
 template <class T>
-void splitToGrid_(const Mat& src, vector<Mat>& dest, Size gridNum, int borderRadius)
+void splitToGrid_(const Mat& src, Vector<Mat>& dest, Size gridNum, int borderRadius)
 {
 	int w = (src.cols%gridNum.width == 0) ? src.cols/gridNum.width : src.cols/gridNum.width+1;
 	int h = (src.rows%gridNum.height == 0) ? src.rows/gridNum.height : src.cols/gridNum.height+1;
@@ -62,7 +62,7 @@ void splitToGrid_(const Mat& src, vector<Mat>& dest, Size gridNum, int borderRad
 	}
 }
 
-void splitToGrid_8u(const Mat& src, vector<Mat>& dest, Size gridNum, int borderRadius)
+void splitToGrid_8u(const Mat& src, Vector<Mat>& dest, Size gridNum, int borderRadius)
 {
 	int w = (src.cols%gridNum.width == 0) ? src.cols/gridNum.width : src.cols/gridNum.width+1;
 	int h = (src.rows%gridNum.height == 0) ? src.rows/gridNum.height : src.rows/gridNum.height+1;
@@ -151,7 +151,7 @@ Ex: 4x4 grid
 |    | = | 8 91011|
 |    |   |12131415|
 */
-void splitToGrid(const Mat& src, vector<Mat>& dest, Size grid, int borderRadius)
+void splitToGrid(const Mat& src, Vector<Mat>& dest, Size grid, int borderRadius)
 {
 	if(src.depth()==CV_8U)
 	{
@@ -178,7 +178,7 @@ void splitToGrid(const Mat& src, vector<Mat>& dest, Size grid, int borderRadius)
 
 using namespace std;
 template <class T>
-void mergeFromGrid_(vector<Mat>& src, Size beforeSize, Mat& dest, Size grid, int borderRadius)
+void mergeFromGrid_(Vector<Mat>& src, Size beforeSize, Mat& dest, Size grid, int borderRadius)
 {	
 	const int width = beforeSize.width;
 	const int height = beforeSize.height;
@@ -250,7 +250,7 @@ void mergeFromGrid_(vector<Mat>& src, Size beforeSize, Mat& dest, Size grid, int
 	Mat(dbuff(Rect(0,0,beforeSize.width, beforeSize.height))).copyTo(dest);
 }
 
-void mergeFromGrid_8u(vector<Mat>& src, Mat& dest, Size grid, int borderRadius)
+void mergeFromGrid_8u(Vector<Mat>& src, Mat& dest, Size grid, int borderRadius)
 {
 	const int width = (src[0].cols-2*borderRadius)*grid.width;
 	const int height = (src[0].rows-2*borderRadius)*grid.height;
@@ -314,7 +314,7 @@ void mergeFromGrid_8u(vector<Mat>& src, Mat& dest, Size grid, int borderRadius)
 	}
 }
 
-void mergeFromGrid(vector<Mat>& src,  Size beforeSize, Mat& dest, Size grid, int borderRadius)
+void mergeFromGrid(Vector<Mat>& src,  Size beforeSize, Mat& dest, Size grid, int borderRadius)
 {
 	int depth = src[0].depth();
 	if(depth==CV_8U)

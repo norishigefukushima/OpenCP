@@ -3946,7 +3946,7 @@ void bilateralFilter(const Mat& src, Mat& dst, Size kernelSize, double sigma_col
 {
 	if(dst.empty())dst.create(src.size(),src.type());
 
-	if(method== FILTER_CIRCLE)
+	if(method== FILTER_CIRCLE || method== FILTER_DEFAULT)
 	{
 		if(src.type()==CV_MAKE_TYPE(CV_8U,src.channels()))
 		{
@@ -4021,7 +4021,7 @@ void weightedBilateralFilterSP_32f( const Mat& src, Mat& weight, Mat& dst, Size 
 void weightedBilateralFilter(const Mat& src, Mat& weight, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method, int borderType)
 {
 	if(dst.empty())dst.create(src.size(),src.type());
-	if(method==FILTER_CIRCLE)
+	if(method==FILTER_CIRCLE|| method== FILTER_DEFAULT)
 	{
 		if(src.type()==CV_MAKE_TYPE(CV_8U,src.channels()))
 		{

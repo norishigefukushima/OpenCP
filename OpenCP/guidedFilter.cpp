@@ -351,7 +351,6 @@ static void divideSSE_float(Mat& src1, Mat& src2, Mat& dest)
 
 static void guidedFilterSrc1Guidance3SSE_(const Mat& src, const Mat& guidance, Mat& dest, const int radius,const float eps)
 {
-	cout<<"!!!";
 	if(src.channels()!=1 && guidance.channels()!=3)
 	{
 		cout<<"Please input gray scale image as src, and color image as guidance."<<endl;
@@ -362,11 +361,23 @@ static void guidedFilterSrc1Guidance3SSE_(const Mat& src, const Mat& guidance, M
 	split(guidance,I);
 
 	Mat temp;
-	src.convertTo(temp,CV_32F);
-	I[0].convertTo(If[0],CV_32F);
-	I[1].convertTo(If[1],CV_32F);
-	I[2].convertTo(If[2],CV_32F);
 
+	if(src.type()==CV_8U)
+	{
+		cvt8u32f(src,temp);
+		cvt8u32f(I[0],If[0]);
+		cvt8u32f(I[1],If[1]);
+		cvt8u32f(I[2],If[2]);
+	}
+	else
+	{
+		src.convertTo(temp,CV_32F);
+		I[0].convertTo(If[0],CV_32F);
+		I[1].convertTo(If[1],CV_32F);
+		I[2].convertTo(If[2],CV_32F);
+	}
+
+	
 	const Size ksize(2*radius+1,2*radius+1);
 	const Point PT(-1,-1);
 	const float e=eps;
@@ -391,7 +402,6 @@ static void guidedFilterSrc1Guidance3SSE_(const Mat& src, const Mat& guidance, M
 	Mat mean_Ip_r(imsize,CV_32F);
 	Mat mean_Ip_g(imsize,CV_32F);
 	Mat mean_Ip_b(imsize,CV_32F);
-
 	{
 		float* s0 = temp.ptr<float>(0);
 		float* s1 = If[0].ptr<float>(0);
@@ -1481,7 +1491,6 @@ void guidedFilterSrc1SSE_(const Mat& src, Mat& dest, const int radius,const floa
 	if(src.depth()==CV_8U)
 	{
 		cvt32f8u(x2,dest);
-		//x2.convertTo(dest,src.type());
 	}
 	else
 	{
@@ -1564,13 +1573,12 @@ void guidedFilter(const Mat& src,  Mat& dest, const int radius,const float eps)
 	}
 }
 
-
 class GuidedFilterInvoler : public cv::ParallelLoopBody
 {
 	Size imsize;
 	Size gsize;
-	vector<Mat> srcGrid;
-	vector<Mat> guideGrid;
+	Vector<Mat> srcGrid;
+	Vector<Mat> guideGrid;
 
 	Mat* dest2;
 	int r;
@@ -1581,7 +1589,7 @@ class GuidedFilterInvoler : public cv::ParallelLoopBody
 
 public:
 	~GuidedFilterInvoler()
-	{
+	{		
 		mergeFromGrid(srcGrid,imsize,*dest2,gsize,2*r);
 	}
 	GuidedFilterInvoler(const Mat& src_,Mat& dest_, int r_,float eps_, int numthread_): 
@@ -1616,7 +1624,6 @@ public:
 		else if(th<=32) gsize=Size(4,8);
 		else if(th<=64) gsize=Size(8,8);
 
-
 		splitToGrid(src_,srcGrid, gsize,2*r);
 		splitToGrid(guidance_,guideGrid, gsize,2*r);
 	}
@@ -1627,12 +1634,11 @@ public:
 		{
 			if(!isGuide)
 			{
-				Mat s = srcGrid[i];	
-				guidedFilter(s, s, r,eps);	
+				Mat s = srcGrid[i];
+				guidedFilter(s, s, r,eps);
 			}
 			else
 			{
-
 				Mat s = srcGrid[i];	
 				Mat g = guideGrid[i];	
 				guidedFilter(s, g,s, r,eps);
@@ -1641,10 +1647,9 @@ public:
 	}
 };
 
-
-void guidedFilterMultiCore(const Mat& src, Mat& dest, int r,float eps)
+void guidedFilterMultiCore(const Mat& src, Mat& dest, int r,float eps, int numcore)
 {
-	int th = cv::getNumThreads();
+	int th= (numcore<=0) ? cv::getNumThreads():numcore;
 
 	if(th==1) th=1;
 	else if(th<=2) th=2;
@@ -1655,14 +1660,13 @@ void guidedFilterMultiCore(const Mat& src, Mat& dest, int r,float eps)
 	else if(th<=64) th=64;
 
 	dest.create(src.size(),src.type());	
-
 	GuidedFilterInvoler body(src,dest,r,eps, th);	
 	parallel_for_(Range(0, th), body, th);
 }
 
-void guidedFilterMultiCore(const Mat& src, const Mat& guidance, Mat& dest, int r,float eps)
+void guidedFilterMultiCore(const Mat& src, const Mat& guidance, Mat& dest, int r,float eps, int numcore)
 {
-	int th = cv::getNumThreads();
+	int th= (numcore<=0) ? cv::getNumThreads(): numcore;	
 
 	if(th==1) th=1;
 	else if(th<=2) th=2;
@@ -1677,6 +1681,8 @@ void guidedFilterMultiCore(const Mat& src, const Mat& guidance, Mat& dest, int r
 	GuidedFilterInvoler body(src,guidance,dest,r,eps, th);	
 	parallel_for_(Range(0, th), body, th);
 }
+
+
 
 
 

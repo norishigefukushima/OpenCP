@@ -18,7 +18,7 @@ int main(int argc, char** argv)
 	Mat src = imread("img/lenna.png");
 	//Mat src = imread("Clipboard01.png");
 	
-	timeGuidedFilterTest(src);
+	//timeGuidedFilterTest(src);
 	//Mat src = imread("img/flower.png");
 
 	
@@ -27,6 +27,7 @@ int main(int argc, char** argv)
 	
 	eraseBoundary(src,10);
 	Mat mega;
+	//resize(src,mega,Size(1024,1024));
 	resize(src,mega,Size(1024,1024));
 
 	//guiSLICTest(src);

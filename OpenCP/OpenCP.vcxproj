@@ -130,7 +130,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <OpenMPSupport>true</OpenMPSupport>
+      <OpenMPSupport>false</OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -152,6 +152,7 @@
     <ClCompile Include="denoise\denoiseTest.cpp" />
     <ClCompile Include="detailEnhancement.cpp" />
     <ClCompile Include="detailEnhancement\detailEnhancementTest.cpp" />
+    <ClCompile Include="domainTransformFilter.cpp" />
     <ClCompile Include="draw.cpp" />
     <ClCompile Include="guidedFilter.cpp" />
     <ClCompile Include="guidedFilter\guidedFilterTest.cpp" />

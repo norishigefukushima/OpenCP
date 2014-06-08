@@ -2,11 +2,8 @@
 #include <fstream>
 using namespace std;
 
-void guiGuidedFilterTest(Mat& src_)
+void guiGuidedFilterTest(Mat& src)
 {
-	Mat src;
-	if(src_.channels()==3) cvtColor(src_,src, COLOR_BGR2GRAY);
-
 	Mat dest,dest2;
 
 	string wname = "non local means";
@@ -19,7 +16,7 @@ void guiGuidedFilterTest(Mat& src_)
 	int sigma_space10 = 120; createTrackbar("sigma_space",wname,&sigma_color10,2550);
 	int r = 4; createTrackbar("r",wname,&r,100);
 
-	int tr = 1; createTrackbar("tr",wname,&tr,20);
+	int core = 1; createTrackbar("core",wname,&core,24);
 	
 	int noise_s10 = 100; createTrackbar("noise",wname,&noise_s10,2550);
 	int key = 0;
@@ -33,7 +30,6 @@ void guiGuidedFilterTest(Mat& src_)
 		float sigma_color = sigma_color10/10.f;
 		float sigma_space = sigma_space10/10.f;
 		int d = 2*r+1;
-		int td = 2*tr+1;
 
 		Mat noise;
 		addNoise(src,noise,noise_s10/10.0);
@@ -48,12 +44,13 @@ void guiGuidedFilterTest(Mat& src_)
 		else if(sw==1)
 		{	
 			CalcTime t("guided filter tbb");
-			guidedFilterMultiCore(noise, dest,r,sigma_color*sigma_color);
+			guidedFilterMultiCore(noise, dest,r,sigma_color*sigma_color,core);
 		}
 		else if(sw==2)
 		{	
-			CalcTime t("guided filter tbb");
-			guidedFilterMultiCore(noise, src, dest,r,sigma_color*sigma_color);
+			CalcTime t("bilateral filter");
+			domainTransformFilter(noise,  dest, 0.333*r,sigma_color,3);
+			//bilateralFilter(noise,  dest,Size(2*r+1,2*r+1),sigma_color,0.333*r,FILTER_DEFAULT);
 		}
 
 
@@ -81,7 +78,7 @@ void timeGuidedFilterTest(Mat& src)
 		for(int n=0;n<5;n++)
 		{
 			CalcTime t("a",TIME_MSEC,false);
-		guidedFilter(src,dest,20,0.1);
+		guidedFilter(src,dest,20,0.1f);
 		st.push_back(t.getTime());
 		}
 		cout<<i<<" "<<st.getMedian()<<endl;
