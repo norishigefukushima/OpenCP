@@ -22,12 +22,12 @@ void guiSLICTest(Mat& src)
 		{
 			CalcTime t("slic all");
 			cvtColor(src,lab,COLOR_BGR2Lab);
-			SLIC(lab, seg, S, m, mrs/100.0,iter);
+			SLIC(lab, seg, S, (float)m, mrs/100.0f,iter);
 		}
 		drawSLIC(src,seg,dest,true,Scalar(255,255,0));
 		
 		Mat dest2;
-		SLIC(lab, seg, S*2, m, mrs/100.0,iter);
+		SLIC(lab, seg, S*2, (float)m, mrs/100.f,iter);
 		drawSLIC(src,seg,dest2,true,Scalar(255,255,0));
 
 		patchBlendImage(dest, dest2,show, Scalar(255,255,255));

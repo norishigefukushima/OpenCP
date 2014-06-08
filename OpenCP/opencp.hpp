@@ -158,6 +158,10 @@ public:
 void addNoise(Mat&src, Mat& dest, double sigma, double solt_papper_rate=0.0);
 
 //image processing
+//arithmetics
+void pow_fmath(const float a  , const Mat&  src , Mat & dest);
+void pow_fmath(const Mat& src , const float a   , Mat & dest);
+void pow_fmath(const Mat& src1, const Mat&  src2, Mat & dest);
 
 //bit convert
 void cvt32f8u(const Mat& src, Mat& dest);
@@ -224,6 +228,8 @@ typedef enum
 }DTF_METHOD;
 
 void domainTransformFilter(cv::Mat& img, cv::Mat& out, double sigma_s, double sigma_r, int maxiter, int method=DTF_RF);
+void domainTransformFilterBase(const Mat& img, Mat& dest, double sigma_s, double sigma_r, int maxiter, int method=DTF_RF);
+void domainTransformFilterBase(const Mat& img, const Mat& guide, Mat& dest, double sigma_s, double sigma_r, int maxiter, int method=DTF_RF);
 
 void recursiveBilateralFilter(Mat& src, Mat& dest, float sigma_range, float sigma_spatial, int method=0);
 class RecursiveBilateralFilter

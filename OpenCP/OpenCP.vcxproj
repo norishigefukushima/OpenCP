@@ -141,6 +141,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="alphaBlend.cpp" />
+    <ClCompile Include="arithmetic.cpp" />
     <ClCompile Include="bilateralFilter.cpp" />
     <ClCompile Include="binalyWeightedRangeFilter.cpp" />
     <ClCompile Include="birateralFilter\binalyWeightedRangeFilterTest.cpp" />
@@ -153,6 +154,7 @@
     <ClCompile Include="detailEnhancement.cpp" />
     <ClCompile Include="detailEnhancement\detailEnhancementTest.cpp" />
     <ClCompile Include="domainTransformFilter.cpp" />
+    <ClCompile Include="domainTransformFilter\domainTransformFilterTest.cpp" />
     <ClCompile Include="draw.cpp" />
     <ClCompile Include="guidedFilter.cpp" />
     <ClCompile Include="guidedFilter\guidedFilterTest.cpp" />
@@ -173,6 +175,7 @@
     <ClCompile Include="timer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="fmath.hpp" />
     <ClInclude Include="opencp.hpp" />
     <ClInclude Include="test.hpp" />
   </ItemGroup>

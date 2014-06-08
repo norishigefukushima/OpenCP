@@ -1,7 +1,6 @@
 #include "opencp.hpp"
 #include <opencv2/core/internal.hpp>
-//#include "fmath.hpp"
-//using namespace fmath;
+
 
 //#define SSE_FUNC
 
@@ -1025,7 +1024,8 @@ void domainTransformFilter(cv::Mat& src, cv::Mat& dst, double sigma_s, double si
 
 
 // Recursive filter for vertical direction
-void recursiveFilterVerticalB(cv::Mat& out, cv::Mat& dct) {
+void recursiveFilterVerticalB(cv::Mat& out, cv::Mat& dct) 
+{
 	int width = out.cols;
 	int height = out.rows;
 	int dim = out.channels();
@@ -1057,7 +1057,8 @@ void recursiveFilterVerticalB(cv::Mat& out, cv::Mat& dct) {
 }
 
 // Recursive filter for horizontal direction
-void recursiveFilterHorizontalB(cv::Mat& out, cv::Mat& dct) {
+void recursiveFilterHorizontalB(cv::Mat& out, cv::Mat& dct) 
+{
 	int width = out.cols;
 	int height = out.rows;
 	int dim = out.channels();
@@ -1066,7 +1067,8 @@ void recursiveFilterHorizontalB(cv::Mat& out, cv::Mat& dct) {
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-	for(int y=0; y<height; y++) {
+	for(int y=0; y<height; y++)
+	{
 		for(int x=1; x<width; x++)
 		{
 			float p = dct.at<float>(y, x-1);
@@ -1145,6 +1147,149 @@ void domainTransformFilterbase(cv::Mat& src, cv::Mat& dest, double sigma_s, doub
 	{
 		recursiveFilterHorizontalB(out, dctx);
 		recursiveFilterVerticalB(out, dcty);
+	}
+	out.convertTo(dest,src.type());
+}
+
+void powMat(const float a , Mat& src, Mat & dest)
+{
+	if(dest.empty())dest.create(src.size(),CV_32F);
+
+	int width = src.cols;
+	int height = src.rows;
+	for(int y=0; y<height; y++)
+	{
+		for(int x=0; x<width; x++)  
+		{
+			dest.at<float>(y, x) = cv::pow(a, src.at<float>(y,x)); 
+		}
+	}
+}
+
+// Domain transform filtering
+void domainTransformFilterBase(const Mat& src, Mat& dest, double sigma_s, double sigma_r, int maxiter, int method)
+{
+	Mat img,out;
+	src.convertTo(img, CV_MAKETYPE(CV_32F, src.channels()));
+
+	int width = img.cols;
+	int height = img.rows;
+	int dim = img.channels();
+
+	// compute derivatives of transformed domain "dct"
+	// and a = exp(-sqrt(2) / sigma_H) to the power of "dct"
+	cv::Mat dctx = cv::Mat::zeros(height, width-1, CV_32FC1);
+	cv::Mat dcty = cv::Mat::zeros(height-1, width, CV_32FC1);
+	float ratio = (float)(sigma_s / sigma_r);
+
+	for(int y=0; y<height; y++)
+	{
+		for(int x=0; x<width-1; x++)
+		{
+			float accum = 0.0f;
+			for(int c=0; c<dim; c++)
+			{
+				accum += abs(img.at<float>(y, (x+1)*dim+c) - img.at<float>(y, x*dim+c)); 
+			}
+			dctx.at<float>(y, x) = 1.0f + ratio * accum; 
+		}
+	}
+
+	for(int y=0; y<height-1; y++)
+	{
+		for(int x=0; x<width; x++)  
+		{
+			float accum = 0.0f;
+			for(int c=0; c<dim; c++)
+			{
+				accum += abs(img.at<float>(y+1, x*dim+c) - img.at<float>(y, x*dim+c)); 
+			}
+			
+			dcty.at<float>(y, x) = 1.0f + ratio * accum; 
+		}
+	}
+	
+	// Apply recursive folter maxiter times
+	img.convertTo(out, CV_MAKETYPE(CV_32F, dim));
+
+	int i=maxiter;
+	Mat amat;
+	while(i--)
+	{
+		float sigma_h = (float) (sigma_s * sqrt(3.0) * pow(2.0,(maxiter - (i+1))) / sqrt(pow(4.0,maxiter) -1));
+		float a = (float)exp(-sqrt(2.0) / sigma_h);
+
+		//pow_fmath(a,dctx, amat);
+		powMat(a,dctx, amat);
+		recursiveFilterHorizontalB(out, amat);
+
+		powMat(a,dcty, amat);
+		//pow_fmath(a,dcty, amat);
+		recursiveFilterVerticalB(out, amat);
+	}
+	out.convertTo(dest,src.type());
+}
+
+// Domain transform filtering
+void domainTransformFilterBase(const Mat& src, const Mat& guide, Mat& dest, double sigma_s, double sigma_r, int maxiter, int method)
+{
+	Mat img,out,joint;
+	src.convertTo(img, CV_MAKETYPE(CV_32F, src.channels()));
+	guide.convertTo(joint, CV_MAKETYPE(CV_32F, src.channels()));
+	int width = img.cols;
+	int height = img.rows;
+	int dim = img.channels();
+
+	// compute derivatives of transformed domain "dct"
+	cv::Mat dctx = cv::Mat::zeros(height, width-1, CV_32FC1);
+	cv::Mat dcty = cv::Mat::zeros(height-1, width, CV_32FC1);
+	float ratio = (float)(sigma_s / sigma_r);
+
+	for(int y=0; y<height; y++)
+	{
+		for(int x=0; x<width-1; x++)
+		{
+			float accum = 0.0f;
+			for(int c=0; c<dim; c++)
+			{
+				accum += abs(joint.at<float>(y, (x+1)*dim+c) - joint.at<float>(y, x*dim+c)); 
+			}
+			dctx.at<float>(y, x) = 1.0f + ratio * accum; 
+		}
+	}
+
+	for(int y=0; y<height-1; y++)
+	{
+		for(int x=0; x<width; x++)  
+		{
+			float accum = 0.0f;
+			for(int c=0; c<dim; c++)
+			{
+				accum += abs(joint.at<float>(y+1, x*dim+c) - joint.at<float>(y, x*dim+c)); 
+			}
+			
+			dcty.at<float>(y, x) = 1.0f + ratio * accum; 
+		}
+	}
+	
+	// Apply recursive folter maxiter times
+	img.convertTo(out, CV_MAKETYPE(CV_32F, dim));
+
+	int i=maxiter;
+	Mat amat;
+	while(i--)
+	{
+		float sigma_h = (float) (sigma_s * sqrt(3.0) * pow(2.0,(maxiter - (i+1))) / sqrt(pow(4.0,maxiter) -1));
+		float a = (float)exp(-sqrt(2.0) / sigma_h);
+
+		//pow_fmath(a,dctx, amat);
+		// and a = exp(-sqrt(2) / sigma_H) to the power of "dct"
+		powMat(a,dctx, amat);
+		recursiveFilterHorizontalB(out, amat);
+
+		powMat(a,dcty, amat);
+		//pow_fmath(a,dcty, amat);
+		recursiveFilterVerticalB(out, amat);
 	}
 	out.convertTo(dest,src.type());
 }

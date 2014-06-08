@@ -120,12 +120,21 @@
     <ClCompile Include="domainTransformFilter.cpp">
       <Filter>ソース ファイル\filter</Filter>
     </ClCompile>
+    <ClCompile Include="domainTransformFilter\domainTransformFilterTest.cpp">
+      <Filter>ソース ファイル\test</Filter>
+    </ClCompile>
+    <ClCompile Include="arithmetic.cpp">
+      <Filter>ソース ファイル\util</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="opencp.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="test.hpp">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="fmath.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
