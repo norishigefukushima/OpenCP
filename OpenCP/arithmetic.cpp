@@ -4,10 +4,42 @@
 #include "fmath.hpp"
 using namespace fmath;
 
+// if you do not use fmath.hpp
+/*
+// Fast SSE pow for range [0, 1]
+// Adapted from C. Schlick with one more iteration each for exp(x) and ln(x)
+// 8 muls, 5 adds, 1 rcp
+inline __m128 _mm_pow01_ps(__m128 x, __m128 y)
+{
+	static const __m128 fourOne = _mm_set1_ps(1.0f);
+	static const __m128 fourHalf = _mm_set1_ps(0.5f);
+
+	__m128 a = _mm_sub_ps(fourOne, y);
+	__m128 b = _mm_sub_ps(x, fourOne);
+	__m128 aSq = _mm_mul_ps(a, a);
+	__m128 bSq = _mm_mul_ps(b, b);
+	__m128 c = _mm_mul_ps(fourHalf, bSq);
+	__m128 d = _mm_sub_ps(b, c);
+	__m128 dSq = _mm_mul_ps(d, d);
+	__m128 e = _mm_mul_ps(aSq, dSq);
+	__m128 f = _mm_mul_ps(a, d);
+	__m128 g = _mm_mul_ps(fourHalf, e);
+	__m128 h = _mm_add_ps(fourOne, f);
+	__m128 i = _mm_add_ps(h, g);	
+	__m128 iRcp = _mm_rcp_ps(i);
+	//__m128 iRcp = _mm_rcp_22bit_ps(i);
+	__m128 result = _mm_mul_ps(x, iRcp);
+
+	return result;
+}
+#define _mm_pow_ps _mm_pow01_ps
+*/
+
 inline __m128 _mm_pow_ps(__m128 a, __m128 b)
 {
 	return exp_ps(_mm_mul_ps(b,log_ps(a)));
 }
+
 
 void pow_fmath(const float a , const Mat& src, Mat & dest)
 {

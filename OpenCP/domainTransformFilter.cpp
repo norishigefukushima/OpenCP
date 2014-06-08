@@ -20,55 +20,6 @@ double fastPow(double a, double b)
 	return u.d;
 }
 
-#ifdef SSE_FUNC
-
-#define _mm_pow_ps _mm_powel_ps //accurate pow
-//#define _mm_pow_ps _mm_pow01_ps //fast pow
-
-inline __m128 _mm_powel_ps(__m128 a, __m128 b)
-{
-	return exp_ps(_mm_mul_ps(b,log_ps(a)));
-}
-
-//refine rcp
-inline __m128 _mm_rcp_22bit_ps(__m128 a )
-{
-	__m128 xm0 = a;
-	__m128 xm1 = _mm_rcp_ps(xm0);
-	xm0 = _mm_mul_ps( _mm_mul_ps( xm0, xm1 ), xm1 );
-	xm1 = _mm_add_ps( xm1, xm1 );
-	return _mm_sub_ps( xm1, xm0 );
-}
-
-// Fast SSE pow for range [0, 1]
-// Adapted from C. Schlick with one more iteration each for exp(x) and ln(x)
-// 8 muls, 5 adds, 1 rcp
-inline __m128 _mm_pow01_ps(__m128 x, __m128 y)
-{
-	static const __m128 fourOne = _mm_set1_ps(1.0f);
-	static const __m128 fourHalf = _mm_set1_ps(0.5f);
-
-	__m128 a = _mm_sub_ps(fourOne, y);
-	__m128 b = _mm_sub_ps(x, fourOne);
-	__m128 aSq = _mm_mul_ps(a, a);
-	__m128 bSq = _mm_mul_ps(b, b);
-	__m128 c = _mm_mul_ps(fourHalf, bSq);
-	__m128 d = _mm_sub_ps(b, c);
-	__m128 dSq = _mm_mul_ps(d, d);
-	__m128 e = _mm_mul_ps(aSq, dSq);
-	__m128 f = _mm_mul_ps(a, d);
-	__m128 g = _mm_mul_ps(fourHalf, e);
-	__m128 h = _mm_add_ps(fourOne, f);
-	__m128 i = _mm_add_ps(h, g);	
-	__m128 iRcp = _mm_rcp_ps(i);
-	//__m128 iRcp = _mm_rcp_22bit_ps(i);
-	__m128 result = _mm_mul_ps(x, iRcp);
-
-	return result;
-}
-#endif
-
-
 // domain transform filter
 
 //RF implimentations
@@ -638,97 +589,97 @@ public:
 		int height = img->rows/dim;
 		int ssewidth = ((width)/4);
 
-#ifdef SSE_FUNC
+		#ifdef SSE_FUNC
 		const int CV_DECL_ALIGNED(16) v32f_absmask[] = { 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff };
 		const __m128 mratio = _mm_set1_ps(ratio);
 		const __m128 ones = _mm_set1_ps(1.f);
 		const __m128 ma = _mm_set1_ps(a);
-#endif
+		#endif
 
 		// for last line
 		if(dim==1)
 		{
 
-#ifdef SSE_FUNC
-			float* s = img->ptr<float>(height-1);
-			float* dx = dctx->ptr<float>(height-1);
-			for(int x=ssewidth; x--;)
-			{
-				__m128 ms = _mm_load_ps(s);
-				__m128 msp = _mm_loadu_ps(s+1);
+		#ifdef SSE_FUNC
+		float* s = img->ptr<float>(height-1);
+		float* dx = dctx->ptr<float>(height-1);
+		for(int x=ssewidth; x--;)
+		{
+		__m128 ms = _mm_load_ps(s);
+		__m128 msp = _mm_loadu_ps(s+1);
 
-				__m128 w =  _mm_and_ps(_mm_sub_ps(ms,msp), *(const __m128*)v32f_absmask);
-				__m128 d = _mm_pow_ps(ma,_mm_add_ps(ones, _mm_mul_ps(mratio,w)));
-				_mm_stream_ps(dx,d);
+		__m128 w =  _mm_and_ps(_mm_sub_ps(ms,msp), *(const __m128*)v32f_absmask);
+		__m128 d = _mm_pow_ps(ma,_mm_add_ps(ones, _mm_mul_ps(mratio,w)));
+		_mm_stream_ps(dx,d);
 
-				s+=4;
-				dx+=4;
-			}
-#else
-			float* v = img->ptr<float>(height-1);
+		s+=4;
+		dx+=4;
+		}
+		#else
+		float* v = img->ptr<float>(height-1);
 
-			float* dx = dctx->ptr<float>(height-1);
-			for(int x=0; x<width-1; x++)
-			{
-				float accumx = 0.0f;
-				accumx += abs(v[x]-v[x+1]);
+		float* dx = dctx->ptr<float>(height-1);
+		for(int x=0; x<width-1; x++)
+		{
+		float accumx = 0.0f;
+		accumx += abs(v[x]-v[x+1]);
 
-#ifdef USE_FAST_POW
-				*dx = (float)fastPow(a, 1.0f + ratio * accumx); 
-#else
-				*dx = (float)cv::pow(a, 1.0f + ratio * accumx); 
-#endif
-				dx++;
-			}
-#endif
+		#ifdef USE_FAST_POW
+		*dx = (float)fastPow(a, 1.0f + ratio * accumx); 
+		#else
+		*dx = (float)cv::pow(a, 1.0f + ratio * accumx); 
+		#endif
+		dx++;
+		}
+		#endif
 		}
 		else if(dim==3)
 		{
-			const int istep = height*width;
-			float* b = img->ptr<float>(height-1);
-			float* g = b+istep;
-			float* r = g+istep;
+		const int istep = height*width;
+		float* b = img->ptr<float>(height-1);
+		float* g = b+istep;
+		float* r = g+istep;
 
-			float* dx = dctx->ptr<float>(height-1);
+		float* dx = dctx->ptr<float>(height-1);
 
-#ifdef SSE_FUNC
-			for(int x=ssewidth; x--;)
-			{
-				__m128 ms = _mm_load_ps(b);
-				__m128 msp = _mm_loadu_ps(b+1);//h diff
-				__m128 w =  _mm_and_ps(_mm_sub_ps(ms,msp), *(const __m128*)v32f_absmask);
+		#ifdef SSE_FUNC
+		for(int x=ssewidth; x--;)
+		{
+		__m128 ms = _mm_load_ps(b);
+		__m128 msp = _mm_loadu_ps(b+1);//h diff
+		__m128 w =  _mm_and_ps(_mm_sub_ps(ms,msp), *(const __m128*)v32f_absmask);
 
-				ms = _mm_load_ps(g);
-				msp = _mm_loadu_ps(g+1);//h diff
-				w =  _mm_add_ps(w, _mm_and_ps(_mm_sub_ps(ms,msp), *(const __m128*)v32f_absmask));
+		ms = _mm_load_ps(g);
+		msp = _mm_loadu_ps(g+1);//h diff
+		w =  _mm_add_ps(w, _mm_and_ps(_mm_sub_ps(ms,msp), *(const __m128*)v32f_absmask));
 
-				ms = _mm_load_ps(r);
-				msp = _mm_loadu_ps(r+1);//h diff
-				w =  _mm_add_ps(w, _mm_and_ps(_mm_sub_ps(ms,msp), *(const __m128*)v32f_absmask));
+		ms = _mm_load_ps(r);
+		msp = _mm_loadu_ps(r+1);//h diff
+		w =  _mm_add_ps(w, _mm_and_ps(_mm_sub_ps(ms,msp), *(const __m128*)v32f_absmask));
 
-				_mm_stream_ps(dx, _mm_pow_ps(ma,_mm_add_ps(ones, _mm_mul_ps(mratio,w))));
+		_mm_stream_ps(dx, _mm_pow_ps(ma,_mm_add_ps(ones, _mm_mul_ps(mratio,w))));
 
-				b+=4;
-				g+=4;
-				r+=4;
-				dx+=4;
-			}
-#else
-			for(int x=0; x<width-1; x++)
-			{
-				float accumx = 0.0f;
-				accumx += abs(b[x]-b[x+1]);
-				accumx += abs(g[x]-g[x+1]);
-				accumx += abs(r[x]-r[x+1]);
+		b+=4;
+		g+=4;
+		r+=4;
+		dx+=4;
+		}
+		#else
+		for(int x=0; x<width-1; x++)
+		{
+		float accumx = 0.0f;
+		accumx += abs(b[x]-b[x+1]);
+		accumx += abs(g[x]-g[x+1]);
+		accumx += abs(r[x]-r[x+1]);
 
-#ifdef USE_FAST_POW
-				*dx = (float)fastPow(a, 1.0f + ratio * accumx); 
-#else
-				*dx = (float)cv::pow(a, 1.0f + ratio * accumx); 
-#endif
-				dx++;
-			}
-#endif
+		#ifdef USE_FAST_POW
+		*dx = (float)fastPow(a, 1.0f + ratio * accumx); 
+		#else
+		*dx = (float)cv::pow(a, 1.0f + ratio * accumx); 
+		#endif
+		dx++;
+		}
+		#endif
 		}
 		*/
 	}
@@ -951,21 +902,21 @@ void domainTransformFilter_RF_(cv::Mat& src, cv::Mat& dst, double sigma_space, d
 
 	for(int i=0;i<maxiter;i++)
 	{
-		DomainTransformRFHorizontal_32F_Invoker H(img, dctx, dim);
-		parallel_for_(Range(0, height), H);
+	DomainTransformRFHorizontal_32F_Invoker H(img, dctx, dim);
+	parallel_for_(Range(0, height), H);
 
-		DomainTransformRFVertical_32F_Invoker V(img, dcty, dim);
-		parallel_for_(Range(0, width/4), V);			
+	DomainTransformRFVertical_32F_Invoker V(img, dcty, dim);
+	parallel_for_(Range(0, width/4), V);			
 	}*/
 
-	
+
 
 	for(int i=0;i<maxiter;i++)
 	{
 		float sigma_h = (float) (sigma_s * sqrt(3.0) * pow(2.0,(maxiter - (i+1))) / sqrt(pow(4.0,maxiter) -1));
 		float a = (float)exp(-sqrt(2.0) / sigma_h);
 		DomainTransformRFInit_32F_Invoker body(img, dctx, dcty, a, ratio, dim);
-	parallel_for_(Range(0, height-1), body);
+		parallel_for_(Range(0, height-1), body);
 
 		DomainTransformRFHorizontal_32F_Invoker H(img, dctx, dim);
 		parallel_for_(Range(0, height), H);
@@ -1019,6 +970,8 @@ void domainTransformFilter(cv::Mat& src, cv::Mat& dst, double sigma_s, double si
 	}
 }
 
+
+
 /////////////////////////////////////////////////////////////////////////////////////////
 //for base implimentation of recursive implimentation
 
@@ -1030,10 +983,6 @@ void recursiveFilterVerticalB(cv::Mat& out, cv::Mat& dct)
 	int height = out.rows;
 	int dim = out.channels();
 
-	// if openmp is available, compute in parallel
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
 	for(int x=0; x<width; x++)
 	{
 		for(int y=1; y<height; y++)
@@ -1063,10 +1012,6 @@ void recursiveFilterHorizontalB(cv::Mat& out, cv::Mat& dct)
 	int height = out.rows;
 	int dim = out.channels();
 
-	// if openmp is available, compute in parallel
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
 	for(int y=0; y<height; y++)
 	{
 		for(int x=1; x<width; x++)
@@ -1089,68 +1034,6 @@ void recursiveFilterHorizontalB(cv::Mat& out, cv::Mat& dct)
 	}
 }
 
-
-// Domain transform filtering
-void domainTransformFilterbase(cv::Mat& src, cv::Mat& dest, double sigma_s, double sigma_r, int maxiter)
-{
-	Mat img,out;
-	src.convertTo(img, CV_MAKETYPE(CV_32F, src.channels()));
-
-	int width = img.cols;
-	int height = img.rows;
-	int dim = img.channels();
-
-	// compute derivatives of transformed domain "dct"
-	// and a = exp(-sqrt(2) / sigma_H) to the power of "dct"
-	cv::Mat dctx = cv::Mat::zeros(height, width-1, CV_32FC1);
-	cv::Mat dcty = cv::Mat::zeros(height-1, width, CV_32FC1);
-	float ratio = (float)(sigma_s / sigma_r);
-
-	float a = (float)exp(-sqrt(2.0) / sigma_s);
-	for(int y=0; y<height; y++)
-	{
-		for(int x=0; x<width-1; x++)
-		{
-			float accum = 0.0f;
-			for(int c=0; c<dim; c++)
-			{
-				accum += abs(img.at<float>(y, (x+1)*dim+c) - img.at<float>(y, x*dim+c)); 
-			}
-#ifdef USE_FAST_POW
-			dctx.at<float>(y, x) = fastPow(a, 1.0f + ratio * accum); 
-#else
-			dctx.at<float>(y, x) = cv::pow(a, 1.0f + ratio * accum); 
-#endif
-		}
-	}
-
-	for(int y=0; y<height-1; y++)
-	{
-		for(int x=0; x<width; x++)  
-		{
-			float accum = 0.0f;
-			for(int c=0; c<dim; c++)
-			{
-				accum += abs(img.at<float>(y+1, x*dim+c) - img.at<float>(y, x*dim+c)); 
-			}
-#ifdef USE_FAST_POW
-			dcty.at<float>(y, x) = fastPow(a, 1.0f + ratio * accum); 
-#else
-			dcty.at<float>(y, x) = cv::pow(a, 1.0f + ratio * accum); 
-#endif
-		}
-	}
-
-	// Apply recursive folter maxiter times
-	img.convertTo(out, CV_MAKETYPE(CV_32F, dim));
-	while(maxiter--)
-	{
-		recursiveFilterHorizontalB(out, dctx);
-		recursiveFilterVerticalB(out, dcty);
-	}
-	out.convertTo(dest,src.type());
-}
-
 void powMat(const float a , Mat& src, Mat & dest)
 {
 	if(dest.empty())dest.create(src.size(),CV_32F);
@@ -1166,7 +1049,7 @@ void powMat(const float a , Mat& src, Mat & dest)
 	}
 }
 
-// Domain transform filtering
+// Domain transform filtering: baseline implimentation for optimization
 void domainTransformFilterBase(const Mat& src, Mat& dest, double sigma_s, double sigma_r, int maxiter, int method)
 {
 	Mat img,out;
@@ -1204,11 +1087,11 @@ void domainTransformFilterBase(const Mat& src, Mat& dest, double sigma_s, double
 			{
 				accum += abs(img.at<float>(y+1, x*dim+c) - img.at<float>(y, x*dim+c)); 
 			}
-			
+
 			dcty.at<float>(y, x) = 1.0f + ratio * accum; 
 		}
 	}
-	
+
 	// Apply recursive folter maxiter times
 	img.convertTo(out, CV_MAKETYPE(CV_32F, dim));
 
@@ -1230,7 +1113,7 @@ void domainTransformFilterBase(const Mat& src, Mat& dest, double sigma_s, double
 	out.convertTo(dest,src.type());
 }
 
-// Domain transform filtering
+// Domain transform filtering: baseline implimentation for optimization
 void domainTransformFilterBase(const Mat& src, const Mat& guide, Mat& dest, double sigma_s, double sigma_r, int maxiter, int method)
 {
 	Mat img,out,joint;
@@ -1267,14 +1150,15 @@ void domainTransformFilterBase(const Mat& src, const Mat& guide, Mat& dest, doub
 			{
 				accum += abs(joint.at<float>(y+1, x*dim+c) - joint.at<float>(y, x*dim+c)); 
 			}
-			
+
 			dcty.at<float>(y, x) = 1.0f + ratio * accum; 
 		}
 	}
-	
-	// Apply recursive folter maxiter times
+
+
 	img.convertTo(out, CV_MAKETYPE(CV_32F, dim));
 
+	// Apply recursive folter maxiter times
 	int i=maxiter;
 	Mat amat;
 	while(i--)
