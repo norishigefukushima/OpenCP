@@ -28,21 +28,21 @@ The *method* has following options:　　
 
 **void jointBilateralFilter(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method, int borderType)**  
 * Mat& src: filtering target image.    
-* Nat& guide: guidance image for joint birateral filtering.    
-* Other argements are same as the birateral filter function.  
+* Nat& guide: guidance image for joint bilateral filtering.    
+* Other argements are same as the bilateral filter function.  
 
-The function is implimentation of papers[3,4]. Paper[3] calls this filter as joint birateral filter, and paper[4] calls this filter cross birateral filter.  
+The function is implementation of papers[3,4]. Paper[3] calls this filter as joint bilateral filter, and paper[4] calls this filter cross bilateral filter.  
 
 
 **void binalyWeightedRangeFilter(const Mat& src, Mat& dst, Size kernelSize, float threshold, int method=BILATERAL_DEFAULT, int borderType=cv::BORDER_REPLICATE)**  
 * Mat& src: filtering target image.  
 * Size kernelSize: kernel size.  
 * float threshold: if a value <threshold, then the weight of kernel is 1 otherwise, 0.  
-* Other argements are same as the birateral filter function.  
+* Other argements are same as the bilateral filter function.  
 
 This filter is A weighted mean filter: domain kernel is binary (0 or 1), and spatial kernel is constant (1). 
 The filter is a case of the epsilon filter. The filter is used for;    
-* a simlified birateral filter (faster than the birateral filter),     
+* a simlified bilateral filter (faster than the bilateral filter),     
 * depth-map range interporation,    
 * an approximation of orthogonal integral images for cross based local stereo matching.   
 
@@ -51,12 +51,12 @@ The filter is a case of the epsilon filter. The filter is used for;
 * This filter is jointly filtering version of the binalyWeightedRangeFilter.
     
 The filter is a case of the epsilon filter. The filter is used for;   
-* a simlified joint birateral filter (faster than the birateral filter),   
+* a simlified joint bilateral filter (faster than the bilateral filter),   
 * depth-map estimation for adaptive kernel,    
 * mosquite noise reduction.  
 
 
-Example of birateral filter: computational speed
+Example of bilateral filter: computational speed
 ------------------------------------------------
 Computational time for a 1M pixel (1024 * 1024) and color image with following methods:  
 * OpenCV implimentation  
@@ -67,16 +67,16 @@ Computational time for a 1M pixel (1024 * 1024) and color image with following m
 each median value in 10 times trials is plotted.  
 **Tested on Dual CPU of Intel Xeon X5690 3.47Ghz (12 core * HT), 64bit OS, Visual Studio 2012's compiler**  
 
-![birateral](birateral_time.png "birateraltime")
+![bilateral](bilateral_time.png "bilateraltime")
 
-Example of joint birateral filter: flash-no-flash photography  
+Example of joint bilateral filter: flash-no-flash photography  
 -------------------------------------------------------------
 
-![jbirateralinput](fnof.png "flash")  
+![jbilateralinput](fnof.png "flash")  
 left upper: non flash,  right down: flash  
 
-![jbirateral](jointbirateralfilter.png "jointbirateral")  
-left upper: result of birateral filter,  right down: result of joint birateral filter  
+![jbilateral](jointbilateralfilter.png "jointbilateral")  
+left upper: result of bilateral filter,  right down: result of joint bilateral filter  
 
 
 Example of binary weighted range filter: range value interpolation of depth map  
