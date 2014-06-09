@@ -25,7 +25,7 @@ int main(int argc, char** argv)
 	//Mat src = imread("img/kodim22.png");
 	//Mat src = imread("img/teddy_view1.png");
 	
-	eraseBoundary(src,10);
+	//eraseBoundary(src,10);
 	Mat mega;
 	//resize(src,mega,Size(1024,1024));
 	resize(src,mega,Size(1024,1024));
