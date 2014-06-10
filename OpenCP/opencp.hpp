@@ -243,6 +243,21 @@ void domainTransformFilterBase(const Mat& img, const Mat& guide, Mat& dest, doub
 void domainTransformFilterFast(const Mat& src, const Mat& guide, Mat& dest, double sigma_s, double sigma_r, int maxiter, int method);
 void domainTransformFilterFast2(const Mat& src, const Mat& guide, Mat& dest, double sigma_s, double sigma_r, int maxiter, int method);
 
+class DomainTransformFilter
+{
+	Mat img;
+	Mat joint;
+	Mat rgba;
+	Mat dctx;
+	Mat dcty;
+
+public:
+	DomainTransformFilter();
+	void operator()(const Mat& src, const Mat& guide, Mat& dest, double sigma_s, double sigma_r, int maxiter, int method);
+};
+
+
+
 void recursiveBilateralFilter(Mat& src, Mat& dest, float sigma_range, float sigma_spatial, int method=0);
 class RecursiveBilateralFilter
 {
