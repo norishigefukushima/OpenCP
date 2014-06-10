@@ -12,9 +12,11 @@ Todo
   + real-time O(1) bilateral
 * add dxt thresholding for denoising
 * add super resolution demo for iterative back projection.   
-* add recursive birateral filter for gray, more efficient implimentaion, line by line chatching    
+* add recursive birateral filter for gray, more efficient implimentaion, line by line chatching?    
 * add domain transform filter  
-  * add test for domain transform filter.  
+  * ~~add test for domain transform filter.6/11~~
+  * ~~add  various simd implementation for RF filter.6/11~~  
+  * add SIMD V-direction ver.  
   * add other implimentation of domain transform filter  
 * write detail enhancement document
 * add detail enhancement class.  
