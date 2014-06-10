@@ -182,7 +182,10 @@ void cvtColorBGR2PLANE(const Mat& src, Mat& dest);
 void cvtColorPLANE2BGR(const Mat& src, Mat& dest);
 
 void cvtColorBGRA2BGR(const Mat& src, Mat& dest);
+void cvtColorBGRA32f2BGR8u(const Mat& src, Mat& dest);
+
 void cvtColorBGR2BGRA(const Mat& src, Mat& dest, const uchar alpha=255);
+void cvtColorBGR8u2BGRA32f(const Mat& src, Mat& dest, const float alpha=255.f);
 
 
 //convert a BGR color image into a skipped one channel data: ex BGRBGRBGR... -> BBBB...(cols size), GGGG....(cols size), RRRR....(cols size),BBBB...(cols size), GGGG....(cols size), RRRR....(cols size),...
@@ -230,18 +233,27 @@ void guidedFilterMultiCore(const Mat& src, const Mat& guide, Mat& dest, int r,fl
 
 typedef enum
 {
+	DTF_L1=1,
+	DTF_L2=2
+}DTF_NORM;
+
+typedef enum
+{
 	DTF_RF=0,//Recursive Filtering
 	DTF_NC=1,//Normalized Convolution
 	DTF_IC=1,//Interpolated Convolution
 
 }DTF_METHOD;
 
-void domainTransformFilter(cv::Mat& img, cv::Mat& out, double sigma_s, double sigma_r, int maxiter, int method=DTF_RF);
-void domainTransformFilterBase(const Mat& img, Mat& dest, double sigma_s, double sigma_r, int maxiter, int method=DTF_RF);
-void domainTransformFilterBase(const Mat& img, const Mat& guide, Mat& dest, double sigma_s, double sigma_r, int maxiter, int method=DTF_RF);
+typedef enum
+{
+	DTF_BGRA_SSE=0,
+	DTF_BGRA_SSE_PARALLEL,
+	DTF_SLOWEST
+}DTF_IMPLEMENTATION;
 
-void domainTransformFilterFast(const Mat& src, const Mat& guide, Mat& dest, double sigma_s, double sigma_r, int maxiter, int method);
-void domainTransformFilterFast2(const Mat& src, const Mat& guide, Mat& dest, double sigma_s, double sigma_r, int maxiter, int method);
+void domainTransformFilterRF(const Mat& img, Mat& out, float sigma_r, float sigma_s, int maxiter, int norm=DTF_L1, int implementation=DTF_BGRA_SSE_PARALLEL);
+void domainTransformFilterRF(const Mat& img, const Mat& guide, Mat& out, float sigma_r, float sigma_s,int maxiter, int norm=DTF_L1, int implementation=DTF_BGRA_SSE_PARALLEL);
 
 class DomainTransformFilter
 {

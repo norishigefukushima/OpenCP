@@ -477,6 +477,23 @@ void splitBGRLineInterleave( const Mat& src, Mat& dest)
 }
 
 
+void cvtColorBGR8u2BGRA32f(const Mat& src, Mat& dest, const float alpha)
+{
+	if(dest.empty())dest.create(src.size(),CV_32FC4);
+
+	int size = src.size().area();
+	uchar* s = (uchar*)src.ptr<uchar>(0);
+	float* d = dest.ptr<float>(0);
+	
+	for(int i=0;i<size;i++)
+	{
+		*d++ = *s++;
+		*d++ = *s++;
+		*d++ = *s++;
+		*d++ = alpha;
+	}
+}
+
 void cvtColorBGR2BGRA(const Mat& src, Mat& dest, const uchar alpha)
 {
 	if(dest.empty())dest.create(src.size(),CV_8UC4);
@@ -494,8 +511,27 @@ void cvtColorBGR2BGRA(const Mat& src, Mat& dest, const uchar alpha)
 	}
 }
 
+void cvtColorBGRA32f2BGR8u(const Mat& src, Mat& dest)
+{
+	CV_Assert(src.type()==CV_32FC4);
+	if(dest.empty())dest.create(src.size(),CV_8UC3);
+
+	int size = src.size().area();
+	float* s = (float*)src.ptr<float>(0);
+	uchar* d = dest.ptr<uchar>(0);
+	
+	for(int i=0;i<size;i++)
+	{
+		*d++ = saturate_cast<uchar>(*s++ +0.5f);
+		*d++ = saturate_cast<uchar>(*s++ +0.5f);
+		*d++ = saturate_cast<uchar>(*s++ +0.5f);
+		*s++;
+	}
+}
+
 void cvtColorBGRA2BGR(const Mat& src, Mat& dest)
 {
+	CV_Assert(src.type()==CV_8UC4);
 	if(dest.empty())dest.create(src.size(),CV_8UC3);
 
 	int size = src.size().area();
@@ -510,6 +546,9 @@ void cvtColorBGRA2BGR(const Mat& src, Mat& dest)
 		*s++;
 	}
 }
+
+
+
 
 
 void makemultichannel(Mat& gray, Mat& color)

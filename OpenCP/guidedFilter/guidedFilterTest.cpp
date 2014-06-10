@@ -49,7 +49,7 @@ void guiGuidedFilterTest(Mat& src)
 		else if(sw==2)
 		{	
 			CalcTime t("bilateral filter");
-			domainTransformFilter(noise,  dest, 0.333*r,sigma_color,3);
+//			domainTransformFilter(noise,  dest, 0.333*r,sigma_color,3);
 			//bilateralFilter(noise,  dest,Size(2*r+1,2*r+1),sigma_color,0.333*r,FILTER_DEFAULT);
 		}
 

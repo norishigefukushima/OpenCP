@@ -29,11 +29,11 @@ void guiDomainTransformFilterTest(Mat& src)
 	moveWindow(wname,300,100);
 
 	int a=0;createTrackbar("a",wname,&a,100);
-	int sw = 1; createTrackbar("switch",wname,&sw, 2);
+	int sw = 1; createTrackbar("switch",wname,&sw, 3);
 
 	int sigma_color10 = 700; createTrackbar("sigma_color",wname,&sigma_color10,2550);
 	int sigma_space10 = 700; createTrackbar("sigma_space",wname,&sigma_color10,2550);
-	int iter = 4; createTrackbar("iter",wname,&iter,10);
+	int iter = 3; createTrackbar("iter",wname,&iter,10);
 
 	//int core = 1; createTrackbar("core",wname,&core,24);
 	
@@ -56,25 +56,31 @@ void guiDomainTransformFilterTest(Mat& src)
 		if(key=='n')
 			addNoise(src,noise,noise_s10/10.0);
 
-		domainTransformFilterBase(noise,  base, sigma_space,sigma_color, iter);
+		domainTransformFilterRF(noise,  base, sigma_color,sigma_space, iter,1,DTF_SLOWEST);
 
 		if(sw==0)
 		{
 			CalcTime t("domain transform filter: base implimentation");
 			//blur(noise,noise,Size(3,3));
-			domainTransformFilterBase(noise,  dest, sigma_space,sigma_color, iter);
+			domainTransformFilterRF(noise,  dest, sigma_color,sigma_space, iter,1,DTF_SLOWEST);
 			//guidedFilter(feather,src,dest,r,sigma_color*sigma_color);
 		}
 		else if(sw==1)
 		{	
 			CalcTime t("domain transform filter");
-			domainTransformFilterFast(noise,  noise, dest, sigma_space,sigma_color, iter,0);
+			domainTransformFilterRF(noise, dest, sigma_color,sigma_space, iter,1,DTF_BGRA_SSE);
 			//dtf(noise,  noise, dest, sigma_space,sigma_color, iter,0);
 		}
 		else if(sw==2)
 		{	
 			CalcTime t("domain transform filter");
-			domainTransformFilterFast2(noise,  noise, dest, sigma_space,sigma_color, iter,0);
+			domainTransformFilterRF(noise,  dest, sigma_color,sigma_space, iter,1,DTF_BGRA_SSE_PARALLEL);
+			//bilateralFilter(noise,  dest,Size(2*r+1,2*r+1),sigma_color,0.333*r,FILTER_DEFAULT);
+		}
+		else if(sw==3)
+		{	
+			CalcTime t("domain transform filter");
+			domainTransformFilterRF(noise,  dest, sigma_color,sigma_space, iter,1,-1);
 			//bilateralFilter(noise,  dest,Size(2*r+1,2*r+1),sigma_color,0.333*r,FILTER_DEFAULT);
 		}
 
