@@ -60,7 +60,21 @@ void guiDomainTransformFilterTest(Mat& src)
 
 		if(sw==0)
 		{
-			CalcTime t("domain transform filter: base implimentation");
+			Mat gray;
+			cvtColor(src,gray,COLOR_BGR2GRAY);
+			{
+				CalcTime t("domain transform filter: base implimentation");
+				///CalcTime t("domain transform filter: base implimentation");
+				{
+				CalcTime t("di");
+				dilate(gray,gray,Mat());
+				}
+				{
+					CalcTime t("ga");
+				GaussianBlur(src,dest,Size(3,3),3);	
+				}
+			}
+			
 			//blur(noise,noise,Size(3,3));
 			domainTransformFilterRF(noise,  dest, sigma_color,sigma_space, iter,1,DTF_SLOWEST);
 			//guidedFilter(feather,src,dest,r,sigma_color*sigma_color);
@@ -80,7 +94,7 @@ void guiDomainTransformFilterTest(Mat& src)
 		else if(sw==3)
 		{	
 			CalcTime t("domain transform filter");
-			domainTransformFilterRF(noise,  dest, sigma_color,sigma_space, iter,1,-1);
+			dtf(noise,  noise, dest, sigma_color,sigma_space, iter,1);
 			//bilateralFilter(noise,  dest,Size(2*r+1,2*r+1),sigma_color,0.333*r,FILTER_DEFAULT);
 		}
 

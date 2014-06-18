@@ -65,6 +65,14 @@ void memcpy_float_sse(float* dest, float* src, const int size);
 
 // utility functions
 void showMatInfo(InputArray src_, string name="Mat");
+double YPSNR(const Mat& src1, const Mat& src2);
+
+
+void guiCompareDiff(Mat& before, Mat& after, Mat& ref);
+void guiAbsDiffCompareNE(Mat& src1, Mat& src2);
+void guiAbsDiffCompareEQ(Mat& src1, Mat& src2);
+void guiAbsDiffCompareLE(Mat& src1, Mat& src2);
+void guiAbsDiffCompareGE(Mat& src1, Mat& src2);
 
 class ConsoleImage
 {
@@ -200,14 +208,12 @@ void SLIC(const Mat& src, Mat& segment, int regionSize, float regularization, fl
 void drawSLIC(const Mat& src, Mat& segment, Mat& dest, bool isLine=true, Scalar line_color=Scalar(0,0,255));
 void SLICBase(Mat& src, Mat& segment, int regionSize, float regularization, float minRegionRatio, int max_iteration);
 
-//bilateral filters
 
+void maxFilter(const Mat& src, Mat& dest, Size kernelSize);
+void maxFilter(const Mat& src, Mat& dest, int radius);
+void minFilter(const Mat& src, Mat& dest, Size kernelSize);
+void minFilter(const Mat& src, Mat& dest, int radius);
 
-enum
-{
-	BILATERAL_ORDER2,//underconstruction
-	BILATERAL_ORDER2_SEPARABLE//underconstruction
-};
 
 enum
 {
@@ -217,6 +223,19 @@ enum
 	FILTER_SEPARABLE,
 	FILTER_SLOWEST,// for just comparison.
 };
+
+void GaussianFilter(const Mat src, Mat& dest, int r, float sigma, int method=FILTER_SLOWEST, Mat& mask=Mat());
+void weightedGaussianFilter(Mat& src, Mat& weight, Mat& dest,Size ksize, float sigma, int border_type = BORDER_REPLICATE);
+
+//bilateral filters
+enum
+{
+	BILATERAL_ORDER2,//underconstruction
+	BILATERAL_ORDER2_SEPARABLE//underconstruction
+};
+
+
+
 
 void bilateralFilter(const Mat& src, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method=FILTER_DEFAULT, int borderType=cv::BORDER_REPLICATE);
 void jointBilateralFilter(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method=FILTER_DEFAULT, int borderType=cv::BORDER_REPLICATE);
@@ -258,14 +277,13 @@ void domainTransformFilterRF(const Mat& img, const Mat& guide, Mat& out, float s
 class DomainTransformFilter
 {
 	Mat img;
-	Mat joint;
-	Mat rgba;
+	Mat guidef;
 	Mat dctx;
 	Mat dcty;
 
 public:
 	DomainTransformFilter();
-	void operator()(const Mat& src, const Mat& guide, Mat& dest, double sigma_s, double sigma_r, int maxiter, int method);
+	void operator()(const Mat& src, const Mat& guide, Mat& dest, float sigma_r, float sigma_s, int maxiter, int norm);
 };
 
 
@@ -309,3 +327,165 @@ enum
 };
 
 void detailEnhancementBilateral(Mat& src, Mat& dest, int d, float sigma_color, float sigma_space, float boost, int color=PROCESS_LAB);
+
+
+
+void fillOcclusion(Mat& src, int invalidvalue=0);// for disparity map
+
+class dispRefinement
+{
+private:
+
+public:
+
+	int r;
+	int th;
+	int iter_ex;
+	int th_r;
+	int r_flip;
+	int iter;
+	int iter_g;
+	int r_g;
+	int eps_g;
+	int th_FB;
+
+	dispRefinement();
+	void boundaryDetect(Mat& src, Mat& guid, Mat& dest, Mat& mask);
+	void dispRefine(Mat& src, Mat& guid, Mat& guid_mask, Mat& alpha);
+	void operator()(Mat& src, Mat& guid, Mat& dest);
+};
+
+class mattingMethod
+{
+private:
+	Mat trimap;
+	Mat trimask;
+	Mat f;
+	Mat b;
+	Mat a;
+
+public:
+
+	int r;
+	int iter;
+	int iter_g;
+	int r_g;
+	int eps_g;
+	int th_FB;
+	int r_Wgauss;
+	int sigma_Wgauss;
+	int th;
+
+	mattingMethod();
+	void boundaryDetect(Mat& disp);
+	void getAmap(Mat& img);
+	void getFBimg(Mat& img);
+	void operator()(Mat& img, Mat& disp, Mat& alpha, Mat& Fimg, Mat& Bimg);
+};
+
+class StereoViewSynthesis
+{
+	void depthfilter(Mat& depth, Mat& depth2,Mat& mask2,int viewstep,double disp_amp);
+public:
+	double blend_z_thresh;
+
+	enum 
+	{
+		WAPR_IMG_INV= 0,//Mori et al.
+		WAPR_IMG_FWD_SUB_INV, //Zenger et al.
+	};
+	int warpInterpolationMethod;
+	
+	//Nearest, Linear or Cubic
+	int warpMethod;
+	bool warpSputtering;
+
+	enum 
+	{
+		DEPTH_FILTER_SPECKLE = 0,
+		DEPTH_FILTER_MEDIAN,
+		DEPTH_FILTER_MEDIAN_ERODE,
+		DEPTH_FILTER_CRACK,
+		DEPTH_FILTER_NONE
+	};
+	int depthfiltermode;
+
+	enum 
+	{
+		POST_GAUSSIAN_FILL=0,
+		POST_FILL,
+		POST_NONE
+	};
+	int postFilterMethod;
+	enum 
+	{
+	FILL_OCCLUSION_LINE = 0,
+	FILL_OCCLUSION_REFLECT = 1,
+	FILL_OCCLUSION_STRETCH = -1,
+	FILL_OCCLUSION_HV=2
+	};
+	int inpaintMethod;
+
+	enum 
+	{
+	PRESET_FASTEST = 0,
+	PRESET_SLOWEST,
+	};
+	
+	int warpedMedianKernel;
+	int warpedSpeckesWindow;
+	int warpedSpeckesRange;
+	int large_jump;
+
+	int canny_t1;
+	int canny_t2;
+	Size occBlurSize;
+
+	Size boundaryKernelSize;
+	double boundarySigma;
+	double boundaryGaussianRatio;
+	StereoViewSynthesis();
+	StereoViewSynthesis(int preset);
+	template <class T>
+	void viewsynth (Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp, int disptype);
+	void operator()(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp);
+
+	Mat diskMask;
+	Mat allMask;//all mask
+	Mat boundaryMask;//disparity boundary
+	Mat nonOcclusionMask;
+	Mat occlusionMask;//half and full occlusion
+	Mat fullOcclusionMask;//full occlusion
+	Mat nonFullOcclusionMask; //bar of full occlusion
+	Mat halfOcclusionMask;//left and right half ooclusion
+
+	template <class T>
+	void analyzeSynthesizedViewDetail_(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, double alpha, int invalidvalue, double disp_amp,Mat& srcsynth, Mat& ref);
+	void analyzeSynthesizedViewDetail(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, double alpha, int invalidvalue, double disp_amp,Mat& srcsynth, Mat& ref);
+
+	template <class T>
+	void makeMask_(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, double alpha, int invalidvalue, double disp_amp);
+
+	
+	void analyzeSynthesizedView(Mat& srcsynth, Mat& ref);
+
+	
+	void makeMask(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, double alpha, int invalidvalue, double disp_amp);
+	void makeMask(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, double alpha, int invalidvalue, double disp_amp, Mat& srcsynth, Mat& ref);
+
+	void viewsynthSingleAlphaMap(Mat& src,Mat& disp, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp, int disptype);
+	template <class T>
+	void viewsynthSingle(Mat& src,Mat& disp, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp, int disptype);
+
+	void operator()(Mat& src,Mat& disp, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp);
+
+	void alphaSynth(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp);
+
+	void noFilter(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp);
+	void check(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp, Mat& ref);
+
+	void check(Mat& src,Mat& disp,Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp, Mat& ref);
+
+	void preview(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR,int invalidvalue, double disp_amp);
+	void preview(Mat& src, Mat& disp,int invalidvalue, double disp_amp);
+};

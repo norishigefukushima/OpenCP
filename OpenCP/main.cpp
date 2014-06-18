@@ -10,11 +10,12 @@ void eraseBoundary(Mat& src, int step)
 	copyMakeBorder(a,b,step,step,step,step,BORDER_REPLICATE);
 	//guiAlphaBlend(b,src);
 	b.copyTo(src);
-
-	
 }
+
 int main(int argc, char** argv)
 {
+	guiViewSynthesis();
+
 	Mat src = imread("img/lenna.png");
 	//Mat src = imread("Clipboard01.png");
 	
@@ -28,7 +29,8 @@ int main(int argc, char** argv)
 	//eraseBoundary(src,10);
 	Mat mega;
 	//resize(src,mega,Size(1024,1024));
-	resize(src,mega,Size(1024,1024));
+	//resize(src,mega,Size(1024,1024));
+	resize(src,mega,Size(640,480));
 
 	//guiSLICTest(src);
 	//guiBilateralFilterTest(mega);

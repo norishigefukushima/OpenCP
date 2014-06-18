@@ -1,29 +1,6 @@
 #include "opencp.hpp"
 #include <opencv2/core/internal.hpp>
 
-
-//#define SSE_FUNC
-
-//pow function
-
-//#define USE_FAST_POW
-// Fast pow function, referred from
-// http://martin.ankerl.com/2012/01/25/optimized-approximative-pow-in-c-and-cpp/
-double fastPow(double a, double b)
-{
-	union {
-		double d;
-		int x[2];
-	} u = { a };
-	u.x[1] = (int)(b * (u.x[1] - 1072632447) + 1072632447);
-	u.x[0] = 0;
-	return u.d;
-}
-
-// domain transform filter
-
-//RF implimentations
-
 class DomainTransformRFVertical_32F_Invoker : public cv::ParallelLoopBody
 {
 	int dim;
@@ -1622,67 +1599,6 @@ void recursiveFilterHorizontalBGRA_SSE(cv::Mat& out, cv::Mat& dct)
 	}
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////
-//for base implimentation of recursive implimentation
-// Recursive filter for vertical direction
-void recursiveFilterVerticalBGR(cv::Mat& out, cv::Mat& dct) 
-{
-	int width = out.cols;
-	int height = out.rows;
-	int dim = out.channels();
-
-	for(int x=0; x<width; x++)
-	{
-		for(int y=1; y<height; y++)
-		{
-			float p = dct.at<float>(y-1, x);
-			for(int c=0; c<dim; c++)
-			{
-				out.at<float>(y, x*dim+c) = (1.f - p) * out.at<float>(y, x*dim+c) + p * out.at<float>(y-1, x*dim+c);
-			}
-		}
-
-		for(int y=height-2; y>=0; y--)
-		{
-			float p = dct.at<float>(y, x);
-			for(int c=0; c<dim; c++)
-			{
-				out.at<float>(y, x*dim+c) = p * out.at<float>(y+1, x*dim+c) + (1.f - p) * out.at<float>(y, x*dim+c);
-			}
-		}
-	}
-}
-
-// Recursive filter for horizontal direction
-void recursiveFilterHorizontalBGR(cv::Mat& out, cv::Mat& dct) 
-{
-	int width = out.cols;
-	int height = out.rows;
-	int dim = out.channels();
-
-	for(int y=0; y<height; y++)
-	{
-		for(int x=1; x<width; x++)
-		{
-			float p = dct.at<float>(y, x-1);
-			for(int c=0; c<dim; c++)
-			{
-				out.at<float>(y, x*dim+c) = (1.f - p) * out.at<float>(y, x*dim+c) + p * out.at<float>(y, (x-1)*dim+c);
-			}
-		}
-
-		for(int x=width-2; x>=0; x--)
-		{
-			float p = dct.at<float>(y, x);
-			for(int c=0; c<dim; c++)
-			{
-				out.at<float>(y, x*dim+c) = p * out.at<float>(y, (x+1)*dim+c) + (1.f - p) * out.at<float>(y, x*dim+c);
-			}
-		}
-	}
-}
-
-
 /*
 const uchar* s = src.ptr<uchar>(0);
 uchar* B = dest.ptr<uchar>(0);//line by line interleave
@@ -1710,16 +1626,16 @@ const __m128i ssmask2 = _mm_setr_epi8(0,1,2,3,4,11,12,13,14,15,5,6,7,8,9,10);
 //const __m128i ssmask3 = _mm_setr_epi8(11,12,13,14,15,0,1,2,3,4,5,6,7,8,9,10);
 
 const __m128i bmask1 = _mm_setr_epi8
-(255,255,255,255,255,255,0,0,0,0,0,0,0,0,0,0);
+(0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0,0,0,0,0,0,0,0,0,0);
 
 const __m128i bmask2 = _mm_setr_epi8
-(255,255,255,255,255,255,255,255,255,255,255,0,0,0,0,0);
+(0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0,0,0,0,0);
 
 const __m128i bmask3 = _mm_setr_epi8
-(255,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0);
+(0xFF,0xFF,0xFF,0xFF,0xFF,0,0,0,0,0,0,0,0,0,0,0);
 
 const __m128i bmask4 = _mm_setr_epi8
-(255,255,255,255,255,255,255,255,255,255,0,0,0,0,0,0);	
+(0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0,0,0,0,0,0);	
 
 __m128i a,b,c;
 
@@ -1759,13 +1675,13 @@ void buid_dxdyL1_8u(const Mat& src, Mat& dx, Mat& dy, const float ratio)
 	const __m128i mask2 = _mm_setr_epi8(0,3,6,9,12,15, 2,5,8,11,14,1,4,7,10,13);
 	const __m128i ssmask2 = _mm_setr_epi8(0,1,2,3,4,11,12,13,14,15,5,6,7,8,9,10);
 	const __m128i bmask1 = _mm_setr_epi8
-		(255,255,255,255,255,255,0,0,0,0,0,0,0,0,0,0);
+		(0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00);
 	const __m128i bmask2 = _mm_setr_epi8
-		(255,255,255,255,255,255,255,255,255,255,255,0,0,0,0,0);
+		(0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0x00,0x00,0x00,0x00,0x00);
 	const __m128i bmask3 = _mm_setr_epi8
-		(255,255,255,255,255,0,0,0,0,0,0,0,0,0,0,0);
+		(0xFF,0xFF,0xFF,0xFF,0xFF,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00);
 	const __m128i bmask4 = _mm_setr_epi8
-		(255,255,255,255,255,255,255,255,255,255,0,0,0,0,0,0);	
+		(0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0x00,0x00,0x00,0x00,0x00,0x00);	
 
 	__m128i a,b,c;
 
@@ -2135,7 +2051,7 @@ DomainTransformFilter::DomainTransformFilter()
 {
 	img = Mat::zeros(1,1,CV_8U);
 }
-void DomainTransformFilter::operator()(const Mat& src, const Mat& guide, Mat& dest, double sigma_s, double sigma_r, int maxiter, int norm)
+void DomainTransformFilter::operator()(const Mat& src, const Mat& guide, Mat& dest, float sigma_r, float sigma_s, int maxiter, int norm)
 {
 	int width = src.cols;
 	int height = src.rows;
@@ -2143,8 +2059,8 @@ void DomainTransformFilter::operator()(const Mat& src, const Mat& guide, Mat& de
 	if(src.size()!=img.size())
 	{
 		img.release();
-		joint.release();
-		rgba.release();
+		guidef.release();
+		
 		dctx.release();
 		dcty.release();
 
@@ -2152,27 +2068,25 @@ void DomainTransformFilter::operator()(const Mat& src, const Mat& guide, Mat& de
 		dcty = cv::Mat::zeros(height-1, width, CV_32FC1);
 	}
 
-	cvtColorBGR2BGRA(src,rgba);
+	Mat img;
+	cvtColorBGR8u2BGRA32f(src,img);
 
-	//rgba.convertTo(img, CV_MAKETYPE(CV_32F, rgba.channels()));
-	rgba.convertTo(img, CV_32F);
-
-	// compute derivatives of transformed domain "dct"		
-	float ratio = (float)(sigma_s / sigma_r);
+	// compute derivatives of transformed domain "dct"
+	cv::Mat dctx = cv::Mat::zeros(height, width-1, CV_32FC1);
+	cv::Mat dcty = cv::Mat::zeros(height-1, width, CV_32FC1);
+	float ratio = (sigma_s / sigma_r);
 
 	if(guide.depth()==CV_8U)
 	{
 		if(norm == DTF_L1) 
 		{
-			//	buid_dxdyL1_8u(guide, dctx,dcty,ratio);	
 			DomainTransformBuildDXDY_Invoker B(guide, dctx, dcty, ratio);
-			parallel_for_(Range(0, height-1), B);			
+			parallel_for_(Range(0, height-1), B);
 		}
 		else if(norm == DTF_L2) buid_dxdyL2_8u(guide, dctx,dcty,ratio);
 	}
 	else
 	{
-		Mat guidef;
 		guide.convertTo(guidef, CV_32F);
 		if(norm == DTF_L1) buid_dxdyL1_32f(guidef, dctx,dcty,ratio);
 		else if(norm == DTF_L2) buid_dxdyL2_32f(guidef, dctx,dcty,ratio);
@@ -2180,7 +2094,6 @@ void DomainTransformFilter::operator()(const Mat& src, const Mat& guide, Mat& de
 
 	// Apply recursive folter maxiter times
 	int i=maxiter;
-
 	Mat out = img.clone();
 	while(i--)
 	{
@@ -2189,18 +2102,14 @@ void DomainTransformFilter::operator()(const Mat& src, const Mat& guide, Mat& de
 		float a = (float)exp(-sqrt(2.0) / sigma_h);
 		{
 			DomainTransformPowHorizontalBGRA_SSE_Invoker H(out, dctx, a);
-			parallel_for_(Range(0, height-1), H);			
+			parallel_for_(Range(0, height), H);			
 		}
 		{
 			DomainTransformPowVerticalBGRA_SSE_Invoker V(out, dcty, a);
-			parallel_for_(Range(0, width-1), V);			
+			parallel_for_(Range(0, width), V);			
 		}
-		//recursiveFilterPowHorizontalBGRA_SSE(out, dctx, a);
-		//recursiveFilterPowVerticalBGRA_SSE(out, dcty, a);
 	}
-
-	out.convertTo(rgba,src.depth());
-	cvtColorBGRA2BGR(rgba,dest);
+	cvtColorBGRA32f2BGR8u(out,dest);
 }
 
 // Domain transform filtering: fast implimentation for optimization BGR2BGR2 ->SSE optimization
@@ -2236,7 +2145,6 @@ void domainTransformFilter_RF_BGRA_SSE_PARALLEL(const Mat& src, const Mat& guide
 
 	// Apply recursive folter maxiter times
 	int i=maxiter;
-
 	Mat out = img.clone();
 	while(i--)
 	{
@@ -2252,7 +2160,6 @@ void domainTransformFilter_RF_BGRA_SSE_PARALLEL(const Mat& src, const Mat& guide
 			parallel_for_(Range(0, width), V);			
 		}
 	}
-
 	cvtColorBGRA32f2BGR8u(out,dest);
 }
 
@@ -2316,6 +2223,66 @@ void powMat(const float a , Mat& src, Mat & dest)
 		for(int x=0; x<width; x++)  
 		{
 			dest.at<float>(y, x) = cv::pow(a, src.at<float>(y,x)); 
+		}
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+//for base implimentation of recursive implimentation
+// Recursive filter for vertical direction
+void recursiveFilterVerticalBGR(cv::Mat& out, cv::Mat& dct) 
+{
+	int width = out.cols;
+	int height = out.rows;
+	int dim = out.channels();
+
+	for(int x=0; x<width; x++)
+	{
+		for(int y=1; y<height; y++)
+		{
+			float p = dct.at<float>(y-1, x);
+			for(int c=0; c<dim; c++)
+			{
+				out.at<float>(y, x*dim+c) = (1.f - p) * out.at<float>(y, x*dim+c) + p * out.at<float>(y-1, x*dim+c);
+			}
+		}
+
+		for(int y=height-2; y>=0; y--)
+		{
+			float p = dct.at<float>(y, x);
+			for(int c=0; c<dim; c++)
+			{
+				out.at<float>(y, x*dim+c) = p * out.at<float>(y+1, x*dim+c) + (1.f - p) * out.at<float>(y, x*dim+c);
+			}
+		}
+	}
+}
+
+// Recursive filter for horizontal direction
+void recursiveFilterHorizontalBGR(cv::Mat& out, cv::Mat& dct) 
+{
+	int width = out.cols;
+	int height = out.rows;
+	int dim = out.channels();
+
+	for(int y=0; y<height; y++)
+	{
+		for(int x=1; x<width; x++)
+		{
+			float p = dct.at<float>(y, x-1);
+			for(int c=0; c<dim; c++)
+			{
+				out.at<float>(y, x*dim+c) = (1.f - p) * out.at<float>(y, x*dim+c) + p * out.at<float>(y, (x-1)*dim+c);
+			}
+		}
+
+		for(int x=width-2; x>=0; x--)
+		{
+			float p = dct.at<float>(y, x);
+			for(int c=0; c<dim; c++)
+			{
+				out.at<float>(y, x*dim+c) = p * out.at<float>(y, (x+1)*dim+c) + (1.f - p) * out.at<float>(y, x*dim+c);
+			}
 		}
 	}
 }

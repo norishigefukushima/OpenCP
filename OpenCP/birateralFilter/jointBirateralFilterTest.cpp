@@ -23,7 +23,6 @@ void guiJointBirateralFilterTest(Mat& src, Mat& guide)
 		double sigma_color = color/10.0;
 		double sigma_space = space/10.0;
 		int d = 2*r+1;
-
 		
 		if(sw==0)
 		{

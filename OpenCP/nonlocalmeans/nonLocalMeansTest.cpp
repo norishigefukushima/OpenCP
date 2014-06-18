@@ -23,8 +23,8 @@ void guiNonLocalMeansTest(Mat& src)
 
 	while(key!='q')
 	{
-		double sigma = color/10.0;
-		double h = h10/10.0;
+		float sigma = (float)color/10.f;
+		float h = (float)h10/10.f;
 		int d = 2*r+1;
 		int td = 2*tr+1;
 

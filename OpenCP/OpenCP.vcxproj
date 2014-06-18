@@ -131,6 +131,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <OpenMPSupport>true</OpenMPSupport>
+      <DisableSpecificWarnings>4309</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -156,13 +157,18 @@
     <ClCompile Include="domainTransformFilter.cpp" />
     <ClCompile Include="domainTransformFilter\domainTransformFilterTest.cpp" />
     <ClCompile Include="draw.cpp" />
+    <ClCompile Include="GaussianFilter.cpp" />
     <ClCompile Include="guidedFilter.cpp" />
     <ClCompile Include="guidedFilter\guidedFilterTest.cpp" />
+    <ClCompile Include="imagediff.cpp" />
     <ClCompile Include="iterativeBackProjection.cpp" />
     <ClCompile Include="iterativeBackProjection\iterativeBackProjectionTest.cpp" />
     <ClCompile Include="jointBirateralFilter.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="matInfo.cpp" />
+    <ClCompile Include="mattingRendering.cpp" />
+    <ClCompile Include="metrics.cpp" />
+    <ClCompile Include="minmaxfilter.cpp" />
     <ClCompile Include="noise.cpp" />
     <ClCompile Include="nonLocalMeans.cpp" />
     <ClCompile Include="nonlocalmeans\nonLocalMeansTest.cpp" />
@@ -173,6 +179,8 @@
     <ClCompile Include="stat.cpp" />
     <ClCompile Include="stencil.cpp" />
     <ClCompile Include="timer.cpp" />
+    <ClCompile Include="viewsynthesis.cpp" />
+    <ClCompile Include="viewSynthesis\viewSynthesisTest.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="fmath.hpp" />

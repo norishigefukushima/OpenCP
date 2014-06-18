@@ -25,6 +25,9 @@
     <Filter Include="ソース ファイル\filter">
       <UniqueIdentifier>{20f00ae6-0839-445f-aaa7-48897c787316}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\view synthesis">
+      <UniqueIdentifier>{ce01d62b-e8b6-4b78-9dac-dd68648543a5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -124,6 +127,27 @@
       <Filter>ソース ファイル\test</Filter>
     </ClCompile>
     <ClCompile Include="arithmetic.cpp">
+      <Filter>ソース ファイル\util</Filter>
+    </ClCompile>
+    <ClCompile Include="viewsynthesis.cpp">
+      <Filter>ソース ファイル\view synthesis</Filter>
+    </ClCompile>
+    <ClCompile Include="mattingRendering.cpp">
+      <Filter>ソース ファイル\view synthesis</Filter>
+    </ClCompile>
+    <ClCompile Include="viewSynthesis\viewSynthesisTest.cpp">
+      <Filter>ソース ファイル\test</Filter>
+    </ClCompile>
+    <ClCompile Include="GaussianFilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="minmaxfilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="metrics.cpp">
+      <Filter>ソース ファイル\util</Filter>
+    </ClCompile>
+    <ClCompile Include="imagediff.cpp">
       <Filter>ソース ファイル\util</Filter>
     </ClCompile>
   </ItemGroup>

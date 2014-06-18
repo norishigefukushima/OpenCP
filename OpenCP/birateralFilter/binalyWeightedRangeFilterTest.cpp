@@ -22,7 +22,7 @@ void guiBinalyWeightedRangeFilterTest(Mat& src)
 	while(key!='q')
 	{
 		//cout<<"r="<<r<<": "<<"please change 'sw' for changing the type of implimentations."<<endl;
-		double sigma_color = color;
+		float sigma_color = (float)color;
 		double rcomp = max(range_comp,1);
 		int d = 2*r+1;
 
@@ -66,7 +66,7 @@ void guiJointBinalyWeightedRangeFilterTest(Mat& src, Mat& guide)
 	while(key!='q')
 	{
 		cout<<"r="<<r<<": "<<"please change 'sw' for changing the type of implimentations."<<endl;
-		double sigma_color = color/10.0;
+		float sigma_color = color/10.f;
 		int d = 2*r+1;
 
 		if(sw==0)

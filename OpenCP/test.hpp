@@ -27,3 +27,6 @@ void guiDetailEnhancement(Mat& src);
 void guiDenoiseTest(Mat& src);
 
 
+void guiViewSynthesis();
+
+
