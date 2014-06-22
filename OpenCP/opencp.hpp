@@ -392,7 +392,16 @@ public:
 
 class StereoViewSynthesis
 {
+private:
 	void depthfilter(Mat& depth, Mat& depth2,Mat& mask2,int viewstep,double disp_amp);
+	template <class T>
+	void analyzeSynthesizedViewDetail_(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, double alpha, int invalidvalue, double disp_amp,Mat& srcsynth, Mat& ref);
+	template <class T>
+	void viewsynth (const Mat& srcL, const Mat& srcR, const Mat& dispL, const Mat& dispR, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp, int disptype);
+	template <class T>
+	void makeMask_(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, double alpha, int invalidvalue, double disp_amp);
+	template <class T>
+	void viewsynthSingle(Mat& src,Mat& disp, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp, int disptype);
 public:
 	//warping parameters
 	enum 
@@ -461,6 +470,7 @@ public:
 	double boundarySigma;
 	double boundaryGaussianRatio;
 
+
 	//preset
 	enum 
 	{
@@ -471,8 +481,8 @@ public:
 	StereoViewSynthesis();
 	StereoViewSynthesis(int preset);
 	void init(int preset);
-	template <class T>
-	void viewsynth (const Mat& srcL, const Mat& srcR, const Mat& dispL, const Mat& dispR, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp, int disptype);
+
+	void operator()(Mat& src,Mat& disp, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp);
 	void operator()(const Mat& srcL, const Mat& srcR, const Mat& dispL, const Mat& dispR, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp);
 
 	Mat diskMask;
@@ -484,33 +494,16 @@ public:
 	Mat nonFullOcclusionMask; //bar of full occlusion
 	Mat halfOcclusionMask;//left and right half ooclusion
 
-	template <class T>
-	void analyzeSynthesizedViewDetail_(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, double alpha, int invalidvalue, double disp_amp,Mat& srcsynth, Mat& ref);
+	void viewsynthSingleAlphaMap(Mat& src,Mat& disp, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp, int disptype);
+	void alphaSynth(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp);
+	void noFilter(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp);
 	void analyzeSynthesizedViewDetail(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, double alpha, int invalidvalue, double disp_amp,Mat& srcsynth, Mat& ref);
-
-	template <class T>
-	void makeMask_(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, double alpha, int invalidvalue, double disp_amp);
-
-	
 	void analyzeSynthesizedView(Mat& srcsynth, Mat& ref);
-
-	
 	void makeMask(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, double alpha, int invalidvalue, double disp_amp);
 	void makeMask(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, double alpha, int invalidvalue, double disp_amp, Mat& srcsynth, Mat& ref);
 
-	void viewsynthSingleAlphaMap(Mat& src,Mat& disp, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp, int disptype);
-	template <class T>
-	void viewsynthSingle(Mat& src,Mat& disp, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp, int disptype);
-
-	void operator()(Mat& src,Mat& disp, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp);
-
-	void alphaSynth(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp);
-
-	void noFilter(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp);
 	void check(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp, Mat& ref);
-
 	void check(Mat& src,Mat& disp,Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp, Mat& ref);
-
 	void preview(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR,int invalidvalue, double disp_amp);
 	void preview(Mat& src, Mat& disp,int invalidvalue, double disp_amp);
 };
