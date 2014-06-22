@@ -35,6 +35,80 @@ double getsn(StereoViewSynthesis& svs, Mat& matimL, Mat& matimR, Mat& max_disp_l
 	svs(matimL,matimR,max_disp_l,max_disp_r, dest, destdisp,0.5,0, 2);
 	return YPSNR(dest,ref);
 }
+void average(const Mat& src1, const Mat& src2, Mat& dest)
+{
+	Mat temp;
+	add(src1,src2,temp,noArray(),CV_32F);
+	temp.convertTo(dest,src1.type(),0.5);
+}
+
+Mat clipmergeHorizon(const Mat& src, int index, int max_index)
+{
+	
+	uchar* ptr;
+	int num = max_index;
+
+	int vp = 0;
+	int vc = 0;
+	for(int i=0;i<num;i++)
+	{
+		vc = (int)(src.rows*(i+1)/(double)num);
+		if(i==index)
+		{
+			ptr = (uchar*)src.ptr<uchar>(vp);
+			break;
+		}
+		vp = vc;
+	}
+
+	Mat ret(Size(src.cols,vc-vp),src.type(),ptr);
+	return ret;
+}
+
+class StereoViewSynthesisInvoker: public cv::ParallelLoopBody
+{
+	vector<Mat> imgL;
+	vector<Mat> imgR;
+	vector<Mat> disparityL;
+	vector<Mat> disparityR;
+
+	Mat* imgDest;
+	Mat* dispDest;
+	int splitnum;
+public:
+	~StereoViewSynthesisInvoker()
+	{
+		//mergeHorizon(destdisparity,*dispDest);
+		//mergeHorizon(destim,*imgDest);
+	}
+
+	StereoViewSynthesisInvoker(Mat& imL, Mat& imR, Mat& dispL, Mat& dispR, Mat& dest, Mat& destdisp, int splitnum_) : 
+		splitnum(splitnum_), dispDest(&destdisp), imgDest(&dest)
+	{
+		splitHorizon(imL,imgL, splitnum);
+		splitHorizon(dispL,disparityL, splitnum);
+
+		splitHorizon(imR,imgR, splitnum);
+		splitHorizon(dispR,disparityR, splitnum);	
+
+		imgDest->create(imL.size(), imL.type());
+		dispDest->create(dispL.size(),dispL.type());
+	}
+	virtual void operator() (const Range& range) const
+	{
+		StereoViewSynthesis svs(StereoViewSynthesis::PRESET_SLOWEST);
+		for(int i = range.start; i != range.end; i++)
+		{
+			Mat a = clipmergeHorizon(*imgDest, i, splitnum);
+			Mat b = clipmergeHorizon(*dispDest, i, splitnum);
+			/*
+			average(imgL[i], imgR[i], a);
+			average(disparityL[i], disparityR[i], b);
+			*/
+			svs(imgL[i], imgR[i], disparityL[i], disparityR[i], a, b, 0.5, 0, 2);
+		}
+	}
+};
 
 void guiViewSynthesis()
 {
@@ -69,7 +143,6 @@ void guiViewSynthesis()
 	sequence[s_index++]="Rocks2";
 	sequence[s_index++]="Wood1";
 	sequence[s_index++]="Wood2";
-	//sequence[s_index++]="Venus";
 	int s_index_max=s_index;
 	s_index=2;
 
@@ -97,6 +170,7 @@ void guiViewSynthesis()
 	//int alphaPos = 491;createTrackbar("alphaPos","FV_parameter",&alphaPos,1000);
 	int alphaPos = 500;createTrackbar("alphaPos","FV_parameter",&alphaPos,1000);
 	int dispAmp = 2;cvCreateTrackbar("dispAmp","FV_parameter",&dispAmp,10);
+	createTrackbar("index", "FV_parameter", &s_index,s_index_max-1);
 
 	namedWindow("Refine_parameter");
 	int r_R = 4;createTrackbar("r","Refine_parameter",&r_R,20);
@@ -121,15 +195,17 @@ void guiViewSynthesis()
 	int th_FB_M = 85;createTrackbar("th_FB","Matting_parameter",&th_FB_M,100);
 
 	StereoViewSynthesis svs(StereoViewSynthesis::PRESET_SLOWEST);
-	StereoViewSynthesis svsL;
-	StereoViewSynthesis svsR;
+	StereoViewSynthesis svsL(StereoViewSynthesis::PRESET_SLOWEST);
+	StereoViewSynthesis svsR(StereoViewSynthesis::PRESET_SLOWEST);
 
 	int key = 0;
 
+	ConsoleImage ci;
+	
 	Mat dest,destdisp, max_disp_l, max_disp_r;
 
 	//svs.depthfiltermode = StereoViewSynthesis::DEPTH_FILTER_MEDIAN;
-
+	
 	string wname = "view";
 	namedWindow(wname);
 
@@ -138,15 +214,24 @@ void guiViewSynthesis()
 	int dilation_rad = 1; createTrackbar("dilation r", wname, &dilation_rad,10);
 	int blur_rad = 1; createTrackbar("blur r", wname, &blur_rad,10);
 	int isOcc = 2; createTrackbar("is Occ", wname, &isOcc,2);
-	int isOccD = 1; createTrackbar("is OccD", wname, &isOccD,1);
-	int zth = 0; createTrackbar("z thresh", wname, &zth,100);
+	int isOccD = 1; createTrackbar("is OccD", wname, &isOccD,3);
+	int zth = 32; createTrackbar("z thresh", wname, &zth,100);
 	int grate = 100; createTrackbar("grate", wname, &grate,100);
-	
-	ConsoleImage ci;
+	int ljump = 0; createTrackbar("ljump", wname, &ljump,1000);
+	int ncore = 1;createTrackbar("ncore", wname, &ncore,32);
+	int blend = 0; createTrackbar("blend", wname, &blend,1);
+	int inter = 2; createTrackbar("inter", wname, &inter,2);
+
+	int color = 300; createTrackbar("color", wname, &color,2000);
+	int space = 300; createTrackbar("space", wname, &space,2000);
+	int iter = 0; createTrackbar("iter", wname, &iter,30);
+
+
 	while(key!='q')
 	{
 		Mat dest,destdisp, max_disp_l, max_disp_r;
 		StereoViewSynthesis svs(StereoViewSynthesis::PRESET_SLOWEST);
+		
 		//cout<<"img/stereo/"+sequence[s_index]<<endl;
 		Mat matdiL = imread("img/stereo/"+sequence[s_index]+"/disp1.png",0);
 		Mat matdiR = imread("img/stereo/"+sequence[s_index]+"/disp5.png",0);
@@ -156,8 +241,26 @@ void guiViewSynthesis()
 		Mat ref= imread("img/stereo/"+sequence[s_index]+"/view3.png");
 
 		fillOcclusion(matdiL);
+		if((matdiL.size().area()-countNonZero(matdiL)!=0))fillOcclusionHV(matdiL);
 		fillOcclusion(matdiR);
+		if((matdiL.size().area()-countNonZero(matdiR)!=0))fillOcclusionHV(matdiR);
+		
+		Mat temp;
+		for(int i=0;i<iter;i++)
+		{
+			jointBilateralFilter(matdiR,matimR, temp,Size(7,7),color/10.0,space/10.0);
+			jointNearestFilterBase(temp,matdiR,Size(3,3),matdiR);
 
+			jointBilateralFilter(matdiL,matimL, temp,Size(7,7),color/10.0,space/10.0);
+			jointNearestFilterBase(temp,matdiL,Size(3,3),matdiL);
+		}
+		Mat show;
+		alphaBlend(matimL,matdiL,alpha/100.0,show);
+		imshow("disp",show);
+
+
+		svs.blendMethod=blend;
+		svs.large_jump = ljump;
 
 		svs.boundaryGaussianRatio = (double)grate/100.0;
 		svs.blend_z_thresh=zth;
@@ -169,16 +272,22 @@ void guiViewSynthesis()
 		if(isOcc==1) svs.postFilterMethod=StereoViewSynthesis::POST_FILL;
 		if(isOcc==2) svs.postFilterMethod=StereoViewSynthesis::POST_GAUSSIAN_FILL;
 		if(isOccD==0)svs.inpaintMethod=StereoViewSynthesis::FILL_OCCLUSION_LINE;
+		if(isOccD==1)svs.inpaintMethod=StereoViewSynthesis::FILL_OCCLUSION_HV;
+		if(isOccD==2)svs.inpaintMethod=StereoViewSynthesis::FILL_OCCLUSION_INPAINT_NS;
+		if(isOccD==3)svs.inpaintMethod=StereoViewSynthesis::FILL_OCCLUSION_INPAINT_TELEA;
 		//
-		svs.warpInterpolationMethod = INTER_CUBIC;
+		svs.warpInterpolationMethod = inter;
 		{
 			CalcTime t("time",0,false);
 			maxFilter(matdiL, max_disp_l,dilation_rad);
 			maxFilter(matdiR, max_disp_r,dilation_rad);
 			svs(matimL,matimR,max_disp_l,max_disp_r, dest, destdisp,alphaPos*0.001,0,dispAmp);
+			
+			//StereoViewSynthesisInvoker body(matimL,matimR,max_disp_l,max_disp_r, dest, destdisp,ncore);
+			//parallel_for_(Range(0, ncore), body);
 			ci("%f ms",t.getTime());
 		}
-
+		
 		if(key=='c')
 		{
 			Mat gdest;
@@ -186,7 +295,7 @@ void guiViewSynthesis()
 			guiCompareDiff(dest,gdest,ref);
 		}
 		//svs.check(matimL,matimR,max_disp_l,max_disp_r, dest, destdisp,alphaPos*0.001,0,dispAmp,ref);
-
+		
 		if(key == 'p')
 		{
 			Stat st;
@@ -206,11 +315,13 @@ void guiViewSynthesis()
 				//cout<<sequence[i]<<endl;
 			}
 			cout<<"ave"<<st.getMean()<<endl;
-
-
 		}
 
-		alphaBlend(destdisp,dest,alpha/100.0,dest);
+			
+
+		//	alphaBlend(destdisp,dest,alpha/100.0,dest);
+		alphaBlend(ref,dest,alpha/100.0,dest);
+
 		imshow(wname, dest);
 		key = waitKey(1);
 		if(key=='f') alpha = (alpha == 0) ? 100 : 0;
@@ -219,12 +330,24 @@ void guiViewSynthesis()
 		
 		if(key=='d') guiAbsDiffCompareGE(dest,ref);
 		ci("%f dB",YPSNR(dest,ref));
+			
 		ci.flush();
 	}
 
+	key = 0;
 	
 	while(key!='q')
 	{
+		Mat matdiL = imread("img/stereo/"+sequence[s_index]+"/disp1.png",0);
+		Mat matdiR = imread("img/stereo/"+sequence[s_index]+"/disp5.png",0);
+		Mat matimL= imread("img/stereo/"+sequence[s_index]+"/view1.png");
+		Mat matimR= imread("img/stereo/"+sequence[s_index]+"/view5.png");
+
+		Mat ref= imread("img/stereo/"+sequence[s_index]+"/view3.png");
+
+		fillOcclusion(matdiL);
+		fillOcclusion(matdiR);
+
 #pragma omp parallel 
 		{
 #pragma omp sections
@@ -274,6 +397,8 @@ void guiViewSynthesis()
 		Mat fL,fR;
 		Mat bL,bR;
 		Mat base;
+		Mat basic;
+		Mat dilateSynth;
 
 #pragma omp parallel
 #pragma omp sections
@@ -283,7 +408,7 @@ void guiViewSynthesis()
 				mmL.r = r_M;
 				mmL.th = th_M;
 				mmL.r_g = r_g_M;
-				mmL.eps_g = eps_g_M;
+				mmL.eps_g = eps_g_M*255;
 				mmL.iter_g = iter_g_M;
 				mmL.iter = iter_M;
 				mmL.r_Wgauss = r_Wgauss_M;
@@ -296,7 +421,7 @@ void guiViewSynthesis()
 				mmR.r = r_M;
 				mmR.th = th_M;
 				mmR.r_g = r_g_M;
-				mmR.eps_g = eps_g_M;
+				mmR.eps_g = eps_g_M*255;
 				mmR.iter_g = iter_g_M;
 				mmR.iter = iter_M;
 				mmR.r_Wgauss = r_Wgauss_M;
@@ -306,9 +431,20 @@ void guiViewSynthesis()
 			}
 		}
 
+
+		Mat max_disp_l,max_disp_r;
+		int dilation_rad=1;
+
+		
+		maxFilter(matdiL, max_disp_l,dilation_rad);
+		maxFilter(matdiR, max_disp_r,dilation_rad);
+		svs(matimL,matimR,max_disp_l,max_disp_r,dilateSynth,destMat[9],alphaPos*0.001,0,dispAmp);
+		svs(matimL,matimR,rdL,rdR,basic,destMat[9],alphaPos*0.001,0,dispAmp);
+		
+		imshow("disp",rdL);
 		svs(bL,bR,rdL,rdR,base,destMat[9],alphaPos*0.001,0,dispAmp);
 
-#pragma omp parallel 
+//#pragma omp parallel 
 		{
 #pragma omp sections
 			{
@@ -327,7 +463,6 @@ void guiViewSynthesis()
 					svsL.viewsynthSingleAlphaMap(aML,dL,waL,destMat[13],alphaPos*0.001,0,dispAmp,dL.type());
 					cvtColor(waL,amapL,CV_BGR2GRAY);
 					alphaBlend(wfL,base,amapL,destL);
-
 				}
 #pragma omp section
 				{
@@ -344,21 +479,24 @@ void guiViewSynthesis()
 					svsR.viewsynthSingleAlphaMap(aMR,dR,waR,destMat[17],-alphaPos*0.001,0,dispAmp,dR.depth());
 					cvtColor(waR,amapR,CV_BGR2GRAY);
 					alphaBlend(wfR,base,amapR,destR);
+					guiAlphaBlend(waR,wfR);
 				}
 			}
 		}
 		
 		alphaBlend(destL,destR,alphaPos*0.001,FVdest);
 
-
 		imshow("FVdest",FVdest);
 		waitKey(1);
-		guiAlphaBlend(FVdest,ref);
+		//guiAlphaBlend(FVdest,ref);
+		//cout<<YPSNR(FVdest,ref)<<endl;
 
-
-		cout<<YPSNR(FVdest,ref)<<endl;
-		cout<<PSNR(FVdest,ref)<<endl;
+		ci("basic %f",YPSNR(basic,ref));
+		ci("max.  %f",YPSNR(dilateSynth,ref));
+		ci("Base. %f",YPSNR(base,ref));
 		
+		ci("Matt. %f",YPSNR(FVdest,ref));
+		ci.flush();
 	}
 
 	//imwrite("FVdest.png",FVdest);

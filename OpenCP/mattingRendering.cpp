@@ -116,7 +116,7 @@ void dispRefinement::operator()(Mat& src, Mat& guid, Mat& dest)
 		Mat temp;
 		for(int i=0;i<iter_g;i++)
 		{
-			guidedFilter(alpha,ref,temp,r_g,eps_g/100.0);
+			guidedFilter(alpha,ref,temp,r_g,eps_g/100.0f);
 			temp.copyTo(alpha);
 			alpha.setTo(128,bmask);
 		}
@@ -198,7 +198,7 @@ void mattingMethod::getAmap(Mat& img)
 	Mat imgG;cvtColor(img,imgG,CV_BGR2GRAY);
 	for(int i=0;i<iter_g;i++)
 	{
-		guidedFilter(trimap,imgG,tmp,r_g,eps_g/100.0);
+		guidedFilter(trimap,imgG,tmp,r_g,eps_g/100.0f);
 		tmp.copyTo(trimap);
 	}
 

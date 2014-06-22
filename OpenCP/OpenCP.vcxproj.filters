@@ -54,20 +54,11 @@
     <ClCompile Include="matInfo.cpp">
       <Filter>ソース ファイル\util</Filter>
     </ClCompile>
-    <ClCompile Include="birateralFilter\birateralFilterTest.cpp">
-      <Filter>ソース ファイル\test</Filter>
-    </ClCompile>
     <ClCompile Include="stat.cpp">
       <Filter>ソース ファイル\util</Filter>
     </ClCompile>
     <ClCompile Include="noise.cpp">
       <Filter>ソース ファイル\util</Filter>
-    </ClCompile>
-    <ClCompile Include="birateralFilter\jointBirateralFilterTest.cpp">
-      <Filter>ソース ファイル\test</Filter>
-    </ClCompile>
-    <ClCompile Include="birateralFilter\binalyWeightedRangeFilterTest.cpp">
-      <Filter>ソース ファイル\test</Filter>
     </ClCompile>
     <ClCompile Include="bilateralFilter.cpp">
       <Filter>ソース ファイル\filter</Filter>
@@ -149,6 +140,21 @@
     </ClCompile>
     <ClCompile Include="imagediff.cpp">
       <Filter>ソース ファイル\util</Filter>
+    </ClCompile>
+    <ClCompile Include="jointNearestFilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="bilateralfilter\bilateralFilterTest.cpp">
+      <Filter>ソース ファイル\test</Filter>
+    </ClCompile>
+    <ClCompile Include="bilateralfilter\binalyWeightedRangeFilterTest.cpp">
+      <Filter>ソース ファイル\test</Filter>
+    </ClCompile>
+    <ClCompile Include="bilateralfilter\jointBilateralFilterTest.cpp">
+      <Filter>ソース ファイル\test</Filter>
+    </ClCompile>
+    <ClCompile Include="jointNearestFilter\jointNearestFilterTest.cpp">
+      <Filter>ソース ファイル\test</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

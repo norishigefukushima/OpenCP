@@ -148,14 +148,14 @@ void getZeroMask(Mat& src, Mat& mask)
 }
 
 template <class T>
-void shiftImInvNN_(Mat& srcim, Mat& srcdisp, Mat& destim, double amp, Mat& mask, int invalid = 0)
+void shiftImInvNN_(const Mat& srcim, Mat& srcdisp, Mat& destim, double amp, Mat& mask, int invalid = 0)
 {		
 	if(amp>0)
 	{
 		//#pragma omp parallel for
 		for(int j=0;j<srcdisp.rows;j++)
 		{
-			uchar* sim = srcim.ptr<uchar>(j);
+			uchar* sim = (uchar*)srcim.ptr<uchar>(j);
 			uchar* dim = destim.ptr<uchar>(j);
 			uchar* m = mask.ptr<uchar>(j);
 			T* s = srcdisp.ptr<T>(j);
@@ -198,7 +198,7 @@ void shiftImInvNN_(Mat& srcim, Mat& srcdisp, Mat& destim, double amp, Mat& mask,
 		//#pragma omp parallel for
 		for(int j=0;j<srcdisp.rows;j++)
 		{
-			uchar* sim = srcim.ptr<uchar>(j);
+			uchar* sim = (uchar*)srcim.ptr<uchar>(j);
 			uchar* dim = destim.ptr<uchar>(j);
 			uchar* m = mask.ptr<uchar>(j);
 
@@ -242,10 +242,74 @@ void shiftImInvNN_(Mat& srcim, Mat& srcdisp, Mat& destim, double amp, Mat& mask,
 	}	
 }
 
+
+
 template <class T>
-void shiftImInvCubicLUT_(Mat& srcim, Mat& srcdisp, Mat& destim, double amp, int disp_amp,int invalid = 0)
+void shiftImInvNN_(const Mat& srcim, Mat& srcdisp, Mat& destim, float amp, int invalid = 0)
 {		
-	const float cubic = -1.f;
+
+	if(amp>0)
+	{
+		for(int j=0;j<srcdisp.rows;j++)
+		{
+			Mat im;copyMakeBorder(srcim,im, 0,0,2,0,BORDER_REPLICATE);
+			uchar* sim = (uchar*)im.ptr<uchar>(j);sim+=6;
+			uchar* dim = destim.ptr<uchar>(j);
+			T* s = srcdisp.ptr<T>(j);
+
+			for(int i=0;i<srcdisp.cols;i++)
+			{
+				const T disp = s[i];
+				if(disp ==invalid)
+				{
+					memset(dim+3*i,0,3);
+					continue;
+				}
+
+				const int dest = (int)(disp*amp + 0.5f);
+				dim[3*(i)+0]=sim[3*(i-dest)+0];
+				dim[3*(i)+1]=sim[3*(i-dest)+1];
+				dim[3*(i)+2]=sim[3*(i-dest)+2];
+			}
+		}
+	}
+	else if(amp<0)
+	{
+		Mat im;copyMakeBorder(srcim,im, 0,0,0,2,BORDER_REPLICATE);
+		for(int j=0;j<srcdisp.rows;j++)
+		{
+			uchar* sim = (uchar*)im.ptr<uchar>(j);
+			uchar* dim = destim.ptr<uchar>(j);
+
+			T* s = srcdisp.ptr<T>(j);
+			for(int i=0;i<srcdisp.cols;i++)
+			{
+				const T disp = s[i];
+				if(disp ==invalid)
+				{
+					memset(dim+3*i,0,3);
+					continue;
+				}
+
+				const int dest = (int)(-amp*disp  +0.5f);//ïÑçÜ
+
+				dim[3*(i)+0]=sim[3*(i+dest)+0];
+				dim[3*(i)+1]=sim[3*(i+dest)+1];
+				dim[3*(i)+2]=sim[3*(i+dest)+2];			
+			}
+		}
+	}
+	else
+	{
+		srcim.copyTo(destim);
+	}	
+}
+
+template <class T>
+void shiftImInvCubicLUT_(const Mat& srcim, Mat& srcdisp, Mat& destim, float amp, int disp_amp,int invalid = 0)
+{		
+	const float cubic = -1.0f;
+	//const float cubic = -0.7f;
 	const float c1 = cubic;
 	const float c2 = -5.f*cubic;
 	const float c3 = 8.f*cubic;
@@ -275,8 +339,9 @@ void shiftImInvCubicLUT_(Mat& srcim, Mat& srcdisp, Mat& destim, double amp, int 
 		for(int i=0; i<256;i++)
 		{
 			const int dest = (int)(i*-amp);
-			const float ia = (-amp*i)-dest;
+			const float ia = (float)((-amp*i)-dest);
 			const float a = 1.f-ia;
+
 
 			lut[4*i+0] = c1*(1.f+ a)*(1.f+ a)*(1.f+ a) + c2*(1.f+ a)*(1.f+ a) +c3*(1.f+ a) + c4;
 			lut[4*i+1] = c5* a* a* a + c6* a* a + 1.f;
@@ -322,6 +387,10 @@ void shiftImInvCubicLUT_(Mat& srcim, Mat& srcdisp, Mat& destim, double amp, int 
 					dim[3*(i)+0]=saturate_cast<uchar>(vaa*sim[3*(i-dest+1)+0] + aa*sim[3*(i-dest)+0]+iaa*sim[3*(i-dest-1)+0]+viaa*sim[3*(i-dest-2)+0]);
 					dim[3*(i)+1]=saturate_cast<uchar>(vaa*sim[3*(i-dest+1)+1] + aa*sim[3*(i-dest)+1]+iaa*sim[3*(i-dest-1)+1]+viaa*sim[3*(i-dest-2)+1]);
 					dim[3*(i)+2]=saturate_cast<uchar>(vaa*sim[3*(i-dest+1)+2] + aa*sim[3*(i-dest)+2]+iaa*sim[3*(i-dest-1)+2]+viaa*sim[3*(i-dest-2)+2]);
+
+				//	dim[3*(i)+0]=saturate_cast<uchar>(vaa*sim[3*(i-dest+1)+0] + aa*sim[3*(i-dest)+0]+iaa*sim[3*(i-dest-1)+0]+viaa*sim[3*(i-dest-2)+0]+0.5f);
+					//dim[3*(i)+1]=saturate_cast<uchar>(vaa*sim[3*(i-dest+1)+1] + aa*sim[3*(i-dest)+1]+iaa*sim[3*(i-dest-1)+1]+viaa*sim[3*(i-dest-2)+1]+0.5f);
+				//	dim[3*(i)+2]=saturate_cast<uchar>(vaa*sim[3*(i-dest+1)+2] + aa*sim[3*(i-dest)+2]+iaa*sim[3*(i-dest-1)+2]+viaa*sim[3*(i-dest-2)+2]+0.5f);
 
 
 					/*__m128 mlut = _mm_load_ps(lut+idx);
@@ -369,7 +438,7 @@ void shiftImInvCubicLUT_(Mat& srcim, Mat& srcdisp, Mat& destim, double amp, int 
 				}
 
 				const int dest = (int)(-amp*disp);//ïÑçÜ
-				const float ia = (-amp*disp)-dest;
+				const float ia = (float)((-amp*disp)-dest);
 				if(ia==0.f)
 				{
 					memcpy(dim+3*i,sim+3*(i+dest), 3);
@@ -385,6 +454,9 @@ void shiftImInvCubicLUT_(Mat& srcim, Mat& srcdisp, Mat& destim, double amp, int 
 					dim[3*(i)+0]=saturate_cast<uchar>(vaa*sim[3*(i+dest-1)+0] + aa*sim[3*(i+dest)+0]+iaa*sim[3*(i+dest+1)+0]+viaa*sim[3*(i+dest+2)+0]);
 					dim[3*(i)+1]=saturate_cast<uchar>(vaa*sim[3*(i+dest-1)+1] + aa*sim[3*(i+dest)+1]+iaa*sim[3*(i+dest+1)+1]+viaa*sim[3*(i+dest+2)+1]);
 					dim[3*(i)+2]=saturate_cast<uchar>(vaa*sim[3*(i+dest-1)+2] + aa*sim[3*(i+dest)+2]+iaa*sim[3*(i+dest+1)+2]+viaa*sim[3*(i+dest+2)+2]);
+					/*dim[3*(i)+0]=saturate_cast<uchar>(vaa*sim[3*(i+dest-1)+0] + aa*sim[3*(i+dest)+0]+iaa*sim[3*(i+dest+1)+0]+viaa*sim[3*(i+dest+2)+0]+0.5f);
+					dim[3*(i)+1]=saturate_cast<uchar>(vaa*sim[3*(i+dest-1)+1] + aa*sim[3*(i+dest)+1]+iaa*sim[3*(i+dest+1)+1]+viaa*sim[3*(i+dest+2)+1]+0.5f);
+					dim[3*(i)+2]=saturate_cast<uchar>(vaa*sim[3*(i+dest-1)+2] + aa*sim[3*(i+dest)+2]+iaa*sim[3*(i+dest+1)+2]+viaa*sim[3*(i+dest+2)+2]+0.5f);*/
 				}			
 			}
 		}
@@ -396,9 +468,10 @@ void shiftImInvCubicLUT_(Mat& srcim, Mat& srcdisp, Mat& destim, double amp, int 
 }
 
 template <class T>
-void shiftImInvCubic_(Mat& srcim, Mat& srcdisp, Mat& destim, double amp, Mat& mask, int invalid = 0)
+void shiftImInvCubic_(const Mat& srcim, Mat& srcdisp, Mat& destim, double amp, Mat& mask, int invalid = 0)
 {		
 	const float cubic = -1.f;
+	
 	const float c1 = cubic;
 	const float c2 = -5.f*cubic;
 	const float c3 = 8.f*cubic;
@@ -448,11 +521,6 @@ void shiftImInvCubic_(Mat& srcim, Mat& srcdisp, Mat& destim, double amp, Mat& ma
 						const float iaa = c5* a* a* a + c6* a* a + 1.f;
 						const float aa  = c5*ia*ia*ia + c6*ia*ia + 1.f;
 						const float vaa = c1*(1.f+ ia)*(1.f+ ia)*(1.f+ ia) + c2*(1.f+ ia)*(1.f+ ia) +c3*(1.f+ ia) + c4;
-
-						/*const float viaa= lut[0];
-						const float iaa = lut[1];
-						const float aa  = lut[2];
-						const float vaa = lut[3];*/
 
 						dim[3*(i)+0]=saturate_cast<uchar>(vaa*sim[3*(i-dest+1)+0] + aa*sim[3*(i-dest)+0]+iaa*sim[3*(i-dest-1)+0]+viaa*sim[3*(i-dest-2)+0]);
 						dim[3*(i)+1]=saturate_cast<uchar>(vaa*sim[3*(i-dest+1)+1] + aa*sim[3*(i-dest)+1]+iaa*sim[3*(i-dest-1)+1]+viaa*sim[3*(i-dest-2)+1]);
@@ -507,7 +575,7 @@ void shiftImInvCubic_(Mat& srcim, Mat& srcdisp, Mat& destim, double amp, Mat& ma
 					}
 					else 
 					{
-						const float viaa= c1*(1.f+ a)*(1.f+ a)*(1.0+ a) + c2*(1.f+ a)*(1.0+ a) +c3*(1.f+ a) + c4;
+						const float viaa= c1*(1.f+ a)*(1.f+ a)*(1.f+ a) + c2*(1.f+ a)*(1.f+ a) +c3*(1.f+ a) + c4;
 						const float iaa = c5* a* a* a + c6* a* a + 1.f;
 						const float aa  = c5*ia*ia*ia + c6*ia*ia + 1.f;
 						const float vaa = c1*(1.f+ ia)*(1.f+ ia)*(1.f+ ia) + c2*(1.f+ ia)*(1.f+ ia) +c3*(1.f+ ia) + c4;
@@ -539,7 +607,83 @@ void shiftImInvCubic_(Mat& srcim, Mat& srcdisp, Mat& destim, double amp, Mat& ma
 }
 
 template <class T>
-void shiftImInvLinear_(Mat& srcim, Mat& srcdisp, Mat& destim, double amp, Mat& mask, int invalid = 0)
+void shiftImInvLinear_(const Mat& srcim, Mat& srcdisp, Mat& destim, float amp, int invalid = 0)
+{
+	if(amp>0)
+	{
+		Mat im;copyMakeBorder(srcim,im, 0,0,1,0,BORDER_REPLICATE);
+		//#pragma omp parallel for
+		for(int j=0;j<srcdisp.rows;j++)
+		{
+			uchar* sim = im.ptr<uchar>(j);sim+=3;
+			uchar* dim = destim.ptr<uchar>(j);
+			T* s = srcdisp.ptr<T>(j);
+
+			for(int i=0;i<srcdisp.cols;i++)
+			{
+				const T disp = s[i];
+				if(disp ==invalid)
+				{
+					memset(dim+3*i,0,3);
+					continue;
+				}
+
+				const int dest = (int)(disp*amp);
+
+
+				const float ia = (float)((disp*amp)-dest);
+				const float a = 1.f-ia;
+
+				/*dim[3*(i)+0]=saturate_cast<uchar>(a*sim[3*(i-dest)+0]+ia*sim[3*(i-dest-1)+0]+0.5f);
+				dim[3*(i)+1]=saturate_cast<uchar>(a*sim[3*(i-dest)+1]+ia*sim[3*(i-dest-1)+1]+0.5f);
+				dim[3*(i)+2]=saturate_cast<uchar>(a*sim[3*(i-dest)+2]+ia*sim[3*(i-dest-1)+2]+0.5f);*/
+				dim[3*(i)+0]=saturate_cast<uchar>(a*sim[3*(i-dest)+0]+ia*sim[3*(i-dest-1)+0]);
+				dim[3*(i)+1]=saturate_cast<uchar>(a*sim[3*(i-dest)+1]+ia*sim[3*(i-dest-1)+1]);
+				dim[3*(i)+2]=saturate_cast<uchar>(a*sim[3*(i-dest)+2]+ia*sim[3*(i-dest-1)+2]);
+			}
+		}
+	}
+	else if(amp<0)
+	{
+		Mat im;copyMakeBorder(srcim,im, 0,0,0,2,BORDER_REPLICATE);
+		//#pragma omp parallel for
+		for(int j=0;j<srcdisp.rows;j++)
+		{
+			uchar* sim = im.ptr<uchar>(j);
+			uchar* dim = destim.ptr<uchar>(j);
+
+			T* s = srcdisp.ptr<T>(j);
+			for(int i=0;i<srcdisp.cols;i++)
+			{
+				const T disp = s[i];
+				if(disp ==invalid)
+				{
+					memset(dim+3*i,0,3);
+					continue;
+				}
+
+				const int dest = (int)(-amp*disp);//ïÑçÜ
+				const float ia = (-amp*disp)-dest;
+				const float a = 1.f-ia;
+
+				/*dim[3*(i)+0]=saturate_cast<uchar>(a*sim[3*(i+dest)+0]+ia*sim[3*(i+dest+1)+0]+0.5f);
+				dim[3*(i)+1]=saturate_cast<uchar>(a*sim[3*(i+dest)+1]+ia*sim[3*(i+dest+1)+1]+0.5f);
+				dim[3*(i)+2]=saturate_cast<uchar>(a*sim[3*(i+dest)+2]+ia*sim[3*(i+dest+1)+2]+0.5f);*/
+
+				dim[3*(i)+0]=saturate_cast<uchar>(a*sim[3*(i+dest)+0]+ia*sim[3*(i+dest+1)+0]);
+				dim[3*(i)+1]=saturate_cast<uchar>(a*sim[3*(i+dest)+1]+ia*sim[3*(i+dest+1)+1]);
+				dim[3*(i)+2]=saturate_cast<uchar>(a*sim[3*(i+dest)+2]+ia*sim[3*(i+dest+1)+2]);
+			}
+		}
+	}
+	else
+	{
+		srcim.copyTo(destim);
+	}	
+}
+
+template <class T>
+void shiftImInvLinear_(const Mat& srcim, Mat& srcdisp, Mat& destim, double amp, Mat& mask, int invalid = 0)
 {
 	if(amp>0)
 	{
@@ -638,7 +782,7 @@ void shiftImInvLinear_(Mat& srcim, Mat& srcdisp, Mat& destim, double amp, Mat& m
 }
 
 template <class T>
-void shiftImInv_(Mat& srcim, Mat& srcdisp, Mat& destim, double amp, Mat& mask, int invalid = 0, int inter_method=INTER_CUBIC)
+void shiftImInvWithMask_(const Mat& srcim, Mat& srcdisp, Mat& destim, double amp, Mat& mask, int invalid = 0, int inter_method=INTER_CUBIC)
 {
 	destim.setTo(0);
 
@@ -652,9 +796,113 @@ void shiftImInv_(Mat& srcim, Mat& srcdisp, Mat& destim, double amp, Mat& mask, i
 		cout<<"support types are NN, linear and cubic"<<endl;
 }
 
+
+template <class T>
+void shiftImInv_(const Mat& srcim, Mat& srcdisp, Mat& destim, float amp, int invalid = 0, int inter_method=INTER_CUBIC)
+{
+	destim.setTo(0);
+
+	if(inter_method==INTER_CUBIC)
+	{
+		if(srcdisp.type()!=CV_8U)cout<<" the function must be 8bit"<<endl;
+		shiftImInvCubicLUT_<T>(srcim, srcdisp, destim, amp, invalid);
+	}
+	else if(inter_method==INTER_LINEAR)
+		shiftImInvLinear_<T>(srcim, srcdisp, destim, amp, invalid);
+	else if(inter_method==INTER_NEAREST)
+		shiftImInvNN_<T>(srcim, srcdisp, destim, amp, invalid);
+	else
+		cout<<"support types are NN, linear and cubic"<<endl;
+}
+
+
+//without mask mad jump
+template <class T>
+void shiftDisp_(const Mat& srcdisp, Mat& destdisp, double amp, const int sub_gap)
+{
+	Mat dsp; copyMakeBorder(srcdisp,dsp,0,0,1,1,BORDER_REPLICATE);
+	const int offset = 256;
+	Mat dst = Mat::zeros(Size(destdisp.cols+offset, 1),destdisp.type());
+
+	if(amp>0)
+	{
+		//#pragma omp parallel for
+		for(int j=0;j<srcdisp.rows;j++)
+		{
+			dst.setTo(0);
+			T* s = dsp.ptr<T>(j);s+=1;
+			T* d = dst.ptr<T>(0);d+=offset;
+
+			for(int i=srcdisp.cols;i>=0;i--)
+				//for(int i=0;i<srcdisp.cols;i++)
+			{
+				const T disp = s[i];
+				const int sub = (int)(abs(disp-s[i-1]));
+
+				bool issub = (sub<=sub_gap && sub>0)?true:false;
+				//bool issub = (sub<=sub_gap)?true:false;
+
+				const int dest = (int)(disp*amp);
+
+				if(disp>d[i-dest])
+				{
+					d[i-dest]=disp;
+					if(issub)
+					{
+						if(disp>d[i-dest-1])
+						{
+							d[i-dest-1]=(T)((disp+s[i-1])*0.5);
+							//d[i-dest-1]=disp;
+						}
+					}
+				}
+			}
+			memcpy(destdisp.ptr<T>(j),d,sizeof(T)*destdisp.cols);
+		}
+
+	}
+	else if(amp<0)
+	{
+		//#pragma omp parallel for
+		for(int j=0;j<srcdisp.rows;j++)
+		{
+			dst.setTo(0);
+			T* s = dsp.ptr<T>(j);s+=1;
+			T* d = dst.ptr<T>(0);
+			for(int i=0;i<srcdisp.cols;i++)
+			{
+				const T disp = s[i];
+				const int sub=(int)(abs(disp-s[i+1]));
+				bool issub = (sub<=sub_gap && sub>0)?true:false;
+				//bool issub = (sub<=sub_gap)?true:false;
+
+				const int dest = (int)(-amp*disp);
+
+				if(disp>d[i+dest])
+				{
+					d[i+dest]=(T)disp;
+					if(issub)
+					{
+						if(disp>d[i+dest+1])
+						{
+							d[i+dest+1]=(T)((disp+s[i+1])*0.5);
+							//d[i+dest+1]=(disp);
+						}
+					}
+				}	
+			}
+			memcpy(destdisp.ptr<T>(j),d,sizeof(T)*destdisp.cols);
+		}
+	}
+	else
+	{
+		srcdisp.copyTo(destdisp);
+	}	
+}
+
 //without mask
 template <class T>
-void shiftDisp_(Mat& srcdisp, Mat& destdisp, double amp, const int large_jump, const int sub_gap)
+void shiftDisp_(const Mat& srcdisp, Mat& destdisp, double amp, const int large_jump, const int sub_gap)
 {
 	Mat dsp; copyMakeBorder(srcdisp,dsp,0,0,1,1,BORDER_REPLICATE);
 	const int offset = 256;
@@ -755,7 +1003,7 @@ void shiftDisp_(Mat& srcdisp, Mat& destdisp, double amp, const int large_jump, c
 
 //with mask
 template <class T>
-void shiftDisp_(Mat& srcdisp, Mat& destdisp, double amp, Mat& mask, const int large_jump, const int sub_gap)
+void shiftDisp_(const Mat& srcdisp, Mat& destdisp, double amp, Mat& mask, const int large_jump, const int sub_gap)
 {
 	Mat dsp; copyMakeBorder(srcdisp,dsp,0,0,1,1,BORDER_REPLICATE);
 	const int offset = 256;
@@ -1437,7 +1685,7 @@ void shiftImDisp(Mat& srcim, Mat& srcdisp, Mat& destim, Mat& destdisp, double am
 
 
 template <class T>
-void shiftDisp(Mat& srcdisp, Mat& destdisp, double amp,double sub_gap,const int large_jump = 3 ,Mat& mask=Mat())
+void shiftDisp(const Mat& srcdisp, Mat& destdisp, double amp,double sub_gap,const int large_jump = 3 ,Mat& mask=Mat())
 {
 	if(srcdisp.type()==CV_8U)
 	{
@@ -1462,7 +1710,14 @@ void shiftDisp(Mat& srcdisp, Mat& destdisp, double amp,double sub_gap,const int 
 
 	if(mask.empty())
 	{
+		if(large_jump==0)
+		{
+			shiftDisp_<T>(srcdisp,destdisp,amp, (int)sub_gap);
+		}
+		else
+		{
 		shiftDisp_<T>(srcdisp,destdisp,amp,large_jump, (int)sub_gap);
+		}
 	}
 	else
 	{
@@ -2546,9 +2801,9 @@ void blendLRS(Mat& iml, Mat& imr, Mat& dispL, Mat& dispR ,Mat& dest, Mat& destdi
 			if(dl[i]!=invalid && dr[i]!=invalid)
 			{
 				dd[i]=(T)((dl[i]+dr[i])*0.5);
-				d[3*i+0] = saturate_cast<uchar>(ia*l[3*i+0]+a*r[3*i+0]);
-				d[3*i+1] = saturate_cast<uchar>(ia*l[3*i+1]+a*r[3*i+1]);
-				d[3*i+2] = saturate_cast<uchar>(ia*l[3*i+2]+a*r[3*i+2]);
+				d[3*i+0] = saturate_cast<uchar>(ia*l[3*i+0]+a*r[3*i+0]+0.5f);
+				d[3*i+1] = saturate_cast<uchar>(ia*l[3*i+1]+a*r[3*i+1]+0.5f);
+				d[3*i+2] = saturate_cast<uchar>(ia*l[3*i+2]+a*r[3*i+2]+0.5f);
 			}
 			else if(dl[i]!=invalid)
 			{
@@ -2575,10 +2830,10 @@ void blendLRS_8u_leftisout(Mat& iml, Mat& imr, Mat& dispL, Mat& dispR, double a,
 	double ia =1.0-a;
 
 
-	const int shift = 20;
+	const int shift = 10;
 	int base = 1<<shift;
-	int A = base * a;
-	int IA = base * ia;
+	int A = (int)(base * a);
+	int IA = base -A;
 
 	for(int j=0;j<iml.rows;j++)
 	{
@@ -2596,7 +2851,7 @@ void blendLRS_8u_leftisout(Mat& iml, Mat& imr, Mat& dispL, Mat& dispR, double a,
 				/*l[3*i+0] = saturate_cast<uchar>(ia*l[3*i+0]+a*r[3*i+0]);
 				l[3*i+1] = saturate_cast<uchar>(ia*l[3*i+1]+a*r[3*i+1]);
 				l[3*i+2] = saturate_cast<uchar>(ia*l[3*i+2]+a*r[3*i+2]);*/
-				/*	l[3*i+0] = saturate_cast<uchar>(ia*l[3*i+0]+a*r[3*i+0]+0.5);
+				/*l[3*i+0] = saturate_cast<uchar>(ia*l[3*i+0]+a*r[3*i+0]+0.5);
 				l[3*i+1] = saturate_cast<uchar>(ia*l[3*i+1]+a*r[3*i+1]+0.5);
 				l[3*i+2] = saturate_cast<uchar>(ia*l[3*i+2]+a*r[3*i+2]+0.5);*/
 				l[3*i+0] = saturate_cast<uchar>((IA*l[3*i+0]+A*r[3*i+0])>>shift);
@@ -2640,9 +2895,9 @@ void blendLRS(Mat& iml, Mat& imr, Mat& dispL, Mat& dispR ,Mat& dest, Mat& destdi
 			if(ml[i]==255&&mr[i]==255)
 			{
 				dd[i]=(T)((dl[i]+dr[i])*0.5);
-				d[3*i+0] = saturate_cast<uchar>(ia*l[3*i+0]+a*r[3*i+0]);
-				d[3*i+1] = saturate_cast<uchar>(ia*l[3*i+1]+a*r[3*i+1]);
-				d[3*i+2] = saturate_cast<uchar>(ia*l[3*i+2]+a*r[3*i+2]);
+				d[3*i+0] = saturate_cast<uchar>(ia*l[3*i+0]+a*r[3*i+0]+0.5);
+				d[3*i+1] = saturate_cast<uchar>(ia*l[3*i+1]+a*r[3*i+1]+0.5);
+				d[3*i+2] = saturate_cast<uchar>(ia*l[3*i+2]+a*r[3*i+2]+0.5);
 			}
 			else if(ml[i]==255)
 			{
@@ -2663,6 +2918,92 @@ void blendLRS(Mat& iml, Mat& imr, Mat& dispL, Mat& dispR ,Mat& dest, Mat& destdi
 }
 
 
+
+//without mask
+template <class T>
+void blendLR_NearestMax(Mat& iml, Mat& imr, Mat& dispL, Mat& dispR ,Mat& dest, Mat& destdisp, double a, T dth, T invalid)
+{
+	a = max(0.0,min(a, 1.0));
+
+	Mat maxL, maxR;
+	maxFilter(dispL,maxL,1);
+	maxFilter(dispR,maxR,1);
+	double ia =1.0-a;
+	//#pragma omp parallel for
+	for(int j=0;j<iml.rows;j++)
+	{
+		uchar* d=dest.ptr<uchar>(j);
+		uchar* l=iml.ptr<uchar>(j);
+		uchar* r=imr.ptr<uchar>(j);
+
+		T* dd=destdisp.ptr<T>(j);
+		T* dl=dispL.ptr<T>(j);
+		T* dr=dispR.ptr<T>(j);
+
+		T* mdl=maxL.ptr<T>(j);
+		T* mdr=maxR.ptr<T>(j);
+
+		for(int i=0;i<iml.cols;i++)
+		{
+			if(dl[i]!=invalid &&dr[i]!=invalid)
+			{
+				if(abs(dr[i]-dl[i])<=dth)
+				{
+					dd[i]=(T)((dl[i]+dr[i])*0.5);
+
+					d[3*i+0] = saturate_cast<uchar>(ia*l[3*i+0]+a*r[3*i+0]+0.5);
+					d[3*i+1] = saturate_cast<uchar>(ia*l[3*i+1]+a*r[3*i+1]+0.5);
+					d[3*i+2] = saturate_cast<uchar>(ia*l[3*i+2]+a*r[3*i+2]+0.5);
+				}
+				else if(abs(mdr[i]-dl[i])<=dth)
+				{
+					dd[i]=(T)((dl[i]+mdr[i])*0.5);
+
+					d[3*i+0] = saturate_cast<uchar>(ia*l[3*i+0]+a*r[3*i+0]+0.5);
+					d[3*i+1] = saturate_cast<uchar>(ia*l[3*i+1]+a*r[3*i+1]+0.5);
+					d[3*i+2] = saturate_cast<uchar>(ia*l[3*i+2]+a*r[3*i+2]+0.5);
+				}
+				else  if(abs(dr[i]-mdl[i])<=dth)
+				{
+					dd[i]=(T)((mdl[i]+dr[i])*0.5);
+
+					d[3*i+0] = saturate_cast<uchar>(ia*l[3*i+0]+a*r[3*i+0]+0.5);
+					d[3*i+1] = saturate_cast<uchar>(ia*l[3*i+1]+a*r[3*i+1]+0.5);
+					d[3*i+2] = saturate_cast<uchar>(ia*l[3*i+2]+a*r[3*i+2]+0.5);
+				}
+
+				else if(dl[i]-dr[i]>dth)
+				{
+					dd[i]=dl[i];
+					d[3*i+0] = l[3*i+0];
+					d[3*i+1] = l[3*i+1];
+					d[3*i+2] = l[3*i+2];
+				}
+				else if(dr[i]-dl[i]>dth)
+				{
+					dd[i]=dr[i];
+					d[3*i+0] = r[3*i+0];
+					d[3*i+1] = r[3*i+1];
+					d[3*i+2] = r[3*i+2];
+				}
+			}
+			else if(dl[i]!=invalid )
+			{
+				dd[i]=dl[i];
+				d[3*i+0] = l[3*i+0];
+				d[3*i+1] = l[3*i+1];
+				d[3*i+2] = l[3*i+2];
+			}
+			else if(dr[i]!=invalid )
+			{
+				dd[i]=dr[i];
+				d[3*i+0] = r[3*i+0];
+				d[3*i+1] = r[3*i+1];
+				d[3*i+2] = r[3*i+2];
+			}
+		}
+	}
+}
 
 //without mask
 template <class T>
@@ -2704,12 +3045,9 @@ void blendLR(Mat& iml, Mat& imr, Mat& dispL, Mat& dispR ,Mat& dest, Mat& destdis
 				else
 				{
 					dd[i]=(T)((dl[i]+dr[i])*0.5);
-					/*	d[3*i+0] = saturate_cast<uchar>(ia*l[3*i+0]+a*r[3*i+0]+0.5);
+					d[3*i+0] = saturate_cast<uchar>(ia*l[3*i+0]+a*r[3*i+0]+0.5);
 					d[3*i+1] = saturate_cast<uchar>(ia*l[3*i+1]+a*r[3*i+1]+0.5);
-					d[3*i+2] = saturate_cast<uchar>(ia*l[3*i+2]+a*r[3*i+2]+0.5);*/
-					d[3*i+0] = saturate_cast<uchar>(ia*l[3*i+0]+a*r[3*i+0]);
-					d[3*i+1] = saturate_cast<uchar>(ia*l[3*i+1]+a*r[3*i+1]);
-					d[3*i+2] = saturate_cast<uchar>(ia*l[3*i+2]+a*r[3*i+2]);
+					d[3*i+2] = saturate_cast<uchar>(ia*l[3*i+2]+a*r[3*i+2]+0.5);
 				}
 			}
 			else if(dl[i]!=invalid )
@@ -2729,6 +3067,7 @@ void blendLR(Mat& iml, Mat& imr, Mat& dispL, Mat& dispR ,Mat& dest, Mat& destdis
 		}
 	}
 }
+
 
 template <class T>
 void blendLR(Mat& iml, Mat& imr, Mat& dispL, Mat& dispR ,Mat& dest, Mat& destdisp,Mat& maskL, Mat& maskR, double a, T dth)
@@ -2773,9 +3112,9 @@ void blendLR(Mat& iml, Mat& imr, Mat& dispL, Mat& dispR ,Mat& dest, Mat& destdis
 				else
 				{
 					dd[i]=(T)((dl[i]+dr[i])*0.5);
-					d[3*i+0] = saturate_cast<uchar>(ia*l[3*i+0]+a*r[3*i+0]);
-					d[3*i+1] = saturate_cast<uchar>(ia*l[3*i+1]+a*r[3*i+1]);
-					d[3*i+2] = saturate_cast<uchar>(ia*l[3*i+2]+a*r[3*i+2]);
+					d[3*i+0] = saturate_cast<uchar>(ia*l[3*i+0]+a*r[3*i+0]+0.5);
+					d[3*i+1] = saturate_cast<uchar>(ia*l[3*i+1]+a*r[3*i+1]+0.5);
+					d[3*i+2] = saturate_cast<uchar>(ia*l[3*i+2]+a*r[3*i+2]+0.5);
 				}
 			}
 			else if(ml[i]==255)
@@ -3624,7 +3963,8 @@ void StereoViewSynthesis::depthfilter(Mat& depth, Mat& depth2,Mat& mask, int vie
 	}
 }
 
-StereoViewSynthesis::StereoViewSynthesis(int preset)
+
+void StereoViewSynthesis::init(int preset)
 {
 	warpMethod = WAPR_IMG_INV;
 	warpSputtering = false;
@@ -3633,12 +3973,17 @@ StereoViewSynthesis::StereoViewSynthesis(int preset)
 	postFilterMethod=POST_GAUSSIAN_FILL;
 	inpaintMethod = FILL_OCCLUSION_HV;
 
-	large_jump = 5;
+	large_jump = 0;
 	warpedMedianKernel = 3;
 	warpedSpeckesWindow=100;
 	warpedSpeckesRange=1;
 
-	blend_z_thresh = 6.0;
+	bilateral_r = 2;
+	bilateral_sigma_space=5;
+	bilateral_sigma_color=8;
+
+	blendMethod = 0;
+	blend_z_thresh = 32.0;
 
 	occBlurSize = Size(3,3);
 
@@ -3648,12 +3993,13 @@ StereoViewSynthesis::StereoViewSynthesis(int preset)
 	boundarySigma = 3.0;
 	boundaryGaussianRatio = 1.0;
 
+	inpaintr = 2.0;
 	if(preset == StereoViewSynthesis::PRESET_FASTEST)
 	{
 		blend_z_thresh = 0.0;
 		warpSputtering = false;
 		warpInterpolationMethod= INTER_NEAREST;
-		depthfiltermode=DEPTH_FILTER_NONE;
+		depthfiltermode=DEPTH_FILTER_MEDIAN;
 		postFilterMethod=POST_FILL;
 		inpaintMethod = FILL_OCCLUSION_LINE;
 	}
@@ -3666,30 +4012,16 @@ StereoViewSynthesis::StereoViewSynthesis(int preset)
 		inpaintMethod = FILL_OCCLUSION_HV;
 	}
 }
+StereoViewSynthesis::StereoViewSynthesis(int preset)
+{
+	init(preset);
+}
 
 StereoViewSynthesis::StereoViewSynthesis()
 {
-	warpMethod = WAPR_IMG_INV;
-	warpSputtering = true;
-	warpInterpolationMethod = INTER_CUBIC;
-	depthfiltermode=0;
-	postFilterMethod=POST_GAUSSIAN_FILL;
-	inpaintMethod = FILL_OCCLUSION_HV;
-
-	large_jump = 3;
-	warpedMedianKernel = 3;
-	warpedSpeckesWindow=100;
-	warpedSpeckesRange=1;
-
-	blend_z_thresh = 0.0;
-
-	occBlurSize = Size(3,3);
-
-	canny_t1=18;
-	canny_t2=30;
-	boundaryKernelSize = Size(3,3);
-	boundarySigma = 3.0;
+	init(PRESET_SLOWEST);
 }
+
 void StereoViewSynthesis::check(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp, Mat& ref)
 {
 	if(ref.empty())ref= Mat::zeros(srcL.size(),srcL.type());
@@ -3859,7 +4191,7 @@ void StereoViewSynthesis::alphaSynth(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR,
 		maskL.setTo(0,m);
 		maskL2.setTo(0,m);
 
-		shiftImInv_<uchar>(srcL,destdisp,dest,-alpha*disp_amp,maskL2);
+		shiftImInvWithMask_<uchar>(srcL,destdisp,dest,-alpha*disp_amp,maskL2);
 		maskL=maskL+maskL2;
 
 		temp.setTo(0);
@@ -3871,7 +4203,7 @@ void StereoViewSynthesis::alphaSynth(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR,
 		destR.setTo(0,m2);
 		maskR.setTo(0,m2);
 		maskL2.setTo(0,m2);
-		shiftImInv_<uchar>(srcR,destdispR,destR,disp_amp*(1.0-alpha),maskL2);
+		shiftImInvWithMask_<uchar>(srcR,destdispR,destR,disp_amp*(1.0-alpha),maskL2);
 		filterSpeckles(destR,0,255,255);
 
 		maskR=maskR+maskL2;
@@ -3988,7 +4320,7 @@ void StereoViewSynthesis::analyzeSynthesizedViewDetail_(Mat& srcL,Mat& srcR, Mat
 	depthfilter(temp,destdisp,maskTemp,cvRound(abs(alpha)),disp_amp);
 	compare(destdisp,0,maskL,cv::CMP_NE);
 	dest.setTo(0);
-	shiftImInv_<T>(srcL,destdisp,dest,-alpha/disp_amp,maskL,0,warpInterpolationMethod); 
+	shiftImInvWithMask_<T>(srcL,destdisp,dest,-alpha/disp_amp,maskL,0,warpInterpolationMethod); 
 
 	draw.push_back(dest.clone());
 
@@ -3998,7 +4330,7 @@ void StereoViewSynthesis::analyzeSynthesizedViewDetail_(Mat& srcL,Mat& srcR, Mat
 	depthfilter(temp,destdispR,maskTemp,cvRound(abs(alpha)),disp_amp);		
 	compare(destdispR,0,maskR,cv::CMP_NE);
 	destR.setTo(0);
-	shiftImInv_<T>(srcR,destdispR,destR,(1.0-alpha)/disp_amp,maskR,0,warpInterpolationMethod);
+	shiftImInvWithMask_<T>(srcR,destdispR,destR,(1.0-alpha)/disp_amp,maskR,0,warpInterpolationMethod);
 
 	draw.push_back(destR.clone());
 
@@ -4069,7 +4401,7 @@ void StereoViewSynthesis::makeMask_(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, 
 	depthfilter(temp,destdisp,maskTemp,cvRound(abs(alpha)),disp_amp);
 	compare(destdisp,0,maskL,cv::CMP_NE);
 	dest.setTo(0);
-	shiftImInv_<T>(srcL,destdisp,dest,-alpha/disp_amp,maskL,0,warpInterpolationMethod); 
+	shiftImInvWithMask_<T>(srcL,destdisp,dest,-alpha/disp_amp,maskL,0,warpInterpolationMethod); 
 
 	draw.push_back(dest.clone());
 
@@ -4077,7 +4409,7 @@ void StereoViewSynthesis::makeMask_(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, 
 	depthfilter(temp,destdispR,maskTemp,cvRound(abs(alpha)),disp_amp);		
 	compare(destdispR,0,maskR,cv::CMP_NE);
 	destR.setTo(0);
-	shiftImInv_<T>(srcR,destdispR,destR,(1.0-alpha)/disp_amp,maskR,0,warpInterpolationMethod);
+	shiftImInvWithMask_<T>(srcR,destdispR,destR,(1.0-alpha)/disp_amp,maskR,0,warpInterpolationMethod);
 
 	draw.push_back(destR.clone());
 
@@ -4101,7 +4433,7 @@ void StereoViewSynthesis::makeMask_(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, 
 
 //#define VIS_SYNTH_INFO 0
 template <class T>
-void StereoViewSynthesis::viewsynth(Mat& srcL, Mat& srcR, Mat& dispL,Mat& dispR, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp, int disptype)
+void StereoViewSynthesis::viewsynth(const Mat& srcL, const Mat& srcR, const Mat& dispL, const Mat& dispR, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp, int disptype)
 {
 	Mat disp8Ubuff;
 	Mat edge;
@@ -4175,13 +4507,12 @@ void StereoViewSynthesis::viewsynth(Mat& srcL, Mat& srcR, Mat& dispL,Mat& dispR,
 #endif
 		shiftDisp<T>(dispL,temp,alpha/disp_amp,sub_gap,(int)(large_jump*disp_amp));
 		depthfilter(temp,destdisp,Mat(),cvRound(abs(alpha)),disp_amp);
-		//shiftImInv_<T>(srcL,destdisp,dest,-alpha/disp_amp,maskL,0,warpInterpolationMethod); 
-		shiftImInvCubicLUT_<T>(srcL,destdisp,dest,-alpha/disp_amp,(int)disp_amp,0); 
+		shiftImInv_<T>(srcL,destdisp,dest,(float)(-alpha/disp_amp),0,warpInterpolationMethod); 
 
 
 		{
 			//	CalcTime t("shift");
-			shiftDisp<T>(dispR,temp,(alpha-1.0)/disp_amp,sub_gap,large_jump*disp_amp);
+			shiftDisp<T>(dispR,temp,(alpha-1.0)/disp_amp,sub_gap,(int)(large_jump*disp_amp));
 		}
 		{
 			//	CalcTime t("filter");
@@ -4190,7 +4521,7 @@ void StereoViewSynthesis::viewsynth(Mat& srcL, Mat& srcR, Mat& dispL,Mat& dispR,
 		{
 			//CalcTime t("inter");
 			//shiftImInv_<T>(srcR,destdispR,destR,(1.0-alpha)/disp_amp,maskR,0,warpInterpolationMethod);
-			shiftImInvCubicLUT_<T>(srcR,destdispR,destR,(1.0-alpha)/disp_amp,disp_amp,0);
+			shiftImInv_<T>(srcR,destdispR,destR,(float)((1.0-alpha)/disp_amp),0, warpInterpolationMethod);
 		}
 
 		//with mask
@@ -4227,12 +4558,18 @@ void StereoViewSynthesis::viewsynth(Mat& srcL, Mat& srcR, Mat& dispL,Mat& dispR,
 		{
 			//blendLRS<T>(dest,destR,destdisp,destdispR,destR,destdispR,maskL,maskR,alpha);
 			//	blendLRS<T>(dest,destR,destdisp,destdispR,destR,destdisp,alpha,invalidvalue);
-			blendLRS_8u_leftisout(dest,destR,destdisp,destdispR,alpha,invalidvalue);
-			dest.copyTo(destR);
+			if(blendMethod==0) blendLRS<T>(dest,destR,destdisp,destdispR, destR,destdisp,alpha,invalidvalue);
+			else 
+			{
+				blendLRS_8u_leftisout(dest,destR,destdisp,destdispR,alpha,invalidvalue);//faster, but not accurate.
+				dest.copyTo(destR);
+			}
 		}
 		else
 		{
-			blendLR<T>(dest,destR,destdisp,destdispR,destR,destdisp,alpha, (T)(blend_z_thresh*disp_amp),invalidvalue);//
+			if(blendMethod==0) blendLR<T>(dest,destR,destdisp,destdispR,destR,destdisp,alpha, (T)(blend_z_thresh*disp_amp),invalidvalue);//
+			else blendLR_NearestMax<T>(dest,destR,destdisp,destdispR,destR,destdisp,alpha, (T)(blend_z_thresh*disp_amp),invalidvalue);//
+			//blendLR<T>(dest,destR,destdisp,destdispR,destR,destdisp,alpha, (T)(blend_z_thresh*disp_amp),invalidvalue);//
 			//blendLR<T>(dest,destR,destdisp,destdispR,destR,destdispR,maskL,maskR,alpha, (T)(blend_z_thresh*disp_amp));//
 
 			//blendLRRes2<T>(dest,destR, srcL, srcR,destdisp,destdispR,destR,destdispR,maskL,maskR,alpha);
@@ -4249,7 +4586,16 @@ void StereoViewSynthesis::viewsynth(Mat& srcL, Mat& srcR, Mat& dispL,Mat& dispR,
 
 		{
 			//CalcTime t("fill");
-			fillOcclusionImDisp(destR,destdisp,invalidvalue, inpaintMethod);
+			if(inpaintMethod<FILL_OCCLUSION_INPAINT_NS)
+				fillOcclusionImDisp(destR,destdisp,invalidvalue, inpaintMethod);
+			else
+			{
+				
+				if(inpaintMethod==FILL_OCCLUSION_INPAINT_NS) inpaint(destR,m,destR,inpaintr,INPAINT_NS);
+				if(inpaintMethod==FILL_OCCLUSION_INPAINT_TELEA) inpaint(destR,m,destR,inpaintr,INPAINT_TELEA);
+
+				fillOcclusion(destdisp);
+			}
 		}
 
 		{
@@ -4464,7 +4810,7 @@ void StereoViewSynthesis::viewsynthSingleAlphaMap(Mat& src,Mat& disp, Mat& dest,
 	//
 	shiftImDispNN3_<T>(src,disp,dest,temp,alpha/disp_amp,zero_,large_jump,(int)disp_amp);// warpInterpolationMethod
 	depthfilter(temp,destdisp,mask,cvRound(abs(alpha)),disp_amp);
-	shiftImInv_<T>(src,destdisp,dest,-alpha/disp_amp,mask,0, INTER_NEAREST);
+	shiftImInvWithMask_<T>(src,destdisp,dest,-alpha/disp_amp,mask,0, INTER_NEAREST);
 
 	//guiAlphaBlend(dest,destdisp);
 }
@@ -4502,7 +4848,7 @@ void StereoViewSynthesis::viewsynthSingle(Mat& src,Mat& disp, Mat& dest, Mat& de
 
 		depthfilter(temp,destdisp,mask,cvRound(abs(alpha)),disp_amp);
 
-		shiftImInv_<T>(src,destdisp,dest,-alpha/disp_amp,mask);
+		shiftImInvWithMask_<T>(src,destdisp,dest,-alpha/disp_amp,mask);
 		//destdisp.convertTo(temp,CV_8U,5.0/disp_amp);imshow("a",temp);//waitKey();
 	}
 
@@ -4553,7 +4899,7 @@ void StereoViewSynthesis::viewsynthSingle(Mat& src,Mat& disp, Mat& dest, Mat& de
 	}
 }
 
-void StereoViewSynthesis::operator()(Mat& srcL, Mat& srcR, Mat& dispL, Mat& dispR, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp)
+void StereoViewSynthesis::operator()(const Mat& srcL, const Mat& srcR, const Mat& dispL, const Mat& dispR, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp)
 {
 	int type = dispL.depth();	
 	if(type == CV_8U)

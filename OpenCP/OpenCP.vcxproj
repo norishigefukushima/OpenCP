@@ -144,10 +144,10 @@
     <ClCompile Include="alphaBlend.cpp" />
     <ClCompile Include="arithmetic.cpp" />
     <ClCompile Include="bilateralFilter.cpp" />
+    <ClCompile Include="bilateralfilter\bilateralFilterTest.cpp" />
+    <ClCompile Include="bilateralfilter\binalyWeightedRangeFilterTest.cpp" />
+    <ClCompile Include="bilateralfilter\jointBilateralFilterTest.cpp" />
     <ClCompile Include="binalyWeightedRangeFilter.cpp" />
-    <ClCompile Include="birateralFilter\binalyWeightedRangeFilterTest.cpp" />
-    <ClCompile Include="birateralFilter\birateralFilterTest.cpp" />
-    <ClCompile Include="birateralFilter\jointBirateralFilterTest.cpp" />
     <ClCompile Include="bitconvert.cpp" />
     <ClCompile Include="color.cpp" />
     <ClCompile Include="consoleImage.cpp" />
@@ -164,6 +164,8 @@
     <ClCompile Include="iterativeBackProjection.cpp" />
     <ClCompile Include="iterativeBackProjection\iterativeBackProjectionTest.cpp" />
     <ClCompile Include="jointBirateralFilter.cpp" />
+    <ClCompile Include="jointNearestFilter.cpp" />
+    <ClCompile Include="jointNearestFilter\jointNearestFilterTest.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="matInfo.cpp" />
     <ClCompile Include="mattingRendering.cpp" />

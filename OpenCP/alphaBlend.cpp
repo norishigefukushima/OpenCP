@@ -157,19 +157,19 @@ void alphaBlend(const Mat& src1, const Mat& src2, const Mat& alpha, Mat& dest)
 		s1=src1;
 	}
 	Mat a;
-	if(alpha.depth()==CV_8U)
+	if(alpha.depth()==CV_8U && s1.channels()==1)
 	{
 		//alpha.convertTo(a,CV_32F,1.0/255.0);
 		alphaBlendSSE_8u(src1,src2,alpha,dest);
 		return ;
 	}
-	else if(alpha.depth()==CV_32F)
+	else if(alpha.depth()==CV_8U)
+	{
+		alpha.convertTo(a,CV_32F,1.0/255);
+	}
+	else 
 	{
 		alpha.copyTo(a);
-	}
-	else if(alpha.depth()==CV_64F)
-	{
-		alpha.convertTo(a,CV_32F);
 	}
 
 	if(dest.channels()==3)

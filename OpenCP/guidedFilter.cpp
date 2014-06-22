@@ -1641,7 +1641,8 @@ public:
 			{
 				Mat s = srcGrid[i];	
 				Mat g = guideGrid[i];	
-				guidedFilter(s, g,s, r,eps);
+				guidedFilter(s, g, s, r,eps);
+				//guidedFilter(srcGrid[i], guideGrid[i], srcGrid[i], r,eps);
 			}
 		}
 	}

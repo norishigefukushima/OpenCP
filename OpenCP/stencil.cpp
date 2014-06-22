@@ -339,3 +339,39 @@ void mergeFromGrid(Vector<Mat>& src,  Size beforeSize, Mat& dest, Size grid, int
 		mergeFromGrid_<double>(src,beforeSize,dest,grid,borderRadius);
 	}
 }
+
+
+void splitHorizon(const Mat& src, vector<Mat>& dest, int num)
+{
+	dest.resize(num);
+	num = max(num,1);
+
+	int vp = 0;
+
+	for(int i=0;i<num;i++)
+	{
+		int vc = (int)(src.rows*(i+1)/(double)num);
+		Mat(src(Rect(Point(0,vp),Point(src.cols,vc)))).copyTo(dest[i]);
+		vp = vc;
+	}
+}
+
+void mergeHorizon(const vector<Mat>& src, Mat& dest)
+{
+	int num = (int)src.size();
+
+	if(dest.empty())
+	{
+		int h = 0;
+		for(int i=0;i<num;i++) h+=src[i].rows;
+		dest.create(Size(src[0].cols,h),src[0].type());
+	}
+	int vp = 0;
+	for(int i=0;i<num;i++)
+	{
+		cout<<i<<endl;
+		int vc = vp + src[i].rows;
+		src[i].copyTo(dest(Rect(Point(0,vp),Point(src[0].cols,vc))));
+		vp = vc;
+	}
+}

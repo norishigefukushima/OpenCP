@@ -56,9 +56,12 @@ using namespace cv;
 
 //merge two images into one image with some options.
 void patchBlendImage(Mat& src1, Mat& src2, Mat& dest, Scalar linecolor=CV_RGB(0,0,0), int linewidth = 2, int direction = 0);
+
 void alphaBlend(const Mat& src1, const Mat& src2, const Mat& alpha, Mat& dest);
 void alphaBlend(const Mat& src1, const Mat& src2, double alpha, Mat& dest);
 void guiAlphaBlend(const Mat& src1, const Mat& src2);
+
+void eraseBoundary(const Mat& src, Mat& dest, int step, int border=BORDER_REPLICATE);
 
 //sse utils
 void memcpy_float_sse(float* dest, float* src, const int size);
@@ -199,6 +202,8 @@ void cvtColorBGR8u2BGRA32f(const Mat& src, Mat& dest, const float alpha=255.f);
 //convert a BGR color image into a skipped one channel data: ex BGRBGRBGR... -> BBBB...(cols size), GGGG....(cols size), RRRR....(cols size),BBBB...(cols size), GGGG....(cols size), RRRR....(cols size),...
 void splitBGRLineInterleave( const Mat& src, Mat& dest);
 
+void mergeHorizon(const vector<Mat>& src, Mat& dest);
+void splitHorizon(const Mat& src, vector<Mat>& dest, int num);
 //split by number of grid
 void mergeFromGrid(Vector<Mat>& src, Size beforeSize, Mat& dest, Size grid, int borderRadius);
 void splitToGrid(const Mat& src, Vector<Mat>& dest, Size grid, int borderRadius);
@@ -226,6 +231,8 @@ enum
 
 void GaussianFilter(const Mat src, Mat& dest, int r, float sigma, int method=FILTER_SLOWEST, Mat& mask=Mat());
 void weightedGaussianFilter(Mat& src, Mat& weight, Mat& dest,Size ksize, float sigma, int border_type = BORDER_REPLICATE);
+
+void jointNearestFilterBase(const Mat& src, const Mat& guide, const Size ksize, Mat& dest);
 
 //bilateral filters
 enum
@@ -387,29 +394,44 @@ class StereoViewSynthesis
 {
 	void depthfilter(Mat& depth, Mat& depth2,Mat& mask2,int viewstep,double disp_amp);
 public:
-	double blend_z_thresh;
-
+	//warping parameters
 	enum 
 	{
 		WAPR_IMG_INV= 0,//Mori et al.
 		WAPR_IMG_FWD_SUB_INV, //Zenger et al.
 	};
-	int warpInterpolationMethod;
-	
-	//Nearest, Linear or Cubic
 	int warpMethod;
-	bool warpSputtering;
 
+	int warpInterpolationMethod;//Nearest, Linear or Cubic
+	bool warpSputtering;
+	int large_jump;
+
+	//warped depth filtering parameters
 	enum 
 	{
 		DEPTH_FILTER_SPECKLE = 0,
 		DEPTH_FILTER_MEDIAN,
 		DEPTH_FILTER_MEDIAN_ERODE,
 		DEPTH_FILTER_CRACK,
+		DEPTH_FILTER_MEDIAN_BILATERAL,
 		DEPTH_FILTER_NONE
 	};
 	int depthfiltermode;
+	int warpedMedianKernel;
 
+	int warpedSpeckesWindow;
+	int warpedSpeckesRange;
+
+	int bilateral_r;
+	float bilateral_sigma_space;
+	float bilateral_sigma_color;
+
+	//blending parameter
+
+	int blendMethod;
+	double blend_z_thresh;
+
+	//post filtering parameters
 	enum 
 	{
 		POST_GAUSSIAN_FILL=0,
@@ -417,38 +439,41 @@ public:
 		POST_NONE
 	};
 	int postFilterMethod;
+
 	enum 
 	{
 	FILL_OCCLUSION_LINE = 0,
 	FILL_OCCLUSION_REFLECT = 1,
 	FILL_OCCLUSION_STRETCH = -1,
-	FILL_OCCLUSION_HV=2
+	FILL_OCCLUSION_HV=2,
+	FILL_OCCLUSION_INPAINT_NS=3, // OpenCV Navier-Stokes algorithm
+	FILL_OCCLUSION_INPAINT_TELEA=4, // OpenCV A. Telea algorithm
 	};
 	int inpaintMethod;
 
-	enum 
-	{
-	PRESET_FASTEST = 0,
-	PRESET_SLOWEST,
-	};
-	
-	int warpedMedianKernel;
-	int warpedSpeckesWindow;
-	int warpedSpeckesRange;
-	int large_jump;
-
+	double inpaintr;//parameter for opencv inpaint 
 	int canny_t1;
 	int canny_t2;
+
 	Size occBlurSize;
 
 	Size boundaryKernelSize;
 	double boundarySigma;
 	double boundaryGaussianRatio;
+
+	//preset
+	enum 
+	{
+	PRESET_FASTEST = 0,
+	PRESET_SLOWEST,
+	};
+
 	StereoViewSynthesis();
 	StereoViewSynthesis(int preset);
+	void init(int preset);
 	template <class T>
-	void viewsynth (Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp, int disptype);
-	void operator()(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp);
+	void viewsynth (const Mat& srcL, const Mat& srcR, const Mat& dispL, const Mat& dispR, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp, int disptype);
+	void operator()(const Mat& srcL, const Mat& srcR, const Mat& dispL, const Mat& dispR, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp);
 
 	Mat diskMask;
 	Mat allMask;//all mask

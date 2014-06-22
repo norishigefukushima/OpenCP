@@ -1,5 +1,13 @@
 #include "opencp.hpp"
 
+void eraseBoundary(const Mat& src, Mat& dest, int step, int border)
+{
+	Mat temp = src(Rect(step,step,src.cols-2*step,src.rows-2*step));
+	Mat a;temp.copyTo(a);
+	Mat b;
+	copyMakeBorder(a,dest,step,step,step,step,border);
+}
+
 template <class T>
 void setTriangleMask(Mat& src)
 {

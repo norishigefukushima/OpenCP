@@ -21,11 +21,14 @@ Todo
 * write detail enhancement document
 * add detail enhancement class.  
 
+* add color joint nearest filter 
 * add test for stencil and parallel filtering.  
 * need stereo matching/cost filter for joint filtering.    
 * need sse implimmentation cvtColorBGRA2BGR,cvtColorBGR2BGRA  
 * need a floating birateral filter without LUT or quantization for back projection.  
-* 
+
+~~add joint nearest filter 6/18~~  
+~~add view synthesis class 6/18~~  
 ~~add domain transform filter of RF implementation. 6/8~~  
 ~~add guided filter 6/5~~  
 ~~add denoising demo5/31~~  

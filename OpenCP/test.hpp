@@ -29,4 +29,6 @@ void guiDenoiseTest(Mat& src);
 
 void guiViewSynthesis();
 
+void guiJointNearestFilterTest(Mat& src);
+
 
