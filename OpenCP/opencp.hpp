@@ -256,6 +256,14 @@ void guidedFilter(const Mat& src, const Mat& guidance, Mat& dest, const int radi
 void guidedFilterMultiCore(const Mat& src, Mat& dest, int r,float eps, int numcore=0);
 void guidedFilterMultiCore(const Mat& src, const Mat& guide, Mat& dest, int r,float eps,int numcore=0);
 
+enum
+{
+	NO_WEIGHT = 0,
+	GAUSSIAN,
+	BILATERAL
+};
+void weightedMedianFilter(Mat& src, Mat& guide, Mat& dst, int r, int truncate, double sig_s, double sig_c, int metric, int method);
+void weightedModeFilter(Mat& src, Mat& guide, Mat& dst, int r, int truncate, double sig_s, double sig_c, int metric, int method);
 
 typedef enum
 {
@@ -392,6 +400,7 @@ public:
 
 class StereoViewSynthesis
 {
+
 private:
 	void depthfilter(Mat& depth, Mat& depth2,Mat& mask2,int viewstep,double disp_amp);
 	template <class T>
@@ -402,6 +411,7 @@ private:
 	void makeMask_(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, double alpha, int invalidvalue, double disp_amp);
 	template <class T>
 	void viewsynthSingle(Mat& src,Mat& disp, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp, int disptype);
+
 public:
 	//warping parameters
 	enum 
@@ -451,12 +461,12 @@ public:
 
 	enum 
 	{
-	FILL_OCCLUSION_LINE = 0,
-	FILL_OCCLUSION_REFLECT = 1,
-	FILL_OCCLUSION_STRETCH = -1,
-	FILL_OCCLUSION_HV=2,
-	FILL_OCCLUSION_INPAINT_NS=3, // OpenCV Navier-Stokes algorithm
-	FILL_OCCLUSION_INPAINT_TELEA=4, // OpenCV A. Telea algorithm
+		FILL_OCCLUSION_LINE = 0,
+		FILL_OCCLUSION_REFLECT = 1,
+		FILL_OCCLUSION_STRETCH = -1,
+		FILL_OCCLUSION_HV=2,
+		FILL_OCCLUSION_INPAINT_NS=3, // OpenCV Navier-Stokes algorithm
+		FILL_OCCLUSION_INPAINT_TELEA=4, // OpenCV A. Telea algorithm
 	};
 	int inpaintMethod;
 
@@ -470,12 +480,11 @@ public:
 	double boundarySigma;
 	double boundaryGaussianRatio;
 
-
 	//preset
 	enum 
 	{
-	PRESET_FASTEST = 0,
-	PRESET_SLOWEST,
+		PRESET_FASTEST = 0,
+		PRESET_SLOWEST,
 	};
 
 	StereoViewSynthesis();

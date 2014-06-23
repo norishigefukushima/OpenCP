@@ -183,6 +183,7 @@
     <ClCompile Include="timer.cpp" />
     <ClCompile Include="viewsynthesis.cpp" />
     <ClCompile Include="viewSynthesis\viewSynthesisTest.cpp" />
+    <ClCompile Include="weightedModeFilter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="fmath.hpp" />

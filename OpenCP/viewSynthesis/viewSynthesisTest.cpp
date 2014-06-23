@@ -226,7 +226,7 @@ void guiViewSynthesis()
 	int space = 300; createTrackbar("space", wname, &space,2000);
 	int iter = 0; createTrackbar("iter", wname, &iter,30);
 
-
+	/*
 	while(key!='q')
 	{
 		Mat dest,destdisp, max_disp_l, max_disp_r;
@@ -248,11 +248,15 @@ void guiViewSynthesis()
 		Mat temp;
 		for(int i=0;i<iter;i++)
 		{
-			jointBilateralFilter(matdiR,matimR, temp,Size(7,7),color/10.0,space/10.0);
-			jointNearestFilterBase(temp,matdiR,Size(3,3),matdiR);
 
-			jointBilateralFilter(matdiL,matimL, temp,Size(7,7),color/10.0,space/10.0);
-			jointNearestFilterBase(temp,matdiL,Size(3,3),matdiL);
+			weightedModeFilter(matdiR,matimR, matdiR,3,8,space/10.0,color/10.0,2,2);
+			weightedModeFilter(matdiL,matimL, matdiL,3,8,space/10.0,color/10.0,2,2);
+			
+			//jointBilateralFilter(matdiR,matimR, temp,Size(7,7),color/10.0,space/10.0);
+			//jointNearestFilterBase(temp,matdiR,Size(3,3),matdiR);
+
+			//jointBilateralFilter(matdiL,matimL, temp,Size(7,7),color/10.0,space/10.0);
+			//jointNearestFilterBase(temp,matdiL,Size(3,3),matdiL);
 		}
 		Mat show;
 		alphaBlend(matimL,matdiL,alpha/100.0,show);
@@ -333,7 +337,7 @@ void guiViewSynthesis()
 			
 		ci.flush();
 	}
-
+	*/
 	key = 0;
 	
 	while(key!='q')
@@ -479,7 +483,8 @@ void guiViewSynthesis()
 					svsR.viewsynthSingleAlphaMap(aMR,dR,waR,destMat[17],-alphaPos*0.001,0,dispAmp,dR.depth());
 					cvtColor(waR,amapR,CV_BGR2GRAY);
 					alphaBlend(wfR,base,amapR,destR);
-					guiAlphaBlend(waR,wfR);
+					imshow("alpha",waR);
+					//guiAlphaBlend(waR,wfR);
 				}
 			}
 		}

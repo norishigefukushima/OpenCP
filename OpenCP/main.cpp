@@ -2,7 +2,6 @@
 #include "test.hpp"
 
 
-
 void depthSubsumpleForgroundBiasedHalf(Mat& src, Mat& dest, int th, int invalid=0)
 {
 	dest.create(Size(src.cols/2,src.rows/2), src.type());
@@ -107,10 +106,10 @@ void generateData()
 	imwrite(format("img/teddyF/view%d.png",i-1),dest);
 	}
 }
+
 void test()
 {
 	Mat a = Mat::zeros(Size(15000,10000),CV_8UC3);
-	
 	
 	{
 		CalcTime t;
