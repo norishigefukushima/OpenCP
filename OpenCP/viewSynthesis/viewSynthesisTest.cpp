@@ -296,14 +296,17 @@ void guiViewSynthesis()
 			ci("%f ms",t.getTime());
 		}
 
-		Mat dest16;
+		/*Mat dest16;
 		{
 			Mat a = Mat::zeros(matimL.size(),CV_16S);
 			Mat b = Mat::zeros(matimL.size(),CV_16S);
 			DepthMapSubpixelRefinment dsr;
 			
 			
-			dsr(matimL,matimR,matdiL,matdiR,2, a,b);
+			dsr.naive(matimL,matimR,matdiL,matdiR,2, a,b);
+			//Mat a2;
+			//a.convertTo(a2,CV_8U,1.0/8);
+			//guiAlphaBlend(matdiL,a2);
 			CalcTime t("time",0,false);
 			maxFilter(a, a,dilation_rad);
 			maxFilter(b, b,dilation_rad);
@@ -313,7 +316,7 @@ void guiViewSynthesis()
 			//StereoViewSynthesisInvoker body(matimL,matimR,max_disp_l,max_disp_r, dest, destdisp,ncore);
 			//parallel_for_(Range(0, ncore), body);
 			ci("%f ms",t.getTime());
-		}
+		}*/
 		
 		if(key=='c')
 		{
@@ -357,8 +360,8 @@ void guiViewSynthesis()
 		
 		if(key=='d') guiAbsDiffCompareGE(dest,ref);
 		ci("%f dB",YPSNR(dest,ref));
-		ci("%f dB",YPSNR(dest16,ref));
-		if(key=='k')guiCompareDiff(dest,dest16,ref);
+		//ci("%f dB",YPSNR(dest16,ref));
+		//if(key=='k')guiCompareDiff(dest,dest16,ref);
 			
 		ci.flush();
 	}

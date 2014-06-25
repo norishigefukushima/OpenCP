@@ -67,6 +67,10 @@ void eraseBoundary(const Mat& src, Mat& dest, int step, int border=BORDER_REPLIC
 void memcpy_float_sse(float* dest, float* src, const int size);
 
 // utility functions
+
+void warpShift(InputArray src, OutputArray dest, int shiftx, int shifty=0, int borderType=-1);
+void warpShiftSubpix(InputArray  src, OutputArray dest, double shiftx, double shifty=0, const int inter_method = cv::INTER_LANCZOS4);
+
 void imshowScale(string name, Mat& dest, double alpha=1.0, double beta=0.0);
 
 void showMatInfo(InputArray src_, string name="Mat");
@@ -520,10 +524,13 @@ class DepthMapSubpixelRefinment
 	Mat pslice;
 	Mat cslice;
 	Mat mslice;
+	double calcReprojectionError(const Mat& leftim, const Mat& rightim, const Mat& leftdisp, const Mat& rightdisp, int disp_amp, bool left2right=true);
+	
 	template <class S,class T>
 	void getDisparitySubPixel_Integer(Mat& src, Mat& dest, int disp_amp);
 	void bluidCostSlice(const Mat& src1, const Mat& src2, Mat& dest, int metric, int truncate);
 public:
 	DepthMapSubpixelRefinment();
 	void operator()(const Mat& leftim, const Mat& rightim, const Mat& leftdisp, const Mat& rightdisp, int disp_amp, Mat& leftdest, Mat& rightdest);
+	void naive(const Mat& leftim, const Mat& rightim, const Mat& leftdisp, const Mat& rightdisp, int disp_amp, Mat& leftdest, Mat& rightdest);
 };

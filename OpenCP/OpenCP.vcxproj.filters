@@ -159,6 +159,9 @@
     <ClCompile Include="weightedModeFilter.cpp">
       <Filter>ソース ファイル\filter</Filter>
     </ClCompile>
+    <ClCompile Include="shiftImage.cpp">
+      <Filter>ソース ファイル\imgproc</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="opencp.hpp">

@@ -176,6 +176,7 @@
     <ClCompile Include="nonLocalMeans.cpp" />
     <ClCompile Include="nonlocalmeans\nonLocalMeansTest.cpp" />
     <ClCompile Include="recursiveBilateralFilter.cpp" />
+    <ClCompile Include="shiftImage.cpp" />
     <ClCompile Include="slic.cpp" />
     <ClCompile Include="slic\SLICTest.cpp" />
     <ClCompile Include="sse_util.cpp" />
