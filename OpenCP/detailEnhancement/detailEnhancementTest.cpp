@@ -26,10 +26,10 @@ void guiDetailEnhancement(Mat& src)
 	Mat blurred;
 	while(key!='q')
 	{
-		double color_sigma = sigma_c/10.0;
-		double space_sigma = sigma_s/10.0;
+		float color_sigma = (float)sigma_c/10.f;
+		float space_sigma = (float)sigma_s/10.f;
 		int d = 2*r+1;
-		double b = boost/10.0;
+		float b = (float)boost/10.f;
 
 		if(sw==0)
 		{

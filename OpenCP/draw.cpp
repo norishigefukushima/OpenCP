@@ -21,6 +21,12 @@ void setTriangleMask(Mat& src)
 	}
 }
 
+void imshowScale(string name, Mat& dest, double alpha, double beta)
+{
+	Mat show;
+	dest.convertTo(show,CV_8U,alpha, beta);
+	imshow(name,show);
+}
 
 void patchBlendImage(Mat& src1, Mat& src2, Mat& dest, Scalar linecolor, int linewidth, int direction)
 {

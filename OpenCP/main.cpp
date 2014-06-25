@@ -111,23 +111,38 @@ void test()
 {
 	Mat a = Mat::zeros(Size(15000,10000),CV_8UC3);
 	
+	for(int i=0;i<10;i++)
 	{
 		CalcTime t;
 		Mat dest;
-		GaussianBlur(a,dest,Size(11,11),11);
+		cvtColorBGR2BGRA(a,dest);
+
+		//GaussianBlur(a,dest,Size(11,11),11);
+	}
+	for(int i=0;i<10;i++)
+	{
+		CalcTime t;
+		Mat dest;
+		cvtColor(a,dest,COLOR_BGR2BGRA);
+
+		//GaussianBlur(a,dest,Size(11,11),11);
 	}
 }
+
+
 int main(int argc, char** argv)
 {
 	//test();
 
-	generateData();
+	//generateData();
 	//Mat ff3 = imread("img/pixelart/ff3.png");
 	//guiAlphaBlend(ff3,ff3);
 	//guiJointNearestFilterTest(ff3);
 	guiViewSynthesis();
 
 	Mat src = imread("img/lenna.png");
+
+
 	//Mat src = imread("Clipboard01.png");
 	
 	//timeGuidedFilterTest(src);

@@ -19,34 +19,68 @@ void guiBinalyWeightedRangeFilterTest(Mat& src)
 	int key = 0;
 	Mat show;
 
-	while(key!='q')
+	if(src.depth()!=CV_8U)
 	{
-		//cout<<"r="<<r<<": "<<"please change 'sw' for changing the type of implimentations."<<endl;
-		float sigma_color = (float)color;
-		double rcomp = max(range_comp,1);
-		int d = 2*r+1;
-
-		Mat a,b;
-		src.convertTo(a,CV_8U,1.0/rcomp);
-		a.convertTo(dest2,CV_32F);
+		while(key!='q')
 		{
-			CalcTime t("binary weighted range filter 32f");
-			binalyWeightedRangeFilter(dest2, dest2, Size(d,d), sigma_color,FILTER_RECTANGLE);
-			//binalyWeightedRangeFilter(dest2, dest2, Size(d,d), sigma_color,BILATERAL_SEPARABLE);
-		}
-		
-		
-		dest2.convertTo(dest,CV_8U,rcomp);
-		a.convertTo(a,CV_8U,rcomp);
-		
-		Mat c1,c2;
-		applyColorMap(dest,c1,2);
-		applyColorMap(a,c2,2);
+			//cout<<"r="<<r<<": "<<"please change 'sw' for changing the type of implimentations."<<endl;
 
-		patchBlendImage(c1,c2,c2,Scalar(255,255,255),2,2);
-		//alphaBlend(src, c2,a/100.0, show);
-		imshow(wname,c2);
-		key = waitKey(1);
+			float sigma_color = (float)color;
+			double rcomp = max(range_comp,1);
+			int d = 2*r+1;
+
+			{
+				CalcTime t("binary weighted range filter 32f");
+				binalyWeightedRangeFilter(src, dest2, Size(d,d), sigma_color,FILTER_RECTANGLE);
+				//binalyWeightedRangeFilter(dest2, dest2, Size(d,d), sigma_color,BILATERAL_SEPARABLE);
+			}
+
+			dest2.convertTo(dest,CV_8U,1.0/rcomp,0.5);
+			showMatInfo(dest);
+
+
+			Mat c1,c2;
+			//applyColorMap(dest,c1,2);
+			//applyColorMap(a,c2,2);
+
+			//patchBlendImage(c1,c2,c2,Scalar(255,255,255),2,2);
+			//alphaBlend(src, c2,a/100.0, show);
+			//imshow(wname,c2);
+			imshow(wname,dest);
+			key = waitKey(1);
+		}
+	}
+	else
+	{
+		while(key!='q')
+		{
+			//cout<<"r="<<r<<": "<<"please change 'sw' for changing the type of implimentations."<<endl;
+			float sigma_color = (float)color;
+			double rcomp = max(range_comp,1);
+			int d = 2*r+1;
+
+			Mat a,b;
+			src.convertTo(a,CV_8U,1.0/rcomp);
+			a.convertTo(dest2,CV_32F);
+			{
+				CalcTime t("binary weighted range filter 32f");
+				binalyWeightedRangeFilter(dest2, dest2, Size(d,d), sigma_color,FILTER_RECTANGLE);
+				//binalyWeightedRangeFilter(dest2, dest2, Size(d,d), sigma_color,BILATERAL_SEPARABLE);
+			}
+
+
+			dest2.convertTo(dest,CV_8U,rcomp);
+			a.convertTo(a,CV_8U,rcomp);
+
+			Mat c1,c2;
+			applyColorMap(dest,c1,2);
+			applyColorMap(a,c2,2);
+
+			patchBlendImage(c1,c2,c2,Scalar(255,255,255),2,2);
+			//alphaBlend(src, c2,a/100.0, show);
+			imshow(wname,c2);
+			key = waitKey(1);
+		}
 	}
 }
 void guiJointBinalyWeightedRangeFilterTest(Mat& src, Mat& guide)

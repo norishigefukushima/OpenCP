@@ -176,7 +176,7 @@ void guiViewSynthesis()
 	int r_R = 4;createTrackbar("r","Refine_parameter",&r_R,20);
 	int th_R = 10;createTrackbar("th","Refine_parameter",&th_R,30);
 	int r_g_R = 3;createTrackbar("r_g","Refine_parameter",&r_g_R,20);
-	int eps_g_R = 2;createTrackbar("eps_g","Refine_parameter",&eps_g_R,255);
+	int eps_g_R = 2;createTrackbar("eps_g","Refine_parameter",&eps_g_R,2550);
 	int iter_g_R = 2;createTrackbar("iter_g","Refine_parameter",&iter_g_R,5);
 	int iter_ex_R = 3;createTrackbar("iter_ex","Refine_parameter",&iter_ex_R,5);
 	int iter_R = 3;createTrackbar("iter","Refine_parameter",&iter_R,5);
@@ -188,16 +188,20 @@ void guiViewSynthesis()
 	int r_M = 3;createTrackbar("r","Matting_parameter",&r_M,20);
 	int th_M = 10;createTrackbar("th","Matting_parameter",&th_M,30);
 	int r_g_M = 3;createTrackbar("r_g","Matting_parameter",&r_g_M,20);
-	int eps_g_M = 2;createTrackbar("eps_g","Matting_parameter",&eps_g_M,255);
+	int eps_g_M = 2;createTrackbar("eps_g","Matting_parameter",&eps_g_M,2550);
 	int iter_g_M = 2;createTrackbar("iter_g","Matting_parameter",&iter_g_M,10);
 	int iter_M = 6;createTrackbar("iter","Matting_parameter",&iter_M,10);
 	int r_Wgauss_M = 1;createTrackbar("r_Wgauss","Matting_parameter",&r_Wgauss_M,10);
 	int th_FB_M = 85;createTrackbar("th_FB","Matting_parameter",&th_FB_M,100);
 
+	StereoViewSynthesis svsM(StereoViewSynthesis::PRESET_SLOWEST);
 	StereoViewSynthesis svs(StereoViewSynthesis::PRESET_SLOWEST);
 	StereoViewSynthesis svsL(StereoViewSynthesis::PRESET_SLOWEST);
 	StereoViewSynthesis svsR(StereoViewSynthesis::PRESET_SLOWEST);
 
+	svs.postFilterMethod = StereoViewSynthesis::POST_FILL;
+	svsL.postFilterMethod = StereoViewSynthesis::POST_FILL;
+	svsR	.postFilterMethod = StereoViewSynthesis::POST_FILL;
 	int key = 0;
 
 	ConsoleImage ci;
@@ -226,7 +230,7 @@ void guiViewSynthesis()
 	int space = 300; createTrackbar("space", wname, &space,2000);
 	int iter = 0; createTrackbar("iter", wname, &iter,30);
 
-	/*
+	
 	while(key!='q')
 	{
 		Mat dest,destdisp, max_disp_l, max_disp_r;
@@ -249,8 +253,8 @@ void guiViewSynthesis()
 		for(int i=0;i<iter;i++)
 		{
 
-			weightedModeFilter(matdiR,matimR, matdiR,3,8,space/10.0,color/10.0,2,2);
-			weightedModeFilter(matdiL,matimL, matdiL,3,8,space/10.0,color/10.0,2,2);
+			//weightedModeFilter(matdiR,matimR, matdiR,3,8,space/10.0,color/10.0,2,2);
+			//weightedModeFilter(matdiL,matimL, matdiL,3,8,space/10.0,color/10.0,2,2);
 			
 			//jointBilateralFilter(matdiR,matimR, temp,Size(7,7),color/10.0,space/10.0);
 			//jointNearestFilterBase(temp,matdiR,Size(3,3),matdiR);
@@ -286,6 +290,25 @@ void guiViewSynthesis()
 			maxFilter(matdiL, max_disp_l,dilation_rad);
 			maxFilter(matdiR, max_disp_r,dilation_rad);
 			svs(matimL,matimR,max_disp_l,max_disp_r, dest, destdisp,alphaPos*0.001,0,dispAmp);
+			
+			//StereoViewSynthesisInvoker body(matimL,matimR,max_disp_l,max_disp_r, dest, destdisp,ncore);
+			//parallel_for_(Range(0, ncore), body);
+			ci("%f ms",t.getTime());
+		}
+
+		Mat dest16;
+		{
+			Mat a = Mat::zeros(matimL.size(),CV_16S);
+			Mat b = Mat::zeros(matimL.size(),CV_16S);
+			DepthMapSubpixelRefinment dsr;
+			
+			
+			dsr(matimL,matimR,matdiL,matdiR,2, a,b);
+			CalcTime t("time",0,false);
+			maxFilter(a, a,dilation_rad);
+			maxFilter(b, b,dilation_rad);
+
+			svs(matimL,matimR,a,b, dest16, destdisp,alphaPos*0.001,0,16);
 			
 			//StereoViewSynthesisInvoker body(matimL,matimR,max_disp_l,max_disp_r, dest, destdisp,ncore);
 			//parallel_for_(Range(0, ncore), body);
@@ -334,10 +357,12 @@ void guiViewSynthesis()
 		
 		if(key=='d') guiAbsDiffCompareGE(dest,ref);
 		ci("%f dB",YPSNR(dest,ref));
+		ci("%f dB",YPSNR(dest16,ref));
+		if(key=='k')guiCompareDiff(dest,dest16,ref);
 			
 		ci.flush();
 	}
-	*/
+	
 	key = 0;
 	
 	while(key!='q')
@@ -442,9 +467,9 @@ void guiViewSynthesis()
 		
 		maxFilter(matdiL, max_disp_l,dilation_rad);
 		maxFilter(matdiR, max_disp_r,dilation_rad);
-		svs(matimL,matimR,max_disp_l,max_disp_r,dilateSynth,destMat[9],alphaPos*0.001,0,dispAmp);
-		svs(matimL,matimR,rdL,rdR,basic,destMat[9],alphaPos*0.001,0,dispAmp);
-		
+		svsM(matimL,matimR,max_disp_l,max_disp_r,dilateSynth,destMat[9],alphaPos*0.001,0,dispAmp);
+		svsM(matimL,matimR,rdL,rdR,basic,destMat[9],alphaPos*0.001,0,dispAmp);
+
 		imshow("disp",rdL);
 		svs(bL,bR,rdL,rdR,base,destMat[9],alphaPos*0.001,0,dispAmp);
 
@@ -483,24 +508,34 @@ void guiViewSynthesis()
 					svsR.viewsynthSingleAlphaMap(aMR,dR,waR,destMat[17],-alphaPos*0.001,0,dispAmp,dR.depth());
 					cvtColor(waR,amapR,CV_BGR2GRAY);
 					alphaBlend(wfR,base,amapR,destR);
+					imshow("fore",wfR);
 					imshow("alpha",waR);
 					//guiAlphaBlend(waR,wfR);
 				}
 			}
 		}
 		
+
+		if(key=='b')guiAlphaBlend(base, destL);
 		alphaBlend(destL,destR,alphaPos*0.001,FVdest);
 
 		imshow("FVdest",FVdest);
-		waitKey(1);
+		key = waitKey(1);
 		//guiAlphaBlend(FVdest,ref);
 		//cout<<YPSNR(FVdest,ref)<<endl;
 
+		int thresh = 10;
 		ci("basic %f",YPSNR(basic,ref));
+		ci("basic %f",calcBadPixel(basic,ref,thresh));
 		ci("max.  %f",YPSNR(dilateSynth,ref));
-		ci("Base. %f",YPSNR(base,ref));
+		ci("max.  %f",calcBadPixel(dilateSynth,ref,thresh));
+
+		//ci("Base. %f",YPSNR(base,ref));
 		
 		ci("Matt. %f",YPSNR(FVdest,ref));
+		ci("Matt. %f",calcBadPixel(FVdest,ref,thresh));
+
+		if(key=='o')guiAlphaBlend(FVdest,dilateSynth);
 		ci.flush();
 	}
 

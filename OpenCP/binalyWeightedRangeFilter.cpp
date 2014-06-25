@@ -2161,46 +2161,42 @@ void binalyWeightedRangeFilter(const Mat& src, Mat& dst, Size kernelSize, float 
 	if(dst.empty())dst.create(src.size(),src.type());
 	CV_Assert(method!=FILTER_SLOWEST);
 
-	if(method==FILTER_CIRCLE)
+	if(method==FILTER_CIRCLE || method==FILTER_DEFAULT)
 	{
-		if(src.type()==CV_MAKE_TYPE(CV_8U,src.channels()))
+		if(src.depth()==CV_8U)
 		{
 			binalyWeightedRangeFilter_8u(src,dst,kernelSize,(uchar)threshold,borderType, false);
 		}
-		if(src.type()==CV_MAKE_TYPE(CV_16S,src.channels()))
+		else if(src.depth()==CV_16S || src.depth()==CV_16U)
 		{
-			Mat srcf;
+			Mat srcf; src.convertTo(srcf,CV_32F);
 			Mat destf(src.size(),CV_32F);
-			src.convertTo(srcf,CV_32F);
 
 			binalyWeightedRangeFilter_32f(srcf,destf,kernelSize,threshold,borderType, false);
-			destf.convertTo(dst,CV_16S);
+			destf.convertTo(dst,src.depth(),1.0,0.5);
 		}
-		else if(src.type()==CV_MAKE_TYPE(CV_32F,src.channels()))
+		else if(src.depth()==CV_32F)
 		{
 			binalyWeightedRangeFilter_32f(src,dst,kernelSize,threshold,borderType, false);
-
 		}
 	}
 	else if(method==FILTER_RECTANGLE)
 	{
-		if(src.type()==CV_MAKE_TYPE(CV_8U,src.channels()))
+		if(src.depth()==CV_8U)
 		{
 			binalyWeightedRangeFilter_8u(src,dst,kernelSize,(uchar)threshold,borderType, true);
 		}
-		if(src.type()==CV_MAKE_TYPE(CV_16S,src.channels()))
+		else if(src.depth()==CV_16S || src.depth()==CV_16U)
 		{
-			Mat srcf;
+			Mat srcf; src.convertTo(srcf,CV_32F);
 			Mat destf(src.size(),CV_32F);
-			src.convertTo(srcf,CV_32F);
 
 			binalyWeightedRangeFilter_32f(srcf,destf,kernelSize,threshold,borderType, true);
-			destf.convertTo(dst,CV_16S);
+			destf.convertTo(dst,src.depth(),1.0,0.5);
 		}
-		else if(src.type()==CV_MAKE_TYPE(CV_32F,src.channels()))
+		else if(src.depth()==CV_32F)
 		{
 			binalyWeightedRangeFilter_32f(src,dst,kernelSize,threshold,borderType, true);
-
 		}
 	}
 	else if(method==FILTER_SEPARABLE)
@@ -2243,26 +2239,36 @@ void jointBinalyWeightedRangeFilter(const Mat& src, const Mat& guide, Mat& dst, 
 {
 	if(dst.empty())dst.create(src.size(),src.type());
 	CV_Assert(method!=FILTER_SLOWEST);
+	CV_Assert(src.depth() == guide.depth());
 
-
-	if(method==FILTER_CIRCLE)
+	if(method==FILTER_CIRCLE || method==FILTER_DEFAULT)
 	{
-		if(src.type()==CV_MAKE_TYPE(CV_8U,src.channels()))
+		if(src.depth()==CV_8U)
 		{
 			jointBinalyWeightedRangeFilter_8u(src,guide,dst,kernelSize,(uchar)threshold,borderType,false);
 		}
-		else if(src.type()==CV_MAKE_TYPE(CV_32F,src.channels()))
+		else if(src.depth()==CV_16S || src.depth()==CV_16U)
+		{
+			Mat srcf,guidef;
+			Mat destf(src.size(),CV_32F);
+			src.convertTo(srcf,CV_32F);
+			guide.convertTo(guidef,CV_32F);
+
+			jointBinalyWeightedRangeFilter_32f(srcf,guidef,destf,kernelSize,threshold,borderType, false);
+			destf.convertTo(dst,src.depth(),1.0,0.5);
+		}
+		else if(src.depth()==CV_32F)
 		{
 			jointBinalyWeightedRangeFilter_32f(src,guide,dst,kernelSize,threshold,borderType, false);
 		}
 	}
 	else if(method==FILTER_RECTANGLE)
 	{
-		if(src.type()==CV_MAKE_TYPE(CV_8U,src.channels()))
+		if(src.depth()==CV_8U)
 		{
 			jointBinalyWeightedRangeFilter_8u(src,guide,dst,kernelSize,(uchar)threshold,borderType, true);
 		}
-		if(src.type()==CV_MAKE_TYPE(CV_16S,src.channels()))
+		else if(src.depth()==CV_16S || src.depth()==CV_16U)
 		{
 			Mat srcf,guidef;
 			Mat destf(src.size(),CV_32F);
@@ -2270,21 +2276,20 @@ void jointBinalyWeightedRangeFilter(const Mat& src, const Mat& guide, Mat& dst, 
 			guide.convertTo(guidef,CV_32F);
 
 			jointBinalyWeightedRangeFilter_32f(srcf,guidef,destf,kernelSize,threshold,borderType, true);
-			destf.convertTo(dst,CV_16S);
+			destf.convertTo(dst,src.depth(),1.0,0.5);
 		}
-		else if(src.type()==CV_MAKE_TYPE(CV_32F,src.channels()))
+		else if(src.depth()==CV_32F)
 		{
 			jointBinalyWeightedRangeFilter_32f(src,guide,dst,kernelSize,threshold,borderType, true);
-
 		}
 	}
 	else if(method==FILTER_SEPARABLE)
 	{
-		if(src.type()==CV_MAKE_TYPE(CV_8U,src.channels()))
+		if(src.depth()==CV_8U)
 		{
 			jointBinalyWeightedRangeFilterSP_8u(src,guide,dst,kernelSize,(uchar)threshold,borderType);
 		}
-		else if(src.type()==CV_MAKE_TYPE(CV_32F,src.channels()))
+		else if(src.depth()==CV_32F)
 		{
 			jointBinalyWeightedRangeFilterSP_32f(src,guide,dst,kernelSize,threshold,borderType);
 		}

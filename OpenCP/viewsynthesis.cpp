@@ -388,9 +388,9 @@ void shiftImInvCubicLUT_(const Mat& srcim, Mat& srcdisp, Mat& destim, float amp,
 					dim[3*(i)+1]=saturate_cast<uchar>(vaa*sim[3*(i-dest+1)+1] + aa*sim[3*(i-dest)+1]+iaa*sim[3*(i-dest-1)+1]+viaa*sim[3*(i-dest-2)+1]);
 					dim[3*(i)+2]=saturate_cast<uchar>(vaa*sim[3*(i-dest+1)+2] + aa*sim[3*(i-dest)+2]+iaa*sim[3*(i-dest-1)+2]+viaa*sim[3*(i-dest-2)+2]);
 
-				//	dim[3*(i)+0]=saturate_cast<uchar>(vaa*sim[3*(i-dest+1)+0] + aa*sim[3*(i-dest)+0]+iaa*sim[3*(i-dest-1)+0]+viaa*sim[3*(i-dest-2)+0]+0.5f);
+					//	dim[3*(i)+0]=saturate_cast<uchar>(vaa*sim[3*(i-dest+1)+0] + aa*sim[3*(i-dest)+0]+iaa*sim[3*(i-dest-1)+0]+viaa*sim[3*(i-dest-2)+0]+0.5f);
 					//dim[3*(i)+1]=saturate_cast<uchar>(vaa*sim[3*(i-dest+1)+1] + aa*sim[3*(i-dest)+1]+iaa*sim[3*(i-dest-1)+1]+viaa*sim[3*(i-dest-2)+1]+0.5f);
-				//	dim[3*(i)+2]=saturate_cast<uchar>(vaa*sim[3*(i-dest+1)+2] + aa*sim[3*(i-dest)+2]+iaa*sim[3*(i-dest-1)+2]+viaa*sim[3*(i-dest-2)+2]+0.5f);
+					//	dim[3*(i)+2]=saturate_cast<uchar>(vaa*sim[3*(i-dest+1)+2] + aa*sim[3*(i-dest)+2]+iaa*sim[3*(i-dest-1)+2]+viaa*sim[3*(i-dest-2)+2]+0.5f);
 
 
 					/*__m128 mlut = _mm_load_ps(lut+idx);
@@ -468,10 +468,109 @@ void shiftImInvCubicLUT_(const Mat& srcim, Mat& srcdisp, Mat& destim, float amp,
 }
 
 template <class T>
+void shiftImInvCubic_(const Mat& srcim, Mat& srcdisp, Mat& destim, double amp, int invalid = 0)
+{		
+	const float cubic = -1.f;
+
+	const float c1 = cubic;
+	const float c2 = -5.f*cubic;
+	const float c3 = 8.f*cubic;
+	const float c4 = -4.f*cubic;
+	const float c5 = 2.f+cubic;
+	const float c6 = -(cubic+3.f);
+
+	if(amp>0)
+	{
+		Mat im;copyMakeBorder(srcim,im, 0,0,2,1,BORDER_REPLICATE);
+		//#pragma omp parallel for
+		for(int j=0;j<srcdisp.rows;j++)
+		{
+			uchar* sim = im.ptr<uchar>(j);sim+=6;
+			uchar* dim = destim.ptr<uchar>(j);
+			T* s = srcdisp.ptr<T>(j);
+
+			for(int i=0;i<srcdisp.cols;i++)
+			{
+				const T disp = s[i];
+				if(disp ==invalid)
+				{
+					memset(dim+3*i,0,3);
+					continue;
+				}
+
+				const int dest = (int)(disp*amp);
+				const float ia = (float)((disp*amp)-dest);
+				const float a = 1.f-ia;
+
+				if(ia==0.0)
+				{
+					memcpy(dim+3*i,sim+3*(i-dest), 3);	
+				}
+				else 
+				{	
+					const float viaa= c1*(1.f+ a)*(1.f+ a)*(1.f+ a) + c2*(1.f+ a)*(1.f+ a) +c3*(1.f+ a) + c4;
+					const float iaa = c5* a* a* a + c6* a* a + 1.f;
+					const float aa  = c5*ia*ia*ia + c6*ia*ia + 1.f;
+					const float vaa = c1*(1.f+ ia)*(1.f+ ia)*(1.f+ ia) + c2*(1.f+ ia)*(1.f+ ia) +c3*(1.f+ ia) + c4;
+
+					dim[3*(i)+0]=saturate_cast<uchar>(vaa*sim[3*(i-dest+1)+0] + aa*sim[3*(i-dest)+0]+iaa*sim[3*(i-dest-1)+0]+viaa*sim[3*(i-dest-2)+0]);
+					dim[3*(i)+1]=saturate_cast<uchar>(vaa*sim[3*(i-dest+1)+1] + aa*sim[3*(i-dest)+1]+iaa*sim[3*(i-dest-1)+1]+viaa*sim[3*(i-dest-2)+1]);
+					dim[3*(i)+2]=saturate_cast<uchar>(vaa*sim[3*(i-dest+1)+2] + aa*sim[3*(i-dest)+2]+iaa*sim[3*(i-dest-1)+2]+viaa*sim[3*(i-dest-2)+2]);
+				}			
+			}
+		}
+	}
+	else if(amp<0)
+	{
+		Mat im;copyMakeBorder(srcim,im, 0,0,0,2,BORDER_REPLICATE);
+		for(int j=0;j<srcdisp.rows;j++)
+		{
+			uchar* sim = im.ptr<uchar>(j);
+			uchar* dim = destim.ptr<uchar>(j);
+
+			T* s = srcdisp.ptr<T>(j);
+			for(int i=0;i<srcdisp.cols;i++)
+			{
+				const T disp = s[i];
+				if(disp ==invalid)
+				{
+					memset(dim+3*i,0,3);
+					continue;
+				}
+
+				const int dest = (int)(-amp*disp);//•„†
+				const float ia = (float)((-amp*disp)-dest);
+				const float a = 1.f-ia;
+
+				if(ia==0.0)
+				{
+					memcpy(dim+3*i,sim+3*(i+dest), 3);	
+				}
+				else 
+				{
+					const float viaa= c1*(1.f+ a)*(1.f+ a)*(1.f+ a) + c2*(1.f+ a)*(1.f+ a) +c3*(1.f+ a) + c4;
+					const float iaa = c5* a* a* a + c6* a* a + 1.f;
+					const float aa  = c5*ia*ia*ia + c6*ia*ia + 1.f;
+					const float vaa = c1*(1.f+ ia)*(1.f+ ia)*(1.f+ ia) + c2*(1.f+ ia)*(1.f+ ia) +c3*(1.f+ ia) + c4;
+
+					dim[3*(i)+0]=saturate_cast<uchar>(vaa*sim[3*(i+dest-1)+0] + aa*sim[3*(i+dest)+0]+iaa*sim[3*(i+dest+1)+0]+viaa*sim[3*(i+dest+2)+0]);
+					dim[3*(i)+1]=saturate_cast<uchar>(vaa*sim[3*(i+dest-1)+1] + aa*sim[3*(i+dest)+1]+iaa*sim[3*(i+dest+1)+1]+viaa*sim[3*(i+dest+2)+1]);
+					dim[3*(i)+2]=saturate_cast<uchar>(vaa*sim[3*(i+dest-1)+2] + aa*sim[3*(i+dest)+2]+iaa*sim[3*(i+dest+1)+2]+viaa*sim[3*(i+dest+2)+2]);
+				}			
+			}
+		}
+	}
+	else
+	{
+		srcim.copyTo(destim);
+	}	
+}
+
+template <class T>
 void shiftImInvCubic_(const Mat& srcim, Mat& srcdisp, Mat& destim, double amp, Mat& mask, int invalid = 0)
 {		
 	const float cubic = -1.f;
-	
+
 	const float c1 = cubic;
 	const float c2 = -5.f*cubic;
 	const float c3 = 8.f*cubic;
@@ -605,6 +704,7 @@ void shiftImInvCubic_(const Mat& srcim, Mat& srcdisp, Mat& destim, double amp, M
 		mask.setTo(Scalar(255));
 	}	
 }
+
 
 template <class T>
 void shiftImInvLinear_(const Mat& srcim, Mat& srcdisp, Mat& destim, float amp, int invalid = 0)
@@ -804,8 +904,8 @@ void shiftImInv_(const Mat& srcim, Mat& srcdisp, Mat& destim, float amp, int inv
 
 	if(inter_method==INTER_CUBIC)
 	{
-		if(srcdisp.type()!=CV_8U)cout<<" the function must be 8bit"<<endl;
-		shiftImInvCubicLUT_<T>(srcim, srcdisp, destim, amp, invalid);
+		if(srcdisp.type()!=CV_8U)shiftImInvCubic_<T>(srcim, srcdisp, destim, amp, invalid);
+		else shiftImInvCubicLUT_<T>(srcim, srcdisp, destim, amp, invalid);
 	}
 	else if(inter_method==INTER_LINEAR)
 		shiftImInvLinear_<T>(srcim, srcdisp, destim, amp, invalid);
@@ -1716,7 +1816,7 @@ void shiftDisp(const Mat& srcdisp, Mat& destdisp, double amp,double sub_gap,cons
 		}
 		else
 		{
-		shiftDisp_<T>(srcdisp,destdisp,amp,large_jump, (int)sub_gap);
+			shiftDisp_<T>(srcdisp,destdisp,amp,large_jump, (int)sub_gap);
 		}
 	}
 	else
@@ -4078,6 +4178,8 @@ void StereoViewSynthesis::check(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, Mat&
 	}
 }
 
+
+
 void StereoViewSynthesis::check(Mat& src, Mat& disp,Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp, Mat& ref)
 {
 	if(ref.empty())ref= Mat::zeros(src.size(),src.type());
@@ -4431,6 +4533,212 @@ void StereoViewSynthesis::makeMask_(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, 
 	maxFilter(boundaryMask,boundaryMask,Size(3,3));
 }
 
+
+DepthMapSubpixelRefinment:: DepthMapSubpixelRefinment()
+{
+	;
+}
+
+template <class S,class T>
+void DepthMapSubpixelRefinment::getDisparitySubPixel_Integer(Mat& src, Mat& dest, int disp_amp)
+{
+	T* disp = dest.ptr<T>(0);
+	S* s = src.ptr<S>(0); 
+	const int imsize = src.size().area();
+
+	for(int j=0;j<imsize;j++)
+	{
+		T d = (T)s[j]; 
+		float f = cslice.at<float>(j);
+		float p = pslice.at<float>(j);
+		float m = mslice.at<float>(j);
+
+		float md = ((p+m-(2.f*f))*2.f);
+		if(md!=0)
+		{
+			float dd;
+			float diff = (p-m)/md;
+			if(abs(diff)<1.f)
+				dd = (float)d -diff;
+			else 
+				dd= (float)d;
+			//cout<<d<<":"<<dd<<","<<md<<endl;getchar();
+			disp[j]=(T)(disp_amp*dd+0.5f);
+		}
+		else
+		{
+			disp[j]=(T)(disp_amp*d+0.5f);
+		}
+	}
+}
+void DepthMapSubpixelRefinment::bluidCostSlice(const Mat& src1, const Mat& src2, Mat& dest, int metric, int truncate)
+{
+	if(dest.empty())dest = Mat::zeros(src1.size(),CV_32F);
+
+	uchar* s1 = (uchar*)src1.ptr<uchar>(0);
+	uchar* s2 = (uchar*)src2.ptr<uchar>(0);
+	float* d = dest.ptr<float>(0);
+	if(metric = 1)
+	{
+		for(int i=0;i<src1.size().area();i++)
+		{
+			d[i] = (float)(min( abs(s1[3*i+0] - s2[3*i+0]),truncate)
+				+ min( abs(s1[3*i+1] - s2[3*i+1]),truncate)
+				+ min( abs(s1[3*i+2] - s2[3*i+2]),truncate));
+		}
+	}
+	else if(metric = 2)
+	{
+		int t2 = truncate*truncate;
+		for(int i=0;i<src1.size().area();i++)
+		{
+			d[i] = (float)(min( (s1[3*i+0] - s2[3*i+0])*(s1[3*i+0] - s2[3*i+0]),t2)
+				+ min( (s1[3*i+1] - s2[3*i+1])*(s1[3*i+1] - s2[3*i+1]),t2)
+				+ min( (s1[3*i+2] - s2[3*i+2])*(s1[3*i+2] - s2[3*i+2]),t2));
+		}
+	}
+}
+void DepthMapSubpixelRefinment::operator()(const Mat& leftim, const Mat& rightim, const Mat& leftdisp, const Mat& rightdisp, int disp_amp, Mat& leftdest, Mat& rightdest)
+{
+	int AMP = 16;
+
+	Mat leftdispf;leftdisp.convertTo(leftdispf,CV_32F);
+	Mat rightdispf;rightdisp.convertTo(rightdispf,CV_32F);
+	int interpolation = INTER_NEAREST;
+	Mat ld,rd;
+	leftdisp.convertTo(ld,CV_8U,1.0/(double)disp_amp);
+	rightdisp.convertTo(rd,CV_8U,1.0/(double)disp_amp);
+
+	Mat wleftdisp = Mat::zeros(leftdisp.size(),leftdisp.type());
+	Mat wleftim = Mat::zeros(leftim.size(),leftim.type());
+	Mat pwleftdisp = Mat::zeros(leftdisp.size(),leftdisp.type());
+	Mat pwleftim = Mat::zeros(leftim.size(),leftim.type());
+	Mat mwleftdisp = Mat::zeros(leftdisp.size(),leftdisp.type());
+	Mat mwleftim = Mat::zeros(leftim.size(),leftim.type());
+
+	Mat wrightdisp = Mat::zeros(leftdisp.size(),leftdisp.type());
+	Mat wrightim = Mat::zeros(leftim.size(),leftim.type());
+	Mat pwrightdisp = Mat::zeros(leftdisp.size(),leftdisp.type());
+	Mat pwrightim = Mat::zeros(leftim.size(),leftim.type());
+	Mat mwrightdisp = Mat::zeros(leftdisp.size(),leftdisp.type());
+	Mat mwrightim = Mat::zeros(leftim.size(),leftim.type());
+
+	Mat temp;
+
+	shiftDisp<uchar>(rd,wrightdisp,-1.0,1.0,0);
+	medianBlur(wrightdisp,wrightdisp,3);
+	shiftImInv_<uchar>(rightim,wrightdisp,wrightim,(float)(1.0),0,interpolation); 
+
+	add(rd,1,temp);
+	shiftDisp<uchar>(rd,pwrightdisp,-1.0,1.0,0);
+	medianBlur(pwrightdisp,pwrightdisp,3);
+	shiftImInv_<uchar>(rightim,pwrightdisp,wrightim,(float)(1.0),0,interpolation); 
+
+	subtract(rd,1,temp);
+	shiftDisp<uchar>(rd,mwrightdisp,-1.0,1.0,0);
+	medianBlur(mwrightdisp,mwrightdisp,3);
+	shiftImInv_<uchar>(rightim,mwrightdisp,wrightim,(float)(1.0),0,interpolation); 
+
+
+	shiftDisp<uchar>(ld,wleftdisp,1.0,1.0,0);
+	medianBlur(wleftdisp,wleftdisp,3);
+	shiftImInv_<uchar>(leftim,wleftdisp,wleftim,(float)(-1.0),0,interpolation); 
+
+	add(ld,1,temp);
+	shiftDisp<uchar>(temp,pwleftdisp,1.0,1,0);
+	medianBlur(pwleftdisp,pwleftdisp,3);
+	shiftImInv_<uchar>(leftim,pwleftdisp,pwleftim,(float)(-1.0),0,interpolation); 
+
+	subtract(ld,1,temp);
+	shiftDisp<uchar>(temp,mwleftdisp,1.0,1,0);
+	medianBlur(mwleftdisp,mwleftdisp,3);
+	shiftImInv_<uchar>(leftim,mwleftdisp,mwleftim,(float)(-1.0),0,interpolation); 
+
+	int d = 7;
+	int nrm = 2;
+	int trunc = 30;
+	int t2 = (int)(trunc*trunc/10.0);
+
+
+	Mat srightdisp = Mat::zeros(leftdisp.size(),CV_16S);
+	Mat swrightdisp = Mat::zeros(leftdisp.size(),CV_16S);
+	Mat sleftdisp = Mat::zeros(leftdisp.size(),CV_16S);
+	Mat swleftdisp = Mat::zeros(leftdisp.size(),CV_16S);
+
+
+	bluidCostSlice(rightim,wleftim,cslice,nrm,trunc);
+	//jointBinalyWeightedRangeFilter(cslice,wleftdisp,cslice,Size(d,d),(float)disp_amp);
+	jointBinalyWeightedRangeFilter(cslice,rightdispf,cslice,Size(d,d),(float)disp_amp);
+
+	bluidCostSlice(rightim,pwleftim,pslice,nrm,trunc);
+	//jointBinalyWeightedRangeFilter(pslice,pwleftdisp,pslice,Size(d,d),(float)disp_amp);
+	jointBinalyWeightedRangeFilter(pslice,rightdispf,pslice,Size(d,d),(float)disp_amp);
+
+	bluidCostSlice(rightim,mwleftim,mslice,nrm,trunc);
+	//jointBinalyWeightedRangeFilter(mslice,mwleftdisp,mslice,Size(d,d),(float)disp_amp);
+	jointBinalyWeightedRangeFilter(mslice,rightdispf,mslice,Size(d,d),(float)disp_amp);
+
+
+	getDisparitySubPixel_Integer<uchar,short>(rd,srightdisp,AMP);
+
+
+	bluidCostSlice(leftim,wrightim,cslice,nrm,trunc);
+	//jointBinalyWeightedRangeFilter(cslice,wleftdisp,cslice,Size(d,d),(float)disp_amp);
+	jointBinalyWeightedRangeFilter(cslice,leftdispf,cslice,Size(d,d),(float)disp_amp);
+
+	bluidCostSlice(leftim,pwrightim,pslice,nrm,trunc);
+	//jointBinalyWeightedRangeFilter(pslice,pwleftdisp,pslice,Size(d,d),(float)disp_amp);
+	jointBinalyWeightedRangeFilter(pslice,leftdispf,pslice,Size(d,d),(float)disp_amp);
+
+	bluidCostSlice(leftim,mwrightim,mslice,nrm,trunc);
+	//jointBinalyWeightedRangeFilter(mslice,mwleftdisp,mslice,Size(d,d),(float)disp_amp);
+	jointBinalyWeightedRangeFilter(mslice,leftdispf,mslice,Size(d,d),(float)disp_amp);
+
+	getDisparitySubPixel_Integer<uchar,short>(ld,sleftdisp,AMP);
+
+	binalyWeightedRangeFilter(sleftdisp,leftdest,Size(3,3),16);
+	binalyWeightedRangeFilter(srightdisp,rightdest,Size(3,3),16);
+
+	// showMatInfo(leftdest);
+	// showMatInfo(rightdest);
+	//	 getchar();
+	// showMatInfo(rightdest);
+	//showMatInfo(leftdest);
+
+
+	// cout<<"b left:"<<norm(wleftim,rightim,NORM_L2,wleftdisp)<<endl;
+	// cout<<"b right:"<<norm(wrightim,leftim,NORM_L2,wrightdisp)<<endl;
+
+
+	// shiftDisp<short>(srightdisp,swrightdisp,-1.0/AMP,AMP,0);
+
+	//imshowScale("depthp",wrightdisp,1.0/2);
+	///imshowScale("depth1",srightdisp,1.0/AMP*2);
+
+	// medianBlur(swrightdisp,swrightdisp,3);
+	// imshowScale("depth",swrightdisp,1.0/AMP*2);
+
+	// Mat aa = wrightim.clone();
+
+
+
+	// shiftImInv_<short>(rightim,swrightdisp,wrightim,(float)(1.0/AMP),0,interpolation); 
+
+	// cout<<"a right"<<norm(wrightim,leftim,NORM_L2,wrightdisp)<<endl;
+
+	//guiAlphaBlend(wleftim,rightim);
+
+
+	// guiAlphaBlend(aa, wrightim);
+	// guiCompareDiff(aa,wrightim,leftim);
+
+
+	/*shiftDisp<T>(leftdisp,temp,1.0/disp_amp,disp_amp,0));
+	depthfilter(temp,destdisp,Mat(),cvRound(abs(alpha)),disp_amp);
+	shiftImInv_<T>(srcL,destdisp,dest,(float)(-alpha/disp_amp),0,warpInterpolationMethod); 
+	*/	 
+}
+
 //#define VIS_SYNTH_INFO 0
 template <class T>
 void StereoViewSynthesis::viewsynth(const Mat& srcL, const Mat& srcR, const Mat& dispL, const Mat& dispR, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp, int disptype)
@@ -4468,7 +4776,6 @@ void StereoViewSynthesis::viewsynth(const Mat& srcL, const Mat& srcR, const Mat&
 	Mat destdispR(srcL.size(),disptype);
 	Mat temp(srcL.size(),disptype);
 	Mat m;
-
 
 #ifdef VIS_SYNTH_INFO
 	Mat vis = Mat::zeros(dest.size(),CV_8UC3);
@@ -4590,7 +4897,7 @@ void StereoViewSynthesis::viewsynth(const Mat& srcL, const Mat& srcR, const Mat&
 				fillOcclusionImDisp(destR,destdisp,invalidvalue, inpaintMethod);
 			else
 			{
-				
+
 				if(inpaintMethod==FILL_OCCLUSION_INPAINT_NS) inpaint(destR,m,destR,inpaintr,INPAINT_NS);
 				if(inpaintMethod==FILL_OCCLUSION_INPAINT_TELEA) inpaint(destR,m,destR,inpaintr,INPAINT_TELEA);
 
@@ -4610,7 +4917,7 @@ void StereoViewSynthesis::viewsynth(const Mat& srcL, const Mat& srcR, const Mat&
 			cv::Canny(disp8Ubuff,edge,canny_t1,canny_t2);  
 		}
 
-		
+
 		//imshow("ee",edge);//waitKey();
 #ifdef VIS_SYNTH_INFO
 		vis.setTo(128,edge);
@@ -4807,10 +5114,16 @@ void StereoViewSynthesis::viewsynthSingleAlphaMap(Mat& src,Mat& disp, Mat& dest,
 
 
 	Mat zero_=Mat::zeros(src.size(),CV_8U);
+
+	shiftDisp<T>(disp,temp,alpha/disp_amp,sub_gap,(int)(large_jump*disp_amp));
+	depthfilter(temp,destdisp,Mat(),cvRound(abs(alpha)),disp_amp);
+	//shiftImInv_<T>(src,destdisp,dest,(float)(-alpha/disp_amp),0,warpInterpolationMethod); 
+	shiftImInv_<T>(src,destdisp,dest,(float)(-alpha/disp_amp),0,INTER_NEAREST); 
+
 	//
-	shiftImDispNN3_<T>(src,disp,dest,temp,alpha/disp_amp,zero_,large_jump,(int)disp_amp);// warpInterpolationMethod
-	depthfilter(temp,destdisp,mask,cvRound(abs(alpha)),disp_amp);
-	shiftImInvWithMask_<T>(src,destdisp,dest,-alpha/disp_amp,mask,0, INTER_NEAREST);
+	//shiftImDispNN3_<T>(src,disp,dest,temp,alpha/disp_amp,zero_,large_jump,(int)disp_amp);// warpInterpolationMethod
+	//depthfilter(temp,destdisp,mask,cvRound(abs(alpha)),disp_amp);
+	//shiftImInvWithMask_<T>(src,destdisp,dest,-alpha/disp_amp,mask,0, INTER_NEAREST);
 
 	//guiAlphaBlend(dest,destdisp);
 }

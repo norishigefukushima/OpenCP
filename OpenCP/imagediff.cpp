@@ -1,7 +1,7 @@
 #include "opencp.hpp"
 using namespace std;
 
-void guiCompareDiff(Mat& before, Mat& after, Mat& ref)
+void guiCompareDiff(const Mat& before, const Mat& after, const Mat& ref)
 {
 	string wname = "comp diff";
 	namedWindow(wname);
@@ -77,7 +77,7 @@ void guiCompareDiff(Mat& before, Mat& after, Mat& ref)
 }
 
 
-void guiAbsDiffCompareGE(Mat& src1, Mat& src2)
+void guiAbsDiffCompareGE(const Mat& src1, const Mat& src2)
 {
 	string wname = "Diff Threshold GE";
 	namedWindow(wname);
@@ -124,7 +124,7 @@ void guiAbsDiffCompareGE(Mat& src1, Mat& src2)
 	destroyWindow(wname);
 }
 
-void guiAbsDiffCompareLE(Mat& src1, Mat& src2)
+void guiAbsDiffCompareLE(const Mat& src1, const Mat& src2)
 {
 	string wname = "Diff Threshold LE";
 	namedWindow(wname);
@@ -170,7 +170,7 @@ void guiAbsDiffCompareLE(Mat& src1, Mat& src2)
 	destroyWindow(wname);
 }
 
-void guiAbsDiffCompareEQ(Mat& src1, Mat& src2)
+void guiAbsDiffCompareEQ(const Mat& src1, const Mat& src2)
 {
 	string wname = "Diff Threshold EQ";
 	namedWindow(wname);
@@ -216,7 +216,7 @@ void guiAbsDiffCompareEQ(Mat& src1, Mat& src2)
 	destroyWindow(wname);
 }
 
-void guiAbsDiffCompareNE(Mat& src1, Mat& src2)
+void guiAbsDiffCompareNE(const Mat& src1, const Mat& src2)
 {
 	string wname = "Diff Threshold NE";
 	namedWindow(wname);

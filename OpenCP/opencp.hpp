@@ -67,15 +67,17 @@ void eraseBoundary(const Mat& src, Mat& dest, int step, int border=BORDER_REPLIC
 void memcpy_float_sse(float* dest, float* src, const int size);
 
 // utility functions
+void imshowScale(string name, Mat& dest, double alpha=1.0, double beta=0.0);
+
 void showMatInfo(InputArray src_, string name="Mat");
 double YPSNR(const Mat& src1, const Mat& src2);
+double calcBadPixel(const Mat& src, const Mat& ref, int threshold);
 
-
-void guiCompareDiff(Mat& before, Mat& after, Mat& ref);
-void guiAbsDiffCompareNE(Mat& src1, Mat& src2);
-void guiAbsDiffCompareEQ(Mat& src1, Mat& src2);
-void guiAbsDiffCompareLE(Mat& src1, Mat& src2);
-void guiAbsDiffCompareGE(Mat& src1, Mat& src2);
+void guiCompareDiff(const Mat& before, const Mat& after, const Mat& ref);
+void guiAbsDiffCompareNE(const Mat& src1, const Mat& src2);
+void guiAbsDiffCompareEQ(const Mat& src1, const Mat& src2);
+void guiAbsDiffCompareLE(const Mat& src1, const Mat& src2);
+void guiAbsDiffCompareGE(const Mat& src1, const Mat& src2);
 
 class ConsoleImage
 {
@@ -241,9 +243,6 @@ enum
 	BILATERAL_ORDER2_SEPARABLE//underconstruction
 };
 
-
-
-
 void bilateralFilter(const Mat& src, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method=FILTER_DEFAULT, int borderType=cv::BORDER_REPLICATE);
 void jointBilateralFilter(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method=FILTER_DEFAULT, int borderType=cv::BORDER_REPLICATE);
 
@@ -300,8 +299,6 @@ public:
 	DomainTransformFilter();
 	void operator()(const Mat& src, const Mat& guide, Mat& dest, float sigma_r, float sigma_s, int maxiter, int norm);
 };
-
-
 
 void recursiveBilateralFilter(Mat& src, Mat& dest, float sigma_range, float sigma_spatial, int method=0);
 class RecursiveBilateralFilter
@@ -515,4 +512,18 @@ public:
 	void check(Mat& src,Mat& disp,Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp, Mat& ref);
 	void preview(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR,int invalidvalue, double disp_amp);
 	void preview(Mat& src, Mat& disp,int invalidvalue, double disp_amp);
+};
+
+
+class DepthMapSubpixelRefinment
+{
+	Mat pslice;
+	Mat cslice;
+	Mat mslice;
+	template <class S,class T>
+	void getDisparitySubPixel_Integer(Mat& src, Mat& dest, int disp_amp);
+	void bluidCostSlice(const Mat& src1, const Mat& src2, Mat& dest, int metric, int truncate);
+public:
+	DepthMapSubpixelRefinment();
+	void operator()(const Mat& leftim, const Mat& rightim, const Mat& leftdisp, const Mat& rightdisp, int disp_amp, Mat& leftdest, Mat& rightdest);
 };
