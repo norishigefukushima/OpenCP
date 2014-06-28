@@ -3,7 +3,18 @@ Documents: View Synthesis
 
 	class StereoViewSynthesis
 	{
+	
+	private:
 		void depthfilter(Mat& depth, Mat& depth2,Mat& mask2,int viewstep,double disp_amp);
+		template <class T>
+		void analyzeSynthesizedViewDetail_(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, double alpha, int invalidvalue, double disp_amp,Mat& srcsynth, Mat& ref);
+		template <class T>
+		void viewsynth (const Mat& srcL, const Mat& srcR, const Mat& dispL, const Mat& dispR, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp, int disptype);
+		template <class T>
+		void makeMask_(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, double alpha, int invalidvalue, double disp_amp);
+		template <class T>
+		void viewsynthSingle(Mat& src,Mat& disp, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp, int disptype);
+	
 	public:
 		//warping parameters
 		enum 
@@ -53,12 +64,12 @@ Documents: View Synthesis
 	
 		enum 
 		{
-		FILL_OCCLUSION_LINE = 0,
-		FILL_OCCLUSION_REFLECT = 1,
-		FILL_OCCLUSION_STRETCH = -1,
-		FILL_OCCLUSION_HV=2,
-		FILL_OCCLUSION_INPAINT_NS=3, // OpenCV Navier-Stokes algorithm
-		FILL_OCCLUSION_INPAINT_TELEA=4, // OpenCV A. Telea algorithm
+			FILL_OCCLUSION_LINE = 0,
+			FILL_OCCLUSION_REFLECT = 1,
+			FILL_OCCLUSION_STRETCH = -1,
+			FILL_OCCLUSION_HV=2,
+			FILL_OCCLUSION_INPAINT_NS=3, // OpenCV Navier-Stokes algorithm
+			FILL_OCCLUSION_INPAINT_TELEA=4, // OpenCV A. Telea algorithm
 		};
 		int inpaintMethod;
 	
@@ -75,15 +86,15 @@ Documents: View Synthesis
 		//preset
 		enum 
 		{
-		PRESET_FASTEST = 0,
-		PRESET_SLOWEST,
+			PRESET_FASTEST = 0,
+			PRESET_SLOWEST,
 		};
 	
 		StereoViewSynthesis();
 		StereoViewSynthesis(int preset);
 		void init(int preset);
-		template <class T>
-		void viewsynth (const Mat& srcL, const Mat& srcR, const Mat& dispL, const Mat& dispR, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp, int disptype);
+	
+		void operator()(Mat& src,Mat& disp, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp);
 		void operator()(const Mat& srcL, const Mat& srcR, const Mat& dispL, const Mat& dispR, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp);
 	
 		Mat diskMask;
@@ -95,33 +106,16 @@ Documents: View Synthesis
 		Mat nonFullOcclusionMask; //bar of full occlusion
 		Mat halfOcclusionMask;//left and right half ooclusion
 	
-		template <class T>
-		void analyzeSynthesizedViewDetail_(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, double alpha, int invalidvalue, double disp_amp,Mat& srcsynth, Mat& ref);
+		void viewsynthSingleAlphaMap(Mat& src,Mat& disp, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp, int disptype);
+		void alphaSynth(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp);
+		void noFilter(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp);
 		void analyzeSynthesizedViewDetail(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, double alpha, int invalidvalue, double disp_amp,Mat& srcsynth, Mat& ref);
-	
-		template <class T>
-		void makeMask_(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, double alpha, int invalidvalue, double disp_amp);
-	
-		
 		void analyzeSynthesizedView(Mat& srcsynth, Mat& ref);
-	
-		
 		void makeMask(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, double alpha, int invalidvalue, double disp_amp);
 		void makeMask(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, double alpha, int invalidvalue, double disp_amp, Mat& srcsynth, Mat& ref);
 	
-		void viewsynthSingleAlphaMap(Mat& src,Mat& disp, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp, int disptype);
-		template <class T>
-		void viewsynthSingle(Mat& src,Mat& disp, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp, int disptype);
-	
-		void operator()(Mat& src,Mat& disp, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp);
-	
-		void alphaSynth(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp);
-	
-		void noFilter(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp);
 		void check(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp, Mat& ref);
-	
 		void check(Mat& src,Mat& disp,Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp, Mat& ref);
-	
 		void preview(Mat& srcL,Mat& srcR, Mat& dispL,Mat& dispR,int invalidvalue, double disp_amp);
 		void preview(Mat& src, Mat& disp,int invalidvalue, double disp_amp);
 	};

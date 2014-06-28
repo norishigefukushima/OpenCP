@@ -138,7 +138,7 @@ int main(int argc, char** argv)
 	//Mat ff3 = imread("img/pixelart/ff3.png");
 	//guiAlphaBlend(ff3,ff3);
 	//guiJointNearestFilterTest(ff3);
-	guiViewSynthesis();
+	//guiViewSynthesis();
 
 	Mat src = imread("img/lenna.png");
 

@@ -14,12 +14,13 @@ void checkdiff(Mat& src, Mat& src2)
 	cout<<"non zero"<<countNonZero(mask)<<endl;
 	for(int j=0;j<src.rows;j++)
 	{
-	for(int i=0;i<src.cols;i++)
-	{
-		if(mask.at<uchar>(j,i)!=0)cout<<Point(i,j)<<endl;
-	}
+		for(int i=0;i<src.cols;i++)
+		{
+			if(mask.at<uchar>(j,i)!=0)cout<<Point(i,j)<<endl;
+		}
 	}
 }
+
 void guiDomainTransformFilterTest(Mat& src)
 {
 	Mat dest,dest2;
@@ -34,6 +35,7 @@ void guiDomainTransformFilterTest(Mat& src)
 	int sigma_color10 = 700; createTrackbar("sigma_color",wname,&sigma_color10,2550);
 	int sigma_space10 = 700; createTrackbar("sigma_space",wname,&sigma_color10,2550);
 	int iter = 3; createTrackbar("iter",wname,&iter,10);
+	int nrm = 0; createTrackbar("norm",wname,&nrm,1);
 
 	//int core = 1; createTrackbar("core",wname,&core,24);
 	
@@ -48,57 +50,45 @@ void guiDomainTransformFilterTest(Mat& src)
 	addNoise(src,noise,noise_s10/10.0);
 	DomainTransformFilter dtf;
 	Mat base;
+
 	while(key!='q')
 	{
+		int N = nrm + 1;
 		float sigma_color = sigma_color10/10.f;
 		float sigma_space = sigma_space10/10.f;
 
 		if(key=='n')
 			addNoise(src,noise,noise_s10/10.0);
 
-		domainTransformFilterRF(noise,  base, sigma_color,sigma_space, iter,1,DTF_SLOWEST);
+
+		domainTransformFilterRF(noise,  base, sigma_color,sigma_space, iter,N,DTF_SLOWEST);
 
 		if(sw==0)
 		{
-			Mat gray;
-			cvtColor(src,gray,COLOR_BGR2GRAY);
-			{
-				CalcTime t("domain transform filter: base implimentation");
-				///CalcTime t("domain transform filter: base implimentation");
-				{
-				CalcTime t("di");
-				dilate(gray,gray,Mat());
-				}
-				{
-					CalcTime t("ga");
-				GaussianBlur(src,dest,Size(3,3),3);	
-				}
-			}
-			
-			//blur(noise,noise,Size(3,3));
-			domainTransformFilterRF(noise,  dest, sigma_color,sigma_space, iter,1,DTF_SLOWEST);
+			CalcTime t("domain transform filter");
+			domainTransformFilterRF(noise,  dest, sigma_color,sigma_space, iter,N,DTF_SLOWEST);
 			//guidedFilter(feather,src,dest,r,sigma_color*sigma_color);
 		}
 		else if(sw==1)
 		{	
 			CalcTime t("domain transform filter");
-			domainTransformFilterRF(noise, dest, sigma_color,sigma_space, iter,1,DTF_BGRA_SSE);
+			domainTransformFilterRF(noise, dest, sigma_color,sigma_space, iter,N,DTF_BGRA_SSE);
 			//dtf(noise,  noise, dest, sigma_space,sigma_color, iter,0);
 		}
 		else if(sw==2)
 		{	
 			CalcTime t("domain transform filter");
-			domainTransformFilterRF(noise,  dest, sigma_color,sigma_space, iter,1,DTF_BGRA_SSE_PARALLEL);
+			domainTransformFilterNC(noise,  noise, dest, sigma_color,sigma_space, iter,N, DTF_SLOWEST);
+			//domainTransformFilterRF(noise,  dest, sigma_color,sigma_space, iter,1,DTF_BGRA_SSE_PARALLEL);
 			//bilateralFilter(noise,  dest,Size(2*r+1,2*r+1),sigma_color,0.333*r,FILTER_DEFAULT);
 		}
 		else if(sw==3)
 		{	
 			CalcTime t("domain transform filter");
-			dtf(noise,  noise, dest, sigma_color,sigma_space, iter,1);
+			
+			//dtf(noise,  noise, dest, sigma_color,sigma_space, iter,1);
 			//bilateralFilter(noise,  dest,Size(2*r+1,2*r+1),sigma_color,0.333*r,FILTER_DEFAULT);
 		}
-
-		
 
 		ci(format("before: %f",PSNR(src,noise)));
 		ci(format("filter: %f",PSNR(src,dest)));

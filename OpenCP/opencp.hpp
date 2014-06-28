@@ -278,7 +278,7 @@ typedef enum
 {
 	DTF_RF=0,//Recursive Filtering
 	DTF_NC=1,//Normalized Convolution
-	DTF_IC=1,//Interpolated Convolution
+	DTF_IC=2,//Interpolated Convolution
 
 }DTF_METHOD;
 
@@ -291,7 +291,8 @@ typedef enum
 
 void domainTransformFilterRF(const Mat& img, Mat& out, float sigma_r, float sigma_s, int maxiter, int norm=DTF_L1, int implementation=DTF_BGRA_SSE_PARALLEL);
 void domainTransformFilterRF(const Mat& img, const Mat& guide, Mat& out, float sigma_r, float sigma_s,int maxiter, int norm=DTF_L1, int implementation=DTF_BGRA_SSE_PARALLEL);
-
+void domainTransformFilterNC(const Mat& src, Mat& dest, float sigma_r, float sigma_s, int maxiter, int norm, int implementation=DTF_BGRA_SSE_PARALLEL);
+void domainTransformFilterNC(const Mat& src, const Mat& guide, Mat& dest, float sigma_r, float sigma_s, int maxiter, int norm, int implementation=DTF_BGRA_SSE_PARALLEL);
 class DomainTransformFilter
 {
 	Mat img;

@@ -1,6 +1,16 @@
 #include "opencp.hpp"
 #include <opencv2/core/internal.hpp>
 
+inline int pow2(int x)
+{
+	return x*x;
+}
+
+inline float pow2(float x)
+{
+	return x*x;
+}
+
 class DomainTransformRFVertical_32F_Invoker : public cv::ParallelLoopBody
 {
 	int dim;
@@ -1683,7 +1693,7 @@ void buid_dxdyL1_8u(const Mat& src, Mat& dx, Mat& dy, const float ratio)
 	const __m128i bmask4 = _mm_setr_epi8
 		(0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0x00,0x00,0x00,0x00,0x00,0x00);	
 
-	__m128i a,b,c;
+//	__m128i a,b,c;
 
 	int width = src.cols;
 	int height = src.rows;
@@ -1924,6 +1934,256 @@ void buid_dxdyL1_8u(const Mat& src, Mat& dx, Mat& dy, const float ratio)
 	}
 }
 
+
+void buid_ct_L1_8u(const Mat& src, Mat& ct_x, Mat& ct_y, const float ratio)
+{
+	int width = src.cols;
+	int height = src.rows;
+	int dim = src.channels();
+
+	Mat joint = src;
+	
+	memset(ct_y.ptr<float>(0), 0, sizeof(float)*width);
+
+	//#pragma omp parallel for
+	for(int y=0; y<height-1; y++)
+	{
+		uchar* jc = joint.ptr<uchar>(y);
+		uchar* jp = joint.ptr<uchar>(y+1);
+		float* ctx = ct_x.ptr<float>(y);
+		ctx[0]=0.f;
+		float* ctyp = ct_y.ptr<float>(y);
+		float* cty = ct_y.ptr<float>(y+1);
+		
+
+		for(int x=0; x<width-1; x++)
+		{
+			int accumx = 0;
+			int accumy = 0;
+			for(int c=0; c<dim; c++)
+			{
+				accumx += abs(jc[(x+1)*dim+c] - jc[x*dim+c]); 
+				accumy += abs(jp[x*dim+c]     - jc[x*dim+c]); 
+			}
+			ctx[x+1] = ctx[x] + 1.0f + ratio * accumx; 
+			cty[x]= ctyp[x]+ 1.0f + ratio * accumy; 
+		}
+		int accumy = 0;
+		int x = width -1;
+		for(int c=0; c<dim; c++)
+		{
+			accumy += abs(jp[x*dim+c] - jc[x*dim+c]); 
+		}
+		cty[x]= ctyp[x]+ 1.0f + ratio * accumy; 
+	}
+
+	int y = height-1;
+	float* ctx = ct_x.ptr<float>(y);
+	ctx[0]=0.f;
+	for(int x=0; x<width-1; x++)
+	{
+		int accumx = 0;
+		for(int c=0; c<dim; c++)
+		{
+			accumx += abs(joint.at<uchar>(y, (x+1)*dim+c) - joint.at<uchar>(y, x*dim+c)); 
+		}
+		ctx[x+1] = ctx[x] + 1.0f + ratio * accumx; 
+	}
+}
+
+void buid_ct_L1_32f(const Mat& src, Mat& ct_x, Mat& ct_y, const float ratio)
+{
+	int width = src.cols;
+	int height = src.rows;
+	int dim = src.channels();
+
+	Mat joint = src;
+	
+	memset(ct_y.ptr<float>(0), 0, sizeof(float)*width);
+
+	//#pragma omp parallel for
+	for(int y=0; y<height-1; y++)
+	{
+		float* jc = joint.ptr<float>(y);
+		float* jp = joint.ptr<float>(y+1);
+		float* ctx = ct_x.ptr<float>(y);
+		ctx[0]=0.f;
+		float* ctyp = ct_y.ptr<float>(y);
+		float* cty = ct_y.ptr<float>(y+1);
+		
+
+		for(int x=0; x<width-1; x++)
+		{
+			float accumx = 0.f;
+			float accumy = 0.f;
+			for(int c=0; c<dim; c++)
+			{
+				accumx += abs(jc[(x+1)*dim+c] - jc[x*dim+c]); 
+				accumy += abs(jp[x*dim+c]     - jc[x*dim+c]); 
+			}
+			ctx[x+1] = ctx[x] + 1.0f + ratio * accumx; 
+			cty[x]= ctyp[x]+ 1.0f + ratio * accumy; 
+		}
+		float accumy = 0.f;
+		int x = width -1;
+		for(int c=0; c<dim; c++)
+		{
+			accumy += abs(jp[x*dim+c] - jc[x*dim+c]); 
+		}
+		cty[x]= ctyp[x]+ 1.0f + ratio * accumy; 
+	}
+
+	int y = height-1;
+	float* ctx = ct_x.ptr<float>(y);
+	ctx[0]=0.f;
+	for(int x=0; x<width-1; x++)
+	{
+		float accumx = 0.f;
+		for(int c=0; c<dim; c++)
+		{
+			accumx += abs(joint.at<uchar>(y, (x+1)*dim+c) - joint.at<uchar>(y, x*dim+c)); 
+		}
+		ctx[x+1] = ctx[x] + 1.0f + ratio * accumx; 
+	}
+}
+
+void buid_ct_L2_8u(const Mat& src, Mat& ct_x, Mat& ct_y, const float ratio)
+{
+	int width = src.cols;
+	int height = src.rows;
+	int dim = src.channels();
+	const float ratio2 = ratio*ratio;
+
+	Mat joint = src;
+	memset(ct_y.ptr<float>(0), 0, sizeof(float)*width);
+
+	for(int y=0; y<height-1; y++)
+	{
+		uchar* jc = joint.ptr<uchar>(y);
+		uchar* jp = joint.ptr<uchar>(y+1);
+		float* ctx = ct_x.ptr<float>(y);
+		ctx[0]=0.f;
+		float* ctyp = ct_y.ptr<float>(y);
+		float* cty = ct_y.ptr<float>(y+1);
+
+		for(int x=0; x<width-1; x++)
+		{
+			int accumx = 0;
+			int accumy = 0;
+			for(int c=0; c<dim; c++)
+			{
+				accumx += pow2((int)(jc[(x+1)*dim+c] - jc[x*dim+c])); 
+				accumy += pow2((int)(jp[x*dim+c]     - jc[x*dim+c])); 
+
+
+			}
+			ctx[x+1] = ctx[x] + sqrt(ratio2 + ratio2 * accumx); 
+			cty[x]= ctyp[x]+ sqrt(ratio2 + ratio2 * accumy); 
+		}
+		int accumy = 0;
+		int x = width -1;
+		for(int c=0; c<dim; c++)
+		{
+			accumy += pow2((int)(jp[x*dim+c] - jc[x*dim+c])); 
+		}
+		cty[x]= ctyp[x]+ sqrt(ratio2 + ratio2 * accumy); 
+	}
+
+	int y = height-1;
+	float* ctx = ct_x.ptr<float>(y);
+	ctx[0]=0.f;
+	for(int x=0; x<width-1; x++)
+	{
+		int accumx = 0;
+		for(int c=0; c<dim; c++)
+		{
+			accumx += pow2((int)(joint.at<uchar>(y, (x+1)*dim+c) - joint.at<uchar>(y, x*dim+c))); 
+		}
+		ctx[x+1] = ctx[x] + sqrt(ratio2 + ratio2 * accumx); 
+	}
+}
+
+void buid_ct_L2_32f(const Mat& src, Mat& ct_x, Mat& ct_y, const float ratio)
+{
+	int width = src.cols;
+	int height = src.rows;
+	int dim = src.channels();
+	const float ratio2 = ratio*ratio;
+
+	Mat joint = src;
+	memset(ct_y.ptr<float>(0), 0, sizeof(float)*width);
+
+	for(int y=0; y<height-1; y++)
+	{
+		float* jc = joint.ptr<float>(y);
+		float* jp = joint.ptr<float>(y+1);
+		float* ctx = ct_x.ptr<float>(y);
+		ctx[0]=0.f;
+		float* ctyp = ct_y.ptr<float>(y);
+		float* cty = ct_y.ptr<float>(y+1);
+
+		for(int x=0; x<width-1; x++)
+		{
+			float accumx = 0.f;
+			float accumy = 0.f;
+			for(int c=0; c<dim; c++)
+			{
+				accumx += pow2(jc[(x+1)*dim+c] - jc[x*dim+c]); 
+				accumy += pow2(jp[x*dim+c]     - jc[x*dim+c]); 
+			}
+			ctx[x+1] = ctx[x] + sqrt(ratio2 + ratio2 * accumx); 
+			cty[x]= ctyp[x]+ sqrt(ratio2 + ratio2 * accumy); 
+		}
+		float accumy = 0.f;
+		int x = width -1;
+		for(int c=0; c<dim; c++)
+		{
+			accumy += pow2(jp[x*dim+c] - jc[x*dim+c]); 
+		}
+		cty[x]= ctyp[x]+ sqrt(ratio2 + ratio2 * accumy); 
+	}
+
+	int y = height-1;
+	float* ctx = ct_x.ptr<float>(y);
+	ctx[0]=0.f;
+	for(int x=0; x<width-1; x++)
+	{
+		float accumx = 0.f;
+		for(int c=0; c<dim; c++)
+		{
+			accumx += pow2(joint.at<float>(y, (x+1)*dim+c) - joint.at<float>(y, x*dim+c)); 
+		}
+		ctx[x+1] = ctx[x] + sqrt(ratio2 + ratio2 * accumx); 
+	}
+}
+
+void cunsum_32f(const Mat& src, Mat& dest)
+{
+	for(int j=0;j<src.rows;j++)
+	{
+		float* s = (float*)src.ptr<float>(j);
+		float* d = dest.ptr<float>(j);
+
+		d[0]=s[0];
+		for(int i=1;i<src.cols;i++)
+		{
+			d[i]=s[i]+d[i-1];
+		}
+	}
+}
+
+void cunsum_32f(Mat& inplace)
+{
+	for(int j=0;j<inplace.rows;j++)
+	{
+		float* s = (float*)inplace.ptr<float>(j);
+		for(int i=1;i<inplace.cols;i++)
+		{
+			s[i]+=s[i-1];
+		}
+	}
+}
+
 void buid_dxdyL2_8u(const Mat& src, Mat& dx, Mat& dy, const float ratio)
 {
 	int width = src.cols;
@@ -1931,7 +2191,7 @@ void buid_dxdyL2_8u(const Mat& src, Mat& dx, Mat& dy, const float ratio)
 	int dim = src.channels();
 
 	Mat joint = src;
-	float ratio2 = ratio*ratio;
+	const float ratio2 = ratio*ratio;
 	for(int y=0; y<height-1; y++)
 	{
 		uchar* jc = joint.ptr<uchar>(y);
@@ -2339,7 +2599,7 @@ void domainTransformFilter_RF_Base(const Mat& src, const Mat& guide, Mat& dest, 
 // Domain transform filtering: baseline implimentation for optimization
 void domainTransformFilter_RF_Base(const Mat& src, Mat& dest, float sigma_r, float sigma_s, int maxiter, int norm)
 {
-	domainTransformFilter_RF_Base(src,src,dest,sigma_s,sigma_r,maxiter, norm);
+	domainTransformFilter_RF_Base(src,src,dest,sigma_r,sigma_s,maxiter, norm);
 }
 
 void domainTransformFilterRF(const Mat& src, const Mat& guide, Mat& dst, float sigma_r, float sigma_s, int maxiter, int norm, int implementation)
@@ -2363,4 +2623,279 @@ void domainTransformFilterRF(const Mat& src, const Mat& guide, Mat& dst, float s
 void domainTransformFilterRF(const Mat& src, Mat& dst, float sigma_r, float sigma_s, int maxiter, int norm, int implementation)
 {
 	domainTransformFilterRF(src,src,dst,sigma_r,sigma_s,maxiter,norm,implementation);
+}
+
+
+void RunNC_X_32F(const Mat& in,Mat& out,int radius,Mat& DomainX)
+{
+	if(out.empty()) out.create(in.size(),in.type());
+
+	if(in.channels()==1)
+	{
+		for(int j=0; j<in.rows; j++)
+		{
+			float* s = (float*)in.ptr<float>(j);
+			float* d = out.ptr<float>(j);
+			float* dx = DomainX.ptr<float>(j);
+
+			int kk=0;
+
+			int left=kk;
+			int right=kk;
+
+			float sum=s[0];
+			int sumN=1;
+
+			int i;
+			for(kk=0;kk<in.cols; kk++)
+			{
+				int TMPright=right;
+				for(i=TMPright+1;i<in.cols; i++)
+				{
+					float dis = dx[i]-dx[kk];
+					if(abs(dis)<=radius)
+					{
+						sum += s[i];
+						sumN++;
+						right++;
+					}else
+					{
+						break;
+					}    
+				}
+				int TMPleft=left;
+				for(i=TMPleft;i<kk;i++)
+				{
+//					int Dsum=sum;
+					float dis = dx[i]-dx[kk];
+					if(fabs(dis)>radius){
+						sum -= s[i];
+						sumN--;
+						left++;
+					}else{
+						break;
+					}    
+				}
+				d[kk] = sum/(float)sumN;
+			}
+		}
+	}
+	else if(in.channels()==3)
+	{
+		for(int j=0;j<in.rows;j++)
+		{
+			float* s = (float*)in.ptr<float>(j);
+			float* d = out.ptr<float>(j);
+			float* dx = DomainX.ptr<float>(j);
+
+			int kk=0;
+
+			int left=kk;
+			int right=kk;
+
+			float b=s[0];
+			float g=s[1];
+			float r=s[2];
+			int sumN=1;
+
+			int i;
+			for(kk=0;kk<in.cols;kk++)
+			{
+				int TMPright=right;
+				for(i=TMPright+1;i<in.cols;i++)
+				{
+					float dis = dx[i]-dx[kk];
+					if(abs(dis)<=radius)
+					{
+						b += s[3*i+0];
+						g += s[3*i+1];
+						r += s[3*i+2];
+						sumN++;
+						right++;
+					}else
+					{
+						break;
+					}    
+				}
+				int TMPleft=left;
+				for(i=TMPleft;i<kk;i++)
+				{
+					//int Dsum=sum;
+					float dis = dx[i]-dx[kk];
+					if(fabs(dis)>radius)
+					{
+						b -= s[3*i+0];
+						g -= s[3*i+1];
+						r -= s[3*i+2];
+						sumN--;
+						left++;
+					}else
+					{
+						break;
+					}    
+				}
+				d[3*kk+0] = b/(float)sumN;
+				d[3*kk+1] = g/(float)sumN;
+				d[3*kk+2] = r/(float)sumN;
+			}
+		}
+	}
+}
+
+
+void RunNC_Y_32F(const Mat& in,Mat& out,int radius,Mat& DomainY)
+{
+	if(out.empty()) out.create(in.size(),in.type());
+
+	if(in.channels()==1)
+	{
+		;
+	}
+	else if(in.channels()==3)
+	{
+		for(int j=0;j<in.cols;j++)
+		{
+			int kk=0;
+
+			int left=kk;
+			int right=kk;
+			
+			float b=in.at<float>(0,3*j+0);
+			float g=in.at<float>(0,3*j+1);
+			float r=in.at<float>(0,3*j+2);
+			int sumN=1;
+
+			int i;
+			for(kk=0;kk<in.rows;kk++)
+			{
+				int TMPright=right;
+				for(i=TMPright+1;i<in.rows;i++)
+				{
+					float dis = DomainY.at<float>(i, j) - DomainY.at<float>(kk, j);
+					if(abs(dis)<=radius)
+					{
+						b += in.at<float>(i,3*j+0);
+						g += in.at<float>(i,3*j+1);
+						r += in.at<float>(i,3*j+2);
+						sumN++;
+						right++;
+					}else
+					{
+						break;
+					}    
+				}
+				int TMPleft=left;
+				for(i=TMPleft;i<kk;i++)
+				{
+					//int Dsum=sum;
+					float dis = DomainY.at<float>(i, j) - DomainY.at<float>(kk, j);
+					if(fabs(dis)>radius)
+					{
+						b -= in.at<float>(i,3*j+0);
+						g -= in.at<float>(i,3*j+1);
+						r -= in.at<float>(i,3*j+2);
+						sumN--;
+						left++;
+					}else
+					{
+						break;
+					}    
+				}
+				out.at<float>(kk,3*j+0) = b/(float)sumN;
+				out.at<float>(kk,3*j+1) = g/(float)sumN;
+				out.at<float>(kk,3*j+2) = r/(float)sumN;
+			}
+		}
+	}
+}
+
+
+// Domain transform filtering: baseline implimentation for optimization
+void domainTransformFilter_NC_Base(const Mat& src, const Mat& guide, Mat& dest, float sigma_r, float sigma_s, int maxiter, int norm)
+{
+	Mat img;
+	src.convertTo(img, CV_32F);
+
+	int width = src.cols;
+	int height = src.rows;
+
+	// compute derivatives of transformed domain "dct"
+	cv::Mat dctx = cv::Mat::zeros(height, width, CV_32FC1);
+	cv::Mat dcty = cv::Mat::zeros(height, width, CV_32FC1);
+	cv::Mat ch_v,ch_h;
+	float ratio = (sigma_s / sigma_r);
+
+	if(guide.depth()==CV_8U)
+	{
+		if(norm == DTF_L1) buid_ct_L1_8u(guide, dctx,dcty,ratio);
+		else if(norm == DTF_L2) buid_ct_L2_8u(guide, dctx,dcty,ratio);
+		else buid_ct_L1_8u(guide, dctx,dcty,ratio);
+
+		//cunsum_32f(dctx);
+		ch_h=dctx;
+		//ch_v=dcty;
+		transpose(dcty,ch_v);
+		//cunsum_32f(ch_v);
+	}
+	else
+	{
+		Mat guidef;
+		guide.convertTo(guidef, CV_32F);
+		if(norm == DTF_L1) buid_ct_L2_32f(guidef, dctx,dcty,ratio);
+		else if(norm == DTF_L2) buid_ct_L2_32f(guidef, dctx,dcty,ratio);
+		else buid_ct_L2_32f(guidef, dctx,dcty,ratio);
+
+		//cunsum_32f(dctx);
+		ch_h=dctx;
+		transpose(dcty,ch_v);
+		//cunsum_32f(ch_v);
+	}
+
+	// Apply recursive folter maxiter times
+	int i=maxiter;
+
+	Mat out;
+	Mat imgt;
+	Mat outt;
+	while(i--)
+	{	
+		float sigma_h = (float) (sigma_s * sqrt(3.0) * pow(2.0,(maxiter - (i+1))) / sqrt(pow(4.0,maxiter) -1));
+		int radius = (int)(sigma_h*sqrt(3.f)+0.5f);
+
+		RunNC_X_32F(img,out, radius, ch_h);
+		transpose(out,imgt);
+		RunNC_X_32F(imgt,outt, radius, ch_v);
+		//RunNC_Y_32F(out,img, radius, ch_v);
+		transpose(outt,img);
+	}
+
+	img.convertTo(dest,src.type(), 1.0, 0.5);
+}
+
+void domainTransformFilter_NC_Base(const Mat& src, Mat& dst, float sigma_r, float sigma_s, int maxiter, int norm)
+{
+	domainTransformFilter_NC_Base(src,src,dst,sigma_r,sigma_s,maxiter,norm);
+}
+
+void domainTransformFilterNC(const Mat& src, const Mat& guide, Mat& dst, float sigma_r, float sigma_s, int maxiter, int norm, int implementation)
+{   
+	//setNumThreads(4);
+
+	if(implementation==DTF_SLOWEST)
+	{
+		domainTransformFilter_NC_Base(src, guide, dst, sigma_r,sigma_s,maxiter, norm);
+	}
+	else if(implementation==DTF_BGRA_SSE)
+	{
+		//domainTransformFilter_RF_BGRA_SSE_SINGLE(src, guide, dst, sigma_r,sigma_s,maxiter, norm);
+	}
+	else if(implementation==DTF_BGRA_SSE_PARALLEL)
+	{
+		//domainTransformFilter_RF_BGRA_SSE_PARALLEL(src, guide, dst, sigma_r,sigma_s,maxiter, norm);
+	}
+}
+
+void domainTransformFilterNC(const Mat& src, Mat& dst, float sigma_r, float sigma_s, int maxiter, int norm, int implementation)
+{
+	domainTransformFilterNC(src,src,dst,sigma_r,sigma_s,maxiter,norm,implementation);
 }
