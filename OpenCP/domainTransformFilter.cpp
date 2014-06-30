@@ -1935,6 +1935,64 @@ void buid_dxdyL1_8u(const Mat& src, Mat& dx, Mat& dy, const float ratio)
 }
 
 
+void buid_ct_L_8u(const Mat& src, Mat& ct_x, Mat& ct_y, const float ratio, int th)
+{
+	int width = src.cols;
+	int height = src.rows;
+	int dim = src.channels();
+
+	Mat joint = src;
+	
+	memset(ct_y.ptr<float>(0), 0, sizeof(float)*width);
+
+	//#pragma omp parallel for
+	for(int y=0; y<height-1; y++)
+	{
+		uchar* jc = joint.ptr<uchar>(y);
+		uchar* jp = joint.ptr<uchar>(y+1);
+		float* ctx = ct_x.ptr<float>(y);
+		ctx[0]=0.f;
+		float* ctyp = ct_y.ptr<float>(y);
+		float* cty = ct_y.ptr<float>(y+1);
+		
+
+		for(int x=0; x<width-1; x++)
+		{
+			int accumx = 0;
+			int accumy = 0;
+			for(int c=0; c<dim; c++)
+			{
+				//accumx += (abs(jc[(x+1)*dim+c] - jc[x*dim+c])<th) ? 0 :abs(jc[(x+1)*dim+c] - jc[x*dim+c]); 
+				//accumy += (abs(jp[x*dim+c]     - jc[x*dim+c])<th) ? 0 : abs(jp[x*dim+c]     - jc[x*dim+c]); 
+				accumx += max(abs(jc[(x+1)*dim+c] - jc[x*dim+c])-th,0); 
+				accumy += max(abs(jp[x*dim+c]     - jc[x*dim+c])-th,0);
+			}
+			ctx[x+1] = ctx[x] + 1.0f + ratio * accumx; 
+			cty[x]= ctyp[x]+ 1.0f + ratio * accumy; 
+		}
+		int accumy = 0;
+		int x = width -1;
+		for(int c=0; c<dim; c++)
+		{
+			accumy += max(abs(jp[x*dim+c] - jc[x*dim+c])-th,0); 
+		}
+		cty[x]= ctyp[x]+ 1.0f + ratio * accumy; 
+	}
+
+	int y = height-1;
+	float* ctx = ct_x.ptr<float>(y);
+	ctx[0]=0.f;
+	for(int x=0; x<width-1; x++)
+	{
+		int accumx = 0;
+		for(int c=0; c<dim; c++)
+		{
+			accumx += max(abs(joint.at<uchar>(y, (x+1)*dim+c) - joint.at<uchar>(y, x*dim+c))-th,0); 
+		}
+		ctx[x+1] = ctx[x] + 1.0f + ratio * accumx; 
+	}
+}
+
 void buid_ct_L1_8u(const Mat& src, Mat& ct_x, Mat& ct_y, const float ratio)
 {
 	int width = src.cols;
@@ -2626,18 +2684,18 @@ void domainTransformFilterRF(const Mat& src, Mat& dst, float sigma_r, float sigm
 }
 
 
-void RunNC_X_32F(const Mat& in,Mat& out,int radius,Mat& DomainX)
+void normalizedConvolutionX_32f(const Mat& src,Mat& dest,const float radius, const Mat& ctx)
 {
-	if(out.empty()) out.create(in.size(),in.type());
+	if(dest.empty()) dest.create(src.size(),src.type());
 
-	if(in.channels()==1)
+	if(src.channels()==1)
 	{
-		for(int j=0; j<in.rows; j++)
+		for(int j=0; j<src.rows; j++)
 		{
-			float* s = (float*)in.ptr<float>(j);
-			float* d = out.ptr<float>(j);
-			float* dx = DomainX.ptr<float>(j);
-
+			const float* s = src.ptr<float>(j);
+			const float* dx = ctx.ptr<float>(j);
+			float* d = dest.ptr<float>(j);
+			
 			int kk=0;
 
 			int left=kk;
@@ -2647,10 +2705,10 @@ void RunNC_X_32F(const Mat& in,Mat& out,int radius,Mat& DomainX)
 			int sumN=1;
 
 			int i;
-			for(kk=0;kk<in.cols; kk++)
+			for(kk=0;kk<src.cols; kk++)
 			{
 				int TMPright=right;
-				for(i=TMPright+1;i<in.cols; i++)
+				for(i=TMPright+1;i<src.cols; i++)
 				{
 					float dis = dx[i]-dx[kk];
 					if(abs(dis)<=radius)
@@ -2668,7 +2726,8 @@ void RunNC_X_32F(const Mat& in,Mat& out,int radius,Mat& DomainX)
 				{
 //					int Dsum=sum;
 					float dis = dx[i]-dx[kk];
-					if(fabs(dis)>radius){
+					if(fabs(dis)>radius)
+					{
 						sum -= s[i];
 						sumN--;
 						left++;
@@ -2680,36 +2739,37 @@ void RunNC_X_32F(const Mat& in,Mat& out,int radius,Mat& DomainX)
 			}
 		}
 	}
-	else if(in.channels()==3)
+	else if(src.channels()==3)
 	{
-		for(int j=0;j<in.rows;j++)
+		for(int j=0;j<src.rows;j++)
 		{
-			float* s = (float*)in.ptr<float>(j);
-			float* d = out.ptr<float>(j);
-			float* dx = DomainX.ptr<float>(j);
-
+			const float* s = src.ptr<float>(j);
+			const float* dx = ctx.ptr<float>(j);
+			float* d = dest.ptr<float>(j);
+			
 			int kk=0;
 
 			int left=kk;
 			int right=kk;
 
-			float b=s[0];
-			float g=s[1];
-			float r=s[2];
+			float CV_DECL_ALIGNED(16) bgr[3];
+			bgr[0]=s[0];
+			bgr[1]=s[1];
+			bgr[2]=s[2];
 			int sumN=1;
 
 			int i;
-			for(kk=0;kk<in.cols;kk++)
+			for(kk=0;kk<src.cols;kk++)
 			{
 				int TMPright=right;
-				for(i=TMPright+1;i<in.cols;i++)
+				for(i=TMPright+1;i<src.cols;i++)
 				{
 					float dis = dx[i]-dx[kk];
 					if(abs(dis)<=radius)
 					{
-						b += s[3*i+0];
-						g += s[3*i+1];
-						r += s[3*i+2];
+						bgr[0] += s[3*i+0];
+						bgr[1] += s[3*i+1];
+						bgr[2] += s[3*i+2];
 						sumN++;
 						right++;
 					}else
@@ -2724,9 +2784,9 @@ void RunNC_X_32F(const Mat& in,Mat& out,int radius,Mat& DomainX)
 					float dis = dx[i]-dx[kk];
 					if(fabs(dis)>radius)
 					{
-						b -= s[3*i+0];
-						g -= s[3*i+1];
-						r -= s[3*i+2];
+						bgr[0] -= s[3*i+0];
+						bgr[1] -= s[3*i+1];
+						bgr[2] -= s[3*i+2];
 						sumN--;
 						left++;
 					}else
@@ -2734,49 +2794,50 @@ void RunNC_X_32F(const Mat& in,Mat& out,int radius,Mat& DomainX)
 						break;
 					}    
 				}
-				d[3*kk+0] = b/(float)sumN;
-				d[3*kk+1] = g/(float)sumN;
-				d[3*kk+2] = r/(float)sumN;
+				float div = 1.f/(float)sumN;
+				d[3*kk+0] = bgr[0]*div;
+				d[3*kk+1] = bgr[1]*div;
+				d[3*kk+2] = bgr[2]*div;
 			}
 		}
 	}
 }
 
 
-void RunNC_Y_32F(const Mat& in,Mat& out,int radius,Mat& DomainY)
+void normalizedConvolutionY_32f(const Mat& src,Mat& dest,const float radius,Mat& cty)
 {
-	if(out.empty()) out.create(in.size(),in.type());
+	if(dest.empty()) dest.create(src.size(),src.type());
 
-	if(in.channels()==1)
+	if(src.channels()==1)
 	{
 		;
 	}
-	else if(in.channels()==3)
+	else if(src.channels()==3)
 	{
-		for(int j=0;j<in.cols;j++)
+		for(int j=0;j<src.cols;j++)
 		{
 			int kk=0;
 
 			int left=kk;
 			int right=kk;
 			
-			float b=in.at<float>(0,3*j+0);
-			float g=in.at<float>(0,3*j+1);
-			float r=in.at<float>(0,3*j+2);
+			float b=src.at<float>(0,3*j+0);
+			float g=src.at<float>(0,3*j+1);
+			float r=src.at<float>(0,3*j+2);
 			int sumN=1;
 
 			int i;
-			for(kk=0;kk<in.rows;kk++)
+			for(kk=0;kk<src.rows;kk++)
 			{
 				int TMPright=right;
-				for(i=TMPright+1;i<in.rows;i++)
+				for(i=TMPright+1;i<src.rows;i++)
 				{
-					float dis = DomainY.at<float>(i, j) - DomainY.at<float>(kk, j);
+					float dis = cty.at<float>(i, j) - cty.at<float>(kk, j);
 					if(abs(dis)<=radius)
 					{
-						b += in.at<float>(i,3*j+0);
-						g += in.at<float>(i,3*j+1);
-						r += in.at<float>(i,3*j+2);
+						b += src.at<float>(i,3*j+0);
+						g += src.at<float>(i,3*j+1);
+						r += src.at<float>(i,3*j+2);
 						sumN++;
 						right++;
 					}else
@@ -2788,12 +2849,12 @@ void RunNC_Y_32F(const Mat& in,Mat& out,int radius,Mat& DomainY)
 				for(i=TMPleft;i<kk;i++)
 				{
 					//int Dsum=sum;
-					float dis = DomainY.at<float>(i, j) - DomainY.at<float>(kk, j);
+					float dis = cty.at<float>(i, j) - cty.at<float>(kk, j);
 					if(fabs(dis)>radius)
 					{
-						b -= in.at<float>(i,3*j+0);
-						g -= in.at<float>(i,3*j+1);
-						r -= in.at<float>(i,3*j+2);
+						b -= src.at<float>(i,3*j+0);
+						g -= src.at<float>(i,3*j+1);
+						r -= src.at<float>(i,3*j+2);
 						sumN--;
 						left++;
 					}else
@@ -2801,9 +2862,9 @@ void RunNC_Y_32F(const Mat& in,Mat& out,int radius,Mat& DomainY)
 						break;
 					}    
 				}
-				out.at<float>(kk,3*j+0) = b/(float)sumN;
-				out.at<float>(kk,3*j+1) = g/(float)sumN;
-				out.at<float>(kk,3*j+2) = r/(float)sumN;
+				dest.at<float>(kk,3*j+0) = b/(float)sumN;
+				dest.at<float>(kk,3*j+1) = g/(float)sumN;
+				dest.at<float>(kk,3*j+2) = r/(float)sumN;
 			}
 		}
 	}
@@ -2827,7 +2888,8 @@ void domainTransformFilter_NC_Base(const Mat& src, const Mat& guide, Mat& dest, 
 
 	if(guide.depth()==CV_8U)
 	{
-		if(norm == DTF_L1) buid_ct_L1_8u(guide, dctx,dcty,ratio);
+		//if(norm == DTF_L1) buid_ct_L1_8u(guide, dctx,dcty,ratio);
+		if(norm == DTF_L1) buid_ct_L_8u(guide, dctx,dcty,ratio,5);
 		else if(norm == DTF_L2) buid_ct_L2_8u(guide, dctx,dcty,ratio);
 		else buid_ct_L1_8u(guide, dctx,dcty,ratio);
 
@@ -2860,11 +2922,11 @@ void domainTransformFilter_NC_Base(const Mat& src, const Mat& guide, Mat& dest, 
 	while(i--)
 	{	
 		float sigma_h = (float) (sigma_s * sqrt(3.0) * pow(2.0,(maxiter - (i+1))) / sqrt(pow(4.0,maxiter) -1));
-		int radius = (int)(sigma_h*sqrt(3.f)+0.5f);
+		const float radius = sigma_h*sqrt(3.f);
 
-		RunNC_X_32F(img,out, radius, ch_h);
+		normalizedConvolutionX_32f(img,out, radius, ch_h);
 		transpose(out,imgt);
-		RunNC_X_32F(imgt,outt, radius, ch_v);
+		normalizedConvolutionX_32f(imgt,outt, radius, ch_v);
 		//RunNC_Y_32F(out,img, radius, ch_v);
 		transpose(outt,img);
 	}
