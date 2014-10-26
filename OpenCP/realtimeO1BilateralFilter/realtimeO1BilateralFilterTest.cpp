@@ -17,10 +17,11 @@ void guiRealtimeO1BilateralFilterTest(Mat& src_)
 	int a=0;createTrackbar("a",wname,&a,100);
 	int sw = 0; createTrackbar("switch",wname,&sw, 4);
 
-	int r = 10; createTrackbar("r",wname,&r,200);
-	int space = 300; createTrackbar("space",wname,&space,2000);
+	//int r = 10; createTrackbar("r",wname,&r,200);
+	int space = 100; createTrackbar("space",wname,&space,2000);
 	int color = 500; createTrackbar("color",wname,&color,2550);
 	int bin = 100; createTrackbar("bin",wname,&bin,100);
+	int iter = 1;createTrackbar("iter",wname,&iter,100);
 	int key = 0;
 	Mat show;
 
@@ -44,9 +45,17 @@ void guiRealtimeO1BilateralFilterTest(Mat& src_)
 		{
 			bilateralFilter(src,ref,Size(d,d), color/10.f,space/10.0f);
 		}
+		if(sw==0)
 		{
 			CalcTime t("realtime bilateral filter",0,false);
 			rbf.gauss(src, dest, d/2,sigma_color, sigma_space, bin);
+			tim = t.getTime();
+		}
+
+		if(sw==1)
+		{
+			CalcTime t("realtime bilateral filter",0,false);
+			rbf.gauss_iir(src, dest, sigma_color, sigma_space, bin,iter);
 			tim = t.getTime();
 		}
 		/*

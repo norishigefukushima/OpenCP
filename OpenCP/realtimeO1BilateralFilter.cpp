@@ -56,6 +56,133 @@ RealtimeO1BilateralFilter::RealtimeO1BilateralFilter()
 
 //#include "spectral_recursive_filter.hpp"
 
+
+void RealtimeO1BilateralFilter::gauss_iir(Mat& src, Mat& joint, Mat& dest, float sigma_color, float sigma_space, int num_bin,int iter)
+{
+	CV_Assert(joint.channels()==1);
+	num_bin = max(num_bin,2);// for 0 and 255
+	dest.create(src.size(),src.type());
+
+	setColorLUT(sigma_color);
+	if(sub_range.size()!=num_bin || sub_range[0].size().area()!=src.size().area())
+	{
+		createBin(src.size(),num_bin, src.channels());
+		allocateBin(num_bin);
+	}
+
+	if(src.channels()==3)
+	{
+		uchar* s = src.ptr<uchar>(0);
+		uchar* j = joint.ptr<uchar>(0);
+		uchar* d = dest.ptr<uchar>(0);
+#pragma omp parallel for schedule (dynamic)
+		for(int b=0;b<num_bin;b++)
+		{
+			float* su = sub_range[b].ptr<float>(0);//upper
+			float* sd = normalize_sub_range[b].ptr<float>(0);//down
+
+			uchar v = (uchar)(255.0/(float)(num_bin-1)*(b));
+
+			if(b==0)v=0;
+			if(b==num_bin-1)v=255;
+
+			for(int i=0;i<src.size().area();i++)
+			{
+				const float coeff = color_weight[ abs(j[i] - v)];
+
+				su[3*i+0] = coeff*s[3*i+0];
+				su[3*i+1] = coeff*s[3*i+1];
+				su[3*i+2] = coeff*s[3*i+2];
+				sd[3*i+0] = coeff;
+				sd[3*i+1] = coeff;
+				sd[3*i+2] = coeff;
+			}
+
+			/*spectral_recursive_filter::gauss srf_gauss(sigma_space,sigma_space);
+			srf_gauss.filter(sub_range[b],sub_range[b]);
+			srf_gauss.filter(normalize_sub_range[b],normalize_sub_range[b]);*/
+		/*				if(r<=0)
+			{
+				
+			}
+			else*/
+			{
+				GaussianBlurIIR(sub_range[b],sub_range[b],sigma_space,iter);
+				GaussianBlurIIR(normalize_sub_range[b],normalize_sub_range[b],sigma_space,iter);
+			}
+			
+
+			max(normalize_sub_range[b],0.00001f,normalize_sub_range[b]);//a
+			divide(sub_range[b],normalize_sub_range[b],sub_range[b]);
+		}
+
+		for(int i=0;i<src.size().area();i++)
+		{
+			int id = idx[j[i]];
+			float ca = a[j[i]];
+			
+			d[3*i+0] = saturate_cast<uchar>(ca*sub_range[id].at<float>(3*i+0)+(1.0f-ca)*sub_range[id+1].at<float>(3*i+0));
+			d[3*i+1] = saturate_cast<uchar>(ca*sub_range[id].at<float>(3*i+1)+(1.0f-ca)*sub_range[id+1].at<float>(3*i+1));
+			d[3*i+2] = saturate_cast<uchar>(ca*sub_range[id].at<float>(3*i+2)+(1.0f-ca)*sub_range[id+1].at<float>(3*i+2));
+		}
+	}
+	else if(src.channels()==1)
+	{
+		uchar* s = src.ptr<uchar>(0);
+		uchar* j = joint.ptr<uchar>(0);
+		uchar* d = dest.ptr<uchar>(0);
+#pragma omp parallel for schedule (dynamic)
+		for(int b=0;b<num_bin;b++)
+		{
+			float* su = sub_range[b].ptr<float>(0);//upper
+			float* sd = normalize_sub_range[b].ptr<float>(0);//down
+
+			uchar v = (uchar)(255.0/(float)(num_bin-1)*(b));
+
+			if(b==0)v=0;
+			if(b==num_bin-1)v=255;
+
+			for(int i=0;i<src.size().area();i++)
+			{
+				const float coeff = color_weight[ abs(j[i] - v)];
+
+				su[i] = coeff*s[i];
+				sd[i] = coeff;
+			}
+
+			//spectral_recursive_filter::gauss srf_gauss(sigma_space,sigma_space);
+			//srf_gauss.filter(sub_range[b],sub_range[b]);
+			//srf_gauss.filter(normalize_sub_range[b],normalize_sub_range[b]);
+		/*	if(r<=0)
+			{
+				GaussianBlurIIR(sub_range[b],sub_range[b],sigma_space,4);
+				GaussianBlurIIR(normalize_sub_range[b],normalize_sub_range[b],sigma_space,4);
+			}
+			else*/
+			{
+				GaussianBlurIIR(sub_range[b],sub_range[b],sigma_space,iter);
+				GaussianBlurIIR(normalize_sub_range[b],normalize_sub_range[b],sigma_space,iter);
+			}
+			max(normalize_sub_range[b],0.00001f,normalize_sub_range[b]);//a
+			divide(sub_range[b],normalize_sub_range[b],sub_range[b]);
+		}
+
+		for(int i=0;i<src.size().area();i++)
+		{
+			int id = idx[j[i]];
+			float ca = a[j[i]];
+			d[i] = saturate_cast<uchar>(ca*sub_range[id].at<float>(i)+(1.0f-ca)*sub_range[id+1].at<float>(i));
+		}
+	}
+}
+void RealtimeO1BilateralFilter::gauss_iir(Mat& src, Mat& dest, float sigma_color, float sigma_space, int num_bin, int iter)
+{
+	Mat joint;
+	if(src.channels()==1) joint = src;
+	else cvtColor(src,joint,COLOR_BGR2GRAY);
+	gauss_iir(src,joint,dest,sigma_color,sigma_space,num_bin,iter);
+}
+
 void RealtimeO1BilateralFilter::gauss(Mat& src, Mat& joint, Mat& dest, int r, float sigma_color, float sigma_space, int num_bin)
 {
 	CV_Assert(joint.channels()==1);
@@ -98,15 +225,7 @@ void RealtimeO1BilateralFilter::gauss(Mat& src, Mat& joint, Mat& dest, int r, fl
 				sd[3*i+2] = coeff;
 			}
 
-			/*spectral_recursive_filter::gauss srf_gauss(sigma_space,sigma_space);
-			srf_gauss.filter(sub_range[b],sub_range[b]);
-			srf_gauss.filter(normalize_sub_range[b],normalize_sub_range[b]);*/
-		/*				if(r<=0)
-			{
-				GaussianBlurIIR(sub_range[b],sub_range[b],sigma_space,4);
-				GaussianBlurIIR(normalize_sub_range[b],normalize_sub_range[b],sigma_space,4);
-			}
-			else*/
+
 			{
 				GaussianBlur(sub_range[b],sub_range[b],kernel,sigma_space);
 				GaussianBlur(normalize_sub_range[b],normalize_sub_range[b],kernel,sigma_space);
@@ -177,6 +296,7 @@ void RealtimeO1BilateralFilter::gauss(Mat& src, Mat& joint, Mat& dest, int r, fl
 		}
 	}
 }
+
 
 void RealtimeO1BilateralFilter::gauss(Mat& src, Mat& dest, int r, float sigma_color, float sigma_space, int num_bin)
 {

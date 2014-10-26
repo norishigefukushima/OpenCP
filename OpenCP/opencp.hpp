@@ -298,6 +298,8 @@ public:
 	RealtimeO1BilateralFilter();
 	~RealtimeO1BilateralFilter(){;};
 
+	void gauss_iir(Mat& src, Mat& dest, float sigma_color, float sigma_space, int num_bin,int iter);
+	void gauss_iir(Mat& src, Mat& joint, Mat& dest, float sigma_color, float sigma_space, int num_bin,int iter);
 	void gauss(Mat& src, Mat& joint, Mat& dest, int r, float sigma_color, float sigma_space, int num_bin);
 	void gauss(Mat& src, Mat& dest, int r, float sigma_color, float sigma_space, int num_bin);
 

@@ -215,7 +215,8 @@ void GaussianFilter(const Mat src, Mat& dest, int r, float sigma, int method, Ma
 }
 
 // Alvarez–Mazorra
-//L. Alvarez, L. Mazorra, "Signal and image restoration using shock filters and anisotropic diffusion," SIAM Journal on Numerical Analysis, vol. 31, no. 2, pp. 590–605, 1994.
+//L. Alvarez, L. Mazorra, "Signal and image restoration using shock filters and anisotropic diffusion," SIAM Journal on Numerical Analysis, vol. 31, no. 2, pp. 590–605, 1994.
+
 void gaussian_am(float *image, const int width, const int height, const float sigma, const int iteration)
 {
     const int num_pixels = width*height;
@@ -357,6 +358,6 @@ void GaussianBlurIIR(InputArray src_, OutputArray dest, float sigma, int iterati
 		 merge(plane,dest);
 	 }
 
-	 if(src.depth()!=CV_32F)srcf.convertTo(dest,src.type());
+	 if(src.depth()!=CV_32F) srcf.convertTo(dest,src.type(),1.0,0.5);
 	 else srcf.copyTo(dest);
  }
