@@ -1,5 +1,6 @@
 #include "../opencp.hpp"
 #include <fstream>
+
 using namespace std;
 
 void checkdiff(Mat& src, Mat& src2)
@@ -23,85 +24,124 @@ void checkdiff(Mat& src, Mat& src2)
 
 void guiDomainTransformFilterTest(Mat& src)
 {
-	Mat dest,dest2;
-
-	string wname = "domain transform filter";
+	 string wname = "smooth";
 	namedWindow(wname);
-	moveWindow(wname,300,100);
 
-	int a=0;createTrackbar("a",wname,&a,100);
-	int sw = 1; createTrackbar("switch",wname,&sw, 3);
-
-	int sigma_color10 = 700; createTrackbar("sigma_color",wname,&sigma_color10,2550);
-	int sigma_space10 = 700; createTrackbar("sigma_space",wname,&sigma_color10,2550);
-	int iter = 3; createTrackbar("iter",wname,&iter,10);
-	int nrm = 0; createTrackbar("norm",wname,&nrm,1);
-
-	//int core = 1; createTrackbar("core",wname,&core,24);
+	int sc = 500;
+	int ss = 30;
+	int iteration = 2;
 	
-	int noise_s10 = 100; createTrackbar("noise",wname,&noise_s10,2550);
+	createTrackbar("sigma_color",wname,&sc,2550);
+	createTrackbar("sigma_space",wname,&ss,100);
+	createTrackbar("iteration",wname,&iteration,10);
+	int norm = 0;
+	createTrackbar("normL1/L2",wname,&norm,1);
+	int implimentation=0;
+	createTrackbar("impliment",wname,&implimentation,2);
+	int sw=0;
+	createTrackbar("RF/NC/IC",wname,&sw,2);
+	int color = 0;
+	createTrackbar("color",wname,&color,1);
+
 	int key = 0;
-	Mat show;
-
-	Mat guide;
-	
-	ConsoleImage ci(Size(640,480));
-	Mat noise;
-	addNoise(src,noise,noise_s10/10.0);
-	DomainTransformFilter dtf;
-	Mat base;
-
-	while(key!='q')
+	while(key!='q' && key!=VK_ESCAPE)
 	{
-		int N = nrm + 1;
-		float sigma_color = sigma_color10/10.f;
-		float sigma_space = sigma_space10/10.f;
-
-		if(key=='n')
-			addNoise(src,noise,noise_s10/10.0);
-
-
-		domainTransformFilterRF(noise,  base, sigma_color,sigma_space, iter,N,DTF_SLOWEST);
-
+		float scf = (float)sc*0.1f;
+		float ssf = (float)ss*1.0f;
+		Mat show;
+		Mat input;
+		
+		if(color==0) cvtColor(src,input,COLOR_BGR2GRAY);
+		else input = src;
+		
+		int64 startTime = getTickCount();
 		if(sw==0)
 		{
-			CalcTime t("domain transform filter");
-			domainTransformFilterRF(noise,  dest, sigma_color,sigma_space, iter,N,DTF_SLOWEST);
-			//guidedFilter(feather,src,dest,r,sigma_color*sigma_color);
+			domainTransformFilter(input, show,scf,ssf,iteration,norm+1,DTF_RF,implimentation);
 		}
-		else if(sw==1)
-		{	
-			CalcTime t("domain transform filter");
-			domainTransformFilterRF(noise, dest, sigma_color,sigma_space, iter,N,DTF_BGRA_SSE);
-			//dtf(noise,  noise, dest, sigma_space,sigma_color, iter,0);
+		else if(sw == 1)
+		{
+			domainTransformFilter(input, show,scf,ssf,iteration,norm+1,DTF_NC,implimentation);
 		}
-		else if(sw==2)
-		{	
-			CalcTime t("domain transform filter");
-			domainTransformFilterNC(noise,  noise, dest, sigma_color,sigma_space, iter,N, DTF_SLOWEST);
-			//domainTransformFilterRF(noise,  dest, sigma_color,sigma_space, iter,1,DTF_BGRA_SSE_PARALLEL);
-			//bilateralFilter(noise,  dest,Size(2*r+1,2*r+1),sigma_color,0.333*r,FILTER_DEFAULT);
-		}
-		else if(sw==3)
-		{	
-			CalcTime t("domain transform filter");
-			
-			//dtf(noise,  noise, dest, sigma_color,sigma_space, iter,1);
-			//bilateralFilter(noise,  dest,Size(2*r+1,2*r+1),sigma_color,0.333*r,FILTER_DEFAULT);
+		else if(sw == 2)
+		{
+			domainTransformFilter(input, show,scf,ssf,iteration,norm+1,DTF_IC,implimentation);
 		}
 
-		ci(format("before: %f",PSNR(src,noise)));
-		ci(format("filter: %f",PSNR(src,dest)));
+		double time = (getTickCount()-startTime)/(getTickFrequency());
+		printf("domain transform filter: %f ms\n",time*1000.0);
 
-		ci(format("DIFF: %f",PSNR(base,dest)));
-		ci(format("norm: %f",norm(base,dest)));
-		//checkdiff(base,dest);
-
-		ci.flush();
-		
-		//patchBlendImage(noise,dest,dest,Scalar(255,255,255));
-		alphaBlend(src, dest,a/100.0, show);
-		cv::imshow(wname,show);
+		imshow(wname,show);
 		key = waitKey(1);
 	}
-}
+
+	destroyWindow(wname);
+ }
+
+ void guiJointDomainTransformFilterTest(Mat& src, Mat& guide)
+ {
+	 string wname = "smooth";
+	 namedWindow(wname);
+
+	 int sc = 500;
+	 int ss = 30;
+	 int iteration = 2;
+
+	 createTrackbar("sigma_color",wname,&sc,2550);
+	 createTrackbar("sigma_space",wname,&ss,100);
+	 createTrackbar("iteration",wname,&iteration,10);
+	 int norm = 0;
+	 createTrackbar("normL1/L2",wname,&norm,1);
+	 int implimentation=0;
+	 createTrackbar("impliment",wname,&implimentation,2);
+	 int sw=0;
+	 createTrackbar("RF/NC/IC",wname,&sw,5);
+
+	 int color = 0;
+	 createTrackbar("color",wname,&color,1);
+
+	 int key = 0;
+	 while(key!='q' && key!=VK_ESCAPE)
+	 {
+		 float scf = (float)sc*0.1f;
+		 float ssf = (float)ss*1.0f;
+		 Mat show;
+		 Mat input;
+
+		 if(color==0) cvtColor(src,input,COLOR_BGR2GRAY);
+		 else input = src;
+
+		 int64 startTime = getTickCount();
+		 if(sw==0)
+		 {
+			 domainTransformFilter(input,show,scf,ssf,iteration,norm+1,DTF_RF,implimentation);
+		 }
+		 else if(sw == 2)
+		 {
+			 domainTransformFilter(input, show,scf,ssf,iteration,norm+1,DTF_NC,implimentation);
+		 }
+		 else if(sw == 4)
+		 {
+			 domainTransformFilter(input, show,scf,ssf,iteration,norm+1,DTF_IC,implimentation);
+		 }
+		 if(sw==1)
+		 {
+			 domainTransformFilter(input, guide,show,scf,ssf,iteration,norm+1,DTF_RF,implimentation);
+		 }
+		 else if(sw == 3)
+		 {
+			 domainTransformFilter(input, guide, show,scf,ssf,iteration,norm+1,DTF_NC,implimentation);
+		 }
+		 else if(sw == 5)
+		 {
+			 domainTransformFilter(input, guide, show,scf,ssf,iteration,norm+1,DTF_IC,implimentation);
+		 }
+
+		 double time = (getTickCount()-startTime)/(getTickFrequency());
+		 printf("domain transform filter: %f ms\n",time*1000.0);
+
+		 imshow(wname,show);
+		 key = waitKey(1);
+	 }
+	 destroyWindow(wname);
+ }

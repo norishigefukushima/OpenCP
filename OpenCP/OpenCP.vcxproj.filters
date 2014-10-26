@@ -162,6 +162,27 @@
     <ClCompile Include="shiftImage.cpp">
       <Filter>ソース ファイル\imgproc</Filter>
     </ClCompile>
+    <ClCompile Include="localLaplacianFilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="PermutohedralLattice.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="adaptiveManifold.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="ffttest\fftTest.cpp">
+      <Filter>ソース ファイル\test</Filter>
+    </ClCompile>
+    <ClCompile Include="realtimeO1BilateralFilter\realtimeO1BilateralFilterTest.cpp">
+      <Filter>ソース ファイル\test</Filter>
+    </ClCompile>
+    <ClCompile Include="realtimeO1BilateralFilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="GaussianFilter\GaussianFilterTest.cpp">
+      <Filter>ソース ファイル\test</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="opencp.hpp">

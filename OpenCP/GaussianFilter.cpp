@@ -1,5 +1,6 @@
-#include "opencp.hpp"
+﻿#include "opencp.hpp"
 #include <opencv2/core/internal.hpp>
+
 void weightedGaussianFilter(Mat& src, Mat& weight, Mat& dest,Size ksize, float sigma, int border_type)
 {
 	Mat temp;
@@ -212,3 +213,150 @@ void GaussianFilter(const Mat src, Mat& dest, int r, float sigma, int method, Ma
 		GaussianFilter_8u_ignore_boudary(src,dest,r,sigma,mask);
 	}
 }
+
+// Alvarez–Mazorra
+//L. Alvarez, L. Mazorra, "Signal and image restoration using shock filters and anisotropic diffusion," SIAM Journal on Numerical Analysis, vol. 31, no. 2, pp. 590–605, 1994.
+void gaussian_am(float *image, const int width, const int height, const float sigma, const int iteration)
+{
+    const int num_pixels = width*height;
+
+    float nu, boundary_scale, post_scale;
+    float *ptr;
+    long i, x, y;
+    int step;
+    
+    if(sigma <= 0 || iteration < 0)
+        return;
+    
+    double lambda = (sigma*sigma)/(2.0*iteration);
+    double dnu = (1.0 + 2.0*lambda - sqrt(1.0 + 4.0*lambda))/(2.0*lambda);
+    nu = (float)dnu;
+    boundary_scale = (float)(1.0/(1.0 - dnu));
+    post_scale = (float)(pow(dnu/lambda,2*iteration));
+    
+    //Filter horizontally along each row 
+    for(y = 0; y < height; y++)
+    {
+        for(step = 0; step < iteration; step++)
+        {
+            ptr = image + width*y;
+            ptr[0] *= boundary_scale;
+            
+            //rightwards
+            for(x = 1; x < width; x++)
+                ptr[x] += nu*ptr[x - 1];
+            
+            ptr[x = width - 1] *= boundary_scale;
+            
+            //leftwards
+            for(; x > 0; x--)
+                ptr[x - 1] += nu*ptr[x];
+        }
+    }
+    
+    // Filter vertically along each column
+	x = 0;
+
+	for(; x <= width-4; x+=4)
+	{	
+		const __m128 mnu = _mm_set1_ps(nu);
+		const __m128 mboundaryscale = _mm_set1_ps(boundary_scale);
+
+		for(step = 0; step < iteration; step++)
+		{
+			ptr = image + x;
+
+			//ptr[0] *= boundaryscale;
+			{
+				__m128 im = _mm_loadu_ps(ptr);
+				_mm_storeu_ps(ptr,_mm_mul_ps(mboundaryscale,im));
+			}
+
+			//downwards 
+			for(i = width; i < num_pixels; i += width)
+			{
+				__m128 im = _mm_loadu_ps(ptr+i-width);
+				__m128 dm = _mm_loadu_ps(ptr+i);
+				_mm_storeu_ps(ptr+i,_mm_add_ps(dm,_mm_mul_ps(mnu,im)));
+			}
+
+			
+			//ptr[i = numpixels - width] *= boundaryscale;
+			{
+				__m128 im = _mm_loadu_ps(ptr+num_pixels - width);
+				_mm_storeu_ps(ptr+num_pixels - width,_mm_mul_ps(mboundaryscale,im));
+			}
+			
+			i = num_pixels - width;
+			//upwards
+			for(; i > 0; i -= width)
+			{
+				__m128 im = _mm_loadu_ps(ptr+i);
+				__m128 dm = _mm_loadu_ps(ptr+i-width);
+				_mm_storeu_ps(ptr+i-width,_mm_add_ps(dm,_mm_mul_ps(mnu,im)));
+			}
+		}
+	}
+
+    for(; x < width; x++)
+    {
+        for(step = 0; step < iteration; step++)
+        {
+            ptr = image + x;
+            ptr[0] *= boundary_scale;
+            
+            //downwards
+            for(i = width; i < num_pixels; i += width)
+                ptr[i] += nu*ptr[i - width];
+            
+			i = num_pixels - width;
+            ptr[i] *= boundary_scale;
+            
+            //upwards
+            for(; i > 0; i -= width)
+                ptr[i - width] += nu*ptr[i];
+        }
+    }
+    
+    i=0;
+	const __m128 mpostscale = _mm_set1_ps(post_scale);
+    for(; i <= num_pixels-4; i+=4)
+	{
+		__m128 im = _mm_loadu_ps(image+i);
+		_mm_storeu_ps(image+i,_mm_mul_ps(mpostscale,im));
+
+	}
+	for(; i < num_pixels; i++)
+	{
+		image[i] *= post_scale;
+	}
+    
+    return;
+}
+
+void GaussianBlurIIR(InputArray src_, OutputArray dest, float sigma, int iteration)
+ {
+	 Mat src = src_.getMat();
+	 Mat srcf;
+	 if(src.depth()!=CV_32F) src.convertTo(srcf,CV_32F);
+	 else srcf = src;
+
+	 if(src.channels()==1)
+	 {	 
+		 gaussian_am(srcf.ptr<float>(0),src.cols, src.rows, sigma, iteration);
+	 }
+	 else if (src.channels()==3)
+	 {
+		 vector<Mat> plane;
+		 split(srcf,plane);
+		// cvtColorBGR2PLANE(src,plane);
+		 gaussian_am(plane[0].ptr<float>(0),src.cols,src.rows, sigma, iteration);
+		 gaussian_am(plane[1].ptr<float>(0),src.cols,src.rows, sigma, iteration);
+		 gaussian_am(plane[2].ptr<float>(0),src.cols,src.rows, sigma, iteration);
+
+		 merge(plane,dest);
+	 }
+
+	 if(src.depth()!=CV_32F)srcf.convertTo(dest,src.type());
+	 else srcf.copyTo(dest);
+ }

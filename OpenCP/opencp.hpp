@@ -1,6 +1,7 @@
 #pragma once
 
 #include <opencv2/opencv.hpp>
+#include <opencv2/core/internal.hpp>
 using namespace cv;
 
 #define CV_VERSION_NUMBER CVAUX_STR(CV_MAJOR_VERSION) CVAUX_STR(CV_MINOR_VERSION) CVAUX_STR(CV_SUBMINOR_VERSION)
@@ -51,6 +52,10 @@ using namespace cv;
 #pragma comment(lib, "opencv_contrib"CV_VERSION_NUMBER".lib")
 #pragma comment(lib, "opencv_calib3d"CV_VERSION_NUMBER".lib")
 #endif
+
+#ifndef VK_ESCAPE
+#define VK_ESCAPE 0x1B
+#endif // VK_ESCAPE
 
 //Draw fuction
 
@@ -235,6 +240,8 @@ enum
 	FILTER_SLOWEST,// for just comparison.
 };
 
+
+void GaussianBlurIIR(InputArray src_, OutputArray dest, float sigma, int iteration);
 void GaussianFilter(const Mat src, Mat& dest, int r, float sigma, int method=FILTER_SLOWEST, Mat& mask=Mat());
 void weightedGaussianFilter(Mat& src, Mat& weight, Mat& dest,Size ksize, float sigma, int border_type = BORDER_REPLICATE);
 
@@ -250,6 +257,17 @@ enum
 void bilateralFilter(const Mat& src, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method=FILTER_DEFAULT, int borderType=cv::BORDER_REPLICATE);
 void jointBilateralFilter(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method=FILTER_DEFAULT, int borderType=cv::BORDER_REPLICATE);
 
+
+void bilateralFilterL2_8u( const Mat& src, Mat& dst, int d, double sigma_color, double sigma_space,int borderType=cv::BORDER_REPLICATE);
+void bilateralFilterSP_test5_8u( const Mat& src, Mat& dst, Size kernelSize, double sigma_color1, double sigma_color2, double sigma_color3, double sigma_color4, double sigma_space, int borderType =cv::BORDER_REPLICATE);
+void bilateralFilterSP_test4_8u( const Mat& src, Mat& dst, Size kernelSize, double sigma_color1, double sigma_color2, double sigma_space1, double sigma_space2, int borderType =cv::BORDER_REPLICATE);
+void bilateralFilterSP_test4_8u( const Mat& src, Mat& dst, Size kernelSize, double sigma_color1, double sigma_color2, double sigma_space, int borderType =cv::BORDER_REPLICATE);
+void bilateralFilterSP_test3_8u( const Mat& src, Mat& dst, Size kernelSize, double sigma_color1, double sigma_color2, double sigma_space, int borderType =cv::BORDER_REPLICATE);
+void bilateralFilterSP_test2_8u( const Mat& src, Mat& dst, Size kernelSize, double sigma_color1,  double sigma_space, int borderType =cv::BORDER_REPLICATE);
+void bilateralFilterSP_test1_8u( const Mat& src, Mat& dst, Size kernelSize, double sigma_color1, double sigma_color2, double sigma_space, int borderType =cv::BORDER_REPLICATE);
+void bilateralFilterSP2_8u( const Mat& src, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int borderType=cv::BORDER_REPLICATE);
+void bilateralFilterSP3_8u( const Mat& src, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int skip, int borderType=cv::BORDER_REPLICATE);
+
 void weightedBilateralFilter(const Mat& src, Mat& weight, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method, int borderType=cv::BORDER_REPLICATE);
 void weightedJointBilateralFilter(const Mat& src, Mat& weightMap,const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method, int borderType);
 
@@ -258,6 +276,34 @@ void guidedFilter(const Mat& src, const Mat& guidance, Mat& dest, const int radi
 
 void guidedFilterMultiCore(const Mat& src, Mat& dest, int r,float eps, int numcore=0);
 void guidedFilterMultiCore(const Mat& src, const Mat& guide, Mat& dest, int r,float eps,int numcore=0);
+
+
+class RealtimeO1BilateralFilter
+{
+private:
+	float CV_DECL_ALIGNED(16) color_weight[256];
+
+	vector<Mat> sub_range; 
+	vector<Mat> normalize_sub_range;
+
+	vector<uchar> idx;
+	vector<float> a;
+
+	void createBin(Size imsize, int num_bin, int channles);
+	void setColorLUT(float sigma_color);
+	void allocateBin(int num_bin);
+
+public:
+
+	RealtimeO1BilateralFilter();
+	~RealtimeO1BilateralFilter(){;};
+
+	void gauss(Mat& src, Mat& joint, Mat& dest, int r, float sigma_color, float sigma_space, int num_bin);
+	void gauss(Mat& src, Mat& dest, int r, float sigma_color, float sigma_space, int num_bin);
+
+	void box(Mat& src, Mat& dest, int r, float sigma_color, int num_bin, int box_iter=1);
+	void box(Mat& src, Mat& joint, Mat& dest, int r, float sigma_color, int num_bin, int box_iter=1);
+};
 
 enum
 {
@@ -289,21 +335,10 @@ typedef enum
 	DTF_SLOWEST
 }DTF_IMPLEMENTATION;
 
-void domainTransformFilterRF(const Mat& img, Mat& out, float sigma_r, float sigma_s, int maxiter, int norm=DTF_L1, int implementation=DTF_BGRA_SSE_PARALLEL);
-void domainTransformFilterRF(const Mat& img, const Mat& guide, Mat& out, float sigma_r, float sigma_s,int maxiter, int norm=DTF_L1, int implementation=DTF_BGRA_SSE_PARALLEL);
-void domainTransformFilterNC(const Mat& src, Mat& dest, float sigma_r, float sigma_s, int maxiter, int norm, int implementation=DTF_BGRA_SSE_PARALLEL);
-void domainTransformFilterNC(const Mat& src, const Mat& guide, Mat& dest, float sigma_r, float sigma_s, int maxiter, int norm, int implementation=DTF_BGRA_SSE_PARALLEL);
-class DomainTransformFilter
-{
-	Mat img;
-	Mat guidef;
-	Mat dctx;
-	Mat dcty;
 
-public:
-	DomainTransformFilter();
-	void operator()(const Mat& src, const Mat& guide, Mat& dest, float sigma_r, float sigma_s, int maxiter, int norm);
-};
+void domainTransformFilter(InputArray srcImage, OutputArray destImage, const float sigma_r, const float sigma_s, const int maxiter, const int norm=DTF_L1, const int convolutionType=DTF_RF, const int implementation=DTF_SLOWEST);
+void domainTransformFilter(InputArray srcImage, InputArray guideImage, OutputArray destImage, const float sigma_r, const float sigma_s, const int maxiter, const int norm=DTF_L1, const int convolutionType=DTF_RF, const int implementation=DTF_SLOWEST);
+
 
 void recursiveBilateralFilter(Mat& src, Mat& dest, float sigma_range, float sigma_spatial, int method=0);
 class RecursiveBilateralFilter
@@ -336,6 +371,9 @@ void nonLocalMeansFilter(Mat& src, Mat& dest, int templeteWindowSize, int search
 
 void iterativeBackProjectionDeblurGaussian(const Mat& src, Mat& dest, const Size ksize, const double sigma, const double lambda, const int iteration);
 void iterativeBackProjectionDeblurBilateral(const Mat& src, Mat& dest, const Size ksize, const double sigma_color, const double sigma_space, const double lambda, const int iteration);
+
+
+void bilateralFilterPermutohedralLattice(Mat& src, Mat& dest, float sigma_space, float sigma_color);
 
 enum
 {

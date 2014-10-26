@@ -130,8 +130,9 @@ void test()
 }
 
 
+
 int main(int argc, char** argv)
-{
+{	
 	//test();
 
 	//generateData();
@@ -140,26 +141,31 @@ int main(int argc, char** argv)
 	//guiJointNearestFilterTest(ff3);
 	//guiViewSynthesis();
 
-	Mat src = imread("img/lenna.png");
-
-
+	//Mat src = imread("img/lenna.png");
+	//Mat src = imread("img/cave-flash.png");
+	//Mat src = imread("img/feathering/toy.png");
 	//Mat src = imread("Clipboard01.png");
 	
 	//timeGuidedFilterTest(src);
-	//Mat src = imread("img/flower.png");
-
+	Mat src = imread("img/flower.png");
+	Mat dest;
 	
+	guiGauusianFilterTest(src);
+	//guiRealtimeO1BilateralFilterTest(src);
+
+	//fftTest(src);
 	//Mat src = imread("img/kodim22.png");
 	//Mat src = imread("img/teddy_view1.png");
 	
 	//eraseBoundary(src,10);
 	Mat mega;
 	//resize(src,mega,Size(1024,1024));
-	//resize(src,mega,Size(1024,1024));
+//	resize(src,mega,Size(1024,1024));
 	resize(src,mega,Size(640,480));
 
 	//guiSLICTest(src);
-	//guiBilateralFilterTest(mega);
+	//guiBilateralFilterTest(src);
+	//guiBilateralFilterSPTest(mega);
 	//guiRecursiveBilateralFilterTest(mega);
 
 	
@@ -181,7 +187,7 @@ int main(int argc, char** argv)
 	//application 
 	//guiDetailEnhancement(src);
 	//guiGuidedFilterTest(mega);
-	guiDomainTransformFilterTest(mega);
+//	guiDomainTransformFilterTest(mega);
 	//guiDenoiseTest(src);
 	return 0;
 }

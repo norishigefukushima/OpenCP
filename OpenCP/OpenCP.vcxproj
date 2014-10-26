@@ -142,6 +142,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="adaptiveManifold.cpp" />
     <ClCompile Include="alphaBlend.cpp" />
     <ClCompile Include="arithmetic.cpp" />
     <ClCompile Include="bilateralFilter.cpp" />
@@ -158,7 +159,9 @@
     <ClCompile Include="domainTransformFilter.cpp" />
     <ClCompile Include="domainTransformFilter\domainTransformFilterTest.cpp" />
     <ClCompile Include="draw.cpp" />
+    <ClCompile Include="ffttest\fftTest.cpp" />
     <ClCompile Include="GaussianFilter.cpp" />
+    <ClCompile Include="GaussianFilter\GaussianFilterTest.cpp" />
     <ClCompile Include="guidedFilter.cpp" />
     <ClCompile Include="guidedFilter\guidedFilterTest.cpp" />
     <ClCompile Include="imagediff.cpp" />
@@ -167,6 +170,7 @@
     <ClCompile Include="jointBirateralFilter.cpp" />
     <ClCompile Include="jointNearestFilter.cpp" />
     <ClCompile Include="jointNearestFilter\jointNearestFilterTest.cpp" />
+    <ClCompile Include="localLaplacianFilter.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="matInfo.cpp" />
     <ClCompile Include="mattingRendering.cpp" />
@@ -175,6 +179,9 @@
     <ClCompile Include="noise.cpp" />
     <ClCompile Include="nonLocalMeans.cpp" />
     <ClCompile Include="nonlocalmeans\nonLocalMeansTest.cpp" />
+    <ClCompile Include="PermutohedralLattice.cpp" />
+    <ClCompile Include="realtimeO1BilateralFilter\realtimeO1BilateralFilterTest.cpp" />
+    <ClCompile Include="realtimeO1BilateralFilter.cpp" />
     <ClCompile Include="recursiveBilateralFilter.cpp" />
     <ClCompile Include="shiftImage.cpp" />
     <ClCompile Include="slic.cpp" />

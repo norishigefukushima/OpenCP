@@ -1683,16 +1683,6 @@ void guidedFilterMultiCore(const Mat& src, const Mat& guidance, Mat& dest, int r
 	parallel_for_(Range(0, th), body, th);
 }
 
-
-
-
-
-
-
-
-
-
-
 void guidedFilterSrc1GuidanceN_(const Mat& src, const Mat& guidance, Mat& dest, const int radius,const float eps)
 {
 	int debug = 0;
@@ -1771,7 +1761,6 @@ void guidedFilterSrc1GuidanceN_(const Mat& src, const Mat& guidance, Mat& dest, 
 			var_I_vec[idx]-=temp;
 		}
 	}
-
 	
 	for(int j=0;j<channels;j++)
 	{
