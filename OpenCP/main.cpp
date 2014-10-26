@@ -150,8 +150,7 @@ int main(int argc, char** argv)
 	Mat src = imread("img/flower.png");
 	Mat dest;
 	
-	//guiGauusianFilterTest(src);
-	guiRealtimeO1BilateralFilterTest(src);
+
 
 	//fftTest(src);
 	//Mat src = imread("img/kodim22.png");
@@ -159,9 +158,13 @@ int main(int argc, char** argv)
 	
 	//eraseBoundary(src,10);
 	Mat mega;
-	//resize(src,mega,Size(1024,1024));
+	resize(src,mega,Size(1024,1024));
 //	resize(src,mega,Size(1024,1024));
-	resize(src,mega,Size(640,480));
+	//resize(src,mega,Size(640,480));
+
+
+	//guiGauusianFilterTest(mega);
+	guiRealtimeO1BilateralFilterTest(mega);
 
 	//guiSLICTest(src);
 	//guiBilateralFilterTest(src);

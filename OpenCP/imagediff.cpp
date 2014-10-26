@@ -1,6 +1,18 @@
 #include "opencp.hpp"
 using namespace std;
 
+
+void diffshow(string wname, InputArray src, InputArray ref, const float scale)
+{
+	Mat show;
+	Mat diff;
+	subtract(src.getMat(),ref.getMat(),diff, noArray(),CV_32F);
+	diff*=scale;
+	diff+=128.f;
+	diff.convertTo(show, CV_8U);
+	imshow(wname,show);
+}
+
 void guiCompareDiff(const Mat& before, const Mat& after, const Mat& ref)
 {
 	string wname = "comp diff";

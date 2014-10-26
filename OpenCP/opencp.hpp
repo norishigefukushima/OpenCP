@@ -59,6 +59,8 @@ using namespace cv;
 
 //Draw fuction
 
+void diffshow(string wname, InputArray src, InputArray ref, const float scale=1.f);
+
 //merge two images into one image with some options.
 void patchBlendImage(Mat& src1, Mat& src2, Mat& dest, Scalar linecolor=CV_RGB(0,0,0), int linewidth = 2, int direction = 0);
 
@@ -242,6 +244,7 @@ enum
 
 
 void GaussianBlurIIR(InputArray src_, OutputArray dest, float sigma, int iteration);
+void GaussianBlurSR(InputArray src_, OutputArray dest, float sigma);
 void GaussianFilter(const Mat src, Mat& dest, int r, float sigma, int method=FILTER_SLOWEST, Mat& mask=Mat());
 void weightedGaussianFilter(Mat& src, Mat& weight, Mat& dest,Size ksize, float sigma, int border_type = BORDER_REPLICATE);
 
@@ -298,6 +301,9 @@ public:
 	RealtimeO1BilateralFilter();
 	~RealtimeO1BilateralFilter(){;};
 
+
+	void gauss_sr(Mat& src, Mat& dest, float sigma_color, float sigma_space, int num_bin);
+	void gauss_sr(Mat& src, Mat& joint, Mat& dest, float sigma_color, float sigma_space, int num_bin);
 	void gauss_iir(Mat& src, Mat& dest, float sigma_color, float sigma_space, int num_bin,int iter);
 	void gauss_iir(Mat& src, Mat& joint, Mat& dest, float sigma_color, float sigma_space, int num_bin,int iter);
 	void gauss(Mat& src, Mat& joint, Mat& dest, int r, float sigma_color, float sigma_space, int num_bin);

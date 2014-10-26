@@ -647,17 +647,6 @@ void GaussianBlurDeriche(InputArray src_, OutputArray dest, float sigma, int K)
 	 else srcf.copyTo(dest);
  }
 
-void diffshow(string wname, Mat& src, Mat& ref, float scale)
-{
-	Mat show;
-	Mat diff;
-	subtract(src,ref,diff, noArray(),CV_32F);
-	diff*=scale;
-	diff+=128.f;
-	diff.convertTo(show, CV_8U);
-	imshow(wname,show);
-}
-
 void GaussianBlur2(Mat& src, Mat& dest, float sigma, int clip = 3, int depth=CV_32F)
 {	
 	Mat srcf;
@@ -736,13 +725,14 @@ void guiGauusianFilterTest(Mat& src_)
 			GaussianBlur2(src, dest, sigma_space,6,CV_32F);
 			tim = t.getTime();
 
-		}/*
+		}
 		else if(sw==4)
 		{
-			CalcTime t("birateral filter: slowest: non-parallel and inefficient implimentation");
-			bilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space, FILTER_SLOWEST);
+			CalcTime t("realtime bilateral filter",0,false);
+			GaussianBlurSR(src, dest, sigma_space);
+			tim = t.getTime();
 		}
-		*/
+		
 
 		ci("time: %f",tim);
 		ci("d: %d",d);
@@ -757,4 +747,5 @@ void guiGauusianFilterTest(Mat& src_)
 		imshow(wname,show);
 		key = waitKey(1);
 	}
+	destroyAllWindows();
 }

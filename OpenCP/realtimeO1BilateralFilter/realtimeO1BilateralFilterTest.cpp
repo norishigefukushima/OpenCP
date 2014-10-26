@@ -15,13 +15,17 @@ void guiRealtimeO1BilateralFilterTest(Mat& src_)
 	ConsoleImage ci;
 
 	int a=0;createTrackbar("a",wname,&a,100);
-	int sw = 0; createTrackbar("switch",wname,&sw, 4);
+	int sw = 2; createTrackbar("switch",wname,&sw, 4);
 
 	//int r = 10; createTrackbar("r",wname,&r,200);
 	int space = 100; createTrackbar("space",wname,&space,2000);
 	int color = 500; createTrackbar("color",wname,&color,2550);
-	int bin = 100; createTrackbar("bin",wname,&bin,100);
-	int iter = 1;createTrackbar("iter",wname,&iter,100);
+	int bin = 16; createTrackbar("bin",wname,&bin,100);
+	int iter = 3;createTrackbar("iter",wname,&iter,100);
+
+	namedWindow("diff");
+	int scale = 1;createTrackbar("scale","diff",&scale,50);
+
 	int key = 0;
 	Mat show;
 
@@ -58,14 +62,13 @@ void guiRealtimeO1BilateralFilterTest(Mat& src_)
 			rbf.gauss_iir(src, dest, sigma_color, sigma_space, bin,iter);
 			tim = t.getTime();
 		}
-		/*
-		if(sw==0)
+		if(sw==2)
 		{
-			CalcTime t("birateral filter: opencv");
-			bilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space,FILTER_SEPARABLE);
-			//bilateralFilter(src, dest, d, sigma_color, sigma_space);
-			//recursiveBilateralFilter(src, dest, sigma_color, sigma_space,0);
+			CalcTime t("realtime bilateral filter",0,false);
+			rbf.gauss_sr(src, dest, sigma_color, sigma_space, bin);
+			tim = t.getTime();
 		}
+		/*
 		else if(sw==1)
 		{
 			CalcTime t("birateral filter: fastest opencp implimentation");
@@ -104,7 +107,10 @@ void guiRealtimeO1BilateralFilterTest(Mat& src_)
 		ci("time: %f",tim);
 		ci.flush();
 		alphaBlend(ref, dest,a/100.0, show);
+
+		diffshow("diff", dest,ref, scale);
 		imshow(wname,show);
 		key = waitKey(1);
 	}
+	destroyAllWindows();
 }
