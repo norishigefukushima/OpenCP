@@ -1,16 +1,15 @@
 #include "opencp.hpp"
 
 
-
-void maxFilter(const Mat& src, Mat& dest, Size kernelSize)
+void maxFilter(const Mat& src, Mat& dest, Size kernelSize, int shape)
 {	
-	Mat element = Mat::ones(kernelSize.width,kernelSize.height, src.type());
+	Mat element = getStructuringElement(shape, kernelSize);
 	dilate(src,dest,element);
 }
 
-void minFilter(const Mat& src, Mat& dest, Size kernelSize)
+void minFilter(const Mat& src, Mat& dest, Size kernelSize, int shape)
 {
-	Mat element = Mat::ones(kernelSize.width,kernelSize.height, src.type());
+	Mat element = getStructuringElement(shape, kernelSize);
 	erode(src,dest,element);
 }
 

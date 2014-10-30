@@ -691,7 +691,6 @@ void guiGauusianFilterTest(Mat& src_)
 		float sigma_space = space/10.f;
 		int d = cvRound(sigma_space*3.0)*2+1;
 
-		
 		{
 			CalcTime t("realtime bilateral filter",0,false);
 			GaussianBlur2(src, ref, sigma_space,6,CV_64F);

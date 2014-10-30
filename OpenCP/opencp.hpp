@@ -227,9 +227,11 @@ void drawSLIC(const Mat& src, Mat& segment, Mat& dest, bool isLine=true, Scalar 
 void SLICBase(Mat& src, Mat& segment, int regionSize, float regularization, float minRegionRatio, int max_iteration);
 
 
-void maxFilter(const Mat& src, Mat& dest, Size kernelSize);
+//MORPH_RECT=0, MORPH_CROSS=1, MORPH_ELLIPSE
+void maxFilter(const Mat& src, Mat& dest, Size kernelSize, int shape=MORPH_RECT);
 void maxFilter(const Mat& src, Mat& dest, int radius);
-void minFilter(const Mat& src, Mat& dest, Size kernelSize);
+//MORPH_RECT=0, MORPH_CROSS=1, MORPH_ELLIPSE
+void minFilter(const Mat& src, Mat& dest, Size kernelSize, int shape = MORPH_RECT);
 void minFilter(const Mat& src, Mat& dest, int radius);
 
 
@@ -296,8 +298,27 @@ private:
 	void setColorLUT(float sigma_color);
 	void allocateBin(int num_bin);
 
-public:
+	void filter(const Mat& src, Mat& dest);
+	void body(const Mat& src, const Mat& joint, Mat& dest);
 
+	enum
+	{
+		FIR_SEPARABLE,
+		FIR_BOX,
+		IIR_AM,
+		IIR_SR
+	};
+	
+	int filter_type;
+	float sigma_color;
+	float sigma_space;
+	int num_bin;
+	int radius;
+
+	int filter_iteration;
+public:
+	int downsample_size;
+	
 	RealtimeO1BilateralFilter();
 	~RealtimeO1BilateralFilter(){;};
 

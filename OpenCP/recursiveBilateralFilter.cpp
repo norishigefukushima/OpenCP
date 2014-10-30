@@ -621,7 +621,7 @@ void recursive_bilateral_filter_base(Mat& src, Mat& dest, float sigma_range, flo
 	qx_freed_3(temp_2);
 }
 
-void setColorLUTGaussian(float* lut, float sigma)
+inline void setColorLUTGaussian(float* lut, const float sigma)
 {
 	const float inv_sigma_range=-1.f/(2.f*sigma*sigma);
 	for(int i=0;i<=UCHAR_MAX;i++)
@@ -629,15 +629,15 @@ void setColorLUTGaussian(float* lut, float sigma)
 		lut[i]=exp((i*i)*inv_sigma_range);
 	}
 }
-void setColorLUTLaplacian(float* lut, float sigma)
+
+inline void setColorLUTLaplacian(float* lut, const float sigma)
 {
-	float inv_sigma_range=-1.f/(sigma);//raplacian
+	const float inv_sigma_range=-1.f/(sigma);//raplacian
 	for(int i=0;i<=UCHAR_MAX;i++)
 	{
 		lut[i]=exp(i*inv_sigma_range);
 	}
 }
-
 
 void recursive_bilateral_filter_interleave_sse_before(Mat& src, Mat& dest, float sigma_range, float sigma_spatial)
 {

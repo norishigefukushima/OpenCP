@@ -363,6 +363,8 @@ void GaussianBlurIIR(InputArray src_, OutputArray dest, float sigma, int iterati
  }
 
 
+//spectral recursive Gaussian Filter
+//K. Sugimoto and S. Kamata: "Fast Gaussian filter with second-order shift property of DCT-5", Proc. IEEE Int. Conf. on Image Process. (ICIP2013), pp.514-518 (Sep. 2013).
 namespace spectral_recursive_filter
 {
 //*************************************************************************************************
@@ -958,10 +960,7 @@ inline void gauss::filter_sse_v<float>(int w,int h,float* src,float* dst)
 }
 }
 
-
-
-
-void GaussianBlurSR(InputArray src_, OutputArray dest, float sigma)
+void GaussianBlurSR_cliped(InputArray src_, OutputArray dest, float sigma)
 {
 	Mat src = src_.getMat();
 	Mat srcf;
@@ -992,4 +991,26 @@ void GaussianBlurSR(InputArray src_, OutputArray dest, float sigma)
 	if(src.depth()!=CV_32F && src.depth()!=CV_64F) srcf2.convertTo(dest,src.type(),1.0,0.5);
 	else if(src.depth()==CV_64F)srcf2.convertTo(dest,src.type());
 	else srcf2.copyTo(dest);
+}
+
+void GaussianBlurSR(InputArray src, OutputArray dest, float sigma)
+{
+	const int SIMDSTEP = 4;
+	int xpad = src.size().width%4;
+	int ypad = src.size().height%4;
+
+	xpad = (SIMDSTEP-xpad)%SIMDSTEP;
+	ypad = (SIMDSTEP-ypad)%SIMDSTEP;
+
+	if(xpad==0 && ypad==0)
+	{
+		GaussianBlurSR_cliped(src,dest,sigma);
+	}
+	else
+	{
+		Mat s, d;
+		copyMakeBorder(src, s, 0, ypad, 0, xpad, BORDER_REPLICATE);
+		GaussianBlurSR_cliped(s,d,sigma);
+		Mat(d(Rect(Point(0,0),src.size()))).copyTo(dest);
+	}
 }

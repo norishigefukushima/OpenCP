@@ -87,72 +87,24 @@ void depthSubsumpleHalf(Mat& src, Mat& dest, int invalid=0)
 	}
 }
 
-void generateData()
-{
-
-	/*int i=2;
-	Mat im = imread(format("img/teddyF/disp%d.pgm",i),0);
-	Mat dest;
-	//resize(im,dest,Size(im.cols/2,im.rows/2),0,0,INTER_AREA);
-	//depthSubsumpleHalf(im,dest,0);
-	depthSubsumpleForgroundBiasedHalf(im,dest,8,0);
-	imwrite(format("img/teddyF/disp%d.png",i-1),dest);*/
-
-	for(int i = 1;i<9;i++)
-	{
-	Mat im = imread(format("img/teddyF/im%d.ppm",i));
-	Mat dest;
-	resize(im,dest,Size(im.cols/2,im.rows/2),0,0,INTER_LINEAR);
-	imwrite(format("img/teddyF/view%d.png",i-1),dest);
-	}
-}
-
-void test()
-{
-	Mat a = Mat::zeros(Size(15000,10000),CV_8UC3);
-	
-	for(int i=0;i<10;i++)
-	{
-		CalcTime t;
-		Mat dest;
-		cvtColorBGR2BGRA(a,dest);
-
-		//GaussianBlur(a,dest,Size(11,11),11);
-	}
-	for(int i=0;i<10;i++)
-	{
-		CalcTime t;
-		Mat dest;
-		cvtColor(a,dest,COLOR_BGR2BGRA);
-
-		//GaussianBlur(a,dest,Size(11,11),11);
-	}
-}
-
-
-
 int main(int argc, char** argv)
 {	
-	//test();
-
-	//generateData();
 	//Mat ff3 = imread("img/pixelart/ff3.png");
-	//guiAlphaBlend(ff3,ff3);
-	//guiJointNearestFilterTest(ff3);
-	//guiViewSynthesis();
-
+	
 	//Mat src = imread("img/lenna.png");
 	//Mat src = imread("img/cave-flash.png");
 	//Mat src = imread("img/feathering/toy.png");
 	//Mat src = imread("Clipboard01.png");
 	
 	//timeGuidedFilterTest(src);
-	Mat src = imread("img/flower.png");
+	//Mat src = imread("img/flower.png");
+	//Mat src = imread("img/teddy_disp1.png");
+	Mat src_ = imread("img/stereo/Art/view1.png",0);
+	Mat src;
+	copyMakeBorder(src_,src,0,1,0,1,BORDER_REPLICATE);
+		
 	Mat dest;
-	
 
-
-	//fftTest(src);
 	//Mat src = imread("img/kodim22.png");
 	//Mat src = imread("img/teddy_view1.png");
 	
@@ -162,15 +114,17 @@ int main(int argc, char** argv)
 //	resize(src,mega,Size(1024,1024));
 	//resize(src,mega,Size(640,480));
 
+	//guiGauusianFilterTest(src);
+	guiRealtimeO1BilateralFilterTest(src);
 
-	//guiGauusianFilterTest(mega);
-	guiRealtimeO1BilateralFilterTest(mega);
-
+	//guiAlphaBlend(ff3,ff3);
+	//guiJointNearestFilterTest(ff3);
+	//guiViewSynthesis();
 	//guiSLICTest(src);
 	//guiBilateralFilterTest(src);
 	//guiBilateralFilterSPTest(mega);
 	//guiRecursiveBilateralFilterTest(mega);
-
+	//fftTest(src);
 	
 	Mat feather = imread("img/feathering/toy-mask.png");
 	//Mat guide = imread("img/feathering/toy.png");
