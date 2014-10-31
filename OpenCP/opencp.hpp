@@ -300,6 +300,7 @@ private:
 
 	void filter(const Mat& src, Mat& dest);
 	void body(const Mat& src, const Mat& joint, Mat& dest);
+	int inline bin2num(const int bin);
 
 	enum
 	{

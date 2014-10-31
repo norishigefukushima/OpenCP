@@ -22,39 +22,31 @@ void RealtimeO1BilateralFilter::setColorLUT(float sigma_color)
 	}
 }
 
+int inline RealtimeO1BilateralFilter::bin2num(const int bin_index)
+{
+	int v = (int)(255.f/(float)(num_bin-1)*(bin_index)) ;
+
+	if(bin_index==num_bin-1) v=254;
+	return v;
+}
+
 void RealtimeO1BilateralFilter::allocateBin(int num_bin)
 {	
-	if(num_bin==256)
+	float astep = (255.f/(float)(num_bin-1));
+	//std::cout<<"=================="<<std::endl;
+	for(int i=0;i<256;i++)
 	{
-		for(int i=0;i<256;i++)
+		if(i==255)
 		{
-			idx[i]=i;
-			a[i]=1.0f;
+			idx[i]=(uchar)(num_bin-2);
+			a[i] = 0.f;	
 		}
-	}
-	else
-	{
-		float astep = (255.f/(float)(num_bin-1));
-
-		for(int i=0;i<256;i++)
+		else
 		{
-			if(i==0)
-			{
-				idx[i]=0;
-				a[i] = 1.f;	
-			}
-			else if(i==255)
-			{
-				idx[i]=(uchar)(num_bin-2);
-				a[i] = 0.f;	
-			}
-			else
-			{
-				idx[i]=(uchar)((float)i/astep);
-				int step = (int)(astep*(idx[i]+1)) - (int)astep*idx[i];
-				a[i] = 1.f- (float)(i - (int)astep*idx[i])/(float)step;
-				//cout<<i<<","<<(int)(255.0/(float)(num_bin-1)*(idx[i]))<<","<<idx[i]<<","<<num_bin-1<<","<<a[i]<<endl;
-			}
+			idx[i]=(uchar)((float)i/astep);
+			int step = (int)(astep*(idx[i]+1)) - (int)(astep*idx[i]);
+			a[i] = 1.f-(i- bin2num(idx[i]))/(float)(bin2num(idx[i]+1)- bin2num(idx[i]));
+			//std::cout<<i<<","<<(int)(astep*(idx[i]+1))<<","<<(int)(astep*idx[i])<<","<<num_bin-1<<","<<a[i]<<std::endl;
 		}
 	}
 }
@@ -69,6 +61,7 @@ RealtimeO1BilateralFilter::RealtimeO1BilateralFilter()
 void RealtimeO1BilateralFilter::filter(const Mat& src_, Mat& dest_)
 {
 	Mat src, dest;
+
 	if(downsample_size == 1)
 	{
 		src = src_;
@@ -77,6 +70,7 @@ void RealtimeO1BilateralFilter::filter(const Mat& src_, Mat& dest_)
 	else
 	{
 		resize(src_,src, Size(src_.cols/downsample_size, src_.rows/downsample_size),0.0,0.0,INTER_AREA);
+		//resize(src_,src, Size(src_.cols/downsample_size, src_.rows/downsample_size),0.0,0.0,INTER_AREA);
 	}
 
 	if(filter_type==FIR_SEPARABLE)
@@ -103,7 +97,8 @@ void RealtimeO1BilateralFilter::filter(const Mat& src_, Mat& dest_)
 
 	if(downsample_size != 1)
 	{
-		resize(dest, dest_,src_.size(),0.0,0.0,INTER_LINEAR);
+		//resize(dest, dest_,src_.size(),0.0,0.0,INTER_LINEAR);
+		resize(dest, dest_,src_.size(),0.0,0.0,INTER_CUBIC);
 	}
 }
 
@@ -132,10 +127,7 @@ void RealtimeO1BilateralFilter::body(const Mat& src, const Mat& joint, Mat& dest
 			float* su = sub_range[b].ptr<float>(0);//upper
 			float* sd = normalize_sub_range[b].ptr<float>(0);//down
 
-			uchar v = (uchar)(255.f/(float)(num_bin-1)*(b));
-
-			if(b==0)v=0;
-			if(b==num_bin-1)v=255;
+			uchar v = (uchar)bin2num(b);
 
 			for(int i=0;i<src.size().area();i++)
 			{
@@ -152,7 +144,6 @@ void RealtimeO1BilateralFilter::body(const Mat& src, const Mat& joint, Mat& dest
 			filter(sub_range[b],sub_range[b]);
 			filter(normalize_sub_range[b],normalize_sub_range[b]);
 
-			max(normalize_sub_range[b],0.00001f,normalize_sub_range[b]);//a
 			divide(sub_range[b],normalize_sub_range[b],sub_range[b]);
 		}
 
@@ -179,16 +170,13 @@ void RealtimeO1BilateralFilter::body(const Mat& src, const Mat& joint, Mat& dest
 			float* su = sub_range[b].ptr<float>(0);//upper
 			float* sd = normalize_sub_range[b].ptr<float>(0);//down
 
-			uchar v = (uchar)(255.f/(float)(num_bin-1)*(b));
+			uchar v = (uchar)bin2num(b);
 
 			//uchar v = (uchar)(255.f/(float)((num_bin-1)*(b))+0.5);
 			//uchar v = (uchar)(255.f/(float)(num_bin-1)*(b));
 			//uchar v = (uchar)(255.f/(float)((num_bin-1)*(b)));
 			//uchar v = 0;
-
-			if(b==0)v=0;
-			if(b==num_bin-1) v=255;
-
+			
 			for(int i=0;i<src.size().area();i++)
 			{
 				const float coeff = color_weight[ abs(j[i] - v)];
@@ -196,11 +184,10 @@ void RealtimeO1BilateralFilter::body(const Mat& src, const Mat& joint, Mat& dest
 				su[i] = coeff*s[i];
 				sd[i] = coeff;
 			}
-
+			
 			filter(sub_range[b],sub_range[b]);
 			filter(normalize_sub_range[b],normalize_sub_range[b]);
-
-			//max(normalize_sub_range[b],0.00001f,normalize_sub_range[b]);//a
+			
 			divide(sub_range[b],normalize_sub_range[b],sub_range[b]);
 		}
 

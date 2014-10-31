@@ -81,7 +81,7 @@ void guiRealtimeO1BilateralFilterTest(Mat& src_)
 	int color = 500; createTrackbar("color",wname,&color,2550);
 	int bin = 16; createTrackbar("bin",wname,&bin,256);
 	int iter = 3;createTrackbar("iter",wname,&iter,100);
-	int rsize = 1;createTrackbar("resize",wname,&rsize,12);
+	int rsize = 1;createTrackbar("resize",wname,&rsize,32);
 
 	namedWindow("diff");
 	int scale = 10;createTrackbar("scale","diff",&scale,50);
@@ -95,7 +95,7 @@ void guiRealtimeO1BilateralFilterTest(Mat& src_)
 	//GaussianBlur(src, ref, Size(cvRound(3*space/10.f)*2 +1,cvRound(3*space/10.f)*2 +1),space/10.f);
 
 	
-	bilateralFilter(src,ref,cvRound(3.f*space/10.f)*2 +1, color/10.f,space/10.0f, BORDER_REPLICATE);
+	bilateralFilter(src,ref,cvRound(6.f*space/10.f)*2 +1, color/10.f,space/10.0f, BORDER_REPLICATE);
 
 	while(key!='q')
 	{
@@ -103,7 +103,7 @@ void guiRealtimeO1BilateralFilterTest(Mat& src_)
 		//cout<<"r="<<r<<": "<<"please change 'sw' for changing the type of implimentations."<<endl;
 		float sigma_color = color/10.f;
 		float sigma_space = space/10.f;
-		int d = cvRound(sigma_space*3.0)*2+1;
+		int d = cvRound(sigma_space*4.0)*2+1;
 
 		rbf.downsample_size = rsize;
 		if(key=='r')
@@ -172,7 +172,7 @@ void guiRealtimeO1BilateralFilterTest(Mat& src_)
 		
 
 		ci("d: %d",d);
-		ci("PSNR: %f",PSNRBB(dest,ref,50,50));
+		ci("PSNR: %f",PSNRBB(dest,ref,100,100));
 		ci("MSE:  %f",norm(dest,ref,NORM_L2SQR)/(double)dest.size().area());
 		ci("time: %f",tim);
 		ci.flush();
