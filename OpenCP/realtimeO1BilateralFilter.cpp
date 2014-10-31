@@ -62,6 +62,7 @@ void RealtimeO1BilateralFilter::filter(const Mat& src_, Mat& dest_)
 {
 	Mat src, dest;
 
+	downsample_size = max(downsample_size,1);
 	if(downsample_size == 1)
 	{
 		src = src_;
@@ -70,7 +71,6 @@ void RealtimeO1BilateralFilter::filter(const Mat& src_, Mat& dest_)
 	else
 	{
 		resize(src_,src, Size(src_.cols/downsample_size, src_.rows/downsample_size),0.0,0.0,INTER_AREA);
-		//resize(src_,src, Size(src_.cols/downsample_size, src_.rows/downsample_size),0.0,0.0,INTER_AREA);
 	}
 
 	if(filter_type==FIR_SEPARABLE)
@@ -89,16 +89,29 @@ void RealtimeO1BilateralFilter::filter(const Mat& src_, Mat& dest_)
 	else if(filter_type==FIR_BOX)
 	{
 		Size kernel = Size(2*(radius/downsample_size)+1,2*(radius/downsample_size)+1);
-		for(int i=0;i<filter_iteration;i++)
+
+		if(src.data==dest.data)
 		{
-			boxFilter(src,dest,CV_32F,kernel,Point(-1,-1),false);
+			for(int i=0;i<filter_iteration;i++)
+			{
+				boxFilter(src,dest,CV_32F,kernel,Point(-1,-1),true);
+			}
+		}
+		else
+		{
+			src.copyTo(dest);
+			for(int i=0;i<filter_iteration;i++)
+			{
+				boxFilter(dest,dest,CV_32F,kernel,Point(-1,-1),true);
+			}
+
 		}
 	}
 
 	if(downsample_size != 1)
 	{
-		//resize(dest, dest_,src_.size(),0.0,0.0,INTER_LINEAR);
-		resize(dest, dest_,src_.size(),0.0,0.0,INTER_CUBIC);
+		resize(dest, dest_,src_.size(),0.0,0.0,INTER_LINEAR);
+		//resize(dest, dest_,src_.size(),0.0,0.0,INTER_CUBIC);
 	}
 }
 
@@ -258,6 +271,7 @@ void RealtimeO1BilateralFilter::gauss_sr(Mat& src, Mat& dest, float sigma_color,
 
 void RealtimeO1BilateralFilter::box(Mat& src, Mat& joint, Mat& dest, int r, float sigma_color_, int num_bin_, int iteration)
 {
+	radius = r;
 	filter_iteration=iteration;
 	sigma_color=sigma_color_;
 	num_bin=num_bin_;
@@ -272,5 +286,5 @@ void RealtimeO1BilateralFilter::box(Mat& src, Mat& dest, int r, float sigma_colo
 	if(src.channels()==1) joint = src;
 	else cvtColor(src,joint,COLOR_BGR2GRAY);
 
-	box(src,joint,dest, r,sigma_color, num_bin,box_iter);
+	box(src, joint, dest, r, sigma_color, num_bin, box_iter);
 }
