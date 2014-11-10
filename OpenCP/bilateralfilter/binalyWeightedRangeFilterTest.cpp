@@ -2,9 +2,135 @@
 #include <fstream>
 using namespace std;
 
+int degradeImageJPEG(InputArray src, OutputArray dest, const int quality)
+{
+	vector<uchar> buff;
+	vector<int> param(2);
+
+	param[0]=IMWRITE_JPEG_QUALITY;
+	param[1]=quality;
+
+	imencode(".jpg",src, buff, param);
+	Mat temp = imdecode(buff,cv::IMREAD_UNCHANGED);
+	temp.copyTo(dest);
+	return (int)buff.size();
+}
+
+void guiCodingDistortionRemoveTest(Mat& src)
+{
+	fillOcclusion(src);
+	Mat dest,dest2;
+
+	string wname = "coding noise remove test";
+	namedWindow(wname);
+
+	int a=0;createTrackbar("a",wname,&a,100);
+	int sw = 1; createTrackbar("switch",wname,&sw, 3);
+	int quality=80;createTrackbar("quality",wname,&quality,100);
+	int r = 30; createTrackbar("r",wname,&r,200);
+
+	int color = 4; createTrackbar("thresh",wname,&color,255);
+	int key = 0;
+	Mat show;
+	ConsoleImage ci;
+
+	while(key!='q')
+	{
+		float sigma_color = (float)color;
+		
+		int d = 2*r+1;
+
+		Mat deg;
+		degradeImageJPEG(src, deg,quality);
+		if(sw==0)
+		{
+			CalcTime t("binary weighted range filter");
+			binalyWeightedRangeFilter(deg, dest, Size(d,d), sigma_color,FILTER_RECTANGLE);
+			//binalyWeightedRangeFilter(dest2, dest2, Size(d,d), sigma_color,BILATERAL_SEPARABLE);
+		}
+		else if(sw==1)
+		{
+			
+			CalcTime t("binary weighted range filter");
+			medianBlur(deg, dest,3);
+			blurRemoveMinMax(dest,dest,1);
+			binalyWeightedRangeFilter(dest, dest, Size(d,d), sigma_color,FILTER_RECTANGLE);
+		}
+		else if(sw==2)
+		{
+			
+			CalcTime t("binary weighted range filter");			
+			medianBlur(deg, dest,3);
+			blurRemoveMinMax(dest,dest2,1);
+			centerReplacedBinalyWeightedRangeFilter(deg, dest2,dest, Size(d,d), sigma_color,FILTER_RECTANGLE);
+		}
+		else if(sw==3)
+		{
+			
+			CalcTime t("binary weighted range filter");
+			medianBlur(deg, dest,3);
+			blurRemoveMinMax(dest,dest2,1);
+			Mat destf,degf;
+			dest2.convertTo(destf,CV_32F);
+			deg.convertTo(degf,CV_32F);
+			centerReplacedBinalyWeightedRangeFilter(degf, destf, destf, Size(d,d), sigma_color,FILTER_RECTANGLE);
+			destf.convertTo(dest,CV_8U, 1.0, 0.0);
+			//binalyWeightedRangeFilter(dest2, dest2, Size(d,d), sigma_color,BILATERAL_SEPARABLE);
+		}
+
+		Mat c1,c2;
+		applyColorMap(dest,c2,2);
+		applyColorMap(deg,c1,2);
+
+		ci("before: %f dB", PSNR(deg,src));
+		ci("after : %f dB", PSNR(dest,src));
+		ci("before: %f %%", calcBadPixel(deg,src,1));
+		ci("after : %f %%", calcBadPixel(dest,src,1));
+		
+		ci.flush();
+		//patchBlendImage(c1,c2,c2,Scalar(255,255,255),2,2);
+		alphaBlend(c1, c2, a/100.0, show);
+		imshow(wname,show);
+		key = waitKey(1);
+	}
+}
+
+
+void BinalyWeightedRangeFilterTest(Mat& src)
+{
+	int r = 30;
+	float thresh = 4.f;
+
+	Size kernel = Size(2*r+1,2*r+1);
+	Mat srcf;src.convertTo(srcf,CV_32F);
+	Mat ref,reff,dst,dstf;
+
+	binalyWeightedRangeFilter(src, ref, kernel, thresh, FILTER_SLOWEST);
+	binalyWeightedRangeFilter(srcf, reff, kernel, thresh, FILTER_SLOWEST);
+
+	cout<<"check PSNR between base uchar and float"<<endl;
+	binalyWeightedRangeFilter(srcf, dstf, kernel, thresh, FILTER_SLOWEST);
+	dstf.convertTo(dst,CV_8U);
+	cout<<PSNR(ref,dst)<<" dB"<<endl;
+
+	cout<<"check PSNR between base uchar and sse uchar"<<endl;
+	binalyWeightedRangeFilter(src, dst, kernel, thresh, FILTER_CIRCLE);
+	cout<<PSNR(ref,dst)<<" dB"<<endl;
+
+	cout<<"check PSNR between base uchar and float sse"<<endl;
+	binalyWeightedRangeFilter(srcf, dstf, kernel, thresh, FILTER_CIRCLE);
+	dstf.convertTo(dst,CV_8U);
+	cout<<PSNR(ref,dst)<<" dB"<<endl;
+	cout<<norm(reff,dstf)<<endl;
+
+	//guiAlphaBlend(ref,dst);
+	guiAbsDiffCompareGE(ref,dst);
+}
+
 //depth map range interpolation
 void guiBinalyWeightedRangeFilterTest(Mat& src)
 {
+	//BinalyWeightedRangeFilterTest(src);
 	Mat dest,dest2;
 
 	string wname = "joint binary weighted range filter";

@@ -20,7 +20,7 @@ void timeGuidedFilterTest(Mat& src);
 void guiDomainTransformFilterTest(Mat& src);
 void guiJointDomainTransformFilterTest(Mat& src, Mat& guide);
 
-
+void guiCodingDistortionRemoveTest(Mat& src);
 void guiBinalyWeightedRangeFilterTest(Mat& src);
 void guiJointBinalyWeightedRangeFilterTest(Mat& src, Mat& guide);
 

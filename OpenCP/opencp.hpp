@@ -227,6 +227,7 @@ void drawSLIC(const Mat& src, Mat& segment, Mat& dest, bool isLine=true, Scalar 
 void SLICBase(Mat& src, Mat& segment, int regionSize, float regularization, float minRegionRatio, int max_iteration);
 
 
+void blurRemoveMinMax(const Mat& src, Mat& dest, const int r);
 //MORPH_RECT=0, MORPH_CROSS=1, MORPH_ELLIPSE
 void maxFilter(const Mat& src, Mat& dest, Size kernelSize, int shape=MORPH_RECT);
 void maxFilter(const Mat& src, Mat& dest, int radius);
@@ -396,6 +397,7 @@ public:
 
 void binalyWeightedRangeFilter(const Mat& src, Mat& dst, Size kernelSize, float threshold, int method=FILTER_DEFAULT, int borderType=cv::BORDER_REPLICATE);
 void jointBinalyWeightedRangeFilter(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, float threshold, int method=FILTER_DEFAULT, int borderType=cv::BORDER_REPLICATE);
+void centerReplacedBinalyWeightedRangeFilter(const Mat& src, const Mat& center, Mat& dst, Size kernelSize, float threshold, int method=FILTER_DEFAULT, int borderType=cv::BORDER_REPLICATE);
 
 void nonLocalMeansFilter(Mat& src, Mat& dest, int templeteWindowSize, int searchWindowSize, double h, double sigma=-1.0, int method=FILTER_DEFAULT);
 

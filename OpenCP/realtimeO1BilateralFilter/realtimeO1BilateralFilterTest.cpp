@@ -132,7 +132,7 @@ void guiRealtimeO1BilateralFilterTest(Mat& src_)
 		if(sw==3)
 		{
 			CalcTime t("realtime bilateral filter",0,false);
-			rbf.box(src, dest, d/2, sigma_color, bin,iter);
+			rbf.box(src, dest, d/2, sigma_color, bin, iter);
 			tim = t.getTime();
 		}
 		/*
