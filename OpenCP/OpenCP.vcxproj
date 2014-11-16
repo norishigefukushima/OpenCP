@@ -159,6 +159,7 @@
     <ClCompile Include="domainTransformFilter.cpp" />
     <ClCompile Include="domainTransformFilter\domainTransformFilterTest.cpp" />
     <ClCompile Include="draw.cpp" />
+    <ClCompile Include="dualLateralFilter.cpp" />
     <ClCompile Include="ffttest\fftTest.cpp" />
     <ClCompile Include="GaussianFilter.cpp" />
     <ClCompile Include="GaussianFilterDeriche.cpp" />
@@ -169,7 +170,7 @@
     <ClCompile Include="imagediff.cpp" />
     <ClCompile Include="iterativeBackProjection.cpp" />
     <ClCompile Include="iterativeBackProjection\iterativeBackProjectionTest.cpp" />
-    <ClCompile Include="jointBirateralFilter.cpp" />
+    <ClCompile Include="jointBilateralFilter.cpp" />
     <ClCompile Include="jointNearestFilter.cpp" />
     <ClCompile Include="jointNearestFilter\jointNearestFilterTest.cpp" />
     <ClCompile Include="jointNonLocalMeans.cpp" />

@@ -265,6 +265,8 @@ enum
 void bilateralFilter(const Mat& src, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method=FILTER_DEFAULT, int borderType=cv::BORDER_REPLICATE);
 void jointBilateralFilter(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method=FILTER_DEFAULT, int borderType=cv::BORDER_REPLICATE);
 
+void duallateralFilter(const Mat& src, const Mat& guide, Mat& dst, int d, double sigma_color, double sigma_guide_color,double sigma_space,int method=FILTER_DEFAULT, int borderType=cv::BORDER_REPLICATE);
+void duallateralFilter(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_guide_color,double sigma_space,int method=FILTER_DEFAULT, int borderType=cv::BORDER_REPLICATE);
 
 void bilateralFilterL2_8u( const Mat& src, Mat& dst, int d, double sigma_color, double sigma_space,int borderType=cv::BORDER_REPLICATE);
 void bilateralFilterSP_test5_8u( const Mat& src, Mat& dst, Size kernelSize, double sigma_color1, double sigma_color2, double sigma_color3, double sigma_color4, double sigma_space, int borderType =cv::BORDER_REPLICATE);

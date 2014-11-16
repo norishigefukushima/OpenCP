@@ -66,9 +66,6 @@
     <ClCompile Include="binalyWeightedRangeFilter.cpp">
       <Filter>ソース ファイル\filter</Filter>
     </ClCompile>
-    <ClCompile Include="jointBirateralFilter.cpp">
-      <Filter>ソース ファイル\filter</Filter>
-    </ClCompile>
     <ClCompile Include="nonLocalMeans.cpp">
       <Filter>ソース ファイル\filter</Filter>
     </ClCompile>
@@ -190,6 +187,12 @@
       <Filter>ソース ファイル\filter</Filter>
     </ClCompile>
     <ClCompile Include="GaussianFilterSpectralRecursive.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="jointBilateralFilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="dualLateralFilter.cpp">
       <Filter>ソース ファイル\filter</Filter>
     </ClCompile>
   </ItemGroup>

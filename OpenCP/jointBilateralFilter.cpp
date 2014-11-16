@@ -2759,7 +2759,6 @@ void weightedJointBilateralFilter_32f( const Mat& src, Mat& weight, const Mat& g
 		color_weight[i] = (float)std::exp(i*i*gauss_color_coeff);
 
 	// initialize space-related bilateral filter coefficients
-	// initialize space-related bilateral filter coefficients
 	if(isRectangle)
 	{
 		for( i = -radiusV, maxk = 0; i <= radiusV; i++ )
