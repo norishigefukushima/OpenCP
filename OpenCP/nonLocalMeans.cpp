@@ -7,27 +7,30 @@ class NonlocalMeansFilterNonzeroBaseInvorker_ : public cv::ParallelLoopBody
 private:
 	Mat* im;
 	Mat* dest;
-	int templeteWindowSize;
-	int searchWindowSize;
+	int templeteWindowSizeX;
+	int templeteWindowSizeY;
+	int searchWindowSizeX;
+	int searchWindowSizeY;
 
 	float* w;
 public:
 
-	NonlocalMeansFilterNonzeroBaseInvorker_(Mat& src_, Mat& dest_, int templeteWindowSize_, int searchWindowSize_, float* weight)
-		: im(&src_), dest(&dest_), templeteWindowSize(templeteWindowSize_),searchWindowSize(searchWindowSize_), w(weight)
+	NonlocalMeansFilterNonzeroBaseInvorker_(Mat& src_, Mat& dest_, int templeteWindowSizeX_, int templeteWindowSizeY_, int searchWindowSizeX_, int searchWindowSizeY_, float* weight)
+		: im(&src_), dest(&dest_), templeteWindowSizeX(templeteWindowSizeX_),searchWindowSizeX(searchWindowSizeX_), templeteWindowSizeY(templeteWindowSizeY_),searchWindowSizeY(searchWindowSizeY_), w(weight)
 	{
 		;
 	}
 	virtual void operator()( const cv::Range &r ) const 
 	{
-		const int tr = templeteWindowSize>>1;
-		const int sr = searchWindowSize>>1;
-		const int cstep  = (im->cols-templeteWindowSize)*im->channels();
+		const int tr_x = templeteWindowSizeX>>1;
+		const int sr_x = searchWindowSizeX>>1;
+		const int tr_y = templeteWindowSizeY>>1;
+		const int sr_y = searchWindowSizeY>>1;
+		const int cstep  = (im->cols-templeteWindowSizeX)*im->channels();
 		const int imstep = im->cols*im->channels();
 
-		const int tD = templeteWindowSize*templeteWindowSize;
+		const int tD = templeteWindowSizeX*templeteWindowSizeY;
 		const double tdiv = 1.0/(double)(tD);//templete square div
-
 
 		if(im->channels()==3)
 		{
@@ -42,21 +45,21 @@ public:
 					double tweight=0.0;
 					float wmax=0.f;
 					//search loop
-					const T* tprt = im->ptr<T>(sr+j) + 3*(sr+i); 
+					const T* tprt = im->ptr<T>(sr_y+j) + 3*(sr_x+i); 
 					const T* sptr2 = im->ptr<T>(j) + 3*(i); 
 
-					for(int l=searchWindowSize;l--;)
+					for(int l=searchWindowSizeY;l--;)
 					{
 						const T* sptr = sptr2 +imstep*(l);
-						for (int k=searchWindowSize;k--;)
+						for (int k=searchWindowSizeX;k--;)
 						{
 							//templete loop
 							double e=0.0;
 							const T* t = tprt;
 							T* s = (T*)(sptr+3*k);
-							for(int n=templeteWindowSize;n--;)
+							for(int n=templeteWindowSizeY;n--;)
 							{
-								for(int m=templeteWindowSize;m--;)
+								for(int m=templeteWindowSizeX;m--;)
 								{
 									// computing color L2 norm
 									//e += abs(s[0]-t[0])+abs(s[1]-t[1])+abs(s[2]-t[2]);//L2 norm
@@ -71,9 +74,9 @@ public:
 							const int ediv = cvRound(e*tdiv);
 							float www=w[ediv];
 
-							if(k==sr&&l==sr){;}
+							if(k==sr_x&&l==sr_y){;}
 							else wmax = max(wmax,www);
-							const T* ss = sptr2+imstep*(tr+l)+3*(tr+k);
+							const T* ss = sptr2+imstep*(tr_y+l)+3*(tr_x+k);
 							r+=ss[0]*www;
 							g+=ss[1]*www;
 							b+=ss[2]*www;
@@ -82,8 +85,7 @@ public:
 						}
 					}
 
-
-					const T* ss = sptr2+imstep*(tr+sr)+3*(tr+sr);
+					const T* ss = sptr2+imstep*(tr_y+sr_y)+3*(tr_x+sr_x);
 					r-=ss[0];
 					g-=ss[1];
 					b-=ss[2];
@@ -112,21 +114,21 @@ public:
 					double tweight=0.0;
 					float wmax=0.f;
 					//search loop
-					T* tprt = im->ptr<T>(sr+j) + (sr+i); 
+					T* tprt = im->ptr<T>(sr_y+j) + (sr_x+i); 
 					T* sptr2 = im->ptr<T>(j) + (i); 
 
-					for(int l=searchWindowSize;l--;)
+					for(int l=searchWindowSizeY;l--;)
 					{
 						T* sptr = sptr2 +imstep*(l);
-						for (int k=searchWindowSize;k--;)
+						for (int k=searchWindowSizeX;k--;)
 						{
 							//templete loop
 							double e=0.0;
 							T* t = tprt;
 							T* s = sptr+k;
-							for(int n=templeteWindowSize;n--;)
+							for(int n=templeteWindowSizeY;n--;)
 							{
-								for(int m=templeteWindowSize;m--;)
+								for(int m=templeteWindowSizeX;m--;)
 								{
 									// computing color L2 norm
 									//e += abs(*s-*t);
@@ -138,15 +140,14 @@ public:
 							}
 							const int ediv = cvRound(e*tdiv);
 							float www=w[ediv];
-							if(k==sr&&l==sr){;}
+							if(k==sr_x&&l==sr_y){;}
 							else wmax = max(wmax,www);
-							value+=sptr2[imstep*(tr+l)+tr+k]*www;
+							value+=sptr2[imstep*(tr_y+l)+tr_x+k]*www;
 							//get weighted Euclidean distance
 							tweight+=www;
 						}
 					}
-
-					const T* ss = sptr2+imstep*(tr+sr)+(tr+sr);
+					const T* ss = sptr2+imstep*(tr_y+sr_y)+(tr_x+sr_x);
 					value-=ss[0];
 					tweight-=1.0;
 
@@ -167,25 +168,29 @@ class NonlocalMeansFilterBaseInvorker_ : public cv::ParallelLoopBody
 private:
 	Mat* im;
 	Mat* dest;
-	int templeteWindowSize;
-	int searchWindowSize;
+	int templeteWindowSizeX;
+	int searchWindowSizeX;
+	int templeteWindowSizeY;
+	int searchWindowSizeY;
 
 	float* w;
 public:
 
-	NonlocalMeansFilterBaseInvorker_(Mat& src_, Mat& dest_, int templeteWindowSize_, int searchWindowSize_, float* weight)
-		: im(&src_), dest(&dest_), templeteWindowSize(templeteWindowSize_),searchWindowSize(searchWindowSize_), w(weight)
+	NonlocalMeansFilterBaseInvorker_(Mat& src_, Mat& dest_, int templeteWindowSizeX_, int templeteWindowSizeY_, int searchWindowSizeX_, int searchWindowSizeY_, float* weight)
+		: im(&src_), dest(&dest_), templeteWindowSizeX(templeteWindowSizeX_), searchWindowSizeX(searchWindowSizeX_), templeteWindowSizeY(templeteWindowSizeY_), searchWindowSizeY(searchWindowSizeY_), w(weight)
 	{
 		;
 	}
 	virtual void operator()( const cv::Range &r ) const 
 	{
-		const int tr = templeteWindowSize>>1;
-		const int sr = searchWindowSize>>1;
-		const int cstep  = (im->cols-templeteWindowSize)*im->channels();
+		const int tr_x = templeteWindowSizeX>>1;
+		const int sr_x = searchWindowSizeX>>1;
+		const int tr_y = templeteWindowSizeY>>1;
+		const int sr_y = searchWindowSizeY>>1;
+		const int cstep  = (im->cols-templeteWindowSizeX)*im->channels();
 		const int imstep = im->cols*im->channels();
 
-		const int tD = templeteWindowSize*templeteWindowSize;
+		const int tD = templeteWindowSizeX*templeteWindowSizeY;
 		const double tdiv = 1.0/(double)(tD);//templete square div
 
 
@@ -201,21 +206,21 @@ public:
 					double b=0.0;
 					double tweight=0.0;
 					//search loop
-					const T* tprt = im->ptr<T>(sr+j) + 3*(sr+i); 
+					const T* tprt = im->ptr<T>(sr_y+j) + 3*(sr_x+i); 
 					const T* sptr2 = im->ptr<T>(j) + 3*(i); 
 
-					for(int l=searchWindowSize;l--;)
+					for(int l=searchWindowSizeY;l--;)
 					{
 						const T* sptr = sptr2 +imstep*(l);
-						for (int k=searchWindowSize;k--;)
+						for (int k=searchWindowSizeX;k--;)
 						{
 							//templete loop
 							double e=0.0;
 							const T* t = tprt;
 							T* s = (T*)(sptr+3*k);
-							for(int n=templeteWindowSize;n--;)
+							for(int n=templeteWindowSizeY;n--;)
 							{
-								for(int m=templeteWindowSize;m--;)
+								for(int m=templeteWindowSizeX;m--;)
 								{
 									// computing color L2 norm
 									e += abs(s[0]-t[0])+abs(s[1]-t[1])+abs(s[2]-t[2]);//L2 norm
@@ -227,7 +232,7 @@ public:
 							const int ediv = cvRound(e*tdiv);
 							float www=w[ediv];
 
-							const T* ss = sptr2+imstep*(tr+l)+3*(tr+k);
+							const T* ss = sptr2+imstep*(tr_y+l)+3*(tr_x+k);
 							r+=ss[0]*www;
 							g+=ss[1]*www;
 							b+=ss[2]*www;
@@ -252,21 +257,21 @@ public:
 					double value=0.0;
 					double tweight=0.0;
 					//search loop
-					T* tprt = im->ptr<T>(sr+j) + (sr+i); 
+					T* tprt = im->ptr<T>(sr_y+j) + (sr_x+i); 
 					T* sptr2 = im->ptr<T>(j) + (i); 
 
-					for(int l=searchWindowSize;l--;)
+					for(int l=searchWindowSizeY;l--;)
 					{
 						T* sptr = sptr2 +imstep*(l);
-						for (int k=searchWindowSize;k--;)
+						for (int k=searchWindowSizeX;k--;)
 						{
 							//templete loop
 							double e=0.0;
 							T* t = tprt;
 							T* s = sptr+k;
-							for(int n=templeteWindowSize;n--;)
+							for(int n=templeteWindowSizeY;n--;)
 							{
-								for(int m=templeteWindowSize;m--;)
+								for(int m=templeteWindowSizeX;m--;)
 								{
 									// computing color L2 norm
 									e += abs(*s-*t);
@@ -277,7 +282,7 @@ public:
 							}
 							const int ediv = cvRound(e*tdiv);
 							float www=w[ediv];
-							value+=sptr2[imstep*(tr+l)+tr+k]*www;
+							value+=sptr2[imstep*(tr_y+l)+tr_x+k]*www;
 							//get weighted Euclidean distance
 							tweight+=www;
 						}
@@ -295,25 +300,29 @@ class NonlocalMeansFilterInvorker32f_SSE4 : public cv::ParallelLoopBody
 private:
 	Mat* im;
 	Mat* dest;
-	int templeteWindowSize;
-	int searchWindowSize;
+	int templeteWindowSizeX;
+	int templeteWindowSizeY;
+	int searchWindowSizeX;
+	int searchWindowSizeY;
 
 	float* w;
 public:
 
-	NonlocalMeansFilterInvorker32f_SSE4(Mat& src_, Mat& dest_, int templeteWindowSize_, int searchWindowSize_, float* weight)
-		: im(&src_), dest(&dest_), templeteWindowSize(templeteWindowSize_),searchWindowSize(searchWindowSize_), w(weight)
+	NonlocalMeansFilterInvorker32f_SSE4(Mat& src_, Mat& dest_, int templeteWindowSizeX_, int templeteWindowSizeY_, int searchWindowSizeX_, int searchWindowSizeY_, float* weight)
+		: im(&src_), dest(&dest_), templeteWindowSizeX(templeteWindowSizeX_), templeteWindowSizeY(templeteWindowSizeY_), searchWindowSizeX(searchWindowSizeX_), searchWindowSizeY(searchWindowSizeY_), w(weight)
 	{
 		;
 	}
 	virtual void operator()( const cv::Range &r ) const 
 	{
-		const int tr = templeteWindowSize>>1;
-		const int sr = searchWindowSize>>1;
-		const int cstep  = im->cols-templeteWindowSize;
+		const int tr_x = templeteWindowSizeX>>1;
+		const int sr_x = searchWindowSizeX>>1;
+		const int tr_y = templeteWindowSizeY>>1;
+		const int sr_y = searchWindowSizeY>>1;
+		const int cstep  = im->cols-templeteWindowSizeX;
 		const int imstep = im->cols;
 
-		const int tD = templeteWindowSize*templeteWindowSize;
+		const int tD = templeteWindowSizeX*templeteWindowSizeY;
 		const float tdiv = 1.f/(float)(tD);//templete square div
 		__m128 mtdiv = _mm_set1_ps(tdiv);
 		const int CV_DECL_ALIGNED(16) v32f_absmask_[] = { 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff };
@@ -327,7 +336,7 @@ public:
 			for(int j=r.start;j<r.end;j++)
 			{
 				float* d = dest->ptr<float>(j);	
-				const float* tprt_ = im->ptr<float>(sr+j) + sr; 
+				const float* tprt_ = im->ptr<float>(sr_y+j) + sr_x; 
 				const float* sptr2_ = im->ptr<float>(j); 
 				for(int i=0;i<dest->cols;i+=4)
 				{
@@ -339,19 +348,19 @@ public:
 					//search loop
 					const float* tprt = tprt_+i; 
 					const float* sptr2 = sptr2_ + i; 
-					for(int l=searchWindowSize;l--;)
+					for(int l=searchWindowSizeY;l--;)
 					{
 						const float* sptr = sptr2 +imstep*(l);
-						for (int k=searchWindowSize;k--;)
+						for (int k=searchWindowSizeX;k--;)
 						{
 							//templete loop
 							float* t = (float*)tprt;
 							float* s = (float*)(sptr+k);
 							//colorstep
 							__m128 me = _mm_setzero_ps();
-							for(int n=templeteWindowSize;n--;)
+							for(int n=templeteWindowSizeY;n--;)
 							{
-								for(int m=templeteWindowSize;m--;)
+								for(int m=templeteWindowSizeX;m--;)
 								{
 									// computing color L2 norm
 									__m128 s0 = _mm_sub_ps(_mm_loadu_ps(s),_mm_loadu_ps(t));
@@ -371,7 +380,7 @@ public:
 							_mm_store_si128((__m128i*)buf,_mm_cvtps_epi32(_mm_mul_ps(mtdiv,me)));
 							__m128 www = _mm_set_ps(w[buf[3]],w[buf[2]],w[buf[1]],w[buf[0]]);							
 
-							const float* ss = sptr2+imstep*(tr+l)+(tr+k);
+							const float* ss = sptr2+imstep*(tr_y+l)+(tr_x+k);
 							mg = _mm_add_ps(mg,_mm_mul_ps(www,_mm_loadu_ps(ss)));
 							mb = _mm_add_ps(mb,_mm_mul_ps(www,_mm_loadu_ps(ss+colorstep)));
 							mr = _mm_add_ps(mr,_mm_mul_ps(www,_mm_loadu_ps(ss+colorstep2)));
@@ -405,21 +414,21 @@ public:
 					__m128 mvalue = _mm_setzero_ps();
 					__m128 mtweight = _mm_setzero_ps();
 					//search loop
-					float* tprt = im->ptr<float>(sr+j) + (sr+i); 
+					float* tprt = im->ptr<float>(sr_y+j) + (sr_x+i); 
 					float* sptr2 = im->ptr<float>(j) + (i); 
 
-					for(int l=searchWindowSize;l--;)
+					for(int l=searchWindowSizeY;l--;)
 					{
 						float* sptr = sptr2 +imstep*(l);
-						for (int k=searchWindowSize;k--;)
+						for (int k=searchWindowSizeX;k--;)
 						{
 							//templete loop
 							__m128 me = _mm_setzero_ps();
 							float* t = tprt;
 							float* s = sptr+k;
-							for(int n=templeteWindowSize;n--;)
+							for(int n=templeteWindowSizeY;n--;)
 							{
-								for(int m=templeteWindowSize;m--;)
+								for(int m=templeteWindowSizeX;m--;)
 								{
 									// computing color L2 norm
 									__m128 ms = _mm_loadu_ps(s);
@@ -434,7 +443,7 @@ public:
 							}
 							_mm_store_si128((__m128i*)buf,_mm_cvtps_epi32(_mm_mul_ps(mtdiv,me)));
 							__m128 www = _mm_set_ps(w[buf[3]],w[buf[2]],w[buf[1]],w[buf[0]]);							
-							mvalue = _mm_add_ps(mvalue,_mm_mul_ps(www,_mm_loadu_ps(sptr2+imstep*(tr+l)+tr+k)));
+							mvalue = _mm_add_ps(mvalue,_mm_mul_ps(www,_mm_loadu_ps(sptr2+imstep*(tr_y+l)+tr_x+k)));
 							mtweight = _mm_add_ps(mtweight,www);
 						}
 					}
@@ -452,25 +461,29 @@ class NonlocalMeansFilterInvorker8u_SSE4 : public cv::ParallelLoopBody
 private:
 	Mat* im;
 	Mat* dest;
-	int templeteWindowSize;
-	int searchWindowSize;
+	int templeteWindowSizeX;
+	int templeteWindowSizeY;
+	int searchWindowSizeX;
+	int searchWindowSizeY;
 
 	float* w;
 public:
 
-	NonlocalMeansFilterInvorker8u_SSE4(Mat& src_, Mat& dest_, int templeteWindowSize_, int searchWindowSize_, float* weight)
-		: im(&src_), dest(&dest_), templeteWindowSize(templeteWindowSize_),searchWindowSize(searchWindowSize_), w(weight)
+	NonlocalMeansFilterInvorker8u_SSE4(Mat& src_, Mat& dest_, int templeteWindowSizeX_, int templeteWindowSizeY_, int searchWindowSizeX_, int searchWindowSizeY_, float* weight)
+		: im(&src_), dest(&dest_), templeteWindowSizeX(templeteWindowSizeX_), templeteWindowSizeY(templeteWindowSizeY_), searchWindowSizeX(searchWindowSizeX_), searchWindowSizeY(searchWindowSizeY_), w(weight)
 	{
 		;
 	}
 	virtual void operator()( const cv::Range &r ) const 
 	{
-		const int tr = templeteWindowSize>>1;
-		const int sr = searchWindowSize>>1;
-		const int cstep  = im->cols-templeteWindowSize;
+		const int tr_x = templeteWindowSizeX>>1;
+		const int sr_x = searchWindowSizeX>>1;
+		const int tr_y = templeteWindowSizeY>>1;
+		const int sr_y = searchWindowSizeY>>1;
+		const int cstep  = im->cols-templeteWindowSizeX;
 		const int imstep = im->cols;
 
-		const int tD = templeteWindowSize*templeteWindowSize;
+		const int tD = templeteWindowSizeX*templeteWindowSizeY;
 		const float tdiv = 1.f/(float)(tD);//templete square div
 		__m128 mtdiv = _mm_set1_ps(tdiv);
 		if(dest->channels()==3)
@@ -482,7 +495,7 @@ public:
 			for(int j=r.start;j<r.end;j++)
 			{
 				uchar* d = dest->ptr<uchar>(j);	
-				const uchar* tprt_ = im->ptr<uchar>(sr+j) + sr; 
+				const uchar* tprt_ = im->ptr<uchar>(sr_y+j) + sr_x; 
 				const uchar* sptr2_ = im->ptr<uchar>(j); 
 				for(int i=0;i<dest->cols;i+=16)
 				{
@@ -509,10 +522,10 @@ public:
 					//search loop
 					const uchar* tprt = tprt_+i; 
 					const uchar* sptr2 = sptr2_ + i; 
-					for(int l=searchWindowSize;l--;)
+					for(int l=searchWindowSizeY;l--;)
 					{
 						const uchar* sptr = sptr2 +imstep*(l);
-						for (int k=searchWindowSize;k--;)
+						for (int k=searchWindowSizeX;k--;)
 						{
 							uchar* t = (uchar*)tprt;
 							uchar* s = (uchar*)(sptr+k);
@@ -520,9 +533,9 @@ public:
 							__m128i me0 = _mm_setzero_si128();
 							__m128i me1 = _mm_setzero_si128();
 
-							for(int n=templeteWindowSize;n--;)
+							for(int n=templeteWindowSizeY;n--;)
 							{
-								for(int m=templeteWindowSize;m--;)
+								for(int m=templeteWindowSizeX;m--;)
 								{
 									// computing color L2 norm
 									__m128i ms = _mm_loadu_si128((__m128i*)s);
@@ -570,7 +583,7 @@ public:
 							_mm_store_si128((__m128i*)(buf+ 8),_mm_cvtps_epi32(_mm_mul_ps(mtdiv,_mm_cvtepi32_ps(mme2))));
 							_mm_store_si128((__m128i*)(buf+12),_mm_cvtps_epi32(_mm_mul_ps(mtdiv,_mm_cvtepi32_ps(mme3))));
 
-							const uchar* ss = sptr2+imstep*(tr+l)+(tr+k);
+							const uchar* ss = sptr2+imstep*(tr_y+l)+(tr_x+k);
 							const __m128i sc0 = _mm_loadu_si128((__m128i*)(ss));
 							const __m128i sc1 = _mm_loadu_si128((__m128i*)(ss+colorstep));
 							const __m128i sc2 = _mm_loadu_si128((__m128i*)(ss+colorstep2));
@@ -675,12 +688,12 @@ public:
 					__m128 mtweight3 = _mm_setzero_ps();
 
 					//search loop
-					uchar* tprt = im->ptr<uchar>(sr+j) + (sr+i); 
+					uchar* tprt = im->ptr<uchar>(sr_y+j) + (sr_x+i); 
 					uchar* sptr2 = im->ptr<uchar>(j) + (i); 
-					for(int l=searchWindowSize;l--;)
+					for(int l=searchWindowSizeY;l--;)
 					{
 						uchar* sptr = sptr2 +imstep*(l);
-						for (int k=searchWindowSize;k--;)
+						for (int k=searchWindowSizeX;k--;)
 						{
 							//templete loop
 							__m128i me0 = _mm_setzero_si128();
@@ -688,9 +701,9 @@ public:
 
 							uchar* t = tprt;
 							uchar* s = sptr+k;
-							for(int n=templeteWindowSize;n--;)
+							for(int n=templeteWindowSizeY;n--;)
 							{
-								for(int m=templeteWindowSize;m--;)
+								for(int m=templeteWindowSizeX;m--;)
 								{
 									// computing color L2 norm
 									__m128i ms = _mm_loadu_si128((__m128i*)s);
@@ -718,7 +731,7 @@ public:
 							_mm_store_si128((__m128i*)(buf+ 8),_mm_cvtps_epi32(_mm_mul_ps(mtdiv,_mm_cvtepi32_ps(mme2))));
 							_mm_store_si128((__m128i*)(buf+12),_mm_cvtps_epi32(_mm_mul_ps(mtdiv,_mm_cvtepi32_ps(mme3))));
 
-							const __m128i sc = _mm_loadu_si128((__m128i*)(sptr2+imstep*(tr+l)+tr+k));
+							const __m128i sc = _mm_loadu_si128((__m128i*)(sptr2+imstep*(tr_y+l)+tr_x+k));
 							__m128i s0 = _mm_unpacklo_epi8(sc,zero);
 							__m128i s1 = _mm_unpackhi_epi16(s0,zero);
 							s0 = _mm_unpacklo_epi16(s0,zero);
@@ -755,29 +768,17 @@ public:
 };
 
 
-void nonLocalMeansFilterBase(Mat& src, Mat& dest, int templeteWindowSize, int searchWindowSize, double h, double sigma)
+void nonLocalMeansFilterBase(Mat& src, Mat& dest, Size templeteWindowSize, Size searchWindowSize, double h, double sigma)
 {
 	if(dest.empty())dest=Mat::zeros(src.size(),src.type());
 
-	const int tr = templeteWindowSize>>1;
-	const int sr = searchWindowSize>>1;
-	const int bb = sr+tr;
-	//	const int D = searchWindowSize*searchWindowSize;
+	const int bbx = (templeteWindowSize.width >>1) + (searchWindowSize.width >>1);
+	const int bby = (templeteWindowSize.height>>1) + (searchWindowSize.height>>1);
 
 	//create large size image for bounding box;
 	Mat im;
-	copyMakeBorder(src,im,bb,bb,bb,bb,cv::BORDER_DEFAULT);
+	copyMakeBorder(src,im,bby,bby,bbx,bbx,cv::BORDER_DEFAULT);
 
-	//weight computation;
-	/*vector<float> weight(256*src.channels());
-	float* w = &weight[0];
-	const double gauss_sd = (sigma == 0.0) ? h :sigma;
-	double gauss_color_coeff = -(1.0/(double)(src.channels()))*(1.0/(h*h));
-	for(int i = 0; i < 256*src.channels(); i++ )
-	{
-		double v = std::exp( max(i*i-2.0*gauss_sd*gauss_sd,0.0)*gauss_color_coeff);
-		w[i] = (float)v;
-	}*/
 	vector<float> weight(256*256*src.channels());
 	float* w = &weight[0];
 	const double gauss_sd = (sigma == 0.0) ? h :sigma;
@@ -791,38 +792,37 @@ void nonLocalMeansFilterBase(Mat& src, Mat& dest, int templeteWindowSize, int se
 	if(src.depth()==CV_8U)
 	{
 		//NonlocalMeansFilterBaseInvorker_<uchar> body(im,dest,templeteWindowSize,searchWindowSize,w);
-		NonlocalMeansFilterNonzeroBaseInvorker_<uchar> body(im,dest,templeteWindowSize,searchWindowSize,w);
+		NonlocalMeansFilterNonzeroBaseInvorker_<uchar> body(im, dest, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, w);
 		cv::parallel_for_(Range(0, dest.rows), body);
 	}
 	if(src.depth()==CV_16U)
 	{
-		NonlocalMeansFilterBaseInvorker_<ushort> body(im,dest,templeteWindowSize,searchWindowSize,w);
+		NonlocalMeansFilterBaseInvorker_<ushort> body(im, dest, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, w);
 		cv::parallel_for_(Range(0, dest.rows), body);
 	}
 	if(src.depth()==CV_16S)
 	{
-		NonlocalMeansFilterBaseInvorker_<short> body(im,dest,templeteWindowSize,searchWindowSize,w);
+		NonlocalMeansFilterBaseInvorker_<short> body(im, dest, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, w);
 		cv::parallel_for_(Range(0, dest.rows), body);
 	}
 	else if(src.depth()== CV_32F)
 	{
-		NonlocalMeansFilterBaseInvorker_<float> body(im,dest,templeteWindowSize,searchWindowSize,w);
+		NonlocalMeansFilterBaseInvorker_<float> body(im, dest, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, w);
 		cv::parallel_for_(Range(0, dest.rows), body);
 	}
 	else if(src.depth()==CV_64F)
 	{
-		NonlocalMeansFilterBaseInvorker_<double> body(im,dest,templeteWindowSize,searchWindowSize,w);
+		NonlocalMeansFilterBaseInvorker_<double> body(im, dest, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, w);
 		cv::parallel_for_(Range(0, dest.rows), body);
 	}
 }
 
-void nonLocalMeansFilter_SSE(Mat& src, Mat& dest, int templeteWindowSize, int searchWindowSize, double h, double sigma)
+void nonLocalMeansFilter_SSE(Mat& src, Mat& dest, Size templeteWindowSize, Size searchWindowSize, double h, double sigma)
 {
 	if(dest.empty())dest=Mat::zeros(src.size(),src.type());
 
-	const int tr = templeteWindowSize>>1;
-	const int sr = searchWindowSize>>1;
-	const int bb = sr+tr;
+	const int bbx = (templeteWindowSize.width >>1) + (searchWindowSize.width >>1);
+	const int bby = (templeteWindowSize.height>>1) + (searchWindowSize.height>>1);
 	//	const int D = searchWindowSize*searchWindowSize;
 
 	int dpad;
@@ -831,24 +831,24 @@ void nonLocalMeansFilter_SSE(Mat& src, Mat& dest, int templeteWindowSize, int se
 	if(src.depth()==CV_8U)
 	{
 		dpad = (16- src.cols%16)%16;
-		spad =  (16-(src.cols+2*bb)%16)%16;
+		spad = (16-(src.cols+2*bbx)%16)%16;
 	}
 	else
 	{
 		dpad = (4- src.cols%4)%4;
-		spad = (4-(src.cols+2*bb)%4)%4;
+		spad = (4-(src.cols+2*bbx)%4)%4;
 	}
 	Mat dst = Mat::zeros(Size(src.cols+dpad, src.rows),dest.type());
 
 	Mat im;
 	if(src.channels()==1)
 	{
-		copyMakeBorder(src,im,bb,bb,bb,bb+spad,cv::BORDER_DEFAULT);
+		copyMakeBorder(src,im,bby,bby,bbx,bbx+spad,cv::BORDER_DEFAULT);
 	}
 	else if (src.channels()==3)
 	{
 		Mat temp;
-		copyMakeBorder(src,temp,bb,bb,bb,bb+spad,cv::BORDER_DEFAULT);
+		copyMakeBorder(src,temp,bby,bby,bbx,bbx+spad,cv::BORDER_DEFAULT);
 		cvtColorBGR2PLANE(temp,im);
 	}
 
@@ -866,7 +866,7 @@ void nonLocalMeansFilter_SSE(Mat& src, Mat& dest, int templeteWindowSize, int se
 
 	if(src.depth()==CV_8U)
 	{
-		NonlocalMeansFilterInvorker8u_SSE4 body(im,dst,templeteWindowSize,searchWindowSize,w);
+		NonlocalMeansFilterInvorker8u_SSE4 body(im,dst,templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width,searchWindowSize.height,w);
 		cv::parallel_for_(Range(0, dst.rows), body);
 	}
 	if(src.depth()==CV_16U)
@@ -874,7 +874,7 @@ void nonLocalMeansFilter_SSE(Mat& src, Mat& dest, int templeteWindowSize, int se
 		Mat imf,dstf;
 		im.convertTo(imf,CV_32F);
 		dst.convertTo(dstf,CV_32F);
-		NonlocalMeansFilterInvorker32f_SSE4 body(imf,dstf,templeteWindowSize,searchWindowSize,w);
+		NonlocalMeansFilterInvorker32f_SSE4 body(imf, dstf, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, w);
 		cv::parallel_for_(Range(0, dst.rows), body);
 		dstf.convertTo(dst,CV_16U);
 	}
@@ -883,13 +883,13 @@ void nonLocalMeansFilter_SSE(Mat& src, Mat& dest, int templeteWindowSize, int se
 		Mat imf,dstf;
 		im.convertTo(imf,CV_32F);
 		dst.convertTo(dstf,CV_32F);
-		NonlocalMeansFilterInvorker32f_SSE4 body(imf,dstf,templeteWindowSize,searchWindowSize,w);
+		NonlocalMeansFilterInvorker32f_SSE4 body(imf, dstf, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, w);
 		cv::parallel_for_(Range(0, dst.rows), body);
 		dstf.convertTo(dst,CV_16S);
 	}
 	else if(src.depth()==CV_32F)
 	{
-		NonlocalMeansFilterInvorker32f_SSE4 body(im,dst,templeteWindowSize,searchWindowSize,w);
+		NonlocalMeansFilterInvorker32f_SSE4 body(im, dst, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, w);
 		cv::parallel_for_(Range(0, dst.rows), body);
 	}
 	else if(src.depth()==CV_64F)
@@ -897,7 +897,7 @@ void nonLocalMeansFilter_SSE(Mat& src, Mat& dest, int templeteWindowSize, int se
 		Mat imf,dstf;
 		im.convertTo(imf,CV_32F);
 		dst.convertTo(dstf,CV_32F);
-		NonlocalMeansFilterInvorker32f_SSE4 body(imf,dstf,templeteWindowSize,searchWindowSize,w);
+		NonlocalMeansFilterInvorker32f_SSE4 body(imf, dstf, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, w);
 		cv::parallel_for_(Range(0, dst.rows), body);
 		dstf.convertTo(dst,CV_64F);
 	}
@@ -905,11 +905,15 @@ void nonLocalMeansFilter_SSE(Mat& src, Mat& dest, int templeteWindowSize, int se
 	Mat(dst(Rect(0,0,dest.cols,dest.rows))).copyTo(dest);
 }
 
+void nonLocalMeansFilter_SP(Mat& src, Mat& dest, Size templeteWindowSize, Size searchWindowSize, double h, double sigma)
+{
+	nonLocalMeansFilter_SSE( src, dest, templeteWindowSize, Size(searchWindowSize.width, 1), h, sigma);
+	nonLocalMeansFilter_SSE(dest, dest, templeteWindowSize, Size(1,searchWindowSize.height), h, sigma);
+}
 
-void nonLocalMeansFilter(Mat& src, Mat& dest, int templeteWindowSize, int searchWindowSize, double h, double sigma,int method)
+void nonLocalMeansFilter(Mat& src, Mat& dest, Size templeteWindowSize, Size searchWindowSize, double h, double sigma,int method)
 {
 	CV_Assert(FILTER_CIRCLE);
-	CV_Assert(FILTER_SEPARABLE);
 	if(sigma<1.0) sigma = h;
 
 	if(method==FILTER_SLOWEST)
@@ -920,4 +924,13 @@ void nonLocalMeansFilter(Mat& src, Mat& dest, int templeteWindowSize, int search
 	{
 		nonLocalMeansFilter_SSE(src,dest,templeteWindowSize,searchWindowSize,h,sigma);	
 	}
+	else if (method==FILTER_SEPARABLE)
+	{
+		nonLocalMeansFilter_SP(src,dest,templeteWindowSize,searchWindowSize, h, sigma);
+	}
+}
+
+void nonLocalMeansFilter(Mat& src, Mat& dest, int templeteWindowSize, int searchWindowSize, double h, double sigma, int method)
+{
+	nonLocalMeansFilter(src, dest, Size(templeteWindowSize,templeteWindowSize), Size(searchWindowSize,searchWindowSize), h, sigma, method);
 }

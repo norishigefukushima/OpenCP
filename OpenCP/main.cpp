@@ -114,7 +114,7 @@ int main(int argc, char** argv)
 //	resize(src,mega,Size(1024,1024));
 	//resize(src,mega,Size(640,480));
 
-	//guiGauusianFilterTest(src);
+	guiGauusianFilterTest(src);
 	//guiRealtimeO1BilateralFilterTest(src);
 
 	//guiAlphaBlend(ff3,ff3);
@@ -135,10 +135,10 @@ int main(int argc, char** argv)
 	Mat disparity = imread("img/teddy_disp1.png",0);
 	//guiJointBirateralFilterTest(noflash,flash);
 	//guiBinalyWeightedRangeFilterTest(disparity);
-	guiCodingDistortionRemoveTest(disparity);
+	//guiCodingDistortionRemoveTest(disparity);
 	//guiJointBinalyWeightedRangeFilterTest(noflash,flash);
 
-	//guiNonLocalMeansTest(src);
+	guiNonLocalMeansTest(src);
 
 	//guiIterativeBackProjectionTest(src);
 

@@ -80,7 +80,7 @@ void RealtimeO1BilateralFilter::filter(const Mat& src_, Mat& dest_)
 	}
 	else if(filter_type==IIR_AM)
 	{
-		GaussianBlurIIR(src,dest,sigma_space/downsample_size,filter_iteration);
+		GaussianBlurAM(src,dest,sigma_space/downsample_size,filter_iteration);
 	}
 	else if(filter_type==IIR_SR)
 	{

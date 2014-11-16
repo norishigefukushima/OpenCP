@@ -161,6 +161,8 @@
     <ClCompile Include="draw.cpp" />
     <ClCompile Include="ffttest\fftTest.cpp" />
     <ClCompile Include="GaussianFilter.cpp" />
+    <ClCompile Include="GaussianFilterDeriche.cpp" />
+    <ClCompile Include="GaussianFilterSpectralRecursive.cpp" />
     <ClCompile Include="GaussianFilter\GaussianFilterTest.cpp" />
     <ClCompile Include="guidedFilter.cpp" />
     <ClCompile Include="guidedFilter\guidedFilterTest.cpp" />
@@ -170,6 +172,7 @@
     <ClCompile Include="jointBirateralFilter.cpp" />
     <ClCompile Include="jointNearestFilter.cpp" />
     <ClCompile Include="jointNearestFilter\jointNearestFilterTest.cpp" />
+    <ClCompile Include="jointNonLocalMeans.cpp" />
     <ClCompile Include="localLaplacianFilter.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="matInfo.cpp" />

@@ -246,8 +246,10 @@ enum
 };
 
 
-void GaussianBlurIIR(InputArray src_, OutputArray dest, float sigma, int iteration);
+void GaussianBlurAM(InputArray src_, OutputArray dest, float sigma, int iteration);
+void GaussianBlurDeriche(InputArray src_, OutputArray dest, float sigma, int K);
 void GaussianBlurSR(InputArray src_, OutputArray dest, float sigma);
+
 void GaussianFilter(const Mat src, Mat& dest, int r, float sigma, int method=FILTER_SLOWEST, Mat& mask=Mat());
 void weightedGaussianFilter(Mat& src, Mat& weight, Mat& dest,Size ksize, float sigma, int border_type = BORDER_REPLICATE);
 
@@ -400,12 +402,17 @@ void jointBinalyWeightedRangeFilter(const Mat& src, const Mat& guide, Mat& dst, 
 void centerReplacedBinalyWeightedRangeFilter(const Mat& src, const Mat& center, Mat& dst, Size kernelSize, float threshold, int method=FILTER_DEFAULT, int borderType=cv::BORDER_REPLICATE);
 
 void nonLocalMeansFilter(Mat& src, Mat& dest, int templeteWindowSize, int searchWindowSize, double h, double sigma=-1.0, int method=FILTER_DEFAULT);
+void nonLocalMeansFilter(Mat& src, Mat& dest, Size templeteWindowSize, Size searchWindowSize, double h, double sigma=-1.0, int method=FILTER_DEFAULT);
+void jointNonLocalMeansFilter(Mat& src, Mat& guide, Mat& dest, int templeteWindowSize, int searchWindowSize, double h, double sigma);
+void jointNonLocalMeansFilter(Mat& src, Mat& guide, Mat& dest, Size templeteWindowSize, Size searchWindowSize, double h, double sigma);
+void weightedJointNonLocalMeansFilter(Mat& src, Mat& weightMap, Mat& guide, Mat& dest, int templeteWindowSize, int searchWindowSize, double h, double sigma);
 
 void iterativeBackProjectionDeblurGaussian(const Mat& src, Mat& dest, const Size ksize, const double sigma, const double lambda, const int iteration);
 void iterativeBackProjectionDeblurBilateral(const Mat& src, Mat& dest, const Size ksize, const double sigma_color, const double sigma_space, const double lambda, const int iteration);
 
 
 void bilateralFilterPermutohedralLattice(Mat& src, Mat& dest, float sigma_space, float sigma_color);
+
 
 enum
 {

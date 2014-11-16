@@ -183,6 +183,15 @@
     <ClCompile Include="GaussianFilter\GaussianFilterTest.cpp">
       <Filter>ソース ファイル\test</Filter>
     </ClCompile>
+    <ClCompile Include="jointNonLocalMeans.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="GaussianFilterDeriche.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="GaussianFilterSpectralRecursive.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="opencp.hpp">

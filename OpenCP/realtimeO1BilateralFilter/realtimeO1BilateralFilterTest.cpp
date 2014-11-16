@@ -40,7 +40,7 @@ void guiMaxMinFilter(Mat& src_)
 			tim = t.getTime();
 		}
 		
-		GaussianBlurIIR(dest,dest, 3*r,3);
+		GaussianBlurAM(dest,dest, 3*r,3);
 		alphaBlend(src, dest,a/100.0, show);
 
 		imshow(wname,show);
