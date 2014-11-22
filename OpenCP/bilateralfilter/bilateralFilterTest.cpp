@@ -235,7 +235,6 @@ void guiSeparableBilateralFilterTest(Mat& src)
 		{
 			CalcTime t("bilateral filter: opencv");
 			bilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space,FILTER_RECTANGLE);
-			
 		}
 		else if(sw==1)
 		{
