@@ -1,94 +1,9 @@
 #include "opencp.hpp"
 #include "test.hpp"
 
-
-void depthSubsumpleForgroundBiasedHalf(Mat& src, Mat& dest, int th, int invalid=0)
-{
-	dest.create(Size(src.cols/2,src.rows/2), src.type());
-
-	for(int j=0; j<dest.rows; j++)
-	{
-		for(int i=0; i<dest.cols; i++)
-		{
-			int v=0;
-			int sum=0;
-			int count=0;
-			
-			int vmax = max(max(src.at<uchar>(2*j+0,2*i+0),src.at<uchar>(2*j+0,2*i+1)),max(src.at<uchar>(2*j+1,2*i+0),src.at<uchar>(2*j+1,2*i+1)));
-
-			v = src.at<uchar>(2*j+0,2*i+0);
-			if(v!=invalid && abs(v-vmax)<th)
-			{
-				sum+=v;
-				count++;
-			}
-			v = src.at<uchar>(2*j+0,2*i+1);
-			if(v!=invalid  && abs(v-vmax)<th)
-			{
-				sum+=v;
-				count++;
-			}
-			v = src.at<uchar>(2*j+1,2*i+0);
-			if(v!=invalid && abs(v-vmax)<th)
-			{
-				sum+=v;
-				count++;
-			}
-			v = src.at<uchar>(2*j+1,2*i+1);
-			if(v!=invalid && abs(v-vmax)<th)
-			{
-				sum+=v;
-				count++;
-			}
-			if(count!=0) dest.at<uchar>(j,i)=(uchar)(sum/(double)count+0.5);
-			else dest.at<uchar>(j,i)=invalid;
-		}
-	}
-}
-
-void depthSubsumpleHalf(Mat& src, Mat& dest, int invalid=0)
-{
-	dest.create(Size(src.cols/2,src.rows/2), src.type());
-
-	for(int j=0; j<dest.rows; j++)
-	{
-		for(int i=0; i<dest.cols; i++)
-		{
-			int v=0;
-			int sum=0;
-			int count=0;
-			v = src.at<uchar>(2*j+0,2*i+0);
-			if(v!=invalid)
-			{
-				sum+=v;
-				count++;
-			}
-			v = src.at<uchar>(2*j+0,2*i+1);
-			if(v!=invalid)
-			{
-				sum+=v;
-				count++;
-			}
-			v = src.at<uchar>(2*j+1,2*i+0);
-			if(v!=invalid)
-			{
-				sum+=v;
-				count++;
-			}
-			v = src.at<uchar>(2*j+1,2*i+1);
-			if(v!=invalid)
-			{
-				sum+=v;
-				count++;
-			}
-			if(count!=0) dest.at<uchar>(j,i)=(uchar)(sum/(double)count+0.5);
-			else dest.at<uchar>(j,i)=invalid;
-		}
-	}
-}
-
 int main(int argc, char** argv)
-{	
+{
+	//Mat fuji = imread("fuji.png"); guiDenoiseTest(fuji);
 	//Mat ff3 = imread("img/pixelart/ff3.png");
 	
 	//Mat src = imread("img/lenna.png");
@@ -99,10 +14,14 @@ int main(int argc, char** argv)
 	//timeGuidedFilterTest(src);
 	//Mat src = imread("img/flower.png");
 	//Mat src = imread("img/teddy_disp1.png");
-	Mat src_ = imread("img/stereo/Art/view1.png",0);
-	Mat src;
-	copyMakeBorder(src_,src,0,1,0,1,BORDER_REPLICATE);
+	//Mat src_ = imread("img/stereo/Art/view1.png",0);
+//	Mat src;
+//	copyMakeBorder(src_,src,0,1,0,1,BORDER_REPLICATE);
 		
+
+	Mat src = imread("img/stereo/Art/view1.png");
+	Mat disp = imread("img/stereo/Art/disp1.png");
+//	Mat src;
 	Mat dest;
 
 	//Mat src = imread("img/kodim22.png");
@@ -114,7 +33,8 @@ int main(int argc, char** argv)
 //	resize(src,mega,Size(1024,1024));
 	//resize(src,mega,Size(640,480));
 
-	guiGauusianFilterTest(src);
+	//guiDualBilateralFilterTest(src,disp);
+	//guiGausianFilterTest(src);
 	//guiRealtimeO1BilateralFilterTest(src);
 
 	//guiAlphaBlend(ff3,ff3);
@@ -122,6 +42,7 @@ int main(int argc, char** argv)
 	//guiViewSynthesis();
 	//guiSLICTest(src);
 	//guiBilateralFilterTest(src);
+	guiSeparableBilateralFilterTest(src);
 	//guiBilateralFilterSPTest(mega);
 	//guiRecursiveBilateralFilterTest(mega);
 	//fftTest(src);
@@ -138,7 +59,7 @@ int main(int argc, char** argv)
 	//guiCodingDistortionRemoveTest(disparity);
 	//guiJointBinalyWeightedRangeFilterTest(noflash,flash);
 
-	guiNonLocalMeansTest(src);
+	//guiNonLocalMeansTest(src);
 
 	//guiIterativeBackProjectionTest(src);
 

@@ -12,7 +12,7 @@ void GaussianBlur2(Mat& src, Mat& dest, float sigma, int clip = 3, int depth=CV_
 	srcf.convertTo(dest,src.type(),1.0,0.5);
 }
 
-void guiGauusianFilterTest(Mat& src_)
+void guiGausianFilterTest(Mat& src_)
 {
 	Mat src;
 	if(src_.channels()==3)cvtColor(src_,src,COLOR_BGR2GRAY);

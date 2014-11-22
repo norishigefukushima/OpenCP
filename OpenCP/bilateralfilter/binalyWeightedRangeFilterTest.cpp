@@ -46,11 +46,9 @@ void guiCodingDistortionRemoveTest(Mat& src)
 		{
 			CalcTime t("binary weighted range filter");
 			binalyWeightedRangeFilter(deg, dest, Size(d,d), sigma_color,FILTER_RECTANGLE);
-			//binalyWeightedRangeFilter(dest2, dest2, Size(d,d), sigma_color,BILATERAL_SEPARABLE);
 		}
 		else if(sw==1)
-		{
-			
+		{	
 			CalcTime t("binary weighted range filter");
 			medianBlur(deg, dest,3);
 			blurRemoveMinMax(dest,dest,1);
@@ -62,20 +60,18 @@ void guiCodingDistortionRemoveTest(Mat& src)
 			CalcTime t("binary weighted range filter");			
 			medianBlur(deg, dest,3);
 			blurRemoveMinMax(dest,dest2,1);
-			centerReplacedBinalyWeightedRangeFilter(deg, dest2,dest, Size(d,d), sigma_color,FILTER_RECTANGLE);
+			centerReplacedBinalyWeightedRangeFilter(deg, dest2, dest, Size(d,d), sigma_color,FILTER_RECTANGLE);
 		}
 		else if(sw==3)
 		{
-			
 			CalcTime t("binary weighted range filter");
 			medianBlur(deg, dest,3);
 			blurRemoveMinMax(dest,dest2,1);
 			Mat destf,degf;
 			dest2.convertTo(destf,CV_32F);
 			deg.convertTo(degf,CV_32F);
-			centerReplacedBinalyWeightedRangeFilter(degf, destf, destf, Size(d,d), sigma_color,FILTER_RECTANGLE);
+			centerReplacedBinalyWeightedRangeFilter(degf, destf, destf, Size(d,d), sigma_color, FILTER_RECTANGLE);
 			destf.convertTo(dest,CV_8U, 1.0, 0.0);
-			//binalyWeightedRangeFilter(dest2, dest2, Size(d,d), sigma_color,BILATERAL_SEPARABLE);
 		}
 
 		Mat c1,c2;

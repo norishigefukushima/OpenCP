@@ -39,7 +39,7 @@ void guiBilateralFilterTest(Mat& src)
 		else if(sw==1)
 		{
 			CalcTime t("birateral filter: fastest opencp implimentation");
-			bilateralFilterSP_test3_8u(src, dest, Size(d,d), sigma_color,sigma_color*rate/100.0, sigma_space,BORDER_REPLICATE);
+//			bilateralFilterSP_test3_8u(src, dest, Size(d,d), sigma_color,sigma_color*rate/100.0, sigma_space,BORDER_REPLICATE);
 			//bilateralFilterSP2_8u(src, dest, Size(d,d), sigma_color, sigma_space,BORDER_REPLICATE);
 			//recursiveBilateralFilter(src, dest, sigma_color, sigma_space,1);
 
@@ -183,11 +183,12 @@ double getTV(Mat& src)
 	}
 	return (double)sum/(double)count;
 }
-void guiBilateralFilterSPTest(Mat& src)
-{
-	Mat dest,dest2;
 
-	string wname = "bilateral filter";
+void guiSeparableBilateralFilterTest(Mat& src)
+{
+	Mat dest;
+
+	string wname = "bilateral filter SP";
 	namedWindow(wname);
 
 	int a=0;createTrackbar("a",wname,&a,100);
@@ -196,60 +197,45 @@ void guiBilateralFilterSPTest(Mat& src)
 	int space = 300; createTrackbar("space",wname,&space,2000);
 	int color = 500; createTrackbar("color",wname,&color,2550);
 	int rate = 100; createTrackbar("color2 rate",wname,&rate,100);
-	int rate_s = 100; createTrackbar("space2 rate",wname,&rate_s,100);
+	//int rate_s = 100; createTrackbar("space2 rate",wname,&rate_s,100);
 
-	int rate1 = 100; createTrackbar("c3 rate",wname,&rate1,100);
-	int rate2 = 100; createTrackbar("c4 rate",wname,&rate2,100);
-
+	//int rate1 = 100; createTrackbar("c3 rate",wname,&rate1,100);
+	//int rate2 = 100; createTrackbar("c4 rate",wname,&rate2,100);
 
 	int s = 15; createTrackbar("ssim",wname,&s,200);
 	int skip = 10; createTrackbar("skip",wname,&skip,40);
 
-	int key = 0;
-	Mat show;
 	Mat ref;
+	{
+		float sigma_color = color/10.f;
+		float sigma_space = space/10.f;
+		int r = cvRound(sigma_space*3.0)/2;
+		int d = 2*r+1;
+		bilateralFilter(src, ref, Size(d,d), sigma_color, sigma_space,FILTER_RECTANGLE);
+	}
 	ConsoleImage ci;
 
-	int prespace=-1;
-	int precolor=-1;
-
+	Mat show;
+	int key = 0;
 	while(key!='q')
 	{
-		//cout<<"r="<<r<<": "<<"please change 'sw' for changing the type of implimentations."<<endl;
 		float sigma_color = color/10.f;
-		float sigma_color2 = sigma_color/100.f*rate;
 		float sigma_space = space/10.f;
 		int r = cvRound(sigma_space*3.0)/2;
 		int d = 2*r+1;
 
 		double ssims = s/10.0;
-
-		float sigma_color0 = sigma_color/100.f*rate_s;
 		
-		float sigma_space2 = sigma_space/100.f*rate_s;
-		int d2 = 2*(cvRound(sigma_space*3.0)/2)+1;
-
-		float sigma_color3 = sigma_color/100.f*rate1;
-		float sigma_color4 = sigma_color/100.f*rate2;
-
-		
-		if(prespace!=space || precolor!=color)
+		if(key=='r')
 		{
-			//bilateralFilter(src, ref, Size(d,d), sigma_color, sigma_space,FILTER_RECTANGLE);
-			bilateralFilterL2_8u(src, ref,d, sigma_color, sigma_space);
-			//src.copyTo(ref);
-			prespace=space;
-			precolor=color;
+			bilateralFilter(src, ref, Size(d,d), sigma_color, sigma_space,FILTER_RECTANGLE);
 		}
-
 		
 		if(sw==0)
 		{
 			CalcTime t("bilateral filter: opencv");
-			//bilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space,FILTER_RECTANGLE);
-			bilateralFilterPermutohedralLattice(src,dest,sigma_space,sigma_color);
-			//bilateralFilter(src, dest, d, sigma_color, sigma_space);
-			//recursiveBilateralFilter(src, dest, sigma_color, sigma_space,0);
+			bilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space,FILTER_RECTANGLE);
+			
 		}
 		else if(sw==1)
 		{
@@ -258,41 +244,28 @@ void guiBilateralFilterSPTest(Mat& src)
 		}
 		else if(sw==2)
 		{
-			CalcTime t("bilateral filter: opencv hv parameter change");
-			bilateralFilterSP_test1_8u(src, dest, Size(d,d), sigma_color, sigma_color2,sigma_space);
+			CalcTime t("bilateral filter: opencv sp HV");
+			separableBilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space,rate/100.0,DUAL_KERNEL_HV);
 		}
 		else if(sw==3)
 		{
-			CalcTime t("bilateral filter: opencv joint filter change");
-			bilateralFilterSP_test2_8u(src, dest, Size(d,d), sigma_color, sigma_space);
-
+			CalcTime t("bilateral filter: opencv sp HVVH");
+			separableBilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space,rate/100.0,DUAL_KERNEL_HVVH);
 		}
 		else if(sw==4)
 		{
-			CalcTime t("bilateral filter: full");
-			bilateralFilterSP_test3_8u(src, dest, Size(d,d), sigma_color, sigma_color2,sigma_space);
+			CalcTime t("bilateral filter: opencv sp HVVH");
+			separableBilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space,rate/100.0,DUAL_KERNEL_CROSS);
 		}
 		else if(sw==5)
 		{
-			CalcTime t("birateral filter: full float");
-			bilateralFilterSP2_8u(src, dest, Size(d,d), sigma_color, sigma_space,BORDER_REPLICATE);
-			//bilateralFilterSP_test5_8u(src, dest, Size(d2,d2), sigma_color, sigma_color2,sigma_color3,sigma_color4,sigma_space2);
-			
-			//bilateralFilterSP_test3_8u(src, dest, Size(d,d), sigma_color0, sigma_color2,sigma_space);
-			//bilateralFilterSP_test4_8u(src, dest, Size(d,d2), sigma_color, sigma_color2,sigma_space, sigma_space2);
+			CalcTime t("bilateral filter: opencv sp HVVH");
+			separableBilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space,rate/100.0,DUAL_KERNEL_CROSSCROSS);
 		}
-
 		else if(sw==6)
 		{
-			CalcTime t("bilateral filter: full float");
-			bilateralFilterSP3_8u(src, dest, Size(d,d), sigma_color, sigma_space,skip);
-
-			for(int i=0;i<10;i++)
-			bilateralFilterSP3_8u(dest, dest, Size(d,d), sigma_color, sigma_space,skip);
-			//bilateralFilterSP_test5_8u(src, dest, Size(d2,d2), sigma_color, sigma_color2,sigma_color3,sigma_color4,sigma_space2);
-			
-			//bilateralFilterSP_test3_8u(src, dest, Size(d,d), sigma_color0, sigma_color2,sigma_space);
-			//bilateralFilterSP_test4_8u(src, dest, Size(d,d2), sigma_color, sigma_color2,sigma_space, sigma_space2);
+			//CalcTime t("bilateral filter: opencv sp HVVH");
+			//separableBilateralFilter(src, dest, Size(d,d), sigma_color, sigma_space,rate1/100.0,DUAL_KERNEL_CROSSCROSS);
 		}
 
 		if(key=='f')
@@ -302,14 +275,15 @@ void guiBilateralFilterSPTest(Mat& src)
 		}
 		ci(format("%f dB",PSNR(ref,dest)));
 		ci(format("%f dB",SSIM(ref,dest,ssims)));
-
 		ci(format("%f %f",getTV(dest),getTV(ref)));
 		ci.flush();
+
 		alphaBlend(ref, dest,a/100.0, show);
 		imshow(wname,show);
 		key = waitKey(1);
 	}
 }
+
 void timeBilateralTest(Mat& src)
 {
 	int iteration = 10;

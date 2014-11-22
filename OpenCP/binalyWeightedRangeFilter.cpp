@@ -1,4 +1,5 @@
 #include "opencp.hpp"
+
 #include <opencv2/core/internal.hpp>
 //for test, non SSE code for tbb
 class BinalyWeightedRangeFilter_8u_Invoker : public cv::ParallelLoopBody

@@ -192,8 +192,17 @@
     <ClCompile Include="jointBilateralFilter.cpp">
       <Filter>ソース ファイル\filter</Filter>
     </ClCompile>
-    <ClCompile Include="dualLateralFilter.cpp">
+    <ClCompile Include="dualBilateralFilter.cpp">
       <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="jointDualBilateralFilter.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="dualBilateralFilter\dualBilateralFilterTest.cpp">
+      <Filter>ソース ファイル\test</Filter>
+    </ClCompile>
+    <ClCompile Include="filterCore.cpp">
+      <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -205,6 +214,9 @@
     </ClInclude>
     <ClInclude Include="fmath.hpp">
       <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="filterCore.h">
+      <Filter>ソース ファイル</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

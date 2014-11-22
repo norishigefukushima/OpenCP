@@ -189,7 +189,8 @@ void trilateralWeightMapBase( const Mat& src, const Mat& guide, Mat& dst, int d,
 		trilateralWeightMapBase_32f(ss,gg,dst,d,sigma_color,sigma_guide_color,sigma_space,borderType);
 	}
 }
-void trilateralFilterBase_32f( const Mat& src, const Mat& guide, Mat& dst, int d,
+
+void dualBilateralFilterBase_32f( const Mat& src, const Mat& guide, Mat& dst, int d,
 	double sigma_color, double sigma_guide_color, double sigma_space,int borderType)
 {
 	if(d==0){src.copyTo(dst);return;}
@@ -199,10 +200,6 @@ void trilateralFilterBase_32f( const Mat& src, const Mat& guide, Mat& dst, int d
 	//	src.type() == dst.type() && src.size() == dst.size() &&
 	//	src.data != dst.data );
 
-	if( sigma_color <= 0.0 )
-		sigma_color = 1.0;
-	if( sigma_space <= 0.0 )
-		sigma_space = 1.0;
 	double gauss_color_coeff = -0.5/(sigma_color*sigma_color);
 	double gauss_guide_color_coeff = -0.5/(sigma_guide_color*sigma_guide_color);//trilateral(1)
 	double gauss_space_coeff = -0.5/(sigma_space*sigma_space);
@@ -310,10 +307,9 @@ void trilateralFilterBase_32f( const Mat& src, const Mat& guide, Mat& dst, int d
 					sum_b += bs*w; sum_g += gs*w; sum_r += rs*w;
 					wsum += w;
 				}
-				wsum = 1.0f/wsum;
-				dptr[j  ] = (sum_b*wsum);
-				dptr[j+1] = (sum_g*wsum);
-				dptr[j+2] = (sum_r*wsum);
+				dptr[j  ] = (sum_b/wsum);
+				dptr[j+1] = (sum_g/wsum);
+				dptr[j+2] = (sum_r/wsum);
 			}
 		}
 		else if(cn == 1 && cnj==3)
@@ -337,8 +333,7 @@ void trilateralFilterBase_32f( const Mat& src, const Mat& guide, Mat& dst, int d
 					sum_b += val*w; 
 					wsum += w;
 				}
-				wsum = 1.f/wsum;
-				dptr[l] = sum_b*wsum;
+				dptr[l] = sum_b/wsum;
 			}
 		}
 		else if(cn == 3 && cnj==1)
@@ -362,18 +357,16 @@ void trilateralFilterBase_32f( const Mat& src, const Mat& guide, Mat& dst, int d
 					sum_b += b*w; sum_g += g*w; sum_r += r*w;
 					wsum += w;
 				}
-				// overflow is not possible here => there is no need to use CV_CAST_8U
-				wsum = 1.f/wsum;
-				dptr[j  ] = sum_b*wsum;
-				dptr[j+1] = sum_g*wsum;
-				dptr[j+2] = sum_r*wsum;
+				dptr[j  ] = sum_b/wsum;
+				dptr[j+1] = sum_g/wsum;
+				dptr[j+2] = sum_r/wsum;
 			}
 		}
 	}
 }
 
-void trilateralFilterBase_8u( const Mat& src, const Mat& guide, Mat& dst, int d,
-	double sigma_color, double sigma_guide_color, double sigma_space,int borderType)
+void dualBilateralFilterBase_8u( const Mat& src, const Mat& guide, Mat& dst, int d, 
+								const double sigma_color, const double sigma_guide_color, const double sigma_space, int borderType)
 {
 	if(d==0){src.copyTo(dst);return;}
 	Size size = src.size();
@@ -382,25 +375,15 @@ void trilateralFilterBase_8u( const Mat& src, const Mat& guide, Mat& dst, int d,
 	//	src.type() == dst.type() && src.size() == dst.size() &&
 	//	src.data != dst.data );
 
-	if( sigma_color <= 0.0 )
-		sigma_color = 1.0;
-	if( sigma_space <= 0.0 )
-		sigma_space = 1.0;
-
-	double gauss_color_coeff = -0.5/(sigma_color*sigma_color);
-	double gauss_guide_color_coeff = -0.5/(sigma_guide_color*sigma_guide_color);//trilateral(1)
-	double gauss_space_coeff = -0.5/(sigma_space*sigma_space);
+	const double gauss_color_coeff = -0.5/(sigma_color*sigma_color);
+	const double gauss_guide_color_coeff = -0.5/(sigma_guide_color*sigma_guide_color);//trilateral(1)
+	const double gauss_space_coeff = -0.5/(sigma_space*sigma_space);
 
 	if(guide.empty())src.copyTo(guide);
 	const int cn = src.channels();
 	const int cnj = guide.channels();
 
-	int radius;
-	if( d <= 0 )
-		radius = cvRound(sigma_space*1.5);
-	else
-		radius = d/2;
-	radius = MAX(radius, 1);
+	int radius = d/2;
 	d = radius*2 + 1;
 
 	Mat jim;
@@ -422,9 +405,13 @@ void trilateralFilterBase_8u( const Mat& src, const Mat& guide, Mat& dst, int d,
 
 	// initialize color-related bilateral filter coefficients
 	for(int i = 0; i < 256*cn; i++ )//trilateral(5)
+	{
 		color_weight[i] = (float)std::exp(i*i*gauss_color_coeff);
+	}
 	for(int i = 0; i < 256*cnj; i++ )//trilateral(6)
+	{
 		color_guide_weight[i] = (float)std::exp(i*i*gauss_guide_color_coeff);
+	}
 
 	int maxk=0;
 	// initialize space-related bilateral filter coefficients
@@ -436,12 +423,13 @@ void trilateralFilterBase_8u( const Mat& src, const Mat& guide, Mat& dst, int d,
 			if( r > radius )
 				continue;
 			space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
+			
 			space_ofs_jnt[maxk] = (int)(i*jim.step + j*cnj);
 			space_ofs_src[maxk++] = (int)(i*sim.step + j*cn);
 		}
 	}
 
-	//#pragma omp parallel for
+//#pragma omp parallel for
 	for(int i = 0; i < size.height; i++ )
 	{
 		const uchar* jptr = jim.data + (i+radius)*jim.step + radius*cnj;
@@ -471,33 +459,29 @@ void trilateralFilterBase_8u( const Mat& src, const Mat& guide, Mat& dst, int d,
 				dptr[j] = (uchar)cvRound(sum/wsum);
 			}
 		}
-		else if(cn == 3 &&cnj==3)
+		else if(cn == 3 && cnj==3)
 		{
 			for(int j = 0; j < size.width*3; j += 3 )
 			{
 				float sum_b = 0.f, sum_g = 0.f, sum_r = 0.f, wsum = 0.f;
 
-				int b0 = jptr[j], g0 = jptr[j+1], r0 = jptr[j+2];
+				int bg0 = jptr[j], gg0 = jptr[j+1], rg0 = jptr[j+2];
 				int bs0 = sptr[j], gs0 = sptr[j+1], rs0 = sptr[j+2];//trilateral(9)
 
 				for(int k = 0; k < maxk; k++ )
 				{
-					const uchar* jptr_k = jptr + j + space_ofs_src[k];
+					const uchar* jptr_k = jptr + j + space_ofs_jnt[k];
 					const uchar* sptr_k = sptr + j + space_ofs_src[k];
 					const int b = jptr_k[0], g = jptr_k[1], r = jptr_k[2];
 					const int bs = sptr_k[0], gs = sptr_k[1], rs = sptr_k[2];//trilateral(10)
-					float w = space_weight[k]
-					*color_weight[std::abs(bs - bs0) +std::abs(gs - gs0) + std::abs(rs - rs0)]
-					*color_guide_weight[std::abs(b - b0) +std::abs(g - g0) + std::abs(r - r0)];//trilateral(11)
+					float w = space_weight[k];
+					w*=color_weight[abs(bs - bs0) +abs(gs - gs0) + abs(rs - rs0)];
+					w*=color_guide_weight[abs(b - bg0) +abs(g - gg0) + abs(r - rg0)];
 
 					sum_b += bs*w; sum_g += gs*w; sum_r += rs*w;
 					wsum += w;
 				}
-				wsum = 1.f/wsum;
-				b0 = cvRound(sum_b*wsum);
-				g0 = cvRound(sum_g*wsum);
-				r0 = cvRound(sum_r*wsum);
-				dptr[j] = (uchar)b0; dptr[j+1] = (uchar)g0; dptr[j+2] = (uchar)r0;
+				dptr[j] = (uchar)cvRound(sum_b/wsum);gs0 = dptr[j+1] = (uchar)cvRound(sum_g/wsum);dptr[j+2] = (uchar)cvRound(sum_r/wsum);
 			}
 		}
 		else if(cn == 1 && cnj==3)
@@ -525,49 +509,49 @@ void trilateralFilterBase_8u( const Mat& src, const Mat& guide, Mat& dst, int d,
 		}
 		else if(cn == 3 && cnj==1)
 		{
-			for(int j = 0,l=0; l < size.width; j+=3,l++ )
+			for(int j = 0,l=0; l < size.width; j+=3, l++ )
 			{
 				float sum_b = 0.f, sum_g = 0.f, sum_r = 0.f, wsum = 0.f;
 				const int bs0 = sptr[j], gs0 = sptr[j+1], rs0 = sptr[j+2];
-				const int val0 = jptr[l];
+				const int vg0 = jptr[l];
 
 				for(int k = 0; k < maxk; k++ )
 				{
 					const uchar* sptr_k = sptr + j + space_ofs_src[k];
-					const int b = sptr_k[0], g = sptr_k[1], r = sptr_k[2];
-					int val = jptr[l + space_ofs_jnt[k]];
+					const int bs = sptr_k[0], gs = sptr_k[1], rs = sptr_k[2];
+					int vg = jptr[l + space_ofs_jnt[k]];
 
-					float w = space_weight[k]
-					*color_weight[std::abs(b - bs0) +std::abs(g - gs0) + std::abs(r - rs0)]
-					*color_guide_weight[std::abs(val - val0)];
+					float w = space_weight[k];
+					w*=color_weight[abs(bs - bs0) +abs(gs - gs0) + abs(rs- rs0)];
+					w*=color_guide_weight[abs(vg - vg0)];
 
-					sum_b += b*w; 
-					sum_g += g*w; 
-					sum_r += r*w;
+					sum_b += bs*w; 
+					sum_g += gs*w; 
+					sum_r += rs*w;
 					wsum += w;
 				}
 				// overflow is not possible here => there is no need to use CV_CAST_8U
-				wsum = 1.f/wsum;
-				dptr[j] = (uchar)cvRound(sum_b*wsum); 
-				dptr[j+1] = (uchar)cvRound(sum_g*wsum); 
-				dptr[j+2] = (uchar)cvRound(sum_r*wsum);
+				dptr[j] = (uchar)cvRound(sum_b/wsum); 
+				dptr[j+1] = (uchar)cvRound(sum_g/wsum); 
+				dptr[j+2] = (uchar)cvRound(sum_r/wsum);
 			}
 		}
 	}
 }
 
-void duallateralFilterBase(const Mat& src, const Mat& guide, Mat& dst, int d, double sigma_color, double sigma_guide_color,double sigma_space,int method, int borderType)
+void dualBilateralFilterBase(const Mat& src, const Mat& guide, Mat& dst, int d, 
+							 double sigma_color, double sigma_guide_color, double sigma_space,int method, int borderType)
 {
 	if(dst.empty())dst.create(src.size(),src.type());
 	if(method==FILTER_CIRCLE)
 	{
 		if(src.type()==CV_MAKE_TYPE(CV_8U,src.channels()))
 	{
-		trilateralFilterBase_8u(src,guide,dst,d,sigma_color,sigma_guide_color, sigma_space,borderType);
+		dualBilateralFilterBase_8u(src, guide, dst, d, sigma_color, sigma_guide_color, sigma_space, borderType);
 	}
 	else if(src.type()==CV_MAKE_TYPE(CV_32F,src.channels()))
 	{
-		trilateralFilterBase_32f(src,guide,dst,d,sigma_color,sigma_guide_color, sigma_space,borderType);
+		dualBilateralFilterBase_32f(src,guide,dst,d, sigma_color, sigma_guide_color, sigma_space, borderType);
 	}
 	}
 	else if(method==FILTER_SEPARABLE)
@@ -642,7 +626,7 @@ public:
 						__m128 wval1 = _mm_setzero_ps();
 						__m128 tval1 = _mm_setzero_ps();
 
-						for(k = 0;  k <= maxk; k ++, ofs++,gofs++,spw++,wofs++)//wmap!
+						for(k = 0;  k < maxk; k ++, ofs++,gofs++,spw++,wofs++)//wmap!
 						{
 							__m128 sref = _mm_loadu_ps((gptrj+*gofs));
 							_mm_store_si128((__m128i*)gbuf,_mm_cvtps_epi32(_mm_and_ps(_mm_sub_ps(val0j,sref), *(const __m128*)v32f_absmask)));
@@ -732,7 +716,7 @@ public:
 
 						__m128 wval1 = _mm_setzero_ps();
 						__m128 tval1 = _mm_setzero_ps();
-						for(k = 0;  k <= maxk; k ++, ofs++,gofs++,spw++,wofs++)//wmap!
+						for(k = 0;  k<maxk; k ++, ofs++,gofs++,spw++,wofs++)//wmap!
 						{
 							const __m128 bref = _mm_loadu_ps((gptrbj+*gofs));
 							const __m128 gref = _mm_loadu_ps((gptrgj+*gofs));
@@ -848,7 +832,7 @@ public:
 						__m128 gval1 = _mm_setzero_ps();
 						__m128 bval1 = _mm_setzero_ps();
 
-						for(k = 0;  k <= maxk; k ++, ofs++,gofs++,spw++,wofs++)//wmap!
+						for(k = 0;  k<maxk; k ++, ofs++,gofs++,spw++,wofs++)//wmap!
 						{
 							__m128 bref = _mm_loadu_ps((gptrbj+*gofs));
 							__m128 gref = _mm_loadu_ps((gptrgj+*gofs));
@@ -995,7 +979,7 @@ public:
 						__m128 gval1 = _mm_set1_ps(0.0f);
 						__m128 bval1 = _mm_set1_ps(0.0f);
 
-						for(k = 0;  k <= maxk; k ++, ofs++,gofs++,spw++,wofs++)//wmap!
+						for(k = 0;  k<maxk; k ++, ofs++,gofs++,spw++,wofs++)//wmap!
 						{
 							__m128 sref = _mm_loadu_ps((gptrj+*gofs));
 							_mm_store_si128((__m128i*)gbuf,_mm_cvtps_epi32(_mm_and_ps(_mm_sub_ps(val0j,sref), *(const __m128*)v32f_absmask)));
@@ -1154,7 +1138,7 @@ public:
 						const __m128i zero = _mm_setzero_si128();
 						__m128i m1,m2;
 						__m128 _valF,_w;
-						for(k = 0;  k <= maxk; k ++, ofs++,wofs++,gofs++,spw++)
+						for(k = 0;  k<maxk; k ++, ofs++,wofs++,gofs++,spw++)
 						{
 							//cout<<k<<":"<<ofs[0]<<","<<wofs[0]<<","<<gofs[0]<<endl;
 							__m128i sref = _mm_loadu_si128((__m128i*)(gptrj+*gofs));
@@ -1167,14 +1151,14 @@ public:
 							m2 = _mm_unpackhi_epi16(m1,zero);
 							m1 = _mm_unpacklo_epi16(m1,zero);
 
-							const __m128 _sw = _mm_set1_ps(*spw);//位置のexp重みをレジスタにストア
+							const __m128 _sw = _mm_set1_ps(*spw);
 							_w = _mm_mul_ps(_sw,_mm_set_ps(color_weight[buf[3]],color_weight[buf[2]],color_weight[buf[1]],color_weight[buf[0]]));//メモリ上の絶対値差をexpを表すLUTに入れてそれをレジスタにストア（色重み）
 							_w = _mm_mul_ps(_w, _mm_set_ps(guide_color_weight[gbuf[3]],guide_color_weight[gbuf[2]],guide_color_weight[gbuf[1]],guide_color_weight[gbuf[0]]));
 
 							_w = _mm_mul_ps(_w,_mm_loadu_ps(wptrj+wofs[0]));
 
-							_valF = _mm_cvtepi32_ps(m1);//slide!
-							_valF = _mm_mul_ps(_w, _valF);//値と重み全体との積
+							_valF = _mm_cvtepi32_ps(m1);
+							_valF = _mm_mul_ps(_w, _valF);
 							tval1 = _mm_add_ps(tval1,_valF);
 							wval1 = _mm_add_ps(wval1,_w);
 
@@ -1182,7 +1166,7 @@ public:
 							_w = _mm_mul_ps(_w, _mm_set_ps(guide_color_weight[gbuf[7]],guide_color_weight[gbuf[6]],guide_color_weight[gbuf[5]],guide_color_weight[gbuf[4]]));
 							_w = _mm_mul_ps(_w,_mm_loadu_ps(wptrj+wofs[0]+4));
 							_valF =_mm_cvtepi32_ps(m2);
-							_valF = _mm_mul_ps(_w, _valF);//値と重み全体との積
+							_valF = _mm_mul_ps(_w, _valF);
 							tval2 = _mm_add_ps(tval2,_valF);
 							wval2 = _mm_add_ps(wval2,_w);
 
@@ -1282,7 +1266,6 @@ public:
 						const __m128i gval = _mm_load_si128((__m128i*)(gptrgj));
 						const __m128i rval = _mm_load_si128((__m128i*)(gptrrj));
 
-						//重みと平滑化後の画素４ブロックづつ
 						__m128 wval1 = _mm_setzero_ps();
 						__m128 tval1 = _mm_setzero_ps();
 						__m128 wval2 = _mm_setzero_ps();
@@ -1294,7 +1277,7 @@ public:
 
 						const __m128i zero = _mm_setzero_si128();
 
-						for(k = 0;  k <= maxk; k ++, ofs++,gofs++,wofs++,spw++)
+						for(k = 0;  k<maxk; k ++, ofs++,gofs++,wofs++,spw++)
 						{
 							const __m128i bref = _mm_loadu_si128((__m128i*)(gptrbj+*gofs));
 							const __m128i gref = _mm_loadu_si128((__m128i*)(gptrgj+*gofs));
@@ -1477,7 +1460,7 @@ public:
 
 						const __m128i zero = _mm_setzero_si128();
 
-						for(k = 0;  k <= maxk; k ++, ofs++,gofs++,wofs++,spw++)
+						for(k = 0;  k< maxk; k ++, ofs++,gofs++,wofs++,spw++)
 						{
 							__m128i bref = _mm_loadu_si128((__m128i*)(gptrbj+*gofs));
 							__m128i gref = _mm_loadu_si128((__m128i*)(gptrgj+*gofs));
@@ -1760,7 +1743,7 @@ public:
 
 						const __m128i zero = _mm_setzero_si128();
 
-						for(k = 0;  k <= maxk; k ++, ofs++,gofs++,wofs++,spw++)
+						for(k = 0;  k <maxk; k ++, ofs++,gofs++,wofs++,spw++)
 						{
 							__m128i jref = _mm_loadu_si128((__m128i*)(gptrj+*gofs));
 							_mm_store_si128((__m128i*)gbuf,_mm_add_epi8(_mm_subs_epu8(val0j,jref),_mm_subs_epu8(jref,val0j)));
@@ -1958,10 +1941,10 @@ private:
 };
 
 
-class TrilateralFilter_32f_InvokerSSE4 : public cv::ParallelLoopBody
+class DualBilateralFilter_32f_InvokerSSE4 : public cv::ParallelLoopBody
 {
 public:
-	TrilateralFilter_32f_InvokerSSE4(Mat& _dest, const Mat& _temp, const Mat& _guide, int _radiusH, int _radiusV, int _maxk,
+	DualBilateralFilter_32f_InvokerSSE4(Mat& _dest, const Mat& _temp, const Mat& _guide, int _radiusH, int _radiusV, int _maxk,
 		int* _space_ofs, int* _space_guide_ofs, float *_space_weight, float *_color_weight, float *_guide_color_weight) :
 	temp(&_temp), dest(&_dest), guide(&_guide), radiusH(_radiusH), radiusV(_radiusV),
 		maxk(_maxk), space_ofs(_space_ofs), space_guide_ofs(_space_guide_ofs), space_weight(_space_weight), color_weight(_color_weight), guide_color_weight(_guide_color_weight)
@@ -1997,8 +1980,7 @@ public:
 #if CV_SSE4_1
 				if( haveSSE4 )
 				{
-					for(; j < size.width; j+=4)//16画素づつ処理
-						//for(; j < 0; j+=16)//16画素づつ処理
+					for(; j < size.width; j+=4)
 					{
 						int* ofs = &space_ofs[0];
 						int* gofs = &space_guide_ofs[0];
@@ -2010,11 +1992,11 @@ public:
 
 						const __m128 jval = _mm_load_ps((gptrj));
 						const __m128 sval = _mm_load_ps((sptrj));
-						//重みと平滑化後の画素４ブロックづつ
+						
 						__m128 wval1 = _mm_setzero_ps();
 						__m128 tval1 = _mm_setzero_ps();
 
-						for(k = 0;  k <= maxk; k ++, ofs++,gofs++,spw++)
+						for(k = 0;  k < maxk; k ++, ofs++,gofs++,spw++)
 						{
 							__m128 jref = _mm_loadu_ps((gptrj+*gofs));
 							_mm_store_si128((__m128i*)gbuf,_mm_cvtps_epi32(_mm_and_ps(_mm_sub_ps(jval,jref), *(const __m128*)v32f_absmask)));
@@ -2022,10 +2004,10 @@ public:
 							__m128 vref = _mm_loadu_ps((sptrj+*ofs));
 							_mm_store_si128((__m128i*)buf,_mm_cvtps_epi32(_mm_and_ps(_mm_sub_ps(sval,vref), *(const __m128*)v32f_absmask)));
 
-							const __m128 _sw = _mm_set1_ps(*spw);//位置のexp重みをレジスタにストア
+							const __m128 _sw = _mm_set1_ps(*spw);
 							__m128 _w = _mm_mul_ps(_sw,_mm_set_ps(color_weight[buf[3]],color_weight[buf[2]],color_weight[buf[1]],color_weight[buf[0]]));//メモリ上の絶対値差をexpを表すLUTに入れてそれをレジスタにストア（色重み）
 							_w = _mm_mul_ps(_w,_mm_set_ps(guide_color_weight[gbuf[3]],guide_color_weight[gbuf[2]],guide_color_weight[gbuf[1]],guide_color_weight[gbuf[0]]));
-							vref = _mm_mul_ps(_w, vref);//値と重み全体との積
+							vref = _mm_mul_ps(_w, vref);
 							tval1 = _mm_add_ps(tval1,vref);
 							wval1 = _mm_add_ps(wval1,_w);
 						}
@@ -2053,7 +2035,7 @@ public:
 		}
 		else if(cn == 1 && cng == 3)
 		{
-			assert( cng == 3 );//カラー処理
+			assert( cng == 3 );
 			int CV_DECL_ALIGNED(16) buf[4];
 			int CV_DECL_ALIGNED(16) gbuf[4];
 
@@ -2073,7 +2055,7 @@ public:
 #if CV_SSE4_1
 				if( haveSSE4 )
 				{
-					for(; j < size.width; j+=4)//4画素づつ処理
+					for(; j < size.width; j+=4)
 					{
 						int* ofs = &space_ofs[0];
 						int* gofs = &space_guide_ofs[0];
@@ -2093,7 +2075,7 @@ public:
 
 						__m128 wval1 = _mm_setzero_ps();
 						__m128 tval1 = _mm_setzero_ps();
-						for(k = 0;  k <= maxk; k ++, ofs++,gofs++,spw++)
+						for(k = 0;  k < maxk; k ++, ofs++,gofs++,spw++)
 						{
 							const __m128 bref = _mm_loadu_ps((gptrbj+*gofs));
 							const __m128 gref = _mm_loadu_ps((gptrgj+*gofs));
@@ -2110,11 +2092,11 @@ public:
 								));
 							__m128 vref = _mm_loadu_ps((sptrj+*ofs));
 							_mm_store_si128((__m128i*)buf,_mm_cvtps_epi32(_mm_and_ps(_mm_sub_ps(sval,vref), *(const __m128*)v32f_absmask)));
-							const __m128 _sw = _mm_set1_ps(*spw);//位置のexp重みをレジスタにストア
+							const __m128 _sw = _mm_set1_ps(*spw);
 
 							__m128 _w = _mm_mul_ps(_sw,_mm_set_ps(color_weight[buf[3]],color_weight[buf[2]],color_weight[buf[1]],color_weight[buf[0]]));//メモリ上の絶対値差をexpを表すLUTに入れてそれをレジスタにストア（色重み）
 							_w = _mm_mul_ps(_w,_mm_set_ps(guide_color_weight[gbuf[3]],guide_color_weight[gbuf[2]],guide_color_weight[gbuf[1]],guide_color_weight[gbuf[0]]));
-							vref = _mm_mul_ps(_w, vref);//値と重み全体との積
+							vref = _mm_mul_ps(_w, vref);
 							tval1 = _mm_add_ps(tval1,vref);
 							wval1 = _mm_add_ps(wval1,_w);
 						}
@@ -2149,7 +2131,6 @@ public:
 		}
 		else if(cn == 3 && cng == 3)
 		{
-			assert( cng == 3 );//カラー処理
 			int CV_DECL_ALIGNED(16) buf[4];
 			int CV_DECL_ALIGNED(16) gbuf[4];
 
@@ -2164,13 +2145,13 @@ public:
 			float* gptrg = (float*)guide->ptr<float>(3*radiusV+3*range.start+1) + 4 * (radiusH/4 + 1);
 			float* gptrb = (float*)guide->ptr<float>(3*radiusV+3*range.start+2) + 4 * (radiusH/4 + 1);
 			float* dptr = dest->ptr<float>(range.start);
-			for(i = range.start; i != range.end; i++,gptrr+=gstep,gptrg+=gstep,gptrb+=gstep, sptrr+=sstep,sptrg+=sstep,sptrb+=sstep, dptr+=dstep )
+			for(i = range.start; i != range.end; i++,gptrr+=gstep, gptrg+=gstep, gptrb+=gstep, sptrr+=sstep, sptrg+=sstep, sptrb+=sstep, dptr+=dstep)
 			{	
 				j=0;
 #if CV_SSE4_1
 				if( haveSSE4 )
 				{
-					for(; j < size.width; j+=4)//4画素づつ処理
+					for(; j < size.width; j+=4)
 					{
 						int* ofs = &space_ofs[0];
 						int* gofs = &space_guide_ofs[0];
@@ -2196,7 +2177,7 @@ public:
 						__m128 gval1 = _mm_setzero_ps();
 						__m128 bval1 = _mm_setzero_ps();
 
-						for(k = 0;  k <= maxk; k ++, ofs++,gofs++,spw++)
+						for(k = 0;  k < maxk; k++, ofs++,gofs++,spw++)
 						{
 							__m128 bref = _mm_loadu_ps((gptrbj+*gofs));
 							__m128 gref = _mm_loadu_ps((gptrgj+*gofs));
@@ -2212,7 +2193,7 @@ public:
 								)
 								));
 
-							gref = _mm_loadu_ps((sptrbj+*ofs));
+							bref = _mm_loadu_ps((sptrbj+*ofs));
 							gref = _mm_loadu_ps((sptrgj+*ofs));
 							rref = _mm_loadu_ps((sptrrj+*ofs));
 							_mm_store_si128((__m128i*)buf,
@@ -2226,13 +2207,12 @@ public:
 								));
 
 
-							const __m128 _sw = _mm_set1_ps(*spw);//位置のexp重みをレジスタにストア
-							__m128 _w = _mm_mul_ps(_sw,_mm_set_ps(color_weight[buf[3]],color_weight[buf[2]],color_weight[buf[1]],color_weight[buf[0]]));//メモリ上の絶対値差をexpを表すLUTに入れてそれをレジスタにストア（色重み）
-
+							__m128 _w = _mm_set1_ps(*spw);
+							_w = _mm_mul_ps(_w,_mm_set_ps(color_weight[buf[3]],color_weight[buf[2]],color_weight[buf[1]],color_weight[buf[0]]));
 							_w = _mm_mul_ps(_w,_mm_set_ps(guide_color_weight[gbuf[3]],guide_color_weight[gbuf[2]],guide_color_weight[gbuf[1]],guide_color_weight[gbuf[0]]));
-							rref = _mm_mul_ps(_w, rref);//値と重み全体との積
-							gref = _mm_mul_ps(_w, gref);//値と重み全体との積
-							bref = _mm_mul_ps(_w, bref);//値と重み全体との積
+							rref = _mm_mul_ps(_w, rref);
+							gref = _mm_mul_ps(_w, gref);
+							bref = _mm_mul_ps(_w, bref);
 
 							rval1 = _mm_add_ps(rval1,rref);
 							gval1 = _mm_add_ps(gval1,gref);
@@ -2262,6 +2242,9 @@ public:
 					const float* gptrgj = gptrg+j;
 					const float* gptrbj = gptrb+j;
 
+					const float sr0 = sptrrj[0];
+					const float sg0 = sptrgj[0];
+					const float sb0 = sptrbj[0];
 					const float r0 = gptrrj[0];
 					const float g0 = gptrgj[0];
 					const float b0 = gptrbj[0];
@@ -2270,17 +2253,19 @@ public:
 					float wsum=0.0f;
 					for(k=0 ; k < maxk; k++ )
 					{
+						const float sr = sptrrj[space_ofs[k]], sg = sptrgj[space_ofs[k]], sb = sptrbj[space_ofs[k]];
 						const float r = gptrrj[space_guide_ofs[k]], g = gptrgj[space_guide_ofs[k]], b = gptrbj[space_guide_ofs[k]];
-						float w = space_weight[k]*color_weight[cvRound(std::abs(b - b0) +std::abs(g - g0) + std::abs(r - r0))];
+						float w = space_weight[k];
+						w*=color_weight[cvRound(std::abs(sb - sb0) +std::abs(sg - sg0) + std::abs(sr - sr0))];
+						w*=guide_color_weight[cvRound(std::abs(b - b0) +std::abs(g - g0) + std::abs(r - r0))];
 						sum_b += sptrrj[space_ofs[k]]*w;
 						sum_g += sptrgj[space_ofs[k]]*w;
 						sum_r += sptrbj[space_ofs[k]]*w;
 						wsum += w;
 					}
-					wsum = 1.f/wsum;
-					dptr[3*j  ] = sum_b*wsum;
-					dptr[3*j+1] = sum_g*wsum;
-					dptr[3*j+2] = sum_r*wsum;
+					dptr[3*j  ] = sum_b/wsum;
+					dptr[3*j+1] = sum_g/wsum;
+					dptr[3*j+2] = sum_r/wsum;
 				}
 			}
 
@@ -2307,7 +2292,7 @@ public:
 #if CV_SSE4_1
 				if( haveSSE4 )
 				{
-					for(; j < size.width; j+=4)//4画素づつ処理
+					for(; j < size.width; j+=4)
 					{
 						int* ofs = &space_ofs[0];
 						int* gofs = &space_guide_ofs[0];
@@ -2324,13 +2309,12 @@ public:
 						const __m128 rval0s = _mm_load_ps((sptrrj));
 						const __m128  val0j = _mm_load_ps((gptrj));
 
-						//重みと平滑化後の画素４ブロックづつ
 						__m128 wval1 = _mm_set1_ps(0.0f);
 						__m128 rval1 = _mm_set1_ps(0.0f);
 						__m128 gval1 = _mm_set1_ps(0.0f);
 						__m128 bval1 = _mm_set1_ps(0.0f);
 
-						for(k = 0;  k <= maxk; k ++, ofs++, gofs++,spw++)
+						for(k = 0;  k < maxk; k ++, ofs++, gofs++,spw++)
 						{
 							__m128 ref = _mm_loadu_ps((gptrj+*gofs));
 							_mm_store_si128((__m128i*)gbuf,_mm_cvtps_epi32(_mm_and_ps(_mm_sub_ps(val0j,ref), *(const __m128*)v32f_absmask)));
@@ -2349,12 +2333,12 @@ public:
 								)
 								));
 
-							__m128 _w = _mm_set1_ps(*spw);//位置のexp重みをレジスタにストア
+							__m128 _w = _mm_set1_ps(*spw);
 							_w = _mm_mul_ps(_w,_mm_set_ps(color_weight[buf[3]],color_weight[buf[2]],color_weight[buf[1]],color_weight[buf[0]]));
 							_w = _mm_mul_ps(_w,_mm_set_ps(guide_color_weight[gbuf[3]],guide_color_weight[gbuf[2]],guide_color_weight[gbuf[1]],guide_color_weight[gbuf[0]]));
-							bref = _mm_mul_ps(_w, bref);//値と重み全体との積
-							gref = _mm_mul_ps(_w, gref);//値と重み全体との積
-							rref = _mm_mul_ps(_w, rref);//値と重み全体との積
+							bref = _mm_mul_ps(_w, bref);
+							gref = _mm_mul_ps(_w, gref);
+							rref = _mm_mul_ps(_w, rref);
 
 							bval1 = _mm_add_ps(bval1,bref);
 							gval1 = _mm_add_ps(gval1,gref);
@@ -2410,28 +2394,29 @@ private:
 	float *space_weight, *color_weight, *guide_color_weight;
 };
 
-class TrilateralFilter_8u_InvokerSSE4 : public cv::ParallelLoopBody
+class DualBilateralFilter_8u_InvokerSSE4 : public cv::ParallelLoopBody
 {
 public:
-	TrilateralFilter_8u_InvokerSSE4(Mat& _dest, const Mat& _temp, const Mat& _guide, int _radiusH, int _radiusV, int _maxk,
-		int* _space_ofs, int* _space_guide_ofs, float *_space_weight, float *_color_weight,float *_guide_color_weight) :
+	DualBilateralFilter_8u_InvokerSSE4(Mat& _dest, const Mat& _temp, const Mat& _guide, int _radiusH, int _radiusV, int _maxk,
+		int* _space_ofs, int* _space_guide_ofs, float *_space_weight, float *_color_weight, float *_guide_color_weight) :
 	temp(&_temp), dest(&_dest), guide(&_guide), radiusH(_radiusH), radiusV(_radiusV),
-		maxk(_maxk), space_ofs(_space_ofs), space_guide_ofs(_space_guide_ofs), space_weight(_space_weight), color_weight(_color_weight),guide_color_weight(_guide_color_weight)
+		maxk(_maxk), space_ofs(_space_ofs), space_guide_ofs(_space_guide_ofs), space_weight(_space_weight), color_weight(_color_weight), guide_color_weight(_guide_color_weight)
 	{
 	}
 
 	virtual void operator() (const Range& range) const
 	{
+
 		int i, j, k;
 		int cn = (temp->rows-2*radiusV)/dest->rows;
 		int cng = (guide->rows-2*radiusV) /dest->rows;
+
 		Size size = dest->size();
 #if CV_SSE4_1
 		bool haveSSE4 = checkHardwareSupport(CV_CPU_SSE4_1);
 #endif
 		if( cn == 1 && cng ==1)
 		{
-			//cout<<"C1 G1\n";
 			uchar CV_DECL_ALIGNED(16) buf[16];
 			uchar CV_DECL_ALIGNED(16) gbuf[16];
 
@@ -2451,7 +2436,7 @@ public:
 #if CV_SSE4_1
 				if( haveSSE4 )
 				{
-					for(; j < size.width; j+=16)//16画素づつ処理
+					for(; j < size.width; j+=16)
 					{
 						int* ofs = &space_ofs[0];
 						int* gofs = &space_guide_ofs[0];
@@ -2463,7 +2448,6 @@ public:
 
 						const __m128i sval = _mm_load_si128((__m128i*)(sptrj));
 						const __m128i gval = _mm_load_si128((__m128i*)(gptrj));
-						//重みと平滑化後の画素４ブロックづつ
 						__m128 wval1 = _mm_setzero_ps();
 						__m128 wval2 = _mm_setzero_ps();
 						__m128 wval3 = _mm_setzero_ps();
@@ -2475,7 +2459,7 @@ public:
 
 						const __m128i zero = _mm_setzero_si128();
 
-						for(k = 0;  k <= maxk; k ++, ofs++,gofs++,spw++)
+						for(k = 0;  k < maxk; k ++, ofs++,gofs++,spw++)
 						{
 							__m128i sref = _mm_loadu_si128((__m128i*)(gptrj+*gofs));
 							_mm_store_si128((__m128i*)gbuf,_mm_add_epi8(_mm_subs_epu8(gval,sref),_mm_subs_epu8(sref,gval)));//guide weight
@@ -2488,19 +2472,19 @@ public:
 							__m128i m2 = _mm_unpackhi_epi16(m1,zero);
 							m1 = _mm_unpacklo_epi16(m1,zero);
 
-							const __m128 _sw = _mm_set1_ps(*spw);//位置のexp重みをレジスタにストア
+							const __m128 _sw = _mm_set1_ps(*spw);
 
 							__m128 _w = _mm_mul_ps(_sw,_mm_set_ps(color_weight[buf[3]],color_weight[buf[2]],color_weight[buf[1]],color_weight[buf[0]]));//メモリ上の絶対値差をexpを表すLUTに入れてそれをレジスタにストア（色重み）
 							_w = _mm_mul_ps(_w, _mm_set_ps(guide_color_weight[gbuf[3]],guide_color_weight[gbuf[2]],guide_color_weight[gbuf[1]],guide_color_weight[gbuf[0]]));
-							__m128 _valF = _mm_cvtepi32_ps(m1);//slide!
-							_valF = _mm_mul_ps(_w, _valF);//値と重み全体との積
+							__m128 _valF = _mm_cvtepi32_ps(m1);
+							_valF = _mm_mul_ps(_w, _valF);
 							tval1 = _mm_add_ps(tval1,_valF);
 							wval1 = _mm_add_ps(wval1,_w);
 
 							_w = _mm_mul_ps(_sw,_mm_set_ps(color_weight[buf[7]],color_weight[buf[6]],color_weight[buf[5]],color_weight[buf[4]]));//メモリ上の絶対値差をexpを表すLUTに入れてそれをレジスタにストア（色重み）
 							_w = _mm_mul_ps(_w, _mm_set_ps(guide_color_weight[gbuf[7]],guide_color_weight[gbuf[6]],guide_color_weight[gbuf[5]],guide_color_weight[gbuf[4]]));
 							_valF =_mm_cvtepi32_ps(m2);
-							_valF = _mm_mul_ps(_w, _valF);//値と重み全体との積
+							_valF = _mm_mul_ps(_w, _valF);
 							tval2 = _mm_add_ps(tval2,_valF);
 							wval2 = _mm_add_ps(wval2,_w);
 
@@ -2511,14 +2495,14 @@ public:
 							_w = _mm_mul_ps(_sw,_mm_set_ps(color_weight[buf[11]],color_weight[buf[10]],color_weight[buf[9]],color_weight[buf[8]]));//メモリ上の絶対値差をexpを表すLUTに入れてそれをレジスタにストア（色重み）
 							_w = _mm_mul_ps(_w, _mm_set_ps(guide_color_weight[gbuf[11]],guide_color_weight[gbuf[10]],guide_color_weight[gbuf[9]],guide_color_weight[gbuf[8]]));
 							_valF =_mm_cvtepi32_ps(m1);
-							_valF = _mm_mul_ps(_w, _valF);//値と重み全体との積
+							_valF = _mm_mul_ps(_w, _valF);
 							wval3 = _mm_add_ps(wval3,_w);
 							tval3 = _mm_add_ps(tval3,_valF);
 
 							_w = _mm_mul_ps(_sw,_mm_set_ps(color_weight[buf[15]],color_weight[buf[14]],color_weight[buf[13]],color_weight[buf[12]]));//メモリ上の絶対値差をexpを表すLUTに入れてそれをレジスタにストア（色重み）
 							_w = _mm_mul_ps(_w, _mm_set_ps(guide_color_weight[gbuf[15]],guide_color_weight[gbuf[14]],guide_color_weight[gbuf[13]],guide_color_weight[gbuf[12]]));
 							_valF =_mm_cvtepi32_ps(m2);
-							_valF = _mm_mul_ps(_w, _valF);//値と重み全体との積
+							_valF = _mm_mul_ps(_w, _valF);
 							wval4 = _mm_add_ps(wval4,_w);
 							tval4 = _mm_add_ps(tval4,_valF);
 						}
@@ -2574,8 +2558,7 @@ public:
 #if CV_SSE4_1
 				if( haveSSE4 )
 				{
-					//for(; j < 0; j+=16)//16画素づつ処理
-					for(; j < size.width; j+=16)//16画素づつ処理
+					for(; j < size.width; j+=16)
 					{
 						__m128i m1,m2,n1,n2;
 						__m128 _valF, _w;
@@ -2597,7 +2580,6 @@ public:
 						const __m128i gval = _mm_load_si128((__m128i*)(gptrgj));
 						const __m128i rval = _mm_load_si128((__m128i*)(gptrrj));
 
-						//重みと平滑化後の画素４ブロックづつ
 						__m128 wval1 = _mm_setzero_ps();
 						__m128 wval2 = _mm_setzero_ps();
 						__m128 wval3 = _mm_setzero_ps();
@@ -2609,7 +2591,7 @@ public:
 
 						const __m128i zero = _mm_setzero_si128();
 
-						for(k = 0;  k <= maxk; k ++, ofs++,gofs++,spw++)
+						for(k = 0;  k < maxk; k ++, ofs++,gofs++,spw++)
 						{
 							const __m128i bref = _mm_loadu_si128((__m128i*)(gptrbj+*gofs));
 							const __m128i gref = _mm_loadu_si128((__m128i*)(gptrgj+*gofs));
@@ -2643,20 +2625,20 @@ public:
 							m2 = _mm_unpackhi_epi16(m1,zero);
 							m1 = _mm_unpacklo_epi16(m1,zero);
 
-							const __m128 _sw = _mm_set1_ps(*spw);//位置のexp重みをレジスタにストア
+							const __m128 _sw = _mm_set1_ps(*spw);
 
 							_w = _mm_mul_ps(_sw,_mm_set_ps(color_weight[buf[3]],color_weight[buf[2]],color_weight[buf[1]],color_weight[buf[0]]));//メモリ上の絶対値差をexpを表すLUTに入れてそれをレジスタにストア（色重み）
 							_w = _mm_mul_ps(_w, _mm_set_ps(guide_color_weight[gbuf[3]],guide_color_weight[gbuf[2]],guide_color_weight[gbuf[1]],guide_color_weight[gbuf[0]]));
 
 							_valF = _mm_cvtepi32_ps(m1);
-							_valF = _mm_mul_ps(_w, _valF);//値と重み全体との積
+							_valF = _mm_mul_ps(_w, _valF);
 							tval1 = _mm_add_ps(tval1,_valF);
 							wval1 = _mm_add_ps(wval1,_w);
 
 							_w = _mm_mul_ps(_sw,_mm_set_ps(color_weight[buf[7]],color_weight[buf[6]],color_weight[buf[5]],color_weight[buf[4]]));//メモリ上の絶対値差をexpを表すLUTに入れてそれをレジスタにストア（色重み）
 							_w = _mm_mul_ps(_w, _mm_set_ps(guide_color_weight[gbuf[7]],guide_color_weight[gbuf[6]],guide_color_weight[gbuf[5]],guide_color_weight[gbuf[4]]));
 							_valF =_mm_cvtepi32_ps(m2);
-							_valF = _mm_mul_ps(_w, _valF);//値と重み全体との積
+							_valF = _mm_mul_ps(_w, _valF);
 							tval2 = _mm_add_ps(tval2,_valF);
 							wval2 = _mm_add_ps(wval2,_w);
 
@@ -2668,14 +2650,14 @@ public:
 							_w = _mm_mul_ps(_sw,_mm_set_ps(color_weight[buf[11]],color_weight[buf[10]],color_weight[buf[9]],color_weight[buf[8]]));//メモリ上の絶対値差をexpを表すLUTに入れてそれをレジスタにストア（色重み）
 							_w = _mm_mul_ps(_w, _mm_set_ps(guide_color_weight[gbuf[11]],guide_color_weight[gbuf[10]],guide_color_weight[gbuf[9]],guide_color_weight[gbuf[8]]));
 							_valF =_mm_cvtepi32_ps(m1);
-							_valF = _mm_mul_ps(_w, _valF);//値と重み全体との積
+							_valF = _mm_mul_ps(_w, _valF);
 							tval3 = _mm_add_ps(tval3,_valF);
 							wval3 = _mm_add_ps(wval3,_w);
 
 							_w = _mm_mul_ps(_sw,_mm_set_ps(color_weight[buf[15]],color_weight[buf[14]],color_weight[buf[13]],color_weight[buf[12]]));//メモリ上の絶対値差をexpを表すLUTに入れてそれをレジスタにストア（色重み）
 							_w = _mm_mul_ps(_w, _mm_set_ps(guide_color_weight[gbuf[15]],guide_color_weight[gbuf[14]],guide_color_weight[gbuf[13]],guide_color_weight[gbuf[12]]));
 							_valF =_mm_cvtepi32_ps(m2);
-							_valF = _mm_mul_ps(_w, _valF);//値と重み全体との積
+							_valF = _mm_mul_ps(_w, _valF);
 							tval4 = _mm_add_ps(tval4,_valF);
 							wval4 = _mm_add_ps(wval4,_w);
 						}
@@ -2730,14 +2712,13 @@ public:
 
 			uchar* dptr = dest->ptr(range.start);
 
-			for(i = range.start; i != range.end; i++,gptrr+=gstep,gptrg+=gstep,gptrb+=gstep, sptrr+=sstep,sptrg+=sstep,sptrb+=sstep, dptr+=dstep )
+			for(i = range.start; i != range.end; i++, gptrr+=gstep,gptrg+=gstep,gptrb+=gstep, sptrr+=sstep,sptrg+=sstep,sptrb+=sstep, dptr+=dstep )
 			{	
 				j=0;
 #if CV_SSE4_1
 				if( haveSSE4 )
 				{
-					//for(; j < 0; j+=16)//16画素づつ処理
-					for(; j < size.width; j+=16)//16画素づつ処理
+					for(; j < size.width; j+=16)
 					{
 						int* ofs = &space_ofs[0];
 						int* gofs = &space_guide_ofs[0];
@@ -2758,8 +2739,6 @@ public:
 						const __m128i sg = _mm_load_si128((__m128i*)(sptrgj));
 						const __m128i sr = _mm_load_si128((__m128i*)(sptrrj));
 
-
-						//重みと平滑化後の画素４ブロックづつ
 						__m128 wval1 = _mm_setzero_ps();
 						__m128 wval2 = _mm_setzero_ps();
 						__m128 wval3 = _mm_setzero_ps();
@@ -2781,7 +2760,7 @@ public:
 						__m128 bval4 = _mm_setzero_ps();
 
 						const __m128i zero = _mm_setzero_si128();
-						for(k = 0;  k <= maxk; k ++, ofs++,gofs++,spw++)
+						for(k = 0;  k < maxk; k ++, ofs++,gofs++,spw++)
 						{
 							__m128i bref = _mm_loadu_si128((__m128i*)(gptrbj+*gofs));
 							__m128i gref = _mm_loadu_si128((__m128i*)(gptrgj+*gofs));
@@ -2843,17 +2822,17 @@ public:
 							b2 = _mm_unpackhi_epi16(b1,zero);
 							b1 = _mm_unpacklo_epi16(b1,zero);
 
-							const __m128 _sw = _mm_set1_ps(*spw);//位置のexp重みをレジスタにストア
+							const __m128 _sw = _mm_set1_ps(*spw);
 							__m128 _w = _mm_mul_ps(_sw,_mm_set_ps(color_weight[buf[3]],color_weight[buf[2]],color_weight[buf[1]],color_weight[buf[0]]));//メモリ上の絶対値差をexpを表すLUTに入れてそれをレジスタにストア（色重み）
 							_w = _mm_mul_ps(_w, _mm_set_ps(guide_color_weight[gbuf[3]],guide_color_weight[gbuf[2]],guide_color_weight[gbuf[1]],guide_color_weight[gbuf[0]]));
 
-							__m128 _valr = _mm_cvtepi32_ps(r1);//slide!
-							__m128 _valg = _mm_cvtepi32_ps(g1);//slide!
-							__m128 _valb = _mm_cvtepi32_ps(b1);//slide!
+							__m128 _valr = _mm_cvtepi32_ps(r1);
+							__m128 _valg = _mm_cvtepi32_ps(g1);
+							__m128 _valb = _mm_cvtepi32_ps(b1);
 
-							_valr = _mm_mul_ps(_w, _valr);//値と重み全体との積
-							_valg = _mm_mul_ps(_w, _valg);//値と重み全体との積
-							_valb = _mm_mul_ps(_w, _valb);//値と重み全体との積
+							_valr = _mm_mul_ps(_w, _valr);
+							_valg = _mm_mul_ps(_w, _valg);
+							_valb = _mm_mul_ps(_w, _valb);
 
 							rval1 = _mm_add_ps(rval1,_valr);
 							gval1 = _mm_add_ps(gval1,_valg);
@@ -2866,9 +2845,9 @@ public:
 							_valg =_mm_cvtepi32_ps(g2);
 							_valb =_mm_cvtepi32_ps(b2);
 
-							_valr = _mm_mul_ps(_w, _valr);//値と重み全体との積
-							_valg = _mm_mul_ps(_w, _valg);//値と重み全体との積
-							_valb = _mm_mul_ps(_w, _valb);//値と重み全体との積
+							_valr = _mm_mul_ps(_w, _valr);
+							_valg = _mm_mul_ps(_w, _valg);
+							_valb = _mm_mul_ps(_w, _valb);
 
 							rval2 = _mm_add_ps(rval2,_valr);
 							gval2 = _mm_add_ps(gval2,_valg);
@@ -2893,9 +2872,9 @@ public:
 							_valg =_mm_cvtepi32_ps(g1);
 							_valb =_mm_cvtepi32_ps(b1);
 
-							_valr = _mm_mul_ps(_w, _valr);//値と重み全体との積
-							_valg = _mm_mul_ps(_w, _valg);//値と重み全体との積
-							_valb = _mm_mul_ps(_w, _valb);//値と重み全体との積
+							_valr = _mm_mul_ps(_w, _valr);
+							_valg = _mm_mul_ps(_w, _valg);
+							_valb = _mm_mul_ps(_w, _valb);
 
 							rval3 = _mm_add_ps(rval3,_valr);
 							gval3 = _mm_add_ps(gval3,_valg);
@@ -2908,9 +2887,9 @@ public:
 							_valg =_mm_cvtepi32_ps(g2);
 							_valb =_mm_cvtepi32_ps(b2);
 
-							_valr = _mm_mul_ps(_w, _valr);//値と重み全体との積
-							_valg = _mm_mul_ps(_w, _valg);//値と重み全体との積
-							_valb = _mm_mul_ps(_w, _valb);//値と重み全体との積
+							_valr = _mm_mul_ps(_w, _valr);
+							_valg = _mm_mul_ps(_w, _valg);
+							_valb = _mm_mul_ps(_w, _valb);
 
 							rval4 = _mm_add_ps(rval4,_valr);
 							gval4 = _mm_add_ps(gval4,_valg);
@@ -2959,27 +2938,37 @@ public:
 					const uchar* gptrgj = gptrg+j;
 					const uchar* gptrbj = gptrb+j;
 
-					int r0 = gptrrj[0];
-					int g0 = gptrgj[0];
-					int b0 = gptrbj[0];
+					int sr0 = sptrrj[0];
+					int sg0 = sptrgj[0];
+					int sb0 = sptrbj[0];
+					int gr0 = gptrrj[0];
+					int gg0 = gptrgj[0];
+					int gb0 = gptrbj[0];
 
-					float sum_r=0.0f,sum_b=0.0f,sum_g=0.0f;
-					float wsum=0.0f;
+					float sum_r=0.f;
+					float sum_b=0.f;
+					float sum_g=0.f;
+					float wsum=0.f;
 					for(k=0 ; k < maxk; k++ )
 					{
-						int r = gptrrj[space_guide_ofs[k]], g = gptrgj[space_guide_ofs[k]], b = gptrbj[space_guide_ofs[k]];
-						float w = space_weight[k]*color_weight[std::abs(b - b0) +std::abs(g - g0) + std::abs(r - r0)];
-						sum_b += sptrrj[space_ofs[k]]*w;
+						int gr = gptrrj[space_guide_ofs[k]];
+						int gg = gptrgj[space_guide_ofs[k]];
+						int gb = gptrbj[space_guide_ofs[k]];
+						int sr = sptrrj[space_ofs[k]];
+						int sg = sptrgj[space_ofs[k]];
+						int sb = sptrbj[space_ofs[k]];
+						float w = space_weight[k];
+						w*= color_weight[abs(sb - sb0) +abs(sg - sg0) + abs(sr - sr0)];
+						w*= guide_color_weight[abs(gb - gb0) +abs(gg - gg0) + abs(gr - gr0)];
+						
+						sum_r += sptrrj[space_ofs[k]]*w;
 						sum_g += sptrgj[space_ofs[k]]*w;
-						sum_r += sptrbj[space_ofs[k]]*w;
-						wsum += w;
+						sum_b += sptrbj[space_ofs[k]]*w;
+						wsum  += w;
 					}
 
-					wsum = 1.f/wsum;
-					b0 = cvRound(sum_b*wsum);
-					g0 = cvRound(sum_g*wsum);
-					r0 = cvRound(sum_r*wsum);
-					dptr[3*j] = (uchar)b0; dptr[3*j+1] = (uchar)g0; dptr[3*j+2] = (uchar)r0;
+					wsum = 1.f/wsum; sb0 = cvRound(sum_b*wsum); sg0 = cvRound(sum_g*wsum); sr0 = cvRound(sum_r*wsum);
+					dptr[3*j] = (uchar)sr0; dptr[3*j+1] = (uchar)sg0; dptr[3*j+2] = (uchar)sb0;
 				}
 			}
 		}
@@ -3006,8 +2995,7 @@ public:
 #if CV_SSE4_1
 				if( haveSSE4 )
 				{
-					//for(; j < 0; j+=16)//16画素づつ処理
-					for(; j < size.width; j+=16)//16画素づつ処理
+					for(; j < size.width; j+=16)
 					{
 						__m128i m1,m2,n1,n2;
 
@@ -3026,7 +3014,6 @@ public:
 						const __m128i rval = _mm_load_si128((__m128i*)(sptrrj));
 						const __m128i ggval = _mm_load_si128((__m128i*)(gptrj));
 
-						//重みと平滑化後の画素４ブロックづつ
 						__m128 wval1 = _mm_set1_ps(0.0f);
 						__m128 rval1 = _mm_set1_ps(0.0f);
 						__m128 gval1 = _mm_set1_ps(0.0f);
@@ -3049,7 +3036,7 @@ public:
 
 						const __m128i zero = _mm_setzero_si128();
 
-						for(k = 0;  k <= maxk; k ++, ofs++,gofs++,spw++)
+						for(k = 0;  k < maxk; k ++, ofs++,gofs++,spw++)
 						{
 							__m128i bref = _mm_loadu_si128((__m128i*)(gptrj+*gofs));
 							_mm_store_si128((__m128i*)gbuf,_mm_add_epi8(_mm_subs_epu8(ggval,bref),_mm_subs_epu8(bref,ggval)));
@@ -3089,16 +3076,16 @@ public:
 							__m128i b2 = _mm_unpackhi_epi16(b1,zero);
 							b1 = _mm_unpacklo_epi16(b1,zero);
 
-							const __m128 _sw = _mm_set1_ps(*spw);//位置のexp重みをレジスタにストア
+							const __m128 _sw = _mm_set1_ps(*spw);
 							__m128 _w = _mm_mul_ps(_sw,_mm_set_ps(color_weight[buf[3]],color_weight[buf[2]],color_weight[buf[1]],color_weight[buf[0]]));//メモリ上の絶対値差をexpを表すLUTに入れてそれをレジスタにストア（色重み）
 							_w = _mm_mul_ps(_w, _mm_set_ps(guide_color_weight[gbuf[3]],guide_color_weight[gbuf[2]],guide_color_weight[gbuf[1]],guide_color_weight[gbuf[0]]));
-							__m128 _valr = _mm_cvtepi32_ps(r1);//slide!
-							__m128 _valg = _mm_cvtepi32_ps(g1);//slide!
-							__m128 _valb = _mm_cvtepi32_ps(b1);//slide!
+							__m128 _valr = _mm_cvtepi32_ps(r1);
+							__m128 _valg = _mm_cvtepi32_ps(g1);
+							__m128 _valb = _mm_cvtepi32_ps(b1);
 
-							_valr = _mm_mul_ps(_w, _valr);//値と重み全体との積
-							_valg = _mm_mul_ps(_w, _valg);//値と重み全体との積
-							_valb = _mm_mul_ps(_w, _valb);//値と重み全体との積
+							_valr = _mm_mul_ps(_w, _valr);
+							_valg = _mm_mul_ps(_w, _valg);
+							_valb = _mm_mul_ps(_w, _valb);
 
 							rval1 = _mm_add_ps(rval1,_valr);
 							gval1 = _mm_add_ps(gval1,_valg);
@@ -3112,9 +3099,9 @@ public:
 							_valg =_mm_cvtepi32_ps(g2);
 							_valb =_mm_cvtepi32_ps(b2);
 
-							_valr = _mm_mul_ps(_w, _valr);//値と重み全体との積
-							_valg = _mm_mul_ps(_w, _valg);//値と重み全体との積
-							_valb = _mm_mul_ps(_w, _valb);//値と重み全体との積
+							_valr = _mm_mul_ps(_w, _valr);
+							_valg = _mm_mul_ps(_w, _valg);
+							_valb = _mm_mul_ps(_w, _valb);
 
 							rval2 = _mm_add_ps(rval2,_valr);
 							gval2 = _mm_add_ps(gval2,_valg);
@@ -3140,9 +3127,9 @@ public:
 							_valg =_mm_cvtepi32_ps(g1);
 							_valb =_mm_cvtepi32_ps(b1);
 
-							_valr = _mm_mul_ps(_w, _valr);//値と重み全体との積
-							_valg = _mm_mul_ps(_w, _valg);//値と重み全体との積
-							_valb = _mm_mul_ps(_w, _valb);//値と重み全体との積
+							_valr = _mm_mul_ps(_w, _valr);
+							_valg = _mm_mul_ps(_w, _valg);
+							_valb = _mm_mul_ps(_w, _valb);
 
 							wval3 = _mm_add_ps(wval3,_w);
 							rval3 = _mm_add_ps(rval3,_valr);
@@ -3156,9 +3143,9 @@ public:
 							_valg =_mm_cvtepi32_ps(g2);
 							_valb =_mm_cvtepi32_ps(b2);
 
-							_valr = _mm_mul_ps(_w, _valr);//値と重み全体との積
-							_valg = _mm_mul_ps(_w, _valg);//値と重み全体との積
-							_valb = _mm_mul_ps(_w, _valb);//値と重み全体との積
+							_valr = _mm_mul_ps(_w, _valr);
+							_valg = _mm_mul_ps(_w, _valg);
+							_valb = _mm_mul_ps(_w, _valb);
 
 							wval4 = _mm_add_ps(wval4,_w);
 							rval4 = _mm_add_ps(rval4,_valr);
@@ -3487,7 +3474,7 @@ void weightedTrilateralFilter_8u( const Mat& src, Mat& weight, const Mat& guide,
 }
 
 
-void duallateralFilter_32f( const Mat& src, const Mat& guide, Mat& dst, Size kernelSize , const double sigma_color, const double sigma_guide_color, const double sigma_space, const int borderType, const bool isRectangle)
+void dualBilateralFilter_32f( const Mat& src, const Mat& guide, Mat& dst, Size kernelSize , const double sigma_color, const double sigma_guide_color, const double sigma_space, const int borderType, const bool isRectangle)
 {
 	if(kernelSize.width==0 || kernelSize.height==0){ src.copyTo(dst);return;}
 	int cn = src.channels();
@@ -3554,11 +3541,15 @@ void duallateralFilter_32f( const Mat& src, const Mat& guide, Mat& dst, Size ker
 
 	float* color_weight = &_color_weight[0];
 	float* color_guide_weight = &_color_guide_weight[0];
-	// initialize color-related bilateral filter coefficients
+	
 	for( i = 0; i < color_range*cn; i++ )
+	{
 		color_weight[i] = (float)std::exp(i*i*gauss_color_coeff);
+	}
 	for( i = 0; i < color_range_guide*cng; i++ )
+	{
 		color_guide_weight[i] = (float)std::exp(i*i*gauss_guide_color_coeff);
+	}
 
 	vector<float> _space_weight(kernelSize.area()+1);
 	float* space_weight = &_space_weight[0];
@@ -3574,10 +3565,10 @@ void duallateralFilter_32f( const Mat& src, const Mat& guide, Mat& dst, Size ker
 		for( i = -radiusV, maxk = 0; i <= radiusV; i++ )
 		{
 			j = -radiusH;
-
 			for( ;j <= radiusH; j++ )
 			{
 				double r = std::sqrt((double)i*i + (double)j*j);
+
 				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
 				space_ofs[maxk] = (int)(i*temp.cols*cn + j);
 				space_guide_ofs[maxk++] = (int)(i*tempg.cols*cng + j);
@@ -3589,12 +3580,11 @@ void duallateralFilter_32f( const Mat& src, const Mat& guide, Mat& dst, Size ker
 		for( i = -radiusV, maxk = 0; i <= radiusV; i++ )
 		{
 			j = -radiusH;
-
 			for( ;j <= radiusH; j++ )
 			{
 				double r = std::sqrt((double)i*i + (double)j*j);
-				if( r > max(radiusV,radiusH) )
-					continue;
+				if( r > max(radiusV,radiusH) ) continue;
+
 				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
 				space_ofs[maxk] = (int)(i*temp.cols*cn + j);
 				space_guide_ofs[maxk++] = (int)(i*tempg.cols*cng + j);
@@ -3603,13 +3593,13 @@ void duallateralFilter_32f( const Mat& src, const Mat& guide, Mat& dst, Size ker
 	}
 
 	Mat dest = Mat::zeros(Size(src.cols+dpad, src.rows),dst.type());
-	TrilateralFilter_32f_InvokerSSE4 body(dest, temp, tempg,radiusH,radiusV, maxk, space_ofs, space_guide_ofs,space_weight, color_weight, color_guide_weight);
+	DualBilateralFilter_32f_InvokerSSE4 body(dest, temp, tempg,radiusH,radiusV, maxk, space_ofs, space_guide_ofs,space_weight, color_weight, color_guide_weight);
 	parallel_for_(Range(0, size.height), body);
 	Mat(dest(Rect(0,0,dst.cols,dst.rows))).copyTo(dst);
 }
 
 
-void duallateralFilter_8u(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, const double sigma_color, const double sigma_guide_color, const double sigma_space, const int borderType, bool isRectangle)
+void dualBilateralFilter_8u(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, const double sigma_color, const double sigma_guide_color, const double sigma_space, const int borderType, bool isRectangle)
 {
 	if(kernelSize.width==0 || kernelSize.height==0){ src.copyTo(dst);return;}
 	int cn = src.channels();
@@ -3625,6 +3615,8 @@ void duallateralFilter_8u(const Mat& src, const Mat& guide, Mat& dst, Size kerne
 	double gauss_guide_color_coeff = -0.5/(sigma_guide_color*sigma_guide_color);
 	double gauss_space_coeff = -0.5/(sigma_space*sigma_space);
 
+
+	
 	int radiusH = kernelSize.width>>1;
 	int radiusV = kernelSize.height>>1;
 
@@ -3680,11 +3672,14 @@ void duallateralFilter_8u(const Mat& src, const Mat& guide, Mat& dst, Size kerne
 	// initialize color-related bilateral filter coefficients
 
 	for( i = 0; i < 256*cn; i++ )
+	{
 		color_weight[i] = (float)std::exp(i*i*gauss_color_coeff);
+	}
 	for( i = 0; i < 256*cng; i++ )
+	{
 		color_guide_weight[i] = (float)std::exp(i*i*gauss_guide_color_coeff);
-
-
+	}
+	
 	// initialize space-related bilateral filter coefficients
 	if(isRectangle)
 	{
@@ -3696,6 +3691,7 @@ void duallateralFilter_8u(const Mat& src, const Mat& guide, Mat& dst, Size kerne
 			{
 				double r = std::sqrt((double)i*i + (double)j*j);
 				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
+
 				space_ofs[maxk] = (int)(i*temp.cols*cn + j);
 				space_guide_ofs[maxk++] = (int)(i*tempg.cols*cng + j);
 			}
@@ -3710,10 +3706,10 @@ void duallateralFilter_8u(const Mat& src, const Mat& guide, Mat& dst, Size kerne
 			for( ;j <= radiusH; j++ )
 			{
 				double r = std::sqrt((double)i*i + (double)j*j);
-				if( r > max(radiusV,radiusH) )
-					continue;
+				if( r > max(radiusV,radiusH) ) continue;
+
 				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-				//space_ofs[maxk++] = (int)(i*temp.step + j*cn);
+
 				space_ofs[maxk] = (int)(i*temp.cols*cn + j);
 				space_guide_ofs[maxk++] = (int)(i*tempg.cols*cng + j);
 			}
@@ -3721,67 +3717,10 @@ void duallateralFilter_8u(const Mat& src, const Mat& guide, Mat& dst, Size kerne
 	}
 
 	Mat dest = Mat::zeros(Size(src.cols+dpad, src.rows),dst.type());
-	TrilateralFilter_8u_InvokerSSE4 body(dest, temp, tempg,radiusH,radiusV, maxk, space_ofs, space_guide_ofs,space_weight, color_weight, color_guide_weight);
+	DualBilateralFilter_8u_InvokerSSE4 body(dest, temp, tempg, radiusH, radiusV, maxk, space_ofs, space_guide_ofs,space_weight, color_weight, color_guide_weight);
 	parallel_for_(Range(0, size.height), body);
 	Mat(dest(Rect(0,0,dst.cols,dst.rows))).copyTo(dst);
 }
-
-void duallateralFilterSP_32f( const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_guide_color,double sigma_space, int borderType )
-{
-	duallateralFilter_32f(src, guide, dst, Size(kernelSize.width, 1), sigma_color, sigma_guide_color, sigma_space, borderType, true);
-	duallateralFilter_32f(dst, guide, dst, Size(1,kernelSize.height), sigma_color, sigma_guide_color, sigma_space, borderType, true);
-}
-
-void duallateralFilterSP_8u( const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_guide_color,double sigma_space, int borderType )
-{
-	duallateralFilter_8u(src, guide, dst, Size(kernelSize.width, 1), sigma_color, sigma_guide_color, sigma_space, borderType, true );
-	duallateralFilter_8u(dst, guide, dst, Size(1,kernelSize.height), sigma_color, sigma_guide_color, sigma_space, borderType, true );
-}
-
-void duallateralFilter(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_guide_color,double sigma_space,int method, int borderType)
-{
-	if(dst.empty())dst.create(src.size(),src.type());
-
-	if(method==FILTER_CIRCLE || method==FILTER_DEFAULT)
-	{
-		if(src.depth()==CV_8U)
-		{
-			duallateralFilter_8u(src,guide,dst,kernelSize,sigma_color,sigma_guide_color, sigma_space,borderType, false);
-		}
-		else if(src.depth()==CV_32F)
-		{
-			duallateralFilter_32f(src,guide,dst,kernelSize,sigma_color,sigma_guide_color, sigma_space,borderType, false);
-		}
-	}
-	else if(method==FILTER_RECTANGLE)
-	{
-		if(src.depth()==CV_8U)
-		{
-			duallateralFilter_8u(src,guide,dst,kernelSize,sigma_color,sigma_guide_color, sigma_space,borderType, true);
-		}
-		else if(src.depth()==CV_32F)
-		{
-			duallateralFilter_32f(src,guide,dst,kernelSize,sigma_color,sigma_guide_color, sigma_space,borderType, true);
-		}
-	}
-	else if(method==FILTER_SEPARABLE)
-	{
-		if(src.depth()==CV_8U)
-		{
-			duallateralFilterSP_8u(src,guide,dst,kernelSize,sigma_color,sigma_guide_color, sigma_space,borderType);
-		}
-		else if(src.depth()==CV_32F)
-		{
-			duallateralFilterSP_32f(src,guide,dst,kernelSize,sigma_color,sigma_guide_color, sigma_space,borderType);
-		}
-	}
-}
-
-void duallateralFilter(const Mat& src, const Mat& guide, Mat& dst, int d, double sigma_color, double sigma_guide_color,double sigma_space,int method, int borderType)
-{
-	duallateralFilter(src, guide, dst, Size(d,d), sigma_color, sigma_guide_color, sigma_space, method,  borderType);
-}
-
 
 void weightedTrilateralFilterSP_8u( const Mat& src, Mat& weightMap, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_guide_color,double sigma_space, int borderType )
 {
@@ -3886,7 +3825,7 @@ public:
 						//重みと平滑化後の画素４ブロックづつ
 						__m128 wval1 = _mm_setzero_ps();
 
-						for(k = 0;  k <= maxk; k ++, ofs++,spw++)
+						for(k = 0;  k < maxk; k ++, ofs++,spw++)
 						{
 							__m128 sref = _mm_loadu_ps((sptrj+*ofs));
 							_mm_store_si128((__m128i*)buf,_mm_cvtps_epi32(_mm_and_ps(_mm_sub_ps(val0s,sref), *(const __m128*)v32f_absmask)));
@@ -3964,11 +3903,8 @@ public:
 						const __m128 gval0j = _mm_load_ps((gptrgj));
 						const __m128 rval0j = _mm_load_ps((gptrrj));
 
-						//重みと平滑化後の画素４ブロックづつ
 						__m128 wval1 = _mm_setzero_ps();
-
-						//for(k = 0;  k <= maxk; k ++, ofs++,gofs++,spw++)
-						for(k = 0;  k <= maxk; k ++, ofs++,spw++)
+						for(k = 0;  k < maxk; k ++, ofs++,spw++)
 						{
 							__m128 bref = _mm_loadu_ps((sptrbj+*ofs));
 							__m128 gref = _mm_loadu_ps((sptrgj+*ofs));
@@ -4067,10 +4003,8 @@ public:
 						const __m128 gval0j = _mm_load_ps((gptrgj));
 						const __m128 rval0j = _mm_load_ps((gptrrj));
 
-						//重みと平滑化後の画素４ブロックづつ
 						__m128 wval1 = _mm_setzero_ps();
-
-						for(k = 0;  k <= maxk; k ++, ofs++,gofs++,spw++)
+						for(k = 0;  k <maxk; k ++, ofs++,gofs++,spw++)
 						{
 							__m128 bref = _mm_loadu_ps((gptrbj+*gofs));
 							__m128 gref = _mm_loadu_ps((gptrgj+*gofs));
@@ -4158,10 +4092,8 @@ public:
 						const __m128 gval0s = _mm_load_ps((sptrgj));
 						const __m128 rval0s = _mm_load_ps((sptrrj));
 
-						//重みと平滑化後の画素４ブロックづつ
 						__m128 wval1 = _mm_setzero_ps();
-
-						for(k = 0;  k <= maxk; k ++, ofs++,gofs++,spw++)
+						for(k = 0;  k < maxk; k ++, ofs++,gofs++,spw++)
 						{
 							__m128 bref = _mm_loadu_ps((sptrbj+*ofs));
 							__m128 gref = _mm_loadu_ps((sptrgj+*ofs));
@@ -4276,13 +4208,12 @@ public:
 						const __m128i sval = _mm_load_si128((__m128i*)(sptrj));
 						const __m128i gval = _mm_load_si128((__m128i*)(gptrj));
 
-						//重みと平滑化後の画素４ブロックづつ
 						__m128 wval1 = _mm_setzero_ps();
 						__m128 wval2 = _mm_setzero_ps();
 						__m128 wval3 = _mm_setzero_ps();
 						__m128 wval4 = _mm_setzero_ps();
 
-						for(k = 0;  k <= maxk; k ++, ofs++,gofs++,spw++)
+						for(k = 0;  k <maxk; k ++, ofs++,gofs++,spw++)
 						{
 							__m128i sref = _mm_loadu_si128((__m128i*)(sptrj+*ofs));
 							_mm_store_si128((__m128i*)buf,_mm_add_epi8(_mm_subs_epu8(sval,sref),_mm_subs_epu8(sref,sval)));
@@ -4376,16 +4307,14 @@ public:
 						const __m128i sb = _mm_load_si128((__m128i*)(sptrbj));
 						const __m128i sg = _mm_load_si128((__m128i*)(sptrgj));
 						const __m128i sr = _mm_load_si128((__m128i*)(sptrrj));
-
-
-						//重みと平滑化後の画素４ブロックづつ
+						
 						__m128 wval1 = _mm_setzero_ps();
 						__m128 wval2 = _mm_setzero_ps();
 						__m128 wval3 = _mm_setzero_ps();
 						__m128 wval4 = _mm_setzero_ps();
 
 						const __m128i zero = _mm_setzero_si128();
-						for(k = 0;  k <= maxk; k ++, ofs++,gofs++,spw++)
+						for(k = 0;  k < maxk; k ++, ofs++,gofs++,spw++)
 						{
 							__m128i bref = _mm_loadu_si128((__m128i*)(gptrbj+*gofs));
 							__m128i gref = _mm_loadu_si128((__m128i*)(gptrgj+*gofs));
@@ -4528,7 +4457,6 @@ public:
 						const __m128i gval = _mm_load_si128((__m128i*)(gptrgj));
 						const __m128i rval = _mm_load_si128((__m128i*)(gptrrj));
 
-						//重みと平滑化後の画素４ブロックづつ
 						__m128 wval1 = _mm_setzero_ps();
 						__m128 wval2 = _mm_setzero_ps();
 						__m128 wval3 = _mm_setzero_ps();
@@ -4536,7 +4464,7 @@ public:
 
 						const __m128 ones = _mm_set1_ps(1.f);
 						const __m128i zero = _mm_setzero_si128();
-						for(k = 0;  k <= maxk; k ++, ofs++,gofs++,spw++)
+						for(k = 0;  k < maxk; k ++, ofs++,gofs++,spw++)
 						{
 							//const __m128i bref = _mm_loadu_si128((__m128i*)(gptrbj+*gofs));
 							//const __m128i gref = _mm_loadu_si128((__m128i*)(gptrgj+*gofs));
@@ -4709,14 +4637,13 @@ public:
 						const __m128i rval0s = _mm_load_si128((__m128i*)(sptrrj));
 						const __m128i val0j = _mm_load_si128((__m128i*)(gptrj));
 
-						//重みと平滑化後の画素４ブロックづつ
 						__m128 wval1 = _mm_setzero_ps();
 						__m128 wval2 = _mm_setzero_ps();
 						__m128 wval3 = _mm_setzero_ps();
 						__m128 wval4 = _mm_setzero_ps();
 
 						const __m128i zero = _mm_setzero_si128();
-						for(k = 0;  k <= maxk; k ++, ofs++,gofs++,spw++)
+						for(k = 0;  k < maxk; k ++, ofs++,gofs++,spw++)
 						{
 							__m128i bref = _mm_loadu_si128((__m128i*)(gptrj+*gofs));
 							_mm_store_si128((__m128i*)gbuf,_mm_add_epi8(_mm_subs_epu8(val0j,bref),_mm_subs_epu8(bref,val0j)));
@@ -4842,7 +4769,6 @@ public:
 #if CV_SSE4_1
 				if( haveSSE4 )
 				{
-					//for(; j < 0; j+=16)//16画素づつ処理
 					for(; j < size.width; j+=16)//16 pixel unit
 					{
 						int* ofs = &space_ofs[0];
@@ -4856,13 +4782,12 @@ public:
 						const __m128i sval = _mm_load_si128((__m128i*)(sptrj));
 						const __m128i gval = _mm_load_si128((__m128i*)(gptrj));
 
-						//重みと平滑化後の画素４ブロックづつ
 						__m128 wval1 = _mm_setzero_ps();
 						__m128 wval2 = _mm_setzero_ps();
 						__m128 wval3 = _mm_setzero_ps();
 						__m128 wval4 = _mm_setzero_ps();
 
-						for(k = 0;  k <= maxk; k ++, ofs++,gofs++,spw++)
+						for(k = 0;  k < maxk; k ++, ofs++,gofs++,spw++)
 						{
 							__m128i sref = _mm_loadu_si128((__m128i*)(sptrj+*ofs));
 							_mm_store_si128((__m128i*)buf,_mm_add_epi8(_mm_subs_epu8(sval,sref),_mm_subs_epu8(sref,sval)));
@@ -4957,15 +4882,13 @@ public:
 						const __m128i sg = _mm_load_si128((__m128i*)(sptrgj));
 						const __m128i sr = _mm_load_si128((__m128i*)(sptrrj));
 
-
-						//重みと平滑化後の画素４ブロックづつ
 						__m128 wval1 = _mm_setzero_ps();
 						__m128 wval2 = _mm_setzero_ps();
 						__m128 wval3 = _mm_setzero_ps();
 						__m128 wval4 = _mm_setzero_ps();
 
 						const __m128i zero = _mm_setzero_si128();
-						for(k = 0;  k <= maxk; k ++, ofs++,gofs++,spw++)
+						for(k = 0;  k < maxk; k ++, ofs++,gofs++,spw++)
 						{
 							__m128i bref = _mm_loadu_si128((__m128i*)(gptrbj+*gofs));
 							__m128i gref = _mm_loadu_si128((__m128i*)(gptrgj+*gofs));
@@ -5108,7 +5031,6 @@ public:
 						const __m128i gval = _mm_load_si128((__m128i*)(gptrgj));
 						const __m128i rval = _mm_load_si128((__m128i*)(gptrrj));
 
-						//重みと平滑化後の画素４ブロックづつ
 						__m128 wval1 = _mm_setzero_ps();
 						__m128 wval2 = _mm_setzero_ps();
 						__m128 wval3 = _mm_setzero_ps();
@@ -5116,7 +5038,7 @@ public:
 
 						const __m128 ones = _mm_set1_ps(1.f);
 						const __m128i zero = _mm_setzero_si128();
-						for(k = 0;  k <= maxk; k ++, ofs++,gofs++,spw++)
+						for(k = 0;  k < maxk; k ++, ofs++,gofs++,spw++)
 						{
 							//const __m128i bref = _mm_loadu_si128((__m128i*)(gptrbj+*gofs));
 							//const __m128i gref = _mm_loadu_si128((__m128i*)(gptrgj+*gofs));
@@ -5293,14 +5215,13 @@ public:
 						const __m128i rval0s = _mm_load_si128((__m128i*)(sptrrj));
 						const __m128i val0j = _mm_load_si128((__m128i*)(gptrj));
 
-						//重みと平滑化後の画素４ブロックづつ
 						__m128 wval1 = _mm_setzero_ps();
 						__m128 wval2 = _mm_setzero_ps();
 						__m128 wval3 = _mm_setzero_ps();
 						__m128 wval4 = _mm_setzero_ps();
 
 						const __m128i zero = _mm_setzero_si128();
-						for(k = 0;  k <= maxk; k ++, ofs++,gofs++,spw++)
+						for(k = 0;  k < maxk; k ++, ofs++,gofs++,spw++)
 						{
 							__m128i bref = _mm_loadu_si128((__m128i*)(gptrj+*gofs));
 							_mm_store_si128((__m128i*)gbuf,_mm_add_epi8(_mm_subs_epu8(val0j,bref),_mm_subs_epu8(bref,val0j)));
@@ -5439,13 +5360,12 @@ public:
 						const __m128i sval = _mm_load_si128((__m128i*)(sptrj));
 						const __m128i gval = _mm_load_si128((__m128i*)(gptrj));
 
-						//重みと平滑化後の画素４ブロックづつ
 						__m128 wval1 = _mm_setzero_ps();
 						__m128 wval2 = _mm_setzero_ps();
 						__m128 wval3 = _mm_setzero_ps();
 						__m128 wval4 = _mm_setzero_ps();
 
-						for(k = 0;  k <= maxk; k ++, ofs++,gofs++,spw++)
+						for(k = 0;  k < maxk; k ++, ofs++,gofs++,spw++)
 						{
 							__m128i sref = _mm_loadu_si128((__m128i*)(sptrj+*ofs));
 							_mm_store_si128((__m128i*)buf,_mm_add_epi8(_mm_subs_epu8(sval,sref),_mm_subs_epu8(sref,sval)));
@@ -5541,14 +5461,13 @@ public:
 						const __m128i sr = _mm_load_si128((__m128i*)(sptrrj));
 
 
-						//重みと平滑化後の画素４ブロックづつ
 						__m128 wval1 = _mm_setzero_ps();
 						__m128 wval2 = _mm_setzero_ps();
 						__m128 wval3 = _mm_setzero_ps();
 						__m128 wval4 = _mm_setzero_ps();
 
 						const __m128i zero = _mm_setzero_si128();
-						for(k = 0;  k <= maxk; k ++, ofs++,gofs++,spw++)
+						for(k = 0;  k < maxk; k ++, ofs++,gofs++,spw++)
 						{
 							__m128i bref = _mm_loadu_si128((__m128i*)(gptrbj+*gofs));
 							__m128i gref = _mm_loadu_si128((__m128i*)(gptrgj+*gofs));
@@ -5669,8 +5588,7 @@ public:
 #if CV_SSE4_1
 				if( haveSSE4 )
 				{
-					for(; j < size.width; j+=16)//16画素づつ処理
-						//for(; j < 0; j+=16)//16画素づつ処理
+					for(; j < size.width; j+=16)
 					{
 						__m128i m1,m2,n1,n2;
 						__m128 _w;
@@ -5691,14 +5609,13 @@ public:
 						const __m128i gval = _mm_load_si128((__m128i*)(gptrgj));
 						const __m128i rval = _mm_load_si128((__m128i*)(gptrrj));
 
-						//重みと平滑化後の画素４ブロックづつ
 						__m128 wval1 = _mm_setzero_ps();
 						__m128 wval2 = _mm_setzero_ps();
 						__m128 wval3 = _mm_setzero_ps();
 						__m128 wval4 = _mm_setzero_ps();
 
 						const __m128i zero = _mm_setzero_si128();
-						for(k = 0;  k <= maxk; k ++, ofs++,gofs++,spw++)
+						for(k = 0;  k < maxk; k ++, ofs++,gofs++,spw++)
 						{
 							const __m128i bref = _mm_loadu_si128((__m128i*)(gptrbj+*gofs));
 							const __m128i gref = _mm_loadu_si128((__m128i*)(gptrgj+*gofs));
@@ -5812,14 +5729,13 @@ public:
 						const __m128i rval0s = _mm_load_si128((__m128i*)(sptrrj));
 						const __m128i val0j = _mm_load_si128((__m128i*)(gptrj));
 
-						//重みと平滑化後の画素４ブロックづつ
 						__m128 wval1 = _mm_setzero_ps();
 						__m128 wval2 = _mm_setzero_ps();
 						__m128 wval3 = _mm_setzero_ps();
 						__m128 wval4 = _mm_setzero_ps();
 
 						const __m128i zero = _mm_setzero_si128();
-						for(k = 0;  k <= maxk; k ++, ofs++,gofs++,spw++)
+						for(k = 0;  k < maxk; k ++, ofs++,gofs++,spw++)
 						{
 							__m128i bref = _mm_loadu_si128((__m128i*)(gptrj+*gofs));
 							_mm_store_si128((__m128i*)gbuf,_mm_add_epi8(_mm_subs_epu8(val0j,bref),_mm_subs_epu8(bref,val0j)));
@@ -6092,8 +6008,8 @@ void trilateralWeightMapXOR_8u( const Mat& src, const Mat& guide, Mat& dst, Size
 
 	for( i = 0; i < 256*cn; i++ )
 	{
-		int v = max(i- sigma_color,0.0);
-		color_weight[i] = max (1.0-1.0/(sigma_color*sigma_color)*v*v,0.0);//1.0- (float)std::exp(i*i*gauss_color_coeff);
+		int v = (int)max(i- sigma_color,0.0);
+		color_weight[i] = (float)max (1.0-1.0/(sigma_color*sigma_color)*v*v,0.0);//1.0- (float)std::exp(i*i*gauss_color_coeff);
 	}
 	for( i = 0; i < 256*cng; i++ )
 	{
@@ -6433,3 +6349,89 @@ void trilateralWeightMapSGB(const Mat& src, const Mat& guide, Mat& dst, Size ker
 	}
 }
 */
+
+void dualBilateralFilterSP_32f( const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_guide_color,double sigma_space, int borderType )
+{
+	dualBilateralFilter_32f(src, guide, dst, Size(kernelSize.width, 1), sigma_color, sigma_guide_color, sigma_space, borderType, true);
+	dualBilateralFilter_32f(dst, guide, dst, Size(1,kernelSize.height), sigma_color, sigma_guide_color, sigma_space, borderType, true);
+}
+
+void dualBilateralFilterSP_8u( const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_guide_color,double sigma_space, int borderType )
+{
+	dualBilateralFilter_8u(src, guide, dst, Size(kernelSize.width, 1), sigma_color, sigma_guide_color, sigma_space, borderType, true );
+	dualBilateralFilter_8u(dst, guide, dst, Size(1,kernelSize.height), sigma_color, sigma_guide_color, sigma_space, borderType, true );
+}
+
+void dualBilateralFilter(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, 
+						 double sigma_color, double sigma_guide_color, double sigma_space, int method, int borderType)
+{
+	if(dst.empty())dst.create(src.size(),src.type());
+
+	if(method==FILTER_CIRCLE || method==FILTER_DEFAULT)
+	{
+		if(src.depth()==CV_8U)
+		{
+			 dualBilateralFilter_8u(src,guide,dst,kernelSize, sigma_color, sigma_guide_color, sigma_space, borderType, false);
+		}
+		else if(src.depth()==CV_32F)
+		{
+			dualBilateralFilter_32f(src,guide,dst,kernelSize, sigma_color, sigma_guide_color, sigma_space, borderType, false);
+		}
+	}
+	else if(method==FILTER_RECTANGLE)
+	{
+		if(src.depth()==CV_8U)
+		{
+			dualBilateralFilter_8u(src,guide,dst,kernelSize,sigma_color,sigma_guide_color, sigma_space, borderType, true);
+		}
+		else if(src.depth()==CV_32F)
+		{
+			dualBilateralFilter_32f(src,guide,dst,kernelSize,sigma_color,sigma_guide_color, sigma_space, borderType, true);
+		}
+	}
+	else if(method==FILTER_SEPARABLE)
+	{
+		if(src.depth()==CV_8U)
+		{
+			dualBilateralFilterSP_8u(src,guide,dst,kernelSize,sigma_color,sigma_guide_color, sigma_space, borderType);
+		}
+		else if(src.depth()==CV_32F)
+		{
+			dualBilateralFilterSP_32f(src,guide,dst,kernelSize,sigma_color,sigma_guide_color, sigma_space, borderType);
+		}
+	}
+	else if(method==FILTER_SLOWEST)
+	{
+		dualBilateralFilterBase(src, guide, dst, kernelSize.width, sigma_color, sigma_guide_color, sigma_space, FILTER_CIRCLE, borderType);
+	}
+}
+
+void dualBilateralFilter(const Mat& src, const Mat& guide, Mat& dst, int d, 
+						 double sigma_color, double sigma_guide_color, double sigma_space, int method, int borderType)
+{
+	dualBilateralFilter(src, guide, dst, Size(d,d), sigma_color, sigma_guide_color, sigma_space, method,  borderType);
+}
+
+void separableDualBilateralFilter(const Mat& src, const Mat& guide, Mat& dst, Size ksize, double sigma_color, double sigma_guide_color, double sigma_space, double alpha1, double alpha2, int method, int borderType)
+{
+	if(method==FILTER_CIRCLE || method==FILTER_DEFAULT)
+	{
+		dualBilateralFilter(src, guide, dst, Size(ksize.width,1), sigma_color, sigma_guide_color, sigma_space, method, borderType);
+		jointDualBilateralFilter(dst, src, guide, dst, Size(1,ksize.height),  sigma_color*alpha1, sigma_guide_color*alpha2, sigma_space, method, borderType);
+	}
+	else if(method==FILTER_SLOWEST)
+	{
+		dualBilateralFilter(src, guide, dst, Size(ksize.width,1), sigma_color, sigma_guide_color, sigma_space, method, borderType);
+		jointDualBilateralFilter(dst, src, guide, dst, Size(1,ksize.height),  sigma_color*alpha1, sigma_guide_color*alpha2, sigma_space, method, borderType);
+	}
+	else if(method==FILTER_SEPARABLE)
+	{
+		dualBilateralFilter(src, guide, dst, Size(ksize.width,1), sigma_color, sigma_guide_color, sigma_space, FILTER_CIRCLE, borderType);
+		jointDualBilateralFilter(dst, src, guide, dst, Size(1,ksize.height),  sigma_color*alpha1, sigma_guide_color*alpha2, sigma_space, FILTER_CIRCLE, borderType);
+		Mat dst2;
+		dualBilateralFilter(src, guide, dst2, Size(1,ksize.height), sigma_color, sigma_guide_color, sigma_space, FILTER_CIRCLE, borderType);
+		jointDualBilateralFilter(dst2, src, guide, dst2, Size(ksize.width,1),  sigma_color*alpha1, sigma_guide_color*alpha2, sigma_space, FILTER_CIRCLE, borderType);
+		
+		alphaBlend(dst,dst2,0.5,dst);
+	}
+}

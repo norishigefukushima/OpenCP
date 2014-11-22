@@ -159,8 +159,10 @@
     <ClCompile Include="domainTransformFilter.cpp" />
     <ClCompile Include="domainTransformFilter\domainTransformFilterTest.cpp" />
     <ClCompile Include="draw.cpp" />
-    <ClCompile Include="dualLateralFilter.cpp" />
+    <ClCompile Include="dualBilateralFilter.cpp" />
+    <ClCompile Include="dualBilateralFilter\dualBilateralFilterTest.cpp" />
     <ClCompile Include="ffttest\fftTest.cpp" />
+    <ClCompile Include="filterCore.cpp" />
     <ClCompile Include="GaussianFilter.cpp" />
     <ClCompile Include="GaussianFilterDeriche.cpp" />
     <ClCompile Include="GaussianFilterSpectralRecursive.cpp" />
@@ -171,6 +173,7 @@
     <ClCompile Include="iterativeBackProjection.cpp" />
     <ClCompile Include="iterativeBackProjection\iterativeBackProjectionTest.cpp" />
     <ClCompile Include="jointBilateralFilter.cpp" />
+    <ClCompile Include="jointDualBilateralFilter.cpp" />
     <ClCompile Include="jointNearestFilter.cpp" />
     <ClCompile Include="jointNearestFilter\jointNearestFilterTest.cpp" />
     <ClCompile Include="jointNonLocalMeans.cpp" />
@@ -199,6 +202,7 @@
     <ClCompile Include="weightedModeFilter.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="filterCore.h" />
     <ClInclude Include="fmath.hpp" />
     <ClInclude Include="opencp.hpp" />
     <ClInclude Include="test.hpp" />

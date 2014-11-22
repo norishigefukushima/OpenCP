@@ -1,4 +1,5 @@
 #include "opencp.hpp"
+#include "filterCore.h"
 #include <opencv2/core/internal.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2937,13 +2938,12 @@ void weightedJointBilateralFilter_8u( const Mat& src, Mat& weight, const Mat& gu
 	Mat(dest(Rect(0,0,dst.cols,dst.rows))).copyTo(dst);
 }
 
-
 void jointBilateralFilter_32f( const Mat& src, const Mat& guide, Mat& dst, Size kernelSize , double sigma_color, double sigma_space, int borderType , bool isRectangle)
 {
 	if(kernelSize.width==0 || kernelSize.height==0){ src.copyTo(dst);return;}
 	int cn = src.channels();
 	int cng = guide.channels();
-	int i, j, maxk;
+
 	Size size = src.size();
 
 	CV_Assert( (src.type() == CV_32FC1   || src.type() == CV_32FC3) &&
@@ -3011,42 +3011,14 @@ void jointBilateralFilter_32f( const Mat& src, const Mat& guide, Mat& dst, Size 
 	int* space_guide_ofs = &_space_guide_ofs[0];
 
 	// initialize color-related bilateral filter coefficients
-	for( i = 0; i < color_range*cng; i++ )
+	for(int i = 0; i < color_range*cng; i++ )
+	{
 		color_weight[i] = (float)std::exp(i*i*gauss_color_coeff);
+	}
 
 	// initialize space-related bilateral filter coefficients
-	if(isRectangle)
-	{
-		for( i = -radiusV, maxk = 0; i <= radiusV; i++ )
-		{
-			j = -radiusH;
-
-			for( ;j <= radiusH; j++ )
-			{
-				double r = std::sqrt((double)i*i + (double)j*j);
-				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-				space_ofs[maxk] = (int)(i*temp.cols*cn + j);
-				space_guide_ofs[maxk++] = (int)(i*tempg.cols*cng + j);
-			}
-		}
-	}
-	else
-	{
-		for( i = -radiusV, maxk = 0; i <= radiusV; i++ )
-		{
-			j = -radiusH;
-
-			for( ;j <= radiusH; j++ )
-			{
-				double r = std::sqrt((double)i*i + (double)j*j);
-				if( r > max(radiusV,radiusH) )
-					continue;
-				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-				space_ofs[maxk] = (int)(i*temp.cols*cn + j);
-				space_guide_ofs[maxk++] = (int)(i*tempg.cols*cng + j);
-			}
-		}
-	}
+	int maxk=0;
+	setSpaceKernel(space_weight, space_ofs, space_guide_ofs, maxk, radiusH, radiusV, gauss_space_coeff, temp.cols*cn, tempg.cols*cng, isRectangle);
 
 	Mat dest = Mat::zeros(Size(src.cols+dpad, src.rows),dst.type());
 	JointBilateralFilter_32f_InvokerSSE4 body(dest, temp, tempg,radiusH,radiusV, maxk, space_ofs, space_guide_ofs,space_weight, color_weight);
@@ -3059,7 +3031,6 @@ void jointBilateralFilter_8u( const Mat& src, const Mat& guide, Mat& dst, Size k
 	if(kernelSize.width==0 || kernelSize.height==0){ src.copyTo(dst);return;}
 	int cn = src.channels();
 	int cng = guide.channels();
-	int i, j, maxk;
 	Size size = src.size();
 
 	CV_Assert( (src.type() == CV_8UC1   || src.type() == CV_8UC3) &&
@@ -3113,9 +3084,6 @@ void jointBilateralFilter_8u( const Mat& src, const Mat& guide, Mat& dst, Size k
 		copyMakeBorder( guide, tempg, radiusV, radiusV, radiusH+lpad, radiusH+rpad, borderType );
 	}
 
-	/*double minv,maxv;
-	minMaxLoc(guide,&minv,&maxv);
-	const int color_range = cvRound(maxv-minv);*/
 	const int color_range = 256;
 
 	vector<float> _color_weight(cng*color_range);
@@ -3128,45 +3096,13 @@ void jointBilateralFilter_8u( const Mat& src, const Mat& guide, Mat& dst, Size k
 	int* space_guide_ofs = &_space_guide_ofs[0];
 
 	// initialize color-related bilateral filter coefficients
-
-	for( i = 0; i < color_range*cng; i++ )
+	for(int i = 0; i < color_range*cng; i++ )
+	{
 		color_weight[i] = (float)std::exp(i*i*gauss_color_coeff);
-
-	if(isRectangle)
-	{
-		for( i = -radiusV, maxk = 0; i <= radiusV; i++ )
-		{
-			j = -radiusH;
-
-			for( ;j <= radiusH; j++ )
-			{
-				double r = std::sqrt((double)i*i + (double)j*j);
-				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-				//space_ofs[maxk++] = (int)(i*temp.step + j*cn);
-				space_ofs[maxk] = (int)(i*temp.cols*cn + j);
-				space_guide_ofs[maxk++] = (int)(i*tempg.cols*cng + j);
-			}
-		}
 	}
-	else
-	{
-		// initialize space-related bilateral filter coefficients
-		for( i = -radiusV, maxk = 0; i <= radiusV; i++ )
-		{
-			j = -radiusH;
 
-			for( ;j <= radiusH; j++ )
-			{
-				double r = std::sqrt((double)i*i + (double)j*j);
-				if( r > max(radiusV,radiusH) )
-					continue;
-				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-				//space_ofs[maxk++] = (int)(i*temp.step + j*cn);
-				space_ofs[maxk] = (int)(i*temp.cols*cn + j);
-				space_guide_ofs[maxk++] = (int)(i*tempg.cols*cng + j);
-			}
-		}
-	}
+	int maxk=0;
+	setSpaceKernel(space_weight, space_ofs, space_guide_ofs, maxk, radiusH, radiusV, gauss_space_coeff, temp.cols*cn, tempg.cols*cng, isRectangle);
 
 	Mat dest = Mat::zeros(Size(src.cols+dpad, src.rows),dst.type());
 	JointBilateralFilter_8u_InvokerSSE4 body(dest, temp, tempg,radiusH,radiusV, maxk, space_ofs, space_guide_ofs,space_weight, color_weight);
@@ -3307,4 +3243,92 @@ void weightedJointBilateralFilter(const Mat& src, Mat& weightMap,const Mat& guid
 			weightedJointBilateralFilterSP_32f(src,weightMap,guide,dst,kernelSize,sigma_color,sigma_space,borderType);
 		}
 	}
+}
+
+
+void jointBilateralFilter_direction_8u( const Mat& src, const Mat& guide, Mat& dst, Size kernelSize , double sigma_color, double sigma_space, int borderType,  int direction, bool isRectangle)
+{
+	if(kernelSize.width==0 || kernelSize.height==0){ src.copyTo(dst);return;}
+	int cn = src.channels();
+	int cng = guide.channels();
+	Size size = src.size();
+
+	CV_Assert( (src.type() == CV_8UC1   || src.type() == CV_8UC3) &&
+		(guide.type() == CV_8UC1 || guide.type() == CV_8UC3));
+
+	if( sigma_color <= 0 )
+		sigma_color = 1;
+	if( sigma_space <= 0 )
+		sigma_space = 1;
+
+	double gauss_color_coeff = -0.5/(sigma_color*sigma_color);
+	double gauss_space_coeff = -0.5/(sigma_space*sigma_space);
+
+	int radiusH = kernelSize.width>>1;
+	int radiusV = kernelSize.height>>1;
+
+	Mat temp,tempg;
+
+	int dpad = (16- src.cols%16)%16;
+	int spad =  dpad + (16-(2*radiusH)%16)%16;
+	if(spad<16) spad +=16;
+	int lpad = 16*(radiusH/16+1)-radiusH;
+	int rpad = spad-lpad;
+	if(cn==1 && cng==1)
+	{
+		copyMakeBorder( src, temp, radiusV, radiusV, radiusH+lpad, radiusH+rpad, borderType );
+		copyMakeBorder( guide, tempg, radiusV, radiusV, radiusH+lpad, radiusH+rpad, borderType );
+	}
+	else if(cn==1 && cng==3)
+	{
+		copyMakeBorder( src, temp, radiusV, radiusV, radiusH+lpad, radiusH+rpad, borderType );
+		Mat temp2;
+		copyMakeBorder( guide, temp2, radiusV, radiusV, radiusH+lpad, radiusH+rpad, borderType );
+		splitBGRLineInterleave(temp2,tempg);
+	}
+	else if(cn==3 && cng==3)
+	{
+		Mat temp2;
+		copyMakeBorder( src, temp2, radiusV, radiusV, radiusH+lpad, radiusH+rpad, borderType );
+		splitBGRLineInterleave(temp2,temp);
+
+		copyMakeBorder( guide, temp2, radiusV, radiusV, radiusH+lpad, radiusH+rpad, borderType );
+		splitBGRLineInterleave(temp2,tempg);
+	}
+	else if(cn==3 && cng==1)
+	{
+		Mat temp2;
+		copyMakeBorder( src, temp2, radiusV, radiusV, radiusH+lpad, radiusH+rpad, borderType );
+		splitBGRLineInterleave(temp2,temp);
+
+		copyMakeBorder( guide, tempg, radiusV, radiusV, radiusH+lpad, radiusH+rpad, borderType );
+	}
+
+	const int color_range = 256;
+
+	vector<float> _color_weight(cng*color_range);
+	vector<float> _space_weight(kernelSize.area()+1);
+	vector<int> _space_ofs(kernelSize.area()+1);
+	vector<int> _space_guide_ofs(kernelSize.area()+1);
+	float* color_weight = &_color_weight[0];
+	float* space_weight = &_space_weight[0];
+	int* space_ofs = &_space_ofs[0];
+	int* space_guide_ofs = &_space_guide_ofs[0];
+
+	// initialize color-related bilateral filter coefficients
+	for(int i = 0; i < color_range*cng; i++ )
+	{
+		color_weight[i] = (float)std::exp(i*i*gauss_color_coeff);
+	}
+
+	int maxk=0;
+	if(direction>0)
+		set1DSpaceKernel45( space_weight, space_ofs, space_guide_ofs, maxk, radiusH, radiusV, gauss_color_coeff, temp.cols*cn, tempg.cols*cng, isRectangle);
+	else
+		set1DSpaceKernel135( space_weight, space_ofs, space_guide_ofs, maxk, radiusH, radiusV, gauss_color_coeff, temp.cols*cn, tempg.cols*cng, isRectangle);
+
+	Mat dest = Mat::zeros(Size(src.cols+dpad, src.rows),dst.type());
+	JointBilateralFilter_8u_InvokerSSE4 body(dest, temp, tempg,radiusH,radiusV, maxk, space_ofs, space_guide_ofs,space_weight, color_weight);
+	parallel_for_(Range(0, size.height), body);
+	Mat(dest(Rect(0,0,dst.cols,dst.rows))).copyTo(dst);
 }

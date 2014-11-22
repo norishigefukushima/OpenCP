@@ -3,10 +3,13 @@
 void guiSLICTest(Mat& src);
 
 void guiBilateralFilterTest(Mat& src);
-void guiBilateralFilterSPTest(Mat& src);
+void guiSeparableBilateralFilterTest(Mat& src);
+
 void timeBirateralTest(Mat& src);
 
-void guiGauusianFilterTest(Mat& src_); 
+void guiDualBilateralFilterTest(Mat& src1, Mat& src2);
+
+void guiGausianFilterTest(Mat& src_); 
 
 void guiRecursiveBilateralFilterTest(Mat& src);
 void guiRealtimeO1BilateralFilterTest(Mat& src);
