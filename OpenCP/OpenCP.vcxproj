@@ -169,6 +169,8 @@
     <ClCompile Include="GaussianFilter\GaussianFilterTest.cpp" />
     <ClCompile Include="guidedFilter.cpp" />
     <ClCompile Include="guidedFilter\guidedFilterTest.cpp" />
+    <ClCompile Include="hazeRemove.cpp" />
+    <ClCompile Include="hazeRemove\hazeRemoveTest.cpp" />
     <ClCompile Include="imagediff.cpp" />
     <ClCompile Include="iterativeBackProjection.cpp" />
     <ClCompile Include="iterativeBackProjection\iterativeBackProjectionTest.cpp" />
@@ -177,6 +179,7 @@
     <ClCompile Include="jointNearestFilter.cpp" />
     <ClCompile Include="jointNearestFilter\jointNearestFilterTest.cpp" />
     <ClCompile Include="jointNonLocalMeans.cpp" />
+    <ClCompile Include="L0Smoothing.cpp" />
     <ClCompile Include="localLaplacianFilter.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="matInfo.cpp" />

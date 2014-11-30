@@ -43,4 +43,4 @@ void guiJointNearestFilterTest(Mat& src);
 
 void fftTest(Mat& src);
 
-
+void guiHazeRemoveTest(Mat& haze);

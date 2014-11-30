@@ -3,7 +3,8 @@
 
 int main(int argc, char** argv)
 {
-	//Mat fuji = imread("fuji.png"); guiDenoiseTest(fuji);
+	//Mat haze = imread("img/haze/haze2.jpg"); guiHazeRemoveTest(haze);
+	//Mat fuji = imread("img/fuji.png"); guiDenoiseTest(fuji);
 	//Mat ff3 = imread("img/pixelart/ff3.png");
 	
 	//Mat src = imread("img/lenna.png");
@@ -34,7 +35,7 @@ int main(int argc, char** argv)
 	//resize(src,mega,Size(640,480));
 
 	//guiDualBilateralFilterTest(src,disp);
-	//guiGausianFilterTest(src);
+	guiGausianFilterTest(src);
 	//guiRealtimeO1BilateralFilterTest(src);
 
 	//guiAlphaBlend(ff3,ff3);

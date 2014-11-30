@@ -289,6 +289,7 @@ void guidedFilter(const Mat& src, const Mat& guidance, Mat& dest, const int radi
 void guidedFilterMultiCore(const Mat& src, Mat& dest, int r,float eps, int numcore=0);
 void guidedFilterMultiCore(const Mat& src, const Mat& guide, Mat& dest, int r,float eps,int numcore=0);
 
+void L0Smoothing(cv::Mat &im8uc3, cv::Mat& dest, float lambda = 0.02f, float kappa = 2.f);
 
 class RealtimeO1BilateralFilter
 {
@@ -614,4 +615,28 @@ public:
 	DepthMapSubpixelRefinment();
 	void operator()(const Mat& leftim, const Mat& rightim, const Mat& leftdisp, const Mat& rightdisp, int disp_amp, Mat& leftdest, Mat& rightdest);
 	void naive(const Mat& leftim, const Mat& rightim, const Mat& leftdisp, const Mat& rightdisp, int disp_amp, Mat& leftdest, Mat& rightdest);
+};
+
+
+class HazeRemove
+{
+public:
+	Size size;
+	Mat dark;
+	vector<Mat> minvalue;
+	Mat tmap;
+	Scalar A;
+
+	void darkChannel(Mat& src,int r);
+	void getAtmosphericLight(Mat& srcImage, double topPercent=0.1);
+	void getTransmissionMap(float omega= 0.95f);
+	void removeHaze(Mat& src, Mat& trans, Scalar v, Mat& dest, float clip = 0.3f);
+	HazeRemove();
+	~HazeRemove();
+
+	void getAtmosphericLightImage(Mat& dest);
+	void showTransmissionMap(Mat& dest, bool isPseudoColor=false);
+	void showDarkChannel(Mat& dest, bool isPseudoColor=false);
+	void operator() (Mat& src, Mat& dest, int r_dark, double toprate,int r_joint, double e_joint);
+	void gui(Mat& src, string wname="hazeRemove");
 };

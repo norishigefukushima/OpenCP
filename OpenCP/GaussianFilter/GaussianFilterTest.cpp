@@ -12,8 +12,12 @@ void GaussianBlur2(Mat& src, Mat& dest, float sigma, int clip = 3, int depth=CV_
 	srcf.convertTo(dest,src.type(),1.0,0.5);
 }
 
-void guiGausianFilterTest(Mat& src_)
+void guiGausianFilterTest(Mat& src__)
 {
+	int w = (4-src__.cols%4)%4;
+	int h = (4-src__.rows%4)%4;
+	Mat src_; copyMakeBorder(src__,src_,0,h,0,w,BORDER_REPLICATE);
+
 	Mat src;
 	if(src_.channels()==3)cvtColor(src_,src,COLOR_BGR2GRAY);
 	else src = src_;
@@ -29,7 +33,7 @@ void guiGausianFilterTest(Mat& src_)
 
 	//int r = 10; createTrackbar("r",wname,&r,200);
 	int space = 50; createTrackbar("space",wname,&space,2000);
-	int step = 2; createTrackbar("step",wname,&step,100);
+	int step = 4; createTrackbar("step",wname,&step,100);
 
 	int scale = 1; createTrackbar("scale",wname,&scale,50);
 	int key = 0;
