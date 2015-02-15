@@ -203,6 +203,7 @@
     <ClCompile Include="viewsynthesis.cpp" />
     <ClCompile Include="viewSynthesis\viewSynthesisTest.cpp" />
     <ClCompile Include="weightedModeFilter.cpp" />
+    <ClCompile Include="zoom.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="filterCore.h" />

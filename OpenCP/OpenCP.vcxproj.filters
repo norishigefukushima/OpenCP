@@ -195,9 +195,6 @@
     <ClCompile Include="dualBilateralFilter.cpp">
       <Filter>ソース ファイル\filter</Filter>
     </ClCompile>
-    <ClCompile Include="jointDualBilateralFilter.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="dualBilateralFilter\dualBilateralFilterTest.cpp">
       <Filter>ソース ファイル\test</Filter>
     </ClCompile>
@@ -212,6 +209,12 @@
     </ClCompile>
     <ClCompile Include="L0Smoothing.cpp">
       <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="jointDualBilateralFilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="zoom.cpp">
+      <Filter>ソース ファイル\util</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

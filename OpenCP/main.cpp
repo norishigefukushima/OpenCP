@@ -1,8 +1,51 @@
 #include "opencp.hpp"
 #include "test.hpp"
 
+void guiGeightedJointBilateralFilterTest()
+{
+	Mat image = imread("imageKinect.png");
+	Mat depth = imread("depthKinect.png",0);
+	guiAlphaBlend(image,depth);
+	Mat depthout;
+
+	Mat mask;
+	compare(depthout,0,mask,cv::CMP_NE);
+
+	Mat weight = Mat::ones(image.size(),CV_32F)*0.0001;
+	weight.setTo(1,mask);
+	
+	Mat out;
+
+	Size ks = Size(15,15);
+	weightedJointBilateralFilter(depthout, weight, image, out, ks, 20, 50, FILTER_DEFAULT, BORDER_REPLICATE);
+	medianBlur(out,out, 3);
+	
+	weightedModeFilter(out, image, out, 5, 2, 30, 20, 2, 0);
+
+	//imshow("d",depthout);waitKey();
+	guiAlphaBlend(image,depthout);
+	guiAlphaBlend(depth,depthout);
+	guiAlphaBlend(out,depthout);
+	guiAlphaBlend(out,depth);
+}
+
+void zoom(int argc, char** argv)
+{
+	if(argc>2)
+	{
+		Mat dest;
+		Mat src = imread(argv[1], IMREAD_COLOR);
+		guiZoom(src, dest);
+		imwrite(argv[2], dest);
+	}
+	
+}
+
 int main(int argc, char** argv)
 {
+	zoom(argc, argv);return 0;
+
+	//guiGeightedJointBilateralFilterTest();
 	//Mat haze = imread("img/haze/haze2.jpg"); guiHazeRemoveTest(haze);
 	//Mat fuji = imread("img/fuji.png"); guiDenoiseTest(fuji);
 	//Mat ff3 = imread("img/pixelart/ff3.png");
@@ -25,6 +68,7 @@ int main(int argc, char** argv)
 //	Mat src;
 	Mat dest;
 
+	
 	//Mat src = imread("img/kodim22.png");
 	//Mat src = imread("img/teddy_view1.png");
 	

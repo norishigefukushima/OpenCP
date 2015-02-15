@@ -67,6 +67,7 @@ void patchBlendImage(Mat& src1, Mat& src2, Mat& dest, Scalar linecolor=CV_RGB(0,
 void alphaBlend(const Mat& src1, const Mat& src2, const Mat& alpha, Mat& dest);
 void alphaBlend(const Mat& src1, const Mat& src2, double alpha, Mat& dest);
 void guiAlphaBlend(const Mat& src1, const Mat& src2);
+void guiZoom(InputArray src, OutputArray dest = noArray());
 
 void eraseBoundary(const Mat& src, Mat& dest, int step, int border=BORDER_REPLICATE);
 
@@ -83,6 +84,8 @@ void imshowScale(string name, Mat& dest, double alpha=1.0, double beta=0.0);
 void showMatInfo(InputArray src_, string name="Mat");
 double YPSNR(const Mat& src1, const Mat& src2);
 double calcBadPixel(const Mat& src, const Mat& ref, int threshold);
+double SSIM(Mat& src, Mat& ref, double sigma = 1.5);
+double calcTV(Mat& src);
 
 void guiCompareDiff(const Mat& before, const Mat& after, const Mat& ref);
 void guiAbsDiffCompareNE(const Mat& src1, const Mat& src2);
@@ -270,6 +273,7 @@ enum SeparableMethod
 	DUAL_KERNEL_CROSS,
 	DUAL_KERNEL_CROSSCROSS,
 };
+
 void separableBilateralFilter(const Mat& src, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, double alpha, int method=DUAL_KERNEL_HV, int borderType=cv::BORDER_REPLICATE);
 void dualBilateralFilter(const Mat& src, const Mat& guide, Mat& dst, int d,           double sigma_color, double sigma_guide_color, double sigma_space, int method=FILTER_DEFAULT, int borderType=cv::BORDER_REPLICATE);
 void dualBilateralFilter(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_guide_color, double sigma_space, int method=FILTER_DEFAULT, int borderType=cv::BORDER_REPLICATE);
@@ -281,7 +285,7 @@ void separableDualBilateralFilter(const Mat& src, const Mat& guide, Mat& dst, Si
 void bilateralFilterL2_8u( const Mat& src, Mat& dst, int d, double sigma_color, double sigma_space,int borderType=cv::BORDER_REPLICATE);
 
 void weightedBilateralFilter(const Mat& src, Mat& weight, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method, int borderType=cv::BORDER_REPLICATE);
-void weightedJointBilateralFilter(const Mat& src, Mat& weightMap,const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method, int borderType);
+void weightedJointBilateralFilter(const Mat& src, Mat& weightMap,const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int method, int borderType=cv::BORDER_REPLICATE);
 
 void guidedFilter(const Mat& src,  Mat& dest, const int radius,const float eps);
 void guidedFilter(const Mat& src, const Mat& guidance, Mat& dest, const int radius,const float eps);
