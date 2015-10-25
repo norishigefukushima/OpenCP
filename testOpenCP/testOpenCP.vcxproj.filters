@@ -1,0 +1,72 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="ソース ファイル">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="ヘッダー ファイル">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="リソース ファイル">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="ソース ファイル\test">
+      <UniqueIdentifier>{f6a35e8f-68c4-4fbf-b0f9-348bc7123f34}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="realtimeO1BilateralFilter\realtimeO1BilateralFilterTest.cpp">
+      <Filter>ソース ファイル\test</Filter>
+    </ClCompile>
+    <ClCompile Include="GaussianFilter\GaussianFilterTest.cpp">
+      <Filter>ソース ファイル\test</Filter>
+    </ClCompile>
+    <ClCompile Include="plotTest\guiPlotTest.cpp">
+      <Filter>ソース ファイル\test</Filter>
+    </ClCompile>
+    <ClCompile Include="shockFilterTest\coherenceEnhancingShockFilterTest.cpp">
+      <Filter>ソース ファイル\test</Filter>
+    </ClCompile>
+    <ClCompile Include="qualityMetricsTest\qualityMetricsTest.cpp">
+      <Filter>ソース ファイル\test</Filter>
+    </ClCompile>
+    <ClCompile Include="analysisShow.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="histogram\guiHistogramTest.cpp">
+      <Filter>ソース ファイル\test</Filter>
+    </ClCompile>
+    <ClCompile Include="colorCorrectionTest.cpp">
+      <Filter>ソース ファイル\test</Filter>
+    </ClCompile>
+    <ClCompile Include="alphaBlendTest.cpp">
+      <Filter>ソース ファイル\test</Filter>
+    </ClCompile>
+    <ClCompile Include="guiStereoTest.cpp">
+      <Filter>ソース ファイル\test</Filter>
+    </ClCompile>
+    <ClCompile Include="guiCrossBasedLocalFilterTest.cpp">
+      <Filter>ソース ファイル\test</Filter>
+    </ClCompile>
+    <ClCompile Include="guiEPFWeightMapTest.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="guiWeightedHistogramFilterTest.cpp">
+      <Filter>ソース ファイル\test</Filter>
+    </ClCompile>
+    <ClCompile Include="bilateralfilter\bilateralFilterTest.cpp">
+      <Filter>ソース ファイル\test</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="test.hpp">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

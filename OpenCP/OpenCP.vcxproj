@@ -1,0 +1,281 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{40F6023E-3DFD-4281-A0D7-C2C180F50658}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>OpenCP</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)\lib\</OutDir>
+    <TargetName>$(ProjectName)d</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)\lib\</OutDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../include</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>Full</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>CP_API;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <OpenMPSupport>true</OpenMPSupport>
+      <DisableSpecificWarnings>4251;4309; 4819;4324</DisableSpecificWarnings>
+      <AdditionalOptions>/MP %(AdditionalOptions)</AdditionalOptions>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <EnableFiberSafeOptimizations>
+      </EnableFiberSafeOptimizations>
+      <AdditionalIncludeDirectories>../include</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <WholeProgramOptimization>
+      </WholeProgramOptimization>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>
+      </EnableCOMDATFolding>
+      <OptimizeReferences>
+      </OptimizeReferences>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <LinkTimeCodeGeneration />
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="adaptiveManifold.cpp" />
+    <ClCompile Include="alphaBlend.cpp" />
+    <ClCompile Include="arithmetic.cpp" />
+    <ClCompile Include="bilateralFilter.cpp" />
+    <ClCompile Include="binalyWeightedRangeFilter.cpp" />
+    <ClCompile Include="bitconvert.cpp" />
+    <ClCompile Include="boudaryReconstructionFilter.cpp" />
+    <ClCompile Include="Calibrator.cpp" />
+    <ClCompile Include="color.cpp" />
+    <ClCompile Include="consoleImage.cpp" />
+    <ClCompile Include="costVolumeFilter.cpp" />
+    <ClCompile Include="crossBasedLocalFilter.cpp" />
+    <ClCompile Include="crossBasedLocalMultipointFilter.cpp" />
+    <ClCompile Include="csv.cpp" />
+    <ClCompile Include="dct_simd.cpp" />
+    <ClCompile Include="depth2disparity.cpp" />
+    <ClCompile Include="depthEval.cpp" />
+    <ClCompile Include="depthfilter.cpp" />
+    <ClCompile Include="detailEnhancement.cpp" />
+    <ClCompile Include="diffPixel.cpp" />
+    <ClCompile Include="domainTransformFilter.cpp" />
+    <ClCompile Include="draw.cpp" />
+    <ClCompile Include="dualBilateralFilter.cpp" />
+    <ClCompile Include="dxtDenoise.cpp" />
+    <ClCompile Include="fftinfo.cpp" />
+    <ClCompile Include="filterCore.cpp" />
+    <ClCompile Include="GaussianBlurIPOL.cpp" />
+    <ClCompile Include="GaussianFilter.cpp" />
+    <ClCompile Include="GaussianFilterSpectralRecursive.cpp" />
+    <ClCompile Include="guiContrast.cpp" />
+    <ClCompile Include="guidedFilter.cpp" />
+    <ClCompile Include="hadamard.cpp" />
+    <ClCompile Include="hazeRemove.cpp" />
+    <ClCompile Include="histogram.cpp" />
+    <ClCompile Include="imagediff.cpp" />
+    <ClCompile Include="imqc.cpp" />
+    <ClCompile Include="iterativeBackProjection.cpp" />
+    <ClCompile Include="jointBilateralFilter.cpp" />
+    <ClCompile Include="jointBilateralUpsample.cpp" />
+    <ClCompile Include="jointDualBilateralFilter.cpp" />
+    <ClCompile Include="jointNearestFilter.cpp" />
+    <ClCompile Include="jointNonLocalMeans.cpp" />
+    <ClCompile Include="L0Smoothing.cpp" />
+    <ClCompile Include="libGaussian\filter_util.cpp" />
+    <ClCompile Include="libGaussian\gaussian_conv_am.cpp" />
+    <ClCompile Include="libGaussian\gaussian_conv_box.cpp" />
+    <ClCompile Include="libGaussian\gaussian_conv_dct.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="libGaussian\gaussian_conv_deriche.cpp" />
+    <ClCompile Include="libGaussian\gaussian_conv_ebox.cpp" />
+    <ClCompile Include="libGaussian\gaussian_conv_fir.cpp" />
+    <ClCompile Include="libGaussian\gaussian_conv_sii.cpp" />
+    <ClCompile Include="libGaussian\gaussian_conv_vyv.cpp" />
+    <ClCompile Include="libGaussian\gaussian_short_conv.cpp" />
+    <ClCompile Include="libimq\delta.cpp" />
+    <ClCompile Include="libimq\fourpyrtransf3.cpp" />
+    <ClCompile Include="libimq\msad.cpp" />
+    <ClCompile Include="libimq\mse.cpp" />
+    <ClCompile Include="libimq\mssim.cpp" />
+    <ClCompile Include="libimq\psnr.cpp" />
+    <ClCompile Include="libimq\ssim.cpp" />
+    <ClCompile Include="libimq\wssim.cpp" />
+    <ClCompile Include="localLaplacianFilter.cpp" />
+    <ClCompile Include="maskoperation.cpp" />
+    <ClCompile Include="matInfo.cpp" />
+    <ClCompile Include="matrixsimdutil.cpp" />
+    <ClCompile Include="mattingRendering.cpp" />
+    <ClCompile Include="metrics.cpp" />
+    <ClCompile Include="minmaxfilter.cpp" />
+    <ClCompile Include="MultiCameraCalibrator.cpp" />
+    <ClCompile Include="noise.cpp" />
+    <ClCompile Include="nonLocalMeans.cpp" />
+    <ClCompile Include="opticalFlow.cpp" />
+    <ClCompile Include="PermutohedralLattice.cpp" />
+    <ClCompile Include="plot.cpp" />
+    <ClCompile Include="pointcloud.cpp" />
+    <ClCompile Include="postFilterSet.cpp" />
+    <ClCompile Include="ppmx.cpp" />
+    <ClCompile Include="realtimeO1BilateralFilter.cpp" />
+    <ClCompile Include="rectifyMultiCollinear.cpp" />
+    <ClCompile Include="recursiveBilateralFilter.cpp" />
+    <ClCompile Include="shiftImage.cpp" />
+    <ClCompile Include="shockFilter.cpp" />
+    <ClCompile Include="slic.cpp" />
+    <ClCompile Include="speckle.cpp" />
+    <ClCompile Include="sse_util.cpp" />
+    <ClCompile Include="stat.cpp" />
+    <ClCompile Include="stencil.cpp" />
+    <ClCompile Include="StereoBase.cpp" />
+    <ClCompile Include="StereoBM2.cpp" />
+    <ClCompile Include="stereoDisplay.cpp" />
+    <ClCompile Include="stereoDP.cpp" />
+    <ClCompile Include="StereoEx.cpp" />
+    <ClCompile Include="StereoIterativeBM.cpp" />
+    <ClCompile Include="StereoSGM2.cpp" />
+    <ClCompile Include="stereo_core.cpp" />
+    <ClCompile Include="timer.cpp" />
+    <ClCompile Include="video.cpp" />
+    <ClCompile Include="viewsynthesis.cpp" />
+    <ClCompile Include="weightedModeFilter.cpp" />
+    <ClCompile Include="Wiener2.cpp" />
+    <ClCompile Include="yuvio.cpp" />
+    <ClCompile Include="zoom.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\include\opencp.hpp" />
+    <ClInclude Include="filterCore.h" />
+    <ClInclude Include="fmath.hpp" />
+    <ClInclude Include="libGaussian\complex_arith.h" />
+    <ClInclude Include="libGaussian\gaussian_conv.h" />
+    <ClInclude Include="libimq\imq.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

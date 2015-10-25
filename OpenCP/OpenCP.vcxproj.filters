@@ -1,0 +1,375 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="ソース ファイル">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="ヘッダー ファイル">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="リソース ファイル">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="ソース ファイル\imgproc">
+      <UniqueIdentifier>{550c4273-fb79-47fe-b66c-d2bac9afedc2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\filter">
+      <UniqueIdentifier>{20f00ae6-0839-445f-aaa7-48897c787316}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\filter\GaussianFilter">
+      <UniqueIdentifier>{6c5605a4-7844-41ff-803f-7690e1d752d0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\stereo">
+      <UniqueIdentifier>{ff627c53-3876-4014-942f-4322f17fb3b2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\opticalflow">
+      <UniqueIdentifier>{3802ec91-62e5-48ba-a935-0229a183f7eb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\filter\simdfuncs">
+      <UniqueIdentifier>{1bfbeefe-97ec-47c9-921a-c1ff3ca181a9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\utilty functions">
+      <UniqueIdentifier>{a8d6d5ad-3a54-49d1-b714-38aaf9b46b00}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\imgproc\qualitymetrics">
+      <UniqueIdentifier>{57d39140-b032-4ffc-9481-77ae454cc77a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\stereo\view synthesis">
+      <UniqueIdentifier>{ce01d62b-e8b6-4b78-9dac-dd68648543a5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\filter\upsample">
+      <UniqueIdentifier>{d986e41f-5f67-4dd5-92bc-f969aba9445b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="color.cpp">
+      <Filter>ソース ファイル\imgproc</Filter>
+    </ClCompile>
+    <ClCompile Include="draw.cpp">
+      <Filter>ソース ファイル\utilty functions</Filter>
+    </ClCompile>
+    <ClCompile Include="slic.cpp">
+      <Filter>ソース ファイル\imgproc</Filter>
+    </ClCompile>
+    <ClCompile Include="timer.cpp">
+      <Filter>ソース ファイル\utilty functions</Filter>
+    </ClCompile>
+    <ClCompile Include="alphaBlend.cpp">
+      <Filter>ソース ファイル\imgproc</Filter>
+    </ClCompile>
+    <ClCompile Include="matInfo.cpp">
+      <Filter>ソース ファイル\utilty functions</Filter>
+    </ClCompile>
+    <ClCompile Include="stat.cpp">
+      <Filter>ソース ファイル\utilty functions</Filter>
+    </ClCompile>
+    <ClCompile Include="noise.cpp">
+      <Filter>ソース ファイル\utilty functions</Filter>
+    </ClCompile>
+    <ClCompile Include="bilateralFilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="binalyWeightedRangeFilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="nonLocalMeans.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="iterativeBackProjection.cpp">
+      <Filter>ソース ファイル\imgproc</Filter>
+    </ClCompile>
+    <ClCompile Include="detailEnhancement.cpp">
+      <Filter>ソース ファイル\imgproc</Filter>
+    </ClCompile>
+    <ClCompile Include="recursiveBilateralFilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="sse_util.cpp">
+      <Filter>ソース ファイル\utilty functions</Filter>
+    </ClCompile>
+    <ClCompile Include="guidedFilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="stencil.cpp">
+      <Filter>ソース ファイル\utilty functions</Filter>
+    </ClCompile>
+    <ClCompile Include="consoleImage.cpp">
+      <Filter>ソース ファイル\utilty functions</Filter>
+    </ClCompile>
+    <ClCompile Include="bitconvert.cpp">
+      <Filter>ソース ファイル\utilty functions</Filter>
+    </ClCompile>
+    <ClCompile Include="domainTransformFilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="arithmetic.cpp">
+      <Filter>ソース ファイル\utilty functions</Filter>
+    </ClCompile>
+    <ClCompile Include="viewsynthesis.cpp">
+      <Filter>ソース ファイル\stereo\view synthesis</Filter>
+    </ClCompile>
+    <ClCompile Include="mattingRendering.cpp">
+      <Filter>ソース ファイル\stereo\view synthesis</Filter>
+    </ClCompile>
+    <ClCompile Include="GaussianFilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="minmaxfilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="imagediff.cpp">
+      <Filter>ソース ファイル\utilty functions</Filter>
+    </ClCompile>
+    <ClCompile Include="jointNearestFilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="weightedModeFilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="localLaplacianFilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="PermutohedralLattice.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="adaptiveManifold.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="realtimeO1BilateralFilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="jointNonLocalMeans.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="GaussianFilterSpectralRecursive.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="jointBilateralFilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="dualBilateralFilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="filterCore.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="hazeRemove.cpp">
+      <Filter>ソース ファイル\imgproc</Filter>
+    </ClCompile>
+    <ClCompile Include="L0Smoothing.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="jointDualBilateralFilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="zoom.cpp">
+      <Filter>ソース ファイル\utilty functions</Filter>
+    </ClCompile>
+    <ClCompile Include="GaussianBlurIPOL.cpp">
+      <Filter>ソース ファイル\filter\GaussianFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="libGaussian\filter_util.cpp">
+      <Filter>ソース ファイル\filter\GaussianFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="libGaussian\gaussian_conv_am.cpp">
+      <Filter>ソース ファイル\filter\GaussianFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="libGaussian\gaussian_conv_box.cpp">
+      <Filter>ソース ファイル\filter\GaussianFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="libGaussian\gaussian_conv_dct.cpp">
+      <Filter>ソース ファイル\filter\GaussianFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="libGaussian\gaussian_conv_deriche.cpp">
+      <Filter>ソース ファイル\filter\GaussianFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="libGaussian\gaussian_conv_ebox.cpp">
+      <Filter>ソース ファイル\filter\GaussianFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="libGaussian\gaussian_conv_fir.cpp">
+      <Filter>ソース ファイル\filter\GaussianFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="libGaussian\gaussian_conv_sii.cpp">
+      <Filter>ソース ファイル\filter\GaussianFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="libGaussian\gaussian_conv_vyv.cpp">
+      <Filter>ソース ファイル\filter\GaussianFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="libGaussian\gaussian_short_conv.cpp">
+      <Filter>ソース ファイル\filter\GaussianFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="libimq\delta.cpp">
+      <Filter>ソース ファイル\imgproc\qualitymetrics</Filter>
+    </ClCompile>
+    <ClCompile Include="libimq\fourpyrtransf3.cpp">
+      <Filter>ソース ファイル\imgproc\qualitymetrics</Filter>
+    </ClCompile>
+    <ClCompile Include="libimq\msad.cpp">
+      <Filter>ソース ファイル\imgproc\qualitymetrics</Filter>
+    </ClCompile>
+    <ClCompile Include="libimq\mse.cpp">
+      <Filter>ソース ファイル\imgproc\qualitymetrics</Filter>
+    </ClCompile>
+    <ClCompile Include="libimq\mssim.cpp">
+      <Filter>ソース ファイル\imgproc\qualitymetrics</Filter>
+    </ClCompile>
+    <ClCompile Include="libimq\psnr.cpp">
+      <Filter>ソース ファイル\imgproc\qualitymetrics</Filter>
+    </ClCompile>
+    <ClCompile Include="libimq\ssim.cpp">
+      <Filter>ソース ファイル\imgproc\qualitymetrics</Filter>
+    </ClCompile>
+    <ClCompile Include="libimq\wssim.cpp">
+      <Filter>ソース ファイル\imgproc\qualitymetrics</Filter>
+    </ClCompile>
+    <ClCompile Include="imqc.cpp">
+      <Filter>ソース ファイル\imgproc\qualitymetrics</Filter>
+    </ClCompile>
+    <ClCompile Include="fftinfo.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="stereoDP.cpp">
+      <Filter>ソース ファイル\stereo</Filter>
+    </ClCompile>
+    <ClCompile Include="boudaryReconstructionFilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="guiContrast.cpp">
+      <Filter>ソース ファイル\utilty functions</Filter>
+    </ClCompile>
+    <ClCompile Include="csv.cpp">
+      <Filter>ソース ファイル\utilty functions</Filter>
+    </ClCompile>
+    <ClCompile Include="opticalFlow.cpp">
+      <Filter>ソース ファイル\opticalflow</Filter>
+    </ClCompile>
+    <ClCompile Include="dxtDenoise.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="dct_simd.cpp">
+      <Filter>ソース ファイル\filter\simdfuncs</Filter>
+    </ClCompile>
+    <ClCompile Include="hadamard.cpp">
+      <Filter>ソース ファイル\filter\simdfuncs</Filter>
+    </ClCompile>
+    <ClCompile Include="matrixsimdutil.cpp">
+      <Filter>ソース ファイル\filter\simdfuncs</Filter>
+    </ClCompile>
+    <ClCompile Include="shockFilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="Wiener2.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="plot.cpp">
+      <Filter>ソース ファイル\utilty functions</Filter>
+    </ClCompile>
+    <ClCompile Include="histogram.cpp">
+      <Filter>ソース ファイル\utilty functions</Filter>
+    </ClCompile>
+    <ClCompile Include="maskoperation.cpp">
+      <Filter>ソース ファイル\utilty functions</Filter>
+    </ClCompile>
+    <ClCompile Include="diffPixel.cpp">
+      <Filter>ソース ファイル\imgproc</Filter>
+    </ClCompile>
+    <ClCompile Include="depthEval.cpp">
+      <Filter>ソース ファイル\stereo</Filter>
+    </ClCompile>
+    <ClCompile Include="video.cpp">
+      <Filter>ソース ファイル\utilty functions</Filter>
+    </ClCompile>
+    <ClCompile Include="crossBasedLocalFilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="speckle.cpp">
+      <Filter>ソース ファイル\imgproc</Filter>
+    </ClCompile>
+    <ClCompile Include="depth2disparity.cpp">
+      <Filter>ソース ファイル\stereo</Filter>
+    </ClCompile>
+    <ClCompile Include="stereoDisplay.cpp">
+      <Filter>ソース ファイル\stereo</Filter>
+    </ClCompile>
+    <ClCompile Include="stereo_core.cpp">
+      <Filter>ソース ファイル\stereo</Filter>
+    </ClCompile>
+    <ClCompile Include="depthfilter.cpp">
+      <Filter>ソース ファイル\stereo</Filter>
+    </ClCompile>
+    <ClCompile Include="rectifyMultiCollinear.cpp">
+      <Filter>ソース ファイル\stereo</Filter>
+    </ClCompile>
+    <ClCompile Include="Calibrator.cpp">
+      <Filter>ソース ファイル\stereo</Filter>
+    </ClCompile>
+    <ClCompile Include="MultiCameraCalibrator.cpp">
+      <Filter>ソース ファイル\stereo</Filter>
+    </ClCompile>
+    <ClCompile Include="postFilterSet.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="pointcloud.cpp">
+      <Filter>ソース ファイル\stereo</Filter>
+    </ClCompile>
+    <ClCompile Include="StereoEx.cpp">
+      <Filter>ソース ファイル\stereo</Filter>
+    </ClCompile>
+    <ClCompile Include="StereoBM2.cpp">
+      <Filter>ソース ファイル\stereo</Filter>
+    </ClCompile>
+    <ClCompile Include="costVolumeFilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="crossBasedLocalMultipointFilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="StereoBase.cpp">
+      <Filter>ソース ファイル\stereo</Filter>
+    </ClCompile>
+    <ClCompile Include="ppmx.cpp">
+      <Filter>ソース ファイル\imgproc</Filter>
+    </ClCompile>
+    <ClCompile Include="yuvio.cpp">
+      <Filter>ソース ファイル\imgproc</Filter>
+    </ClCompile>
+    <ClCompile Include="StereoIterativeBM.cpp">
+      <Filter>ソース ファイル\stereo</Filter>
+    </ClCompile>
+    <ClCompile Include="StereoSGM2.cpp">
+      <Filter>ソース ファイル\stereo</Filter>
+    </ClCompile>
+    <ClCompile Include="jointBilateralUpsample.cpp">
+      <Filter>ソース ファイル\filter\upsample</Filter>
+    </ClCompile>
+    <ClCompile Include="shiftImage.cpp">
+      <Filter>ソース ファイル\imgproc</Filter>
+    </ClCompile>
+    <ClCompile Include="metrics.cpp">
+      <Filter>ソース ファイル\imgproc</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="fmath.hpp">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="filterCore.h">
+      <Filter>ソース ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="libGaussian\gaussian_conv.h">
+      <Filter>ソース ファイル\filter\GaussianFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="libGaussian\complex_arith.h">
+      <Filter>ソース ファイル\filter\GaussianFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="libimq\imq.h">
+      <Filter>ソース ファイル\imgproc\qualitymetrics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\opencp.hpp">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
