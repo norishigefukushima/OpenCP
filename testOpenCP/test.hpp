@@ -8,6 +8,7 @@
 #pragma comment(lib, "opencp.lib")
 #endif
 
+void guiEdgePresevingFilterOpenCV(cv::Mat& src);
 void guiWeightMapTest();
 void guiCrossBasedLocalFilter(cv::Mat& src);
 void guiStereo();
@@ -64,6 +65,7 @@ void guiCoherenceEnhancingShockFilter(cv::Mat& src, cv::Mat& dest);
 void guiPlotTest();
 
 void guiHistgramTest(cv::Mat& src);
+
 
 void guiAnalysisCompare(cv::Mat& src1, cv::Mat& src2);
 void imshowAnalysisCompare(std::string winname, cv::Mat& src1, cv::Mat& src2);

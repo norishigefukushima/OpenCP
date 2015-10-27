@@ -54,13 +54,16 @@
     <ClCompile Include="guiCrossBasedLocalFilterTest.cpp">
       <Filter>ソース ファイル\test</Filter>
     </ClCompile>
-    <ClCompile Include="guiEPFWeightMapTest.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="guiWeightedHistogramFilterTest.cpp">
       <Filter>ソース ファイル\test</Filter>
     </ClCompile>
     <ClCompile Include="bilateralfilter\bilateralFilterTest.cpp">
+      <Filter>ソース ファイル\test</Filter>
+    </ClCompile>
+    <ClCompile Include="guiEdgePreservingFilter.cpp">
+      <Filter>ソース ファイル\test</Filter>
+    </ClCompile>
+    <ClCompile Include="guiEPFWeightMapTest.cpp">
       <Filter>ソース ファイル\test</Filter>
     </ClCompile>
   </ItemGroup>

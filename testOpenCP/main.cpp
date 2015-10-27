@@ -67,16 +67,18 @@ int main(int argc, char** argv)
 	resize(flashImgGray, fmega, Size(1024, 1024));
 	resize(noflashImg, nmega, Size(1024, 1024));
 	
+
+	guiEdgePresevingFilterOpenCV(src);
+
 	//guiJointRealtimeO1BilateralFilterTest(noflashImgGray, flashImgGray); return 0;
 	//guiJointRealtimeO1BilateralFilterTest(noflashImg, flashImgGray); return 0;
 	//guiJointRealtimeO1BilateralFilterTest(noflashImgGray, flashImg); return 0;
 	//guiJointRealtimeO1BilateralFilterTest(noflashImg, flashImg); return 0;
 
-	guiWeightedHistogramFilterTest(noflashImgGray, flashImg); return 0;
-	guiRealtimeO1BilateralFilterTest(noflashImgGray); return 0;
-	//	guiRealtimeO1BilateralFilterTest(src); return 0;
+	//guiWeightedHistogramFilterTest(noflashImgGray, flashImg); return 0;
+	//guiRealtimeO1BilateralFilterTest(noflashImgGray); return 0;
+	//guiRealtimeO1BilateralFilterTest(src); return 0;
 	//guiDMFTest(nmega, nmega, fmega); return 0;
-
 	//guiGausianFilterTest(src); return 0;
 
 

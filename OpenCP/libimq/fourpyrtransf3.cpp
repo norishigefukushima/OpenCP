@@ -1,10 +1,9 @@
-
 #include <stdio.h>
-#include "fftw3.h"
-#include "imq.h"
+#include <fftw3.h>
 #include <math.h>
 #include <stdlib.h>
 
+#include "imq.h"
 
 const double MM_PI=3.14159265358979323846;
 

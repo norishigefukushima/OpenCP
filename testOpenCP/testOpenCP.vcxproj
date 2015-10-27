@@ -156,6 +156,7 @@
     <ClCompile Include="colorCorrectionTest.cpp" />
     <ClCompile Include="guiCrossBasedLocalFilterTest.cpp" />
     <ClCompile Include="GaussianFilter\GaussianFilterTest.cpp" />
+    <ClCompile Include="guiEdgePreservingFilter.cpp" />
     <ClCompile Include="guiEPFWeightMapTest.cpp" />
     <ClCompile Include="guiStereoTest.cpp" />
     <ClCompile Include="guiWeightedHistogramFilterTest.cpp" />
