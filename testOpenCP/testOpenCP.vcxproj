@@ -138,6 +138,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>../include</AdditionalIncludeDirectories>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -154,6 +155,7 @@
     </ClCompile>
     <ClCompile Include="bilateralfilter\bilateralFilterTest.cpp" />
     <ClCompile Include="colorCorrectionTest.cpp" />
+    <ClCompile Include="disparityRefinement\disparityRefinementTest.cpp" />
     <ClCompile Include="guiCrossBasedLocalFilterTest.cpp" />
     <ClCompile Include="GaussianFilter\GaussianFilterTest.cpp" />
     <ClCompile Include="guiEdgePreservingFilter.cpp" />
@@ -166,6 +168,7 @@
     <ClCompile Include="qualityMetricsTest\qualityMetricsTest.cpp" />
     <ClCompile Include="realtimeO1BilateralFilter\realtimeO1BilateralFilterTest.cpp" />
     <ClCompile Include="shockFilterTest\coherenceEnhancingShockFilterTest.cpp" />
+    <ClCompile Include="slic\guiSLICTest.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="test.hpp" />

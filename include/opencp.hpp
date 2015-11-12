@@ -629,9 +629,9 @@ namespace cp
 	CP_EXPORT void splitToGrid(const cv::Mat& src, std::vector<cv::Mat>& dest, cv::Size grid, int borderRadius);
 
 	//slic
-	CP_EXPORT void SLIC(const cv::Mat& src, cv::Mat& segment, int regionSize, float regularization, float minRegionRatio, int max_iteration);
+	CP_EXPORT void SLIC(InputArray src, OutputArray segment, int regionSize, float regularization, float minRegionRatio, int max_iteration);
 	CP_EXPORT void drawSLIC(const cv::Mat& src, cv::Mat& segment, cv::Mat& dest, bool isLine = true, cv::Scalar line_color = cv::Scalar(0, 0, 255));
-	CP_EXPORT void SLICBase(cv::Mat& src, cv::Mat& segment, int regionSize, float regularization, float minRegionRatio, int max_iteration);
+	CP_EXPORT void SLICBase(cv::Mat& src, cv::Mat& segment, int regionSize, float regularization, float minRegionRatio, int max_iteration);//not optimized code for test
 
 
 	//============================================================================================================================================================

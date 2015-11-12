@@ -18,6 +18,7 @@ void guiEdgePresevingFilterOpenCV(Mat& src)
 	Mat dest;
 	int key = 0;
 	Mat show;
+
 	while (key != 'q')
 	{
 		//cout<<"r="<<r<<": "<<"please change 'sw' for changing the type of implimentations."<<endl;

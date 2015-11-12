@@ -85,7 +85,7 @@ int main(int argc, char** argv)
 	//guiAlphaBlend(ff3,ff3);
 	//guiJointNearestFilterTest(ff3);
 	//guiViewSynthesis();
-	//guiSLICTest(src);
+	guiSLICTest(src);
 	//guiBilateralFilterTest(src);
 	//guiSeparableBilateralFilterTest(src);
 	//guiBilateralFilterSPTest(mega);
