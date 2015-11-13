@@ -1242,6 +1242,38 @@ namespace cp
 		}
 	}
 
+	template <typename T>
+	void SLICSegment2Vector3D_(cv::InputArray segment, cv::InputArray signal, std::vector<std::vector<cv::Point3i>>& segmentPoint)
+	{
+		Mat sig = signal.getMat();
+		Mat seg = segment.getMat();
+
+		for (int j = 0; j < seg.rows; ++j)
+		{
+			int* s = seg.ptr<int>(j);
+			T* value = sig.ptr<T>(j);
+			for (int i = 0; i < seg.cols; ++i)
+			{
+				segmentPoint[s[i]].push_back(Point3i(i, j, (int)value[i]));
+			}
+		}
+	}
+
+	void SLICSegment2Vector3D(cv::InputArray segment, cv::InputArray signal, std::vector<std::vector<cv::Point3i>>& segmentPoint)
+	{
+		double minv, maxv;
+		minMaxLoc(segment, &minv, &maxv);
+		segmentPoint.clear();
+		segmentPoint.resize((int)maxv + 1);
+
+		if (signal.depth()==CV_8U) SLICSegment2Vector3D_<uchar>(segment, signal, segmentPoint);
+		else if (signal.depth() == CV_16S) SLICSegment2Vector3D_<short>(segment, signal, segmentPoint);
+		else if (signal.depth() == CV_16U) SLICSegment2Vector3D_<ushort>(segment, signal, segmentPoint);
+		else if (signal.depth() == CV_32S) SLICSegment2Vector3D_<int>(segment, signal, segmentPoint);
+		else if (signal.depth() == CV_32F) SLICSegment2Vector3D_<float>(segment, signal, segmentPoint);
+		else if (signal.depth() == CV_64F) SLICSegment2Vector3D_<double>(segment, signal, segmentPoint);
+	}
+
 	void SLICSegment2Vector(cv::InputArray segment, std::vector<std::vector<cv::Point>>& segmentPoint)
 	{
 		Mat seg = segment.getMat();

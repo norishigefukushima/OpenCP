@@ -1813,7 +1813,7 @@ namespace cp
 
 		while (key != 'q')
 		{
-			double bps;
+			double bps=0.0;
 			//from mouse input
 			x = (int)(xmax*(double)pt.x / (double)(image.cols - 1) + 0.5);
 			y = (int)(ymax*(double)pt.y / (double)(image.rows - 1) + 0.5);
@@ -1853,7 +1853,6 @@ namespace cp
 			}
 			else//depth map view
 			{
-
 				Mat dispC;
 				if (viewSW == 1)
 					cvtColor(dshow, dispC, CV_GRAY2BGR);

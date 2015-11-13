@@ -629,6 +629,7 @@ namespace cp
 	CP_EXPORT void splitToGrid(const cv::Mat& src, std::vector<cv::Mat>& dest, cv::Size grid, int borderRadius);
 
 	//slic
+	CP_EXPORT void SLICSegment2Vector3D(cv::InputArray segment, cv::InputArray signal, std::vector<std::vector<cv::Point3i>>& segmentPoint);
 	CP_EXPORT void SLICVector2Segment(std::vector<std::vector<cv::Point>>& segmentPoint, cv::Size outputImageSize, cv::OutputArray segment);
 	CP_EXPORT void SLICSegment2Vector(cv::InputArray segment, std::vector<std::vector<cv::Point>>& segmentPoint);
 	CP_EXPORT void SLIC(cv::InputArray src, cv::OutputArray segment, int regionSize, float regularization, float minRegionRatio, int max_iteration);
