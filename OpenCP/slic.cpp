@@ -995,7 +995,7 @@ namespace cp
 					float* im1 = (float*)(image + (y)*width + (1)*width*height);
 					float* im2 = (float*)(image + (y)*width + (2)*width*height);
 					float* emap = (float*)(edgeMap + (y)*width);
-					for (x = 1; x <width - 1; ++x)
+					for (x = 1; x < width - 1; ++x)
 					{
 						float a = im0[x - 1] - im0[x + 1];
 						float v = a*a;
@@ -1228,13 +1228,28 @@ namespace cp
 	}
 	}
 
-	void SLICSegment2Vec(InputArray segment, vector<vector<Point>>& segmentPoint)
+	void SLICVector2Segment(vector<vector<Point>>& segmentPoint, Size outputImageSize, OutputArray segment)
+	{
+		if (segment.size() != outputImageSize || segment.depth() != CV_32S) segment.create(outputImageSize, CV_32S);
+
+		Mat seg = segment.getMat();
+		for (int j = 0; j < segmentPoint.size(); ++j)
+		{
+			for (int i = 0; i < segmentPoint[j].size(); ++i)
+			{
+				seg.at<int>(segmentPoint[j][i]) = j;
+			}
+		}
+	}
+
+	void SLICSegment2Vector(cv::InputArray segment, std::vector<std::vector<cv::Point>>& segmentPoint)
 	{
 		Mat seg = segment.getMat();
 		double minv, maxv;
 		minMaxLoc(segment, &minv, &maxv);
-		segmentPoint.resize((int)maxv);
-		
+		segmentPoint.clear();
+		segmentPoint.resize((int)maxv + 1);
+
 		for (int j = 0; j < seg.rows; ++j)
 		{
 			int* s = seg.ptr<int>(j);

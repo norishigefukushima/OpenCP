@@ -67,8 +67,8 @@ int main(int argc, char** argv)
 	resize(flashImgGray, fmega, Size(1024, 1024));
 	resize(noflashImg, nmega, Size(1024, 1024));
 	
-
-	guiEdgePresevingFilterOpenCV(src);
+	guiSLICTest(src);
+	//guiEdgePresevingFilterOpenCV(src);
 
 	//guiJointRealtimeO1BilateralFilterTest(noflashImgGray, flashImgGray); return 0;
 	//guiJointRealtimeO1BilateralFilterTest(noflashImg, flashImgGray); return 0;
@@ -85,7 +85,7 @@ int main(int argc, char** argv)
 	//guiAlphaBlend(ff3,ff3);
 	//guiJointNearestFilterTest(ff3);
 	//guiViewSynthesis();
-	guiSLICTest(src);
+	
 	//guiBilateralFilterTest(src);
 	//guiSeparableBilateralFilterTest(src);
 	//guiBilateralFilterSPTest(mega);
