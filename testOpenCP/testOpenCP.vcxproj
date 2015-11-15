@@ -156,6 +156,7 @@
     <ClCompile Include="bilateralfilter\bilateralFilterTest.cpp" />
     <ClCompile Include="colorCorrectionTest.cpp" />
     <ClCompile Include="disparityRefinement\disparityRefinementTest.cpp" />
+    <ClCompile Include="fitPlaneTest.cpp" />
     <ClCompile Include="guiCrossBasedLocalFilterTest.cpp" />
     <ClCompile Include="GaussianFilter\GaussianFilterTest.cpp" />
     <ClCompile Include="guiEdgePreservingFilter.cpp" />

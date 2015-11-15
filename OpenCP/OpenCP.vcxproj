@@ -182,12 +182,14 @@
     <ClCompile Include="depthfilter.cpp" />
     <ClCompile Include="detailEnhancement.cpp" />
     <ClCompile Include="diffPixel.cpp" />
+    <ClCompile Include="disparityPlaneFit.cpp" />
     <ClCompile Include="domainTransformFilter.cpp" />
     <ClCompile Include="draw.cpp" />
     <ClCompile Include="dualBilateralFilter.cpp" />
     <ClCompile Include="dxtDenoise.cpp" />
     <ClCompile Include="fftinfo.cpp" />
     <ClCompile Include="filterCore.cpp" />
+    <ClCompile Include="fitPlane.cpp" />
     <ClCompile Include="GaussianBlurIPOL.cpp" />
     <ClCompile Include="GaussianFilter.cpp" />
     <ClCompile Include="GaussianFilterSpectralRecursive.cpp" />

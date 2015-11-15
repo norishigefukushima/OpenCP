@@ -8,6 +8,8 @@
 #pragma comment(lib, "opencp.lib")
 #endif
 
+void fitPlaneTest();
+
 void guiEdgePresevingFilterOpenCV(cv::Mat& src);
 void guiWeightMapTest();
 void guiCrossBasedLocalFilter(cv::Mat& src);

@@ -5,6 +5,8 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
+	fitPlaneTest();
+	return 0;
 	//guiWeightMapTest(); return 0;
 	//guiStereo(); return 0;
 	//guiPlotTest(); return 0;
