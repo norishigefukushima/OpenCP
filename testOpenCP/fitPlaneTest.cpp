@@ -49,10 +49,9 @@ void fitPlaneTest()
 	Point3f abc(5.0f, 2.0f, 3.0f);
 	Mat plane = Mat::zeros(Size(512, 512), CV_32F);
 	generatePlane(abc, plane);
-	
 
 	Point3f dest;
-	
+
 	vector<Point3f> input3;
 	randomSampleMat2Vec3f(plane, input3, 3);
 
@@ -62,27 +61,33 @@ void fitPlaneTest()
 
 	Mat noise;
 	addNoise(plane, noise, 2, 0.0);
+	{CalcTime t("PCA");
 	//PCA from noisy input without solt pepper noise;
 	vector<Point3f> input;
-	randomSampleMat2Vec3f(noise, input, 100);
+	mat2vec3f(noise, input);
 	fitPlanePCA(input, dest);
 	cout << "pca without solt pepper:" << dest << endl;
-
+	}
 	addNoise(plane, noise, 2, 0.1);
+	{CalcTime t("PCA");
 	//PCA from noisy input without solt pepper noise;
-	randomSampleMat2Vec3f(noise, input, 100);
+	vector<Point3f> input;
+	mat2vec3f(noise, input); 
 	fitPlanePCA(input, dest);
 	cout << "pca with solt pepper:" << dest << endl;
-
+	}
 	//RANSAC	
+	{CalcTime t("RANSAC");
 	vector<Point3f> points;
 	mat2vec3f(noise, points);
-	fitPlaneRANSAC(points, dest, 100, 5.f, 0);
+	fitPlaneRANSAC(points, dest, 50, 5.f, 0);
 	cout << "ransac:" << dest << endl;
-
+	}
 	//RANSAC
+	{CalcTime t("RANSAC+1 iter");
+	vector<Point3f> points;
 	mat2vec3f(noise, points);
-	fitPlaneRANSAC(points, dest, 100, 5.f, 1);
+	fitPlaneRANSAC(points, dest, 50, 5.f, 1);
 	cout << "ransac+pca1 ref:" << dest << endl;
-	
+	}
 }
