@@ -4,8 +4,10 @@ using namespace std;
 using namespace cv;
 
 //todo
+//“ü—Í‚Ì”Ä—p«Einput array
 //distance mesure:onlyz ->point to plane
 //estimation abc: PCA->direct SVD
+
 namespace cp
 {
 	inline void solveABC(const Point3f& normal, const Point3f& point, Point3f& abc)
@@ -79,7 +81,7 @@ namespace cp
 	}
 
 	//only consider distance of Z: SVD solution for fixed x,y is sutable
-	int countArrowablePointDistanceZ(std::vector<cv::Point3f>& points, Point3f& abc, float threshold)
+	static int countArrowablePointDistanceZ(std::vector<cv::Point3f>& points, Point3f& abc, float threshold)
 	{
 		int count = 0;
 
@@ -94,7 +96,7 @@ namespace cp
 	}
 
 	//only consider distance of Z: SVD solution for fixed x,y is sutable
-	int filterArrowablePointDistanceZ(std::vector<cv::Point3f>& points, std::vector<cv::Point3f>& dest, const Point3f& abc, float threshold)
+	static int filterArrowablePointDistanceZ(std::vector<cv::Point3f>& points, std::vector<cv::Point3f>& dest, const Point3f& abc, float threshold)
 	{
 		dest.clear();
 		for (int n = 0; n < points.size(); ++n)
@@ -141,14 +143,15 @@ namespace cp
 
 		vector<Point3f> filtered;
 		Point3f mean;
-		filterArrowablePointDistanceZ(src, filtered, abc, threshold);
-		fitPlanePCA(filtered, dest);
-
+		int samples = filterArrowablePointDistanceZ(src, filtered, abc, threshold);
+		if (samples>=3) fitPlanePCA(filtered, dest);
+		
 		for (int i = 0; i < refineIteration; i++)
 		{
 			vector<Point3f> filtered2;
-			filterArrowablePointDistanceZ(src, filtered2, dest, threshold);
-			fitPlanePCA(filtered2, dest);
+			int samples = filterArrowablePointDistanceZ(src, filtered2, dest, threshold);
+			if (samples>=3)fitPlanePCA(filtered2, dest);
 		}
+		
 	}
 }

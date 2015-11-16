@@ -16,9 +16,9 @@ void SLICTestSegment2Vector(Mat& src)
 	if (MSE(seg, segout) == 0.0)cout << "segmentation seg2vec test:OK\n";
 }
 
+
 void guiSLICTest(Mat& src)
 {
-	
 	Mat dest, dest2;
 
 	string wname = "SLIC";
@@ -41,18 +41,17 @@ void guiSLICTest(Mat& src)
 			cvtColor(src, lab, COLOR_BGR2Lab);
 			SLIC(lab, seg, S, (float)m, mrs / 100.0f, iter);
 		}
-		drawSLIC(src, seg, dest, true, Scalar(255, 255, 0));
+		drawSLIC(src, seg, dest, true, true, Scalar(255, 255, 0));
 
 		Mat dest2;
 		SLIC(lab, seg, S * 2, (float)m, mrs / 100.f, iter);
-		drawSLIC(src, seg, dest2, true, Scalar(255, 255, 0));
+		drawSLIC(src, seg, dest2, true, true, Scalar(255, 255, 0));
 
 		patchBlendImage(dest, dest2, show, Scalar(255, 255, 255));
 
 		alphaBlend(src, show, a / 100.0, show);
 		imshow(wname, show);
 		key = waitKey(1);
-
 		if (key == 't')
 		{
 			SLICTestSegment2Vector(src);

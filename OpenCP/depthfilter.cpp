@@ -100,18 +100,18 @@ namespace cp
 	template <class T>
 	static void fillOcclusion_(Mat& src, const T invalidvalue, const T maxval)
 	{
-		const int MAX_LENGTH = (int)(src.cols*0.5);
+		const int MAX_LENGTH = (int)(src.cols);
 		//#pragma omp parallel for
-		for (int j = 0; j < src.rows; j++)
+		for (int j = 0; j < src.rows; ++j)
 		{
 			T* s = src.ptr<T>(j);
 
 			s[0] = maxval;
 			s[src.cols - 1] = maxval;
 
-			for (int i = 1; i < src.cols - 1; i++)
+			for (int i = 1; i < src.cols - 1; ++i)
 			{
-				if (s[i] == invalidvalue)
+				if (s[i] <= invalidvalue)
 				{
 					int t = i;
 					do
@@ -123,14 +123,14 @@ namespace cp
 					const T dd = min(s[i - 1], s[t]);
 					if (t - i > MAX_LENGTH)
 					{
-						for (int n = 0; n < src.cols; n++)
+						for (int n = 0; n < src.cols; ++n)
 						{
 							s[n] = invalidvalue;
 						}
 					}
 					else
 					{
-						for (; i < t; i++)
+						for (; i < t; ++i)
 						{
 							s[i] = dd;
 						}
@@ -187,44 +187,62 @@ namespace cp
 		}
 	}
 
-	void fillOcclusion(Mat& src, int invalidvalue, int disp_or_depth)
+	void fillOcclusion(InputOutputArray src_, int invalidvalue, int disp_or_depth)
 	{
+		CV_Assert(src_.channels() == 1);
+		Mat src = src_.getMat();
 		if (disp_or_depth == FILL_DEPTH)
 		{
-			if (src.type() == CV_8U)
+			if (src.depth() == CV_8U)
 			{
 				fillOcclusionInv_<uchar>(src, (uchar)invalidvalue, 0);
 			}
-			else if (src.type() == CV_16S)
+			else if (src.depth() == CV_16S)
 			{
 				fillOcclusionInv_<short>(src, (short)invalidvalue, 0);
 			}
-			else if (src.type() == CV_16U)
+			else if (src.depth() == CV_16U)
 			{
-				fillOcclusionInv_<unsigned short>(src, (unsigned short)invalidvalue, 0);
+				fillOcclusionInv_<ushort>(src, (ushort)invalidvalue, 0);
 			}
-			else if (src.type() == CV_32F)
+			else if (src.depth() == CV_32S)
+			{
+				fillOcclusionInv_<int>(src, (int)invalidvalue, 0);
+			}
+			else if (src.depth() == CV_32F)
 			{
 				fillOcclusionInv_<float>(src, (float)invalidvalue, 0.f);
+			}
+			else if (src.depth() == CV_64F)
+			{
+				fillOcclusionInv_ <double> (src, (double)invalidvalue, 0.f);
 			}
 		}
 		else
 		{
-			if (src.type() == CV_8U)
+			if (src.depth() == CV_8U)
 			{
 				fillOcclusion_<uchar>(src, (uchar)invalidvalue, 255);
 			}
-			else if (src.type() == CV_16S)
+			else if (src.depth() == CV_16S)
 			{
 				fillOcclusion_<short>(src, (short)invalidvalue, SHRT_MAX);
 			}
-			else if (src.type() == CV_16U)
+			else if (src.depth() == CV_16U)
 			{
-				fillOcclusion_<unsigned short>(src, (unsigned short)invalidvalue, USHRT_MAX);
+				fillOcclusion_<ushort>(src, (ushort)invalidvalue, USHRT_MAX);
 			}
-			else if (src.type() == CV_32F)
+			else if (src.depth() == CV_32S)
+			{
+				fillOcclusion_<int>(src, (int)invalidvalue, INT_MAX);
+			}
+			else if (src.depth() == CV_32F)
 			{
 				fillOcclusion_<float>(src, (float)invalidvalue, FLT_MAX);
+			}
+			else if (src.depth() == CV_64F)
+			{
+				fillOcclusion_<double>(src, (double)invalidvalue, DBL_MAX);
 			}
 		}
 	}

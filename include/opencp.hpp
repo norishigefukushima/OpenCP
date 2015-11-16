@@ -101,7 +101,6 @@ namespace cp
 	CP_EXPORT void fitPlanePCA(cv::InputArray src, cv::Point3f& dest);
 	CP_EXPORT void fitPlaneRANSAC(std::vector<cv::Point3f>& src, cv::Point3f& dest, int numofsample, float threshold, int refineIter = 0);
 
-
 	CP_EXPORT void drawHistogramImageGray(cv::InputArray src, cv::OutputArray histogram, cv::Scalar color, cv::Scalar meancolor, bool isGrid = true);
 	CP_EXPORT void drawAccumulateHistogramImageGray(cv::InputArray src, cv::OutputArray histogram, cv::Scalar color, cv::Scalar meancolor, bool isGrid = true);
 	CP_EXPORT void drawHistogramImage(cv::InputArray src, cv::OutputArray histogram, cv::Scalar meancolor, bool isGrid = true);
@@ -635,11 +634,13 @@ namespace cp
 	CP_EXPORT void splitToGrid(const cv::Mat& src, std::vector<cv::Mat>& dest, cv::Size grid, int borderRadius);
 
 	//slic
+	CP_EXPORT void SLICSegment2Vector3D(cv::InputArray segment, cv::InputArray signal, std::vector<std::vector<cv::Point3f>>& segmentPoint);
 	CP_EXPORT void SLICSegment2Vector3D(cv::InputArray segment, cv::InputArray signal, std::vector<std::vector<cv::Point3i>>& segmentPoint);
 	CP_EXPORT void SLICVector2Segment(std::vector<std::vector<cv::Point>>& segmentPoint, cv::Size outputImageSize, cv::OutputArray segment);
+	CP_EXPORT void SLICVector3D2Signal(std::vector<std::vector<cv::Point3f>>& segmentPoint, cv::Size outputImageSize, cv::OutputArray signal);
 	CP_EXPORT void SLICSegment2Vector(cv::InputArray segment, std::vector<std::vector<cv::Point>>& segmentPoint);
 	CP_EXPORT void SLIC(cv::InputArray src, cv::OutputArray segment, int regionSize, float regularization, float minRegionRatio, int max_iteration);
-	CP_EXPORT void drawSLIC(const cv::Mat& src, cv::Mat& segment, cv::Mat& dest, bool isLine = true, cv::Scalar line_color = cv::Scalar(0, 0, 255));
+	CP_EXPORT void drawSLIC(cv::InputArray src, cv::InputArray segment, cv::OutputArray dst, bool isMean = true, bool isLine = true, cv::Scalar line_color = cv::Scalar(0, 0, 255));
 	CP_EXPORT void SLICBase(cv::Mat& src, cv::Mat& segment, int regionSize, float regularization, float minRegionRatio, int max_iteration);//not optimized code for test
 
 
@@ -1842,7 +1843,7 @@ namespace cp
 		FILL_DISPARITY = 0,
 		FILL_DEPTH = 1
 	};
-	CP_EXPORT void fillOcclusion(cv::Mat& src, int invalidvalue = 0, int method = FILL_DISPARITY);// for disparity map
+	CP_EXPORT void fillOcclusion(cv::InputOutputArray src, int invalidvalue = 0, int method = FILL_DISPARITY);// for disparity map
 	CP_EXPORT void jointColorDepthFillOcclusion(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dest, const cv::Size ksize, double threshold);
 
 	//remove Streaking Noise in stereo DP matching and hole filling function
@@ -1871,6 +1872,7 @@ namespace cp
 	CP_EXPORT void createDisparityALLMask(cv::Mat& src, cv::Mat& dest);
 	CP_EXPORT void createDisparityNonOcclusionMask(cv::Mat& src, double amp, double thresh, cv::Mat& dest);
 
+	CP_EXPORT void dispalityFitPlane(cv::InputArray disparity, cv::InputArray image, cv::OutputArray dest, int slicRegionSize, float slicRegularization, float slicMinRegionRatio, int slicMaxIteration, int ransacNumofSample, float ransacThreshold);
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 	//under construction
 	/////////////////////////////////////////////////////////////////////////////////////////////////

@@ -8,6 +8,7 @@
 #pragma comment(lib, "opencp.lib")
 #endif
 
+void guiDisparityPlaneFitSLICTest(cv::Mat& leftim, cv::Mat& rightim, cv::Mat& GT);
 void fitPlaneTest();
 
 void guiEdgePresevingFilterOpenCV(cv::Mat& src);

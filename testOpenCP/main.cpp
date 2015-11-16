@@ -5,8 +5,7 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-	fitPlaneTest();
-	return 0;
+	//fitPlaneTest(); return 0;
 	//guiWeightMapTest(); return 0;
 	//guiStereo(); return 0;
 	//guiPlotTest(); return 0;
@@ -36,10 +35,11 @@ int main(int argc, char** argv)
 	//guiAnalysisImage(src);
 	Mat dst = src.clone();
 	//paralleldenoise(src, dst, 5);
-	Mat disp = imread("img/stereo/Art/disp1.png");
+	Mat disp = imread("img/stereo/Dolls/disp1.png",0 );
 	//	Mat src;
 	Mat dest;
 
+	guiDisparityPlaneFitSLICTest(src, ref, disp);
 	//guiCrossBasedLocalFilter(src); return 0;
 	//guiHistgramTest(src);
 	//Mat src = imread("img/kodim22.png");

@@ -565,10 +565,14 @@ namespace cp
 		return getMax_int32(src.ptr<int>(0), src.size().area());
 	}
 
-	void drawSLIC(const Mat& src, Mat& segment, Mat& dest, bool isLine, Scalar line_color)
+	void drawSLIC(InputArray src_, InputArray segment_, OutputArray dst, bool isMean, bool isLine, Scalar line_color)
 	{
-		if (dest.empty() || dest.size() != src.size()) dest = Mat::zeros(src.size(), src.type());
-		else dest.setTo(0);
+		if (dst.empty() || dst.size() != src_.size()) dst.create(src_.size(), src_.type());
+		else dst.setTo(0);
+
+		Mat dest = dst.getMat();
+		Mat src = src_.getMat();
+		Mat segment = segment_.getMat();
 
 		int maxseg = getMax_int32(segment) + 1;
 
@@ -583,92 +587,100 @@ namespace cp
 		int width = src.cols;
 		int height = src.rows;
 
-		if (src.channels() == 3)
+		if (isMean)
 		{
-			for (int y = 0; y < height; ++y)
+			if (src.channels() == 3)
 			{
-
-				uchar* im = (uchar*)src.ptr<uchar>(y);
-				uchar* d = dest.ptr<uchar>(y);
-				int * seg = segment.ptr<int>(y);
-				for (int x = 0; x < width; ++x)
+				for (int y = 0; y < height; ++y)
 				{
-					const int idx = *seg++;
 
-					numsegment[idx]++;
-					valsegment[3 * idx] += im[0];
-					valsegment[3 * idx + 1] += im[1];
-					valsegment[3 * idx + 2] += im[2];
+					uchar* im = (uchar*)src.ptr<uchar>(y);
+					uchar* d = dest.ptr<uchar>(y);
+					int * seg = segment.ptr<int>(y);
+					for (int x = 0; x < width; ++x)
+					{
+						const int idx = *seg++;
 
-					im += 3;
+						numsegment[idx]++;
+						valsegment[3 * idx] += im[0];
+						valsegment[3 * idx + 1] += im[1];
+						valsegment[3 * idx + 2] += im[2];
+
+						im += 3;
+					}
+				}
+				for (int i = maxseg; i--;)
+				{
+					if (numsegment[i] != 0)
+					{
+						float div = 1.f / (float)numsegment[i];
+						ucharsegment[3 * i] = cvRound(valsegment[3 * i] * div);
+						ucharsegment[3 * i + 1] = cvRound(valsegment[3 * i + 1] * div);
+						ucharsegment[3 * i + 2] = cvRound(valsegment[3 * i + 2] * div);
+					}
+				}
+				for (int y = 0; y < height; ++y)
+				{
+
+					uchar* im = dest.ptr<uchar>(y);
+					int * seg = segment.ptr<int>(y);
+					for (int x = 0; x < width; ++x)
+					{
+						const int idx = *seg++;
+
+						numsegment[idx]++;
+						im[0] = ucharsegment[3 * idx];
+						im[1] = ucharsegment[3 * idx + 1];
+						im[2] = ucharsegment[3 * idx + 2];
+
+						im += 3;
+					}
 				}
 			}
-			for (int i = maxseg; i--;)
+			else if (src.channels() == 1)
 			{
-				if (numsegment[i] != 0)
+				for (int y = 0; y < height; ++y)
 				{
-					float div = 1.f / (float)numsegment[i];
-					ucharsegment[3 * i] = cvRound(valsegment[3 * i] * div);
-					ucharsegment[3 * i + 1] = cvRound(valsegment[3 * i + 1] * div);
-					ucharsegment[3 * i + 2] = cvRound(valsegment[3 * i + 2] * div);
+					uchar* im = (uchar*)src.ptr<uchar>(y);
+					int * seg = segment.ptr<int>(y);
+					for (int x = 0; x < width; ++x)
+					{
+						const int idx = *seg++;
+						numsegment[idx]++;
+						valsegment[idx] += im[0];
+
+						im++;
+					}
 				}
-			}
-			for (int y = 0; y < height; ++y)
-			{
-
-				uchar* im = dest.ptr<uchar>(y);
-				int * seg = segment.ptr<int>(y);
-				for (int x = 0; x < width; ++x)
+				for (int i = maxseg; i--;)
 				{
-					const int idx = *seg++;
+					if (numsegment[i] != 0)
+					{
+						float div = 1.f / (float)numsegment[i];
+						ucharsegment[i] = cvRound(valsegment[i] * div);
+					}
+				}
+				for (int y = 0; y < height; ++y)
+				{
 
-					numsegment[idx]++;
-					im[0] = ucharsegment[3 * idx];
-					im[1] = ucharsegment[3 * idx + 1];
-					im[2] = ucharsegment[3 * idx + 2];
+					uchar* im = dest.ptr<uchar>(y);
+					int * seg = segment.ptr<int>(y);
+					for (int x = 0; x < width; ++x)
+					{
+						const int idx = *seg++;
 
-					im += 3;
+						numsegment[idx]++;
+						im[0] = ucharsegment[idx];
+						im++;
+					}
 				}
 			}
 		}
-		else if (src.channels() == 1)
+		else
 		{
-			for (int y = 0; y < height; ++y)
-			{
-				uchar* im = (uchar*)src.ptr<uchar>(y);
-				int * seg = segment.ptr<int>(y);
-				for (int x = 0; x < width; ++x)
-				{
-					const int idx = *seg++;
-					numsegment[idx]++;
-					valsegment[idx] += im[0];
-
-					im++;
-				}
-			}
-			for (int i = maxseg; i--;)
-			{
-				if (numsegment[i] != 0)
-				{
-					float div = 1.f / (float)numsegment[i];
-					ucharsegment[i] = cvRound(valsegment[i] * div);
-				}
-			}
-			for (int y = 0; y < height; ++y)
-			{
-
-				uchar* im = dest.ptr<uchar>(y);
-				int * seg = segment.ptr<int>(y);
-				for (int x = 0; x < width; ++x)
-				{
-					const int idx = *seg++;
-
-					numsegment[idx]++;
-					im[0] = ucharsegment[idx];
-					im++;
-				}
-			}
+			src.copyTo(dest);
 		}
+
 		if (isLine)
 		{
 			int* t = segment.ptr<int>(0);
@@ -1228,6 +1240,25 @@ namespace cp
 	}
 	}
 
+	void SLICVector3D2Signal(vector<vector<Point3f>>& segmentPoint, Size outputImageSize, OutputArray signal)
+	{
+		if (signal.size() != outputImageSize || signal.depth() != CV_32F) signal.create(outputImageSize, CV_32F);
+		Mat sig = signal.getMat();
+
+		for (int j = 0; j < segmentPoint.size(); ++j)
+		{
+			if (!segmentPoint[j].empty())
+			{
+				for (int i = 0; i < segmentPoint[j].size(); ++i)
+				{
+					int x = cvRound(segmentPoint[j][i].x);
+					int y = cvRound(segmentPoint[j][i].y);
+					sig.at<float>(y,x) = segmentPoint[j][i].z;
+				}
+			}
+		}
+	}
+
 	void SLICVector2Segment(vector<vector<Point>>& segmentPoint, Size outputImageSize, OutputArray segment)
 	{
 		if (segment.size() != outputImageSize || segment.depth() != CV_32S) segment.create(outputImageSize, CV_32S);
@@ -1242,8 +1273,8 @@ namespace cp
 		}
 	}
 
-	template <typename T>
-	void SLICSegment2Vector3D_(cv::InputArray segment, cv::InputArray signal, std::vector<std::vector<cv::Point3i>>& segmentPoint)
+	template <typename T, typename S>
+	void _SLICSegment2Vector3D_(cv::InputArray segment, cv::InputArray signal, std::vector<std::vector<cv::Point3_<S>>>& segmentPoint)
 	{
 		Mat sig = signal.getMat();
 		Mat seg = segment.getMat();
@@ -1254,24 +1285,34 @@ namespace cp
 			T* value = sig.ptr<T>(j);
 			for (int i = 0; i < seg.cols; ++i)
 			{
-				segmentPoint[s[i]].push_back(Point3i(i, j, (int)value[i]));
+				segmentPoint[s[i]].push_back(Point3_<S>((S)i, (S)j, (S)value[i]));
 			}
 		}
 	}
 
-	void SLICSegment2Vector3D(cv::InputArray segment, cv::InputArray signal, std::vector<std::vector<cv::Point3i>>& segmentPoint)
+	template <typename S>
+	void SLICSegment2Vector3D_(cv::InputArray segment, cv::InputArray signal, std::vector<std::vector<cv::Point3_<S>>>& segmentPoint)
 	{
 		double minv, maxv;
 		minMaxLoc(segment, &minv, &maxv);
 		segmentPoint.clear();
 		segmentPoint.resize((int)maxv + 1);
+		cout << maxv << endl;
+		if (signal.depth() == CV_8U) _SLICSegment2Vector3D_<uchar>(segment, signal, segmentPoint);
+		else if (signal.depth() == CV_16S) _SLICSegment2Vector3D_<short, S>(segment, signal, segmentPoint);
+		else if (signal.depth() == CV_16U) _SLICSegment2Vector3D_<ushort, S>(segment, signal, segmentPoint);
+		else if (signal.depth() == CV_32S) _SLICSegment2Vector3D_<int, S>(segment, signal, segmentPoint);
+		else if (signal.depth() == CV_32F) _SLICSegment2Vector3D_<float, S>(segment, signal, segmentPoint);
+		else if (signal.depth() == CV_64F) _SLICSegment2Vector3D_<double, S>(segment, signal, segmentPoint);
+	}
 
-		if (signal.depth()==CV_8U) SLICSegment2Vector3D_<uchar>(segment, signal, segmentPoint);
-		else if (signal.depth() == CV_16S) SLICSegment2Vector3D_<short>(segment, signal, segmentPoint);
-		else if (signal.depth() == CV_16U) SLICSegment2Vector3D_<ushort>(segment, signal, segmentPoint);
-		else if (signal.depth() == CV_32S) SLICSegment2Vector3D_<int>(segment, signal, segmentPoint);
-		else if (signal.depth() == CV_32F) SLICSegment2Vector3D_<float>(segment, signal, segmentPoint);
-		else if (signal.depth() == CV_64F) SLICSegment2Vector3D_<double>(segment, signal, segmentPoint);
+	void SLICSegment2Vector3D(cv::InputArray segment, cv::InputArray signal, std::vector<std::vector<cv::Point3i>>& segmentPoint)
+	{
+		SLICSegment2Vector3D_<int>(segment, signal, segmentPoint);
+	}
+	void SLICSegment2Vector3D(cv::InputArray segment, cv::InputArray signal, std::vector<std::vector<cv::Point3f>>& segmentPoint)
+	{
+		SLICSegment2Vector3D_<float>(segment, signal, segmentPoint);
 	}
 
 	void SLICSegment2Vector(cv::InputArray segment, std::vector<std::vector<cv::Point>>& segmentPoint)

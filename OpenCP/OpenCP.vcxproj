@@ -182,7 +182,7 @@
     <ClCompile Include="depthfilter.cpp" />
     <ClCompile Include="detailEnhancement.cpp" />
     <ClCompile Include="diffPixel.cpp" />
-    <ClCompile Include="disparityPlaneFit.cpp" />
+    <ClCompile Include="disparityFitPlane.cpp" />
     <ClCompile Include="domainTransformFilter.cpp" />
     <ClCompile Include="draw.cpp" />
     <ClCompile Include="dualBilateralFilter.cpp" />

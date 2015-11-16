@@ -351,11 +351,11 @@
     <ClCompile Include="metrics.cpp">
       <Filter>ソース ファイル\imgproc</Filter>
     </ClCompile>
-    <ClCompile Include="disparityPlaneFit.cpp">
-      <Filter>ソース ファイル\stereo</Filter>
-    </ClCompile>
     <ClCompile Include="fitPlane.cpp">
       <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="disparityFitPlane.cpp">
+      <Filter>ソース ファイル\stereo</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

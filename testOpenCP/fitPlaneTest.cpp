@@ -72,7 +72,7 @@ void fitPlaneTest()
 	{CalcTime t("PCA");
 	//PCA from noisy input without solt pepper noise;
 	vector<Point3f> input;
-	mat2vec3f(noise, input); 
+	mat2vec3f(noise, input);
 	fitPlanePCA(input, dest);
 	cout << "pca with solt pepper:" << dest << endl;
 	}
