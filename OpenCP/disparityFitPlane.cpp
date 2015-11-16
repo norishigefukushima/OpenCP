@@ -40,7 +40,16 @@ namespace cp
 		else if (signal.depth() == CV_32F) _SLICSegment2Vector3D_<float, S>(segment, signal, (float)invalidValue, segmentPoint);
 		else if (signal.depth() == CV_64F) _SLICSegment2Vector3D_<double, S>(segment, signal, (double)invalidValue, segmentPoint);
 	}
-
+	/*
+	void vectest(InputArray point)
+	{
+		vector<Point3f> a = point.getMatVector();
+		cout << point.kind() << endl;;
+		cout << _InputArray::STD_VECTOR_MAT << endl;
+		cout << _InputArray::STD_VECTOR_VECTOR << endl;
+		//cv:
+	}*/
+	
 	static int countArrowablePointDistanceZ(const std::vector<cv::Point3f>& points, Point3f& abc, float threshold)
 	{
 		int count = 0;
@@ -54,98 +63,7 @@ namespace cp
 		}
 		return count;
 	}
-	/*
-	void dispalityFitPlane(cv::InputArray disparity, cv::InputArray image, cv::OutputArray dest, int slicRegionSize, float slicRegularization, float slicMinRegionRatio, int slicMaxIteration, int ransacNumofSample, float ransacThreshold)
-	{
-		Mat segment;
 
-		SLIC(image, segment, slicRegionSize, slicRegularization, slicMinRegionRatio, slicMaxIteration);
-
-		vector<vector<Point3f>> points;
-		SLICSegment2Vector3D_<float>(segment, disparity, 0, points);
-
-		Mat disp32f = Mat::zeros(image.size(), CV_32F);
-
-		Mat show = Mat::zeros(image.size(), CV_8U);
-		Mat idx = Mat::zeros(image.size(), CV_8U);
-		for (int i = 0; i < points.size(); ++i)
-		{
-			if (points[i].size() < 3)
-			{
-				if (!points[i].empty())
-				{
-					for (int j = 0; j < points[i].size(); ++j)
-					{
-						points[i][j].z = 0.f;
-					}
-				}
-			}
-			else
-			{
-				Point3f abc;
-				fitPlaneRANSAC(points[i], abc, ransacNumofSample, ransacThreshold, 1);
-				int v = countArrowablePointDistanceZ(points[i], abc, ransacThreshold);
-				double rate = (double)v / points[i].size() * 100;
-								
-				//float error = 0.f; for (int j = 0; j < points[i].size(); ++j) error += abs(points[i][j].z - (points[i][j].x*abc.x + points[i][j].y*abc.y + abc.z));
-				//cout << i << "," << error / points[i].size() << endl;
-
-				for (int j = 0; j < points[i].size(); ++j)
-				{
-					points[i][j].z = points[i][j].x*abc.x + points[i][j].y*abc.y + abc.z;
-				}
-				
-				for (int j = 0; j < points[i].size(); ++j)
-				{
-					int x = cvRound(points[i][j].x);
-					int y = cvRound(points[i][j].y);
-					show.at<uchar>(y, x) = points[i][j].z*0.125;
-					idx.at<uchar>(y, x) = i%256;
-				}
-
-				if (rate < 30)
-				{
-					cout << "rate0: " << rate << ": " << v << "/" << points[i].size() << endl;
-
-					fitPlaneRANSAC(points[i], abc, ransacNumofSample, ransacThreshold, 1);
-					v = countArrowablePointDistanceZ(points[i], abc, ransacThreshold);
-					rate = (double)v / points[i].size() * 100;
-					cout << "rate1: " << rate << ": " << v << "/" << points[i].size() << endl;
-
-					fitPlaneRANSAC(points[i], abc, ransacNumofSample, ransacThreshold, 1);
-					v = countArrowablePointDistanceZ(points[i], abc, ransacThreshold);
-					rate = (double)v / points[i].size() * 100;
-					cout << "rate2: " << rate << ": " << v << "/" << points[i].size() << endl;
-
-					fitPlaneRANSAC(points[i], abc, ransacNumofSample, ransacThreshold, 1);
-					v = countArrowablePointDistanceZ(points[i], abc, ransacThreshold);
-					rate = (double)v / points[i].size() * 100;
-					cout << "rate3: " << rate << ": " << v << "/" << points[i].size() << endl;
-
-					//cout << abc << endl;
-					imshow("debug", show);
-					imshow("debug2", idx);
-					waitKey();
-				}
-				
-			}
-		}
-
-		SLICVector3D2Signal(points, image.size(), disp32f);
-		if (disparity.depth() == CV_32F)
-		{
-			disp32f.copyTo(dest);
-		}
-		else if (disparity.depth() == CV_8U || disparity.depth() == CV_16U || disparity.depth() == CV_16S || disparity.depth() == CV_32S)
-		{
-			disp32f.convertTo(dest, disparity.type(), 1.0, 0.5);
-		}
-		else
-		{
-			disp32f.convertTo(dest, disparity.type());
-		}
-	}
-	*/
 	Point3f getMean(vector<Point3f>& src)
 	{
 		Point3f ret = Point3f(0.f,0.f,0.f);
@@ -185,7 +103,7 @@ namespace cp
 			dest.push_back(src[rnd.uniform(0, s)]);
 		}
 	}
-	void disparityFitTestTest(int ransacNumofSample, float ransacThreshold)
+	void disparityFitTest(int ransacNumofSample, float ransacThreshold)
 	{
 		cv::FileStorage pointxml("planePoint.xml", cv::FileStorage::READ);
 		namedWindow("test");
@@ -208,7 +126,7 @@ namespace cp
 
 				Point3f abc;
 				fitPlaneRANSAC(a, abc, ransacNumofSample, ransacThreshold, 0);
-
+//				vectest(a);
 				//vector<Point3f> point3;
 				//randomSampleVector2Vec3f(a, point3, 3);
 				//fitPlaneCrossProduct(point3, abc);
@@ -234,8 +152,8 @@ namespace cp
 	{
 		//disparityFitTest(ransacNumofSample, ransacThreshold);
 		//cv::FileStorage pointxml("planePoint.xml", cv::FileStorage::WRITE); int err = 0;
+
 		Mat segment;
-		
 		SLIC(image, segment, slicRegionSize, slicRegularization, slicMinRegionRatio, slicMaxIteration);
 		
 		vector<vector<Point3f>> points;
@@ -243,8 +161,6 @@ namespace cp
 
 		Mat disp32f = Mat::zeros(dest.size(), CV_32F);
 
-		
-		
 		for (int i = 0; i < points.size(); ++i)
 		{	
 			if (points[i].size() < 3)
@@ -262,16 +178,16 @@ namespace cp
 				Point3f abc;
 
 				fitPlaneRANSAC(points[i], abc, ransacNumofSample, ransacThreshold, 1);
+
+				//for refinement(if nessesary)
 				int v = countArrowablePointDistanceZ(points[i], abc, ransacThreshold);
 				double rate = (double)v / points[i].size() * 100;
-
 				int itermax = 1;
 				for (int n = 0; n < itermax;n++)
 				{
-					if (rate < 40)
+					if (rate < 30)
 					{
 						//pointxml <<format("point%03d",err++)<< points[i];
-
 						fitPlaneRANSAC(points[i], abc, ransacNumofSample, ransacThreshold, 1);
 						v = countArrowablePointDistanceZ(points[i], abc, ransacThreshold);
 						rate = (double)v / points[i].size() * 100;
