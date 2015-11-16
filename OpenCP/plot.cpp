@@ -18,11 +18,13 @@ gnuplot::gnuplot(string gnuplotpath)
 void gnuplot::cmd(string name)
 {
 	fprintf(fp, name.c_str());
+	fprintf(fp, "\n");
 	fflush(fp);
 }
 gnuplot::~gnuplot()
 {
-	fclose(fp);
+	//fclose(fp);
+	cmd("exit");
 	_pclose(fp);
 }
 

@@ -96,7 +96,7 @@ namespace cp
 	}
 
 	//only consider distance of Z: SVD solution for fixed x,y is sutable
-	static int filterArrowablePointDistanceZ(std::vector<cv::Point3f>& points, std::vector<cv::Point3f>& dest, const Point3f& abc, float threshold)
+	static int filterArrowablePointDistanceZ(const std::vector<cv::Point3f>& points, std::vector<cv::Point3f>& dest, const Point3f& abc, float threshold)
 	{
 		dest.clear();
 		for (int n = 0; n < points.size(); ++n)
@@ -110,9 +110,13 @@ namespace cp
 		return (int)dest.size();
 	}
 
-	void randomSampleVector2Vec3f(vector<Point3f>& src, vector<Point3f>& dest, int numofsample = 3)
+	static void randomSampleVector2Vec3f(const vector<Point3f>& src, vector<Point3f>& dest, int numofsample = 3)
 	{
-		if (!dest.empty())dest.clear();
+		if (!dest.empty())
+		{
+			dest.clear();
+			dest.resize(0);
+		}
 		cv::RNG rnd(cv::getTickCount());
 
 		int s = (int)src.size();
@@ -127,23 +131,30 @@ namespace cp
 		int numValidSample = 0;
 		Point3f abc = Point3f(0.f, 0.f, 0.f);
 
-		vector<Point3f> point3;
-		Point3f abctemp;
 		for (int i = 0; i < numofsample; i++)
 		{
+			vector<Point3f> point3;
+			Point3f abctemp;
 			randomSampleVector2Vec3f(src, point3, 3);
 			fitPlaneCrossProduct_(point3, abctemp);
-			int num = countArrowablePointDistanceZ(src, abctemp, threshold);
-			if (numValidSample < num)
+
+			if (checkRange(Mat(abctemp)))
 			{
-				numValidSample = num;
-				abc = abctemp;
+				int num = countArrowablePointDistanceZ(src, abctemp, threshold);
+				if (numValidSample < num)
+				{
+					numValidSample = num;
+					abc = abctemp;
+				}
 			}
 		}
 
 		vector<Point3f> filtered;
 		Point3f mean;
 		int samples = filterArrowablePointDistanceZ(src, filtered, abc, threshold);
+		
+		//cout << abc << endl;
+		//cout <<"final:"<< samples << "/"<<src.size()<<endl;
 		if (samples>=3) fitPlanePCA(filtered, dest);
 		
 		for (int i = 0; i < refineIteration; i++)
@@ -151,7 +162,6 @@ namespace cp
 			vector<Point3f> filtered2;
 			int samples = filterArrowablePointDistanceZ(src, filtered2, dest, threshold);
 			if (samples>=3)fitPlanePCA(filtered2, dest);
-		}
-		
+		}	
 	}
 }

@@ -3,6 +3,7 @@
 
 using namespace std;
 
+
 int main(int argc, char** argv)
 {
 	//fitPlaneTest(); return 0;
@@ -39,7 +40,7 @@ int main(int argc, char** argv)
 	//	Mat src;
 	Mat dest;
 
-	guiDisparityPlaneFitSLICTest(src, ref, disp);
+	guiDisparityPlaneFitSLICTest(src, ref, disp); return 0;
 	//guiCrossBasedLocalFilter(src); return 0;
 	//guiHistgramTest(src);
 	//Mat src = imread("img/kodim22.png");

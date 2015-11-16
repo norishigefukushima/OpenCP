@@ -1,5 +1,6 @@
 #include "opencp.hpp"
-
+#include <opencv2/viz.hpp>
+#include <fstream>
 using namespace std;
 using namespace cv;
 
@@ -40,7 +41,7 @@ namespace cp
 		else if (signal.depth() == CV_64F) _SLICSegment2Vector3D_<double, S>(segment, signal, (double)invalidValue, segmentPoint);
 	}
 
-	static int countArrowablePointDistanceZ(std::vector<cv::Point3f>& points, Point3f& abc, float threshold)
+	static int countArrowablePointDistanceZ(const std::vector<cv::Point3f>& points, Point3f& abc, float threshold)
 	{
 		int count = 0;
 
@@ -145,17 +146,105 @@ namespace cp
 		}
 	}
 	*/
+	Point3f getMean(vector<Point3f>& src)
+	{
+		Point3f ret = Point3f(0.f,0.f,0.f);
+		for (int i = 0; i < src.size(); i++)
+		{
+			ret += src[i];
+		}
+		return ret / (float)src.size();
+	}
+
+	void subMean(vector<Point3f>& src, Point3f mean)
+	{
+		Point3f ret = Point3f(0.f, 0.f, 0.f);
+		for (int i = 0; i < src.size(); i++)
+		{
+			src[i] -= mean;
+		}	
+	}
+
+	void addMean(vector<Point3f>& src, Point3f mean)
+	{
+		Point3f ret = Point3f(0.f, 0.f, 0.f);
+		for (int i = 0; i < src.size(); i++)
+		{
+			src[i] += mean;
+		}
+	}
+
+	static void randomSampleVector2Vec3f(vector<Point3f>& src, vector<Point3f>& dest, int numofsample = 3)
+	{
+		if (!dest.empty())dest.clear();
+		cv::RNG rnd(cv::getTickCount());
+
+		int s = (int)src.size();
+		for (int i = 0; i < numofsample; i++)
+		{
+			dest.push_back(src[rnd.uniform(0, s)]);
+		}
+	}
+	void disparityFitTestTest(int ransacNumofSample, float ransacThreshold)
+	{
+		cv::FileStorage pointxml("planePoint.xml", cv::FileStorage::READ);
+		namedWindow("test");
+		
+		gnuplot plot("C:/fukushima/docs/Dropbox/bin/gnuplot/bin/pgnuplot.exe");
+		//gnuplot plot("C:/fukushima/docs/Dropbox/bin/gnuplot/bin/wgnuplot_pipes.exe");
 	
+		int idx = 0;
+		for (int i = 0; i < 300; i++)
+		{
+			int key = 0;
+			while (key != 'n')
+			{
+				cv::RNG rnd(cv::getTickCount());
+
+				vector<Point3f> a;
+				std::ofstream raw("raw.dat");
+				std::ofstream ref("ref.dat");
+				pointxml[format("point%03d", idx)] >> a;
+
+				Point3f abc;
+				fitPlaneRANSAC(a, abc, ransacNumofSample, ransacThreshold, 0);
+
+				//vector<Point3f> point3;
+				//randomSampleVector2Vec3f(a, point3, 3);
+				//fitPlaneCrossProduct(point3, abc);
+				//int num = countArrowablePointDistanceZ(a, abc, ransacThreshold);
+				//cout << num << endl;
+				for (int i = 0; i < a.size(); i++)
+				{
+					//cout << a << endl;
+					raw << format("%f %f %f\n", a[i].x, a[i].y, a[i].z);
+					ref << format("%f %f %f\n", a[i].x, a[i].y, abc.x*a[i].x + abc.y*a[i].y + abc.z);
+				}
+			
+				raw.close();
+				ref.close();
+				plot.cmd("sp 'raw.dat', 'ref.dat'");
+				key = waitKey();
+			}
+			idx++;
+		}
+	}
+
 	void dispalityFitPlane(cv::InputArray disparity, cv::InputArray image, cv::OutputArray dest, int slicRegionSize, float slicRegularization, float slicMinRegionRatio, int slicMaxIteration, int ransacNumofSample, float ransacThreshold)
 	{
+		//disparityFitTest(ransacNumofSample, ransacThreshold);
+		//cv::FileStorage pointxml("planePoint.xml", cv::FileStorage::WRITE); int err = 0;
 		Mat segment;
-
+		
 		SLIC(image, segment, slicRegionSize, slicRegularization, slicMinRegionRatio, slicMaxIteration);
 		
 		vector<vector<Point3f>> points;
 		SLICSegment2Vector3D_<float>(segment, disparity, 0, points);
 
 		Mat disp32f = Mat::zeros(dest.size(), CV_32F);
+
+		
+		
 		for (int i = 0; i < points.size(); ++i)
 		{	
 			if (points[i].size() < 3)
@@ -171,31 +260,28 @@ namespace cp
 			else
 			{
 				Point3f abc;
+
 				fitPlaneRANSAC(points[i], abc, ransacNumofSample, ransacThreshold, 1);
 				int v = countArrowablePointDistanceZ(points[i], abc, ransacThreshold);
 				double rate = (double)v / points[i].size() * 100;
 
-				int itermax = 0;
+				int itermax = 1;
 				for (int n = 0; n < itermax;n++)
 				{
 					if (rate < 40)
 					{
+						//pointxml <<format("point%03d",err++)<< points[i];
+
 						fitPlaneRANSAC(points[i], abc, ransacNumofSample, ransacThreshold, 1);
 						v = countArrowablePointDistanceZ(points[i], abc, ransacThreshold);
 						rate = (double)v / points[i].size() * 100;
-
-					//	cout <<n<<":"<< rate << endl;
 					}
 				}
-				
-				
-				//float error = 0.f; for (int j = 0; j < points[i].size(); ++j) error += abs(points[i][j].z - (points[i][j].x*abc.x + points[i][j].y*abc.y + abc.z));
-				//cout << i << "," << error / points[i].size() << endl;
-					
+	
 				for (int j = 0; j < points[i].size(); ++j)
 				{
 					points[i][j].z = points[i][j].x*abc.x + points[i][j].y*abc.y + abc.z;
-				}	
+				}			
 			}
 		}
 

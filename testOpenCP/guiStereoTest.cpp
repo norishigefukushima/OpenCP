@@ -36,7 +36,7 @@ void guiDisparityPlaneFitSLICTest(Mat& leftim, Mat& rightim, Mat& GT)
 	int mrs = 10; createTrackbar("ratio of min region size", wname, &mrs, 100);
 	int iter = 20; createTrackbar("iteration", wname, &iter, 1000);
 	int nransac = 30; createTrackbar("samples", wname, &nransac, 1000);
-	int transac = 10; createTrackbar("threshold", wname, &transac, 1000);
+	int transac = 3; createTrackbar("threshold", wname, &transac, 1000);
 	int key = 0;
 
 	Mat refine;
@@ -51,7 +51,7 @@ void guiDisparityPlaneFitSLICTest(Mat& leftim, Mat& rightim, Mat& GT)
 	while (key != 'q')
 	{
 		dispalityFitPlane(disparity, leftim, refine, S, (float)m, mrs / 100.0f, iter, nransac, transac);
-
+		binalyWeightedRangeFilter(disparity, disparity, Size(7, 7), 16);
 		if (isStop) buffer.copyTo(refine);
 		else refine.copyTo(buffer);
 
@@ -69,7 +69,7 @@ void guiDisparityPlaneFitSLICTest(Mat& leftim, Mat& rightim, Mat& GT)
 		key = waitKey(1);
 
 		
-		Mat save; cvtColor(show, save, CV_GRAY2BGR); static int count = 0; imwrite(format("out%d.png", count++), save);
+		Mat save; cvtColor(show, save, CV_GRAY2BGR); static int count = 0; imwrite(format("GIF/out%d.png", count++), save);
 		if (key == 'p')
 		{
 			isStop = (isStop) ? false : true;
