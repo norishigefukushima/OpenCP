@@ -95,9 +95,9 @@ void guiRealtimeO1BilateralFilterTest(Mat& src)
 #define DEBUG_32F_RTBF 1
 #ifdef DEBUG_32F_RTBF
 	{
-	//bilateralFilter(srcf, ref, cvRound(3.f*space / 10.f) * 2 + 1, color / 10.f, space / 10.0f, BORDER_REPLICATE);
-	bilateralFilterL2(srcf, ref, cvRound(3.f*space / 10.f), color / 10.f, space / 10.0f, BORDER_REPLICATE);
-	cout << PSNR64F(ref2, ref)<< endl;
+		//bilateralFilter(srcf, ref, cvRound(3.f*space / 10.f) * 2 + 1, color / 10.f, space / 10.0f, BORDER_REPLICATE);
+		bilateralFilterL2(srcf, ref, cvRound(3.f*space / 10.f), color / 10.f, space / 10.0f, BORDER_REPLICATE);
+		cout << PSNR64F(ref2, ref) << endl;
 	}
 #else
 	bilateralFilter(src, ref, cvRound(3.f*space / 10.f) * 2 + 1, color / 10.f, space / 10.0f, BORDER_REPLICATE);
@@ -118,9 +118,9 @@ void guiRealtimeO1BilateralFilterTest(Mat& src)
 		float sigma_color = color / 10.f;
 		float sigma_space = space / 10.f;
 		int d = cvRound(sigma_space*3.f) * 2 + 1;
-		rbf.upsample_method = upmethod;
-		rbf.downsample_size = rsize;
-		rbf.splatting_downsample_size = srsize;
+		rbf.upsampleMethod = upmethod;
+		rbf.downsampleSizeBlurring = rsize;
+		rbf.downsampleSizeSplatting = srsize;
 		if (key == 'r')
 		{
 
@@ -137,7 +137,7 @@ void guiRealtimeO1BilateralFilterTest(Mat& src)
 			CalcTime t("FIR SP", 0, false);
 
 #ifdef DEBUG_32F_RTBF
-			rbf.gauss_fir(srcf, dest, d / 2, sigma_color, sigma_space, bin);
+			rbf.gaussFIR(srcf, dest, d / 2, sigma_color, sigma_space, bin);
 #else
 			rbf.gauss_fir(src, dest, d / 2, sigma_color, sigma_space, bin);
 #endif
@@ -148,7 +148,7 @@ void guiRealtimeO1BilateralFilterTest(Mat& src)
 			CalcTime t("IIR AM", 0, false);
 
 #ifdef DEBUG_32F_RTBF
-			rbf.gauss_iir(srcf, dest, sigma_color, sigma_space, bin, RealtimeO1BilateralFilter::IIR_AM, iter);
+			rbf.gaussIIR(srcf, dest, sigma_color, sigma_space, bin, RealtimeO1BilateralFilter::IIR_AM, iter);
 #else
 			rbf.gauss_iir(src, dest, sigma_color, sigma_space, bin, RealtimeO1BilateralFilter::IIR_AM, iter);
 #endif
@@ -159,7 +159,7 @@ void guiRealtimeO1BilateralFilterTest(Mat& src)
 			CalcTime t("IIR SR", 0, false);
 
 #ifdef DEBUG_32F_RTBF
-			rbf.gauss_iir(srcf, dest, sigma_color, sigma_space, bin, RealtimeO1BilateralFilter::IIR_SR, iter);
+			rbf.gaussIIR(srcf, dest, sigma_color, sigma_space, bin, RealtimeO1BilateralFilter::IIR_SR, iter);
 #else
 			rbf.gauss_iir(src, dest, sigma_color, sigma_space, bin, RealtimeO1BilateralFilter::IIR_SR, iter);
 #endif
@@ -170,7 +170,7 @@ void guiRealtimeO1BilateralFilterTest(Mat& src)
 			CalcTime t("IIR Deriche", 0, false);
 
 #ifdef DEBUG_32F_RTBF
-			rbf.gauss_iir(srcf, dest, sigma_color, sigma_space, bin, RealtimeO1BilateralFilter::IIR_Deriche, iter);
+			rbf.gaussIIR(srcf, dest, sigma_color, sigma_space, bin, RealtimeO1BilateralFilter::IIR_Deriche, iter);
 #else
 			rbf.gauss_iir(src, dest, sigma_color, sigma_space, bin, RealtimeO1BilateralFilter::IIR_Deriche, iter);
 #endif
@@ -181,7 +181,7 @@ void guiRealtimeO1BilateralFilterTest(Mat& src)
 			CalcTime t("IIR YVY", 0, false);
 
 #ifdef DEBUG_32F_RTBF
-			rbf.gauss_iir(srcf, dest, sigma_color, sigma_space, bin, RealtimeO1BilateralFilter::IIR_YVY, iter);
+			rbf.gaussIIR(srcf, dest, sigma_color, sigma_space, bin, RealtimeO1BilateralFilter::IIR_YVY, iter);
 #else
 			rbf.gauss_iir(src, dest, sigma_color, sigma_space, bin, RealtimeO1BilateralFilter::IIR_YVY, iter);
 #endif
@@ -222,7 +222,7 @@ void guiRealtimeO1BilateralFilterTest(Mat& src)
 
 void guiJointRealtimeO1BilateralFilterTest(Mat& src_, Mat& guide_)
 {
-	
+
 	Mat src, guide;
 	if (src_.channels() == 3)
 	{
@@ -289,9 +289,9 @@ void guiJointRealtimeO1BilateralFilterTest(Mat& src_, Mat& guide_)
 		float sigma_color = color / 10.f;
 		float sigma_space = space / 10.f;
 		int d = cvRound(sigma_space*3.f) * 2 + 1;
-		rbf.upsample_method = upmethod;
-		rbf.downsample_size = rsize;
-		rbf.splatting_downsample_size = srsize;
+		rbf.upsampleMethod = upmethod;
+		rbf.downsampleSizeBlurring = rsize;
+		rbf.downsampleSizeSplatting = srsize;
 		if (key == 'r')
 		{
 
@@ -302,13 +302,13 @@ void guiJointRealtimeO1BilateralFilterTest(Mat& src_, Mat& guide_)
 			//jointBilateralFilter(src, guide, ref, Size(d, d), color / 10.f, space / 10.0f, FILTER_CIRCLE, BORDER_REFLECT);
 #endif
 		}
-		
+
 		if (sw == 0)
 		{
 			CalcTime t("FIR SP", 0, false);
 
 #ifdef DEBUG_32F_RTBF
-			rbf.gauss_fir(srcf, guide, dest, d / 2, sigma_color, sigma_space, bin);
+			rbf.gaussFIR(srcf, guide, dest, d / 2, sigma_color, sigma_space, bin);
 #else
 			rbf.gauss_fir(src, guide, dest, d / 2, sigma_color, sigma_space, bin);
 #endif
@@ -319,7 +319,7 @@ void guiJointRealtimeO1BilateralFilterTest(Mat& src_, Mat& guide_)
 			CalcTime t("IIR AM", 0, false);
 
 #ifdef DEBUG_32F_RTBF
-			rbf.gauss_iir(srcf, guide, dest, sigma_color, sigma_space, bin, RealtimeO1BilateralFilter::IIR_AM, iter);
+			rbf.gaussIIR(srcf, guide, dest, sigma_color, sigma_space, bin, RealtimeO1BilateralFilter::IIR_AM, iter);
 #else
 			rbf.gauss_iir(src, guide, dest, sigma_color, sigma_space, bin, RealtimeO1BilateralFilter::IIR_AM, iter);
 #endif
@@ -330,7 +330,7 @@ void guiJointRealtimeO1BilateralFilterTest(Mat& src_, Mat& guide_)
 			CalcTime t("IIR SR", 0, false);
 
 #ifdef DEBUG_32F_RTBF
-			rbf.gauss_iir(srcf, guide, dest, sigma_color, sigma_space, bin, RealtimeO1BilateralFilter::IIR_SR, iter);
+			rbf.gaussIIR(srcf, guide, dest, sigma_color, sigma_space, bin, RealtimeO1BilateralFilter::IIR_SR, iter);
 #else
 			rbf.gauss_iir(src, guide, dest, sigma_color, sigma_space, bin, RealtimeO1BilateralFilter::IIR_SR, iter);
 #endif
@@ -341,7 +341,7 @@ void guiJointRealtimeO1BilateralFilterTest(Mat& src_, Mat& guide_)
 			CalcTime t("IIR Deriche", 0, false);
 
 #ifdef DEBUG_32F_RTBF
-			rbf.gauss_iir(srcf, guide, dest, sigma_color, sigma_space, bin, RealtimeO1BilateralFilter::IIR_Deriche, iter);
+			rbf.gaussIIR(srcf, guide, dest, sigma_color, sigma_space, bin, RealtimeO1BilateralFilter::IIR_Deriche, iter);
 #else
 			rbf.gauss_iir(src, guide, dest, sigma_color, sigma_space, bin, RealtimeO1BilateralFilter::IIR_Deriche, iter);
 #endif
@@ -352,7 +352,7 @@ void guiJointRealtimeO1BilateralFilterTest(Mat& src_, Mat& guide_)
 			CalcTime t("IIR YVY", 0, false);
 
 #ifdef DEBUG_32F_RTBF
-			rbf.gauss_iir(srcf, guide, dest, sigma_color, sigma_space, bin, RealtimeO1BilateralFilter::IIR_YVY, iter);
+			rbf.gaussIIR(srcf, guide, dest, sigma_color, sigma_space, bin, RealtimeO1BilateralFilter::IIR_YVY, iter);
 #else
 			rbf.gauss_iir(src, guide, dest, sigma_color, sigma_space, bin, RealtimeO1BilateralFilter::IIR_YVY, iter);
 #endif

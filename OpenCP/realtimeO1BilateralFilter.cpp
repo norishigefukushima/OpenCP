@@ -11,10 +11,10 @@ namespace cp
 		isSaveMemory = false;
 		setBinDepth(CV_32F);
 		setColorNorm(L1SQR);
-		splatting_downsample_size = 1;
-		downsample_size = 1;
-		downsample_method = INTER_AREA;
-		upsample_method = INTER_CUBIC;
+		downsampleSizeSplatting = 1;
+		downsampleSizeBlurring = 1;
+		downsampleMethod = INTER_AREA;
+		upsampleMethod = INTER_CUBIC;
 
 		bin2num.resize(256);
 		idx.resize(256);
@@ -119,22 +119,22 @@ namespace cp
 		normType = normType_;
 	}
 
-	void RealtimeO1BilateralFilter::filter(const Mat& src_, Mat& dest_)
+	void RealtimeO1BilateralFilter::blurring(const Mat& src_, Mat& dest_)
 	{
 		Mat src, dest;
 
-		downsample_size = max(downsample_size, 1);
-		splatting_downsample_size = max(splatting_downsample_size, 1);
+		downsampleSizeBlurring = max(downsampleSizeBlurring, 1);
+		downsampleSizeSplatting = max(downsampleSizeSplatting, 1);
 
-		int dsize = splatting_downsample_size*downsample_size;
-		if (downsample_size == 1)
+		int dsize = downsampleSizeSplatting*downsampleSizeBlurring;
+		if (downsampleSizeBlurring == 1)
 		{
 			src = src_;
 			dest = dest_;
 		}
 		else
 		{
-			resize(src_, src, Size(src_.cols / downsample_size, src_.rows / downsample_size), 0.0, 0.0, downsample_method);
+			resize(src_, src, Size(src_.cols / downsampleSizeBlurring, src_.rows / downsampleSizeBlurring), 0.0, 0.0, downsampleMethod);
 		}
 
 		if (filter_type == FIR_SEPARABLE)
@@ -159,9 +159,9 @@ namespace cp
 		{
 			GaussianFilter(src, dest, (sigma_space / dsize), GAUSSIAN_FILTER_VYV, filterK);
 		}
-		if (downsample_size != 1)
+		if (downsampleSizeBlurring != 1)
 		{
-			resize(dest, dest_, src_.size(), 0.0, 0.0, upsample_method);
+			resize(dest, dest_, src_.size(), 0.0, 0.0, upsampleMethod);
 		}
 	}
 
@@ -389,10 +389,10 @@ namespace cp
 		if (typeid(S) == typeid(float)) dst = Mat::zeros(src_.size(), CV_MAKETYPE(CV_32F, src_.channels()));
 		else dst = Mat::zeros(src_.size(), CV_MAKETYPE(CV_64F, src_.channels()));
 
-		if (splatting_downsample_size != 1)
+		if (downsampleSizeSplatting != 1)
 		{
-			resize(src_, src, Size(src_.size().width / splatting_downsample_size, src_.size().height / splatting_downsample_size), 0, 0, downsample_method);
-			resize(guide_, guide, Size(src_.size().width / splatting_downsample_size, src_.size().height / splatting_downsample_size), 0, 0, downsample_method);
+			resize(src_, src, Size(src_.size().width / downsampleSizeSplatting, src_.size().height / downsampleSizeSplatting), 0, 0, downsampleMethod);
+			resize(guide_, guide, Size(src_.size().width / downsampleSizeSplatting, src_.size().height / downsampleSizeSplatting), 0, 0, downsampleMethod);
 		}
 		else
 		{
@@ -429,17 +429,17 @@ namespace cp
 				uchar v = bin2num[b];
 				splatting<T, S>(s, su, sd, j, v, imageSize, src.channels());
 
-				filter(sub_range[0], sub_range[0]);
-				filter(normalize_sub_range[0], normalize_sub_range[0]);
+				blurring(sub_range[0], sub_range[0]);
+				blurring(normalize_sub_range[0], normalize_sub_range[0]);
 
-				if (splatting_downsample_size == 1)
+				if (downsampleSizeSplatting == 1)
 				{
 					divide(sub_range[0], normalize_sub_range[0], bgrid[0]);
 				}
 				else
 				{
 					divide(sub_range[0], normalize_sub_range[0], sub_range[0]);
-					resize(sub_range[0], bgrid[0], src_.size(), 0, 0, upsample_method);
+					resize(sub_range[0], bgrid[0], src_.size(), 0, 0, upsampleMethod);
 				}
 
 				if (typeid(S) == typeid(float))
@@ -479,17 +479,17 @@ namespace cp
 				uchar v = bin2num[b];
 				splatting<T, S>(s, su, sd, j, v, imageSize, src.channels());
 
-				filter(sub_range[0], sub_range[0]);
-				filter(normalize_sub_range[0], normalize_sub_range[0]);
+				blurring(sub_range[0], sub_range[0]);
+				blurring(normalize_sub_range[0], normalize_sub_range[0]);
 
-				if (splatting_downsample_size == 1)
+				if (downsampleSizeSplatting == 1)
 				{
 					divide(sub_range[0], normalize_sub_range[0], bgrid[0]);
 				}
 				else
 				{
 					divide(sub_range[0], normalize_sub_range[0], sub_range[0]);
-					resize(sub_range[0], bgrid[0], src_.size(), 0, 0, upsample_method);
+					resize(sub_range[0], bgrid[0], src_.size(), 0, 0, upsampleMethod);
 				}
 
 				if (typeid(S) == typeid(float))
@@ -552,17 +552,17 @@ namespace cp
 						bgr[2] = bin2num[r];
 						splattingColor<T, S>(s, su, sd, j, bgr, imageSize, src.channels(), normType);
 
-						filter(sub_range[0], sub_range[0]);
-						filter(normalize_sub_range[0], normalize_sub_range[0]);
+						blurring(sub_range[0], sub_range[0]);
+						blurring(normalize_sub_range[0], normalize_sub_range[0]);
 
-						if (splatting_downsample_size == 1)
+						if (downsampleSizeSplatting == 1)
 						{
 							divide(sub_range[0], normalize_sub_range[0], bgrid[0]);
 						}
 						else
 						{
 							divide(sub_range[0], normalize_sub_range[0], sub_range[0]);
-							resize(sub_range[0], bgrid[0], src_.size(), 0, 0, upsample_method);
+							resize(sub_range[0], bgrid[0], src_.size(), 0, 0, upsampleMethod);
 						}
 
 						if (typeid(S) == typeid(float))
@@ -643,17 +643,17 @@ namespace cp
 						bgr[2] = bin2num[r];
 						splattingColor<T, S>(s, su, sd, j, bgr, imageSize, src.channels(), normType);
 
-						filter(sub_range[0], sub_range[0]);
-						filter(normalize_sub_range[0], normalize_sub_range[0]);
+						blurring(sub_range[0], sub_range[0]);
+						blurring(normalize_sub_range[0], normalize_sub_range[0]);
 
-						if (splatting_downsample_size == 1)
+						if (downsampleSizeSplatting == 1)
 						{
 							divide(sub_range[0], normalize_sub_range[0], bgrid[0]);
 						}
 						else
 						{
 							divide(sub_range[0], normalize_sub_range[0], sub_range[0]);
-							resize(sub_range[0], bgrid[0], src_.size(), 0, 0, upsample_method);
+							resize(sub_range[0], bgrid[0], src_.size(), 0, 0, upsampleMethod);
 						}
 
 						if (typeid(S) == typeid(float))
@@ -735,10 +735,10 @@ namespace cp
 
 		Mat src;
 		Mat guide;
-		if (splatting_downsample_size != 1)
+		if (downsampleSizeSplatting != 1)
 		{
-			resize(src_, src, Size(src_.size().width / splatting_downsample_size, src_.size().height / splatting_downsample_size), 0, 0, downsample_method);
-			resize(guide_, guide, Size(src_.size().width / splatting_downsample_size, src_.size().height / splatting_downsample_size), 0, 0, downsample_method);
+			resize(src_, src, Size(src_.size().width / downsampleSizeSplatting, src_.size().height / downsampleSizeSplatting), 0, 0, downsampleMethod);
+			resize(guide_, guide, Size(src_.size().width / downsampleSizeSplatting, src_.size().height / downsampleSizeSplatting), 0, 0, downsampleMethod);
 		}
 		else
 		{
@@ -779,16 +779,16 @@ namespace cp
 
 				splatting<T, S>(s, su, sd, j, v, imageSize, src.channels());
 
-				filter(sub_range[b], sub_range[b]);
-				filter(normalize_sub_range[b], normalize_sub_range[b]);
-				if (splatting_downsample_size == 1)
+				blurring(sub_range[b], sub_range[b]);
+				blurring(normalize_sub_range[b], normalize_sub_range[b]);
+				if (downsampleSizeSplatting == 1)
 				{
 					divide(sub_range[b], normalize_sub_range[b], bgrid[b]);
 				}
 				else
 				{
 					divide(sub_range[b], normalize_sub_range[b], sub_range[b]);
-					resize(sub_range[b], bgrid[b], src_.size(), 0, 0, upsample_method);
+					resize(sub_range[b], bgrid[b], src_.size(), 0, 0, upsampleMethod);
 				}
 			}
 			for (int i = 0; i < imageSizeFull; i++)
@@ -815,17 +815,17 @@ namespace cp
 
 				splatting<T, S>(s, su, sd, j, v, imageSize, src.channels());
 
-				filter(sub_range[b], sub_range[b]);
-				filter(normalize_sub_range[b], normalize_sub_range[b]);
+				blurring(sub_range[b], sub_range[b]);
+				blurring(normalize_sub_range[b], normalize_sub_range[b]);
 
-				if (splatting_downsample_size == 1)
+				if (downsampleSizeSplatting == 1)
 				{
 					divide(sub_range[b], normalize_sub_range[b], bgrid[b]);
 				}
 				else
 				{
 					divide(sub_range[b], normalize_sub_range[b], sub_range[b]);
-					resize(sub_range[b], bgrid[b], src_.size(), 0, 0, upsample_method);
+					resize(sub_range[b], bgrid[b], src_.size(), 0, 0, upsampleMethod);
 				}
 			}
 
@@ -866,16 +866,16 @@ namespace cp
 						bgr[2] = bin2num[r];
 						splattingColor<T, S>(s, su, sd, j, bgr, imageSize, src.channels(), normType);
 
-						filter(sub_range[b], sub_range[b]);
-						filter(normalize_sub_range[b], normalize_sub_range[b]);
-						if (splatting_downsample_size == 1)
+						blurring(sub_range[b], sub_range[b]);
+						blurring(normalize_sub_range[b], normalize_sub_range[b]);
+						if (downsampleSizeSplatting == 1)
 						{
 							divide(sub_range[b], normalize_sub_range[b], bgrid[b]);
 						}
 						else
 						{
 							divide(sub_range[b], normalize_sub_range[b], sub_range[b]);
-							resize(sub_range[b], bgrid[b], src_.size(), 0, 0, upsample_method);
+							resize(sub_range[b], bgrid[b], src_.size(), 0, 0, upsampleMethod);
 						}
 
 						for (int i = 0; i < imageSizeFull; i++)
@@ -936,16 +936,16 @@ namespace cp
 						bgr[2] = bin2num[r];
 						splattingColor<T, S>(s, su, sd, j, bgr, imageSize, src.channels(), normType);
 
-						filter(sub_range[b], sub_range[b]);
-						filter(normalize_sub_range[b], normalize_sub_range[b]);
-						if (splatting_downsample_size == 1)
+						blurring(sub_range[b], sub_range[b]);
+						blurring(normalize_sub_range[b], normalize_sub_range[b]);
+						if (downsampleSizeSplatting == 1)
 						{
 							divide(sub_range[b], normalize_sub_range[b], bgrid[b]);
 						}
 						else
 						{
 							divide(sub_range[b], normalize_sub_range[b], sub_range[b]);
-							resize(sub_range[b], bgrid[b], src_.size(), 0, 0, upsample_method);
+							resize(sub_range[b], bgrid[b], src_.size(), 0, 0, upsampleMethod);
 						}
 
 						S* bgridPtr = bgrid[b].ptr<S>(0);
@@ -991,13 +991,13 @@ namespace cp
 			}
 
 			if (src.depth() == CV_8U || src.depth() == CV_16U || src.depth() == CV_16S || src.depth() == CV_32S)
-				dst[0].convertTo(dest, src.type(),1.0, 0.5);
-			else 
+				dst[0].convertTo(dest, src.type(), 1.0, 0.5);
+			else
 				dst[0].convertTo(dest, src.type());
 		}
 	}
 
-	void RealtimeO1BilateralFilter::gauss_fir(cv::InputArray src, cv::InputArray joint, cv::OutputArray dest, int r, float sigma_color_, float sigma_space_, int num_bin_)
+	void RealtimeO1BilateralFilter::gaussFIR(cv::InputArray src, cv::InputArray joint, cv::OutputArray dest, int r, float sigma_color_, float sigma_space_, int num_bin_)
 	{
 		radius = r;
 		sigma_color = sigma_color_;
@@ -1008,15 +1008,15 @@ namespace cp
 		body(src, joint, dest, isSaveMemory);
 	}
 
-	void RealtimeO1BilateralFilter::gauss_fir(cv::InputArray src, cv::OutputArray dest, int r, float sigma_color, float sigma_space, int num_bin)
+	void RealtimeO1BilateralFilter::gaussFIR(cv::InputArray src, cv::OutputArray dest, int r, float sigma_color, float sigma_space, int num_bin)
 	{
 		Mat joint;
 		if (src.depth() != CV_8U)src.getMat().convertTo(joint, CV_8U);
 		else joint = src.getMat();
-		gauss_fir(src, joint, dest, r, sigma_color, sigma_space, num_bin);
+		gaussFIR(src, joint, dest, r, sigma_color, sigma_space, num_bin);
 	}
 
-	void RealtimeO1BilateralFilter::gauss_iir(cv::InputArray src, cv::InputArray joint, cv::OutputArray dest, float sigma_color_, float sigma_space_, int num_bin_, int method, int K)
+	void RealtimeO1BilateralFilter::gaussIIR(cv::InputArray src, cv::InputArray joint, cv::OutputArray dest, float sigma_color_, float sigma_space_, int num_bin_, int method, int K)
 	{
 		filterK = K;
 		sigma_color = sigma_color_;
@@ -1027,12 +1027,12 @@ namespace cp
 		body(src, joint, dest, isSaveMemory);
 	}
 
-	void RealtimeO1BilateralFilter::gauss_iir(cv::InputArray src, cv::OutputArray dest, float sigma_color, float sigma_space, int num_bin, int method, int K)
+	void RealtimeO1BilateralFilter::gaussIIR(cv::InputArray src, cv::OutputArray dest, float sigma_color, float sigma_space, int num_bin, int method, int K)
 	{
 		Mat joint;
 		if (src.depth() != CV_8U)src.getMat().convertTo(joint, CV_8U);
 		else joint = src.getMat();
-		gauss_iir(src, joint, dest, sigma_color, sigma_space, num_bin, method, K);
+		gaussIIR(src, joint, dest, sigma_color, sigma_space, num_bin, method, K);
 	}
 
 }

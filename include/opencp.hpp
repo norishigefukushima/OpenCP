@@ -790,7 +790,7 @@ namespace cp
 		int radius;
 		int filterK;
 		int filter_type;
-		virtual void filter(const cv::Mat& src, cv::Mat& dest);
+		virtual void blurring(const cv::Mat& src, cv::Mat& dest);
 
 		template <typename T, typename S>
 		void bodySaveMemorySize_(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dest);
@@ -811,10 +811,10 @@ namespace cp
 		};
 		
 		void setColorNorm(int norm=L1SQR);
-		int splatting_downsample_size;
-		int downsample_size;
-		int downsample_method;
-		int upsample_method;
+		int downsampleSizeSplatting;
+		int downsampleSizeBlurring;
+		int downsampleMethod;
+		int upsampleMethod;
 		bool isSaveMemory;
 
 		enum
@@ -826,10 +826,10 @@ namespace cp
 			IIR_YVY,
 		};
 
-		void gauss_iir(cv::InputArray src, cv::OutputArray dest, float sigma_color, float sigma_space, int num_bin, int method, int K);
-		void gauss_iir(cv::InputArray src, cv::InputArray joint, cv::OutputArray dest, float sigma_color, float sigma_space, int num_bin, int method, int K);
-		void gauss_fir(cv::InputArray src, cv::InputArray joint, cv::OutputArray dest, int r, float sigma_color, float sigma_space, int num_bin);
-		void gauss_fir(cv::InputArray src, cv::OutputArray dest, int r, float sigma_color, float sigma_space, int num_bin);
+		void gaussIIR(cv::InputArray src, cv::OutputArray dest, float sigma_color, float sigma_space, int num_bin, int method, int K);
+		void gaussIIR(cv::InputArray src, cv::InputArray joint, cv::OutputArray dest, float sigma_color, float sigma_space, int num_bin, int method, int K);
+		void gaussFIR(cv::InputArray src, cv::OutputArray dest, int r, float sigma_color, float sigma_space, int num_bin);
+		void gaussFIR(cv::InputArray src, cv::InputArray joint, cv::OutputArray dest, int r, float sigma_color, float sigma_space, int num_bin);
 	};
 
 	enum

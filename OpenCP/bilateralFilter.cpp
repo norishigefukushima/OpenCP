@@ -254,7 +254,7 @@ namespace cp
 			}
 		}
 	}
-		
+
 	class BilateralFilter_L2Naive_32f_InvokerSSE4 : public cv::ParallelLoopBody
 	{
 	public:
@@ -475,7 +475,7 @@ namespace cp
 
 		int dpad = (4 - src.cols % 4) % 4;
 		int spad = dpad + (4 - (2 * radiusH) % 16) % 4;
-		if (spad<4) spad += 4;
+		if (spad < 4) spad += 4;
 		int lpad = 4 * (radiusH / 4 + 1) - radiusH;
 		int rpad = spad - lpad;
 		if (cn == 1)
