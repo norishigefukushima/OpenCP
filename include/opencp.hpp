@@ -759,9 +759,7 @@ namespace cp
 	class CP_EXPORT RealtimeO1BilateralFilter
 	{
 	protected:
-		float CV_DECL_ALIGNED(16) color_weight_32F[256*3];
-		double CV_DECL_ALIGNED(16) color_weight_64F[256*3];
-
+	
 		std::vector<cv::Mat> bgrid;//for presubsampling
 
 		std::vector<cv::Mat> sub_range;
@@ -771,33 +769,53 @@ namespace cp
 		std::vector<uchar> idx;
 		std::vector<float> a;
 
+		int num_bin;
+		int bin_depth;
 		void createBin(cv::Size imsize, int num_bin, int channles);
-		void setColorLUT(double sigma_color, int channlels);
-
 		void disposeBin(int number_of_bin);
 
-		virtual void filter(const cv::Mat& src, cv::Mat& dest);
+		double sigma_color;
+		float CV_DECL_ALIGNED(16) color_weight_32F[256 * 3];
+		double CV_DECL_ALIGNED(16) color_weight_64F[256 * 3];
+		void setColorLUT(double sigma_color, int channlels);
 
+		int normType;
 		template <typename T, typename S>
 		void splatting(const T* s, S* su, S* sd, const uchar* j, const uchar v, const int imageSize, const int channels);
 		template <typename T, typename S>
-		void splattingColor(const T* s, S* su, S* sd, const uchar* j, const uchar* v, const int imageSize, const int channels);
+		void splattingColor(const T* s, S* su, S* sd, const uchar* j, const uchar* v, const int imageSize, const int channels, const int type);
+
+		double sigma_space;
+		int radius;
+		int filterK;
+		int filter_type;
+		virtual void filter(const cv::Mat& src, cv::Mat& dest);
 
 		template <typename T, typename S>
 		void bodySaveMemorySize_(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dest);
 		template <typename T, typename S>
 		void body_(const cv::Mat& src, const cv::Mat& joint, cv::Mat& dest);
+
 		void body(cv::InputArray src, cv::InputArray joint, cv::OutputArray dest, bool save_memorySize);
-
-		int filter_type;
-		double sigma_color;
-		double sigma_space;
-		int num_bin;
-		int radius;
-
-		int filterK;
 	public:
-		void showBinIndex();
+		RealtimeO1BilateralFilter();
+		~RealtimeO1BilateralFilter();
+		void showBinIndex();//show bin index for debug
+		void setBinDepth(int depth = CV_32F);
+		enum
+		{
+			L1SQR,//norm for OpenCV's native Bilateral filter
+			L1,
+			L2
+		};
+		
+		void setColorNorm(int norm=L1SQR);
+		int splatting_downsample_size;
+		int downsample_size;
+		int downsample_method;
+		int upsample_method;
+		bool isSaveMemory;
+
 		enum
 		{
 			FIR_SEPARABLE,
@@ -806,20 +824,9 @@ namespace cp
 			IIR_Deriche,
 			IIR_YVY,
 		};
-		int splatting_downsample_size;
-		int bin_depth;
-		int downsample_size;
-		int downsample_method;
-		int upsample_method;
-		bool coeff_normalization;
-		bool isSaveMemory;
-
-		RealtimeO1BilateralFilter();
-		~RealtimeO1BilateralFilter(){ ; };
 
 		void gauss_iir(cv::InputArray src, cv::OutputArray dest, float sigma_color, float sigma_space, int num_bin, int method, int K);
 		void gauss_iir(cv::InputArray src, cv::InputArray joint, cv::OutputArray dest, float sigma_color, float sigma_space, int num_bin, int method, int K);
-
 		void gauss_fir(cv::InputArray src, cv::InputArray joint, cv::OutputArray dest, int r, float sigma_color, float sigma_space, int num_bin);
 		void gauss_fir(cv::InputArray src, cv::OutputArray dest, int r, float sigma_color, float sigma_space, int num_bin);
 	};

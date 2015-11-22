@@ -9,7 +9,8 @@ namespace cp
 	RealtimeO1BilateralFilter::RealtimeO1BilateralFilter()
 	{
 		isSaveMemory = false;
-		bin_depth = CV_32F;
+		setBinDepth(CV_32F);
+		setColorNorm(L1SQR);
 		splatting_downsample_size = 1;
 		downsample_size = 1;
 		downsample_method = INTER_AREA;
@@ -18,8 +19,16 @@ namespace cp
 		bin2num.resize(256);
 		idx.resize(256);
 		a.resize(256);
+	}
 
-		coeff_normalization = false;
+	RealtimeO1BilateralFilter::~RealtimeO1BilateralFilter()
+	{
+		;
+	}
+
+	void RealtimeO1BilateralFilter::setBinDepth(int depth)
+	{
+		bin_depth = depth;
 	}
 
 	void RealtimeO1BilateralFilter::createBin(Size imsize, int number_of_bin, int channles)
@@ -105,12 +114,9 @@ namespace cp
 		//bin2num[number_of_bin - 1] = bin2num[number_of_bin - 2];
 	}
 
-	double map8URange(InputArray src, InputOutputArray dest)
+	void RealtimeO1BilateralFilter::setColorNorm(int normType_)
 	{
-		double minv, maxv;
-		minMaxLoc(src, &minv, &maxv);
-		normalize(src, dest, 255, 0, cv::NORM_MINMAX);
-		return 255.0 / (maxv - minv);
+		normType = normType_;
 	}
 
 	void RealtimeO1BilateralFilter::filter(const Mat& src_, Mat& dest_)
@@ -160,58 +166,129 @@ namespace cp
 	}
 
 	template <typename T, typename S>
-	void RealtimeO1BilateralFilter::splattingColor(const T* s, S* su, S* sd, const uchar* j, const uchar* v, const int imageSize, const int channels)
+	void RealtimeO1BilateralFilter::splattingColor(const T* s, S* su, S* sd, const uchar* j, const uchar* v, const int imageSize, const int channels, const int type)
 	{
-		if (channels == 3)
+		if (type == L1SQR)
 		{
-			if (typeid(S) == typeid(float))
+			if (channels == 3)
 			{
-				for (int i = 0; i < imageSize; i++)
+				if (typeid(S) == typeid(float))
 				{
-					const float coeff = color_weight_32F[cvRound(abs(j[3 * i + 0] - v[0]) + abs(j[3 * i + 1] - v[1]) + abs(j[3 * i + 2] - v[2]))];
-					su[3 * i + 0] = (S)coeff*(S)s[3 * i + 0];
-					su[3 * i + 1] = (S)coeff*(S)s[3 * i + 1];
-					su[3 * i + 2] = (S)coeff*(S)s[3 * i + 2];
-					sd[3 * i + 0] = (S)coeff;
-					sd[3 * i + 1] = (S)coeff;
-					sd[3 * i + 2] = (S)coeff;
+					for (int i = 0; i < imageSize; i++)
+					{
+						const float coeff = color_weight_32F[abs(j[3 * i + 0] - v[0]) + abs(j[3 * i + 1] - v[1]) + abs(j[3 * i + 2] - v[2])];
+						su[3 * i + 0] = (S)coeff*(S)s[3 * i + 0];
+						su[3 * i + 1] = (S)coeff*(S)s[3 * i + 1];
+						su[3 * i + 2] = (S)coeff*(S)s[3 * i + 2];
+						sd[3 * i + 0] = (S)coeff;
+						sd[3 * i + 1] = (S)coeff;
+						sd[3 * i + 2] = (S)coeff;
+					}
+				}
+				else if (typeid(S) == typeid(double))
+				{
+					for (int i = 0; i < imageSize; i++)
+					{
+						const double coeff = color_weight_64F[abs(j[3 * i + 0] - v[0]) + abs(j[3 * i + 1] - v[1]) + abs(j[3 * i + 2] - v[2])];
+						su[3 * i + 0] = (S)coeff*(S)s[3 * i + 0];
+						su[3 * i + 1] = (S)coeff*(S)s[3 * i + 1];
+						su[3 * i + 2] = (S)coeff*(S)s[3 * i + 2];
+						sd[3 * i + 0] = (S)coeff;
+						sd[3 * i + 1] = (S)coeff;
+						sd[3 * i + 2] = (S)coeff;
+					}
 				}
 			}
-			else if (typeid(S) == typeid(double))
+			else if (channels == 1)
 			{
-				for (int i = 0; i < imageSize; i++)
+				if (typeid(S) == typeid(float))
 				{
-					const double coeff = color_weight_64F[cvRound(abs(j[3 * i + 0] - v[0]) + abs(j[3 * i + 1] - v[1]) + abs(j[3 * i + 2] - v[2]))];
-					su[3 * i + 0] = (S)coeff*(S)s[3 * i + 0];
-					su[3 * i + 1] = (S)coeff*(S)s[3 * i + 1];
-					su[3 * i + 2] = (S)coeff*(S)s[3 * i + 2];
-					sd[3 * i + 0] = (S)coeff;
-					sd[3 * i + 1] = (S)coeff;
-					sd[3 * i + 2] = (S)coeff;
+					for (int i = 0; i < imageSize; i++)
+					{
+						const float coeff = color_weight_32F[abs(j[3 * i + 0] - v[0]) + abs(j[3 * i + 1] - v[1]) + abs(j[3 * i + 2] - v[2])];
+						su[i] = coeff*(float)s[i];
+						sd[i] = coeff;
+					}
+				}
+				else if (typeid(S) == typeid(double))
+				{
+					for (int i = 0; i < imageSize; i++)
+					{
+						const double coeff = color_weight_64F[abs(j[3 * i + 0] - v[0]) + abs(j[3 * i + 1] - v[1]) + abs(j[3 * i + 2] - v[2])];
+						su[i] = (S)coeff*(S)s[i];
+						sd[i] = (S)coeff;
+					}
 				}
 			}
 		}
-		else if (channels == 1)
+		else if (type == L2)
 		{
-			if (typeid(S) == typeid(float))
+			if (channels == 3)
 			{
-				for (int i = 0; i < imageSize; i++)
+				if (typeid(S) == typeid(float))
 				{
-					const float coeff = color_weight_32F[cvRound(abs(j[3 * i + 0] - v[0]) + abs(j[3 * i + 1] - v[1]) + abs(j[3 * i + 2] - v[2]))];
-					//const float coeff = color_weight_32F[cvRound(abs(j[3 * i + 0] - v[0])) + cvRound(abs(j[3 * i + 1] - v[1])) + cvRound(abs(j[3 * i + 2] - v[2]))];
-					su[i] = coeff*(float)s[i];
-					sd[i] = coeff;
+					for (int i = 0; i < imageSize; i++)
+					{
+						const float coeff =
+							color_weight_32F[abs(j[3 * i + 0] - v[0])] *
+							color_weight_32F[abs(j[3 * i + 1] - v[1])] *
+							color_weight_32F[abs(j[3 * i + 2] - v[2])];
+						su[3 * i + 0] = (S)coeff*(S)s[3 * i + 0];
+						su[3 * i + 1] = (S)coeff*(S)s[3 * i + 1];
+						su[3 * i + 2] = (S)coeff*(S)s[3 * i + 2];
+						sd[3 * i + 0] = (S)coeff;
+						sd[3 * i + 1] = (S)coeff;
+						sd[3 * i + 2] = (S)coeff;
+					}
+				}
+				else if (typeid(S) == typeid(double))
+				{
+					for (int i = 0; i < imageSize; i++)
+					{
+						const double coeff =
+							color_weight_64F[abs(j[3 * i + 0] - v[0])] *
+							color_weight_64F[abs(j[3 * i + 1] - v[1])] *
+							color_weight_64F[abs(j[3 * i + 2] - v[2])];
+						su[3 * i + 0] = (S)coeff*(S)s[3 * i + 0];
+						su[3 * i + 1] = (S)coeff*(S)s[3 * i + 1];
+						su[3 * i + 2] = (S)coeff*(S)s[3 * i + 2];
+						sd[3 * i + 0] = (S)coeff;
+						sd[3 * i + 1] = (S)coeff;
+						sd[3 * i + 2] = (S)coeff;
+					}
 				}
 			}
-			else if (typeid(S) == typeid(double))
+			else if (channels == 1)
 			{
-				for (int i = 0; i < imageSize; i++)
+				if (typeid(S) == typeid(float))
 				{
-					const double coeff = color_weight_64F[cvRound(abs(j[3 * i + 0] - v[0]) + abs(j[3 * i + 1] - v[1]) + abs(j[3 * i + 2] - v[2]))];
-					su[i] = (S)coeff*(S)s[i];
-					sd[i] = (S)coeff;
+					for (int i = 0; i < imageSize; i++)
+					{
+						const float coeff =
+							color_weight_32F[abs(j[3 * i + 0] - v[0])] *
+							color_weight_32F[abs(j[3 * i + 1] - v[1])] *
+							color_weight_32F[abs(j[3 * i + 2] - v[2])];
+						su[i] = coeff*(float)s[i];
+						sd[i] = coeff;
+					}
+				}
+				else if (typeid(S) == typeid(double))
+				{
+					for (int i = 0; i < imageSize; i++)
+					{
+						const double coeff =
+							color_weight_64F[abs(j[3 * i + 0] - v[0])] *
+							color_weight_64F[abs(j[3 * i + 1] - v[1])] *
+							color_weight_64F[abs(j[3 * i + 2] - v[2])];
+						su[i] = (S)coeff*(S)s[i];
+						sd[i] = (S)coeff;
+					}
 				}
 			}
+		}
+		else
+		{
+			cout << "not support norm in spplatting color" << endl;
 		}
 	}
 
@@ -276,7 +353,7 @@ namespace cp
 		Mat src = src_.getMat();
 		Mat joint = joint_.getMat();
 		Mat dest = dest_.getMat();
-		
+
 		if (bin_depth == CV_32F)
 		{
 			if (src.depth() == CV_8U)  (save_memorySize) ? bodySaveMemorySize_<uchar, float>(src, joint, dest) : body_<uchar, float>(src, joint, dest);
@@ -330,10 +407,8 @@ namespace cp
 		const int imageSizeFull = src_.size().area();
 
 		Mat joint = guide;
-		double scale = 1.0;
-		if (coeff_normalization) scale = map8URange(guide, joint);
 
-		setColorLUT(sigma_color*scale, guide.channels());
+		setColorLUT(sigma_color, guide.channels());
 		if (sub_range.size() != 1 || sub_range[0].size().area() != imageSize || sub_range[0].depth() != bin_depth)
 		{
 			createBin(src.size(), 1, src.channels());
@@ -475,7 +550,7 @@ namespace cp
 						bgr[0] = bin2num[b];
 						bgr[1] = bin2num[g];
 						bgr[2] = bin2num[r];
-						splattingColor<T, S>(s, su, sd, j, bgr, imageSize, src.channels());
+						splattingColor<T, S>(s, su, sd, j, bgr, imageSize, src.channels(), normType);
 
 						filter(sub_range[0], sub_range[0]);
 						filter(normalize_sub_range[0], normalize_sub_range[0]);
@@ -566,7 +641,7 @@ namespace cp
 						bgr[0] = bin2num[b];
 						bgr[1] = bin2num[g];
 						bgr[2] = bin2num[r];
-						splattingColor<T, S>(s, su, sd, j, bgr, imageSize, src.channels());
+						splattingColor<T, S>(s, su, sd, j, bgr, imageSize, src.channels(), normType);
 
 						filter(sub_range[0], sub_range[0]);
 						filter(normalize_sub_range[0], normalize_sub_range[0]);
@@ -649,186 +724,6 @@ namespace cp
 		}
 	}
 
-	/*
-	template <typename T, typename S>
-	void RealtimeO1BilateralFilter::bodySaveMemorySize_(const Mat& src_, const Mat& guide_, Mat& dest)
-	{
-	if (bgrid.size() != 2 || bgrid[0].size() != src_.size())
-	{
-	bgrid.clear();
-	bgrid.resize(2);
-	}
-
-	Mat src;
-	Mat guide;
-	if (splatting_downsample_size != 1)
-	{
-	resize(src_, src, Size(src_.size().width / splatting_downsample_size, src_.size().height / splatting_downsample_size), 0, 0, downsample_method);
-	resize(guide_, guide, Size(src_.size().width / splatting_downsample_size, src_.size().height / splatting_downsample_size), 0, 0, downsample_method);
-	}
-	else
-	{
-	src = src_;
-	guide = guide_;
-	}
-
-	num_bin = max(num_bin, 2);// for 0 and 255
-	if (dest.empty() || dest.size() != src_.size() || dest.type() != src_.type()) dest.create(src_.size(), src_.type());
-
-	const int imageSize = src.size().area();
-	const int imageSizeFull = src_.size().area();
-
-	Mat joint = guide;
-	double scale = 1.0;
-	if (coeff_normalization) scale = map8URange(guide, joint);
-
-	setColorLUT(sigma_color*scale, guide.channels());
-	if (sub_range.size() != 2 || sub_range[0].size().area() != imageSize || sub_range[0].depth() != bin_depth)
-	{
-	createBin(src.size(), 2, src.channels());
-	}
-	disposeBin(num_bin);
-	if (src.channels() == 3)
-	{
-	const T* s = src.ptr<T>(0);
-	const uchar* j = joint.ptr<uchar>(0);
-	T* d = dest.ptr<T>(0);
-
-	int b = 0;
-	{
-	S* su = sub_range[0].ptr<S>(0);//upper
-	S* sd = normalize_sub_range[0].ptr<S>(0);//down
-
-	uchar v = bin2num[0];
-
-	setCoefficientImage<T, S>(s, su, sd, j, v, imageSize, src.channels());
-
-	filter(sub_range[0], sub_range[0]);
-	filter(normalize_sub_range[0], normalize_sub_range[0]);
-
-	divide(sub_range[0], normalize_sub_range[0], sub_range[0]);
-	}
-	for (b = 1; b < num_bin; b++)
-	{
-	S* su = sub_range[1].ptr<S>(0);//upper
-	S* sd = normalize_sub_range[1].ptr<S>(0);//down
-
-	uchar v = bin2num[b];
-
-	setCoefficientImage<T, S>(s, su, sd, j, v, imageSize, src.channels());
-
-	filter(sub_range[1], sub_range[1]);
-	filter(normalize_sub_range[1], normalize_sub_range[1]);
-
-	divide(sub_range[1], normalize_sub_range[1], sub_range[1]);
-
-	if (typeid(S) == typeid(float))
-	{
-	for (int i = 0; i < imageSize; i++)
-	{
-	int id = idx[j[i]];
-	float ca = a[j[i]];
-	if (id + 1 == b)
-	{
-	d[3 * i + 0] = saturate_cast<T>(ca*sub_range[0].at<float>(3 * i + 0) + (1.0f - ca)*sub_range[1].at<float>(3 * i + 0));
-	d[3 * i + 1] = saturate_cast<T>(ca*sub_range[0].at<float>(3 * i + 1) + (1.0f - ca)*sub_range[1].at<float>(3 * i + 1));
-	d[3 * i + 2] = saturate_cast<T>(ca*sub_range[0].at<float>(3 * i + 2) + (1.0f - ca)*sub_range[1].at<float>(3 * i + 2));
-	}
-	}
-	}
-	else if (typeid(S) == typeid(double))
-	{
-	for (int i = 0; i < imageSize; i++)
-	{
-	int id = idx[j[i]];
-	double ca = (double)a[j[i]];
-	if (id + 1 == b)
-	{
-	d[3 * i + 0] = saturate_cast<T>(ca*sub_range[0].at<double>(3 * i + 0) + (1.0 - ca)*sub_range[1].at<double>(3 * i + 0));
-	d[3 * i + 1] = saturate_cast<T>(ca*sub_range[0].at<double>(3 * i + 1) + (1.0 - ca)*sub_range[1].at<double>(3 * i + 1));
-	d[3 * i + 2] = saturate_cast<T>(ca*sub_range[0].at<double>(3 * i + 2) + (1.0 - ca)*sub_range[1].at<double>(3 * i + 2));
-	}
-	}
-	}
-	}
-	}
-	else if (src.channels() == 1)
-	{
-	const T* s = src.ptr<T>(0);
-	const uchar* j = joint.ptr<uchar>(0);
-	const uchar* jfull = guide_.ptr<uchar>(0);
-	T* d = dest.ptr<T>(0);
-
-	//save memory processing
-	int b = 0;
-	{
-	S* su = sub_range[0].ptr<S>(0);//upper
-	S* sd = normalize_sub_range[0].ptr<S>(0);//down
-
-	uchar v = bin2num[b];
-
-	setCoefficientImage<T, S>(s, su, sd, j, v, imageSize, src.channels());
-
-	filter(sub_range[0], sub_range[0]);
-	filter(normalize_sub_range[0], normalize_sub_range[0]);
-
-	if (splatting_downsample_size == 1)
-	{
-	divide(sub_range[0], normalize_sub_range[0], bgrid[0]);
-	}
-	else
-	{
-	divide(sub_range[0], normalize_sub_range[0], sub_range[0]);
-	resize(sub_range[0], bgrid[0], src_.size(), 0, 0, upsample_method);
-	}
-	}
-
-	for (b = 1; b < num_bin; b++)
-	{
-	S* su = sub_range[1].ptr<S>(0);//upper
-	S* sd = normalize_sub_range[1].ptr<S>(0);//down
-
-	uchar v = bin2num[b];
-	setCoefficientImage<T, S>(s, su, sd, j, v, imageSize, src.channels());
-
-	filter(sub_range[1], sub_range[1]);
-	filter(normalize_sub_range[1], normalize_sub_range[1]);
-
-	if (splatting_downsample_size == 1)
-	{
-	divide(sub_range[1], normalize_sub_range[1], bgrid[1]);
-	}
-	else
-	{
-	divide(sub_range[1], normalize_sub_range[1], sub_range[1]);
-	resize(sub_range[1], bgrid[1], src_.size(), 0, 0, upsample_method);
-	}
-
-	if (typeid(S) == typeid(float))
-	{
-	for (int i = 0; i < imageSizeFull; i++)
-	{
-	int id = idx[jfull[i]];
-	float ca = a[jfull[i]];
-	if (id + 1 == b)
-	d[i] = saturate_cast<T>(ca*bgrid[0].at<float>(i)+(1.0f - ca)*bgrid[1].at<float>(i));
-	}
-	}
-	else if (typeid(S) == typeid(double))
-	{
-	for (int i = 0; i < imageSizeFull; i++)
-	{
-	int id = idx[jfull[i]];
-	double ca = (double)a[jfull[i]];
-	if (id + 1 == b)
-	d[i] = saturate_cast<T>(ca*bgrid[0].at<double>(i)+(1.0 - ca)*bgrid[1].at<double>(i));
-	}
-	}
-	swap(bgrid[0], bgrid[1]);
-	}
-	}
-	}
-	*/
 	template <typename T, typename S>
 	void RealtimeO1BilateralFilter::body_(const Mat& src_, const Mat& guide_, Mat& dest)
 	{
@@ -857,11 +752,7 @@ namespace cp
 		const int imageSize = src.size().area();
 		const int imageSizeFull = src_.size().area();
 
-		Mat joint = guide;
-		double scale = 1.0;
-		if (coeff_normalization) scale = map8URange(guide, joint);
-		setColorLUT(sigma_color*scale, guide.channels());
-
+		setColorLUT(sigma_color, guide.channels());
 		if (sub_range.size() != num_bin || sub_range[0].size().area() != imageSize || sub_range[0].depth() != bin_depth)
 		{
 			createBin(src.size(), num_bin, src.channels());
@@ -869,7 +760,7 @@ namespace cp
 		}
 
 		const T* s = src.ptr<T>(0);
-		const uchar* j = joint.ptr<uchar>(0);
+		const uchar* j = guide.ptr<uchar>(0);
 		const uchar* jfull = guide_.ptr<uchar>(0);
 		T* d = dest.ptr<T>(0);
 		if (src.channels() == 1 && guide.channels() == 1)
@@ -973,7 +864,7 @@ namespace cp
 						bgr[0] = bin2num[b];
 						bgr[1] = bin2num[g];
 						bgr[2] = bin2num[r];
-						splattingColor<T, S>(s, su, sd, j, bgr, imageSize, src.channels());
+						splattingColor<T, S>(s, su, sd, j, bgr, imageSize, src.channels(), normType);
 
 						filter(sub_range[b], sub_range[b]);
 						filter(normalize_sub_range[b], normalize_sub_range[b]);
@@ -1033,19 +924,17 @@ namespace cp
 			for (int b = 0; b < num_bin; b++)
 #endif
 			{
-				S* dtemp = dst[b].ptr<S>(0);
-				CV_DECL_ALIGNED(16) uchar bgr[3];
 				for (int g = 0; g < num_bin; g++)
 				{
 					for (int r = 0; r < num_bin; r++)
 					{
 						S* su = sub_range[b].ptr<S>(0);//upper
 						S* sd = normalize_sub_range[b].ptr<S>(0);//down
-
+						CV_DECL_ALIGNED(16) uchar bgr[3];
 						bgr[0] = bin2num[b];
 						bgr[1] = bin2num[g];
 						bgr[2] = bin2num[r];
-						splattingColor<T, S>(s, su, sd, j, bgr, imageSize, src.channels());
+						splattingColor<T, S>(s, su, sd, j, bgr, imageSize, src.channels(), normType);
 
 						filter(sub_range[b], sub_range[b]);
 						filter(normalize_sub_range[b], normalize_sub_range[b]);
@@ -1059,42 +948,52 @@ namespace cp
 							resize(sub_range[b], bgrid[b], src_.size(), 0, 0, upsample_method);
 						}
 
+						S* bgridPtr = bgrid[b].ptr<S>(0);
+						S* dtemp = dst[b].ptr<S>(0);
+						uchar* ref = (uchar*)jfull;
 						for (int i = 0; i < imageSizeFull; i++)
 						{
 							S inter = (S)1.0;
-							int id = idx[jfull[3 * i + 0]];
-							S ca = a[jfull[3 * i + 0]];
+							int id = idx[ref[0]];
+							S ca = a[ref[0]];
 
 							if (id + 1 == b) inter *= ((S)1.0 - ca);
 							else if (id == b) inter *= ca;
 							else goto jump2;
 
-							id = idx[jfull[3 * i + 1]];
-							ca = a[jfull[3 * i + 1]];
+							id = idx[ref[1]];
+							ca = a[ref[1]];
 							if (id + 1 == g) inter *= ((S)1.0 - ca);
 							else if (id == g)inter *= ca;
 							else goto jump2;
 
-							id = idx[jfull[3 * i + 2]];
-							ca = a[jfull[3 * i + 2]];
+							id = idx[ref[2]];
+							ca = a[ref[2]];
 							if (id + 1 == r) inter *= ((S)1.0 - ca);
 							else if (id == r) inter *= ca;
 							else goto jump2;
 
-							dtemp[3 * i + 0] += inter*bgrid[b].at<S>(3 * i + 0);
-							dtemp[3 * i + 1] += inter*bgrid[b].at<S>(3 * i + 1);
-							dtemp[3 * i + 2] += inter*bgrid[b].at<S>(3 * i + 2);
+							dtemp[0] += inter*bgridPtr[0];
+							dtemp[1] += inter*bgridPtr[1];
+							dtemp[2] += inter*bgridPtr[2];
 						jump2:
-							;
+							dtemp += 3;
+							bgridPtr += 3;
+							ref += 3;
 						}
 					}
 				}
 			}
+
 			for (int b = 1; b < num_bin; b++)
 			{
 				dst[0] += dst[b];
 			}
-			dst[0].convertTo(dest, src.type());
+
+			if (src.depth() == CV_8U || src.depth() == CV_16U || src.depth() == CV_16S || src.depth() == CV_32S)
+				dst[0].convertTo(dest, src.type(),1.0, 0.5);
+			else 
+				dst[0].convertTo(dest, src.type());
 		}
 	}
 

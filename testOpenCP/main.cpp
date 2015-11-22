@@ -4,8 +4,59 @@
 using namespace std;
 
 
+void vectortest(InputArray point)
+{
+	vector<Mat> a; 
+	point.getMatVector(a);
+	
+	showMatInfo(a[0]);
+	cout << a[0] << endl;
+	cout << a[1] << endl;
+
+
+//cout << point.kind() << endl;;
+//cout << _InputArray::STD_VECTOR_MAT << endl;
+//cout << _InputArray::STD_VECTOR_VECTOR << endl;
+//cv:
+}
+
+void vectorvectortest(InputArray point)
+{
+	vector<Mat> a;
+	point.getMatVector(a);
+	
+	//showMatInfo(a[0]);
+	showMatInfo(a[0]);
+	cout << a[0] << endl;
+	cout << a[1] << endl;
+}
+
+void InputArrayOutputArrayTest()
+{
+	vector<Point3f> a;
+	a.push_back(Point3f(1, 2, 3));
+	a.push_back(Point3f(4, 5, 6));
+	a.push_back(Point3f(1, 2, 3));
+	a.push_back(Point3f(4, 5, 6));
+
+	//vectortest(a);
+
+	vector<Point3f> b;
+	b.push_back(Point3f(7, 8, 9));
+	b.push_back(Point3f(10, 11, 12));
+	b.push_back(Point3f(7, 8, 9));
+	b.push_back(Point3f(10, 11, 12));
+
+	vector<vector<Point3f>> ab;
+	ab.push_back(a);
+	ab.push_back(b);
+
+	vectorvectortest(ab);
+}
+
 int main(int argc, char** argv)
 {
+	//InputArrayOutputArrayTest(); return 0;
 	//fitPlaneTest(); return 0;
 	//guiWeightMapTest(); return 0;
 	//guiStereo(); return 0;
@@ -40,7 +91,8 @@ int main(int argc, char** argv)
 	//	Mat src;
 	Mat dest;
 
-	guiDisparityPlaneFitSLICTest(src, ref, disp); return 0;
+	//guiDisparityPlaneFitSLICTest(src, ref, disp); return 0;
+
 	//guiCrossBasedLocalFilter(src); return 0;
 	//guiHistgramTest(src);
 	//Mat src = imread("img/kodim22.png");
@@ -60,7 +112,7 @@ int main(int argc, char** argv)
 	Mat gray;
 	cvtColor(src, gray, CV_BGR2GRAY);
 
-	//guiRealtimeO1BilateralFilterTest(mega); return 0;
+	guiRealtimeO1BilateralFilterTest(src); return 0;
 
 	Mat flashImg = imread("img/flash/cave-flash.png");
 	Mat noflashImg = imread("img/flash/cave-noflash.png");

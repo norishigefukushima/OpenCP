@@ -69,21 +69,20 @@ void guiRealtimeO1BilateralFilterTest(Mat& src)
 	ConsoleImage ci;
 
 	int a = 0; createTrackbar("a", wname, &a, 100);
-	int sw = 2; createTrackbar("switch", wname, &sw, 5);
+	int sw = 2; createTrackbar("filter sw", wname, &sw, 5);
 
 	int space = 100; createTrackbar("space", wname, &space, 2000);
 	int color = 300; createTrackbar("color", wname, &color, 2550);
-	int bin = 8; createTrackbar("bin", wname, &bin, 256);
+	int bin = 4; createTrackbar("bin", wname, &bin, 256);
 	int iter = 3; createTrackbar("iter", wname, &iter, 100);
-	int srsize = 8; createTrackbar("sresize", wname, &srsize, 32);
+	int srsize = 2; createTrackbar("sresize", wname, &srsize, 32);
 	int rsize = 1; createTrackbar("resize", wname, &rsize, 32);
 	int upmethod = 1; createTrackbar("umethod", wname, &upmethod, 4);
-	int type = 0; createTrackbar("type", wname, &type, 1);
+	int type = 0; createTrackbar("type32_64", wname, &type, 1);
 	int mem = 0; createTrackbar("memory", wname, &mem, 1);
-	int sscale = 10; createTrackbar("sscale", wname, &sscale, 100);
+
 	namedWindow("diff");
 	int scale = 10; createTrackbar("scale", "diff", &scale, 50);
-
 
 	int key = 0;
 	Mat show;
@@ -101,9 +100,9 @@ void guiRealtimeO1BilateralFilterTest(Mat& src)
 
 	while (key != 'q')
 	{
-		src.convertTo(srcf, CV_32F, sscale / 10.0);
-		if (type == 0) rbf.bin_depth = CV_32F;
-		else rbf.bin_depth = CV_64F;
+		src.convertTo(srcf, CV_32F);
+		if (type == 0) rbf.setBinDepth(CV_32F);
+		else rbf.setBinDepth(CV_64F);
 
 		if (mem == 0) rbf.isSaveMemory = false;
 		else rbf.isSaveMemory = true;
@@ -272,8 +271,8 @@ void guiJointRealtimeO1BilateralFilterTest(Mat& src_, Mat& guide_)
 	while (key != 'q')
 	{
 		src.convertTo(srcf, CV_32F, sscale / 10.0);
-		if (type == 0) rbf.bin_depth = CV_32F;
-		else rbf.bin_depth = CV_64F;
+		if (type == 0) rbf.setBinDepth(CV_32F);
+		else rbf.setBinDepth(CV_64F);
 
 		if (mem == 0) rbf.isSaveMemory = false;
 		else rbf.isSaveMemory = true;

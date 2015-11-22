@@ -50,8 +50,12 @@ void guiDisparityPlaneFitSLICTest(Mat& leftim, Mat& rightim, Mat& GT)
 	namedWindow("SLIC"); moveWindow("SLIC", 0, 0);
 	while (key != 'q')
 	{
-		dispalityFitPlane(disparity, leftim, refine, S, (float)m, mrs / 100.0f, iter, nransac, transac);
-		binalyWeightedRangeFilter(disparity, disparity, Size(7, 7), 16);
+		{
+			CalcTime t;
+			dispalityFitPlane(disparity, leftim, refine, S, (float)m, mrs / 100.0f, iter, nransac, transac);
+		}
+		
+		//binalyWeightedRangeFilter(disparity, disparity, Size(7, 7), 16);
 		if (isStop) buffer.copyTo(refine);
 		else refine.copyTo(buffer);
 
