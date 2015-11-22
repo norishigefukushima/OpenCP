@@ -740,7 +740,8 @@ namespace cp
 	CP_EXPORT void separableJointDualBilateralFilter(const cv::Mat& src, const cv::Mat& guide1, const cv::Mat& guide2, cv::Mat& dst, cv::Size ksize, double sigma_color, double sigma_guide_color, double sigma_space, double alpha1 = 1.0, double alpha2 = 1.0, int method = DUAL_KERNEL_HV, int borderType = cv::BORDER_REPLICATE);
 	CP_EXPORT void separableJointDualBilateralFilter(const cv::Mat& src, const cv::Mat& guide1, const cv::Mat& guide2, cv::Mat& dst, int D, double sigma_color, double sigma_guide_color, double sigma_space, double alpha1 = 1.0, double alpha2 = 1.0, int method = DUAL_KERNEL_HV, int borderType = cv::BORDER_REPLICATE);
 
-	CP_EXPORT void bilateralFilterL2_8u(const cv::Mat& src, cv::Mat& dst, int d, double sigma_color, double sigma_space, int borderType = cv::BORDER_REPLICATE);
+	CP_EXPORT void bilateralFilterL2(cv::InputArray src, cv::OutputArray dest, int radius, double sigma_color, double sigma_space, int borderType = cv::BORDER_REPLICATE);
+	
 
 	CP_EXPORT void weightedBilateralFilter(cv::InputArray src, cv::InputArray weight, cv::OutputArray dst, int D, double sigma_color, double sigma_space, int method, int borderType = cv::BORDER_REPLICATE);
 	CP_EXPORT void weightedBilateralFilter(cv::InputArray src, cv::InputArray weight, cv::OutputArray dst, cv::Size kernelSize, double sigma_color, double sigma_space, int method, int borderType = cv::BORDER_REPLICATE);

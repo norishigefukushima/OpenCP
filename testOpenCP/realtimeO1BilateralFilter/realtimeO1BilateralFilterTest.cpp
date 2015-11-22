@@ -91,13 +91,19 @@ void guiRealtimeO1BilateralFilterTest(Mat& src)
 	Mat ref;
 
 	Mat srcf; src.convertTo(srcf, CV_32F);
+	Mat ref2;
 #define DEBUG_32F_RTBF 1
 #ifdef DEBUG_32F_RTBF
-	bilateralFilter(srcf, ref, cvRound(3.f*space / 10.f) * 2 + 1, color / 10.f, space / 10.0f, BORDER_REPLICATE);
+	{
+	//bilateralFilter(srcf, ref, cvRound(3.f*space / 10.f) * 2 + 1, color / 10.f, space / 10.0f, BORDER_REPLICATE);
+	bilateralFilterL2(srcf, ref, cvRound(3.f*space / 10.f), color / 10.f, space / 10.0f, BORDER_REPLICATE);
+	cout << PSNR64F(ref2, ref)<< endl;
+	}
 #else
 	bilateralFilter(src, ref, cvRound(3.f*space / 10.f) * 2 + 1, color / 10.f, space / 10.0f, BORDER_REPLICATE);
 #endif
 
+	rbf.setColorNorm(RealtimeO1BilateralFilter::L2);
 	while (key != 'q')
 	{
 		src.convertTo(srcf, CV_32F);
@@ -119,7 +125,8 @@ void guiRealtimeO1BilateralFilterTest(Mat& src)
 		{
 
 #ifdef DEBUG_32F_RTBF
-			bilateralFilter(srcf, ref, d, color / 10.f, space / 10.0f, BORDER_REPLICATE);
+			//bilateralFilter(srcf, ref, d, color / 10.f, space / 10.0f, BORDER_REPLICATE);
+			bilateralFilterL2(srcf, ref, cvRound(3.f*space / 10.f), color / 10.f, space / 10.0f, BORDER_REPLICATE);
 #else
 			//cp::bilateralFilter(src, ref, Size(d, d), sigma_color, sigma_space, FILTER_DEFAULT, BORDER_REPLICATE);		
 			bilateralFilter(src, ref, d, color / 10.f, space / 10.0f, BORDER_REPLICATE);
