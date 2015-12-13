@@ -136,7 +136,7 @@ namespace cp
 		{
 			resize(src_, src, Size(src_.cols / downsampleSizeBlurring, src_.rows / downsampleSizeBlurring), 0.0, 0.0, downsampleMethod);
 		}
-
+		
 		if (filter_type == FIR_SEPARABLE)
 		{
 			Size kernel = Size(2 * (radius / dsize) + 1, 2 * (radius / dsize) + 1);
@@ -159,6 +159,11 @@ namespace cp
 		{
 			GaussianFilter(src, dest, (sigma_space / dsize), GAUSSIAN_FILTER_VYV, filterK);
 		}
+		else
+		{
+			cout << "not supported filter" << endl;
+		}
+
 		if (downsampleSizeBlurring != 1)
 		{
 			resize(dest, dest_, src_.size(), 0.0, 0.0, upsampleMethod);
@@ -349,6 +354,7 @@ namespace cp
 
 	void RealtimeO1BilateralFilter::body(InputArray src_, InputArray joint_, OutputArray dest_, bool save_memorySize)
 	{
+		CV_Assert(bin_depth == CV_32F || bin_depth == CV_64F);
 		if (dest_.empty()) dest_.create(src_.size(), src_.type());
 		Mat src = src_.getMat();
 		Mat joint = joint_.getMat();
@@ -812,7 +818,6 @@ namespace cp
 				S* sd = normalize_sub_range[b].ptr<S>(0);//down
 
 				uchar v = bin2num[b];
-
 				splatting<T, S>(s, su, sd, j, v, imageSize, src.channels());
 
 				blurring(sub_range[b], sub_range[b]);

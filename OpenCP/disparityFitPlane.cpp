@@ -40,55 +40,24 @@ namespace cp
 		else if (signal.depth() == CV_32F) _SLICSegment2Vector3D_<float, S>(segment, signal, (float)invalidValue, segmentPoint);
 		else if (signal.depth() == CV_64F) _SLICSegment2Vector3D_<double, S>(segment, signal, (double)invalidValue, segmentPoint);
 	}
-	
-
-	static int countArrowablePointDistanceZ(std::vector<cv::Point3f>& points, InputArray points2)
-	{
-
-		int count = 0;
-		cout << points.size() << " ";
-
-		vector<Mat> src;
-		points2.getMatVector(src);
-		cout << src.size() << endl;
-		return 0;
-	}
-	/*
-	static int countArrowablePointDistanceZ(std::vector<cv::Point3f>& points, Point3f& abc, float threshold)
-	{
-		int count = 0;
-		cout << points.size() << endl;
-		for (int n = 0; n < points.size(); ++n)
-		{
-			if (abs(points[n].z - (points[n].x*abc.x + points[n].y*abc.y + abc.z)) < threshold)
-			{
-				count++;
-			}
-		}
-		return count;
-	}
-	
+		
 	static int countArrowablePointDistanceZ(InputArray points, Point3f& abc, float threshold)
 	{
-		vector<Mat> src;
-		points.getMatVector(src);
-		cout << src.size() << endl;
+		Mat src = points.getMat();
 		int count = 0;
 		
-		for (int n = 0; n < src.size(); ++n)
+		float* v = src.ptr<float>(0);
+		for (int n = 0; n < src.rows; ++n)
 		{	
-			float* v = (float*)src[n].data;
-			
-			//cout << src[n] << endl;
-			//cout << format("%f %f %f", x, y, z);
 			if (abs(v[2] - (v[0]*abc.x + v[1]*abc.y + abc.z)) < threshold)
 			{
 				count++;
 			}
+			v += 3;
 		}
 		return count;
 	}
-	*/
+	
 	Point3f getMean(vector<Point3f>& src)
 	{
 		Point3f ret = Point3f(0.f,0.f,0.f);
@@ -204,8 +173,7 @@ namespace cp
 				fitPlaneRANSAC(points[i], abc, ransacNumofSample, ransacThreshold, 1);
 
 				//for refinement(if nessesary)
-				//int v = countArrowablePointDistanceZ(points[i], abc, ransacThreshold);
-				int v = countArrowablePointDistanceZ(points[i], points[i]);
+				int v = countArrowablePointDistanceZ(points[i], abc, ransacThreshold);
 				/*double rate = (double)v / points[i].size() * 100;
 				int itermax = 1;
 				for (int n = 0; n < itermax;n++)

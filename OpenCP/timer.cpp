@@ -44,6 +44,7 @@ namespace cp
 		lap_mes.push_back(v);
 		restart();
 	}
+
 	void CalcTime::show()
 	{
 		getTime();
@@ -139,6 +140,7 @@ namespace cp
 			return TIME_NSEC;
 		}
 	}
+
 	double CalcTime::getTime()
 	{
 		cTime = (getTickCount() - pre) / (getTickFrequency());
@@ -174,10 +176,12 @@ namespace cp
 		}
 		return cTime;
 	}
+
 	void CalcTime::setMessage(string& src)
 	{
 		mes = src;
 	}
+
 	void CalcTime::setMode(int mode)
 	{
 		timeMode = mode;
