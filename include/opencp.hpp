@@ -511,11 +511,11 @@ namespace cp
 	//============================================================================================================================================================
 
 	CP_EXPORT cv::Mat imreadPPMX(std::string filename);
-	CP_EXPORT void readYUVGray(std::string fname, cv::Mat& dest, cv::Size size, int frame);
-	CP_EXPORT void readYUV2BGR(std::string fname, cv::Mat& dest, cv::Size size, int frame);
-	CP_EXPORT void writeYUVBGR(std::string fname, cv::Mat& src);
-	CP_EXPORT void writeYUVGray(std::string fname, cv::Mat& src);
-	CP_EXPORT void writeYUV(cv::Mat& src_, std::string name, int mode = 1);
+	CP_EXPORT void readYUVGray(std::string fname, cv::OutputArray dest, cv::Size size, int frame);
+	CP_EXPORT void readYUV2BGR(std::string fname, cv::OutputArray dest, cv::Size size, int frame);
+	CP_EXPORT void writeYUVBGR(std::string fname, cv::InputArray src);
+	CP_EXPORT void writeYUVGray(std::string fname, cv::InputArray src);
+	CP_EXPORT void writeYUV(cv::Mat& InputArray, std::string name, int mode = 1);
 
 	class CP_EXPORT YUVReader
 	{
@@ -647,8 +647,6 @@ namespace cp
 	//============================================================================================================================================================
 	//Filtering Functions
 	//============================================================================================================================================================
-
-
 
 	CP_EXPORT void blurRemoveMinMax(const cv::Mat& src, cv::Mat& dest, const int r);
 	//MORPH_RECT=0, MORPH_CROSS=1, MORPH_ELLIPSE

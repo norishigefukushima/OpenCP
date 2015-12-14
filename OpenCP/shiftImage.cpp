@@ -244,6 +244,12 @@ namespace cp
 			alphaBlend(fiximg, show, 1.0 - a / 100.0, show);
 			imshow(window_name, show);
 			key = waitKey(1);
+
+			if (key == 'f')
+			{
+				a = (a == 0) ? a = 100 : 0;
+				setTrackbarPos("alpha", window_name, a);
+			}
 			if (key == 'l')
 			{
 				x--;

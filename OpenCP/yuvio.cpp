@@ -87,7 +87,7 @@ namespace cp
 		}
 	}
 
-	void readYUVGray(string fname, Mat& dest, Size size, int frame)
+	void readYUVGray(string fname, OutputArray dest, Size size, int frame)
 	{
 		dest.create(size, CV_8U);
 		FILE* fp = fopen(fname.c_str(), "rb");
@@ -95,16 +95,15 @@ namespace cp
 		const int fsize = size.area() + size.area() * 2 / 4;
 
 		fseek(fp, fsize*frame, SEEK_SET);
-
-		fread(dest.data, sizeof(char), size.area(), fp);
+		Mat data = dest.getMat();
+		fread(data.data, sizeof(char), size.area(), fp);
 		//cout<<size.area()<<endl;
 		fflush(fp);
 		fclose(fp);
 		//imshow("aa",dest);waitKey();
 	}
 
-
-	void readYUV2BGR(string fname, Mat& dest, Size size, int frame)
+	void readYUV2BGR(string fname, OutputArray dest, Size size, int frame)
 	{
 		Mat temp = Mat::zeros(Size(size.width, cvRound(size.height*1.5)), CV_8U);
 		FILE* fp = fopen(fname.c_str(), "rb");
@@ -115,13 +114,12 @@ namespace cp
 
 		fread(temp.data, sizeof(char), cvRound(size.area()*1.5), fp);
 
-		cvtColor(temp, dest, CV_YUV420p2BGR);
-
+		cvtColor(temp, dest, CV_YUV420sp2BGR);
 		fclose(fp);
 		//imshow("aa",dest);waitKey();
 	}
 
-	void writeYUVBGR(string fname, Mat& src)
+	void writeYUVBGR(string fname, InputArray src)
 	{
 		Mat yuv;
 		cvtColor(src, yuv, CV_BGRA2YUV_YV12);
@@ -134,12 +132,11 @@ namespace cp
 		fwrite(yuv.data, sizeof(char), fsize, fp);
 		fflush(fp);
 		fclose(fp);
-
-		//imshow("ss",src);waitKey();
 	}
 
-	void writeYUVGray(string fname, Mat& src)
+	void writeYUVGray(string fname, InputArray src_)
 	{
+		Mat src = src_.getMat();
 		Size size = src.size();
 		FILE* fp = fopen(fname.c_str(), "wb");
 		if (fp == NULL)cout << fname << " open error\n";
@@ -157,7 +154,7 @@ namespace cp
 		//imshow("ss",src);waitKey();
 	}
 
-	void writeYUV(Mat& src_, string name, int mode)
+	void writeYUV(InputArray src_, string name, int mode)
 	{
 		Mat src; cvtColor(src_, src, CV_BGR2YUV);
 
