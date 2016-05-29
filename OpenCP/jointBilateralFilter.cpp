@@ -501,6 +501,7 @@ namespace cp
 							__m128 tval1 = _mm_setzero_ps();
 							for (k = 0; k < maxk; k++, ofs++, gofs++, spw++, wofs++)//wmap
 							{
+								
 								const __m128 bref = _mm_loadu_ps((gptrbj + *gofs));
 								const __m128 gref = _mm_loadu_ps((gptrgj + *gofs));
 								const __m128 rref = _mm_loadu_ps((gptrrj + *gofs));
@@ -518,13 +519,14 @@ namespace cp
 								const __m128 _sw = _mm_set1_ps(*spw);//space weight
 								__m128 _w = _mm_mul_ps(_sw, _mm_set_ps(color_weight[buf[3]], color_weight[buf[2]], color_weight[buf[1]], color_weight[buf[0]]));//load exp val from lut
 								_w = _mm_mul_ps(_w, _mm_loadu_ps(wptrj + wofs[0]));//wmap
-
+									
 								vref = _mm_mul_ps(_w, vref);//mul weight and val
 								tval1 = _mm_add_ps(tval1, vref);
 								wval1 = _mm_add_ps(wval1, _w);
 							}
 							tval1 = _mm_div_ps(tval1, wval1);
 							_mm_stream_ps((dptr + j), tval1);
+							//_mm_storeu_ps((dptr + j), tval1);
 						}
 					}
 #endif
@@ -2705,6 +2707,7 @@ namespace cp
 		int lpad = 4 * (radiusH / 4 + 1) - radiusH;
 		int rpad = spad - lpad;
 
+		
 		if (cn == 1 && cng == 1)
 		{
 			copyMakeBorder(src, temp, radiusV, radiusV, radiusH + lpad, radiusH + rpad, borderType);
@@ -2734,7 +2737,7 @@ namespace cp
 
 			copyMakeBorder(guide, tempg, radiusV, radiusV, radiusH + lpad, radiusH + rpad, borderType);
 		}
-		
+		copyMakeBorder(weight, tempw, radiusV, radiusV, radiusH + lpad, radiusH + rpad, borderType);
 
 		double minv, maxv;
 		minMaxLoc(guide, &minv, &maxv);
@@ -2793,7 +2796,7 @@ namespace cp
 
 		Mat dest = Mat::zeros(Size(src.cols + dpad, src.rows), dst.type());
 		WeightedJointBilateralFilter_32f_InvokerSSE4 body(dest, temp, tempw, tempg, radiusH, radiusV, maxk, space_ofs, space_w_ofs, space_guide_ofs, space_weight, color_weight);
-		parallel_for_(Range(0, size.height), body);
+		parallel_for_(Range(0, size.height), body,1);
 		Mat(dest(Rect(0, 0, dst.cols, dst.rows))).copyTo(dst);
 	}
 
@@ -2806,9 +2809,10 @@ namespace cp
 		int i, j, maxk;
 		Size size = src.size();
 
-		CV_Assert((src.type() == CV_8UC1 || src.type() == CV_8UC3) &&
-			(guide.type() == CV_8UC1 || guide.type() == CV_8UC3) &&
-			src.type() == dst.type() && src.size() == dst.size());
+		CV_Assert(src.type() == CV_8UC1 || src.type() == CV_8UC3);
+		CV_Assert(guide.type() == CV_8UC1 || guide.type() == CV_8UC3);
+		CV_Assert(src.type() == dst.type() && src.size() == dst.size());
+			
 
 		if (sigma_color <= 0)
 			sigma_color = 1;
@@ -3200,7 +3204,7 @@ namespace cp
 
 	void weightedJointBilateralFilter(cv::InputArray src_, cv::InputArray weightMap_, cv::InputArray guide_, cv::OutputArray dest, Size kernelSize, double sigma_color, double sigma_space, int kernelType, int borderType)
 	{
-		if (dest.empty())dest.create(src_.size(), src_.type());
+		if (dest.empty() || src_.size()!=dest.size() || src_.type()!=dest.type()) dest.create(src_.size(), src_.type());
 		Mat src = src_.getMat();
 		Mat weightMap = weightMap_.getMat();
 		Mat guide = guide_.getMat();

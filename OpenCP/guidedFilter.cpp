@@ -1558,19 +1558,15 @@ namespace cp
 
 	static void guidedFilterSrc1Guidance1_(const Mat& src, const Mat& joint, Mat& dest, const int radius, const float eps)
 	{
-		if (src.channels() != 1 && joint.channels() != 1)
-		{
-			cout << "Please input gray scale image." << endl;
-			return;
-		}
-		//some opt
 		Size ksize(2 * radius + 1, 2 * radius + 1);
 		Size imsize = src.size();
 		const float e = eps;
 
+		//論文と同じにするために正規化．実際は要らない．
 		Mat sf; src.convertTo(sf, CV_32F, 1.0 / 255);
-		Mat jf; joint.convertTo(jf, CV_32F, 1.0 / 255);////////////////
-		Mat mJoint(imsize, CV_32F);//mean_I///////////////////////////////
+		Mat jf; joint.convertTo(jf, CV_32F, 1.0 / 255);
+
+		Mat mJoint(imsize, CV_32F);//mean_I
 		Mat mSrc(imsize, CV_32F);//mean_p
 
 		boxFilter(jf, mJoint, CV_32F, ksize, Point(-1, -1), true, BORDER_TYPE);//mJoint*K/////////////////////////
@@ -1579,16 +1575,17 @@ namespace cp
 		Mat x1(imsize, CV_32F), x2(imsize, CV_32F), x3(imsize, CV_32F);
 
 		multiply(jf, sf, x1);//x1*1
-		boxFilter(x1, x3, CV_32F, ksize, Point(-1, -1), true, BORDER_TYPE);//x3*K
+		boxFilter(x1, x3, CV_32F, ksize, Point(-1, -1), true, BORDER_TYPE);//corrI
 		multiply(mJoint, mSrc, x1);//;x1*K*K
 		x3 -= x1;//x1 div k ->x3*k
 		multiply(jf, jf, x1);////////////////////////////////////
 		boxFilter(x1, x2, CV_32F, ksize, Point(-1, -1), true, BORDER_TYPE);//x2*K
 		multiply(mJoint, mJoint, x1);//x1*K*K
+
 		sf = Mat(x2 - x1) + e;
-		divide(x3, sf, x3);
+		divide(x3, sf, x3);//x3->a
 		multiply(x3, mJoint, x1);
-		x1 -= mSrc;
+		x1 -= mSrc;//x1->b
 		boxFilter(x3, x2, CV_32F, ksize, Point(-1, -1), true, BORDER_TYPE);//x2*k
 		boxFilter(x1, x3, CV_32F, ksize, Point(-1, -1), true, BORDER_TYPE);//x3*k
 		multiply(x2, jf, x1);//x1*K
@@ -1811,18 +1808,19 @@ namespace cp
 			vector<Mat> v(3);
 			vector<Mat> d(3);
 			split(src, v);
-
 			if (sse)
 			{
-				guidedFilterSrc1Guidance3SSE_(v[0], guidance, d[0], radius, eps);
-				guidedFilterSrc1Guidance3SSE_(v[1], guidance, d[1], radius, eps);
-				guidedFilterSrc1Guidance3SSE_(v[2], guidance, d[2], radius, eps);
+#pragma omp parallel for
+				for (int i = 0; i < 3;i++) 
+					guidedFilterSrc1Guidance3SSE_(v[i], guidance, d[i], radius, eps);
+				
 			}
 			else
 			{
-				guidedFilterSrc1Guidance3_(v[0], guidance, d[0], radius, eps);
-				guidedFilterSrc1Guidance3_(v[1], guidance, d[1], radius, eps);
-				guidedFilterSrc1Guidance3_(v[2], guidance, d[2], radius, eps);
+#pragma omp parallel for
+				for (int i = 0; i < 3; i++)
+				guidedFilterSrc1Guidance3_(v[i], guidance, d[i], radius, eps);
+				
 			}
 			merge(d, dest);
 		}
@@ -1833,15 +1831,17 @@ namespace cp
 			split(src, v);
 			if (sse)
 			{
-				guidedFilterSrc1Guidance1SSE_(v[0], guidance, d[0], radius, eps);
-				guidedFilterSrc1Guidance1SSE_(v[1], guidance, d[1], radius, eps);
-				guidedFilterSrc1Guidance1SSE_(v[2], guidance, d[2], radius, eps);
+#pragma omp parallel for
+				for (int i = 0; i < 3; i++)
+				guidedFilterSrc1Guidance1SSE_(v[i], guidance, d[i], radius, eps);
+				
 			}
 			else
 			{
-				guidedFilterSrc1Guidance1_(v[0], guidance, d[0], radius, eps);
-				guidedFilterSrc1Guidance1_(v[1], guidance, d[1], radius, eps);
-				guidedFilterSrc1Guidance1_(v[2], guidance, d[2], radius, eps);
+#pragma omp parallel for
+				for (int i = 0; i < 3; i++)
+				guidedFilterSrc1Guidance1_(v[i], guidance, d[i], radius, eps);
+				
 			}
 			merge(d, dest);
 		}
@@ -1941,24 +1941,18 @@ namespace cp
 
 	void guidedFilterSrc1_(const Mat& src, Mat& dest, const int radius, const float eps)
 	{
-		if (src.channels() != 1)
-		{
-			cout << "Please input gray scale image." << endl;
-			return;
-		}
 		Size ksize(2 * radius + 1, 2 * radius + 1);
 		Size imsize = src.size();
 		const float e = eps;
-
 		Mat sf; src.convertTo(sf, CV_32F);
-
+		
 		Mat mSrc(imsize, CV_32F);//mean_p
+		boxFilter(sf, mSrc, CV_32F, ksize, Point(-1, -1), true, BORDER_TYPE);//meanImSrc*K
 
-		boxFilter(sf, mSrc, CV_32F, ksize, Point(-1, -1), true, BORDER_TYPE);//mSrc*K
 		Mat x1(imsize, CV_32F), x2(imsize, CV_32F), x3(imsize, CV_32F);
 
 		multiply(sf, sf, x1);//sf*sf
-		boxFilter(x1, x3, CV_32F, ksize, Point(-1, -1), true, BORDER_TYPE);//m*sf*sf
+		boxFilter(x1, x3, CV_32F, ksize, Point(-1, -1), true, BORDER_TYPE);//corrI:m*sf*sf
 
 		multiply(mSrc, mSrc, x1);//;msf*msf
 		x3 -= x1;//x3: m*sf*sf-msf*msf;

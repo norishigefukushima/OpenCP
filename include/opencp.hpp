@@ -1,6 +1,7 @@
 #pragma once
 
 #include <opencv2/opencv.hpp>
+#include <opencv2/stereo.hpp>
 #include <opencv2/xphoto.hpp>
 #include <opencv2/ximgproc.hpp>
 #ifdef CP_API
@@ -30,6 +31,7 @@
 #pragma CV_LIBRARY(ccalib)
 #pragma CV_LIBRARY(core)
 
+/*
 #pragma CV_LIBRARY(cudaarithm)
 #pragma CV_LIBRARY(cudabgsegm)
 #pragma CV_LIBRARY(cudacodec)
@@ -41,6 +43,7 @@
 #pragma CV_LIBRARY(cudaoptflow)
 #pragma CV_LIBRARY(cudastereo)
 #pragma CV_LIBRARY(cudawarping)
+*/
 #pragma CV_LIBRARY(cudev)
 
 
@@ -50,7 +53,8 @@
 #pragma CV_LIBRARY(face)
 #pragma CV_LIBRARY(features2d)
 #pragma CV_LIBRARY(flann)
-#pragma CV_LIBRARY(hal)
+#pragma CV_LIBRARY(fuzzy)
+//#pragma CV_LIBRARY(hal)
 #pragma CV_LIBRARY(highgui)
 #pragma CV_LIBRARY(imgcodecs)
 #pragma CV_LIBRARY(imgproc)
@@ -61,17 +65,19 @@
 #pragma CV_LIBRARY(objdetect)
 #pragma CV_LIBRARY(optflow)
 #pragma CV_LIBRARY(photo)
+#pragma CV_LIBRARY(plot)
 #pragma CV_LIBRARY(reg)
 #pragma CV_LIBRARY(rgbd)
 #pragma CV_LIBRARY(saliency)
 #pragma CV_LIBRARY(shape)
+#pragma CV_LIBRARY(stereo)
 #pragma CV_LIBRARY(stitching)
 #pragma CV_LIBRARY(structured_light)
 #pragma CV_LIBRARY(superres)
 #pragma CV_LIBRARY(surface_matching)
 #pragma CV_LIBRARY(text)
 #pragma CV_LIBRARY(tracking)
-#pragma CV_LIBRARY(ts)
+//#pragma CV_LIBRARY(ts)
 #pragma CV_LIBRARY(video)
 #pragma CV_LIBRARY(videoio)
 #pragma CV_LIBRARY(videostab)
@@ -96,7 +102,7 @@ namespace cp
 #define VK_ESCAPE 0x1B
 #endif // VK_ESCAPE
 
-	
+
 	CP_EXPORT void fitPlaneCrossProduct(std::vector<cv::Point3f>& src, cv::Point3f& dest);
 	CP_EXPORT void fitPlanePCA(cv::InputArray src, cv::Point3f& dest);
 	CP_EXPORT void fitPlaneRANSAC(std::vector<cv::Point3f>& src, cv::Point3f& dest, int numofsample, float threshold, int refineIter = 0);
@@ -114,6 +120,8 @@ namespace cp
 	CP_EXPORT void patchBlendImage(cv::Mat& src1, cv::Mat& src2, cv::Mat& dest, cv::Scalar linecolor = CV_RGB(0, 0, 0), int linewidth = 2, int direction = 0);
 	CP_EXPORT void alphaBlend(const cv::Mat& src1, const cv::Mat& src2, const cv::Mat& alpha, cv::Mat& dest);
 	CP_EXPORT void alphaBlend(cv::InputArray src1, cv::InputArray src2, const double alpha, cv::OutputArray dest);
+	CP_EXPORT void alphaBlendApproxmate(cv::InputArray src1, cv::InputArray src2, cv::InputArray alpha, cv::OutputArray dest);
+	CP_EXPORT void alphaBlendApproxmate(cv::InputArray src1, cv::InputArray src2, const uchar alpha, cv::OutputArray dest);
 	CP_EXPORT void guiAlphaBlend(cv::InputArray src1, cv::InputArray src2, bool isShowImageStats = false);
 	CP_EXPORT void guiZoom(cv::InputArray src, cv::OutputArray dest = cv::noArray());
 	CP_EXPORT void guiContrast(cv::InputArray src);
@@ -123,10 +131,11 @@ namespace cp
 
 	//sse utils
 	CP_EXPORT void memcpy_float_sse(float* dest, float* src, const int size);
-	CP_EXPORT void setDepthMaxValue(cv::InputOutputArray src);
+	CP_EXPORT void setTypeMaxValue(cv::InputOutputArray src);
+	CP_EXPORT void setTypeMinValue(cv::InputOutputArray src);
 
 	CP_EXPORT void guiShift(cv::InputArray centerimg, cv::InputArray leftimg, cv::InputArray rightimg, int max_move, std::string window_name = "Shift");
-	CP_EXPORT void guiShift(cv::InputArray fiximg, cv::InputArray moveimg, const int max_move = 200, std::string window_name = "Shift");
+	CP_EXPORT cv::Mat guiShift(cv::InputArray fiximg, cv::InputArray moveimg, const int max_move = 200, std::string window_name = "Shift");
 
 	CP_EXPORT void warpShiftH(cv::InputArray src, cv::OutputArray dest, const int shiftH);
 	CP_EXPORT void warpShift(cv::InputArray src, cv::OutputArray dest, int shiftx, int shifty = 0, int borderType = -1);
@@ -296,6 +305,7 @@ namespace cp
 
 		void clear();
 		void show();
+		void showDistribution();
 	};
 
 	class CP_EXPORT CSV
@@ -417,6 +427,7 @@ namespace cp
 		cv::Mat plotImage;
 		cv::Mat keyImage;
 	public:
+		//symbolType
 		enum
 		{
 			SYMBOL_NOPOINT = 0,
@@ -433,6 +444,7 @@ namespace cp
 			SYMBOL_TRIANGLE_INV_FILL,
 		};
 
+		//lineType
 		enum
 		{
 			LINE_NONE,
@@ -440,6 +452,7 @@ namespace cp
 			LINE_H2V,
 			LINE_V2H
 		};
+
 		cv::Mat render;
 		cv::Mat graphImage;
 
@@ -493,7 +506,7 @@ namespace cp
 		void swapPlot(int plotIndex1, int plotIndex2);
 	};
 
-	void plotGraph(cv::Mat& render, std::vector<cv::Point2d>& data, double xmin, double xmax, double ymin, double ymax,
+	CP_EXPORT void plotGraph(cv::OutputArray graph, std::vector<cv::Point2d>& data, double xmin, double xmax, double ymin, double ymax,
 		cv::Scalar color = COLOR_RED, int lt = Plot::SYMBOL_PLUS, int isLine = Plot::LINE_LINEAR, int thickness = 1, int ps = 4);
 
 	//simd functions
@@ -511,6 +524,8 @@ namespace cp
 	//============================================================================================================================================================
 
 	CP_EXPORT cv::Mat imreadPPMX(std::string filename);
+	CP_EXPORT cv::Mat imreadPFM(std::string filename);
+	CP_EXPORT void readY16(std::string fname, cv::OutputArray dest, cv::Size size, int frame);
 	CP_EXPORT void readYUVGray(std::string fname, cv::OutputArray dest, cv::Size size, int frame);
 	CP_EXPORT void readYUV2BGR(std::string fname, cv::OutputArray dest, cv::Size size, int frame);
 	CP_EXPORT void writeYUVBGR(std::string fname, cv::InputArray src);
@@ -720,6 +735,7 @@ namespace cp
 	CP_EXPORT void bilateralWeightMap(cv::InputArray src_, cv::OutputArray dst_, cv::Size kernelSize, double sigma_color, double sigma_space, int kernelType = FILTER_DEFAULT, int borderType = cv::BORDER_REPLICATE);
 	CP_EXPORT void dualBilateralWeightMap(cv::InputArray src, cv::InputArray guide, cv::OutputArray dest, cv::Size kernelSize, double sigma_color, double sigma_guide_color, double sigma_space, int kernelType = FILTER_DEFAULT, int borderType = cv::BORDER_REPLICATE);
 	CP_EXPORT void dualBilateralWeightMapXOR(cv::InputArray src, cv::InputArray guide, cv::OutputArray dest, cv::Size kernelSize, double sigma_color, double sigma_guide_color, double sigma_space, int kernelType = FILTER_DEFAULT, int borderType = cv::BORDER_REPLICATE);
+	CP_EXPORT void dualBilateralWeightMapBase(cv::InputArray src, cv::InputArray guide, cv::OutputArray dst, int d, double sigma_color, double sigma_guide_color, double sigma_space, int borderType, bool isLaplace);
 
 	enum SeparableMethod
 	{
@@ -739,7 +755,7 @@ namespace cp
 	CP_EXPORT void separableJointDualBilateralFilter(const cv::Mat& src, const cv::Mat& guide1, const cv::Mat& guide2, cv::Mat& dst, int D, double sigma_color, double sigma_guide_color, double sigma_space, double alpha1 = 1.0, double alpha2 = 1.0, int method = DUAL_KERNEL_HV, int borderType = cv::BORDER_REPLICATE);
 
 	CP_EXPORT void bilateralFilterL2(cv::InputArray src, cv::OutputArray dest, int radius, double sigma_color, double sigma_space, int borderType = cv::BORDER_REPLICATE);
-	
+
 
 	CP_EXPORT void weightedBilateralFilter(cv::InputArray src, cv::InputArray weight, cv::OutputArray dst, int D, double sigma_color, double sigma_space, int method, int borderType = cv::BORDER_REPLICATE);
 	CP_EXPORT void weightedBilateralFilter(cv::InputArray src, cv::InputArray weight, cv::OutputArray dst, cv::Size kernelSize, double sigma_color, double sigma_space, int method, int borderType = cv::BORDER_REPLICATE);
@@ -758,7 +774,7 @@ namespace cp
 	class CP_EXPORT RealtimeO1BilateralFilter
 	{
 	protected:
-	
+
 		std::vector<cv::Mat> bgrid;//for presubsampling
 
 		std::vector<cv::Mat> sub_range;
@@ -807,8 +823,8 @@ namespace cp
 			L1,
 			L2
 		};
-		
-		void setColorNorm(int norm=L1SQR);
+
+		void setColorNorm(int norm = L1SQR);
 		int downsampleSizeSplatting;
 		int downsampleSizeBlurring;
 		int downsampleMethod;
@@ -842,6 +858,11 @@ namespace cp
 	CP_EXPORT void weightedModeFilter(cv::InputArray src, cv::InputArray guide, cv::OutputArray dst, int r, int truncate, double sigmaColor, double sigmaSpace, int metric, int method);
 	CP_EXPORT void weightedweightedModeFilter(cv::InputArray src, cv::InputArray wmap, cv::InputArray guide, cv::OutputArray dst, int r, int truncate, double sigmaColor, double sigmaSpace, int metric, int method);
 	CP_EXPORT void weightedweightedModeFilter(cv::InputArray src, cv::InputArray wmap, cv::InputArray guide, cv::OutputArray dst, int r, int truncate, double sigmaColor1, double sigmaColor2, double sigmaSpace, int metric, int method);
+
+	CP_EXPORT void weightedweightedModeFilter(cv::InputArray src, cv::InputArray wmap, cv::InputArray guide, cv::InputArray mask, cv::OutputArray dst, int r, int truncate, double sigmaColor, double sigmaSpace, int metric, int method);
+	CP_EXPORT void weightedweightedMedianFilter(cv::InputArray src, cv::InputArray wmap, cv::InputArray guide, cv::InputArray mask, cv::OutputArray dst, int r, int truncate, double sigmaColor, double sigmaSpace, int metric, int method);
+	CP_EXPORT void weightedweightedModeFilter(cv::InputArray src, cv::InputArray wmap, cv::InputArray guide, cv::InputArray mask, cv::OutputArray dst, int r, int truncate, double sigmaColor1, double sigmaColor2, double sigmaSpace, int metric, int method);
+	CP_EXPORT void weightedweightedMedianFilter(cv::InputArray src, cv::InputArray wmap, cv::InputArray guide, cv::InputArray mask, cv::OutputArray dst, int r, int truncate, double sigmaColor1, double sigmaColor2, double sigmaSpace, int metric, int method);
 
 	typedef enum
 	{
@@ -892,16 +913,16 @@ namespace cp
 	};
 
 
-	CP_EXPORT void binalyWeightedRangeFilter(const cv::Mat& src, cv::Mat& dst, cv::Size kernelSize, float threshold, int method = FILTER_DEFAULT, int borderType = cv::BORDER_REPLICATE);
-	CP_EXPORT void binalyWeightedRangeFilter(const cv::Mat& src, cv::Mat& dst, int D, float threshold, int method = FILTER_DEFAULT, int borderType = cv::BORDER_REPLICATE);
-	CP_EXPORT void jointBinalyWeightedRangeFilter(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dst, cv::Size kernelSize, float threshold, int method = FILTER_DEFAULT, int borderType = cv::BORDER_REPLICATE);
-	CP_EXPORT void jointBinalyWeightedRangeFilter(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dst, int D, float threshold, int method = FILTER_DEFAULT, int borderType = cv::BORDER_REPLICATE);
+	CP_EXPORT void binalyWeightedRangeFilter(cv::InputArray src, cv::OutputArray dst, cv::Size kernelSize, float threshold, int method = FILTER_DEFAULT, int borderType = cv::BORDER_REPLICATE);
+	CP_EXPORT void binalyWeightedRangeFilter(cv::InputArray src, cv::OutputArray dst, int D, float threshold, int method = FILTER_DEFAULT, int borderType = cv::BORDER_REPLICATE);
+	CP_EXPORT void jointBinalyWeightedRangeFilter(cv::InputArray src, cv::InputArray guide, cv::OutputArray dst, cv::Size kernelSize, float threshold, int method = FILTER_DEFAULT, int borderType = cv::BORDER_REPLICATE);
+	CP_EXPORT void jointBinalyWeightedRangeFilter(cv::InputArray src, cv::InputArray guide, cv::OutputArray dst, int D, float threshold, int method = FILTER_DEFAULT, int borderType = cv::BORDER_REPLICATE);
 
 	CP_EXPORT void centerReplacedBinalyWeightedRangeFilter(const cv::Mat& src, const cv::Mat& center, cv::Mat& dst, cv::Size kernelSize, float threshold, int method = FILTER_DEFAULT, int borderType = cv::BORDER_REPLICATE);
 
 	CP_EXPORT void nonLocalMeansFilter(cv::Mat& src, cv::Mat& dest, int templeteWindowSize, int searchWindowSize, double h, double sigma = -1.0, int method = FILTER_DEFAULT, int borderType = cv::BORDER_REPLICATE);
 	CP_EXPORT void nonLocalMeansFilter(cv::Mat& src, cv::Mat& dest, cv::Size templeteWindowSize, cv::Size searchWindowSize, double h, double sigma = -1.0, int method = FILTER_DEFAULT, int borderType = cv::BORDER_REPLICATE);
-	CP_EXPORT void epsillonFilter(cv::Mat& src, cv::Mat& dest, cv::Size templeteWindowSize, cv::Size searchWindowSize, double h, int borderType=cv::BORDER_REPLICATE);
+	CP_EXPORT void epsillonFilter(cv::Mat& src, cv::Mat& dest, cv::Size templeteWindowSize, cv::Size searchWindowSize, double h, int borderType = cv::BORDER_REPLICATE);
 
 	CP_EXPORT void jointNonLocalMeansFilter(cv::Mat& src, cv::Mat& guide, cv::Mat& dest, int templeteWindowSize, int searchWindowSize, double h, double sigma, int method = FILTER_DEFAULT, int borderType = cv::BORDER_REPLICATE);
 	CP_EXPORT void jointNonLocalMeansFilter(cv::Mat& src, cv::Mat& guide, cv::Mat& dest, cv::Size templeteWindowSize, cv::Size searchWindowSize, double h, double sigma, int method = FILTER_DEFAULT, int borderType = cv::BORDER_REPLICATE);
@@ -1158,15 +1179,18 @@ namespace cp
 		double discMSE;
 
 		void init(cv::Mat& groundtruth, cv::Mat& maskNonocc, cv::Mat& maskAll, cv::Mat& maskDisc, double amp);
+		void init(cv::Mat& groundtruth, double amp);
 
 		StereoEval();
 		StereoEval(std::string groundtruthPath, std::string maskNonoccPath, std::string maskAllPath, std::string maskDiscPath, double amp);
 		StereoEval(cv::Mat& groundtruth, cv::Mat& maskNonocc, cv::Mat& maskAll, cv::Mat& maskDisc, double amp);
+		StereoEval(cv::Mat& groundtruth, double amp);
+
 		~StereoEval(){ ; }
 
 		void getBadPixel(cv::Mat& src, double threshold = 1.0, bool isPrint = true);
 		void getMSE(cv::Mat& src, bool isPrint = true);
-		virtual void operator() (cv::Mat& src, double threshold = 1.0, bool isPrint = true, int disparity_scale = 1);
+		virtual void operator() (cv::InputArray src, double threshold = 1.0, bool isPrint = true, int disparity_scale = 1);
 		void compare(cv::Mat& before, cv::Mat& after, double threshold = 1.0, bool isPrint = true);
 	};
 
@@ -1283,20 +1307,21 @@ namespace cp
 		double alpha, cv::Size newImgSize,
 		cv::Rect* anchorROI1, cv::Rect* anchorROI2, int flags);
 
-	void lookat(const cv::Point3d& from, const cv::Point3d& to, cv::Mat& destR);
-	void eular2rot(double pitch, double roll, double yaw, cv::Mat& dest);
+	CP_EXPORT void lookat(const cv::Point3d& from, const cv::Point3d& to, cv::Mat& destR);
+	CP_EXPORT void Eular2Rotation(const double pitch, const double roll, const double yaw, cv::OutputArray dest);
+	CP_EXPORT void Rotation2Eular(cv::InputArray src, double& pitch, double& roll, double& yaw);
 
-	void rotPitch(cv::Mat& src, cv::Mat& dest, const double pitch);
-	void rotYaw(cv::Mat& src, cv::Mat& dest, const double yaw);
+	CP_EXPORT void rotPitch(cv::InputArray src, cv::OutputArray dest, const double pitch);
+	CP_EXPORT void rotYaw(cv::InputArray src, cv::OutputArray dest, const double yaw);
 
-	void stereoInterlace(cv::Mat& lim, cv::Mat& rim, cv::Mat& dest, int d, int left_right_swap);
-	void stereoAnaglyph(cv::Mat& lim, cv::Mat& rim, cv::Mat& dest, int shift);
+	CP_EXPORT void stereoInterlace(cv::Mat& lim, cv::Mat& rim, cv::Mat& dest, int d, int left_right_swap);
+	CP_EXPORT void stereoAnaglyph(cv::Mat& lim, cv::Mat& rim, cv::Mat& dest, int shift);
 
-	void disp16S2depth16U(cv::Mat& src, cv::Mat& dest, const float focal_baseline, float a = 1.f, float b = 0.f);
-	void disp8U2depth32F(cv::Mat& src, cv::Mat& dest, const float focal_baseline, float a = 1.f, float b = 0.f);
-	void disp16S2depth32F(cv::Mat& src, cv::Mat& dest, const float focal_baseline, float a = 1.f, float b = 0.f);
-	void depth32F2disp8U(cv::Mat& src, cv::Mat& dest, const float focal_baseline, float a = 1.f, float b = 0.f);
-	void depth16U2disp8U(cv::Mat& src, cv::Mat& dest, const float focal_baseline, float a = 1.f, float b = 0.f);
+	CP_EXPORT void disp16S2depth16U(cv::Mat& src, cv::Mat& dest, const float focal_baseline, float a = 1.f, float b = 0.f);
+	CP_EXPORT void disp8U2depth32F(cv::Mat& src, cv::Mat& dest, const float focal_baseline, float a = 1.f, float b = 0.f);
+	CP_EXPORT void disp16S2depth32F(cv::Mat& src, cv::Mat& dest, const float focal_baseline, float a = 1.f, float b = 0.f);
+	CP_EXPORT void depth32F2disp8U(cv::Mat& src, cv::Mat& dest, const float focal_baseline, float a = 1.f, float b = 0.f);
+	CP_EXPORT void depth16U2disp8U(cv::Mat& src, cv::Mat& dest, const float focal_baseline, float a = 1.f, float b = 0.f);
 
 	class CP_EXPORT dispRefinement
 	{
@@ -1646,13 +1671,15 @@ namespace cp
 	};
 	*/
 
-	CP_EXPORT void reprojectXYZ(cv::InputArray depth, cv::OutputArray xyz, cv::InputArray intrinsic, cv::InputArray distortion);
+	CP_EXPORT void moveXYZ(cv::InputArray xyz, cv::OutputArray dest, cv::InputArray R, cv::InputArray t, const bool isRotationThenTranspose=true);
+	CP_EXPORT void reprojectXYZ(cv::InputArray depth, cv::OutputArray xyz, const double focalLength);
+	CP_EXPORT void reprojectXYZ(cv::InputArray depth, cv::OutputArray xyz, cv::InputArray intrinsic, cv::InputArray distortion=cv::noArray());
 
 	class CP_EXPORT PointCloudShow
 	{
 	private:
-		std::string wname;
-		cv::Point pt;
+		bool isRotationThenTranspose;
+		cv::Point pt;	
 		bool isInit;
 		int x;
 		int y;
@@ -1679,22 +1706,43 @@ namespace cp
 		void depth2XYZ(cv::Mat& srcDepth, cv::InputArray srcK, cv::InputArray srcDist);
 
 	public:
+		cv::Mat renderingImage;
 		cv::Mat xyz;
 
 		PointCloudShow();
+		void setIsRotationThenTranspose(bool flag);
 		void disparity2XYZ(cv::Mat& srcDisparity, float disp_amp, float focal, float baseline);
 
 		void loop(cv::Mat& image, cv::Mat& srcDisparity, float disp_amp, float focal, float baseline, int loopcount);
 
-		void loop_depth(cv::Mat& image, cv::Mat& srcDepth, float focal, int loopcount);
-		void loop_depth(cv::Mat& image, cv::Mat& srcDepth, cv::Mat& image2, cv::Mat& srcDepth2, float focal, cv::Mat& R, cv::Mat& t, cv::Mat& k, int loopcount);
 
-		void PointCloudShow::warp_xyz(cv::Mat& dest, cv::Mat& image, cv::InputArray xyz, cv::InputArray R, cv::InputArray t, cv::InputArray k);
+		void loopXYZ(cv::InputArray image, cv::InputArray xyzPoints, cv::InputArray K, cv::InputArray R, cv::InputArray t, int loopcount);
+
+		void loopDepth(cv::InputArray image, cv::InputArray srcDepth, cv::InputArray K, cv::InputArray dist, int loopcount);
+		void loopDepth(cv::InputArray image, cv::InputArray srcDepth, float focal, int loopcount);
+		void loopDepth(cv::InputArray image, cv::InputArray srcDepth, cv::InputArray image2_, cv::InputArray srcDepth2_, float focal, cv::InputArray oR, cv::InputArray ot, cv::InputArray K, int loopcount);
+
+
+		void warp_xyz(cv::Mat& dest, cv::Mat& image, cv::InputArray xyz, cv::InputArray R, cv::InputArray t, cv::InputArray k);
 		void warp_depth(cv::Mat& dest, cv::Mat& image, cv::Mat& srcDepth, float focal, cv::InputArray R, cv::InputArray t, cv::InputArray k);
 		void warp_depth(cv::Mat& dest, cv::Mat& image, cv::Mat& srcDepth, cv::InputArray srcK, cv::InputArray srcDist, cv::InputArray R, cv::InputArray t, cv::InputArray destK, cv::InputArray destDist);
 		void warp_disparity(cv::Mat& dest, cv::Mat& image, cv::Mat& srcDisparity, float disp_amp, float focal, float baseline, cv::Mat& R, cv::Mat& t, cv::Mat& k);
+
+	protected:
+		std::string wname;
+		virtual void filterDepth(cv::InputArray src, cv::OutputArray dest);
+
 	};
 
+	enum
+	{
+		FILL_OCCLUSION_LINE = 0,
+		FILL_OCCLUSION_REFLECT = 1,
+		FILL_OCCLUSION_STRETCH = -1,
+		FILL_OCCLUSION_HV = 2,
+		FILL_OCCLUSION_INPAINT_NS = 3, // OpenCV Navier-Stokes algorithm
+		FILL_OCCLUSION_INPAINT_TELEA = 4, // OpenCV A. Telea algorithm
+	};
 	class CP_EXPORT StereoViewSynthesis
 	{
 
@@ -1755,16 +1803,6 @@ namespace cp
 			POST_NONE
 		};
 		int postFilterMethod;
-
-		enum
-		{
-			FILL_OCCLUSION_LINE = 0,
-			FILL_OCCLUSION_REFLECT = 1,
-			FILL_OCCLUSION_STRETCH = -1,
-			FILL_OCCLUSION_HV = 2,
-			FILL_OCCLUSION_INPAINT_NS = 3, // OpenCV Navier-Stokes algorithm
-			FILL_OCCLUSION_INPAINT_TELEA = 4, // OpenCV A. Telea algorithm
-		};
 		int inpaintMethod;
 
 		double inpaintr;//parameter for opencv inpaint 
@@ -1852,6 +1890,14 @@ namespace cp
 	CP_EXPORT void fillOcclusion(cv::InputOutputArray src, int invalidvalue = 0, int method = FILL_DISPARITY);// for disparity map
 	CP_EXPORT void jointColorDepthFillOcclusion(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dest, const cv::Size ksize, double threshold);
 
+	enum
+	{
+		FILL_OCCLUSION_IM_LINE = FILL_OCCLUSION_LINE,
+		FILL_OCCLUSION_IM_REFLECT = FILL_OCCLUSION_REFLECT,
+		FILL_OCCLUSION_IM_STRETCH = FILL_OCCLUSION_STRETCH,
+		FILL_OCCLUSION_IM_HV = FILL_OCCLUSION_HV,
+	};
+	CP_EXPORT void fillOcclusionImDisp(cv::InputOutputArray im_, cv::InputOutputArray disp_, int invalidvalue, int mode = FILL_OCCLUSION_IM_LINE);
 	//remove Streaking Noise in stereo DP matching and hole filling function
 	CP_EXPORT void removeStreakingNoise(cv::Mat& src, cv::Mat& dest, int th);
 	CP_EXPORT void removeStreakingNoiseV(cv::Mat& src, cv::Mat& dest, int th);

@@ -333,9 +333,6 @@
     <ClCompile Include="ppmx.cpp">
       <Filter>ソース ファイル\imgproc</Filter>
     </ClCompile>
-    <ClCompile Include="yuvio.cpp">
-      <Filter>ソース ファイル\imgproc</Filter>
-    </ClCompile>
     <ClCompile Include="StereoIterativeBM.cpp">
       <Filter>ソース ファイル\stereo</Filter>
     </ClCompile>
@@ -356,6 +353,9 @@
     </ClCompile>
     <ClCompile Include="disparityFitPlane.cpp">
       <Filter>ソース ファイル\stereo</Filter>
+    </ClCompile>
+    <ClCompile Include="yuvio.cpp">
+      <Filter>ソース ファイル\utilty functions</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

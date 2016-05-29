@@ -896,13 +896,17 @@ namespace cp
 					{
 						T d = ld[i];
 						int move = (int)(d*iamp);
-						if (i - move > 0)
+						if (i - move >= 0)
 						{
 							if (abs(rd[i - move] - d)>disp12diff)
 							{
 								//drd[i-move]=invalidvalue;
 								dld[i] = invalidvalue;
 							}
+						}
+						else
+						{
+							dld[i] = invalidvalue;
 						}
 
 						d = rd[i];
@@ -914,6 +918,10 @@ namespace cp
 								//dld[i+move]=invalidvalue;
 								drd[i] = invalidvalue;
 							}
+						}
+						else
+						{
+							drd[i] = invalidvalue;
 						}
 					}
 					dld += step;

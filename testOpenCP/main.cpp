@@ -29,6 +29,7 @@ int main(int argc, char** argv)
 	//	copyMakeBorder(src_,src,0,1,0,1,BORDER_REPLICATE);
 
 	Mat src = imread("img/stereo/Dolls/view1.png");
+	guiBilateralFilterTest(src);
 	Mat ref = imread("img/stereo/Dolls/view6.png");
 	//guiColorCorrectionTest(src, ref); return 0;
 	//Mat src = imread("img/flower.png");
@@ -88,7 +89,6 @@ int main(int argc, char** argv)
 	//guiJointNearestFilterTest(ff3);
 	//guiViewSynthesis();
 	
-	//guiBilateralFilterTest(src);
 	//guiSeparableBilateralFilterTest(src);
 	//guiBilateralFilterSPTest(mega);
 	//guiRecursiveBilateralFilterTest(mega);

@@ -1,6 +1,7 @@
 #include "opencp.hpp"
 
 using namespace std;
+using namespace cv;
 
 namespace cp
 {
@@ -8,6 +9,7 @@ namespace cp
 
 	Stat::Stat(){ ; }
 	Stat::~Stat(){ ; }
+
 	double Stat::getMin()
 	{
 		double minv = DBL_MAX;
@@ -17,6 +19,7 @@ namespace cp
 		}
 		return minv;
 	}
+
 	double Stat::getMax()
 	{
 		double maxv = DBL_MIN;
@@ -26,6 +29,7 @@ namespace cp
 		}
 		return maxv;
 	}
+
 	double Stat::getMean()
 	{
 		double sum = 0.0;
@@ -35,6 +39,7 @@ namespace cp
 		}
 		return sum / (double)num_data;
 	}
+
 	double Stat::getStd()
 	{
 		double std = 0.0;
@@ -45,6 +50,7 @@ namespace cp
 		}
 		return sqrt(std / (double)num_data);
 	}
+
 	double Stat::getMedian()
 	{
 		if (data.size() == 0) return 0.0;
@@ -63,11 +69,13 @@ namespace cp
 		data.push_back(val);
 		num_data = (int)data.size();
 	}
+
 	void Stat::clear()
 	{
 		data.clear();
 		num_data = 0;
 	}
+	
 	void Stat::show()
 	{
 		cout << "mean " << getMean() << endl;
@@ -75,5 +83,14 @@ namespace cp
 		cout << "med  " << getMedian() << endl;
 		cout << "max  " << getMax() << endl;
 		cout << "std  " << getStd() << endl;
+	}
+
+	void Stat::showDistribution()
+	{
+		Mat hist;
+		
+		drawHistogramImage(data, hist, CV_RGB(255, 255, 255));
+		showMatInfo(hist);
+		imshow("dist", hist);
 	}
 }

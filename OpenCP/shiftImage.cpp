@@ -213,7 +213,6 @@ namespace cp
 		}
 	}
 
-
 	void warpShift(InputArray src_, OutputArray dest_, int shiftx, int shifty, int borderType)
 	{
 		Mat src = src_.getMat();
@@ -226,8 +225,11 @@ namespace cp
 			warpShift_(src, dest, shiftx, shifty, borderType);
 	}
 
-	void guiShift(cv::InputArray fiximg, cv::InputArray moveimg, const int max_move, std::string window_name)
+	
+
+	Mat guiShift(cv::InputArray fiximg, cv::InputArray moveimg, const int max_move, std::string window_name)
 	{
+		Mat dest = Mat::zeros(fiximg.size(), fiximg.type());
 		namedWindow(window_name);
 		int a = 50;
 		createTrackbar("alpha", window_name, &a, 100);
@@ -238,10 +240,11 @@ namespace cp
 
 		int key = 0;
 		Mat show;
+		
 		while (key != 'q')
 		{
-			warpShift(moveimg, show, x - max_move, y - max_move, BORDER_REPLICATE);
-			alphaBlend(fiximg, show, 1.0 - a / 100.0, show);
+			warpShift(moveimg, dest, x - max_move, y - max_move, BORDER_REPLICATE);
+			alphaBlend(fiximg, dest, 1.0 - a / 100.0, show);
 			imshow(window_name, show);
 			key = waitKey(1);
 
@@ -272,6 +275,7 @@ namespace cp
 			}
 		}
 		destroyWindow(window_name);
+		return dest;
 	}
 
 	void guiShift(cv::InputArray centerimg, cv::InputArray leftimg, cv::InputArray rightimg, int max_move, std::string window_name)

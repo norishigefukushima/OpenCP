@@ -110,11 +110,11 @@ namespace cp
 		if (fp == NULL)cout << fname << " open error\n";
 		const int fsize = size.area() + size.area() * 2 / 4;
 
-		//fseek(fp,fsize*frame,SEEK_END);
+		fseek(fp,fsize*frame,SEEK_SET);
 
 		fread(temp.data, sizeof(char), cvRound(size.area()*1.5), fp);
 
-		cvtColor(temp, dest, CV_YUV420sp2BGR);
+		cvtColor(temp, dest, CV_YUV420p2RGB);
 		fclose(fp);
 		//imshow("aa",dest);waitKey();
 	}
@@ -152,6 +152,22 @@ namespace cp
 		fclose(fp);
 		delete[] buff;
 		//imshow("ss",src);waitKey();
+	}
+
+	void readY16(string fname, OutputArray dest, Size size, int frame)
+	{
+		dest.create(size, CV_16S);
+		FILE* fp = fopen(fname.c_str(), "rb");
+		if (fp == NULL)cout << fname << " open error\n";
+		const int fsize = size.area();
+
+		fseek(fp, fsize*frame, SEEK_CUR);
+		Mat data = dest.getMat();
+		fread(data.data, sizeof(short), size.area(), fp);
+		//cout<<size.area()<<endl;
+		fflush(fp);
+		fclose(fp);
+		//imshow("aa",dest);waitKey();
 	}
 
 	void writeYUV(InputArray src_, string name, int mode)

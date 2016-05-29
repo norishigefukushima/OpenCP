@@ -31,4 +31,9 @@ namespace cp
 		return ret;
 	}
 
+	Mat imreadPFM(string filename)
+	{
+		return imreadPPMX(filename);
+	}
+
 }

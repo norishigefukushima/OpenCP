@@ -8,6 +8,7 @@ namespace cp
 
 void alphaBlend(InputArray src1, InputArray src2, const double alpha, OutputArray dest)
 {
+	CV_Assert(src1.size() == src2.size());
 	Mat s1, s2;
 	if (src1.depth() == src2.depth())
 	{
@@ -51,6 +52,96 @@ void alphaBlend(InputArray src1, InputArray src2, const double alpha, OutputArra
 	}
 
 	cv::addWeighted(s1, alpha, s2, 1.0 - alpha, 0.0, dest);
+}
+
+void alphaBlendSSE_8u(const Mat& src1, const Mat& src2, const uchar alpha, Mat& dest)
+{
+	if (dest.empty())dest.create(src1.size(), CV_8U);
+
+	const int imsize = (src1.size().area() / 16);
+	uchar* s1 = (uchar*)src1.data;
+	uchar* s2 = (uchar*)src2.data;
+	uchar* d = dest.data;
+
+	const __m128i zero = _mm_setzero_si128();
+	const __m128i amax = _mm_set1_epi8(char(255));
+	const __m128i ma = _mm_set1_epi16(alpha);
+	const __m128i mia = _mm_sub_epi16(amax, ma);
+	int i = 0;
+	if (s1 == d)
+	{
+		
+		for (; i < imsize; ++i)
+		{
+			__m128i ms1h = _mm_load_si128((__m128i*)(s1));
+			__m128i ms2h = _mm_load_si128((__m128i*)(s2));
+			
+			__m128i ms1l = _mm_unpacklo_epi8(ms1h, zero);
+			ms1h = _mm_unpackhi_epi8(ms1h, zero);
+
+			__m128i ms2l = _mm_unpacklo_epi8(ms2h, zero);
+			ms2h = _mm_unpackhi_epi8(ms2h, zero);
+
+			ms1l = _mm_mullo_epi16(ms1l, ma);
+			ms2l = _mm_mullo_epi16(ms2l, mia);
+			ms1l = _mm_add_epi16(ms1l, ms2l);
+			//ms1l = _mm_srli_epi16(ms1l,8);
+			ms1l = _mm_srai_epi16(ms1l, 8);
+
+			ms1h = _mm_mullo_epi16(ms1h, ma);
+			ms2h = _mm_mullo_epi16(ms2h, mia);
+			ms1h = _mm_add_epi16(ms1h, ms2h);
+			//ms1h = _mm_srli_epi16(ms1h,8);
+			ms1h = _mm_srai_epi16(ms1h, 8);
+
+			_mm_stream_si128((__m128i*)s1, _mm_packs_epi16(ms1l, ms1h));
+
+			s1 += 16;
+			s2 += 16;
+		}
+	}
+	else
+	{
+		for (; i < imsize; ++i)
+		{
+			__m128i ms1h = _mm_load_si128((__m128i*)(s1));
+			__m128i ms2h = _mm_load_si128((__m128i*)(s2));
+
+			__m128i ms1l = _mm_unpacklo_epi8(ms1h, zero);
+			ms1h = _mm_unpackhi_epi8(ms1h, zero);
+
+			__m128i ms2l = _mm_unpacklo_epi8(ms2h, zero);
+			ms2h = _mm_unpackhi_epi8(ms2h, zero);
+
+			ms1l = _mm_mullo_epi16(ms1l, ma);
+			ms2l = _mm_mullo_epi16(ms2l, mia);
+			ms1l = _mm_add_epi16(ms1l, ms2l);
+			//ms1l = _mm_srli_epi16(ms1l,8);
+			ms1l = _mm_srai_epi16(ms1l, 8);
+
+			ms1h = _mm_mullo_epi16(ms1h, ma);
+			ms2h = _mm_mullo_epi16(ms2h, mia);
+			ms1h = _mm_add_epi16(ms1h, ms2h);
+			//ms1h = _mm_srli_epi16(ms1h,8);
+			ms1h = _mm_srai_epi16(ms1h, 8);
+
+			_mm_store_si128((__m128i*)d, _mm_packs_epi16(ms1l, ms1h));
+
+			s1 += 16;
+			s2 += 16;
+			d += 16;
+		}
+	}
+
+	{
+		uchar* s1 = (uchar*)src1.data;
+		uchar* s2 = (uchar*)src2.data;
+		uchar* d = dest.data;
+		for (int n = i * 16; n < src1.size().area(); n++)
+		{
+			d[n] = (alpha * s1[n] + (255 - alpha)*s2[n]) >> 8;
+		}
+	}
 }
 
 void alphaBlendSSE_8u(const Mat& src1, const Mat& src2, const Mat& alpha, Mat& dest)
@@ -158,6 +249,21 @@ void alphaBlendSSE_8u(const Mat& src1, const Mat& src2, const Mat& alpha, Mat& d
 			d[n] = (a[n] * s1[n] + (255 - a[n])*s2[n]) >> 8;
 		}
 	}
+}
+
+void alphaBlendApproxmate(InputArray src1, InputArray src2, const uchar alpha, OutputArray dest)
+{
+	if (dest.empty() || dest.size() != src1.size() || dest.type() != src1.type()) dest.create(src1.size(), src1.type());
+
+	alphaBlendApproxmate(src1.getMat(), src2.getMat(), alpha, dest.getMat());
+}
+
+void alphaBlendApproxmate(InputArray src1, InputArray src2, InputArray alpha, OutputArray dest)
+{
+	CV_Assert(alpha.depth() == CV_8U);
+	if (dest.empty() || dest.size() != src1.size() || dest.type() != src1.type()) dest.create(src1.size(), src1.type());
+
+	alphaBlendApproxmate(src1.getMat(), src2.getMat(), alpha.getMat(), dest.getMat());
 }
 
 void alphaBlend(const Mat& src1, const Mat& src2, const Mat& alpha, Mat& dest)
@@ -426,7 +532,7 @@ void guiAlphaBlend(InputArray src1, InputArray src2, bool isShowImageStats)
 	}
 	namedWindow("alphaBlend");
 	int a = 0;
-	createTrackbar("a", "alphaBlend", &a, 100);
+	cv::createTrackbar("a", "alphaBlend", &a, 100);
 	int key = 0;
 	Mat show;
 	while (key != 'q')
@@ -435,13 +541,13 @@ void guiAlphaBlend(InputArray src1, InputArray src2, bool isShowImageStats)
 
 		if (show.depth() == CV_8U)
 		{
-			imshow("alphaBlend", show);
+			cv::imshow("alphaBlend", show);
 		}
 		else
 		{
 			if (isNormirized)
 			{
-				imshow("alphaBlend", show);
+				cv::imshow("alphaBlend", show);
 			}
 			else
 			{

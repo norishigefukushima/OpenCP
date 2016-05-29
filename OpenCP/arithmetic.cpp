@@ -126,7 +126,7 @@ void compareRange(InputArray src, OutputArray destMask, const double validMin, c
 	bitwise_and(mask1, mask2, destMask);
 }
 
-void setDepthMaxValue(InputOutputArray src)
+void setTypeMaxValue(InputOutputArray src)
 {
 	Mat s = src.getMat();
 	if (s.depth() == CV_8U)s.setTo(UCHAR_MAX);
@@ -135,6 +135,17 @@ void setDepthMaxValue(InputOutputArray src)
 	else if (s.depth() == CV_32S)s.setTo(INT_MAX);
 	else if (s.depth() == CV_32F)s.setTo(FLT_MAX);
 	else if (s.depth() == CV_64F)s.setTo(DBL_MAX);
+}
+
+void setTypeMinValue(InputOutputArray src)
+{
+	Mat s = src.getMat();
+	if (s.depth() == CV_8U)s.setTo(0);
+	else if (s.depth() == CV_16U)s.setTo(0);
+	else if (s.depth() == CV_16S)s.setTo(SHRT_MIN);
+	else if (s.depth() == CV_32S)s.setTo(INT_MIN);
+	else if (s.depth() == CV_32F)s.setTo(FLT_MIN);
+	else if (s.depth() == CV_64F)s.setTo(DBL_MIN);
 }
 
 }

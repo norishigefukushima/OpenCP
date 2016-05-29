@@ -2971,14 +2971,16 @@ namespace cp
 			binalyWeightedRangeFilter_32f(dst, dst, Size(1, kernelSize.height), threshold, borderType, false);
 	}
 
-	void binalyWeightedRangeFilter(const Mat& src, Mat& dst, int D, float threshold, int method, int borderType)
+	void binalyWeightedRangeFilter(cv::InputArray src_, cv::OutputArray dst_, int D, float threshold, int method, int borderType)
 	{
-		binalyWeightedRangeFilter(src, dst, Size(D, D), threshold, method, borderType);
+		binalyWeightedRangeFilter(src_, dst_, Size(D, D), threshold, method, borderType);
 	}
 
-	void binalyWeightedRangeFilter(const Mat& src, Mat& dst, Size kernelSize, float threshold, int method, int borderType)
+	void binalyWeightedRangeFilter(cv::InputArray src_, cv::OutputArray dst_, Size kernelSize, float threshold, int method, int borderType)
 	{
-		if (dst.empty())dst.create(src.size(), src.type());
+		if (dst_.empty())dst_.create(src_.size(), src_.type());
+		Mat src = src_.getMat();
+		Mat dst = dst_.getMat();
 
 		if (method == FILTER_SLOWEST)
 		{
@@ -3046,9 +3048,9 @@ namespace cp
 		}
 	}
 
-	void jointBinalyWeightedRangeFilter(const Mat& src, const Mat& guide, Mat& dst, int D, float threshold, int method, int borderType)
+	void jointBinalyWeightedRangeFilter(cv::InputArray src_, cv::InputArray guide_, cv::OutputArray dst_, int D, float threshold, int method, int borderType)
 	{
-		jointBinalyWeightedRangeFilter(src, guide, dst, Size(D, D), threshold, method, borderType);
+		jointBinalyWeightedRangeFilter(src_, guide_, dst_, Size(D, D), threshold, method, borderType);
 	}
 
 	void jointBinalyWeightedRangeFilterSP_8u(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, uchar threshold, int borderType)
@@ -3069,9 +3071,13 @@ namespace cp
 			jointBinalyWeightedRangeFilter_32f(dst, guide, dst, Size(1, kernelSize.height), threshold, borderType, false);
 	}
 
-	void jointBinalyWeightedRangeFilter(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, float threshold, int method, int borderType)
+	void jointBinalyWeightedRangeFilter(cv::InputArray src_, cv::InputArray guide_, cv::OutputArray dst_, Size kernelSize, float threshold, int method, int borderType)
 	{
-		if (dst.empty())dst.create(src.size(), src.type());
+		if (dst_.empty())dst_.create(src_.size(), src_.type());
+		Mat src = src_.getMat();
+		Mat guide = guide_.getMat();
+		Mat dst = dst_.getMat();
+
 		CV_Assert(method != FILTER_SLOWEST);
 		CV_Assert(src.depth() == guide.depth());
 

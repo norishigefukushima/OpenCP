@@ -7,7 +7,7 @@ namespace cp
 
 	//point cloud rendering
 #if CV_SSE4_1
-	static void myProjectPoint_SSE(const Mat& xyz, const Mat& R, const Mat& t, const Mat& K, vector<Point2f>& dest)
+	void myProjectPoint_SSE(const Mat& xyz, const Mat& R, const Mat& t, const Mat& K, vector<Point2f>& dest)
 	{
 		float r[3][3];
 		Mat kr = K*R;
@@ -102,72 +102,125 @@ namespace cp
 		}
 	}
 #endif
-	static void myProjectPoint_BF(const Mat& xyz, const Mat& R, const Mat& t, const Mat& K, vector<Point2f>& dest)
+	void myProjectPoint_BF(const Mat& xyz, const Mat& R, const Mat& t, const Mat& K, vector<Point2f>& dest, const bool isRotationThenTranspose)
 	{
-		float r[3][3];
-		Mat kr = K*R;
-
-		r[0][0] = (float)kr.at<double>(0, 0);
-		r[0][1] = (float)kr.at<double>(0, 1);
-		r[0][2] = (float)kr.at<double>(0, 2);
-
-		r[1][0] = (float)kr.at<double>(1, 0);
-		r[1][1] = (float)kr.at<double>(1, 1);
-		r[1][2] = (float)kr.at<double>(1, 2);
-
-		r[2][0] = (float)kr.at<double>(2, 0);
-		r[2][1] = (float)kr.at<double>(2, 1);
-		r[2][2] = (float)kr.at<double>(2, 2);
-
+		float* data = (float*)xyz.ptr<float>(0);
+		Point2f* dst = &dest[0];
+		int size2 = xyz.size().area();
+		int i;
 		float tt[3];
 		tt[0] = (float)t.at<double>(0, 0);
 		tt[1] = (float)t.at<double>(1, 0);
 		tt[2] = (float)t.at<double>(2, 0);
 
-		float* data = (float*)xyz.ptr<float>(0);
-		Point2f* dst = &dest[0];
-
-		int size2 = xyz.size().area();
-
-		int i;
-		for (i = 0; i < size2; i++)
+		float r[3][3];
+		if (isRotationThenTranspose)
 		{
-			const float x = data[0] + tt[0];
-			const float y = data[1] + tt[1];
-			const float z = data[2] + tt[2];
+			const float f00 = (float)K.at<double>(0, 0);
+			const float xc = (float)K.at<double>(0, 2);
+			const float f11 = (float)K.at<double>(1, 1);
+			const float yc = (float)K.at<double>(1, 2);
 
-			const float div = 1.f / (r[2][0] * x + r[2][1] * y + r[2][2] * z);
+			r[0][0] = (float)R.at<double>(0, 0);
+			r[0][1] = (float)R.at<double>(0, 1);
+			r[0][2] = (float)R.at<double>(0, 2);
 
-			dst->x = (r[0][0] * x + r[0][1] * y + r[0][2] * z) * div;
-			dst->y = (r[1][0] * x + r[1][1] * y + r[1][2] * z) * div;
+			r[1][0] = (float)R.at<double>(1, 0);
+			r[1][1] = (float)R.at<double>(1, 1);
+			r[1][2] = (float)R.at<double>(1, 2);
 
-			data += 3;
-			dst++;
+			r[2][0] = (float)R.at<double>(2, 0);
+			r[2][1] = (float)R.at<double>(2, 1);
+			r[2][2] = (float)R.at<double>(2, 2);
+
+			for (i = 0; i < size2; i++)
+			{
+				const float x = data[0];
+				const float y = data[1];
+				const float z = data[2];
+
+				const float px = r[0][0] * x + r[0][1] * y + r[0][2] * z + tt[0];
+				const float py = r[1][0] * x + r[1][1] * y + r[1][2] * z + tt[1];
+				const float pz = r[2][0] * x + r[2][1] * y + r[2][2] * z + tt[2];
+
+				const float div = 1.f / pz;
+
+				dst->x = (f00*px + xc*pz) * div;
+				dst->y = (f11*py + yc*pz) * div;
+
+				data += 3;
+				dst++;
+			}
+		}
+		else
+		{
+			Mat kr = K*R;
+
+			r[0][0] = (float)kr.at<double>(0, 0);
+			r[0][1] = (float)kr.at<double>(0, 1);
+			r[0][2] = (float)kr.at<double>(0, 2);
+
+			r[1][0] = (float)kr.at<double>(1, 0);
+			r[1][1] = (float)kr.at<double>(1, 1);
+			r[1][2] = (float)kr.at<double>(1, 2);
+
+			r[2][0] = (float)kr.at<double>(2, 0);
+			r[2][1] = (float)kr.at<double>(2, 1);
+			r[2][2] = (float)kr.at<double>(2, 2);
+
+			for (i = 0; i < size2; i++)
+			{
+				const float x = data[0] + tt[0];
+				const float y = data[1] + tt[1];
+				const float z = data[2] + tt[2];
+
+				const float div = 1.f / (r[2][0] * x + r[2][1] * y + r[2][2] * z);
+
+				dst->x = (r[0][0] * x + r[0][1] * y + r[0][2] * z) * div;
+				dst->y = (r[1][0] * x + r[1][1] * y + r[1][2] * z) * div;
+
+				data += 3;
+				dst++;
+			}
 		}
 	}
 
-
-	void moveXYZ(const Mat& xyz, Mat& dest, const Mat& R, const Mat& t)
+	void moveXYZ(cv::InputArray xyz_, cv::OutputArray dest_, cv::InputArray R_, cv::InputArray t_, const bool isRotationThenTranspose)
 	{
-		float r[3][3];
-		Mat kr = R.clone();
+		if (dest_.empty() || xyz_.type() != dest_.type() || xyz_.size() != dest_.size()) dest_.create(xyz_.size(), xyz_.type());
+		Mat xyz = xyz_.getMat();
+		Mat dest = dest_.getMat();
+		Mat R = R_.getMat();
+		Mat t = t_.getMat();
 
-		r[0][0] = (float)kr.at<double>(0, 0);
-		r[0][1] = (float)kr.at<double>(0, 1);
-		r[0][2] = (float)kr.at<double>(0, 2);
+		Mat kr;
+		if (R.depth() == CV_32F)R.convertTo(kr, CV_64F);
+		else if (R.depth() == CV_64F)R.copyTo(kr);
+		else CV_Assert(R.depth() != CV_32F || R.depth() != CV_64F);
 
-		r[1][0] = (float)kr.at<double>(1, 0);
-		r[1][1] = (float)kr.at<double>(1, 1);
-		r[1][2] = (float)kr.at<double>(1, 2);
-
-		r[2][0] = (float)kr.at<double>(2, 0);
-		r[2][1] = (float)kr.at<double>(2, 1);
-		r[2][2] = (float)kr.at<double>(2, 2);
+		const float r0 = (float)kr.at<double>(0);
+		const float r1 = (float)kr.at<double>(1);
+		const float r2 = (float)kr.at<double>(2);
+		const float r3 = (float)kr.at<double>(3);
+		const float r4 = (float)kr.at<double>(4);
+		const float r5 = (float)kr.at<double>(5);
+		const float r6 = (float)kr.at<double>(6);
+		const float r7 = (float)kr.at<double>(7);
+		const float r8 = (float)kr.at<double>(8);
 
 		float tt[3];
-		tt[0] = (float)t.at<double>(0, 0);
-		tt[1] = (float)t.at<double>(1, 0);
-		tt[2] = (float)t.at<double>(2, 0);
+		if (t.depth() == CV_64F)
+		{
+			tt[0] = (float)t.at<double>(0, 0);
+			tt[1] = (float)t.at<double>(1, 0);
+			tt[2] = (float)t.at<double>(2, 0);
+		}
+		else if (t.depth() == CV_32F)
+		{
+			tt[0] = t.at<float>(0, 0);
+			tt[1] = t.at<float>(1, 0);
+			tt[2] = t.at<float>(2, 0);
+		}
 
 		float* data = (float*)xyz.ptr<float>(0);
 		float* dst = (float*)dest.ptr<float>(0);
@@ -175,24 +228,44 @@ namespace cp
 		int size2 = xyz.size().area();
 
 		int i;
-		for (i = 0; i < size2; i++)
-		{
-			const float x = data[0] + tt[0];
-			const float y = data[1] + tt[1];
-			const float z = data[2] + tt[2];
 
-			dst[0] = (r[0][0] * x + r[0][1] * y + r[0][2] * z);
-			dst[1] = (r[1][0] * x + r[1][1] * y + r[1][2] * z);
-			dst[2] = (r[2][0] * x + r[2][1] * y + r[2][2] * z);
-			data += 3;
-			dst += 3;
+		if (isRotationThenTranspose)
+		{
+			for (i = 0; i < size2; i++)
+			{
+				const float x = data[0];
+				const float y = data[1];
+				const float z = data[2];
+
+				dst[0] = (r0 * x + r1 * y + r2 * z) + tt[0];
+				dst[1] = (r3 * x + r4 * y + r5 * z) + tt[1];
+				dst[2] = (r6 * x + r7 * y + r8 * z) + tt[2];
+				data += 3;
+				dst += 3;
+			}
+		}
+		else
+		{
+			for (i = 0; i < size2; i++)
+			{
+				const float x = data[0] + tt[0];
+				const float y = data[1] + tt[1];
+				const float z = data[2] + tt[2];
+
+				dst[0] = (r0 * x + r1 * y + r2 * z);
+				dst[1] = (r3 * x + r4 * y + r5 * z);
+				dst[2] = (r6 * x + r7 * y + r8 * z);
+				data += 3;
+				dst += 3;
+			}
 		}
 	}
 
-	void projectPointsSimple(const Mat& xyz, const Mat& R, const Mat& t, const Mat& K, vector<Point2f>& dest)
+	void projectPointsSimple(const Mat& xyz, const Mat& R, const Mat& t, const Mat& K, vector<Point2f>& dest, bool isRotationThenTranspose)
 	{
 #ifdef CV_SSE4_1
-		myProjectPoint_SSE(xyz, R, t, K, dest);//SSE implimentation
+		//myProjectPoint_SSE(xyz, R, t, K, dest);//SSE implimentation
+		myProjectPoint_BF(xyz, R, t, K, dest, isRotationThenTranspose);//normal implementation
 #else
 		myProjectPoint_BF(xyz, R, t, K, dest);//normal implementation
 #endif
@@ -202,22 +275,22 @@ namespace cp
 	{
 		float r[3][3];
 		Mat kr = K*R;
-		r[0][0] = (float)kr.at<double>(0, 0);
-		r[0][1] = (float)kr.at<double>(0, 1);
-		r[0][2] = (float)kr.at<double>(0, 2);
+		r[0][0] = (float)kr.at<double>(0);
+		r[0][1] = (float)kr.at<double>(1);
+		r[0][2] = (float)kr.at<double>(2);
 
-		r[1][0] = (float)kr.at<double>(1, 0);
-		r[1][1] = (float)kr.at<double>(1, 1);
-		r[1][2] = (float)kr.at<double>(1, 2);
+		r[1][0] = (float)kr.at<double>(3);
+		r[1][1] = (float)kr.at<double>(4);
+		r[1][2] = (float)kr.at<double>(5);
 
-		r[2][0] = (float)kr.at<double>(2, 0);
-		r[2][1] = (float)kr.at<double>(2, 1);
-		r[2][2] = (float)kr.at<double>(2, 2);
+		r[2][0] = (float)kr.at<double>(6);
+		r[2][1] = (float)kr.at<double>(7);
+		r[2][2] = (float)kr.at<double>(8);
 
 		float tt[3];
-		tt[0] = (float)t.at<double>(0, 0);
-		tt[1] = (float)t.at<double>(1, 0);
-		tt[2] = (float)t.at<double>(2, 0);
+		tt[0] = (float)t.at<double>(0);
+		tt[1] = (float)t.at<double>(1);
+		tt[2] = (float)t.at<double>(2);
 
 		const float x = (float)xyz.x + tt[0];
 		const float y = (float)xyz.y + tt[1];
@@ -232,17 +305,17 @@ namespace cp
 	{
 		float r[3][3];
 
-		r[0][0] = (float)R.at<double>(0, 0);
-		r[0][1] = (float)R.at<double>(0, 1);
-		r[0][2] = (float)R.at<double>(0, 2);
+		r[0][0] = (float)R.at<double>(0);
+		r[0][1] = (float)R.at<double>(1);
+		r[0][2] = (float)R.at<double>(2);
 
-		r[1][0] = (float)R.at<double>(1, 0);
-		r[1][1] = (float)R.at<double>(1, 1);
-		r[1][2] = (float)R.at<double>(1, 2);
+		r[1][0] = (float)R.at<double>(3);
+		r[1][1] = (float)R.at<double>(4);
+		r[1][2] = (float)R.at<double>(5);
 
-		r[2][0] = (float)R.at<double>(2, 0);
-		r[2][1] = (float)R.at<double>(2, 1);
-		r[2][2] = (float)R.at<double>(2, 2);
+		r[2][0] = (float)R.at<double>(6);
+		r[2][1] = (float)R.at<double>(7);
+		r[2][2] = (float)R.at<double>(8);
 
 		float tt[3];
 		tt[0] = (float)t.at<double>(0, 0);
@@ -280,8 +353,8 @@ namespace cp
 
 			double cdist = 1 + k0*r2 + k1*r4 + k2*r6;
 
-			dst->x = X*cdist*fx + cx;
-			dst->y = Y*cdist*fy + cy;
+			dst->x = (float)(X*cdist*fx + cx);
+			dst->y = (float)(Y*cdist*fy + cy);
 
 			data += 3;
 			dst++;
@@ -350,7 +423,7 @@ namespace cp
 						g += s[lstep + 1];
 						r += s[lstep + 2];
 						count++;
-				}
+					}
 					lstep = step - 3;
 					if (s[lstep + 1 - 1] != 0)
 					{
@@ -379,15 +452,15 @@ namespace cp
 					d[0] = (count == 0) ? 0 : (uchar)cvRound((double)b / (double)count);
 					d[1] = (count == 0) ? 0 : (uchar)cvRound((double)g / (double)count);
 					d[2] = (count == 0) ? 0 : (uchar)cvRound((double)r / (double)count);
-			}
+				}
 				s += 3, d += 3;
-		}
+			}
 			s += 3, d += 3;
+		}
 	}
-}
 
 
-	void projectImagefromXYZ(const Mat& image, Mat& destimage, const Mat& xyz, const Mat& R_, const Mat& t_, const Mat& K_, const Mat& dist_, Mat& mask, const bool isSub, vector<Point2f>& pt, Mat& depth)
+	void projectImagefromXYZ(const Mat& image, Mat& destimage, const Mat& xyz, const Mat& R_, const Mat& t_, const Mat& K_, const Mat& dist_, Mat& mask, const bool isSub, vector<Point2f>& pt, Mat& depth, bool isRotationThenTranspose)
 	{
 		if (destimage.empty())destimage = Mat::zeros(Size(image.size()), image.type());
 		else destimage.setTo(0);
@@ -404,7 +477,7 @@ namespace cp
 			if (dist_.empty())
 			{
 				//no distortionj
-				projectPointsSimple(xyz, R, t, K, pt);
+				projectPointsSimple(xyz, R, t, K, pt, isRotationThenTranspose);
 			}
 			else
 			{
@@ -416,7 +489,7 @@ namespace cp
 #ifdef _CALC_TIME_
 		CalcTime tm("rendering");
 #endif
-		depth.setTo(10000.f);
+		
 		Point2f* ptxy = &pt[0];
 		float* xyzdata = (float*)xyz.ptr<float>(0);
 		uchar* img = (uchar*)image.ptr<uchar>(0);
@@ -554,20 +627,18 @@ namespace cp
 		}
 	}
 
-	void projectImagefromXYZ(const Mat& image, Mat& destimage, const Mat& xyz, const Mat& R, const Mat& t, const Mat& K, const Mat& dist, Mat& mask, const bool isSub)
+	void projectImagefromXYZ(const Mat& image, Mat& destimage, const Mat& xyz, const Mat& R, const Mat& t, const Mat& K, const Mat& dist, Mat& mask, const bool isSub, const bool isRotationThenTranspose)
 	{
 		vector<Point2f> pt(image.size().area());
 		Mat depth = 10000.f*Mat::ones(image.size(), CV_32F);
 
-		projectImagefromXYZ(image, destimage, xyz, R, t, K, dist, mask, isSub, pt, depth);
+		projectImagefromXYZ(image, destimage, xyz, R, t, K, dist, mask, isSub, pt, depth, isRotationThenTranspose);
 
 	}
 
 	template <class T>
-	static void reprojectXYZ_(const Mat& depth, Mat& xyz, double f)
+	void reprojectXYZ_(const Mat& depth, Mat& xyz, double f)
 	{
-		if (xyz.empty())xyz = Mat::zeros(depth.size().area(), 1, CV_32FC3);
-
 		const float bigZ = 10000.f;
 		const float fxinv = (float)(1.0 / f);
 		const float fyinv = (float)(1.0 / f);
@@ -597,31 +668,35 @@ namespace cp
 		}
 	}
 
-	void reprojectXYZ(const Mat& depth, Mat& xyz, double f)
+	void reprojectXYZ(cv::InputArray depth_, cv::OutputArray xyz_, const double focalLength)
 	{
+		Mat depth = depth_.getMat();
+		if (xyz_.empty())xyz_.create(depth_.size().area(), 1, CV_32FC3);
+		Mat xyz = xyz_.getMat();
+
 		if (depth.type() == CV_8U)
 		{
-			reprojectXYZ_<uchar>(depth, xyz, f);
+			reprojectXYZ_<uchar>(depth, xyz, focalLength);
 		}
 		else if (depth.type() == CV_16S)
 		{
-			reprojectXYZ_<short>(depth, xyz, f);
+			reprojectXYZ_<short>(depth, xyz, focalLength);
 		}
 		else if (depth.type() == CV_16U)
 		{
-			reprojectXYZ_<unsigned short>(depth, xyz, f);
+			reprojectXYZ_<unsigned short>(depth, xyz, focalLength);
 		}
 		else if (depth.type() == CV_32S)
 		{
-			reprojectXYZ_<int>(depth, xyz, f);
+			reprojectXYZ_<int>(depth, xyz, focalLength);
 		}
 		else if (depth.type() == CV_32F)
 		{
-			reprojectXYZ_<float>(depth, xyz, f);
+			reprojectXYZ_<float>(depth, xyz, focalLength);
 		}
 		else if (depth.type() == CV_64F)
 		{
-			reprojectXYZ_<double>(depth, xyz, f);
+			reprojectXYZ_<double>(depth, xyz, focalLength);
 		}
 	}
 
@@ -820,8 +895,6 @@ namespace cp
 		return ret;
 	}
 
-
-
 	static void onMouse(int event, int x, int y, int flags, void* param)
 	{
 		Point* ret = (Point*)param;
@@ -835,8 +908,15 @@ namespace cp
 
 	PointCloudShow::PointCloudShow()
 	{
+
 		wname = "Point Cloud Show";
+		isRotationThenTranspose = false;
 		isInit = false;
+	}
+
+	void PointCloudShow::setIsRotationThenTranspose(bool flag)
+	{
+		isRotationThenTranspose = flag;
 	}
 
 	void PointCloudShow::disparity2XYZ(Mat& srcDisparity, float disp_amp, float focal, float baseline)
@@ -909,9 +989,9 @@ namespace cp
 		if (viewSW == 0)//image view
 		{
 			if (renderOpt > 0)
-				projectImagefromXYZ(image, destImage, xyz, R, t, k, Mat(), Mat(), true);
+				projectImagefromXYZ(image, destImage, xyz, R, t, k, Mat(), Mat(), true, isRotationThenTranspose);
 			else
-				projectImagefromXYZ(image, destImage, xyz, R, t, k, Mat(), Mat(), false);
+				projectImagefromXYZ(image, destImage, xyz, R, t, k, Mat(), Mat(), false, isRotationThenTranspose);
 		}
 		else//depth map view
 		{
@@ -923,9 +1003,9 @@ namespace cp
 				cv::applyColorMap(dshow, dispC, 2);
 
 			if (renderOpt > 0)
-				projectImagefromXYZ(dispC, destImage, xyz, R, t, k, Mat(), Mat(), true);
+				projectImagefromXYZ(dispC, destImage, xyz, R, t, k, Mat(), Mat(), true, isRotationThenTranspose);
 			else
-				projectImagefromXYZ(dispC, destImage, xyz, R, t, k, Mat(), Mat(), false);
+				projectImagefromXYZ(dispC, destImage, xyz, R, t, k, Mat(), Mat(), false, isRotationThenTranspose);
 		}
 
 		//post filter for rendering image
@@ -982,9 +1062,9 @@ namespace cp
 		if (viewSW == 0)//image view
 		{
 			if (renderOpt > 0)
-				projectImagefromXYZ(image, destImage, xyz, R, t, destK, destDist, Mat(), true);
+				projectImagefromXYZ(image, destImage, xyz, R, t, destK, destDist, Mat(), true, isRotationThenTranspose);
 			else
-				projectImagefromXYZ(image, destImage, xyz, R, t, destK, destDist, Mat(), false);
+				projectImagefromXYZ(image, destImage, xyz, R, t, destK, destDist, Mat(), false, isRotationThenTranspose);
 		}
 		else//depth map view
 		{
@@ -996,9 +1076,9 @@ namespace cp
 				cv::applyColorMap(dshow, dispC, 2);
 
 			if (renderOpt > 0)
-				projectImagefromXYZ(dispC, destImage, xyz, R, t, destK, destDist, Mat(), true);
+				projectImagefromXYZ(dispC, destImage, xyz, R, t, destK, destDist, Mat(), true, isRotationThenTranspose);
 			else
-				projectImagefromXYZ(dispC, destImage, xyz, R, t, destK, destDist, Mat(), false);
+				projectImagefromXYZ(dispC, destImage, xyz, R, t, destK, destDist, Mat(), false, isRotationThenTranspose);
 		}
 
 		//post filter for rendering image
@@ -1067,9 +1147,9 @@ namespace cp
 		if (viewSW == 0)//image view
 		{
 			if (renderOpt > 0)
-				projectImagefromXYZ(image, destImage, xyz, R, t, k, Mat(), Mat(), true);
+				projectImagefromXYZ(image, destImage, xyz, R, t, k, Mat(), Mat(), true, isRotationThenTranspose);
 			else
-				projectImagefromXYZ(image, destImage, xyz, R, t, k, Mat(), Mat(), false);
+				projectImagefromXYZ(image, destImage, xyz, R, t, k, Mat(), Mat(), false, isRotationThenTranspose);
 		}
 		else//depth map view
 		{
@@ -1081,9 +1161,9 @@ namespace cp
 				cv::applyColorMap(dshow, dispC, 2);
 
 			if (renderOpt > 0)
-				projectImagefromXYZ(dispC, destImage, xyz, R, t, k, Mat(), Mat(), true);
+				projectImagefromXYZ(dispC, destImage, xyz, R, t, k, Mat(), Mat(), true, isRotationThenTranspose);
 			else
-				projectImagefromXYZ(dispC, destImage, xyz, R, t, k, Mat(), Mat(), false);
+				projectImagefromXYZ(dispC, destImage, xyz, R, t, k, Mat(), Mat(), false, isRotationThenTranspose);
 		}
 
 		//post filter for rendering image
@@ -1138,9 +1218,9 @@ namespace cp
 		if (viewSW == 0)//image view
 		{
 			if (renderOpt > 0)
-				projectImagefromXYZ(image, destImage, xyz, R, t, k, Mat(), Mat(), true);
+				projectImagefromXYZ(image, destImage, xyz, R, t, k, Mat(), Mat(), true, isRotationThenTranspose);
 			else
-				projectImagefromXYZ(image, destImage, xyz, R, t, k, Mat(), Mat(), false);
+				projectImagefromXYZ(image, destImage, xyz, R, t, k, Mat(), Mat(), false, isRotationThenTranspose);
 		}
 		else//depth map view
 		{
@@ -1152,9 +1232,9 @@ namespace cp
 				cv::applyColorMap(dshow, dispC, 2);
 
 			if (renderOpt > 0)
-				projectImagefromXYZ(dispC, destImage, xyz, R, t, k, Mat(), Mat(), true);
+				projectImagefromXYZ(dispC, destImage, xyz, R, t, k, Mat(), Mat(), true, isRotationThenTranspose);
 			else
-				projectImagefromXYZ(dispC, destImage, xyz, R, t, k, Mat(), Mat(), false);
+				projectImagefromXYZ(dispC, destImage, xyz, R, t, k, Mat(), Mat(), false, isRotationThenTranspose);
 		}
 
 		//post filter for rendering image
@@ -1171,8 +1251,221 @@ namespace cp
 		else destImage.copyTo(dest);
 	}
 
-	void PointCloudShow::loop_depth(Mat& image_, Mat& srcDepth_, float focal, int loopcount)
+
+	void PointCloudShow::filterDepth(cv::InputArray src, cv::OutputArray dest)
 	{
+		src.copyTo(dest);
+	}
+
+	void PointCloudShow::loopXYZ(cv::InputArray image_, cv::InputArray xyz_, cv::InputArray K_, cv::InputArray R_, cv::InputArray t_, int loopcount)
+	{
+		Mat image;
+		if (image_.channels() == 3)image = image_.getMat();
+		else cvtColor(image_, image, CV_GRAY2BGR);
+
+		Mat K = K_.getMat();
+		Mat Rinit = R_.getMat();
+		Mat tinit = t_.getMat();
+
+		xyz_.copyTo(xyz);
+
+		namedWindow(wname);
+		moveWindow(wname, 0, 0);
+		int baseline = 1000;
+		const int xmax = baseline * 16;
+		const int ymax = baseline * 16;
+		const int initx = xmax / 2;
+		const int inity = ymax / 2;
+		const int initz = baseline * 16;
+		const int initpitch = 90;
+		const int inityaw = 90;
+
+		if (!isInit)
+		{
+			pt = Point((image.cols - 1) / 2, (image.rows - 1) / 2);
+			x = initx;
+			y = initx;
+			z = initz;
+
+			pitch = initpitch;
+			yaw = inityaw;
+
+			loolatx = (image.cols - 1) / 2;
+			loolaty = (image.rows - 1) / 2;
+
+			renderOpt = 2;
+			viewSW = 0;
+
+			br = 5;
+			bth = 10;
+			maxr = 1;
+
+			isDrawLine = true;
+			isWrite = false;
+			isLookat = false;
+
+			look = get3DPointfromXYZ(xyz, image.size(), pt);
+
+			isInit = true;
+		}
+
+		cv::setMouseCallback(wname, (MouseCallback)onMouse, (void*)&pt);
+
+		string wname2 = "pos";
+		namedWindow(wname2);
+		createTrackbar("x", wname2, &x, xmax);
+		createTrackbar("y", wname2, &y, ymax);
+		createTrackbar("z", wname2, &z, 80000);
+		createTrackbar("pitch", wname2, &pitch, 180);
+		createTrackbar("yaw", wname2, &yaw, 180);
+		createTrackbar("look at x", wname2, &loolatx, image.cols - 1);
+		createTrackbar("look at y", wname2, &loolaty, image.rows - 1);
+
+		int va = 50; createTrackbar("alpha", wname, &va, 100);
+		createTrackbar("render Opt", wname, &renderOpt, 3);
+		createTrackbar("sw", wname, &viewSW, 2);
+
+		createTrackbar("brad", wname, &br, 20);
+		createTrackbar("bth", wname, &bth, 200);
+		createTrackbar("maxr", wname, &maxr, 5);
+
+		Mat destImage(image.size(), CV_8UC3);	//rendered image
+
+		int count = 0;
+		CalcTime tm("total");
+		int key = 0;
+
+		int num_loop = 0;
+		while (key != 'q')
+		{
+			double bps = 0.0;
+			//from mouse input
+			x = (int)(xmax*(double)pt.x / (double)(image.cols - 1) + 0.5);
+			y = (int)(ymax*(double)pt.y / (double)(image.rows - 1) + 0.5);
+			setTrackbarPos("x", wname2, x);
+			setTrackbarPos("y", wname2, y);
+
+			tm.start();
+
+			Mat R, t;
+			Rinit.copyTo(R);
+			tinit.copyTo(t);
+
+			t.at<double>(0, 0) += x - initx;
+			t.at<double>(1, 0) += y - inity;
+			t.at<double>(2, 0) -= -z + initz;
+			//t.at<double>(2, 0) += z - initz;
+
+			Point3d srcview = Point3d(t.at<double>(0, 0), t.at<double>(1, 0), t.at<double>(2, 0));
+			if (isLookat)
+			{
+				look = get3DPointfromXYZ(xyz, image.size(), Point(loolatx, loolaty));
+			}
+			//lookat(look, srcview, R);
+			Mat r;
+			Eular2Rotation(pitch - 90.0, 0.0, yaw - 90, r);
+			R = r*R;
+
+			//*********************************** left
+
+			//project 3D point image
+			if (viewSW == 0)//image view
+			{
+				if (renderOpt > 0)
+					projectImagefromXYZ(image, destImage, xyz, R, t, K, Mat(), Mat(), true, isRotationThenTranspose);
+				else
+					projectImagefromXYZ(image, destImage, xyz, R, t, K, Mat(), Mat(), false, isRotationThenTranspose);
+			}
+
+			//post filter for rendering image
+			if (renderOpt > 2)fillSmallHole(destImage, destImage);
+			if (renderOpt > 1)
+			{
+				Mat gray, mask;
+				cvtColor(destImage, gray, CV_BGR2GRAY);
+				compare(gray, 0, mask, cv::CMP_EQ);
+				medianBlur(destImage, renderingImage, 2 + 1);
+				destImage.copyTo(renderingImage, ~mask);
+			}
+			else destImage.copyTo(renderingImage);
+
+
+			if (isWrite)imwrite(format("out%4d.jpg", count++), renderingImage);
+
+			if (isDrawLine)
+			{
+				Point2d ptf;
+				projectPointSimple(look, R, t, K, ptf);
+				circle(renderingImage, Point(ptf), 7, CV_RGB(0, 255, 0), CV_FILLED);
+				line(renderingImage, Point(0, image.rows / 2), Point(image.cols, image.rows / 2), CV_RGB(255, 0, 0));
+				line(renderingImage, Point(image.cols / 2, 0), Point(image.cols / 2, image.rows), CV_RGB(255, 0, 0));
+			}
+			double fps = 1000.0 / tm.getTime();
+			putText(renderingImage, format("%.02f fps", fps), Point(30, 30), CV_FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255));
+
+			if (isLookat)
+				putText(renderingImage, format("Look at: Free", bps), Point(30, 60), CV_FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255));
+			else
+				putText(renderingImage, format("Look at: Fix", bps), Point(30, 60), CV_FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255));
+
+			//show image
+			Mat msk;
+			compare(renderingImage, Scalar(0), msk, CMP_EQ);
+			imshow(wname, renderingImage);
+			key = waitKey(1);
+
+			if (key == 'o')
+			{
+				renderOpt++;
+				if (renderOpt > 3)renderOpt = 0;
+			}
+			if (key == 'g')
+			{
+				isDrawLine = isDrawLine ? false : true;
+			}
+			if (key == 'l')
+			{
+				isLookat = (isLookat) ? false : true;
+			}
+			if (key == 's')
+			{
+				isWrite = true;
+			}
+			if (key == 'r')
+			{
+				pt.x = image.cols / 2;
+				pt.y = image.rows / 2;
+
+				z = initz;
+				pitch = initpitch;
+				yaw = inityaw;
+
+				setTrackbarPos("z", wname, z);
+				setTrackbarPos("pitch", wname, pitch);
+				setTrackbarPos("yaw", wname, yaw);
+			}
+
+			if (key == 'v')
+			{
+				viewSW++;
+				if (viewSW > 2) viewSW = 0;
+				setTrackbarPos("sw", wname, viewSW);
+
+			}
+			num_loop++;
+			if (loopcount > 0 && num_loop > loopcount) break;
+		}
+	}
+
+	void PointCloudShow::loopDepth(cv::InputArray image__, cv::InputArray srcDepth__, cv::InputArray K_, cv::InputArray dist_, int loopcount)
+	{
+
+	}
+
+	void PointCloudShow::loopDepth(cv::InputArray image__, cv::InputArray srcDepth__, float focal, int loopcount)
+	{
+		Mat image_ = image__.getMat();
+		Mat srcDepth_ = srcDepth__.getMat();
 		Mat srcDepth = srcDepth_.clone();
 		Mat image;
 		if (image_.channels() == 3)image = image_;
@@ -1181,6 +1474,7 @@ namespace cp
 		Mat dshow;
 
 		Mat disp;
+
 		divide(1.0, srcDepth, disp, focal, CV_32F);
 		double maxv, minv;
 		minMaxLoc(disp, &minv, &maxv);
@@ -1270,6 +1564,7 @@ namespace cp
 		int key = 0;
 
 		int num_loop = 0;
+		Mat filteredDepth;
 		while (key != 'q')
 		{
 			double bps = 0.0;
@@ -1283,7 +1578,8 @@ namespace cp
 
 			//{
 			//	//CalcTime t(" depth2xyz projection");
-			//	reprojectXYZ(depthF,xyz,focal_length);
+			filterDepth(srcDepth, filteredDepth);
+			depth2XYZ(filteredDepth, focal);
 			//}
 
 			Mat R = Mat::eye(3, 3, CV_64F);
@@ -1299,16 +1595,16 @@ namespace cp
 			}
 			lookat(look, srcview, R);
 			Mat r;
-			eular2rot(pitch - 90.0, 0.0, yaw - 90, r);
+			Eular2Rotation(pitch - 90.0, 0.0, yaw - 90, r);
 			R = r*R;
 
 			//project 3D point image
 			if (viewSW == 0)//image view
 			{
 				if (renderOpt > 0)
-					projectImagefromXYZ(image, destImage, xyz, R, t, k, Mat(), Mat(), true);
+					projectImagefromXYZ(image, destImage, xyz, R, t, k, Mat(), Mat(), true, isRotationThenTranspose);
 				else
-					projectImagefromXYZ(image, destImage, xyz, R, t, k, Mat(), Mat(), false);
+					projectImagefromXYZ(image, destImage, xyz, R, t, k, Mat(), Mat(), false, isRotationThenTranspose);
 			}
 			else//depth map view
 			{
@@ -1320,9 +1616,9 @@ namespace cp
 					cv::applyColorMap(dshow, dispC, 2);
 
 				if (renderOpt > 0)
-					projectImagefromXYZ(dispC, destImage, xyz, R, t, k, Mat(), Mat(), true);
+					projectImagefromXYZ(dispC, destImage, xyz, R, t, k, Mat(), Mat(), true, isRotationThenTranspose);
 				else
-					projectImagefromXYZ(dispC, destImage, xyz, R, t, k, Mat(), Mat(), false);
+					projectImagefromXYZ(dispC, destImage, xyz, R, t, k, Mat(), Mat(), false, isRotationThenTranspose);
 			}
 
 			//post filter for rendering image
@@ -1407,16 +1703,20 @@ namespace cp
 		}
 	}
 
-	void PointCloudShow::loop_depth(Mat& image_, Mat& srcDepth_, Mat& image2_, Mat& srcDepth2_, float focal, Mat& oR, Mat& ot, Mat& K, int loopcount)
+	void PointCloudShow::loopDepth(cv::InputArray image_, cv::InputArray srcDepth_, cv::InputArray image2_, cv::InputArray srcDepth2_, float focal, cv::InputArray oR_, cv::InputArray ot_, cv::InputArray K_, int loopcount)
 	{
-		Mat srcDepth = srcDepth_.clone();
-		Mat srcDepth2 = srcDepth2_.clone();
+		Mat srcDepth; srcDepth_.copyTo(srcDepth);
+		Mat srcDepth2; srcDepth2_.copyTo(srcDepth2);
 		Mat image;
 		Mat image2;
-		if (image_.channels() == 3)image = image_;
+		if (image_.channels() == 3)image = image_.getMat();
 		else cvtColor(image_, image, CV_GRAY2BGR);
-		if (image2_.channels() == 3)image2 = image2_;
+		if (image2_.channels() == 3)image2 = image2_.getMat();
 		else cvtColor(image2_, image2, CV_GRAY2BGR);
+
+		Mat oR = oR_.getMat();
+		Mat ot = ot_.getMat();
+		Mat K = K_.getMat();
 
 		Mat dshow, dshow2;
 
@@ -1430,7 +1730,6 @@ namespace cp
 		divide(1.0, srcDepth2, disp, focal, CV_32F);
 		minMaxLoc(disp, &minv, &maxv);
 		disp.convertTo(dshow2, CV_8U, 255 / maxv);
-		//guiAlphaBlend(dshow,dshow2);
 
 		namedWindow(wname);
 		moveWindow(wname, 0, 0);
@@ -1498,6 +1797,16 @@ namespace cp
 		createTrackbar("bth", wname, &bth, 200);
 		createTrackbar("maxr", wname, &maxr, 5);
 
+		int pit = 0, ro = 0, ya = 0, xx = 0, yy = 0, zz = 0;
+		createTrackbar("pi", "", &pit, 180);
+		createTrackbar("ro", "", &ro, 180);
+		createTrackbar("ya", "", &ya, 180);
+		createTrackbar("x", "", &xx, 8000);
+		createTrackbar("y", "", &yy, 8000);
+		createTrackbar("z", "", &zz, 8000);
+
+		Mat manualR = Mat::ones(3, 3, CV_64F);
+		Mat manualt = Mat::zeros(3, 1, CV_64F);
 
 		Mat destImage(image.size(), CV_8UC3);	//rendered image
 		Mat view;//drawed image
@@ -1521,7 +1830,11 @@ namespace cp
 		int num_loop = 0;
 		while (key != 'q')
 		{
-			double bps;
+			cp::Eular2Rotation(pit, ro, ya, manualR);
+			manualt.at<double>(0) = xx;
+			manualt.at<double>(1) = yy;
+			manualt.at<double>(2) = zz;
+			double bps = 0.0;
 			//from mouse input
 			x = (int)(xmax*(double)pt.x / (double)(image.cols - 1) + 0.5);
 			y = (int)(ymax*(double)pt.y / (double)(image.rows - 1) + 0.5);
@@ -1548,7 +1861,7 @@ namespace cp
 			}
 			lookat(look, srcview, R);
 			Mat r;
-			eular2rot(pitch - 90.0, 0.0, yaw - 90, r);
+			Eular2Rotation(pitch - 90.0, 0.0, yaw - 90, r);
 			R = r*R;
 
 			//*********************************** left
@@ -1558,9 +1871,9 @@ namespace cp
 			if (viewSW == 0)//image view
 			{
 				if (renderOpt > 0)
-					projectImagefromXYZ(image, destImage, xyz, R, t, k, Mat(), Mat(), true);
+					projectImagefromXYZ(image, destImage, xyz, R, t, k, Mat(), Mat(), true, isRotationThenTranspose);
 				else
-					projectImagefromXYZ(image, destImage, xyz, R, t, k, Mat(), Mat(), false);
+					projectImagefromXYZ(image, destImage, xyz, R, t, k, Mat(), Mat(), false, isRotationThenTranspose);
 			}
 			else//depth map view
 			{
@@ -1572,9 +1885,9 @@ namespace cp
 					cv::applyColorMap(dshow, dispC, 2);
 
 				if (renderOpt > 0)
-					projectImagefromXYZ(dispC, destImage, xyz, R, t, k, Mat(), Mat(), true);
+					projectImagefromXYZ(dispC, destImage, xyz, R, t, k, Mat(), Mat(), true, isRotationThenTranspose);
 				else
-					projectImagefromXYZ(dispC, destImage, xyz, R, t, k, Mat(), Mat(), false);
+					projectImagefromXYZ(dispC, destImage, xyz, R, t, k, Mat(), Mat(), false, isRotationThenTranspose);
 			}
 
 			//post filter for rendering image
@@ -1594,18 +1907,19 @@ namespace cp
 			/*t= (t-oR.t()*ot);
 			R = R*oR.t();*/
 			depth2XYZ(srcDepth2, focal);
-			//moveXYZ(xyz,xyz,oR,Mat(-ot));
-			moveXYZ(xyz, xyz, Mat(oR.t()), Mat(-oR.t()*ot));
 
-			//moveXYZ(xyz,xyz,Mat::eye(3,3,CV_64F),Mat(-ot));
+
+			//moveXYZ(xyz, xyz, Mat(manualR*oR.t()), Mat(-manualR*oR.t()*ot - manualt));
+			moveXYZ(xyz, xyz, oR, ot);
+
 
 			//project 3D point image
 			if (viewSW == 0)//image view
 			{
 				if (renderOpt > 0)
-					projectImagefromXYZ(image2, destImage, xyz, R, t, k, Mat(), Mat(), true);
+					projectImagefromXYZ(image2, destImage, xyz, R, t, k, Mat(), Mat(), true, isRotationThenTranspose);
 				else
-					projectImagefromXYZ(image2, destImage, xyz, R, t, k, Mat(), Mat(), false);
+					projectImagefromXYZ(image2, destImage, xyz, R, t, k, Mat(), Mat(), false, isRotationThenTranspose);
 			}
 			else//depth map view
 			{
@@ -1617,9 +1931,9 @@ namespace cp
 					cv::applyColorMap(dshow2, dispC, 2);
 
 				if (renderOpt > 0)
-					projectImagefromXYZ(dispC, destImage, xyz, R, t, k, Mat(), Mat(), true);
+					projectImagefromXYZ(dispC, destImage, xyz, R, t, k, Mat(), Mat(), true, isRotationThenTranspose);
 				else
-					projectImagefromXYZ(dispC, destImage, xyz, R, t, k, Mat(), Mat(), false);
+					projectImagefromXYZ(dispC, destImage, xyz, R, t, k, Mat(), Mat(), false, isRotationThenTranspose);
 			}
 
 			//post filter for rendering image
@@ -1634,6 +1948,7 @@ namespace cp
 			}
 			else destImage.copyTo(view);
 
+			imshow("test", view);
 			if (isWrite)imwrite(format("out%4d.jpg", count++), view);
 
 			if (isDrawLine)
@@ -1813,7 +2128,7 @@ namespace cp
 
 		while (key != 'q')
 		{
-			double bps=0.0;
+			double bps = 0.0;
 			//from mouse input
 			x = (int)(xmax*(double)pt.x / (double)(image.cols - 1) + 0.5);
 			y = (int)(ymax*(double)pt.y / (double)(image.rows - 1) + 0.5);
@@ -1840,16 +2155,16 @@ namespace cp
 			}
 			lookat(look, srcview, R);
 			Mat r;
-			eular2rot(pitch - 90.0, 0.0, yaw - 90, r);
+			Eular2Rotation(pitch - 90.0, 0.0, yaw - 90, r);
 			R = r*R;
 
 			//project 3D point image
 			if (viewSW == 0)//image view
 			{
 				if (renderOpt > 0)
-					projectImagefromXYZ(image, destImage, xyz, R, t, k, Mat(), Mat(), true);
+					projectImagefromXYZ(image, destImage, xyz, R, t, k, Mat(), Mat(), true, isRotationThenTranspose);
 				else
-					projectImagefromXYZ(image, destImage, xyz, R, t, k, Mat(), Mat(), false);
+					projectImagefromXYZ(image, destImage, xyz, R, t, k, Mat(), Mat(), false, isRotationThenTranspose);
 			}
 			else//depth map view
 			{
@@ -1860,9 +2175,9 @@ namespace cp
 					cv::applyColorMap(dshow, dispC, 2);
 
 				if (renderOpt > 0)
-					projectImagefromXYZ(dispC, destImage, xyz, R, t, k, Mat(), Mat(), true);
+					projectImagefromXYZ(dispC, destImage, xyz, R, t, k, Mat(), Mat(), true, isRotationThenTranspose);
 				else
-					projectImagefromXYZ(dispC, destImage, xyz, R, t, k, Mat(), Mat(), false);
+					projectImagefromXYZ(dispC, destImage, xyz, R, t, k, Mat(), Mat(), false, isRotationThenTranspose);
 			}
 
 			//post filter for rendering image

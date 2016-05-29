@@ -5,8 +5,9 @@ using namespace cv;
 namespace cp
 {
 
-	void rotYaw(Mat& src, Mat& dest, const double yaw)
+	void rotYaw(cv::InputArray src_, cv::OutputArray dest, const double yaw)
 	{
+		Mat src = src_.getMat();
 		double angle = yaw / 180.0*CV_PI;
 		Mat rot = Mat::eye(3, 3, CV_64F);
 
@@ -19,8 +20,10 @@ namespace cp
 		a.copyTo(dest);
 	}
 
-	void rotPitch(Mat& src, Mat& dest, const double pitch)
+	
+	void rotPitch(cv::InputArray src_, cv::OutputArray dest, const double pitch)
 	{
+		Mat src = src_.getMat();
 		double angle = pitch / 180.0*CV_PI;
 		Mat rot = Mat::eye(3, 3, CV_64F);
 
@@ -33,17 +36,39 @@ namespace cp
 		a.copyTo(dest);
 	}
 
-
-
-
-
-
-	void eular2rot(double pitch, double roll, double yaw, Mat& dest)
+	void Eular2Rotation(const double pitch, const double roll, const double yaw, cv::OutputArray dest)
 	{
-		dest = Mat::eye(3, 3, CV_64F);
+		dest.create(3, 3, CV_64F);
+
+		Mat a = Mat::eye(3, 3, CV_64F); a.copyTo(dest);
 		rotYaw(dest, dest, yaw);
 		rotPitch(dest, dest, pitch);
 		rotPitch(dest, dest, roll);
+	}
+
+	void Rotation2Eular(InputArray R_, double & angle_x, double & angle_y, double & angle_z)
+	{
+		Mat R = R_.getMat();
+		double threshold = 0.001;
+
+		if (abs(R.at<double>(2, 1) - 1.0) < threshold){ // R(2,1) = sin(x) = 1
+			angle_x = CV_PI / 2;
+			angle_y = 0;
+			angle_z = atan2(R.at<double>(1, 0), R.at<double>(0, 0));
+		}
+		else if (abs(R.at<double>(2, 1) + 1.0) < threshold){ // R(2,1) = sin(x) = -1
+			angle_x = -CV_PI / 2;
+			angle_y = 0;
+			angle_z = atan2(R.at<double>(1, 0), R.at<double>(0, 0));
+		}
+		else{
+			angle_x = asin(R.at<double>(2, 1));
+			angle_y = atan2(-R.at<double>(2, 0), R.at<double>(2, 2));
+			angle_z = atan2(-R.at<double>(0, 1), R.at<double>(1, 1));
+		}
+		angle_x = 180.0 * angle_x / CV_PI;
+		angle_y = 180.0 * angle_y / CV_PI;
+		angle_z = 180.0 * angle_z / CV_PI;
 	}
 
 	/*

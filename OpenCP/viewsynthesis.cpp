@@ -5,13 +5,7 @@ using namespace cv;
 
 namespace cp
 {
-	enum
-	{
-		FILL_OCCLUSION_LINE = 0,
-		FILL_OCCLUSION_REFLECT = 1,
-		FILL_OCCLUSION_STRETCH = -1
-	};
-
+	
 	void boundaryBlur(Mat& src, int tap, int direction)
 	{
 		Mat val = src.clone();
@@ -1680,28 +1674,28 @@ namespace cp
 		Mat mask_ = mask;
 		if (mask_.empty())mask_ = Mat::zeros(srcim.size(), CV_8U);
 
-		if (srcdisp.type() == CV_8U)
+		if (srcdisp.depth() == CV_8U)
 		{
 			if (destdisp.empty())destdisp = Mat::zeros(srcdisp.size(), CV_8U);
 			else destdisp.setTo(0);
 			if (destim.empty())destim = Mat::zeros(srcim.size(), CV_8UC3);
 			else destim.setTo(0);
 		}
-		else if (srcdisp.type() == CV_16S)
+		else if (srcdisp.depth() == CV_16S)
 		{
 			if (destdisp.empty())destdisp = Mat::zeros(srcdisp.size(), CV_16S);
 			else destdisp.setTo(0);
 			if (destim.empty())destim = Mat::zeros(srcim.size(), CV_8UC3);
 			else destim.setTo(0);
 		}
-		else if (srcdisp.type() == CV_16U)
+		else if (srcdisp.depth() == CV_16U)
 		{
 			if (destdisp.empty())destdisp = Mat::zeros(srcdisp.size(), CV_16U);
 			else destdisp.setTo(0);
 			if (destim.empty())destim = Mat::zeros(srcim.size(), CV_8UC3);
 			else destim.setTo(0);
 		}
-		else if (srcdisp.type() == CV_32F)
+		else if (srcdisp.depth() == CV_32F)
 		{
 			if (destdisp.empty())destdisp = Mat::zeros(srcdisp.size(), CV_32F);
 			else destdisp.setTo(0);
@@ -2623,122 +2617,156 @@ namespace cp
 
 	void fillOcclusionImDispLRMax(Mat& im, Mat& disp, Mat& lref, Mat& rref, double invalidvalue, double alpha, double amp, int mode)
 	{
-		if (disp.type() == CV_8U)
+		if (disp.depth() == CV_8U)
 		{
 			fillOcclusionImDispLRMax_<uchar>(im, disp, lref, rref, (uchar)invalidvalue, alpha, amp, mode);
 		}
-		else if (disp.type() == CV_16S)
+		else if (disp.depth() == CV_16S)
 		{
 			fillOcclusionImDispLRMax_<short>(im, disp, lref, rref, (short)invalidvalue, alpha, amp, mode);
 		}
-		else if (disp.type() == CV_16U)
+		else if (disp.depth() == CV_16U)
 		{
 			fillOcclusionImDispLRMax_<ushort>(im, disp, lref, rref, (ushort)invalidvalue, alpha, amp, mode);
 		}
-		else if (disp.type() == CV_32F)
+		else if (disp.depth() == CV_32F)
 		{
 			fillOcclusionImDispLRMax_<float>(im, disp, lref, rref, (float)invalidvalue, alpha, amp, mode);
 		}
 	}
 
-	void fillOcclusionImDisp(Mat& im, Mat& disp, int invalidvalue, int mode)
+	void fillOcclusionImDisp(InputOutputArray im_, InputOutputArray disp_, int invalidvalue, int mode)
 	{
+		Mat im = im_.getMat();
+		Mat disp = disp_.getMat();
 		if (mode == FILL_OCCLUSION_LINE)
 		{
-			if (disp.type() == CV_8U)
+			if (disp.depth() == CV_8U)
 			{
 				fillOcclusionImDisp_<uchar>(im, disp, (uchar)invalidvalue, 10000);
 			}
-			else if (disp.type() == CV_16S)
+			else if (disp.depth() == CV_16S)
 			{
 				fillOcclusionImDisp_<short>(im, disp, (short)invalidvalue, 10000);
 			}
-			else if (disp.type() == CV_16U)
+			else if (disp.depth() == CV_16U)
 			{
-				fillOcclusionImDisp_<unsigned short>(im, disp, (short)invalidvalue, 10000);
+				fillOcclusionImDisp_<unsigned short>(im, disp, (unsigned short)invalidvalue, 10000);
 			}
-			else if (disp.type() == CV_32F)
+			else if (disp.depth() == CV_32S)
+			{
+				fillOcclusionImDisp_<int>(im, disp, (short)invalidvalue, 10000);
+			}
+			else if (disp.depth() == CV_32F)
 			{
 				fillOcclusionImDisp_<float>(im, disp, (float)invalidvalue, 10000);
+			}
+			else if (disp.depth() == CV_64F)
+			{
+				fillOcclusionImDisp_<double>(im, disp, (double)invalidvalue, 10000);
 			}
 		}
 		else if (mode == FILL_OCCLUSION_REFLECT)
 		{
 			//reflect interpolation
-			if (disp.type() == CV_8U)
+			if (disp.depth() == CV_8U)
 			{
 				fillOcclusionImDispReflect_<uchar>(im, disp, (uchar)invalidvalue);
 			}
-			else if (disp.type() == CV_16S)
+			else if (disp.depth() == CV_16S)
 			{
 				fillOcclusionImDispReflect_<short>(im, disp, (short)invalidvalue);
 			}
-			else if (disp.type() == CV_16U)
+			else if (disp.depth() == CV_16U)
 			{
-				fillOcclusionImDispReflect_<unsigned short>(im, disp, (short)invalidvalue);
+				fillOcclusionImDispReflect_<unsigned short>(im, disp, (unsigned short)invalidvalue);
 			}
-			else if (disp.type() == CV_32F)
+			else if (disp.depth() == CV_32S)
+			{
+				fillOcclusionImDispReflect_<int>(im, disp, (int)invalidvalue);
+			}
+			else if (disp.depth() == CV_32F)
 			{
 				fillOcclusionImDispReflect_<float>(im, disp, (float)invalidvalue);
+			}
+			else if (disp.depth() == CV_64F)
+			{
+				fillOcclusionImDispReflect_<double>(im, disp, (double)invalidvalue);
 			}
 		}
 		else if (mode == FILL_OCCLUSION_STRETCH)
 		{
 			//stretch interpolation
-			if (disp.type() == CV_8U)
+			if (disp.depth() == CV_8U)
 			{
 				fillOcclusionImDispStretch_<uchar>(im, disp, (uchar)invalidvalue);
 			}
-			else if (disp.type() == CV_16S)
+			else if (disp.depth() == CV_16S)
 			{
 				fillOcclusionImDispStretch_<short>(im, disp, (short)invalidvalue);
 			}
-			else if (disp.type() == CV_16U)
+			else if (disp.depth() == CV_16U)
 			{
-				fillOcclusionImDispStretch_<unsigned short>(im, disp, (short)invalidvalue);
+				fillOcclusionImDispStretch_<unsigned short>(im, disp, (unsigned short)invalidvalue);
 			}
-			else if (disp.type() == CV_32F)
+			else if (disp.depth() == CV_32S)
+			{
+				fillOcclusionImDispStretch_<int>(im, disp, (int)invalidvalue);
+			}
+			else if (disp.depth() == CV_32F)
 			{
 				fillOcclusionImDispStretch_<float>(im, disp, (float)invalidvalue);
+			}
+			else if (disp.depth() == CV_64F)
+			{
+				fillOcclusionImDispStretch_<double>(im, disp, (double)invalidvalue);
 			}
 		}
 		//else if(mode==2)
 		//{
 		//	//stretch interpolation
-		//	if(disp.type()==CV_8U)
+		//	if(disp.depth()==CV_8U)
 		//	{
 		//		fillOcclusionImDisp2_<uchar>(im,disp, (uchar)invalidvalue);
 		//	}
-		//	else if(disp.type()==CV_16S)
+		//	else if(disp.depth()==CV_16S)
 		//	{
 		//		fillOcclusionImDisp2_<short>(im,disp, (short)invalidvalue);
 		//	}
-		//	else if(disp.type()==CV_16U)
+		//	else if(disp.depth()==CV_16U)
 		//	{
 		//		fillOcclusionImDisp2_<unsigned short>(im,disp, (short)invalidvalue);
 		//	}
-		//	else if(disp.type()==CV_32F)
+		//	else if(disp.depth()==CV_32F)
 		//	{
 		//		fillOcclusionImDisp2_<float>(im,disp, (float)invalidvalue);
 		//	}
 		//}
-		else if (mode == 2)//FILL_OCCLUSION_HV
+		else if (mode == FILL_OCCLUSION_HV)//FILL_OCCLUSION_HV
 		{
-			if (disp.type() == CV_8U)
+			if (disp.depth() == CV_8U)
 			{
 				fillOcclusionImDispHV_<uchar>(im, disp, (uchar)invalidvalue, 10000);
 			}
-			else if (disp.type() == CV_16S)
+			else if (disp.depth() == CV_16S)
 			{
 				fillOcclusionImDispHV_<short>(im, disp, (short)invalidvalue, 10000);
 			}
-			else if (disp.type() == CV_16U)
+			else if (disp.depth() == CV_16U)
 			{
 				fillOcclusionImDispHV_<unsigned short>(im, disp, (short)invalidvalue, 10000);
 			}
-			else if (disp.type() == CV_32F)
+			else if (disp.depth() == CV_32S)
+			{
+				fillOcclusionImDispHV_<int>(im, disp, (int)invalidvalue, 10000);
+			}
+			else if (disp.depth() == CV_32F)
 			{
 				fillOcclusionImDispHV_<float>(im, disp, (float)invalidvalue, 10000);
+			}
+			else if (disp.depth() == CV_64F)
+			{
+				fillOcclusionImDispHV_<double>(im, disp, (int)invalidvalue, 10000);
 			}
 		}
 	}
@@ -2765,16 +2793,16 @@ namespace cp
 		else im = image;
 
 
-		if (disp.type() == CV_8U)
+		if (disp.depth() == CV_8U)
 		{
 			setRectficatedInvalidMask_<uchar>(disp, im, (uchar)invalidvalue);
 		}
-		else if (disp.type() == CV_16S)
+		else if (disp.depth() == CV_16S)
 		{
 			setRectficatedInvalidMask_<short>(disp, im, (short)invalidvalue);
 
 		}
-		else if (disp.type() == CV_32F)
+		else if (disp.depth() == CV_32F)
 		{
 			setRectficatedInvalidMask_<float>(disp, im, (float)invalidvalue);
 		}
@@ -3860,7 +3888,7 @@ namespace cp
 
 	void shiftDisparity(Mat& srcdisp, Mat& destdisp, double amp, const int large_jump, const int sub_gap)
 	{
-		if (srcdisp.type() == CV_8U)
+		if (srcdisp.depth() == CV_8U)
 		{
 			if (destdisp.empty())destdisp = Mat::zeros(srcdisp.size(), CV_8U);
 			else destdisp.setTo(0);
@@ -3868,21 +3896,21 @@ namespace cp
 			//fillBoundingBoxDepth<uchar>(destdisp,0);
 			//fillOcclusion(destdisp,0);
 		}
-		else if (srcdisp.type() == CV_16S)
+		else if (srcdisp.depth() == CV_16S)
 		{
 			if (destdisp.empty())destdisp = Mat::zeros(srcdisp.size(), CV_16S);
 			else destdisp.setTo(0);
 			shiftDisparity_<short>(srcdisp, destdisp, amp, large_jump, sub_gap);
 			//fillOcclusion(destdisp,0);
 		}
-		else if (srcdisp.type() == CV_16U)
+		else if (srcdisp.depth() == CV_16U)
 		{
 			if (destdisp.empty())destdisp = Mat::zeros(srcdisp.size(), CV_16U);
 			else destdisp.setTo(0);
 			shiftDisparity_<ushort>(srcdisp, destdisp, amp, large_jump, sub_gap);
 			//fillOcclusion(destdisp,0);
 		}
-		else if (srcdisp.type() == CV_32F)
+		else if (srcdisp.depth() == CV_32F)
 		{
 			if (destdisp.empty())destdisp = Mat::zeros(srcdisp.size(), CV_32F);
 			else destdisp.setTo(0);

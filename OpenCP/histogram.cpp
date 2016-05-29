@@ -18,14 +18,14 @@ void drawHistogramImageGray(cv::InputArray src, cv::OutputArray histogram, cv::S
 	int dim_num = 1;        // output histogram dimension
 	int bin_num = 256;       // number of bin
 	int bin_nums[] = { bin_num };
-	float range[] = { 0, 256 };        // range
+	float range[] = { 0, 256*20 };        // range
 	const float *ranges[] = { range }; // 
 	Mat src_ = src.getMat();
 	cv::calcHist(&src_, image_num, channels, cv::Mat(), hist, dim_num, bin_nums, ranges);
 
 	double maxVal = 0;
 	minMaxLoc(hist, 0, &maxVal, 0, 0);
-
+	cout << maxVal << endl;
 	const int hist_height = 200;
 	int shift = 1;
 	Mat hist_img = Mat::zeros(Size(bin_num + 2 * shift, hist_height), CV_8UC3);
@@ -122,6 +122,11 @@ void drawAccumulateHistogramImage(cv::InputArray src, cv::OutputArray histogram,
 
 void drawHistogramImage(cv::InputArray src, cv::OutputArray histogram, cv::Scalar meancolor, bool isGrid)
 {
+	if (src.channels() == 1)
+	{
+		drawHistogramImageGray(src, histogram, meancolor, isGrid);
+		return;
+	}
 	vector<Mat> v; split(src, v);
 	vector<Mat> hist(3);
 	drawHistogramImageGray(v[0], hist[0], COLOR_BLUE, meancolor, isGrid);

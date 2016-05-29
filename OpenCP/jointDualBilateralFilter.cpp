@@ -49,7 +49,7 @@ namespace cp
 
 		for (int i = 0; i < 256 * cnj1; i++)//trilateral(6)
 			color_guide_weight1[i] = (float)std::exp(i*i*gauss_guide_color_coeff1);
-
+		
 		for (int i = 0; i < 256 * cnj2; i++)//trilateral(6)
 			color_guide_weight2[i] = (float)std::exp(i*i*gauss_guide_color_coeff2);
 
@@ -105,7 +105,6 @@ namespace cp
 			}
 			else if (cn == 1 && cnj1 == 1 && cnj2 == 3)
 			{
-				//std::cout<<"here"<<std::endl;
 				for (int j = 0, l = 0; j < size.width * 3; j += 3, l++)
 				{
 					float sum = 0.f, wsum = 0.f;
@@ -401,7 +400,6 @@ namespace cp
 			}
 			else if (cn == 1 && cnj1 == 1 && cnj2 == 3)
 			{
-				//std::cout<<"here"<<std::endl;
 				for (int j = 0, l = 0; j < size.width * 3; j += 3, l++)
 				{
 					float sum = 0.f, wsum = 0.f;

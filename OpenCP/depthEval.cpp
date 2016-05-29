@@ -125,6 +125,18 @@ namespace cp
 		state_disc = Mat::zeros(ground_truth.size(), CV_8UC3);
 	}
 
+	void StereoEval::init(Mat& ground_truth_, double amp_)
+	{
+		ground_truth = ground_truth_;
+		amp = amp_;
+
+		createDisparityALLMask(ground_truth_, mask_all);
+		createDisparityNonOcclusionMask(ground_truth_, amp_, 1, mask_nonocc);
+		mask_nonocc.copyTo(mask_disc);//under construction
+		
+		threshmap_init();
+	}
+
 	void StereoEval::init(Mat& ground_truth_, Mat& mask_nonocc_, Mat& mask_all_, Mat& mask_disc_, double amp_)
 	{
 		ground_truth = ground_truth_;
@@ -143,6 +155,11 @@ namespace cp
 	StereoEval::StereoEval(Mat& ground_truth_, Mat& mask_nonocc_, Mat& mask_all_, Mat& mask_disc_, double amp_)
 	{
 		init(ground_truth_, mask_nonocc_, mask_all_, mask_disc_, amp_);
+	}
+
+	StereoEval::StereoEval(Mat& ground_truth_, double amp_)
+	{
+		init(ground_truth_,  amp_);
 	}
 
 	void  StereoEval::getBadPixel(Mat& src, double threshold, bool isPrint)
@@ -177,8 +194,9 @@ namespace cp
 			}*/
 	}
 
-	void StereoEval::operator() (Mat& src, double threshold, bool isPrint, int disparity_scale)
+	void StereoEval::operator() (InputArray src_, double threshold, bool isPrint, int disparity_scale)
 	{
+		Mat src = src_.getMat();
 		if (disparity_scale == 1)
 		{
 			getBadPixel(src, threshold, isPrint);

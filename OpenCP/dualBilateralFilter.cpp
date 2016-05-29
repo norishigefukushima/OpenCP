@@ -9,7 +9,7 @@ namespace cp
 	//baseline 
 
 	void dualBilateralWeightMapBase_32f(const Mat& src, const Mat& guide, Mat& dst, int d,
-		double sigma_color, double sigma_guide_color, double sigma_space, int borderType)
+		double sigma_color, double sigma_guide_color, double sigma_space, int borderType, bool isLaplace)
 	{
 		if (d == 0){ src.copyTo(dst); return; }
 		Size size = src.size();
@@ -22,8 +22,12 @@ namespace cp
 			sigma_color = 1.0;
 		if (sigma_space <= 0.0)
 			sigma_space = 1.0;
-		double gauss_color_coeff = -0.5 / (sigma_color*sigma_color);
-		double gauss_guide_color_coeff = -0.5 / (sigma_guide_color*sigma_guide_color);//trilateral(1)
+
+
+		double gauss_color_coeff = (isLaplace) ? -1.0 / (sigma_color) : -0.5 / (sigma_color*sigma_color);
+		double gauss_guide_color_coeff = (isLaplace) ? -1.0 / (sigma_guide_color) : -0.5 / (sigma_guide_color*sigma_guide_color);//trilateral(1)
+
+		//do not suppert Laplace distribution
 		double gauss_space_coeff = -0.5 / (sigma_space*sigma_space);
 
 		if (guide.empty())src.copyTo(guide);
@@ -57,11 +61,13 @@ namespace cp
 
 		// initialize color-related bilateral filter coefficients
 		for (int i = 0; i < 256 * cn; i++)//trilateral(5)
-			color_weight[i] = (float)std::exp(i*i*gauss_color_coeff);
-
-
+		{
+			color_weight[i] = (isLaplace) ? (float)std::exp(i*gauss_color_coeff) : (float)std::exp(i*i*gauss_color_coeff);
+		}
 		for (int i = 0; i < 256 * cnj; i++)//trilateral(6)
-			color_guide_weight[i] = (float)std::exp(i*i*gauss_guide_color_coeff);
+		{
+			color_guide_weight[i] = (isLaplace) ? (float)std::exp(i*gauss_guide_color_coeff) : (float)std::exp(i*i*gauss_guide_color_coeff);
+		}
 
 		int maxk = 0;
 		// initialize space-related bilateral filter coefficients
@@ -70,8 +76,7 @@ namespace cp
 			for (int j = -radius; j <= radius; j++)
 			{
 				double r = std::sqrt((double)i*i + (double)j*j);
-				if (r > radius)
-					continue;
+				if (r > radius) continue;
 				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
 				space_ofs_jnt[maxk] = (int)(i*jim.cols*cnj + j*cnj);
 				space_ofs_src[maxk++] = (int)(i*sim.cols*cn + j*cn);
@@ -178,19 +183,24 @@ namespace cp
 		}
 	}
 
-	void dualBilateralWeightMapBase(const Mat& src, const Mat& guide, Mat& dst, int d,
-		double sigma_color, double sigma_guide_color, double sigma_space, int borderType)
+	void dualBilateralWeightMapBase(InputArray src_, InputArray guide_, OutputArray dst_, int d,
+		double sigma_color, double sigma_guide_color, double sigma_space, int borderType, bool isLaplace)
 	{
+		Mat src = src_.getMat();
+		Mat guide = guide_.getMat();
+		if (dst_.empty()) dst_.create(src_.size(), CV_32F);
+		Mat dst = dst_.getMat();
+
 		if (src.type() == CV_MAKE_TYPE(CV_32F, src.channels()))
 		{
-			dualBilateralWeightMapBase_32f(src, guide, dst, d, sigma_color, sigma_guide_color, sigma_space, borderType);
+			dualBilateralWeightMapBase_32f(src, guide, dst, d, sigma_color, sigma_guide_color, sigma_space, borderType, isLaplace);
 		}
 		else
 		{
 			Mat ss, gg;
 			src.convertTo(ss, CV_32F);
 			guide.convertTo(gg, CV_32F);
-			dualBilateralWeightMapBase_32f(ss, gg, dst, d, sigma_color, sigma_guide_color, sigma_space, borderType);
+			dualBilateralWeightMapBase_32f(ss, gg, dst, d, sigma_color, sigma_guide_color, sigma_space, borderType, isLaplace);
 		}
 	}
 
@@ -3771,10 +3781,10 @@ namespace cp
 	}
 
 
-	class TrilateralWeightMap_32f_InvokerSSE4 : public cv::ParallelLoopBody
+	class DualBilateralWeightMap_32f_InvokerSSE4 : public cv::ParallelLoopBody
 	{
 	public:
-		TrilateralWeightMap_32f_InvokerSSE4(Mat& _dest, const Mat& _temp, const Mat& _guide, int _radiusH, int _radiusV, int _maxk,
+		DualBilateralWeightMap_32f_InvokerSSE4(Mat& _dest, const Mat& _temp, const Mat& _guide, int _radiusH, int _radiusV, int _maxk,
 			int* _space_ofs, int* _space_guide_ofs, float *_space_weight, float *_color_weight, float *_guide_color_weight) :
 			temp(&_temp), dest(&_dest), guide(&_guide), radiusH(_radiusH), radiusV(_radiusV),
 			maxk(_maxk), space_ofs(_space_ofs), space_guide_ofs(_space_guide_ofs), space_weight(_space_weight), color_weight(_color_weight), guide_color_weight(_guide_color_weight)
@@ -5848,7 +5858,6 @@ namespace cp
 
 		int radiusH = kernelSize.width >> 1;
 		int radiusV = kernelSize.height >> 1;
-
 		Mat temp, tempg;
 
 		int dpad = (4 - src.cols % 4) % 4;
@@ -5886,7 +5895,7 @@ namespace cp
 
 			copyMakeBorder(guide, tempg, radiusV, radiusV, radiusH + lpad, radiusH + rpad, borderType);
 		}
-
+	
 		double minv, maxv;
 		minMaxLoc(src, &minv, &maxv);
 		const int color_range = cvRound(maxv - minv);
@@ -5897,6 +5906,7 @@ namespace cp
 		float* color_weight = &_color_weight[0];
 		float* color_guide_weight = &_color_guide_weight[0];
 		// initialize color-related bilateral filter coefficients
+		
 		for (i = 0; i < color_range*cn; i++)
 			color_weight[i] = (float)std::exp(i*i*gauss_color_coeff);
 		for (i = 0; i < color_range_guide*cng; i++)
@@ -5909,25 +5919,22 @@ namespace cp
 		vector<int> _space_g_ofs(kernelSize.area() + 1);
 		int* space_ofs = &_space_ofs[0];
 		int* space_g_ofs = &_space_g_ofs[0];
-
+		
 		// initialize space-related bilateral filter coefficients
 		for (i = -radiusV, maxk = 0; i <= radiusV; i++)
 		{
-			j = -radiusH;
-
-			for (; j <= radiusH; j++)
+			for (j = -radiusH; j <= radiusH; j++)
 			{
 				double r = std::sqrt((double)i*i + (double)j*j);
-				if (r > max(radiusV, radiusH))
-					continue;
+				if (r > max(radiusV, radiusH)) continue;
 				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
 				space_g_ofs[maxk] = (int)(i*tempg.cols*cng + j);
 				space_ofs[maxk++] = (int)(i*temp.cols*cn + j);
 			}
 		}
-
+		
 		Mat dest = Mat::zeros(Size(src.cols + dpad, src.rows), CV_32F);
-		TrilateralWeightMap_32f_InvokerSSE4 body(dest, temp, tempg, radiusH, radiusV, maxk, space_ofs, space_g_ofs, space_weight, color_weight, color_guide_weight);
+		DualBilateralWeightMap_32f_InvokerSSE4 body(dest, temp, tempg, radiusH, radiusV, maxk, space_ofs, space_g_ofs, space_weight, color_weight, color_guide_weight);
 		parallel_for_(Range(0, size.height), body);
 		Mat(dest(Rect(0, 0, dst.cols, dst.rows))).copyTo(dst);
 	}
@@ -6273,17 +6280,17 @@ namespace cp
 
 	void dualBilateralWeightMap(InputArray src_, InputArray guide_, OutputArray dest, Size kernelSize, double sigma_color, double sigma_guide_color, double sigma_space, int method, int borderType)
 	{
-		if (dest.empty() || dest.depth()!=CV_32F || src_.size()!=dest.size()) dest.create(src_.size(), CV_32F);
+		if (dest.empty() || dest.depth() != CV_32F || src_.size() != dest.size()) dest.create(src_.size(), CV_32F);
 		Mat src = src_.getMat();
 		Mat guide = guide_.getMat();
 		Mat dst = dest.getMat();
-		
-		if (method == FILTER_CIRCLE || method==FILTER_DEFAULT)
+
+		if (method == FILTER_CIRCLE || method == FILTER_DEFAULT)
 		{
 			if (src.depth() == CV_8U)
 			{
 				dualBilateralWeightMap_8u(src, guide, dst, kernelSize, sigma_color, sigma_guide_color, sigma_space, borderType);
-			//	dualBilateralWeightMapBase(src, guide, dst, kernelSize.width, sigma_color, sigma_guide_color, sigma_space, borderType);
+				//	dualBilateralWeightMapBase(src, guide, dst, kernelSize.width, sigma_color, sigma_guide_color, sigma_space, borderType);
 
 			}
 			else if (src.depth() == CV_32F)
@@ -6301,6 +6308,10 @@ namespace cp
 			{
 				dualBilateralWeightMapSP_32f(src, guide, dst, kernelSize, sigma_color, sigma_guide_color, sigma_space, borderType);
 			}
+		}
+		else
+		{
+			cout << "not suported "<<endl;
 		}
 	}
 
