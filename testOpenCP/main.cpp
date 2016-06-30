@@ -5,6 +5,7 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
+
 	//fitPlaneTest(); return 0;
 	//guiWeightMapTest(); return 0;
 	//guiStereo(); return 0;
@@ -28,8 +29,9 @@ int main(int argc, char** argv)
 	//	Mat src;
 	//	copyMakeBorder(src_,src,0,1,0,1,BORDER_REPLICATE);
 
-	Mat src = imread("img/stereo/Dolls/view1.png");
-	guiBilateralFilterTest(src);
+	Mat src = imread("img/lenna.png");
+	//Mat src = imread("img/stereo/Dolls/view1.png");
+	//guiBilateralFilterTest(src);
 	Mat ref = imread("img/stereo/Dolls/view6.png");
 	//guiColorCorrectionTest(src, ref); return 0;
 	//Mat src = imread("img/flower.png");
@@ -59,9 +61,10 @@ int main(int argc, char** argv)
 	
 	Mat gray;
 	cvtColor(src, gray, CV_BGR2GRAY);
-	guiDisparityPlaneFitSLICTest(src, ref, disp); return 0;
+	//guiDisparityPlaneFitSLICTest(src, ref, disp); return 0;
+	getPSNRRealtimeO1BilateralFilterKodak();
 	guiRealtimeO1BilateralFilterTest(src); return 0;
-
+	
 	Mat flashImg = imread("img/flash/cave-flash.png");
 	Mat noflashImg = imread("img/flash/cave-noflash.png");
 	Mat noflashImgGray; cvtColor(noflashImg, noflashImgGray, COLOR_BGR2GRAY);

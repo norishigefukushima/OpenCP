@@ -1,7 +1,8 @@
-#include "../opencp.hpp"
+#include <opencp.hpp>
 #include <fstream>
 using namespace std;
-
+using namespace cv;
+using namespace cp;
 /*
 #include <stdio.h>
 #include <stdlib.h>
@@ -274,15 +275,15 @@ void guiViewSynthesis()
 		svs.blend_z_thresh=zth;
 
 		svs.occBlurSize = Size(2*blur_rad+1,2*blur_rad+1);
-		svs.inpaintMethod = StereoViewSynthesis::FILL_OCCLUSION_HV;
+		svs.inpaintMethod = FILL_OCCLUSION_HV;
 		
 		if(isOcc==0) svs.postFilterMethod=StereoViewSynthesis::POST_NONE;
 		if(isOcc==1) svs.postFilterMethod=StereoViewSynthesis::POST_FILL;
 		if(isOcc==2) svs.postFilterMethod=StereoViewSynthesis::POST_GAUSSIAN_FILL;
-		if(isOccD==0)svs.inpaintMethod=StereoViewSynthesis::FILL_OCCLUSION_LINE;
-		if(isOccD==1)svs.inpaintMethod=StereoViewSynthesis::FILL_OCCLUSION_HV;
-		if(isOccD==2)svs.inpaintMethod=StereoViewSynthesis::FILL_OCCLUSION_INPAINT_NS;
-		if(isOccD==3)svs.inpaintMethod=StereoViewSynthesis::FILL_OCCLUSION_INPAINT_TELEA;
+		if(isOccD==0)svs.inpaintMethod=FILL_OCCLUSION_LINE;
+		if(isOccD==1)svs.inpaintMethod=FILL_OCCLUSION_HV;
+		if(isOccD==2)svs.inpaintMethod=FILL_OCCLUSION_INPAINT_NS;
+		if(isOccD==3)svs.inpaintMethod=FILL_OCCLUSION_INPAINT_TELEA;
 		//
 		svs.warpInterpolationMethod = inter;
 		{

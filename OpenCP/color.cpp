@@ -307,7 +307,8 @@ namespace cp
 
 	void cvtColorBGR2PLANE(cv::InputArray src_, cv::OutputArray dest_)
 	{
-		if (src_.channels() != 3)printf("input image must have 3 channels\n");
+		CV_Assert(src_.channels() == 3);
+		
 		Mat src = src_.getMat();
 		dest_.create(Size(src.cols, src.rows * 3), src.depth());
 		Mat dest = dest_.getMat();

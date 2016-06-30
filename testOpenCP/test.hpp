@@ -29,6 +29,7 @@ void guiGausianFilterTest(cv::Mat& src_);
 
 void guiRecursiveBilateralFilterTest(cv::Mat& src);
 void guiRealtimeO1BilateralFilterTest(cv::Mat& src);
+void getPSNRRealtimeO1BilateralFilterKodak();
 void guiJointRealtimeO1BilateralFilterTest(cv::Mat& src_, cv::Mat& guide_);
 
 void guiJointBirateralFilterTest(cv::Mat& src, cv::Mat& guide);

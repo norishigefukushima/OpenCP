@@ -170,6 +170,7 @@
     <ClCompile Include="realtimeO1BilateralFilter\realtimeO1BilateralFilterTest.cpp" />
     <ClCompile Include="shockFilterTest\coherenceEnhancingShockFilterTest.cpp" />
     <ClCompile Include="slic\guiSLICTest.cpp" />
+    <ClCompile Include="viewSynthesis\viewSynthesisTest.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="test.hpp" />

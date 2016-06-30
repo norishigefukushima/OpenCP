@@ -60,6 +60,72 @@ double PSNRBB(InputArray src, InputArray ref, int boundingX, int boundingY = 0)
 	return PSNR(a(roi), b(roi));
 }
 
+double psnrRGBave(Mat& src, Mat& ref)
+{
+	Mat srcf, reff;
+	src.convertTo(srcf, CV_64F);
+	ref.convertTo(reff, CV_64F);
+	vector<Mat> srcfs;
+	vector<Mat> reffs;
+	split(srcf, srcfs);
+	split(reff, reffs);
+	double b = PSNR64F(srcfs[0], reffs[0]);
+	double g = PSNR64F(srcfs[1], reffs[0]);
+	double r = PSNR64F(srcfs[2], reffs[0]);
+
+	return(b + g + r) / 3;
+}
+
+double psnrRGBone(Mat& src, Mat& ref)
+{
+	Mat srcf,reff;
+	Mat srcfs, reffs;
+	src.convertTo(srcf, CV_64F);
+	ref.convertTo(reff, CV_64F);
+
+	cvtColorBGR2PLANE(srcf, srcfs);
+	cvtColorBGR2PLANE(reff, reffs);
+
+	double a = PSNR64F(srcfs, reffs);
+	return a;
+}
+
+static double getPSNRRealtimeO1BilateralFilter(Mat& src, Mat ref, double sigmaSpace, double sigmaColor, int bin)
+{
+	Mat srcf; src.convertTo(srcf, CV_32F);
+	
+
+	CalcTime t;
+	RealtimeO1BilateralFilter rbf;
+	rbf.setColorNorm(RealtimeO1BilateralFilter::L2);
+	rbf.setBinDepth(CV_64F);
+
+	Mat dest;
+	rbf.gaussIIR(srcf, dest, sigmaColor, sigmaSpace, bin, RealtimeO1BilateralFilter::IIR_SR, 0);
+
+	cout << psnrRGBone(dest, ref)<<endl;
+	double ret = psnrRGBone(dest, ref);
+	return ret;
+}
+
+void getPSNRRealtimeO1BilateralFilterKodak()
+{
+	for (int i = 1; i <= 24; i++)
+	{
+		Mat src = imread(format("img/Kodak/kodim%02d.png",i));
+
+		double sigmaSpace = 10.0;
+		double sigmaColor = 30.0;
+		const int r = cvRound(3.f*sigmaSpace);
+
+		Mat srcf; src.convertTo(srcf, CV_32F);
+		Mat ref; 
+		bilateralFilterL2(srcf, ref, r, 30.0, sigmaSpace, BORDER_REPLICATE);
+
+		cout << i << "," << getPSNRRealtimeO1BilateralFilter(src, ref, sigmaSpace, sigmaColor, 4) << endl;
+	}
+}
+
 void guiRealtimeO1BilateralFilterTest(Mat& src)
 {
 	Mat dest;
@@ -75,7 +141,7 @@ void guiRealtimeO1BilateralFilterTest(Mat& src)
 	int color = 300; createTrackbar("color", wname, &color, 2550);
 	int bin = 4; createTrackbar("bin", wname, &bin, 256);
 	int iter = 3; createTrackbar("iter", wname, &iter, 100);
-	int srsize = 2; createTrackbar("sresize", wname, &srsize, 32);
+	int srsize = 1; createTrackbar("sresize", wname, &srsize, 32);
 	int rsize = 1; createTrackbar("resize", wname, &rsize, 32);
 	int upmethod = 1; createTrackbar("umethod", wname, &upmethod, 4);
 	int type = 0; createTrackbar("type32_64", wname, &type, 1);
@@ -97,7 +163,8 @@ void guiRealtimeO1BilateralFilterTest(Mat& src)
 	{
 		//bilateralFilter(srcf, ref, cvRound(3.f*space / 10.f) * 2 + 1, color / 10.f, space / 10.0f, BORDER_REPLICATE);
 		bilateralFilterL2(srcf, ref, cvRound(3.f*space / 10.f), color / 10.f, space / 10.0f, BORDER_REPLICATE);
-		cout << PSNR64F(ref2, ref) << endl;
+		//cout << PSNR64F(ref2, ref) << endl;
+		//cout << psnrRGBone(ref, ref) << endl;
 	}
 #else
 	bilateralFilter(src, ref, cvRound(3.f*space / 10.f) * 2 + 1, color / 10.f, space / 10.0f, BORDER_REPLICATE);
@@ -124,6 +191,7 @@ void guiRealtimeO1BilateralFilterTest(Mat& src)
 		if (key == 'r')
 		{
 
+			CalcTime t("reftime");
 #ifdef DEBUG_32F_RTBF
 			//bilateralFilter(srcf, ref, d, color / 10.f, space / 10.0f, BORDER_REPLICATE);
 			bilateralFilterL2(srcf, ref, cvRound(3.f*space / 10.f), color / 10.f, space / 10.0f, BORDER_REPLICATE);
@@ -190,8 +258,11 @@ void guiRealtimeO1BilateralFilterTest(Mat& src)
 
 		ci("d: %d", d);
 		//ci("PSNR: %f", PSNRBB(dest, ref, 100, 100));
-		ci("PSNR: %f", PSNR64F(dest, ref));
-		ci("MSE:  %f", norm(dest, ref, NORM_L2SQR) / (double)dest.size().area());
+		//ci("PSNR: %f", PSNR64F(dest, ref));
+		
+		ci("PSNR: %f", psnrRGBone(dest, ref));
+		cout << psnrRGBone(dest, ref) << endl;
+		//ci("MSE:  %f", norm(dest, ref, NORM_L2SQR) / (double)dest.size().area());
 		ci("time: %f", tim);
 		ci.flush();
 		alphaBlend(ref, dest, a / 100.0, show);
@@ -206,6 +277,14 @@ void guiRealtimeO1BilateralFilterTest(Mat& src)
 		if (key == 'd')
 		{
 			guiAbsDiffCompareGE(ref, dest);
+		}
+
+		if (key == 's')
+		{
+			cout << "write" << endl;
+			showMatInfo(ref);
+			imwrite("test.tiff", ref);
+			imwrite("test.png", ref);
 		}
 #ifdef DEBUG_32F_RTBF
 		Mat show8U;
