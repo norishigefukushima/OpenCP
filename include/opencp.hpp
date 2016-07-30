@@ -631,7 +631,7 @@ namespace cp
 
 	CP_EXPORT void cvtColorOPP2BGR(cv::InputArray src, cv::OutputArray dest);
 	CP_EXPORT void cvtColorBGR2OPP(cv::InputArray src, cv::OutputArray dest);
-	CP_EXPORT void cvtColorMatrix(cv::InputArray src, cv::InputOutputArray dest, cv::InputArray C);
+	CP_EXPORT void cvtColorMatrix(cv::InputArray src, cv::OutputArray dest, cv::InputArray C);
 
 	CP_EXPORT void cvtRAWVector2BGR(std::vector<float>& src, cv::OutputArray dest, cv::Size size);
 	CP_EXPORT void cvtBGR2RawVector(cv::InputArray src, std::vector<float>& dest);

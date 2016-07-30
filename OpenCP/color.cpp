@@ -802,7 +802,7 @@ namespace cp
 	* | 1|                  | 1|
 	*
 	*/
-	void cvtColorMatrix(InputArray src_, InputOutputArray dest, InputArray C_)
+	void cvtColorMatrix(InputArray src_, OutputArray dest, InputArray C_)
 	{
 		if (dest.empty())dest.create(src_.size(), src_.type());
 		Mat src = src_.getMat();
