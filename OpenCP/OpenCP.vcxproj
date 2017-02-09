@@ -73,7 +73,7 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)\lib\</OutDir>
     <TargetName>$(ProjectName)d</TargetName>
-    <IncludePath>$(OPENCV_INCLUDE_DIR);../fftw-3.3.5-dll64;$(IncludePath)</IncludePath>
+    <IncludePath>$(OPENCV_INCLUDE_DIR);../fftw;$(IncludePath)</IncludePath>
     <LibraryPath>$(OPENCV_LIB_DIR);$(LibraryPath)</LibraryPath>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
@@ -83,7 +83,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)\lib\</OutDir>
-    <IncludePath>$(OPENCV_INCLUDE_DIR);../fftw-3.3.5-dll64;$(IncludePath)</IncludePath>
+    <IncludePath>$(OPENCV_INCLUDE_DIR);$(IncludePath)</IncludePath>
     <LibraryPath>$(OPENCV_LIB_DIR);$(LibraryPath)</LibraryPath>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
@@ -113,6 +113,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>../lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -163,6 +164,7 @@
       </OptimizeReferences>
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <LinkTimeCodeGeneration />
+      <AdditionalLibraryDirectories>../lib</AdditionalLibraryDirectories>
     </Link>
     <ProjectReference>
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
@@ -359,6 +361,7 @@
     <ClInclude Include="..\include\Wiener2.hpp" />
     <ClInclude Include="..\include\yuvio.hpp" />
     <ClInclude Include="..\include\zoom.hpp" />
+    <ClInclude Include="fftw3.h" />
     <ClInclude Include="filterCore.h" />
     <ClInclude Include="filterengine.hpp" />
     <ClInclude Include="fmath.hpp" />

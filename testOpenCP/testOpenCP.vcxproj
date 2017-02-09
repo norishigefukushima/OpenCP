@@ -72,7 +72,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(OPENCV_INCLUDE_DIR);$(IncludePath)</IncludePath>
-    <LibraryPath>$(OPENCV_LIB_DIR);../fftw-3.3.5-dll64;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(OPENCV_LIB_DIR);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>

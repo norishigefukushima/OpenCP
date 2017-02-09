@@ -653,5 +653,8 @@
     <ClInclude Include="..\include\stereoDP.hpp">
       <Filter>ヘッダー ファイル\headers\stereo</Filter>
     </ClInclude>
+    <ClInclude Include="fftw3.h">
+      <Filter>ソース ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
