@@ -31,7 +31,7 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
@@ -73,6 +73,9 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)\lib\</OutDir>
     <TargetName>$(ProjectName)d</TargetName>
+    <IncludePath>$(OPENCV_INCLUDE_DIR);../fftw-3.3.5-dll64;$(IncludePath)</IncludePath>
+    <LibraryPath>$(OPENCV_LIB_DIR);$(LibraryPath)</LibraryPath>
+    <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -80,6 +83,9 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)\lib\</OutDir>
+    <IncludePath>$(OPENCV_INCLUDE_DIR);../fftw-3.3.5-dll64;$(IncludePath)</IncludePath>
+    <LibraryPath>$(OPENCV_LIB_DIR);$(LibraryPath)</LibraryPath>
+    <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -100,7 +106,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>CP_API;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../include</AdditionalIncludeDirectories>
       <OpenMPSupport>false</OpenMPSupport>
     </ClCompile>
@@ -169,7 +175,7 @@
     <ClCompile Include="bilateralFilter.cpp" />
     <ClCompile Include="binalyWeightedRangeFilter.cpp" />
     <ClCompile Include="bitconvert.cpp" />
-    <ClCompile Include="boudaryReconstructionFilter.cpp" />
+    <ClCompile Include="boundaryReconstructionFilter.cpp" />
     <ClCompile Include="Calibrator.cpp" />
     <ClCompile Include="color.cpp" />
     <ClCompile Include="consoleImage.cpp" />
@@ -271,8 +277,90 @@
     <ClCompile Include="zoom.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\include\alphaBlend.hpp" />
+    <ClInclude Include="..\include\arithmetic.hpp" />
+    <ClInclude Include="..\include\bilateralFilter.hpp" />
+    <ClInclude Include="..\include\binalyWeightedRangeFilter.hpp" />
+    <ClInclude Include="..\include\bitconvert.hpp" />
+    <ClInclude Include="..\include\boundaryReconstructionFilter.hpp" />
+    <ClInclude Include="..\include\Calibrator.hpp" />
+    <ClInclude Include="..\include\color.hpp" />
+    <ClInclude Include="..\include\common.hpp" />
+    <ClInclude Include="..\include\consoleImage.hpp" />
+    <ClInclude Include="..\include\costVolumeFilter.hpp" />
+    <ClInclude Include="..\include\crossBasedLocalFilter.hpp" />
+    <ClInclude Include="..\include\crossBasedLocalMultipointFilter.hpp" />
+    <ClInclude Include="..\include\csv.hpp" />
+    <ClInclude Include="..\include\depth2disparity.hpp" />
+    <ClInclude Include="..\include\depthEval.hpp" />
+    <ClInclude Include="..\include\depthfilter.hpp" />
+    <ClInclude Include="..\include\detailEnhancement.hpp" />
+    <ClInclude Include="..\include\diffPixel.hpp" />
+    <ClInclude Include="..\include\disparityFitPlane.hpp" />
+    <ClInclude Include="..\include\domainTransformFilter.hpp" />
+    <ClInclude Include="..\include\draw.hpp" />
+    <ClInclude Include="..\include\dualBilateralFilter.hpp" />
+    <ClInclude Include="..\include\dxtDenoise.hpp" />
+    <ClInclude Include="..\include\fftinfo.hpp" />
+    <ClInclude Include="..\include\fitPlane.hpp" />
+    <ClInclude Include="..\include\GaussianBlurIPOL.hpp" />
+    <ClInclude Include="..\include\GaussianFilter.hpp" />
+    <ClInclude Include="..\include\GaussianFilterSpectralRecursive.hpp" />
+    <ClInclude Include="..\include\getContrast.hpp" />
+    <ClInclude Include="..\include\guidedFilter.hpp" />
+    <ClInclude Include="..\include\hazeRemove.hpp" />
+    <ClInclude Include="..\include\histogram.hpp" />
+    <ClInclude Include="..\include\imagediff.hpp" />
+    <ClInclude Include="..\include\imqc.hpp" />
+    <ClInclude Include="..\include\iterativeBackProjection.hpp" />
+    <ClInclude Include="..\include\jointBilateralFilter.hpp" />
+    <ClInclude Include="..\include\jointBilateralUpsample.hpp" />
+    <ClInclude Include="..\include\jointDualBilateralFilter.hpp" />
+    <ClInclude Include="..\include\jointNearestFilter.hpp" />
+    <ClInclude Include="..\include\jointNonLocalMeans.hpp" />
+    <ClInclude Include="..\include\L0Smoothing.hpp" />
+    <ClInclude Include="..\include\markoperation.hpp" />
+    <ClInclude Include="..\include\matinfo.hpp" />
+    <ClInclude Include="..\include\mattingRendering.hpp" />
+    <ClInclude Include="..\include\metrics.hpp" />
+    <ClInclude Include="..\include\minmaxfilter.hpp" />
+    <ClInclude Include="..\include\MultiCameraCalibrator.hpp" />
+    <ClInclude Include="..\include\noise.hpp" />
+    <ClInclude Include="..\include\nonLocalMeans.hpp" />
     <ClInclude Include="..\include\opencp.hpp" />
+    <ClInclude Include="..\include\opticalFlow.hpp" />
+    <ClInclude Include="..\include\PermutohedralLattice.hpp" />
+    <ClInclude Include="..\include\plot.hpp" />
+    <ClInclude Include="..\include\pointcloud.hpp" />
+    <ClInclude Include="..\include\postFilterSet.hpp" />
+    <ClInclude Include="..\include\ppmx.hpp" />
+    <ClInclude Include="..\include\realtimeO1BilateralFilter.hpp" />
+    <ClInclude Include="..\include\rectifyMultiCollinear.hpp" />
+    <ClInclude Include="..\include\recursiveBilateralFilter.hpp" />
+    <ClInclude Include="..\include\shiftImage.hpp" />
+    <ClInclude Include="..\include\shockFilter.hpp" />
+    <ClInclude Include="..\include\slic.hpp" />
+    <ClInclude Include="..\include\speckle.hpp" />
+    <ClInclude Include="..\include\sse_util.hpp" />
+    <ClInclude Include="..\include\stat.hpp" />
+    <ClInclude Include="..\include\stencil.hpp" />
+    <ClInclude Include="..\include\StereoBase.hpp" />
+    <ClInclude Include="..\include\StereoBM2.hpp" />
+    <ClInclude Include="..\include\StereoEx.hpp" />
+    <ClInclude Include="..\include\StereoIterativeBM.hpp" />
+    <ClInclude Include="..\include\StereoSGM2.hpp" />
+    <ClInclude Include="..\include\stereo_core.hpp" />
+    <ClInclude Include="..\include\stereoDisplay.hpp" />
+    <ClInclude Include="..\include\stereoDP.hpp" />
+    <ClInclude Include="..\include\timer.hpp" />
+    <ClInclude Include="..\include\video.hpp" />
+    <ClInclude Include="..\include\viewsynthesis.hpp" />
+    <ClInclude Include="..\include\weightedModeFilter.hpp" />
+    <ClInclude Include="..\include\Wiener2.hpp" />
+    <ClInclude Include="..\include\yuvio.hpp" />
+    <ClInclude Include="..\include\zoom.hpp" />
     <ClInclude Include="filterCore.h" />
+    <ClInclude Include="filterengine.hpp" />
     <ClInclude Include="fmath.hpp" />
     <ClInclude Include="libGaussian\complex_arith.h" />
     <ClInclude Include="libGaussian\gaussian_conv.h" />

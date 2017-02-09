@@ -1,4 +1,7 @@
-#include "opencp.hpp"
+#include "bilateralFilter.hpp"
+#include "jointBilateralFilter.hpp"
+#include "color.hpp"
+#include "alphaBlend.hpp"
 #include "fmath.hpp"
 #include "filterCore.h"
 

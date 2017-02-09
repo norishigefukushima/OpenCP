@@ -1,4 +1,6 @@
-#include "opencp.hpp"
+#include "shiftImage.hpp"
+#include "alphaBlend.hpp"
+#include "matinfo.hpp"
 
 using namespace std;
 using namespace cv;

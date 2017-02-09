@@ -1,11 +1,10 @@
-#include "opencp.hpp"
+#include "matinfo.hpp"
 
 using namespace cv;
 using namespace std;
 
 namespace cp
 {
-
 	void showMatInfo(InputArray src_, string name)
 	{
 		Mat src = src_.getMat();

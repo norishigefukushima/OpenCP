@@ -1,4 +1,7 @@
-#include "opencp.hpp"
+#include "costVolumeFilter.hpp"
+#include "guidedFilter.hpp"
+#include "jointBilateralFilter.hpp"
+#include "color.hpp"
 
 using namespace std;
 using namespace cv;

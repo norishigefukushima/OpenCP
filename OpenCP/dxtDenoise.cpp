@@ -1,4 +1,4 @@
-#include "opencp.hpp"
+#include "dxtDenoise.hpp"
 
 using namespace std;
 using namespace cv;
@@ -1625,13 +1625,6 @@ namespace cp
 			}
 		}
 	};
-
-
-
-
-
-
-
 
 	void DenoiseDXTShrinkage::cvtColorOrder32F_BGR2BBBBGGGGRRRR(const Mat& src, Mat& dest)
 	{

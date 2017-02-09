@@ -1,11 +1,10 @@
-#include "opencp.hpp"
+#include "fftinfo.hpp"
 
 using namespace std;
 using namespace cv;
 
 namespace cp
 {
-
 	void imshowFFT(string wname, InputArray src__)
 	{
 		Mat src_ = src__.getMat();

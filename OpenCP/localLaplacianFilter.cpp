@@ -1,4 +1,4 @@
-#include "opencp.hpp"
+#include "shiftImage.hpp"
 #include <iostream>
 #ifdef _OPENMP
 #include <omp.h>

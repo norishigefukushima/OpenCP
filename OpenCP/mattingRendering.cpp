@@ -1,4 +1,7 @@
-#include "opencp.hpp"
+#include "mattingRendering.hpp"
+#include "guidedFilter.hpp"
+#include "GaussianFilter.hpp"
+#include "minmaxfilter.hpp"
 
 using namespace cv;
 

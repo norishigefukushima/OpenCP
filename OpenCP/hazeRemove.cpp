@@ -1,4 +1,6 @@
-#include "opencp.hpp" 
+#include "hazeRemove.hpp" 
+#include "guidedFilter.hpp"
+#include "minmaxfilter.hpp"
 
 using namespace std;
 using namespace cv;

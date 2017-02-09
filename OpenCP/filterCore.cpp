@@ -1,4 +1,3 @@
-#include "opencp.hpp"
 #include "filterCore.h"
 
 using namespace cv;

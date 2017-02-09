@@ -1,4 +1,12 @@
-#include "opencp.hpp"
+#include "viewsynthesis.hpp"
+#include "depthfilter.hpp"
+#include "GaussianFilter.hpp"
+#include "binalyWeightedRangeFilter.hpp"
+#include "minmaxfilter.hpp"
+#include "shiftImage.hpp"
+#include "alphaBlend.hpp"
+#include "metrics.hpp"
+#include "draw.hpp"
 
 using namespace std;
 using namespace cv;

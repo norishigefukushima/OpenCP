@@ -1,4 +1,4 @@
-#include "opencp.hpp"
+#include "stencil.hpp"
 
 using namespace std;
 using namespace cv;

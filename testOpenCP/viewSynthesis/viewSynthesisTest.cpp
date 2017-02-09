@@ -46,7 +46,7 @@ void average(const Mat& src1, const Mat& src2, Mat& dest)
 Mat clipmergeHorizon(const Mat& src, int index, int max_index)
 {
 	
-	uchar* ptr;
+	uchar* ptr = NULL;
 	int num = max_index;
 
 	int vp = 0;

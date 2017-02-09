@@ -1,4 +1,5 @@
-#include <opencp.hpp>
+#include "diffPixel.hpp"
+#include "shiftImage.hpp"
 
 using namespace std;
 using namespace cv;

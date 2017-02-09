@@ -2,7 +2,6 @@
 #include <limits>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include "opencp.hpp"
 using namespace std;
 using namespace cv;
 

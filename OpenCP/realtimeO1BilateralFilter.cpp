@@ -1,4 +1,5 @@
-#include "opencp.hpp"
+#include "realtimeO1BilateralFilter.hpp"
+#include "GaussianBlurIPOL.hpp"
 #define USE_OPENMP 1
 
 using namespace std;

@@ -2,7 +2,7 @@
 using namespace std;
 using namespace cv;
 using namespace cp;
-
+/*
 void guiEdgePresevingFilterOpenCV(Mat& src)
 {
 	string wname = "edge preserving filter";
@@ -76,18 +76,18 @@ void guiEdgePresevingFilterOpenCV(Mat& src)
 		{
 			CalcTime t("dct denoise");
 			xphoto::dctDenoising(src, dest, sigma_color, 8);
-			/*
+			
 			//opencv code maybe invalid
 
-			CalcTime t("denoise TV");
-			vector<Mat> v;
-			vector<Mat> d(3);
-			split(src, v);
-			denoise_TVL1(v[0], d[0], sigma_color);
-			denoise_TVL1(v[1], d[1], sigma_color);
-			denoise_TVL1(v[2], d[2], sigma_color);
-			merge(d, dest);
-			*/
+			//CalcTime t("denoise TV");
+			//vector<Mat> v;
+			//vector<Mat> d(3);
+			//split(src, v);
+			//denoise_TVL1(v[0], d[0], sigma_color);
+			//denoise_TVL1(v[1], d[1], sigma_color);
+			//denoise_TVL1(v[2], d[2], sigma_color);
+			//merge(d, dest);
+			
 		}
 
 		if (key == 'f')
@@ -100,3 +100,4 @@ void guiEdgePresevingFilterOpenCV(Mat& src)
 		key = waitKey(1);
 	}
 }
+*/

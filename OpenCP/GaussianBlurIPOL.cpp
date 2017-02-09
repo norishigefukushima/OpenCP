@@ -1,5 +1,6 @@
-#include "libGaussian\gaussian_conv.h"
-#include "opencp.hpp"
+#include "libGaussian/gaussian_conv.h"
+#include "color.hpp"
+#include "GaussianBlurIPOL.hpp"
 
 using namespace std;
 using namespace cv;
@@ -336,6 +337,7 @@ namespace cp
 
 	void GaussianFilter(InputArray src, OutputArray dest, const double sigma_space, const int filter_method, const int K_, const double tol)
 	{
+		if (dest.empty()) dest.create(src.size(), src.type());
 		int K = K_;
 		switch (filter_method)
 		{

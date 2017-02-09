@@ -1,4 +1,4 @@
-#include "opencp.hpp"
+#include "weightedModeFilter.hpp"
 
 using namespace std;
 using namespace cv;

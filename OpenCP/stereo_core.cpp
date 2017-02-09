@@ -1,4 +1,4 @@
-#include "opencp.hpp"
+#include "stereo_core.hpp"
 
 using namespace std;
 using namespace cv;
@@ -20,7 +20,6 @@ namespace cp
 		a.copyTo(dest);
 	}
 
-	
 	void rotPitch(cv::InputArray src_, cv::OutputArray dest, const double pitch)
 	{
 		Mat src = src_.getMat();
@@ -36,6 +35,21 @@ namespace cp
 		a.copyTo(dest);
 	}
 
+	void rotRoll(cv::InputArray src_, cv::OutputArray dest, const double roll)
+	{
+		Mat src = src_.getMat();
+		double angle = roll / 180.0*CV_PI;
+		Mat rot = Mat::eye(3, 3, CV_64F);
+
+		rot.at<double>(0, 0) = cos(angle);
+		rot.at<double>(0, 1) = -sin(angle);
+		rot.at<double>(1, 0) = sin(angle);
+		rot.at<double>(1, 1) = cos(angle);
+
+		Mat a = rot*src;
+		a.copyTo(dest);
+	}
+
 	void Eular2Rotation(const double pitch, const double roll, const double yaw, cv::OutputArray dest)
 	{
 		dest.create(3, 3, CV_64F);
@@ -43,7 +57,7 @@ namespace cp
 		Mat a = Mat::eye(3, 3, CV_64F); a.copyTo(dest);
 		rotYaw(dest, dest, yaw);
 		rotPitch(dest, dest, pitch);
-		rotPitch(dest, dest, roll);
+		rotRoll(dest, dest, roll);
 	}
 
 	void Rotation2Eular(InputArray R_, double & angle_x, double & angle_y, double & angle_z)

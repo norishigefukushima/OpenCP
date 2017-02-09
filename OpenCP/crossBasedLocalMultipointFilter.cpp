@@ -1,4 +1,4 @@
-#include "opencp.hpp"
+#include "crossBasedLocalMultipointFilter.hpp"
 
 using namespace std;
 using namespace cv;

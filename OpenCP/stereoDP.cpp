@@ -52,7 +52,11 @@ O(pixPerRow*maxDisparity) complexity of dynamic programming stage versus
 O(pixPerRow*log(pixPerRow)*maxDisparity) in the above paper.
 \****************************************************************************************/
 
-#include "opencp.hpp"
+#include "stereoDP.hpp"
+#include "depthfilter.hpp"
+#include "timer.hpp"
+#include "alphaBlend.hpp"
+#include "shiftImage.hpp"
 
 using namespace std;
 using namespace cv;

@@ -1,4 +1,5 @@
-#include "opencp.hpp"
+#include "MultiCameraCalibrator.hpp"
+#include "rectifyMultiCollinear.hpp"
 
 using namespace std;
 using namespace cv;

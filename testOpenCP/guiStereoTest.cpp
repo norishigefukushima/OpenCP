@@ -52,7 +52,7 @@ void guiDisparityPlaneFitSLICTest(Mat& leftim, Mat& rightim, Mat& GT)
 	{
 		{
 			CalcTime t;
-			dispalityFitPlane(disparity, leftim, refine, S, (float)m, mrs / 100.0f, iter, nransac, transac);
+			disparityFitPlane(disparity, leftim, refine, S, (float)m, mrs / 100.0f, iter, nransac, transac);
 		}
 		
 		//binalyWeightedRangeFilter(disparity, disparity, Size(7, 7), 16);

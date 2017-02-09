@@ -1,4 +1,12 @@
-#include "opencp.hpp"
+#include "StereoEx.hpp"
+#include "viewsynthesis.hpp"
+#include "depthfilter.hpp"
+#include "binalyWeightedRangeFilter.hpp"
+#include "minmaxfilter.hpp"
+#include "noise.hpp"
+#include "stat.hpp"
+#include "timer.hpp"
+#include "alphaBlend.hpp"
 
 using namespace std;
 using namespace cv;

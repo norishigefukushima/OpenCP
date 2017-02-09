@@ -1,11 +1,10 @@
-#include "opencp.hpp"
+#include "speckle.hpp"
 
 using namespace std;
 using namespace cv;
 
 namespace cp
 {
-
 	void guiFilterSpeckle(cv::InputArray src_)
 	{
 		Mat src = src_.getMat();

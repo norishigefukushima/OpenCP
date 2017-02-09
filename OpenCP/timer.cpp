@@ -1,4 +1,4 @@
-#include "opencp.hpp"
+#include "timer.hpp"
 
 using namespace std;
 using namespace cv;
@@ -226,6 +226,8 @@ namespace cp
 		}
 	}
 
+
+
 	void DestinationTimePrediction::init(int DestinationCount)
 	{
 		pCount = 0;
@@ -237,14 +239,17 @@ namespace cp
 
 		firstprediction = 0;
 	}
+
 	DestinationTimePrediction::DestinationTimePrediction()
 	{
 		;
 	}
+
 	DestinationTimePrediction::DestinationTimePrediction(int DestinationCount)
 	{
 		init(DestinationCount);
 	}
+
 	int DestinationTimePrediction::autoTimeMode(double cTime)
 	{
 		if (cTime > 60.0*60.0*24.0)
@@ -264,6 +269,7 @@ namespace cp
 			return TIME_SEC;
 		}
 	}
+
 	void DestinationTimePrediction::tick2Time(double tick, string mes)
 	{
 		double cTime = tick / (getTickFrequency());
@@ -310,6 +316,7 @@ namespace cp
 			break;
 		}
 	}
+
 	int64 DestinationTimePrediction::getTime(string mes)
 	{
 		int64 ret = (getTickCount() - startTime);

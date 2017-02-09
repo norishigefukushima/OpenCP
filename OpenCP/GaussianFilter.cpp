@@ -1,4 +1,4 @@
-﻿#include "opencp.hpp"
+﻿#include "GaussianFilter.hpp"
 
 using namespace std;
 using namespace cv;

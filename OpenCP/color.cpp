@@ -1,4 +1,5 @@
-#include "opencp.hpp"
+#include "color.hpp"
+#include "arithmetic.hpp"
 
 using namespace std;
 using namespace cv;
@@ -811,8 +812,6 @@ namespace cp
 		Mat cmat;
 		if (C.cols < C.rows)cmat = C.t();
 		else cmat = C;
-
-
 
 		vector<Mat> s;
 		split(src, s);

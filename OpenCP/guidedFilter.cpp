@@ -1,4 +1,6 @@
-#include "opencp.hpp"
+#include "guidedFilter.hpp"
+#include "stencil.hpp"
+#include "bitconvert.hpp"
 #include "filterengine.hpp"
 using namespace std;
 using namespace cv;

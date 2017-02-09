@@ -1,4 +1,5 @@
-#include "opencp.hpp"
+#include "imagediff.hpp"
+#include "alphaBlend.hpp"
 using namespace cv;
 using namespace std;
 

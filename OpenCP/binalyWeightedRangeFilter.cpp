@@ -1,4 +1,5 @@
-#include "opencp.hpp"
+#include "binalyWeightedRangeFilter.hpp"
+#include "color.hpp"
 using namespace std;
 using namespace cv;
 namespace cp

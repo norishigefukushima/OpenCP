@@ -43,7 +43,10 @@
 *    Very fast SAD-based (Sum-of-Absolute-Diffrences) stereo correspondence algorithm.   *
 *    Contributed by Kurt Konolige                                                        *
 \****************************************************************************************/
-#include "opencp.hpp"
+#include "StereoBM2.hpp"
+#include "depthfilter.hpp"
+#include "timer.hpp"
+#include "alphaBlend.hpp"
 using namespace cv;
 using namespace std;
 

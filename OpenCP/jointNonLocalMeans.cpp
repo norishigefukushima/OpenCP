@@ -1,4 +1,5 @@
-#include "opencp.hpp"
+#include "jointNonLocalMeans.hpp"
+#include "color.hpp"
 
 using namespace std;
 using namespace cv;

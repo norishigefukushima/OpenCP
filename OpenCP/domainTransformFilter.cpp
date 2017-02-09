@@ -1,4 +1,5 @@
-#include "opencp.hpp"
+#include "domainTransformFilter.hpp"
+#include "color.hpp"
 using namespace std;
 using namespace cv;
 

@@ -1,4 +1,6 @@
-#include "opencp.hpp"
+#include "stat.hpp"
+#include "histogram.hpp"
+#include "matinfo.hpp"
 
 using namespace std;
 using namespace cv;

@@ -1,4 +1,4 @@
-#include "opencp.hpp"
+#include "depthfilter.hpp"
 
 using namespace std;
 using namespace cv;
@@ -1096,6 +1096,7 @@ namespace cp
 			LRCheckDisparity_<float>(left_disp, right_disp, disp12diff, (float)invalidvalue, amp, disparity_max, mode);
 		}
 	}
+
 	void LRCheckDisparityAdd(Mat& left_disp, Mat& right_disp, const int disp12diff, const int amp)
 	{
 		if (left_disp.type() == CV_8U)

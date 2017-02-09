@@ -1,12 +1,11 @@
-#include "opencp.hpp"
+#include "plot.hpp"
+#include "draw.hpp"
 #include <iostream>
 using namespace std;
 using namespace cv;
 
 namespace cp
 {
-	
-
 	gnuplot::gnuplot(string gnuplotpath)
 	{
 
@@ -235,11 +234,13 @@ namespace cp
 		xmin = 0;
 		ymin = 0;
 	}
+
 	void Plot::setYOriginZERO()
 	{
 		recomputeXYMAXMIN(false);
 		ymin = 0;
 	}
+
 	void Plot::setXOriginZERO()
 	{
 		recomputeXYMAXMIN(false);
@@ -315,12 +316,14 @@ namespace cp
 		ymax_no_margin = ymax;
 		ymin_no_margin = ymin;
 	}
+
 	void Plot::setXMinMax(double xmin_, double xmax_)
 	{
 		recomputeXYMAXMIN(isXYCenter);
 		xmin = xmin_;
 		xmax = xmax_;
 	}
+
 	void Plot::setYMinMax(double ymin_, double ymax_)
 	{
 		recomputeXYMAXMIN(isXYCenter);
@@ -380,6 +383,7 @@ namespace cp
 		data_max = max(data_max, plotIndex + 1);
 		pinfo[plotIndex].data.push_back(Point2d(x, y));
 	}
+
 	void Plot::push_back(vector<cv::Point> point, int plotIndex)
 	{
 		data_max = max(data_max, plotIndex + 1);
@@ -397,7 +401,6 @@ namespace cp
 			push_back(point[i].x, point[i].y, plotIndex);
 		}
 	}
-
 
 	void Plot::erase(int sampleIndex, int plotIndex)
 	{
@@ -430,7 +433,6 @@ namespace cp
 		else
 			pinfo[datanum].data.clear();
 	}
-
 
 	void Plot::swapPlot(int plotIndex1, int plotIndex2)
 	{
@@ -483,6 +485,7 @@ namespace cp
 			putText(render, buff, Point(origin.x, origin.y), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_BLACK);
 		}
 	}
+
 	void Plot::plotPoint(Point2d point, Scalar color_, int thickness_, int linetype)
 	{
 		CvMat* temp = cvCreateMat(5, 2, CV_64F);
@@ -497,7 +500,6 @@ namespace cp
 
 		plotGraph(plotImage, data, xmin, xmax, ymin, ymax, color_, SYMBOL_NOPOINT, linetype, thickness_);
 	}
-
 
 	void Plot::plotGrid(int level)
 	{
@@ -684,6 +686,27 @@ namespace cp
 		}
 	}
 
+	void Plot::plotMat(InputArray src_, string wname, bool isWait, string gnuplotpath)
+	{
+		Mat src = src_.getMat();
+		clear();
+	
+		if (src.depth()==CV_32F)
+			for (int i = 0; i < src.size().area(); i++) push_back(i, src.at<float>(i));
+		else if (src.depth() == CV_64F)
+			for (int i = 0; i < src.size().area(); i++)push_back(i, src.at<double>(i));
+		else if (src.depth() == CV_8U)
+			for (int i = 0; i < src.size().area(); i++)push_back(i, src.at<uchar>(i));
+		else if (src.depth() == CV_16U)
+			for (int i = 0; i < src.size().area(); i++)push_back(i, src.at<ushort>(i));
+		else if (src.depth() == CV_16S)
+			for (int i = 0; i < src.size().area(); i++)push_back(i, src.at<short>(i));
+		else if (src.depth() == CV_32S)
+			for (int i = 0; i < src.size().area(); i++)push_back(i, src.at<int>(i));
+		
+		plot(wname, isWait, gnuplotpath);	
+	}
+
 	void Plot::plot(string wname, bool isWait, string gnuplotpath)
 	{
 		Point pt = Point(0, 0);
@@ -722,8 +745,9 @@ namespace cp
 			}
 
 			if (isPosition)drawGrid(render, pt, Scalar(180, 180, 255), 1, 4, 0);
-			if (!isWait) imshow(wname, render);
-			key = waitKey(30);
+
+			if (isWait) imshow(wname, render);
+			key = waitKey(1);
 
 			if (key == '?')
 			{
@@ -803,8 +827,18 @@ namespace cp
 				imwrite("plotim.png", render);
 				//imwrite("plot.png", save);
 			}
+
+			if (key == '0')
+			{
+				for (int i = 0; i < pinfo[0].data.size(); i++)
+				{
+					cout << i << pinfo[0].data[i] << endl;
+				}
+			}
+
 			if (!isWait) break;
 		}
+
 		if (isWait) destroyWindow(wname);
 	}
 

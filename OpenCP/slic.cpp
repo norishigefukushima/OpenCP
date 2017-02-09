@@ -1,5 +1,3 @@
-//#include <opencv2/core/internal.hpp>
-
 #include <stdlib.h>
 #include <stddef.h>
 #include <time.h>
@@ -8,7 +6,8 @@
 #include <limits>
 #include <math.h>
 
-#include "opencp.hpp"
+#include "slic.hpp"
+#include "color.hpp"
 using namespace cv;
 using namespace std;
 

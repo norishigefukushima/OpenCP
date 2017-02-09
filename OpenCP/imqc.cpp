@@ -1,6 +1,6 @@
 // iq.cpp : Defines the entry point for the console application.
-#include "opencp.hpp"
-#include "libimq\imq.h"
+#include "imqc.hpp"
+#include "libimq/imq.h"
 
 using namespace cv;
 

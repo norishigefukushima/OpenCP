@@ -1,4 +1,5 @@
-#include "opencp.hpp"
+#include "histogram.hpp"
+#include "draw.hpp"
 
 using namespace std;
 using namespace cv;

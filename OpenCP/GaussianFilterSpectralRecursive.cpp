@@ -1,4 +1,4 @@
-#include "opencp.hpp"
+#include "GaussianFilterSpectralRecursive.hpp"
 
 using namespace std;
 using namespace cv;

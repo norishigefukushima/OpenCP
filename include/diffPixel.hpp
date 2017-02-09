@@ -1,0 +1,24 @@
+#pragma once
+
+#include "common.hpp"
+
+namespace cp
+{
+	enum
+	{
+		PIXEL_DIFF_DIRECTION_H = 0,
+		PIXEL_DIFF_DIRECTION_V,
+		PIXEL_DIFF_DIRECTION_HV,
+		PIXEL_DIFF_DIRECTION_HH,
+		PIXEL_DIFF_DIRECTION_VV,
+		PIXEL_DIFF_DIRECTION_HHVV,
+		PIXEL_DIFF_DIRECTION_HMIN,
+		PIXEL_DIFF_DIRECTION_HMAX,
+		PIXEL_DIFF_DIRECTION_VMIN,
+		PIXEL_DIFF_DIRECTION_VMAX,
+		PIXEL_DIFF_DIRECTION_HVMIN,
+		PIXEL_DIFF_DIRECTION_HVMAX
+	};
+	CP_EXPORT void pixelDiffABS(cv::Mat& src, cv::Mat& dest, int direction = PIXEL_DIFF_DIRECTION_H);
+	CP_EXPORT void pixelDiffThresh(cv::Mat& src, cv::Mat& dest, double thresh, int direction = PIXEL_DIFF_DIRECTION_H);
+}

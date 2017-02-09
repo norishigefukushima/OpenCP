@@ -1,11 +1,10 @@
-#include "opencp.hpp"
+#include "video.hpp"
 
 using namespace std;
 using namespace cv;
 
 namespace cp
 {
-
 	void guiVideoShow(std::string wname)
 	{
 		VideoCapture cap(0);

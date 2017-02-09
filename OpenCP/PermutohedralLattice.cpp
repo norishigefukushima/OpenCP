@@ -1,4 +1,5 @@
-#include "opencp.hpp"
+#include "PermutohedralLattice.hpp"
+#include "timer.hpp"
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>

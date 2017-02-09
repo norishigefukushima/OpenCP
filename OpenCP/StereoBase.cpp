@@ -1,4 +1,16 @@
-#include "opencp.hpp"
+#include "StereoBase.hpp"
+#include "depthfilter.hpp"
+#include "StereoBM2.hpp"
+#include "costVolumeFilter.hpp"
+#include "crossBasedLocalMultipointFilter.hpp"
+#include "guidedFilter.hpp"
+#include "binalyWeightedRangeFilter.hpp"
+#include "minmaxfilter.hpp"
+#include "plot.hpp"
+#include "timer.hpp"
+#include "consoleImage.hpp"
+#include "shiftImage.hpp"
+#include "alphaBlend.hpp"
 using namespace std;
 using namespace cv;
 

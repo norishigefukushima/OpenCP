@@ -1,4 +1,6 @@
-#include "opencp.hpp"
+#include "detailEnhancement.hpp"
+#include "recursiveBilateralFilter.hpp"
+#include "bilateralFilter.hpp"
 
 using namespace std;
 using namespace cv;

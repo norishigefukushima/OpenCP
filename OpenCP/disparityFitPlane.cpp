@@ -1,5 +1,8 @@
-#include "opencp.hpp"
-#include <opencv2/viz.hpp>
+#include "disparityFitPlane.hpp"
+#include "slic.hpp"
+#include "fitPlane.hpp"
+#include "plot.hpp"
+//#include <opencv2/viz.hpp>
 #include <fstream>
 using namespace std;
 using namespace cv;
@@ -141,7 +144,7 @@ namespace cp
 		}
 	}
 
-	void dispalityFitPlane(cv::InputArray disparity, cv::InputArray image, cv::OutputArray dest, int slicRegionSize, float slicRegularization, float slicMinRegionRatio, int slicMaxIteration, int ransacNumofSample, float ransacThreshold)
+	void disparityFitPlane(cv::InputArray disparity, cv::InputArray image, cv::OutputArray dest, int slicRegionSize, float slicRegularization, float slicMinRegionRatio, int slicMaxIteration, int ransacNumofSample, float ransacThreshold)
 	{
 		//disparityFitTest(ransacNumofSample, ransacThreshold);
 		//cv::FileStorage pointxml("planePoint.xml", cv::FileStorage::WRITE); int err = 0;

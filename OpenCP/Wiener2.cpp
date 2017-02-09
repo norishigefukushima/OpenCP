@@ -12,7 +12,7 @@
 *   This seems to be a lie -- the center has to be explicitly stated
 */
 
-#include "opencp.hpp"
+#include "wiener2.hpp"
 using namespace cv;
 
 namespace cp

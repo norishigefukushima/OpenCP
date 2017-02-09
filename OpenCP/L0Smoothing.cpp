@@ -1,5 +1,5 @@
 //https://github.com/cache-tlb/L0Smoothing
-#include "opencp.hpp"
+#include "L0Smoothing.hpp"
 using namespace std;
 using namespace cv;
 

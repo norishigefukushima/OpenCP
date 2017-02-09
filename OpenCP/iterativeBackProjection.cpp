@@ -1,4 +1,5 @@
-#include "opencp.hpp"
+#include "iterativeBackProjection.hpp"
+#include "jointBilateralFilter.hpp"
 
 using namespace cv;
 using namespace std;

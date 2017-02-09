@@ -1,4 +1,7 @@
-#include "opencp.hpp"
+#include "dualBilateralFilter.hpp"
+#include "jointDualBilateralFilter.hpp"
+#include "color.hpp"
+#include "alphaBlend.hpp"
 
 using namespace std;
 using namespace cv;

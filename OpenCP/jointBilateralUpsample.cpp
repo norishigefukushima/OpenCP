@@ -1,4 +1,6 @@
-#include "opencp.hpp"
+#include "jointBilateralUpsample.hpp"
+#include "minmaxfilter.hpp"
+#include "shiftImage.hpp"
 
 using namespace std;
 using namespace cv;

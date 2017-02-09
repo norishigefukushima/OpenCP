@@ -158,6 +158,7 @@ void fDCT2D8x4_and_threshold_keep00_32f(const float* x, float* y, float thresh)
 	y[i] *= invsqrt2h;
 	}*/
 }
+
 void fDCT2D8x4_and_threshold_32f(const float* x, float* y, float thresh)
 {
 	const int __declspec(align(16)) v32f_absmask[] = { 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff };
@@ -287,7 +288,6 @@ void fDCT2D8x4_and_threshold_32f(const float* x, float* y, float thresh)
 	y[i] *= invsqrt2h;
 	}*/
 }
-
 
 void fDCT2D8x4noscale_32f(const float* x, float* y)
 {

@@ -49,17 +49,14 @@ We match blocks rather than individual pixels, thus the algorithm is called
 SGBM (Semi-global block matching)
 */
 
-#include "opencp.hpp"
+#include "StereoSGM2.hpp"
+#include "plot.hpp"
 
 using namespace std;
 using namespace cv;
 
 namespace cp
 {
-
-
-
-
 	typedef uchar PixType;
 	typedef short CostType;
 	typedef short DispType;

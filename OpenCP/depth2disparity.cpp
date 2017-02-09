@@ -1,4 +1,4 @@
-#include "opencp.hpp"
+#include "depth2disparity.hpp"
 
 using namespace std;
 using namespace cv;
