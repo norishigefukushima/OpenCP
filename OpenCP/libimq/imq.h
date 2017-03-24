@@ -2,7 +2,7 @@
 
 #define PC601
 #include <tchar.h>
-#include "../fftw3.h"
+#include <fftw3.h>
 
 #ifdef REC601
 

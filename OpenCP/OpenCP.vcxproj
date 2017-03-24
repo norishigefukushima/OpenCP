@@ -73,8 +73,8 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)\lib\</OutDir>
     <TargetName>$(ProjectName)d</TargetName>
-    <IncludePath>$(OPENCV_INCLUDE_DIR);../fftw;$(IncludePath)</IncludePath>
-    <LibraryPath>$(OPENCV_LIB_DIR);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(OPENCV_INCLUDE_DIR);$(FFTW_INCLUDE_DIR);../include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(OPENCV_LIB_DIR);$(FFTW_LIB_DIR);$(LibraryPath)</LibraryPath>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -83,8 +83,8 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)\lib\</OutDir>
-    <IncludePath>$(OPENCV_INCLUDE_DIR);$(IncludePath)</IncludePath>
-    <LibraryPath>$(OPENCV_LIB_DIR);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(OPENCV_INCLUDE_DIR);$(FFTW_INCLUDE_DIR);../include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(OPENCV_LIB_DIR);$(FFTW_LIB_DIR);$(LibraryPath)</LibraryPath>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -107,13 +107,15 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>CP_API;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>
+      </AdditionalIncludeDirectories>
       <OpenMPSupport>false</OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>../lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>move $(SolutionDir)\lib\OpenCPd.dll  $(SolutionDir)\bin</Command>
@@ -153,7 +155,8 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <EnableFiberSafeOptimizations>
       </EnableFiberSafeOptimizations>
-      <AdditionalIncludeDirectories>../include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>
+      </AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <WholeProgramOptimization>
       </WholeProgramOptimization>
@@ -167,7 +170,8 @@
       </OptimizeReferences>
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <LinkTimeCodeGeneration />
-      <AdditionalLibraryDirectories>../lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
     </Link>
     <ProjectReference>
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
@@ -367,7 +371,6 @@
     <ClInclude Include="..\include\Wiener2.hpp" />
     <ClInclude Include="..\include\yuvio.hpp" />
     <ClInclude Include="..\include\zoom.hpp" />
-    <ClInclude Include="fftw3.h" />
     <ClInclude Include="filterCore.h" />
     <ClInclude Include="filterengine.hpp" />
     <ClInclude Include="fmath.hpp" />

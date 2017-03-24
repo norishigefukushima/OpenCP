@@ -3,23 +3,8 @@
 
 using namespace std;
 
-void rgbyuv(Mat& src)
-{
-	vector<Mat> dst;
-	Mat img;
-	cvtColor(src, img, COLOR_BGR2YCrCb);
-	split(img, dst);
-
-	imshow("1", dst[0]);
-	imshow("2", dst[1]);
-	imshow("3", dst[2]);
-
-	waitKey();
-}
-
 int main(int argc, char** argv)
 {
-
 	//fitPlaneTest(); return 0;
 	//guiWeightMapTest(); return 0;
 	//guiStereo(); return 0;
@@ -44,9 +29,8 @@ int main(int argc, char** argv)
 	//	copyMakeBorder(src_,src,0,1,0,1,BORDER_REPLICATE);
 
 	Mat src = imread("img/lenna.png");
-	rgbyuv(src);
 	//Mat src = imread("img/stereo/Dolls/view1.png");
-	//guiBilateralFilterTest(src);
+	guiBilateralFilterTest(src);
 	Mat ref = imread("img/stereo/Dolls/view6.png");
 	//guiColorCorrectionTest(src, ref); return 0;
 	//Mat src = imread("img/flower.png");
