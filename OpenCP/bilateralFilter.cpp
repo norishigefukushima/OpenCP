@@ -4444,7 +4444,7 @@ namespace cp
 
 		Mat dest = Mat::zeros(Size(src.cols + dpad, src.rows), src.type());
 		BilateralFilter_8u_InvokerSSE4 body(dest, temp, radiusH, radiusV, maxk, space_ofs, space_weight, color_weight);
-		parallel_for_(Range(0, size.height), body, 1);
+		parallel_for_(Range(0, size.height), body);
 		Mat(dest(Rect(0, 0, dst.cols, dst.rows))).copyTo(dst);
 	}
 
@@ -4610,11 +4610,11 @@ namespace cp
 		}
 		else if (kernel_type == FILTER_SEPARABLE)
 		{
-			if (src.type() == CV_MAKE_TYPE(CV_8U, src.channels()))
+			if (src.depth() == CV_8U)
 			{
 				bilateralFilterSP_8u(src, dst, kernelSize, sigma_color, sigma_space, borderType);
 			}
-			else if (src.type() == CV_MAKE_TYPE(CV_32F, src.channels()))
+			else if (src.depth() == CV_32F)
 			{
 				bilateralFilterSP_32f(src, dst, kernelSize, sigma_color, sigma_space, borderType);
 			}

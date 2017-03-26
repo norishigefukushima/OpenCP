@@ -48,12 +48,12 @@ void guiBilateralFilterTest(Mat& src)
 		else if (sw == 1)
 		{
 			CalcTime t("bilateral filter: fastest opencp implimentation");
-			bilateralFilter(src, dest, Size(d, d), sigma_color, sigma_space, FILTER_CIRCLE);
+			cp::bilateralFilter(src, dest, Size(d, d), sigma_color, sigma_space, FILTER_CIRCLE);
 		}
 		else if (sw == 2)
 		{
 			CalcTime t("bi;ateral filter: fastest opencp implimentation with rectangle kernel");
-			bilateralFilter(src, dest, Size(d, d), sigma_color, sigma_space, FILTER_RECTANGLE);
+			cp::bilateralFilter(src, dest, Size(d, d), sigma_color, sigma_space, FILTER_RECTANGLE);
 		}
 		else if (sw == 3)
 		{
