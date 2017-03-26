@@ -286,3 +286,9 @@ __pycache__/
 *.btm.cs
 *.odx.cs
 *.xsd.cs
+
+bin/OpenCP.dll
+bin/OpenCPd.dll
+lib/*.exp
+lib/OpenCP.lib
+lib/OpenCPd.lib
