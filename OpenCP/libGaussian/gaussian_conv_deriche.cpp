@@ -240,7 +240,7 @@ void deriche_gaussian_conv_(deriche_coeffs<T> c, T *dest, T *buffer, const T *sr
     y_anticausal = buffer + N;
     
     /* Initialize the causal filter on the left boundary. */
-    init_recursive_filter<T>(y_causal, src, N, stride,
+    init_recursive_filter_<T>(y_causal, src, N, stride,
         c.b_causal, c.K - 1, c.a, c.K, c.sum_causal, c.tol, c.max_iter);
     
     /* The following filters the interior samples according to the filter

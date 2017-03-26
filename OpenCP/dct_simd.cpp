@@ -983,9 +983,9 @@ void DCT2x2_32f(float* src, float* dest, float* temp)
 void dct1d2_32f_and_thresh(float* src, float* dest, float thresh)
 {
 	float v = 0.7071068f*(src[0] + src[1]);
-	dest[0] = (abs(v) < thresh) ? 0.f : v;
+	dest[0] = (fabs(v) < thresh) ? 0.f : v;
 	v = 0.7071068f*(src[0] - src[1]);
-	dest[1] = (abs(v) < thresh) ? 0 : v;
+	dest[1] = (fabs(v) < thresh) ? 0 : v;
 }
 void fDCT2x2_32f_and_threshold(float* src, float* dest, float* temp, float thresh)
 {

@@ -287,7 +287,7 @@ void vyv_gaussian_conv(const vyv_coeffs<T> c, T *dest, const T *src, const int N
 
 
 	/* Handle the left boundary. */
-	init_recursive_filter<T>(q, src, N, stride, c.filter, 0, c.filter, c.K, (T)1.0, c.tol, c.max_iter);
+	init_recursive_filter_<T>(q, src, N, stride, c.filter, 0, c.filter, c.K, (T)1.0, c.tol, c.max_iter);
 
 	for (m = 0; m < c.K; ++m)
 		dest[stride * m] = q[m];
@@ -406,7 +406,7 @@ void vyv_gaussian_conv_w(const vyv_coeffs<T> c, T *dest, const T *src, const int
 
 
 	/* Handle the left boundary. */
-	init_recursive_filter<T>(q, src, N, 1, c.filter, 0, c.filter, c.K, (T)1.0, c.tol, c.max_iter);
+	init_recursive_filter_<T>(q, src, N, 1, c.filter, 0, c.filter, c.K, (T)1.0, c.tol, c.max_iter);
 
 	for (m = 0; m < c.K; ++m)
 		dest[m] = q[m];
@@ -524,7 +524,7 @@ void vyv_gaussian_conv_w<float>(const vyv_coeffs<float> c, float *dest, const fl
 	}
 
 	/* Handle the left boundary. */
-	init_recursive_filter<float>(q, src, N, 1, c.filter, 0, c.filter, c.K, 1.f, c.tol, c.max_iter);
+	init_recursive_filter_<float>(q, src, N, 1, c.filter, 0, c.filter, c.K, 1.f, c.tol, c.max_iter);
 
 	for (m = 0; m < c.K; ++m)
 		dest[m] = q[m];

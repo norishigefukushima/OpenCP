@@ -253,19 +253,19 @@ namespace cp
 	}
 	}
 
-	void alphaBlendApproxmate(InputArray src1, InputArray src2, const uchar alpha, OutputArray dest)
+	void alphaBlendApproximate(InputArray src1, InputArray src2, const uchar alpha, OutputArray dest)
 	{
 		if (dest.empty() || dest.size() != src1.size() || dest.type() != src1.type()) dest.create(src1.size(), src1.type());
 
-		alphaBlendApproxmate(src1.getMat(), src2.getMat(), alpha, dest.getMat());
+		alphaBlendSSE_8u(src1.getMat(), src2.getMat(), alpha, dest.getMat());
 	}
 
-	void alphaBlendApproxmate(InputArray src1, InputArray src2, InputArray alpha, OutputArray dest)
+	void alphaBlendApproximate(InputArray src1, InputArray src2, InputArray alpha, OutputArray dest)
 	{
 		CV_Assert(alpha.depth() == CV_8U);
 		if (dest.empty() || dest.size() != src1.size() || dest.type() != src1.type()) dest.create(src1.size(), src1.type());
 
-		alphaBlendApproxmate(src1.getMat(), src2.getMat(), alpha.getMat(), dest.getMat());
+		alphaBlendSSE_8u(src1.getMat(), src2.getMat(), alpha.getMat(), dest.getMat());
 	}
 
 	void alphaBlend(const Mat& src1, const Mat& src2, const Mat& alpha, Mat& dest)

@@ -1,4 +1,6 @@
 #include "rectifyMultiCollinear.hpp"
+#include <iterator>
+
 using namespace std;
 using namespace cv;
 
