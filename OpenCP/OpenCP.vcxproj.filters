@@ -79,6 +79,9 @@
     <Filter Include="ソース ファイル\filter\edgePreservingFilter">
       <UniqueIdentifier>{d4aaffff-9b56-49d0-b921-13de8f8bacee}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\filter\dct-fft">
+      <UniqueIdentifier>{58c7015d-a5f2-455d-bd1a-3808a64f3337}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="color.cpp">
@@ -221,9 +224,6 @@
     </ClCompile>
     <ClCompile Include="imqc.cpp">
       <Filter>ソース ファイル\imgproc\qualitymetrics</Filter>
-    </ClCompile>
-    <ClCompile Include="fftinfo.cpp">
-      <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="stereoDP.cpp">
       <Filter>ソース ファイル\stereo</Filter>
@@ -399,8 +399,11 @@
     <ClCompile Include="recursiveBilateralFilter.cpp">
       <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
     </ClCompile>
+    <ClCompile Include="fftinfo.cpp">
+      <Filter>ソース ファイル\filter\dct-fft</Filter>
+    </ClCompile>
     <ClCompile Include="dctFilter.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>ソース ファイル\filter\dct-fft</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

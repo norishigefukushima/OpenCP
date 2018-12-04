@@ -8,6 +8,7 @@
 #pragma comment(lib, "opencp.lib")
 #endif
 
+void splitmergeTest(cv::Mat& src);
 void guiDisparityPlaneFitSLICTest(cv::Mat& leftim, cv::Mat& rightim, cv::Mat& GT);
 void fitPlaneTest();
 
