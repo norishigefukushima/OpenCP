@@ -18,7 +18,7 @@ namespace cp
 
 	YUVReader::YUVReader(string name, cv::Size size, int frame_max)
 	{
-		init(name, cvSize(size.width, size.height), frame_max);
+		init(name, Size(size.width, size.height), frame_max);
 	}
 
 	void YUVReader::init(string name, Size size, int frame_max)
@@ -50,7 +50,7 @@ namespace cp
 		fread(buff, sizeof(char), yuvSize, fp);
 
 		Mat src(Size(width, cvRound(height*1.5)), CV_8U, buff);
-		cvtColor(src, dest, CV_YUV420p2BGR);
+		cvtColor(src, dest, COLOR_YUV420p2BGR);
 
 		frameCount++;
 		if (frameCount == framemax)
@@ -69,7 +69,7 @@ namespace cp
 			fseek(fp, (frame - frameCount)*yuvSize, SEEK_CUR);
 			fread(buff, sizeof(char), yuvSize, fp);
 			Mat src(Size(width, cvRound(height*1.5)), CV_8U, buff);
-			cvtColor(src, dest, CV_YUV420p2BGR);
+			cvtColor(src, dest, COLOR_YUV420p2BGR);
 
 			frameCount = frame + 1;
 			if (frameCount == framemax)
@@ -114,7 +114,7 @@ namespace cp
 
 		fread(temp.data, sizeof(char), cvRound(size.area()*1.5), fp);
 
-		cvtColor(temp, dest, CV_YUV420p2RGB);
+		cvtColor(temp, dest, COLOR_YUV420p2RGB);
 		fclose(fp);
 		//imshow("aa",dest);waitKey();
 	}
@@ -122,7 +122,7 @@ namespace cp
 	void writeYUVBGR(string fname, InputArray src)
 	{
 		Mat yuv;
-		cvtColor(src, yuv, CV_BGRA2YUV_YV12);
+		cvtColor(src, yuv, COLOR_BGRA2YUV_YV12);
 
 		Size size = src.size();
 		FILE* fp = fopen(fname.c_str(), "wb");
@@ -172,7 +172,7 @@ namespace cp
 
 	void writeYUV(InputArray src_, string name, int mode)
 	{
-		Mat src; cvtColor(src_, src, CV_BGR2YUV);
+		Mat src; cvtColor(src_, src, COLOR_BGR2YUV);
 
 		int s = 1;
 		if (src.type() == CV_16S) s = 2;

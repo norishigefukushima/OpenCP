@@ -99,7 +99,7 @@ int main(int argc, char** argv)
 	//guiCoherenceEnhancingShockFilter(src, dest);
 	
 	Mat gray;
-	cvtColor(src, gray, CV_BGR2GRAY);
+	cvtColor(src, gray, COLOR_BGR2GRAY);
 	//guiDisparityPlaneFitSLICTest(src, ref, disp); return 0;
 	getPSNRRealtimeO1BilateralFilterKodak();
 	guiRealtimeO1BilateralFilterTest(src); return 0;

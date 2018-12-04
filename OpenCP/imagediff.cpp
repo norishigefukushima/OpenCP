@@ -28,11 +28,11 @@ namespace cp
 		int key = 0;
 		Mat show;
 		Mat g1, g2, g;
-		if (before.channels() == 3)cvtColor(before, g1, CV_BGR2GRAY);
+		if (before.channels() == 3)cvtColor(before, g1, COLOR_BGR2GRAY);
 		else  g1 = before;
-		if (after.channels() == 3)cvtColor(after, g2, CV_BGR2GRAY);
+		if (after.channels() == 3)cvtColor(after, g2, COLOR_BGR2GRAY);
 		else  g2 = after;
-		if (ref.channels() == 3)cvtColor(ref, g, CV_BGR2GRAY);
+		if (ref.channels() == 3)cvtColor(ref, g, COLOR_BGR2GRAY);
 		else  g = ref;
 
 		Mat cmap(before.size(), CV_8UC3);

@@ -5,6 +5,7 @@
 
 namespace cp
 {
+#if CV_MAJOR_VERSION <=3
 	class CP_EXPORT StereoBM2
 	{
 	public:
@@ -69,4 +70,5 @@ namespace cp
 		void check(cv::Mat& leftim, cv::Mat& rightim, cv::Mat& disp);
 		void check(cv::Mat& leftim, cv::Mat& rightim, cv::Mat& disp, StereoEval& eval);
 	};
+#endif
 }

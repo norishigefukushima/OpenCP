@@ -69,8 +69,8 @@ namespace cp
 				{
 					double nsrc = data[i + 1].x;
 					double ndest = data[i + 1].x;
-					line(graph, p, cvPoint(cvRound(x*(nsrc - xmin)), p.y), color, thickness);
-					line(graph, cvPoint(cvRound(x*(nsrc - xmin)), p.y), cvPoint(cvRound(x*(nsrc - xmin)), H - cvRound(y*(ndest - ymin))), color, thickness);
+					line(graph, p, Point(cvRound(x*(nsrc - xmin)), p.y), color, thickness);
+					line(graph, Point(cvRound(x*(nsrc - xmin)), p.y), Point(cvRound(x*(nsrc - xmin)), H - cvRound(y*(ndest - ymin))), color, thickness);
 				}
 			}
 			else if (isLine == Plot::LINE_V2H)
@@ -79,8 +79,8 @@ namespace cp
 				{
 					double nsrc = data[i + 1].x;
 					double ndest = data[i + 1].x;
-					line(graph, p, cvPoint(p.x, H - cvRound(y*(ndest - ymin))), color, thickness);
-					line(graph, cvPoint(p.x, H - cvRound(y*(ndest - ymin))), cvPoint(cvRound(x*(nsrc - xmin)), H - cvRound(y*(ndest - ymin))), color, thickness);
+					line(graph, p, Point(p.x, H - cvRound(y*(ndest - ymin))), color, thickness);
+					line(graph, Point(p.x, H - cvRound(y*(ndest - ymin))), Point(cvRound(x*(nsrc - xmin)), H - cvRound(y*(ndest - ymin))), color, thickness);
 				}
 			}
 
@@ -106,17 +106,17 @@ namespace cp
 			}
 			else if (lt == Plot::SYMBOL_RECTANGLE)
 			{
-				rectangle(graph, cvPoint(p.x - ps, p.y - ps), cvPoint(p.x + ps, p.y + ps),
+				rectangle(graph, Point(p.x - ps, p.y - ps), Point(p.x + ps, p.y + ps),
 					color, thickness);
 			}
 			else if (lt == Plot::SYMBOL_CIRCLE_FILL)
 			{
-				circle(graph, p, ps, color, CV_FILLED);
+				circle(graph, p, ps, color, FILLED);
 			}
 			else if (lt == Plot::SYMBOL_RECTANGLE_FILL)
 			{
-				rectangle(graph, cvPoint(p.x - ps, p.y - ps), cvPoint(p.x + ps, p.y + ps),
-					color, CV_FILLED);
+				rectangle(graph, Point(p.x - ps, p.y - ps), Point(p.x + ps, p.y + ps),
+					color, FILLED);
 			}
 			else if (lt == Plot::SYMBOL_TRIANGLE)
 			{
@@ -124,7 +124,7 @@ namespace cp
 			}
 			else if (lt == Plot::SYMBOL_TRIANGLE_FILL)
 			{
-				triangle(graph, p, 2 * ps, color, CV_FILLED);
+				triangle(graph, p, 2 * ps, color, FILLED);
 			}
 			else if (lt == Plot::SYMBOL_TRIANGLE_INV)
 			{
@@ -132,7 +132,7 @@ namespace cp
 			}
 			else if (lt == Plot::SYMBOL_TRIANGLE_INV_FILL)
 			{
-				triangleinv(graph, p, 2 * ps, color, CV_FILLED);
+				triangleinv(graph, p, 2 * ps, color, FILLED);
 			}
 		}
 	}
@@ -695,7 +695,7 @@ namespace cp
 	{
 		Point* ret = (Point*)param;
 
-		if (flags == CV_EVENT_FLAG_LBUTTON)
+		if (flags == EVENT_FLAG_LBUTTON)
 		{
 			ret->x = x;
 			ret->y = y;
@@ -936,7 +936,7 @@ namespace cp
 		}
 		else
 		{
-			cvtColor(graphG, graph, CV_GRAY2BGR);
+			cvtColor(graphG, graph, COLOR_GRAY2BGR);
 			if (arg_min_max > 0)
 				circle(graph, maxp, 5, Scalar(0, 0, 0));
 			else
@@ -950,18 +950,18 @@ namespace cp
 	{
 		copyMakeBorder(graph, show, 0, 50, 50, 0, BORDER_CONSTANT, Scalar(255, 255, 255));
 
-		putText(show, namex, Point(show.cols / 2 - 50, graph.rows + 30), CV_FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0));
-		putText(show, format("%.2f", minx), Point(50, graph.rows + 30), CV_FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0));
+		putText(show, namex, Point(show.cols / 2 - 50, graph.rows + 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0));
+		putText(show, format("%.2f", minx), Point(50, graph.rows + 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0));
 
 		double minv, maxv;
 		Point minp;
 		Point maxp;
 		minMaxLoc(graphBase, &minv, &maxv, &minp, &maxp);
-		putText(show, format("%.2f", maxv), Point(400, graph.rows + 30), CV_FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0));
+		putText(show, format("%.2f", maxv), Point(400, graph.rows + 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0));
 
 		Mat text = ~Mat::zeros(Size(50 + graph.cols, 50), CV_8UC3);
 
-		putText(text, namey, Point(80, 20), CV_FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0));
+		putText(text, namey, Point(80, 20), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0));
 
 		Mat a = text.t();
 		flip(a, a, 0);

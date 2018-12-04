@@ -160,13 +160,13 @@ namespace cp
 	{
 		Mat temp;
 		tmap.convertTo(temp, CV_8U, 255);
-		if (!isPseudoColor)cvtColor(temp, dest, CV_GRAY2BGR);
+		if (!isPseudoColor)cvtColor(temp, dest, COLOR_GRAY2BGR);
 		else applyColorMap(temp, dest, 2);
 	}
 
 	void HazeRemove::showDarkChannel(Mat& dest, bool isPseudoColor)
 	{
-		if (!isPseudoColor)cvtColor(dark, dest, CV_GRAY2BGR);
+		if (!isPseudoColor)cvtColor(dark, dest, COLOR_GRAY2BGR);
 		else applyColorMap(dark, dest, 2);
 	}
 
@@ -178,7 +178,7 @@ namespace cp
 		getAtmosphericLight(src, toprate);
 		getTransmissionMap();
 		Mat srcg;
-		cvtColor(src, srcg, CV_BGR2GRAY);
+		cvtColor(src, srcg, COLOR_BGR2GRAY);
 		guidedFilter(tmap, srcg, tmap, r_joint, (float)e_joint);
 		removeHaze(src, tmap, A, dest);
 	}
@@ -226,7 +226,7 @@ namespace cp
 			{
 				double mn, mx;
 				Mat srcg;
-				cvtColor(src, srcg, CV_RGB2YUV);
+				cvtColor(src, srcg, COLOR_RGB2YUV);
 				minMaxLoc(srcg, &mn, &mx);
 				Mat dest = src - CV_RGB(mn, mn, mn);
 

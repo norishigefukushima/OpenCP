@@ -11,7 +11,7 @@ public:
 	{
 		Point* ret = (Point*)param;
 
-		if (flags == CV_EVENT_FLAG_LBUTTON)
+		if (flags == EVENT_FLAG_LBUTTON)
 		{
 			ret->x = x;
 			ret->y = y;

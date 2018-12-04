@@ -96,8 +96,8 @@ namespace cp
 		Mat g1, g2;
 		if (src.channels() == 3)
 		{
-			cvtColor(src, g1, CV_BGR2GRAY);
-			cvtColor(ref, g2, CV_BGR2GRAY);
+			cvtColor(src, g1, COLOR_BGR2GRAY);
+			cvtColor(ref, g2, COLOR_BGR2GRAY);
 		}
 		else
 		{
@@ -171,8 +171,8 @@ namespace cp
 	double SSIM(Mat& src, Mat& ref, double sigma)
 	{
 		Mat gray1, gray2;
-		cvtColor(src, gray1, CV_BGR2GRAY);
-		cvtColor(ref, gray2, CV_BGR2GRAY);
+		cvtColor(src, gray1, COLOR_BGR2GRAY);
+		cvtColor(ref, gray2, COLOR_BGR2GRAY);
 
 		Scalar v = getMSSIM(gray1, gray2, sigma);
 		return v.val[0];
@@ -198,7 +198,7 @@ namespace cp
 	double calcTV(Mat& src)
 	{
 		Mat gray;
-		cvtColor(src, gray, CV_BGR2GRAY);
+		cvtColor(src, gray, COLOR_BGR2GRAY);
 		Mat bb;
 		copyMakeBorder(gray, bb, 0, 1, 0, 1, BORDER_REFLECT);
 

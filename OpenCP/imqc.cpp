@@ -16,7 +16,7 @@ namespace cp
 		if (src.channels() == 3)
 		{
 			Mat temp;
-			cvtColor(src, temp, CV_BGR2GRAY);
+			cvtColor(src, temp, COLOR_BGR2GRAY);
 			Mat v;
 			temp.convertTo(v, CV_32S);
 			Mat(v(Rect(boundingBox, boundingBox, src.cols - 2 * boundingBox, src.rows - 2 * boundingBox))).copyTo(im1);
@@ -31,7 +31,7 @@ namespace cp
 		if (target.channels() == 3)
 		{
 			Mat temp;
-			cvtColor(target, temp, CV_BGR2GRAY);
+			cvtColor(target, temp, COLOR_BGR2GRAY);
 			Mat v;
 			temp.convertTo(v, CV_32S);
 			Mat(v(Rect(boundingBox, boundingBox, src.cols - 2 * boundingBox, src.rows - 2 * boundingBox))).copyTo(im2);

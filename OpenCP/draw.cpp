@@ -18,7 +18,7 @@ namespace cp
 
 		const cv::Point *ppt[1] = { pt1[0] };
 
-		if (thickness == CV_FILLED)
+		if (thickness == FILLED)
 		{
 			fillPoly(src, ppt, npt, 1, color, 1);
 		}
@@ -41,7 +41,7 @@ namespace cp
 
 		const cv::Point *ppt[1] = { pt1[0] };
 
-		if (thickness == CV_FILLED)
+		if (thickness == FILLED)
 		{
 			fillPoly(src, ppt, npt, 1, color, 1);
 		}
@@ -62,8 +62,8 @@ namespace cp
 		}
 
 		int hl = length / 2;
-		line(dest, cvPoint(crossCenter.x - hl, crossCenter.y), cvPoint(crossCenter.x + hl, crossCenter.y), color, thickness, line_type, shift);
-		line(dest, cvPoint(crossCenter.x, crossCenter.y - hl), cvPoint(crossCenter.x, crossCenter.y + hl), color, thickness, line_type, shift);
+		line(dest, Point(crossCenter.x - hl, crossCenter.y), Point(crossCenter.x + hl, crossCenter.y), color, thickness, line_type, shift);
+		line(dest, Point(crossCenter.x, crossCenter.y - hl), Point(crossCenter.x, crossCenter.y + hl), color, thickness, line_type, shift);
 
 		dest.copyTo(src);
 	}
@@ -77,8 +77,8 @@ namespace cp
 			crossCenter.y = dest.rows / 2;
 		}
 		int hl = cvRound((double)length / 2.0 / sqrt(2.0));
-		line(dest, cvPoint(crossCenter.x - hl, crossCenter.y - hl), cvPoint(crossCenter.x + hl, crossCenter.y + hl), color, thickness, line_type, shift);
-		line(dest, cvPoint(crossCenter.x + hl, crossCenter.y - hl), cvPoint(crossCenter.x - hl, crossCenter.y + hl), color, thickness, line_type, shift);
+		line(dest, Point(crossCenter.x - hl, crossCenter.y - hl), Point(crossCenter.x + hl, crossCenter.y + hl), color, thickness, line_type, shift);
+		line(dest, Point(crossCenter.x + hl, crossCenter.y - hl), Point(crossCenter.x - hl, crossCenter.y + hl), color, thickness, line_type, shift);
 
 		dest.copyTo(src);
 	}
@@ -108,12 +108,12 @@ namespace cp
 		}
 
 		int hl = cvRound((double)length / 2.0 / sqrt(2.0));
-		line(dest, cvPoint(crossCenter.x - hl, crossCenter.y - hl), cvPoint(crossCenter.x + hl, crossCenter.y + hl), color, thickness, line_type, shift);
-		line(dest, cvPoint(crossCenter.x + hl, crossCenter.y - hl), cvPoint(crossCenter.x - hl, crossCenter.y + hl), color, thickness, line_type, shift);
+		line(dest, Point(crossCenter.x - hl, crossCenter.y - hl), Point(crossCenter.x + hl, crossCenter.y + hl), color, thickness, line_type, shift);
+		line(dest, Point(crossCenter.x + hl, crossCenter.y - hl), Point(crossCenter.x - hl, crossCenter.y + hl), color, thickness, line_type, shift);
 
 		hl = length / 2;
-		line(dest, cvPoint(crossCenter.x - hl, crossCenter.y), cvPoint(crossCenter.x + hl, crossCenter.y), color, thickness, line_type, shift);
-		line(dest, cvPoint(crossCenter.x, crossCenter.y - hl), cvPoint(crossCenter.x, crossCenter.y + hl), color, thickness, line_type, shift);
+		line(dest, Point(crossCenter.x - hl, crossCenter.y), Point(crossCenter.x + hl, crossCenter.y), color, thickness, line_type, shift);
+		line(dest, Point(crossCenter.x, crossCenter.y - hl), Point(crossCenter.x, crossCenter.y + hl), color, thickness, line_type, shift);
 
 		dest.copyTo(src);
 	}

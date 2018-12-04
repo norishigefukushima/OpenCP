@@ -150,6 +150,6 @@ namespace cp
 	}
 	void Calibrator::undistort(Mat& src, Mat& dest)
 	{
-		remap(src, dest, mapu, mapv, CV_INTER_LINEAR);
+		remap(src, dest, mapu, mapv, INTER_LINEAR);
 	}
 }

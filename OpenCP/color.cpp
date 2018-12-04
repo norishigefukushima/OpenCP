@@ -1279,6 +1279,8 @@ namespace cp
 		cmat.at<double>(2, 3) = -std1.val[2] / std2.val[2] * mean2.val[2] + mean1.val[2];
 	}
 
+	//TODO: support OpenCV 4
+#if CV_MAJOR_VERSION == 3
 	void xcvFindWhiteBlanceMatrix(IplImage* src, CvMat* C, IplImage* mask)
 	{
 		uchar* data = (uchar*)src->imageData;
@@ -1481,4 +1483,5 @@ namespace cp
 
 		xcvFindColorMatrix(&CvMat(src_point_crowd1), &CvMat(src_point_crowd2), &CvMat(C));
 	}
+#endif
 }

@@ -42,9 +42,9 @@ void alphaBtest(Mat& src1, Mat& src2)
 	int key = 0;
 	Mat alpha(src1.size(), CV_8U);
 	Mat s1, s2;
-	if (src1.channels() == 3)cvtColor(src1, s1, CV_BGR2GRAY);
+	if (src1.channels() == 3)cvtColor(src1, s1, COLOR_BGR2GRAY);
 	else s1 = src1;
-	if (src2.channels() == 3)cvtColor(src2, s2, CV_BGR2GRAY);
+	if (src2.channels() == 3)cvtColor(src2, s2, COLOR_BGR2GRAY);
 	else s2 = src2;
 
 	Mat dest;

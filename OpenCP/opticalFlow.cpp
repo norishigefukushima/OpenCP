@@ -501,7 +501,11 @@ namespace cp
 		if (flow.empty()) flow.create(Size(prevC1.cols, prevC1.rows), CV_32FC2);
 
 		Mat dstflow, dstorg, xdst, ydst, xflow, yflow;
+#if CV_MAJOR_VERSION <= 3
 		Ptr<DenseOpticalFlow> tvl1 = createOptFlow_DualTVL1();
+#else
+		Ptr<DenseOpticalFlow> tvl1 = optflow::createOptFlow_DualTVL1();
+#endif
 
 		switch (method) {
 		case 0:

@@ -5,6 +5,7 @@
 
 namespace cp
 {
+#if CV_MAJOR_VERSION <= 3
 	class CP_EXPORT StereoDP
 	{
 		void shiftImage(cv::Mat& src, cv::Mat& dest, const int shift);
@@ -28,4 +29,5 @@ namespace cp
 		void check(cv::Mat& leftim, cv::Mat& rightim, cv::Mat& disp);
 		void check(cv::Mat& leftim, cv::Mat& rightim, cv::Mat& disp, StereoEval& eval);
 	};
+#endif
 }

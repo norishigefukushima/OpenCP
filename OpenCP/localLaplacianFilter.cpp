@@ -60,7 +60,7 @@ namespace cp
 			return -1;
 		}
 
-		cv::Mat img = cv::imread(argv[1], CV_LOAD_IMAGE_COLOR);
+		cv::Mat img = cv::imread(argv[1], IMREAD_COLOR);
 		if (img.empty()) {
 			cout << "Failed to load file \"" << argv[1] << "\"" << endl;
 			return -1;

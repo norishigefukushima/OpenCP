@@ -1140,7 +1140,7 @@ namespace cp
 		{
 			Mat temp;
 			src.convertTo(temp, CV_8U, a, -minDisparity*255.0 / (double)numDisparities);
-			cvtColor(temp, dest, CV_GRAY2BGR);
+			cvtColor(temp, dest, COLOR_GRAY2BGR);
 		}
 		else if (option == DISPARITY_COLOR_GRAY_OCC)
 		{
@@ -1148,7 +1148,7 @@ namespace cp
 			cv::compare(src, minDisparity*amp, mask, cv::CMP_LT);
 			Mat temp;
 			src.convertTo(temp, CV_8U, a, -minDisparity*255.0 / (double)numDisparities);
-			cvtColor(temp, dest, CV_GRAY2BGR);
+			cvtColor(temp, dest, COLOR_GRAY2BGR);
 			dest.setTo(Scalar(0, 0, 255), mask);
 		}
 		else

@@ -9,7 +9,7 @@ namespace cp
 	void weightedGaussianFilter(Mat& src, Mat& weight, Mat& dest, Size ksize, float sigma, int border_type)
 	{
 		Mat temp;
-		if (src.channels() == 3)cvtColor(weight, temp, CV_GRAY2BGR);
+		if (src.channels() == 3)cvtColor(weight, temp, COLOR_GRAY2BGR);
 		else temp = weight;
 		Mat weightf; temp.convertTo(weightf, CV_32F);
 

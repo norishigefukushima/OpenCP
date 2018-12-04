@@ -100,13 +100,13 @@ namespace cp
 		Mat_<double> t12 = r_r * relativeT[anchorView2];
 
 		int idx = fabs(t12(0, 0)) > fabs(t12(1, 0)) ? 0 : 1;
-		double c = t12(idx, 0), nt = norm(t12, CV_L2);
+		double c = t12(idx, 0), nt = norm(t12, NORM_L2);
 		Mat_<double> uu = Mat_<double>::zeros(3, 1);
 		uu(idx, 0) = c > 0 ? 1 : -1;
 
 		// calculate global Z rotation
 		Mat_<double> ww = t12.cross(uu), wR;
-		double nw = norm(ww, CV_L2);
+		double nw = norm(ww, NORM_L2);
 		ww *= acos(fabs(c) / nt) / nw;
 		Rodrigues(ww, wR);
 

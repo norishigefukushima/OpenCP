@@ -170,7 +170,7 @@ void guiViewSynthesis()
 	namedWindow("FV_parameter");
 	//int alphaPos = 491;createTrackbar("alphaPos","FV_parameter",&alphaPos,1000);
 	int alphaPos = 500;createTrackbar("alphaPos","FV_parameter",&alphaPos,1000);
-	int dispAmp = 2;cvCreateTrackbar("dispAmp","FV_parameter",&dispAmp,10);
+	int dispAmp = 2;createTrackbar("dispAmp","FV_parameter",&dispAmp,10);
 	createTrackbar("index", "FV_parameter", &s_index,s_index_max-1);
 
 	namedWindow("Refine_parameter");
@@ -447,7 +447,7 @@ void guiViewSynthesis()
 				mmL.r_Wgauss = r_Wgauss_M;
 				mmL.th_FB = th_FB_M;
 				mmL(matimL,rdL,alphaL,fL,bL);
-				cvtColor(alphaL,aL,CV_GRAY2BGR);
+				cvtColor(alphaL,aL,COLOR_GRAY2BGR);
 			}
 #pragma omp section
 			{
@@ -460,7 +460,7 @@ void guiViewSynthesis()
 				mmR.r_Wgauss = r_Wgauss_M;
 				mmR.th_FB = th_FB_M;
 				mmR(matimR,rdR,alphaR,fR,bR);
-				cvtColor(alphaR,aR,CV_GRAY2BGR);
+				cvtColor(alphaR,aR,COLOR_GRAY2BGR);
 			}
 		}
 
@@ -489,12 +489,12 @@ void guiViewSynthesis()
 					Mat amapL;
 					Mat aML;
 					maxFilter(rdL,dL,Size(3,3));
-					cvtColor(aL,aL,CV_BGR2GRAY);
+					cvtColor(aL,aL,COLOR_BGR2GRAY);
 					maxFilter(aL,aL,Size(1,1));
-					cvtColor(aL,aML,CV_GRAY2BGR);
+					cvtColor(aL,aML,COLOR_GRAY2BGR);
 					svsL.viewsynthSingleAlphaMap(fL,dL,wfL,destMat[11],alphaPos*0.001,0,dispAmp,dL.type());
 					svsL.viewsynthSingleAlphaMap(aML,dL,waL,destMat[13],alphaPos*0.001,0,dispAmp,dL.type());
-					cvtColor(waL,amapL,CV_BGR2GRAY);
+					cvtColor(waL,amapL,COLOR_BGR2GRAY);
 					alphaBlend(wfL,base,amapL,destL);
 				}
 #pragma omp section
@@ -504,13 +504,13 @@ void guiViewSynthesis()
 					Mat dR;
 					Mat amapR;
 					Mat aMR;
-					cvtColor(aR,aR,CV_BGR2GRAY);
+					cvtColor(aR,aR,COLOR_BGR2GRAY);
 					maxFilter(rdR,dR,Size(3,3));
 					maxFilter(aR,aR,Size(1,1));
-					cvtColor(aR,aMR,CV_GRAY2BGR);
+					cvtColor(aR,aMR,COLOR_GRAY2BGR);
 					svsR.viewsynthSingleAlphaMap(fR,dR,wfR,destMat[15],-alphaPos*0.001,0,dispAmp,dR.depth());
 					svsR.viewsynthSingleAlphaMap(aMR,dR,waR,destMat[17],-alphaPos*0.001,0,dispAmp,dR.depth());
-					cvtColor(waR,amapR,CV_BGR2GRAY);
+					cvtColor(waR,amapR,COLOR_BGR2GRAY);
 					alphaBlend(wfR,base,amapR,destR);
 					imshow("fore",wfR);
 					imshow("alpha",waR);

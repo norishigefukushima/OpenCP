@@ -10,7 +10,7 @@ namespace cp
 	{
 		Point* pt = (Point*)param;
 		//if(events==CV_EVENT_LBUTTONDOWN)
-		if (flags & CV_EVENT_FLAG_LBUTTON)
+		if (flags & EVENT_FLAG_LBUTTON)
 		{
 			pt->x = x;
 			pt->y = y;

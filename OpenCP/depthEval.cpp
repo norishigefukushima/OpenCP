@@ -8,7 +8,7 @@ namespace cp
 {
 	void createDisparityALLMask(Mat& src, Mat& dest)
 	{
-		compare(src, 0, dest, CV_CMP_NE);
+		compare(src, 0, dest, CMP_NE);
 	}
 
 	void createDisparityNonOcclusionMask(Mat& src, double amp, double thresh, Mat& dest)

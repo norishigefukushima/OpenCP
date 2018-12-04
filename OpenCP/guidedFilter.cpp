@@ -86,7 +86,7 @@ void scalarToRawData(const Scalar& s, void* _buf, int type, int unroll_to)
 		break;
 	}
 	default:
-		CV_Error(CV_StsUnsupportedFormat, "");
+		CV_Error(cv::Error::Code::StsUnsupportedFormat, "");
 	}
 }
 

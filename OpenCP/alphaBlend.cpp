@@ -21,12 +21,12 @@ namespace cp
 			}
 			else if (src2.channels() == 3)
 			{
-				cvtColor(src1, s1, CV_GRAY2BGR);
+				cvtColor(src1, s1, COLOR_GRAY2BGR);
 				s2 = src2.getMat();
 			}
 			else
 			{
-				cvtColor(src2, s2, CV_GRAY2BGR);
+				cvtColor(src2, s2, COLOR_GRAY2BGR);
 				s1 = src1.getMat();
 			}
 		}
@@ -41,12 +41,12 @@ namespace cp
 			}
 			else if (src2.channels() == 3)
 			{
-				cvtColor(src1, s1, CV_GRAY2BGR);
+				cvtColor(src1, s1, COLOR_GRAY2BGR);
 				s2 = src2.getMat();
 			}
 			else
 			{
-				cvtColor(src2, s2, CV_GRAY2BGR);
+				cvtColor(src2, s2, COLOR_GRAY2BGR);
 				s1 = src1.getMat();
 			}
 			s1.convertTo(s1, depth);
@@ -283,12 +283,12 @@ namespace cp
 		}
 		else if (src2.channels() == 3)
 		{
-			cvtColor(src1, s1, CV_GRAY2BGR);
+			cvtColor(src1, s1, COLOR_GRAY2BGR);
 			s2 = src2;
 		}
 		else
 		{
-			cvtColor(src2, s2, CV_GRAY2BGR);
+			cvtColor(src2, s2, COLOR_GRAY2BGR);
 			s1 = src1;
 		}
 		Mat a;
@@ -455,9 +455,9 @@ namespace cp
 	int key = 0;
 	Mat alpha(src1.size(),CV_8U);
 	Mat s1,s2;
-	if(src1.channels()==3)cvtColor(src1,s1,CV_BGR2GRAY);
+	if(src1.channels()==3)cvtColor(src1,s1,COLOR_BGR2GRAY);
 	else s1 = src1;
-	if(src2.channels()==3)cvtColor(src2,s2,CV_BGR2GRAY);
+	if(src2.channels()==3)cvtColor(src2,s2,COLOR_BGR2GRAY);
 	else s2 = src2;
 
 	Mat dest;
@@ -516,9 +516,9 @@ namespace cp
 
 		if (src1.depth() == CV_8U || src1.depth() == CV_32F)
 		{
-			if (src1.channels() == 1)cvtColor(src1, s1, CV_GRAY2BGR);
+			if (src1.channels() == 1)cvtColor(src1, s1, COLOR_GRAY2BGR);
 			else s1 = src1.getMat();
-			if (src2.channels() == 1)cvtColor(src2, s2, CV_GRAY2BGR);
+			if (src2.channels() == 1)cvtColor(src2, s2, COLOR_GRAY2BGR);
 			else s2 = src2.getMat();
 		}
 		else
@@ -527,9 +527,9 @@ namespace cp
 			src1.getMat().convertTo(ss1, CV_32F);
 			src2.getMat().convertTo(ss2, CV_32F);
 
-			if (src1.channels() == 1)cvtColor(ss1, s1, CV_GRAY2BGR);
+			if (src1.channels() == 1)cvtColor(ss1, s1, COLOR_GRAY2BGR);
 			else s1 = ss1.clone();
-			if (src2.channels() == 1)cvtColor(ss2, s2, CV_GRAY2BGR);
+			if (src2.channels() == 1)cvtColor(ss2, s2, COLOR_GRAY2BGR);
 			else s2 = ss2.clone();
 		}
 		namedWindow("alphaBlend");
