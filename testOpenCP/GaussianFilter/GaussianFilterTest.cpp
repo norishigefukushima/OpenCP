@@ -207,7 +207,7 @@ void guiGausianFilterTest(Mat& src__)
 			ci("PSNR: %f", PSNR(dest, ref));
 
 		diffshow("diff", dest, ref, (float)scale);
-		ci.flush();
+		ci.show();
 		imshow(wname, show);
 
 		key = waitKey(1);

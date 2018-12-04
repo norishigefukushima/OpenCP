@@ -67,7 +67,7 @@ void guiLaplacianSmoothingIIRFilterTest(Mat& src, String wname = "Laplacian")
 		{
 			guiAlphaBlend(dest, dest2);
 		}
-		ci.flush();
+		ci.show();
 		imshow(wname, dest2);
 		key = waitKey(1);
 		if (key == 'r')

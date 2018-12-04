@@ -706,7 +706,7 @@ void guiUpsampleTest(Mat& src_)
 		ci(format("Down : %s", downsampleMethod));
 		ci(format("PSNR : %f", calcImageQualityMetric(dest, src, cp::IQM_PSNR, 5)));
 		ci(format("time : %f", t.getTime()));
-		ci.flush();
+		ci.show();
 
 		if (key == 'f')
 		{

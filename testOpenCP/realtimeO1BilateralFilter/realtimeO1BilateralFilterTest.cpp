@@ -264,7 +264,7 @@ void guiRealtimeO1BilateralFilterTest(Mat& src)
 		cout << psnrRGBone(dest, ref) << endl;
 		//ci("MSE:  %f", norm(dest, ref, NORM_L2SQR) / (double)dest.size().area());
 		ci("time: %f", tim);
-		ci.flush();
+		ci.show();
 		alphaBlend(ref, dest, a / 100.0, show);
 
 		if (key == 'p') rbf.showBinIndex();
@@ -443,7 +443,7 @@ void guiJointRealtimeO1BilateralFilterTest(Mat& src_, Mat& guide_)
 		ci("PSNR: %f", PSNR64F(dest, ref));
 		ci("MSE:  %f", norm(dest, ref, NORM_L2SQR) / (double)dest.size().area());
 		ci("time: %f", tim);
-		ci.flush();
+		ci.show();
 		alphaBlend(ref, dest, a / 100.0, show);
 
 		if (key == 'p') rbf.showBinIndex();

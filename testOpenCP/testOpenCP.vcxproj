@@ -173,6 +173,7 @@
     <ClCompile Include="disparityRefinement\disparityRefinementTest.cpp" />
     <ClCompile Include="dualExponentialSmoothingTest.cpp" />
     <ClCompile Include="fitPlaneTest.cpp" />
+    <ClCompile Include="guiConsoleTest.cpp" />
     <ClCompile Include="guiCrossBasedLocalFilterTest.cpp" />
     <ClCompile Include="GaussianFilter\GaussianFilterTest.cpp" />
     <ClCompile Include="guiDomainTransformTest.cpp" />

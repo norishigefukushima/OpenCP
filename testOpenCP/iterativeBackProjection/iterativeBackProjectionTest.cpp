@@ -223,7 +223,7 @@ void guiIterativeBackProjectionTest(Mat& src)
 		//alphaBlend(blurred, show, a / 100.0, aa);
 
 		imshow(wname, aa);
-		ci.flush();
+		ci.show();
 		key = waitKey(1);
 	}
 }

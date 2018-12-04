@@ -80,7 +80,7 @@ void alphaBtest(Mat& src1, Mat& src2)
 		ci("bf->sse:   %f dB", PSNR(dest, destbf));
 		ci("bf->shift  %f dB", PSNR(destshift, destbf));
 		ci("shift->sse %f dB", PSNR(destshift, dest));
-		imshow("console", ci.show);
+		imshow("console", ci.image);
 		imshow("alphaB", destbf);
 		key = waitKey(1);
 	}

@@ -4,9 +4,8 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
+	guiConsoleTest();
 	
-	//stereotest();
-	//matmul(); return 0;
 	Mat left = imread("img/stereo/Reindeer/view1.png", 0);
 	Mat right = imread("img/stereo/Reindeer/view5.png", 0);
 	Mat dmap = imread("img/stereo/Reindeer/sgbm.png", 0);

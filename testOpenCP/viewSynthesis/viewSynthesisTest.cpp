@@ -364,7 +364,7 @@ void guiViewSynthesis()
 		//ci("%f dB",YPSNR(dest16,ref));
 		//if(key=='k')guiCompareDiff(dest,dest16,ref);
 			
-		ci.flush();
+		ci.show();
 	}
 	
 	key = 0;
@@ -540,7 +540,7 @@ void guiViewSynthesis()
 		ci("Matt. %f",calcBadPixel(FVdest,ref,thresh));
 
 		if(key=='o')guiAlphaBlend(FVdest,dilateSynth);
-		ci.flush();
+		ci.show();
 	}
 
 	//imwrite("FVdest.png",FVdest);

@@ -169,7 +169,7 @@ void guiSeparableBilateralFilterTest(Mat& src)
 		ci(format("%f dB", PSNR(ref, dest)));
 		ci(format("%f dB", SSIM(ref, dest, ssims)));
 		//		ci(format("%f %f",getTV(dest),getTV(ref)));
-		ci.flush();
+		ci.show();
 
 		alphaBlend(ref, dest, a / 100.0, show);
 		imshow(wname, show);

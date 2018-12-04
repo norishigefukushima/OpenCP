@@ -3031,7 +3031,7 @@ namespace cp
 			Mat show;
 			alphaBlend(leftim, dsp, alpha / 100.0, show);
 			imshow(wname, show);
-			imshow("console", ci.show);
+			imshow("console", ci.image);
 			key = waitKey(1);
 
 		}
@@ -3756,7 +3756,7 @@ namespace cp
 			}
 		}
 
-		imshow("console", ci.show);
+		imshow("console", ci.image);
 		if (key == 'l')isProcessLBorder = (isProcessLBorder) ? false : true;
 		if (key == 'g')isGrid = (isGrid) ? false : true;
 		if (key == 'f')isGuided = (isGuided) ? false : true;

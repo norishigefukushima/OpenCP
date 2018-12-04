@@ -19,7 +19,7 @@ namespace cp
 
 		void setIsLineNumber(bool isLine = true);
 		bool getIsLineNumber();
-		cv::Mat show;
+		cv::Mat image;
 
 		void init(cv::Size size, std::string wname);
 		ConsoleImage();
@@ -29,10 +29,11 @@ namespace cp
 		void printData();
 		void clear();
 
-		void operator()(std::string src);
+		void operator()(std::string str);
 		void operator()(const char *format, ...);
+		void operator()(cv::Scalar color, std::string str);
 		void operator()(cv::Scalar color, const char *format, ...);
-
-		void flush(bool isClear = true);
+		
+		void show(bool isClear = true);
 	};
 }

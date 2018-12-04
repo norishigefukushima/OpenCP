@@ -575,7 +575,7 @@ void imshowAnalysisCompare(String winname, Mat& src1, Mat& src2)
 			}
 			}
 			*/
-			imshow(winnameInfo, cw.show);
+			imshow(winnameInfo, cw.image);
 		}
 	}
 	else
