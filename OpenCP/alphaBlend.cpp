@@ -578,4 +578,95 @@ namespace cp
 		}
 		destroyWindow("alphaBlend");
 	}
+
+	void dissolveSlide(InputArray src1, InputArray src2, OutputArray dest, const double ratio, const int direction, const bool isBorderLine)
+	{
+		CV_Assert(src1.size() == src2.size());
+		Mat s1;
+		Mat s2;
+		if (src1.channels() == src2.channels())
+		{
+			s1 = src1.getMat();
+			s2 = src2.getMat();
+			if (dest.empty())dest.create(src1.size(), src1.type());
+		}
+		else
+		{
+			if (src1.channels() == 1)cvtColor(src1, s1, COLOR_GRAY2BGR);
+			else s1 = src1.getMat();
+			if (src2.channels() == 1)cvtColor(src2, s2, COLOR_GRAY2BGR);
+			else s2 = src2.getMat();
+			if (dest.empty())dest.create(src1.size(), CV_MAKETYPE(src1.depth(), 3));
+		}
+
+		Mat dst = dest.getMat();
+
+		s2.copyTo(dest);
+
+		if (direction == 0)//v split
+		{
+			int w = s1.cols*ratio;
+			Rect roi = Rect(0, 0, w, s1.rows);
+			Mat(s1(roi)).copyTo(dst(roi));
+
+			if (isBorderLine) line(dst, Point(w, 0), Point(w, s1.rows - 1), Scalar::all(255), 2);
+		}
+		else if (direction == 1)//h split
+		{
+			int h = s1.rows*ratio;
+			Rect roi = Rect(0, 0, s1.cols, h);
+			Mat(s1(roi)).copyTo(dst(roi));
+			if (isBorderLine) line(dst, Point(0, h), Point(s1.cols - 1, h), Scalar::all(255), 2);
+		}
+	}
+
+	void guiDissolveSlide(InputArray src1, InputArray src2, string wname)
+	{
+		namedWindow(wname);
+		bool isBorderLine = true;
+		static int a = 50; createTrackbar("ratio", wname, &a, 100);
+		static int direction = 0; createTrackbar("direction", wname, &direction, 1);
+		int key = 0;
+		Mat show;
+		while (key != 'q')
+		{
+			dissolveSlide(src1, src2, show, a / 100.0, direction, isBorderLine);
+			imshow(wname, show);
+			key = waitKey(1);
+
+			if (key == 'k' || key == 'l')
+			{
+				a++;
+				a = min(100, a);
+				setTrackbarPos("ratio", wname, a);
+			}
+			if (key == 'i' || key == 'j')
+			{
+				a--;
+				a = max(0, a);
+				setTrackbarPos("ratio", wname, a);
+			}
+			if (key == 'f')
+			{
+				a = (a == 0) ? 100 : 0;
+				setTrackbarPos("ratio", wname, a);
+			}
+			if (key == 'd')
+			{
+				direction = (direction == 0) ? 1 : 0;
+				setTrackbarPos("direction", wname, direction);
+			}
+			if (key == 'b')isBorderLine = (isBorderLine) ? false : true;
+			if (key == '?')
+			{
+				cout << "Help: " << endl;
+				cout << "i,j,k,l: move ratio slider" << endl;
+				cout << "f: flip ratio" << endl;
+				cout << "d: flip direction" << endl;
+				cout << "b: flip flag of isBorderline" << endl;
+				cout << "q: quit" << endl;
+			}
+		}
+		destroyWindow(wname);
+	}
 }

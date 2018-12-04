@@ -4,11 +4,14 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-	guiConsoleTest();
 	
-	Mat left = imread("img/stereo/Reindeer/view1.png", 0);
-	Mat right = imread("img/stereo/Reindeer/view5.png", 0);
-	Mat dmap = imread("img/stereo/Reindeer/sgbm.png", 0);
+	//guiConsoleTest();
+	
+	Mat left = imread("img/stereo/Dolls/view1.png");
+	Mat right = imread("img/stereo/Dolls/view5.png");
+	Mat dmap = imread("img/stereo/Dolls/disp1.png", 0);
+	guiDissolveSlide(left, dmap);
+
 	Mat img = imread("img/lenna.png");
 	Mat a;
 	resize(img, a, Size(513, 513));
