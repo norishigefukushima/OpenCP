@@ -52,6 +52,8 @@ using namespace std;
 
 namespace cp
 {
+//TODO: support OpenCV 4
+#if CV_MAJOR_VERSION <= 3
 	CvStereoBMState* cvCreateStereoBMState(int /*preset*/, int numberOfDisparities)
 	{
 		CvStereoBMState* state = (CvStereoBMState*)cvAlloc(sizeof(*state));
@@ -1033,11 +1035,11 @@ namespace cp
 		Mat slb, srb;
 		Mat disp2;
 		if (leftim.channels() == 3)
-			cvtColor(leftim, sl, CV_BGR2GRAY);
+			cvtColor(leftim, sl, COLOR_BGR2GRAY);
 		else
 			sl = leftim;
 		if (rightim.channels() == 3)
-			cvtColor(rightim, sr, CV_BGR2GRAY);
+			cvtColor(rightim, sr, COLOR_BGR2GRAY);
 		else
 			sr = rightim;
 
@@ -1092,12 +1094,12 @@ namespace cp
 		Mat disp2;
 
 		if (leftim.channels() == 3)
-			cvtColor(leftim, sl, CV_BGR2GRAY);
+			cvtColor(leftim, sl, COLOR_BGR2GRAY);
 		else
 			sl = leftim;
 
 		if (rightim.channels() == 3)
-			cvtColor(rightim, sr, CV_BGR2GRAY);
+			cvtColor(rightim, sr, COLOR_BGR2GRAY);
 		else
 			sr = rightim;
 
@@ -1247,4 +1249,5 @@ namespace cp
 		}
 		destroyWindow(wname);
 	}
+#endif
 }

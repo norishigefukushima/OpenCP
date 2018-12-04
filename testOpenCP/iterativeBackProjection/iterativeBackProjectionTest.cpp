@@ -21,7 +21,7 @@ void guiIterativeBackProjectionTest(Mat& src)
 
 	int r_sigma = 15; createTrackbar("rev_sigma", wname, &r_sigma, 2000);
 	//int r = 4; createTrackbar("r", wname, &r, 200);
-	
+
 	int eps = 10; createTrackbar("eps*0.001", wname, &eps, 100);
 	int eps2 = 10;  createTrackbar("eps*0.01", wname, &eps2, 100);
 	//int r_sigma2 = 10; createTrackbar("r_sigma2", wname, &r_sigma2, 2000);
@@ -39,7 +39,7 @@ void guiIterativeBackProjectionTest(Mat& src)
 	int ds = 2;  createTrackbar("BFs", wname, &ds, 20);
 	int dc = 0;  createTrackbar("BFc", wname, &dc, 50);
 
-	
+
 	int nth = 100;  createTrackbar("nth", wname, &nth, 2000);
 	int psw = 1; createTrackbar("psw", wname, &psw, 4);
 	int sovolev = 0; createTrackbar("sovolev", wname, &sovolev, 1);
@@ -52,11 +52,11 @@ void guiIterativeBackProjectionTest(Mat& src)
 	int border = 10;
 	while (key != 'q')
 	{
-		double e = eps*0.01;
-		double e2 = eps2*0.01;
-		e = e*e;
-		e2 = e2*e2;
-		double noiselevel = noise_s*0.01;
+		double e = eps * 0.01;
+		double e2 = eps2 * 0.01;
+		e = e * e;
+		e2 = e2 * e2;
+		double noiselevel = noise_s * 0.01;
 		double color_sigma = cs / 10.0;
 		int r = (d_sigma / 10.0) * 3.0;
 		int d = 2 * r + 1;
@@ -70,8 +70,8 @@ void guiIterativeBackProjectionTest(Mat& src)
 		Mat show;
 		Mat raw;
 		addNoise(blurred, raw, noiselevel);
-		
-		float denoiseth = nth*0.01;
+
+		float denoiseth = nth * 0.01;
 		{
 			ci(format("src: %05.2f %0.2f", 0, PSNR64F(raw, src)));
 			if (sw == 0) raw.copyTo(show);
@@ -97,7 +97,7 @@ void guiIterativeBackProjectionTest(Mat& src)
 			//iterativeBackProjectionDeblurDelta(blurred, dest, Size(d, d), r_sigma / 10.0, lambda, iter);
 			//LucyRichardsonGauss(blurred, dest, Size(d, d), r_sigma / 10.0, iter);
 
-			
+
 			deblurring(blurred, dest, r_sigma / 10.0, 0, denoiseth, e2, false);
 			//LucyRichardsonGaussTikhonov(dest, dest, Size(d, d), r_sigma / 10.0, lambda*0.0001, iter);
 			iterativeBackProjectionDeblurGaussian(dest, dest, Size(d, d), r_sigma / 10.0, bss*0.1, lambda, iter);
@@ -112,14 +112,14 @@ void guiIterativeBackProjectionTest(Mat& src)
 			//ci(format("DCT: %05.2f %0.2f %0.4f", t.getTime(), cp::PSNR64F(dest, src), cp::calcImageQualityMetric(dest, src, IQM_CWSSIM)));
 			if (sw == 2) dest.copyTo(show);
 		}
-		
+
 		//if(sw==0)
 		{
 			CalcTime t("ibp");
 			//LucyRichardsonGaussTikhonov(blurred, dest, Size(d, d), r_sigma / 10.0, th*0.0001, iter);
 			//iterativeBackProjectionDeblurGaussian(blurred, dest, Size(d, d), r_sigma / 10.0, bss*0.1, lambda, iter);
 
-			
+
 			deblurDCTWiener(blurred, dest, r_sigma / 10.0, e2);
 			//deblurDCTWiener(dest, dest, r_sigma / 10.0, e2);
 			double time = t.getTime();
@@ -212,7 +212,7 @@ void guiIterativeBackProjectionTest(Mat& src)
 		*/
 		//patchBlendImage(blurred,dest,dest,Scalar(255,255,255));
 		//alphaBlend(src, show, a / 100.0, show);
-		
+
 		Mat aa;
 		show.convertTo(aa, CV_8U);
 		Mat dmap;
@@ -272,15 +272,15 @@ static float gaussscale = 0;
 
 static void createGaussianDCTI(Mat& src, const float sigma, const float eps)
 {
-	float temp = sigma*CV_PI / 8;
-	float a = -temp*temp / 2.0;
+	float temp = sigma * CV_PI / 8;
+	float a = -temp * temp / 2.0;
 	//int r = min((int)(ks * sigma), src.cols - 1);
-	
+
 	for (int j = 0; j <= 7; j++)
 	{
 		for (int i = 0; i <= 7; i++)
 		{
-			float d = i*i + j*j;
+			float d = i * i + j * j;
 			float v = exp(a*d);
 
 			src.at<float>(j, i) = v + eps;
@@ -290,18 +290,18 @@ static void createGaussianDCTI(Mat& src, const float sigma, const float eps)
 
 static void createGaussianDCTIMax(Mat& src, const float sigma, const float eps, const int ks)
 {
-	float temp = sigma*CV_PI / 8;
-	float a = -temp*temp / 2.0;
+	float temp = sigma * CV_PI / 8;
+	float a = -temp * temp / 2.0;
 	//int r = min((int)(ks * sigma), src.cols - 1);
 
 	for (int j = 0; j <= 7; j++)
 	{
 		for (int i = 0; i <= 7; i++)
 		{
-			float d = i*i + j*j;
+			float d = i * i + j * j;
 			float v = exp(a*d);
 
-			src.at<float>(j, i) = max(v ,eps);
+			src.at<float>(j, i) = max(v, eps);
 		}
 	}
 }
@@ -614,18 +614,18 @@ static void dctDenoisingSingleAAN(Mat& src, Mat& dest, float th, int sw, float e
 template<class T>
 void createGaussianDCTIWiener_(Mat& src, const T sigma, const T eps)
 {
-	T temp = sigma*(T)CV_PI / (src.cols);
-	T a = -temp*temp / (T)2.0;
+	T temp = sigma * (T)CV_PI / (src.cols);
+	T a = -temp * temp / (T)2.0;
 
 	float s = 1.f / ((src.rows - 1)*(src.cols - 1));
 	for (int j = 0; j < src.rows; j++)
 	{
 		for (int i = 0; i < src.cols; i++)
 		{
-			T d = (T)(i*i + j*j);
+			T d = (T)(i*i + j * j);
 			T v = exp(a*d);
 			//src.at<T>(j, i) = v / (v + eps);
-			src.at<T>(j, i) = v*v / (v*v + eps);
+			src.at<T>(j, i) = v * v / (v*v + eps);
 			//src.at<T>(j, i) = sqrt(v)*v / (sqrt(v)*v + eps);
 			//src.at<T>(j, i) = v*v*v / (v*v*v + eps);
 		}
@@ -635,18 +635,18 @@ void createGaussianDCTIWiener_(Mat& src, const T sigma, const T eps)
 template<class T>
 void createGaussianDCTIWienerSobolev_(Mat& src, const T sigma, const T eps)
 {
-	T temp = sigma*(T)CV_PI / (src.cols);
-	T a = -temp*temp / (T)2.0;
+	T temp = sigma * (T)CV_PI / (src.cols);
+	T a = -temp * temp / (T)2.0;
 
 	float s = 1.f / ((src.rows - 1)*(src.cols - 1));
 	for (int j = 0; j < src.rows; j++)
 	{
 		for (int i = 0; i < src.cols; i++)
 		{
-			T d = (T)(i*i + j*j);
+			T d = (T)(i*i + j * j);
 			T v = exp(a*d);
 			//src.at<T>(j, i) = v / (v + eps);
-			src.at<T>(j, i) = v*v / (v*v + eps*d*s);
+			src.at<T>(j, i) = v * v / (v*v + eps * d*s);
 			//src.at<T>(j, i) = sqrt(v)*v / (sqrt(v)*v + eps);
 			//src.at<T>(j, i) = v*v*v / (v*v*v + eps);
 		}
@@ -674,8 +674,8 @@ void deblurring(Mat& src, Mat& dest, float sigma, int sw, float sigmanoise, cons
 	//createGaussianDCTI(gauss, sigma, eps);
 	//createGaussianDCTI(gauss, sigma, eps, 8);
 	createGaussianDCTI(gauss, sigma, FLT_EPSILON);
-	
-	if(isSobolev)createGaussianDCTIWienerSobolev_<float>(gausswei, sigma, eps);
+
+	if (isSobolev)createGaussianDCTIWienerSobolev_<float>(gausswei, sigma, eps);
 	else createGaussianDCTIWiener_<float>(gausswei, sigma, eps);
 	divide(gauss, gausswei, gauss);
 
@@ -692,9 +692,9 @@ void deblurring(Mat& src, Mat& dest, float sigma, int sw, float sigmanoise, cons
 	{
 		if (src.channels() == 3)
 		{
-			cv::Matx33f mt(cvInvSqrt(3.0f), cvInvSqrt(3.0f), cvInvSqrt(3.0f),
-				cvInvSqrt(2.0f), 0.0f, -cvInvSqrt(2.0f),
-				cvInvSqrt(6.0f), -2.0f*cvInvSqrt(6.0f), cvInvSqrt(6.0f));
+			cv::Matx33f mt(1.f / sqrt(3.0f), 1.f / sqrt(3.0f), 1.f / sqrt(3.0f),
+				1.f / sqrt(2.0f), 0.0f, -1.f / sqrt(2.0f),
+				1.f / sqrt(6.0f), -2.0f / sqrt(6.0f), 1.f / sqrt(6.0f));
 
 			cv::transform(img, img, mt);
 
@@ -707,7 +707,7 @@ void deblurring(Mat& src, Mat& dest, float sigma, int sw, float sigmanoise, cons
 			//{
 			//	float* kgauss = gauss1.ptr<float>(i);
 			//	for (int j = 0; j < 512; j++) {
-			
+
 			//		float x = j - 0.5;
 			//		float y = i - 0.5;
 			//		kgauss[j] = expf(-(x*x + y*y) / (2 * sigma*sigma));
@@ -729,13 +729,13 @@ void deblurring(Mat& src, Mat& dest, float sigma, int sw, float sigmanoise, cons
 		}
 		else
 		{
-			CV_Error_(CV_StsNotImplemented, ("Unsupported source image format (=%d)", img.type()));
+			CV_Error_(cv::Error::StsNotImplemented, ("Unsupported source image format (=%d)", img.type()));
 		}
 	}
 	//imshow("AAN", img);
 
-	if(sw==0 || isSobolev) img.convertTo(copy, src.type());
-	else Mat((1.f+eps)*img).convertTo(copy, src.type());
-	
+	if (sw == 0 || isSobolev) img.convertTo(copy, src.type());
+	else Mat((1.f + eps)*img).convertTo(copy, src.type());
+
 	copy(Rect(8, 8, src.cols, src.rows)).copyTo(dest);
 }

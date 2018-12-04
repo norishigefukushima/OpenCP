@@ -386,8 +386,8 @@ namespace cp
 				}
 				//imshow("synth",synth);
 				//imshowAnalysisCompare("comp", synth, ref);
-				//Mat mk;Mat gg;cvtColor(synth,gg,CV_BGR2GRAY); cv::compare(gg,0,mk,cv::CMP_NE);cout<<calcPSNR(synth,rightim,0,82,mk)<<endl;
-				//	Mat mk;Mat gg;cvtColor(synth,gg,CV_BGR2GRAY); cv::compare(gg,0,mk,cv::CMP_NE);cout<<calcPSNR(synth,ref,0,82,mk)<<endl;
+				//Mat mk;Mat gg;cvtColor(synth,gg,COLOR_BGR2GRAY); cv::compare(gg,0,mk,cv::CMP_NE);cout<<calcPSNR(synth,rightim,0,82,mk)<<endl;
+				//	Mat mk;Mat gg;cvtColor(synth,gg,COLOR_BGR2GRAY); cv::compare(gg,0,mk,cv::CMP_NE);cout<<calcPSNR(synth,ref,0,82,mk)<<endl;
 				imshowDisparity("disp", dispL, 2);
 				//cout<<calcPSNRBB(synth,ref,10,10)<<endl;
 				//cout<<calcPSNRBB(synth,rightim,10,10)<<endl;
@@ -589,9 +589,9 @@ namespace cp
 	void StereoGCEx::operator()(Mat& leftim, Mat& rightim, Mat& dispL, Mat& dispR, int bd)
 	{
 	Mat l, r;
-	if (leftim.channels() == 3)cvtColor(leftim, l, CV_BGR2GRAY);
+	if (leftim.channels() == 3)cvtColor(leftim, l, COLOR_BGR2GRAY);
 	else l = leftim;
-	if (rightim.channels() == 3)cvtColor(rightim, r, CV_BGR2GRAY);
+	if (rightim.channels() == 3)cvtColor(rightim, r, COLOR_BGR2GRAY);
 	else r = rightim;
 
 	Mat lb, rb;

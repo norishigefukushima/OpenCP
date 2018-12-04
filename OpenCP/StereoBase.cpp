@@ -52,7 +52,7 @@ namespace cp
 				T mind;
 
 				const T cd = s[i];
-				if (s[i - 1]<s[i])
+				if (s[i - 1] < s[i])
 				{
 					const int rl = -(r);
 					const int rr = r;
@@ -66,7 +66,7 @@ namespace cp
 					for (k = rl; k <= rr; k++)
 					{
 						const int rcost = 0;//abs(r);
-						if (sbl[i + k] + rcost>maxval)
+						if (sbl[i + k] + rcost > maxval)
 						{
 							if (abs(s[i - 1 + k] - s[i + k]) * 2 >= sub)
 							{
@@ -90,7 +90,7 @@ namespace cp
 					else if (maxp < 0)
 					{
 						i += maxp;
-						for (int n = 0; n<-maxp; n++, i++)
+						for (int n = 0; n < -maxp; n++, i++)
 						{
 							s[i] = maxd;
 						}
@@ -110,7 +110,7 @@ namespace cp
 					for (k = rl; k <= rr; k++)
 					{
 						const int rcost = 0;//abs(r);
-						if (sbl[i + k] + rcost>maxval)
+						if (sbl[i + k] + rcost > maxval)
 						{
 							if (abs(s[i - 1 + k] - s[i + k]) * 2 >= sub)
 							{
@@ -180,7 +180,7 @@ namespace cp
 				T mind;
 
 				const T cd = s[i];
-				if (s[i - 1]<s[i])
+				if (s[i - 1] < s[i])
 				{
 					const int rl = -(r >> 1);
 					const int rr = r;
@@ -194,7 +194,7 @@ namespace cp
 					for (k = rl; k <= rr; k++)
 					{
 						const int rcost = 0;//abs(r);
-						if (sbl[i + k] + rcost>maxval)
+						if (sbl[i + k] + rcost > maxval)
 						{
 							if (abs(s[i - 1 + k] - s[i + k]) * 2 >= sub)
 							{
@@ -218,7 +218,7 @@ namespace cp
 					else if (maxp < 0)
 					{
 						i += maxp;
-						for (int n = 0; n<-maxp; n++, i++)
+						for (int n = 0; n < -maxp; n++, i++)
 						{
 							s[i] = maxd;
 						}
@@ -238,7 +238,7 @@ namespace cp
 					for (k = rl; k <= rr; k++)
 					{
 						const int rcost = 0;//abs(r);
-						if (sbl[i + k] + rcost>maxval)
+						if (sbl[i + k] + rcost > maxval)
 						{
 							if (abs(s[i - 1 + k] - s[i + k]) * 2 >= sub)
 							{
@@ -280,7 +280,7 @@ namespace cp
 		T invalidvalue = 0;
 
 		Mat ref;
-		if (refimg.channels() == 3)cvtColor(refimg, ref, CV_BGR2GRAY);
+		if (refimg.channels() == 3)cvtColor(refimg, ref, COLOR_BGR2GRAY);
 		else ref = refimg.clone();
 
 		Mat sobel;
@@ -302,7 +302,7 @@ namespace cp
 				T maxd;
 				T mind;
 				const T cd = s[i];
-				if (s[i - 1]<s[i])
+				if (s[i - 1] < s[i])
 				{
 					const int rl = -(r >> 1);
 					const int rr = r;
@@ -316,7 +316,7 @@ namespace cp
 					for (k = rl; k <= rr; k++)
 					{
 						const int rcost = 0; abs(r);
-						if (sbl[i + k] + rcost>maxval && s[i + k] <= maxd + 16 && s[i + k] >= mind - 16)
+						if (sbl[i + k] + rcost > maxval && s[i + k] <= maxd + 16 && s[i + k] >= mind - 16)
 						{
 							maxp = k;
 							maxval = sbl[i + k] + rcost;
@@ -344,7 +344,7 @@ namespace cp
 					else if (maxp < 0)
 					{
 						i += maxp;
-						for (int n = 0; n<-maxp; n++, i++)
+						for (int n = 0; n < -maxp; n++, i++)
 						{
 							s[i] = maxd;
 						}
@@ -364,7 +364,7 @@ namespace cp
 					for (k = rl; k <= rr; k++)
 					{
 						const int rcost = 0; abs(r);
-						if (sbl[i + k] + rcost>maxval && s[i + k] <= maxd + 16 && s[i + k] >= mind - 16)
+						if (sbl[i + k] + rcost > maxval && s[i + k] <= maxd + 16 && s[i + k] >= mind - 16)
 						{
 							maxp = k;
 							maxval = sbl[i + k] + rcost;
@@ -405,7 +405,7 @@ namespace cp
 			s += step;
 			sbl += step;
 		}
-	}	
+	}
 
 #define  CV_CAST_8U(t)  (uchar)(!((t) & ~255) ? (t) : (t) > 0 ? 255 : 0)
 	static void
@@ -565,7 +565,7 @@ namespace cp
 	{
 		vector<Mat> img;
 		//split(leftim,img);
-		cvtColor(src, img[0], CV_BGR2GRAY); img[0].copyTo(img[1]); img[0].copyTo(img[2]);
+		cvtColor(src, img[0], COLOR_BGR2GRAY); img[0].copyTo(img[1]); img[0].copyTo(img[2]);
 
 		for (int c = 0; c < 3; c++)
 			prefilterXSobel(img[c], img[c], preFilterCap);
@@ -1160,12 +1160,12 @@ namespace cp
 			short* s = temp.ptr<short>(j);
 			uchar* d = dest.ptr<uchar>(j);
 
-			for (int i = r; i<src.cols - r; i++)
+			for (int i = r; i < src.cols - r; i++)
 			{
 				int n = -r;
 				for (; n <= r; n++)
 				{
-					if (abs(s[i + n])>th)
+					if (abs(s[i + n]) > th)
 						break;
 				}
 				if (n == r + 1)d[i] = saturate_cast<uchar>(d[i] + std::max(std::min((int)s[i], th), -th));
@@ -1182,12 +1182,12 @@ namespace cp
 	{
 		target.resize(2);
 		refference.resize(2);
-		cvtColor(src1, target[0], CV_BGR2GRAY);
+		cvtColor(src1, target[0], COLOR_BGR2GRAY);
 
 
 		//enhance(target[0],target[0],prefParam,2*prefSize+1);
 
-		cvtColor(src2, refference[0], CV_BGR2GRAY);
+		cvtColor(src2, refference[0], COLOR_BGR2GRAY);
 
 		//enhance(refference[0],refference[0],prefParam,0);
 
@@ -1250,7 +1250,7 @@ namespace cp
 				short dd = (*disp);
 
 				int v = (*cost) *mul;
-				if ((*pDSI) <= v && abs(d - dd)>16)
+				if ((*pDSI) <= v && abs(d - dd) > 16)
 				{
 					*disp = 0;//(minDisparity-1)<<4;
 				}
@@ -1553,76 +1553,76 @@ namespace cp
 		if ((int)DSI.size() < numberOfDisparities)DSI.resize(numberOfDisparities);
 
 		Mat joint;
-		cvtColor(leftim, joint, CV_BGR2GRAY);
+		cvtColor(leftim, joint, COLOR_BGR2GRAY);
 
 		{
 			CalcTime t("pre filter");
 			prefilter(leftim, rightim);
 			cout << "pref end" << endl;
 		}
-	{
-		CalcTime t("Cost computation");
-		for (int i = 0; i < numberOfDisparities; i++)
 		{
-			const int d = minDisparity + i;
-			getMatchingCost(d, DSI[i]);
-			//getCostAggregation(DSI[i],DSI[i],joint);
+			CalcTime t("Cost computation");
+			for (int i = 0; i < numberOfDisparities; i++)
+			{
+				const int d = minDisparity + i;
+				getMatchingCost(d, DSI[i]);
+				//getCostAggregation(DSI[i],DSI[i],joint);
+			}
 		}
-	}
-	{
-		CalcTime t("Cost aggregation");
-		for (int i = 0; i < numberOfDisparities; i++)
 		{
-			Mat dsi = DSI[i];
-			const int d = minDisparity + i;
-			getCostAggregation(dsi, DSI[i], joint);
+			CalcTime t("Cost aggregation");
+			for (int i = 0; i < numberOfDisparities; i++)
+			{
+				Mat dsi = DSI[i];
+				const int d = minDisparity + i;
+				getCostAggregation(dsi, DSI[i], joint);
+			}
 		}
-	}
 
-	{
-		CalcTime t("Cost Optimization");
-		if (P1 != 0 && P2 != 0)
-			getOptScanline();
-	}
-
-
-	const int imsize = DSI[0].size().area();
-	{
-		CalcTime t("DisparityComputation");
-		getWTA(DSI, dest);
-	}
-
-	{
-		CalcTime t("Post Filterings");
-
-		//medianBlur(dest,dest,3);
 		{
-			CalcTime t("Post: uniqueness");
-			uniquenessFilter(minCostMap, dest);
-		}
-		//subpix;
-		{
-			CalcTime t("Post: subpix");
-			subpixelInterpolation(dest, subpixMethod);
-			binalyWeightedRangeFilter(dest, dest, subboxWindowR, subboxRange);
-		}
-		//R depth map;
-		//OpenCVはコストとデプスのワープで実装．斜めのminコストではない．
-		{
-			CalcTime t("Post: LR");
-			fastLRCheck(minCostMap, dest);
-		}
-		{
-			CalcTime t("Post: mincost");
-			minCostFilter(minCostMap, dest);
-		}
-		{
-			CalcTime t("Post: filterSpeckles");
-			filterSpeckles(dest, 0, speckleWindowSize, speckleRange, specklebuffer);
+			CalcTime t("Cost Optimization");
+			if (P1 != 0 && P2 != 0)
+				getOptScanline();
 		}
 
 
-	}
+		const int imsize = DSI[0].size().area();
+		{
+			CalcTime t("DisparityComputation");
+			getWTA(DSI, dest);
+		}
+
+		{
+			CalcTime t("Post Filterings");
+
+			//medianBlur(dest,dest,3);
+			{
+				CalcTime t("Post: uniqueness");
+				uniquenessFilter(minCostMap, dest);
+			}
+			//subpix;
+			{
+				CalcTime t("Post: subpix");
+				subpixelInterpolation(dest, subpixMethod);
+				binalyWeightedRangeFilter(dest, dest, subboxWindowR, subboxRange);
+			}
+			//R depth map;
+			//OpenCVはコストとデプスのワープで実装．斜めのminコストではない．
+			{
+				CalcTime t("Post: LR");
+				fastLRCheck(minCostMap, dest);
+			}
+			{
+				CalcTime t("Post: mincost");
+				minCostFilter(minCostMap, dest);
+			}
+			{
+				CalcTime t("Post: filterSpeckles");
+				filterSpeckles(dest, 0, speckleWindowSize, speckleRange, specklebuffer);
+			}
+
+
+		}
 	}
 	void minMaxShow(Mat& src)
 	{
@@ -1638,7 +1638,7 @@ namespace cp
 		T invalidvalue = 0;
 		Mat sobel;
 		Mat ref;
-		if (refimg.channels() == 3)cvtColor(refimg, ref, CV_BGR2GRAY);
+		if (refimg.channels() == 3)cvtColor(refimg, ref, COLOR_BGR2GRAY);
 		else ref = refimg.clone();
 		medianBlur(ref, ref, 3);
 		//blurRemoveMinMax(ref,ref,1,0);
@@ -1709,7 +1709,7 @@ namespace cp
 								{
 									s[i] = mind;
 								}
-								for (; i<t; i++)
+								for (; i < t; i++)
 								{
 									s[i] = maxd;
 								}
@@ -1724,7 +1724,7 @@ namespace cp
 							int maxval = 0;
 							for (int k = -r; k <= r; k++)
 							{
-								if (sbl[i - 1 + k]>maxval)
+								if (sbl[i - 1 + k] > maxval)
 								{
 									maxp = k;
 									maxval = sbl[i - 1 + k];
@@ -1744,14 +1744,14 @@ namespace cp
 							else
 							{
 								i += maxp;
-								for (; i<t - maxp; i++)
+								for (; i < t - maxp; i++)
 								{
 									s[i] = mind;
 								}
 							}
 						}
 
-						if (t - i>MAX_LENGTH)
+						if (t - i > MAX_LENGTH)
 						{
 							for (int n = 0; n < src.cols; n++)
 							{
@@ -1775,7 +1775,7 @@ namespace cp
 		T invalidvalue = 0;
 		Mat sobel;
 		Mat ref;
-		if (refimg.channels() == 3)cvtColor(refimg, ref, CV_BGR2GRAY);
+		if (refimg.channels() == 3)cvtColor(refimg, ref, COLOR_BGR2GRAY);
 		else ref = refimg.clone();
 		medianBlur(ref, ref, 3);
 		//blurRemoveMinMax(ref,ref,1,0);
@@ -1846,7 +1846,7 @@ namespace cp
 								{
 									s[i] = mind;
 								}
-								for (; i<t; i++)
+								for (; i < t; i++)
 								{
 									s[i] = maxd;
 								}
@@ -1861,7 +1861,7 @@ namespace cp
 							int maxval = 0;
 							for (int k = -r; k <= r; k++)
 							{
-								if (sbl[i - 1 + k]>maxval)
+								if (sbl[i - 1 + k] > maxval)
 								{
 									maxp = k;
 									maxval = sbl[i - 1 + k];
@@ -1881,14 +1881,14 @@ namespace cp
 							else
 							{
 								i += maxp;
-								for (; i<t - maxp; i++)
+								for (; i < t - maxp; i++)
 								{
 									s[i] = mind;
 								}
 							}
 						}
 
-						if (t - i>MAX_LENGTH)
+						if (t - i > MAX_LENGTH)
 						{
 							for (int n = 0; n < src.cols; n++)
 							{
@@ -1939,7 +1939,7 @@ namespace cp
 	{
 		Point* pt = (Point*)param;
 		//if(events==CV_EVENT_LBUTTONDOWN)
-		if (flags & CV_EVENT_FLAG_LBUTTON)
+		if (flags & EVENT_FLAG_LBUTTON)
 		{
 			pt->x = x;
 			pt->y = y;
@@ -1988,7 +1988,7 @@ namespace cp
 						if (t - i > MAX_LENGTH)
 						{
 							//for(int n=0;n<src.cols;n++)s[n]=invalidvalue;
-							memcpy(s, s - step, step*sizeof(T));
+							memcpy(s, s - step, step * sizeof(T));
 						}
 						else
 						{
@@ -2028,30 +2028,30 @@ namespace cp
 
 		T* is = sim.ptr<T>(0);
 		T* s = is + hw;
-		S* g = gim.ptr<S>(0); g += hw*c;
+		S* g = gim.ptr<S>(0); g += hw * c;
 		T* d = dest.ptr<T>(0);
 		if (c == 1)
 		{
 			for (int j = 0; j < src.rows; j++)
 			{
 				integral[0] = 0;
-				for (int i = 0; i<sim.cols; i++)
+				for (int i = 0; i < sim.cols; i++)
 					integral[i + 1] = integral[i] + is[i];
 
-				for (int i = 0; i<src.cols; i++)
+				for (int i = 0; i < src.cols; i++)
 				{
 					const S v = g[i];
 					int rl = 0;
 					for (int n = 1; n <= hw; n++)
 					{
-						if (abs(v - g[i - n])>thresh)
+						if (abs(v - g[i - n]) > thresh)
 							break;
 						rl = -n;
 					}
 					int rr = 0;
 					for (int n = 1; n <= hw; n++)
 					{
-						if (abs(v - g[i + n])>thresh)
+						if (abs(v - g[i + n]) > thresh)
 							break;
 						rr = n;
 					}
@@ -2079,14 +2079,14 @@ namespace cp
 					int rl = 0;
 					for (int n = 1; n <= hw; n++)
 					{
-						if (abs(rv - g[3 * (i - n) + 0]) + abs(gv - g[3 * (i - n) + 1]) + abs(bv - g[3 * (i - n) + 2])>3 * thresh)
+						if (abs(rv - g[3 * (i - n) + 0]) + abs(gv - g[3 * (i - n) + 1]) + abs(bv - g[3 * (i - n) + 2]) > 3 * thresh)
 							break;
 						rl = -n;
 					}
 					int rr = 0;
 					for (int n = 1; n <= hw; n++)
 					{
-						if (abs(rv - g[3 * (i + n) + 0]) + abs(gv - g[3 * (i + n) + 1]) + abs(bv - g[3 * (i + n) + 2])>3 * thresh)
+						if (abs(rv - g[3 * (i + n) + 0]) + abs(gv - g[3 * (i + n) + 1]) + abs(bv - g[3 * (i + n) + 2]) > 3 * thresh)
 							break;
 						rr = n;
 					}
@@ -2699,9 +2699,9 @@ namespace cp
 	{
 		if (dest.empty())dest.create(leftim.size(), CV_8U);
 		Mat lim, rim;
-		if (leftim.channels() == 3)cvtColor(leftim, lim, CV_BGR2GRAY);
+		if (leftim.channels() == 3)cvtColor(leftim, lim, COLOR_BGR2GRAY);
 		else lim = leftim;
-		if (rightim.channels() == 3)cvtColor(rightim, rim, CV_BGR2GRAY);
+		if (rightim.channels() == 3)cvtColor(rightim, rim, COLOR_BGR2GRAY);
 		else rim = rightim;
 
 		Mat limCensus, rimCensus;
@@ -2733,9 +2733,9 @@ namespace cp
 	{
 		if (dest.empty())dest.create(leftim.size(), CV_8U);
 		Mat lim, rim;
-		if (leftim.channels() == 3)cvtColor(leftim, lim, CV_BGR2GRAY);
+		if (leftim.channels() == 3)cvtColor(leftim, lim, COLOR_BGR2GRAY);
 		else lim = leftim;
-		if (rightim.channels() == 3)cvtColor(rightim, rim, CV_BGR2GRAY);
+		if (rightim.channels() == 3)cvtColor(rightim, rim, COLOR_BGR2GRAY);
 		else rim = rightim;
 
 		Mat limCensus, rimCensus;
@@ -2767,9 +2767,9 @@ namespace cp
 	{
 		if (dest.empty())dest.create(leftim.size(), CV_8U);
 		Mat lim, rim;
-		if (leftim.channels() == 3)cvtColor(leftim, lim, CV_BGR2GRAY);
+		if (leftim.channels() == 3)cvtColor(leftim, lim, COLOR_BGR2GRAY);
 		else lim = leftim;
-		if (rightim.channels() == 3)cvtColor(rightim, rim, CV_BGR2GRAY);
+		if (rightim.channels() == 3)cvtColor(rightim, rim, COLOR_BGR2GRAY);
 		else rim = rightim;
 
 
@@ -2813,6 +2813,8 @@ namespace cp
 			a.copyTo(dest);
 		}
 	}
+
+#if CV_MAJOR_VERSION <=3
 	void testStereo(Mat& leftim, Mat& rightim)
 	{
 		/*Mat disp1,disp2,disp3;
@@ -2902,7 +2904,7 @@ namespace cp
 		createTrackbar("crth", wname, &crth, 256);
 		int method = 0;
 		createTrackbar("method", wname, &method, 4);
-		Mat g; cvtColor(leftim, g, CV_BGR2GRAY);
+		Mat g; cvtColor(leftim, g, COLOR_BGR2GRAY);
 		ConsoleImage ci(Size(640, 480));
 
 
@@ -3036,6 +3038,8 @@ namespace cp
 
 		}
 	}
+#endif
+
 	void checkFilter(Mat& src)
 	{
 		CrossBasedLocalFilter cbabf(src, 5, 30);
@@ -3064,7 +3068,7 @@ namespace cp
 		bool isWeight = true;
 		Mat dest;
 		Mat dest2;
-		Mat gray; cvtColor(src, gray, CV_BGR2GRAY);
+		Mat gray; cvtColor(src, gray, COLOR_BGR2GRAY);
 
 		Mat weight;
 		while (key != 'q')
@@ -3133,7 +3137,7 @@ namespace cp
 				alphaBlend(show, src, alpha / 100.0, show);
 			else
 			{
-				Mat gs; cvtColor(gray, gs, CV_GRAY2BGR);
+				Mat gs; cvtColor(gray, gs, COLOR_GRAY2BGR);
 				alphaBlend(show, gs, alpha / 100.0, show);
 			}
 			imshow("filtered", dest);
@@ -3150,6 +3154,8 @@ namespace cp
 		}
 	}
 
+	//TODO: support OpenCV 4
+#if CV_MAJOR_VERSION <= 3
 	void StereoBMSimple::check(Mat& leftim, Mat& rightim, Mat& dest, StereoEval& eval)
 	{
 		//checkFilter(leftim);
@@ -3397,7 +3403,7 @@ namespace cp
 					Mat lt; transpose(leftim, lt);
 
 					/*Mat sobel;
-					Mat ltg;cvtColor(lt,ltg,CV_BGR2GRAY);
+					Mat ltg;cvtColor(lt,ltg,COLOR_BGR2GRAY);
 					Sobel(ltg,sobel,CV_16S,1,0,3);
 					Mat disp;dt.convertTo(disp,CV_8U,0.25);
 					Mat sobel2;Mat(abs(sobel)).convertTo(sobel2,CV_8U);
@@ -3408,7 +3414,7 @@ namespace cp
 					Mat dest2;
 					transpose(dt, dest2);
 					Mat mask = Mat::zeros(dest.size(), CV_8U);
-					cv::rectangle(mask, Rect(40, 40, dest.cols - 80, dest.rows - 80), 255, CV_FILLED);
+					cv::rectangle(mask, Rect(40, 40, dest.cols - 80, dest.rows - 80), 255, FILLED);
 					dest2.copyTo(dest, mask);
 				}
 				else if (isOcc == 4)
@@ -3461,64 +3467,64 @@ namespace cp
 
 					//medianBlur(dest,dest,3);*/
 				}
-			{
-				Mat dest22 = dest.clone();
-				fastLRCheck(dest22);
-				Mat showss;
-				dest22.convertTo(showss, CV_8U, 0.25); imshow("lrre", showss);
-			}
-			absdiff(base, dest, base); Mat mask; compare(base, 0, mask, cv::CMP_NE); imshow("diff", mask);
+				{
+					Mat dest22 = dest.clone();
+					fastLRCheck(dest22);
+					Mat showss;
+					dest22.convertTo(showss, CV_8U, 0.25); imshow("lrre", showss);
+				}
+				absdiff(base, dest, base); Mat mask; compare(base, 0, mask, cv::CMP_NE); imshow("diff", mask);
 
-			//medianBlur(dest,dest,3);
-			if (isStreak)
-			{
-				removeStreakingNoise(dest, dest, 16);
-				removeStreakingNoiseV(dest, dest, 16);
-			}
+				//medianBlur(dest,dest,3);
+				if (isStreak)
+				{
+					removeStreakingNoise(dest, dest, 16);
+					removeStreakingNoiseV(dest, dest, 16);
+				}
 
-			if (isGuided)
-			{
-				CalcTime t("guided");
-				crossBasedAdaptiveBoxFilter(dest, leftim, dest, Size(2 * gr + 1, 2 * gr + 1), ge);
-				ci("cross: %f", t.getTime());
-				/*Mat base = dest.clone();
-				Mat gfil = dest.clone();
-				guidedFilter(dest,leftim,gfil,gr,ge/1000.0);
-				possibleFilter(gfil,dest,Size(2*pr+1,2*pr+1),dest);
-				filterSpeckles(dest,0,speckleWindowSize,speckleRange);
-				fillOcclusion(dest);
-				guidedFilter(dest,leftim,gfil,gr,ge/1000.0);
-				possibleFilter(gfil,dest,Size(2*pr+1,2*pr+1),dest);
+				if (isGuided)
+				{
+					CalcTime t("guided");
+					crossBasedAdaptiveBoxFilter(dest, leftim, dest, Size(2 * gr + 1, 2 * gr + 1), ge);
+					ci("cross: %f", t.getTime());
+					/*Mat base = dest.clone();
+					Mat gfil = dest.clone();
+					guidedFilter(dest,leftim,gfil,gr,ge/1000.0);
+					possibleFilter(gfil,dest,Size(2*pr+1,2*pr+1),dest);
+					filterSpeckles(dest,0,speckleWindowSize,speckleRange);
+					fillOcclusion(dest);
+					guidedFilter(dest,leftim,gfil,gr,ge/1000.0);
+					possibleFilter(gfil,dest,Size(2*pr+1,2*pr+1),dest);
 
-				Mat bbdest;
-				Mat mask = Mat::zeros(dest.size(),CV_8U);
-				cv::rectangle(mask,Rect(0,dest.rows-22,480,45),255,CV_FILLED);
-				base.copyTo(dest,mask);*/
-			}
-			if (isMedian)
-			{
-				medianBlur(dest, dest, 3);
-			}
-			if (isBoxRefinement)
-			{
-				binalyWeightedRangeFilter(dest, dest, bx, bran);
-				//boxSubpixelRefinement(dest,dest,3,16);
-				//filterSpeckles(dest,0,spsize,spdiff);
-				//fillOcclusion(dest);
-			}
-			if (isReCost)
-			{
-				//jointBilateralModeFilter(dest,dest,9,50,255,leftim);
-				//refineFromCost(dest,dest);
-			}
-			ci("post: %f", t.getTime());
+					Mat bbdest;
+					Mat mask = Mat::zeros(dest.size(),CV_8U);
+					cv::rectangle(mask,Rect(0,dest.rows-22,480,45),255,CV_FILLED);
+					base.copyTo(dest,mask);*/
+				}
+				if (isMedian)
+				{
+					medianBlur(dest, dest, 3);
+				}
+				if (isBoxRefinement)
+				{
+					binalyWeightedRangeFilter(dest, dest, bx, bran);
+					//boxSubpixelRefinement(dest,dest,3,16);
+					//filterSpeckles(dest,0,spsize,spdiff);
+					//fillOcclusion(dest);
+				}
+				if (isReCost)
+				{
+					//jointBilateralModeFilter(dest,dest,9,50,255,leftim);
+					//refineFromCost(dest,dest);
+				}
+				ci("post: %f", t.getTime());
 			}
 			//box refine
 			{
 				Mat bbdest;
 				blur(dest, bbdest, Size(2 * boxb + 1, 2 * boxb + 1), Point(-1, -1), BORDER_REPLICATE);
 				Mat mask = Mat::zeros(dest.size(), CV_8U);
-				cv::rectangle(mask, Rect(0, dest.rows - 22, 480, 45), 255, CV_FILLED);
+				cv::rectangle(mask, Rect(0, dest.rows - 22, 480, 45), 255, FILLED);
 				bbdest.copyTo(dest, mask);
 			}
 
@@ -3564,221 +3570,222 @@ namespace cp
 				p.plotData();
 				imshow("cost", p.render);
 			}
-		{
-			signal.clear();
-			const int mindisp = 15;
-			if (vh == 0)
 			{
-				signal.setXYMinMax(0, dest.cols - 1, mindisp, 64);
-				signal.setPlot(0, CV_RGB(0, 0, 0), 0, 1, 1);
-				signal.setPlot(1, CV_RGB(255, 0, 0), 0, 1, 1);
-				for (int i = 0; i < dest.cols; i++)
+				signal.clear();
+				const int mindisp = 15;
+				if (vh == 0)
 				{
-					double ddd = (eval.ground_truth.at<uchar>(mpt.y, i) / eval.amp);
-					double ddd2 = ((double)dest.at<short>(mpt.y, i) / (16.0));
-
-					if (diffmode == 1)
+					signal.setXYMinMax(0, dest.cols - 1, mindisp, 64);
+					signal.setPlot(0, CV_RGB(0, 0, 0), 0, 1, 1);
+					signal.setPlot(1, CV_RGB(255, 0, 0), 0, 1, 1);
+					for (int i = 0; i < dest.cols; i++)
 					{
-						ddd = abs(ddd - (eval.ground_truth.at<uchar>(mpt.y, i - 1) / eval.amp));
-						ddd2 = abs(ddd2 - (((double)dest.at<short>(mpt.y, i - 1) / (16.0))));
-					}
-					if (diffmode == 2)
-					{
-						ddd = abs((ddd - (eval.ground_truth.at<uchar>(mpt.y, i - 1) / eval.amp)) - (ddd - (eval.ground_truth.at<uchar>(mpt.y, i + 1) / eval.amp)));
-						ddd2 = abs((ddd2 - ((double)dest.at<short>(mpt.y, i - 1) / (16.0))) - (ddd2 - ((double)dest.at<short>(mpt.y, i + 1) / (16.0))));
-					}
+						double ddd = (eval.ground_truth.at<uchar>(mpt.y, i) / eval.amp);
+						double ddd2 = ((double)dest.at<short>(mpt.y, i) / (16.0));
 
-					signal.push_back(i, ddd2, 0);
-					signal.push_back(i, ddd, 1);
+						if (diffmode == 1)
+						{
+							ddd = abs(ddd - (eval.ground_truth.at<uchar>(mpt.y, i - 1) / eval.amp));
+							ddd2 = abs(ddd2 - (((double)dest.at<short>(mpt.y, i - 1) / (16.0))));
+						}
+						if (diffmode == 2)
+						{
+							ddd = abs((ddd - (eval.ground_truth.at<uchar>(mpt.y, i - 1) / eval.amp)) - (ddd - (eval.ground_truth.at<uchar>(mpt.y, i + 1) / eval.amp)));
+							ddd2 = abs((ddd2 - ((double)dest.at<short>(mpt.y, i - 1) / (16.0))) - (ddd2 - ((double)dest.at<short>(mpt.y, i + 1) / (16.0))));
+						}
+
+						signal.push_back(i, ddd2, 0);
+						signal.push_back(i, ddd, 1);
+					}
+					signal.plotData();
+					imshow("signal", signal.render);
 				}
-				signal.plotData();
-				imshow("signal", signal.render);
+				else
+				{
+					signal.setXYMinMax(0, dest.rows - 1, mindisp, 64);
+					signal.setPlot(0, CV_RGB(0, 0, 0), 0, 1, 1);
+					signal.setPlot(1, CV_RGB(255, 0, 0), 0, 1, 1);
+					for (int i = 0; i < dest.rows; i++)
+					{
+						double ddd = (eval.ground_truth.at<uchar>(i, mpt.x) / eval.amp);
+						double ddd2 = ((double)dest.at<short>(i, mpt.x) / (16.0));
+
+						if (diffmode == 1)
+						{
+							ddd = abs(ddd - (eval.ground_truth.at<uchar>(i - 1, mpt.x) / eval.amp));
+							ddd2 = abs(ddd2 - (((double)dest.at<short>(i - 1, mpt.x) / (16.0))));
+						}
+						if (diffmode == 2)
+						{
+							ddd = abs(-(ddd - (eval.ground_truth.at<uchar>(i - 1, mpt.x) / eval.amp)) + (-ddd + (eval.ground_truth.at<uchar>(i + 1, mpt.x) / eval.amp)));
+							ddd2 = abs(-(ddd2 - ((double)dest.at<short>(i - 1, mpt.x) / (16.0))) + (-ddd2 + ((double)dest.at<short>(i + 1, mpt.x) / (16.0))));
+						}
+
+						signal.push_back(i, ddd2, 0);
+						signal.push_back(i, ddd, 1);
+					}
+					signal.plotData();
+					Mat show;
+					transpose(signal.render, show);
+					flip(show, show, 1);
+					imshow("signal", show);
+				}
+			}
+			{
+				histp.clear();
+				short* d = dest.ptr<short>(0);
+				int hist[16];
+				for (int i = 0; i < 16; i++)hist[i] = 0;
+
+				for (int i = 0; i < dest.size().area(); i++)
+				{
+					if (d[i] > minDisparity * 16 && d[i] < (numberOfDisparities + minDisparity - 1) * 16)
+					{
+						hist[d[i] % 16]++;
+					}
+				}
+
+				for (int i = 0; i < 16; i++)
+				{
+					histp.push_back(i, hist[(i + 8) % 16]);
+				}
+				histp.recomputeXYMAXMIN();
+				histp.setYOriginZERO();
+
+				histp.plotData();
+				imshow("hist", histp.render);
+			}
+
+
+			Mat temp;
+			if (dispColor)
+				cvtDisparityColor(dest, temp, minDisparity, numberOfDisparities - 10, 2, 16);
+			else
+				cvtDisparityColor(dest, temp, 0, 64, 0);
+
+			if (eval.isInit)
+			{
+				//Mat mask=Mat::zeros(dd.size(),CV_8U);rectangle(mask,Rect(250,20,200,115),255,CV_FILLED); eval.ground_truth.copyTo(dd,mask);
+				//Mat mask=Mat::zeros(dd.size(),CV_8U);rectangle(mask,Rect(50,20,400,315),255,CV_FILLED); eval.ground_truth.copyTo(dd,mask);
+
+				Mat maskbadpixel = Mat::zeros(dest.size(), CV_8U);
+
+				eval(dest, 0.25, true, 16);
+				ci(eval.message);
+
+				eval(dest, 0.5, true, 16);
+				ci(eval.message);
+
+				eval(dest, 1, true, 16);
+				ci(eval.message);
+
+
+				if (maskType != 0)
+				{
+					if (maskPrec == 0)eval(dest, 1, true, 16);
+					if (maskPrec == 1)eval(dest, 0.5, true, 16);
+					if (maskPrec == 2)eval(dest, 0.25, true, 16);
+
+					if (maskType == 1)
+						eval.nonocc_th.copyTo(maskbadpixel);
+					else if (maskType == 2)
+						eval.all_th.copyTo(maskbadpixel);
+					else if (maskType == 3)
+						eval.disc_th.copyTo(maskbadpixel);
+				}
+
+				Mat eshow;
+				alphaBlend(leftim, eval.all_th, alpha / 100.0, eshow);
+				imshow("eval", eshow);
+				if (isShowGT)
+				{
+					if (dispColor) { Mat a; eval.ground_truth.convertTo(a, CV_16S, 4); cvtDisparityColor(a, temp, minDisparity, numberOfDisparities - 10, 2, 16); }
+					else eval.ground_truth.copyTo(temp);
+				}
+				else
+				{
+					temp.setTo(Scalar(0, 0, 255), maskbadpixel);
+				}
 			}
 			else
 			{
-				signal.setXYMinMax(0, dest.rows - 1, mindisp, 64);
-				signal.setPlot(0, CV_RGB(0, 0, 0), 0, 1, 1);
-				signal.setPlot(1, CV_RGB(255, 0, 0), 0, 1, 1);
-				for (int i = 0; i < dest.rows; i++)
-				{
-					double ddd = (eval.ground_truth.at<uchar>(i, mpt.x) / eval.amp);
-					double ddd2 = ((double)dest.at<short>(i, mpt.x) / (16.0));
-
-					if (diffmode == 1)
-					{
-						ddd = abs(ddd - (eval.ground_truth.at<uchar>(i - 1, mpt.x) / eval.amp));
-						ddd2 = abs(ddd2 - (((double)dest.at<short>(i - 1, mpt.x) / (16.0))));
-					}
-					if (diffmode == 2)
-					{
-						ddd = abs(-(ddd - (eval.ground_truth.at<uchar>(i - 1, mpt.x) / eval.amp)) + (-ddd + (eval.ground_truth.at<uchar>(i + 1, mpt.x) / eval.amp)));
-						ddd2 = abs(-(ddd2 - ((double)dest.at<short>(i - 1, mpt.x) / (16.0))) + (-ddd2 + ((double)dest.at<short>(i + 1, mpt.x) / (16.0))));
-					}
-
-					signal.push_back(i, ddd2, 0);
-					signal.push_back(i, ddd, 1);
-				}
-				signal.plotData();
-				Mat show;
-				transpose(signal.render, show);
-				flip(show, show, 1);
-				imshow("signal", show);
 			}
-		}
-		{
-			histp.clear();
-			short* d = dest.ptr<short>(0);
-			int hist[16];
-			for (int i = 0; i < 16; i++)hist[i] = 0;
-
-			for (int i = 0; i < dest.size().area(); i++)
+			alphaBlend(leftim, temp, alpha / 100.0, temp);
+			if (isGrid)
 			{
-				if (d[i] > minDisparity * 16 && d[i] < (numberOfDisparities + minDisparity - 1) * 16)
-				{
-					hist[d[i] % 16]++;
-				}
+				line(temp, Point(0, mpt.y), Point(leftim.cols, mpt.y), CV_RGB(0, 255, 0));
+				line(temp, Point(mpt.x, 0), Point(mpt.x, leftim.rows), CV_RGB(0, 255, 0));
 			}
+			imshow(wname, temp);
+			//state
+			ci(CV_RGB(255, 0, 0), "Subpex: %d", subpixMethod);
+			if (isStreak)ci(CV_RGB(255, 0, 0), "Streak: true");
+			if (isGuided)ci(CV_RGB(255, 0, 0), "Guided: true");
+			if (isMedian)ci(CV_RGB(255, 0, 0), "Median: true");
 
-			for (int i = 0; i < 16; i++)
-			{
-				histp.push_back(i, hist[(i + 8) % 16]);
-			}
-			histp.recomputeXYMAXMIN();
-			histp.setYOriginZERO();
+			if (isBoxRefinement)ci(CV_RGB(255, 0, 0), "BoxRefine: true");
+			if (isMinCostFilter)ci(CV_RGB(255, 0, 0), "MinCost: true");
+			if (isBT)ci(CV_RGB(255, 0, 0), "BT: true");
 
-			histp.plotData();
-			imshow("hist", histp.render);
-		}
-
-
-		Mat temp;
-		if (dispColor)
-			cvtDisparityColor(dest, temp, minDisparity, numberOfDisparities - 10, 2, 16);
-		else
-			cvtDisparityColor(dest, temp, 0, 64, 0);
-
-		if (eval.isInit)
-		{
-			//Mat mask=Mat::zeros(dd.size(),CV_8U);rectangle(mask,Rect(250,20,200,115),255,CV_FILLED); eval.ground_truth.copyTo(dd,mask);
-			//Mat mask=Mat::zeros(dd.size(),CV_8U);rectangle(mask,Rect(50,20,400,315),255,CV_FILLED); eval.ground_truth.copyTo(dd,mask);
-
-			Mat maskbadpixel = Mat::zeros(dest.size(), CV_8U);
-
-			eval(dest, 0.25, true, 16);
-			ci(eval.message);
-
-			eval(dest, 0.5, true, 16);
-			ci(eval.message);
-
-			eval(dest, 1, true, 16);
-			ci(eval.message);
-
-
-			if (maskType != 0)
-			{
-				if (maskPrec == 0)eval(dest, 1, true, 16);
-				if (maskPrec == 1)eval(dest, 0.5, true, 16);
-				if (maskPrec == 2)eval(dest, 0.25, true, 16);
-
-				if (maskType == 1)
-					eval.nonocc_th.copyTo(maskbadpixel);
-				else if (maskType == 2)
-					eval.all_th.copyTo(maskbadpixel);
-				else if (maskType == 3)
-					eval.disc_th.copyTo(maskbadpixel);
-			}
-
-			Mat eshow;
-			alphaBlend(leftim, eval.all_th, alpha / 100.0, eshow);
-			imshow("eval", eshow);
 			if (isShowGT)
 			{
-				if (dispColor){ Mat a; eval.ground_truth.convertTo(a, CV_16S, 4); cvtDisparityColor(a, temp, minDisparity, numberOfDisparities - 10, 2, 16); }
-				else eval.ground_truth.copyTo(temp);
+				ci(CV_RGB(255, 0, 0), "show ground trueth");
 			}
 			else
 			{
-				temp.setTo(Scalar(0, 0, 255), maskbadpixel);
+				if (maskType != 0)
+				{
+					if (maskPrec == 2 && maskType == 1)
+						ci(CV_RGB(255, 0, 0), "mask: nonocc, prec: 0.25");
+					if (maskPrec == 1 && maskType == 1)
+						ci(CV_RGB(255, 0, 0), "mask: nonocc, prec: 0.50");
+					if (maskPrec == 0 && maskType == 1)
+						ci(CV_RGB(255, 0, 0), "mask: nonocc, prec: 1.00");
+
+					if (maskPrec == 2 && maskType == 2)
+						ci(CV_RGB(255, 0, 0), "mask: all, prec: 0.25");
+					if (maskPrec == 1 && maskType == 2)
+						ci(CV_RGB(255, 0, 0), "mask: all, prec: 0.50");
+					if (maskPrec == 0 && maskType == 2)
+						ci(CV_RGB(255, 0, 0), "mask: all, prec: 1.00");
+
+					if (maskPrec == 2 && maskType == 3)
+						ci(CV_RGB(255, 0, 0), "mask: disc, prec: 0.25");
+					if (maskPrec == 1 && maskType == 3)
+						ci(CV_RGB(255, 0, 0), "mask: disc, prec: 0.50");
+					if (maskPrec == 0 && maskType == 3)
+						ci(CV_RGB(255, 0, 0), "mask: disc, prec: 1.00");
+				}
+				else
+				{
+					ci(CV_RGB(255, 0, 0), "mask: none");
+				}
 			}
-		}
-		else
-		{
-		}
-		alphaBlend(leftim, temp, alpha / 100.0, temp);
-		if (isGrid)
-		{
-			line(temp, Point(0, mpt.y), Point(leftim.cols, mpt.y), CV_RGB(0, 255, 0));
-			line(temp, Point(mpt.x, 0), Point(mpt.x, leftim.rows), CV_RGB(0, 255, 0));
-		}
-		imshow(wname, temp);
-		//state
-		ci(CV_RGB(255, 0, 0), "Subpex: %d", subpixMethod);
-		if (isStreak)ci(CV_RGB(255, 0, 0), "Streak: true");
-		if (isGuided)ci(CV_RGB(255, 0, 0), "Guided: true");
-		if (isMedian)ci(CV_RGB(255, 0, 0), "Median: true");
 
-		if (isBoxRefinement)ci(CV_RGB(255, 0, 0), "BoxRefine: true");
-		if (isMinCostFilter)ci(CV_RGB(255, 0, 0), "MinCost: true");
-		if (isBT)ci(CV_RGB(255, 0, 0), "BT: true");
+			imshow("console", ci.show);
+			if (key == 'l')isProcessLBorder = (isProcessLBorder) ? false : true;
+			if (key == 'g')isGrid = (isGrid) ? false : true;
+			if (key == 'f')isGuided = (isGuided) ? false : true;
+			if (key == 'v')isMedian = (isMedian) ? false : true;
+			if (key == 'd') isStreak = (isStreak) ? false : true;
+			if (key == 's')isBoxRefinement = (isBoxRefinement) ? false : true;
+			if (key == 'a')isReCost = (isReCost) ? false : true;
+			if (key == 'm')isMinCostFilter = isMinCostFilter ? false : true;
+			if (key == 'c')guiAlphaBlend(temp, leftim);
+			if (key == 'p') { subpixMethod++; subpixMethod = (subpixMethod > 2) ? 0 : subpixMethod; }
+			if (key == '@') { subpixMethod--; subpixMethod = (subpixMethod < 0) ? 2 : subpixMethod; }
+			if (key == 'b')isBT = isBT ? false : true;
 
-		if (isShowGT)
-		{
-			ci(CV_RGB(255, 0, 0), "show ground trueth");
-		}
-		else
-		{
-			if (maskType != 0)
-			{
-				if (maskPrec == 2 && maskType == 1)
-					ci(CV_RGB(255, 0, 0), "mask: nonocc, prec: 0.25");
-				if (maskPrec == 1 && maskType == 1)
-					ci(CV_RGB(255, 0, 0), "mask: nonocc, prec: 0.50");
-				if (maskPrec == 0 && maskType == 1)
-					ci(CV_RGB(255, 0, 0), "mask: nonocc, prec: 1.00");
-
-				if (maskPrec == 2 && maskType == 2)
-					ci(CV_RGB(255, 0, 0), "mask: all, prec: 0.25");
-				if (maskPrec == 1 && maskType == 2)
-					ci(CV_RGB(255, 0, 0), "mask: all, prec: 0.50");
-				if (maskPrec == 0 && maskType == 2)
-					ci(CV_RGB(255, 0, 0), "mask: all, prec: 1.00");
-
-				if (maskPrec == 2 && maskType == 3)
-					ci(CV_RGB(255, 0, 0), "mask: disc, prec: 0.25");
-				if (maskPrec == 1 && maskType == 3)
-					ci(CV_RGB(255, 0, 0), "mask: disc, prec: 0.50");
-				if (maskPrec == 0 && maskType == 3)
-					ci(CV_RGB(255, 0, 0), "mask: disc, prec: 1.00");
-			}
-			else
-			{
-				ci(CV_RGB(255, 0, 0), "mask: none");
-			}
-		}
-
-		imshow("console", ci.show);
-		if (key == 'l')isProcessLBorder = (isProcessLBorder) ? false : true;
-		if (key == 'g')isGrid = (isGrid) ? false : true;
-		if (key == 'f')isGuided = (isGuided) ? false : true;
-		if (key == 'v')isMedian = (isMedian) ? false : true;
-		if (key == 'd') isStreak = (isStreak) ? false : true;
-		if (key == 's')isBoxRefinement = (isBoxRefinement) ? false : true;
-		if (key == 'a')isReCost = (isReCost) ? false : true;
-		if (key == 'm')isMinCostFilter = isMinCostFilter ? false : true;
-		if (key == 'c')guiAlphaBlend(temp, leftim);
-		if (key == 'p'){ subpixMethod++; subpixMethod = (subpixMethod > 2) ? 0 : subpixMethod; }
-		if (key == '@'){ subpixMethod--; subpixMethod = (subpixMethod < 0) ? 2 : subpixMethod; }
-		if (key == 'b')isBT = isBT ? false : true;
-
-		if (key == 'w')dispColor = (dispColor) ? false : true;
-		if (key == 'e')isShowGT = (isShowGT) ? false : true;
-		if (key == 'r')maskType++; maskType = maskType > 4 ? 0 : maskType;
-		if (key == 't')maskType--; maskType = maskType < 0 ? 3 : maskType;
-		if (key == 'y')maskPrec++; maskPrec = maskPrec > 3 ? 0 : maskPrec;
-		if (key == 'u')maskPrec--; maskPrec = maskPrec < 0 ? 2 : maskPrec;
+			if (key == 'w')dispColor = (dispColor) ? false : true;
+			if (key == 'e')isShowGT = (isShowGT) ? false : true;
+			if (key == 'r')maskType++; maskType = maskType > 4 ? 0 : maskType;
+			if (key == 't')maskType--; maskType = maskType < 0 ? 3 : maskType;
+			if (key == 'y')maskPrec++; maskPrec = maskPrec > 3 ? 0 : maskPrec;
+			if (key == 'u')maskPrec--; maskPrec = maskPrec < 0 ? 2 : maskPrec;
 
 		}
 
 	}
+#endif
 
 }

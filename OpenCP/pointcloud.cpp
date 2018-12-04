@@ -1237,7 +1237,7 @@ namespace cp
 	{
 		Point* ret = (Point*)param;
 
-		if (flags == CV_EVENT_FLAG_LBUTTON)
+		if (flags == EVENT_FLAG_LBUTTON)
 		{
 			ret->x = x;
 			ret->y = y;
@@ -1307,7 +1307,7 @@ namespace cp
 
 		Mat image;
 		if (image_.channels() == 3)image = image_.getMat();
-		else cvtColor(image_, image, CV_GRAY2BGR);
+		else cvtColor(image_, image, COLOR_GRAY2BGR);
 
 		Mat dshow;
 
@@ -1334,7 +1334,7 @@ namespace cp
 		{
 			Mat dispC;
 			if (viewSW == 1)
-				cvtColor(dshow, dispC, CV_GRAY2BGR);
+				cvtColor(dshow, dispC, COLOR_GRAY2BGR);
 			else
 				cv::applyColorMap(dshow, dispC, 2);
 
@@ -1350,7 +1350,7 @@ namespace cp
 		if (renderOpt > 1)
 		{
 			Mat gray, mask;
-			cvtColor(renderingImage, gray, CV_BGR2GRAY);
+			cvtColor(renderingImage, gray, COLOR_BGR2GRAY);
 			compare(gray, 0, mask, cv::CMP_EQ);
 			medianBlur(renderingImage, dest, 2 + 1);
 			renderingImage.copyTo(dest, ~mask);
@@ -1370,7 +1370,7 @@ namespace cp
 		Mat srcDepth = srcDepth_.getMat().clone();
 		Mat image;
 		if (image_.channels() == 3)image = image_.getMat();
-		else cvtColor(image_, image, CV_GRAY2BGR);
+		else cvtColor(image_, image, COLOR_GRAY2BGR);
 
 		Mat dshow;
 
@@ -1407,7 +1407,7 @@ namespace cp
 
 			Mat dispC;
 			if (viewSW == 1)
-				cvtColor(dshow, dispC, CV_GRAY2BGR);
+				cvtColor(dshow, dispC, COLOR_GRAY2BGR);
 			else
 				cv::applyColorMap(dshow, dispC, 2);
 
@@ -1423,7 +1423,7 @@ namespace cp
 		if (renderOpt > 1)
 		{
 			Mat gray, mask;
-			cvtColor(renderingImage, gray, CV_BGR2GRAY);
+			cvtColor(renderingImage, gray, COLOR_BGR2GRAY);
 			compare(gray, 0, mask, cv::CMP_EQ);
 			medianBlur(renderingImage, dest, 2 + 1);
 			renderingImage.copyTo(dest, ~mask);
@@ -1439,7 +1439,7 @@ namespace cp
 		Mat srcDepth = srcDepth_.getMat().clone();
 		Mat image;
 		if (image_.channels() == 3)image = image_.getMat();
-		else cvtColor(image_, image, CV_GRAY2BGR);
+		else cvtColor(image_, image, COLOR_GRAY2BGR);
 
 		Mat dshow;
 
@@ -1484,7 +1484,7 @@ namespace cp
 		{
 			Mat dispC;
 			if (viewSW == 1)
-				cvtColor(dshow, dispC, CV_GRAY2BGR);
+				cvtColor(dshow, dispC, COLOR_GRAY2BGR);
 			else
 				cv::applyColorMap(dshow, dispC, 2);
 
@@ -1500,7 +1500,7 @@ namespace cp
 		if (renderOpt > 1)
 		{
 			Mat gray, mask;
-			cvtColor(renderingImage, gray, CV_BGR2GRAY);
+			cvtColor(renderingImage, gray, COLOR_BGR2GRAY);
 			compare(gray, 0, mask, cv::CMP_EQ);
 			medianBlur(renderingImage, dest, 2 + 1);
 			renderingImage.copyTo(dest, ~mask);
@@ -1516,7 +1516,7 @@ namespace cp
 		Mat srcDisparity = srcDisparity_.getMat().clone();
 		Mat image;
 		if (image_.channels() == 3)image = image_.getMat();
-		else cvtColor(image_, image, CV_GRAY2BGR);
+		else cvtColor(image_, image, COLOR_GRAY2BGR);
 
 		Mat dshow;
 		srcDisparity.convertTo(dshow, CV_8U, 1 / disp_amp);
@@ -1554,7 +1554,7 @@ namespace cp
 		{
 			Mat dispC;
 			if (viewSW == 1)
-				cvtColor(dshow, dispC, CV_GRAY2BGR);
+				cvtColor(dshow, dispC, COLOR_GRAY2BGR);
 			else
 				cv::applyColorMap(dshow, dispC, 2);
 
@@ -1570,7 +1570,7 @@ namespace cp
 		if (renderOpt > 1)
 		{
 			Mat gray, mask;
-			cvtColor(renderingImage, gray, CV_BGR2GRAY);
+			cvtColor(renderingImage, gray, COLOR_BGR2GRAY);
 			compare(gray, 0, mask, cv::CMP_EQ);
 			medianBlur(renderingImage, dest, 2 + 1);
 			renderingImage.copyTo(dest, ~mask);
@@ -1745,7 +1745,7 @@ namespace cp
 			if (renderOpt > 1)
 			{
 				Mat gray, mask;
-				cvtColor(destImage, gray, CV_BGR2GRAY);
+				cvtColor(destImage, gray, COLOR_BGR2GRAY);
 				compare(gray, 0, mask, cv::CMP_EQ);
 				medianBlur(destImage, renderingImage, 2 + 1);
 				destImage.copyTo(renderingImage, ~mask);
@@ -1760,17 +1760,17 @@ namespace cp
 				//projectPointSimple(look, R, t, K, ptf);
 				projectPointSimple(mean3d, R, t, K, ptf);
 				
-				circle(renderingImage, Point(ptf), 7, CV_RGB(0, 255, 0), CV_FILLED);
+				circle(renderingImage, Point(ptf), 7, CV_RGB(0, 255, 0), FILLED);
 				line(renderingImage, Point(0, height / 2), Point(width, height/2), CV_RGB(255, 0, 0));
 				line(renderingImage, Point(width / 2, 0), Point(width / 2, height), CV_RGB(255, 0, 0));
 			}
 			double fps = 1000.0 / tm.getTime();
-			putText(renderingImage, format("%.02f fps", fps), Point(30, 30), CV_FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255));
+			putText(renderingImage, format("%.02f fps", fps), Point(30, 30), FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255));
 
 			if (isLookat)
-				putText(renderingImage, format("Look at: Free", bps), Point(30, 60), CV_FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255));
+				putText(renderingImage, format("Look at: Free", bps), Point(30, 60), FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255));
 			else
-				putText(renderingImage, format("Look at: Fix", bps), Point(30, 60), CV_FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255));
+				putText(renderingImage, format("Look at: Fix", bps), Point(30, 60), FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255));
 
 			//show image
 			Mat msk;
@@ -1825,7 +1825,7 @@ namespace cp
 	{
 		Mat image;
 		if (image_.channels() == 3)image = image_.getMat();
-		else cvtColor(image_, image, CV_GRAY2BGR);
+		else cvtColor(image_, image, COLOR_GRAY2BGR);
 
 		Mat K = K_.getMat();
 		Mat Rinit = R_.getMat();
@@ -1946,7 +1946,7 @@ namespace cp
 			if (renderOpt > 1)
 			{
 				Mat gray, mask;
-				cvtColor(destImage, gray, CV_BGR2GRAY);
+				cvtColor(destImage, gray, COLOR_BGR2GRAY);
 				compare(gray, 0, mask, cv::CMP_EQ);
 				medianBlur(destImage, renderingImage, 2 + 1);
 				destImage.copyTo(renderingImage, ~mask);
@@ -1960,17 +1960,17 @@ namespace cp
 			{
 				Point2d ptf;
 				projectPointSimple(look, R, t, K, ptf);
-				circle(renderingImage, Point(ptf), 7, CV_RGB(0, 255, 0), CV_FILLED);
+				circle(renderingImage, Point(ptf), 7, CV_RGB(0, 255, 0), FILLED);
 				line(renderingImage, Point(0, image.rows / 2), Point(image.cols, image.rows / 2), CV_RGB(255, 0, 0));
 				line(renderingImage, Point(image.cols / 2, 0), Point(image.cols / 2, image.rows), CV_RGB(255, 0, 0));
 			}
 			double fps = 1000.0 / tm.getTime();
-			putText(renderingImage, format("%.02f fps", fps), Point(30, 30), CV_FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255));
+			putText(renderingImage, format("%.02f fps", fps), Point(30, 30), FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255));
 
 			if (isLookat)
-				putText(renderingImage, format("Look at: Free", bps), Point(30, 60), CV_FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255));
+				putText(renderingImage, format("Look at: Free", bps), Point(30, 60), FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255));
 			else
-				putText(renderingImage, format("Look at: Fix", bps), Point(30, 60), CV_FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255));
+				putText(renderingImage, format("Look at: Fix", bps), Point(30, 60), FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255));
 
 			//show image
 			Mat msk;
@@ -2033,7 +2033,7 @@ namespace cp
 		Mat srcDepth = srcDepth_.clone();
 		Mat image;
 		if (image_.channels() == 3)image = image_;
-		else cvtColor(image_, image, CV_GRAY2BGR);
+		else cvtColor(image_, image, COLOR_GRAY2BGR);
 
 		Mat dshow;
 
@@ -2175,7 +2175,7 @@ namespace cp
 
 				Mat dispC;
 				if (viewSW == 1)
-					cvtColor(dshow, dispC, CV_GRAY2BGR);
+					cvtColor(dshow, dispC, COLOR_GRAY2BGR);
 				else
 					cv::applyColorMap(dshow, dispC, 2);
 
@@ -2190,7 +2190,7 @@ namespace cp
 			if (renderOpt > 1)
 			{
 				Mat gray, mask;
-				cvtColor(destImage, gray, CV_BGR2GRAY);
+				cvtColor(destImage, gray, COLOR_BGR2GRAY);
 				compare(gray, 0, mask, cv::CMP_EQ);
 				medianBlur(destImage, view, 2 + 1);
 				destImage.copyTo(view, ~mask);
@@ -2203,17 +2203,17 @@ namespace cp
 			{
 				Point2d ptf;
 				projectPointSimple(look, R, t, k, ptf);
-				circle(view, Point(ptf), 7, CV_RGB(0, 255, 0), CV_FILLED);
+				circle(view, Point(ptf), 7, CV_RGB(0, 255, 0), FILLED);
 				line(view, Point(0, image.rows / 2), Point(image.cols, image.rows / 2), CV_RGB(255, 0, 0));
 				line(view, Point(image.cols / 2, 0), Point(image.cols / 2, image.rows), CV_RGB(255, 0, 0));
 			}
 			double fps = 1000.0 / tm.getTime();
-			putText(view, format("%.02f fps", fps), Point(30, 30), CV_FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255));
+			putText(view, format("%.02f fps", fps), Point(30, 30), FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255));
 
 			if (isLookat)
-				putText(view, format("Look at: Free", bps), Point(30, 60), CV_FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255));
+				putText(view, format("Look at: Free", bps), Point(30, 60), FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255));
 			else
-				putText(view, format("Look at: Fix", bps), Point(30, 60), CV_FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255));
+				putText(view, format("Look at: Fix", bps), Point(30, 60), FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255));
 
 			//show image
 			imshow(wname, view);
@@ -2274,9 +2274,9 @@ namespace cp
 		Mat image;
 		Mat image2;
 		if (image_.channels() == 3)image = image_.getMat();
-		else cvtColor(image_, image, CV_GRAY2BGR);
+		else cvtColor(image_, image, COLOR_GRAY2BGR);
 		if (image2_.channels() == 3)image2 = image2_.getMat();
-		else cvtColor(image2_, image2, CV_GRAY2BGR);
+		else cvtColor(image2_, image2, COLOR_GRAY2BGR);
 
 		Mat oR = oR_.getMat();
 		Mat ot = ot_.getMat();
@@ -2444,7 +2444,7 @@ namespace cp
 
 				Mat dispC;
 				if (viewSW == 1)
-					cvtColor(dshow, dispC, CV_GRAY2BGR);
+					cvtColor(dshow, dispC, COLOR_GRAY2BGR);
 				else
 					cv::applyColorMap(dshow, dispC, 2);
 
@@ -2459,7 +2459,7 @@ namespace cp
 			if (renderOpt > 1)
 			{
 				Mat gray, mask;
-				cvtColor(destImage, gray, CV_BGR2GRAY);
+				cvtColor(destImage, gray, COLOR_BGR2GRAY);
 				compare(gray, 0, mask, cv::CMP_EQ);
 				medianBlur(destImage, view, 2 + 1);
 				destImage.copyTo(view, ~mask);
@@ -2490,7 +2490,7 @@ namespace cp
 
 				Mat dispC;
 				if (viewSW == 1)
-					cvtColor(dshow2, dispC, CV_GRAY2BGR);
+					cvtColor(dshow2, dispC, COLOR_GRAY2BGR);
 				else
 					cv::applyColorMap(dshow2, dispC, 2);
 
@@ -2505,7 +2505,7 @@ namespace cp
 			if (renderOpt > 1)
 			{
 				Mat gray, mask;
-				cvtColor(destImage, gray, CV_BGR2GRAY);
+				cvtColor(destImage, gray, COLOR_BGR2GRAY);
 				compare(gray, 0, mask, cv::CMP_EQ);
 				medianBlur(destImage, view, 2 + 1);
 				destImage.copyTo(view, ~mask);
@@ -2519,17 +2519,17 @@ namespace cp
 			{
 				Point2d ptf;
 				projectPointSimple(look, R, t, k, ptf);
-				circle(view, Point(ptf), 7, CV_RGB(0, 255, 0), CV_FILLED);
+				circle(view, Point(ptf), 7, CV_RGB(0, 255, 0), FILLED);
 				line(view, Point(0, image.rows / 2), Point(image.cols, image.rows / 2), CV_RGB(255, 0, 0));
 				line(view, Point(image.cols / 2, 0), Point(image.cols / 2, image.rows), CV_RGB(255, 0, 0));
 			}
 			double fps = 1000.0 / tm.getTime();
-			putText(view, format("%.02f fps", fps), Point(30, 30), CV_FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255));
+			putText(view, format("%.02f fps", fps), Point(30, 30), FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255));
 
 			if (isLookat)
-				putText(view, format("Look at: Free", bps), Point(30, 60), CV_FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255));
+				putText(view, format("Look at: Free", bps), Point(30, 60), FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255));
 			else
-				putText(view, format("Look at: Fix", bps), Point(30, 60), CV_FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255));
+				putText(view, format("Look at: Fix", bps), Point(30, 60), FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255));
 
 			//show image
 			Mat msk, msk2;
@@ -2601,7 +2601,7 @@ namespace cp
 		Mat srcDisparity = srcDisparity_.clone();
 		Mat image;
 		if (image_.channels() == 3)image = image_;
-		else cvtColor(image_, image, CV_GRAY2BGR);
+		else cvtColor(image_, image, COLOR_GRAY2BGR);
 
 		Mat dshow;
 		srcDisparity.convertTo(dshow, CV_8U, 1 / disp_amp);
@@ -2734,7 +2734,7 @@ namespace cp
 			{
 				Mat dispC;
 				if (viewSW == 1)
-					cvtColor(dshow, dispC, CV_GRAY2BGR);
+					cvtColor(dshow, dispC, COLOR_GRAY2BGR);
 				else
 					cv::applyColorMap(dshow, dispC, 2);
 
@@ -2749,7 +2749,7 @@ namespace cp
 			if (renderOpt > 1)
 			{
 				Mat gray, mask;
-				cvtColor(destImage, gray, CV_BGR2GRAY);
+				cvtColor(destImage, gray, COLOR_BGR2GRAY);
 				compare(gray, 0, mask, cv::CMP_EQ);
 				medianBlur(destImage, view, 2 + 1);
 				destImage.copyTo(view, ~mask);
@@ -2762,17 +2762,17 @@ namespace cp
 			{
 				Point2d ptf;
 				projectPointSimple(look, R, t, k, ptf);
-				circle(view, Point(ptf), 7, CV_RGB(0, 255, 0), CV_FILLED);
+				circle(view, Point(ptf), 7, CV_RGB(0, 255, 0), FILLED);
 				line(view, Point(0, image.rows / 2), Point(image.cols, image.rows / 2), CV_RGB(255, 0, 0));
 				line(view, Point(image.cols / 2, 0), Point(image.cols / 2, image.rows), CV_RGB(255, 0, 0));
 			}
 			double fps = 1000.0 / tm.getTime();
-			putText(view, format("%.02f fps", fps), Point(30, 30), CV_FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255));
+			putText(view, format("%.02f fps", fps), Point(30, 30), FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255));
 
 			if (isLookat)
-				putText(view, format("Look at: Free", bps), Point(30, 60), CV_FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255));
+				putText(view, format("Look at: Free", bps), Point(30, 60), FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255));
 			else
-				putText(view, format("Look at: Fix", bps), Point(30, 60), CV_FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255));
+				putText(view, format("Look at: Fix", bps), Point(30, 60), FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255));
 
 			//show image
 			imshow(wname, view);

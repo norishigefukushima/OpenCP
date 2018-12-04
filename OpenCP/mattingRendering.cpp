@@ -109,8 +109,8 @@ namespace cp
 	void dispRefinement::operator()(Mat& src, Mat& guid, Mat& dest)
 	{
 		Mat s; src.copyTo(s);
-		Mat imgG; cv::cvtColor(guid, imgG, CV_BGR2GRAY);
-		Mat ref; cv::cvtColor(guid, ref, CV_BGR2GRAY);
+		Mat imgG; cv::cvtColor(guid, imgG, COLOR_BGR2GRAY);
+		Mat ref; cv::cvtColor(guid, ref, COLOR_BGR2GRAY);
 
 		for (int j = 0; j < iter; j++)
 		{
@@ -203,7 +203,7 @@ namespace cp
 		}
 
 		Mat tmp;
-		Mat imgG; cvtColor(img, imgG, CV_BGR2GRAY);
+		Mat imgG; cvtColor(img, imgG, COLOR_BGR2GRAY);
 		for (int i = 0; i < iter_g; i++)
 		{
 			guidedFilter(trimap, imgG, tmp, r_g, eps_g / 100.0f);
@@ -232,8 +232,8 @@ namespace cp
 		weightedGaussianFilter(img, bmask, bimg, Size(d, d), (float)sigma_Wgauss);
 
 		Mat gb, gf;
-		cvtColor(bimg, gb, CV_BGR2GRAY);
-		cvtColor(fimg, gf, CV_BGR2GRAY);
+		cvtColor(bimg, gb, COLOR_BGR2GRAY);
+		cvtColor(fimg, gf, COLOR_BGR2GRAY);
 		Mat fmask2, bmask2;
 		compare(gb, 0, bmask2, CMP_NE);
 		compare(gf, 0, fmask2, CMP_NE);

@@ -37,7 +37,7 @@ namespace cp
 		Mat smat = s.reshape(1, s.cols);
 		Mat d; smat.convertTo(d, CV_64F);
 
-		PCA pca(d, Mat(), CV_PCA_DATA_AS_ROW);
+		PCA pca(d, Mat(), PCA::DATA_AS_ROW);
 
 		Point3f  normal = pca.eigenvectors.row(2);
 		Point3f mean = pca.mean;

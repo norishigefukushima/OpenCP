@@ -63,7 +63,8 @@ using namespace cv;
 
 namespace cp
 {
-
+	//TODO: support OpenCV 4
+#if CV_MAJOR_VERSION <= 3
 	/****************************************************************************************\
 	*       Find stereo correspondence by dynamic programming algorithm                      *
 	\****************************************************************************************/
@@ -833,9 +834,9 @@ namespace cp
 	{
 		int dmax = disparityRange;
 		Mat l, r;
-		if (leftim.channels() == 3)cvtColor(leftim, l, CV_BGR2GRAY);
+		if (leftim.channels() == 3)cvtColor(leftim, l, COLOR_BGR2GRAY);
 		else l = leftim;
-		if (rightim.channels() == 3)cvtColor(rightim, r, CV_BGR2GRAY);
+		if (rightim.channels() == 3)cvtColor(rightim, r, COLOR_BGR2GRAY);
 		else r = rightim;
 
 		Mat lb, rb;
@@ -941,4 +942,5 @@ namespace cp
 		}
 		destroyWindow(wname);
 	}
+#endif
 }

@@ -10,10 +10,10 @@ namespace cp
 	{
 		Mat g1, g2, swap;
 
-		cvtColor(rim, swap, CV_BGR2GRAY);
+		cvtColor(rim, swap, COLOR_BGR2GRAY);
 		warpShift(swap, g1, -shift, 0);
 
-		cvtColor(lim, swap, CV_BGR2GRAY);
+		cvtColor(lim, swap, COLOR_BGR2GRAY);
 		warpShift(swap, g2, shift, 0);
 
 		vector<Mat> v(3);

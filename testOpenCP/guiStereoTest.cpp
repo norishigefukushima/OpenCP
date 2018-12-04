@@ -73,7 +73,7 @@ void guiDisparityPlaneFitSLICTest(Mat& leftim, Mat& rightim, Mat& GT)
 		key = waitKey(1);
 
 		
-		Mat save; cvtColor(show, save, CV_GRAY2BGR); static int count = 0; imwrite(format("GIF/out%d.png", count++), save);
+		Mat save; cvtColor(show, save, COLOR_GRAY2BGR); static int count = 0; imwrite(format("GIF/out%d.png", count++), save);
 		if (key == 'p')
 		{
 			isStop = (isStop) ? false : true;

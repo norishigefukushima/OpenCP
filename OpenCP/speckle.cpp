@@ -23,7 +23,7 @@ namespace cp
 			compare(src, target, mask, CMP_NE);
 
 			Mat show;
-			cvtColor(src, show, CV_GRAY2BGR);
+			cvtColor(src, show, COLOR_GRAY2BGR);
 			show.setTo(Scalar(0, 255, 0), mask);
 			imshow(wname, show);
 			key = waitKey(1);

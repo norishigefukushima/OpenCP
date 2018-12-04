@@ -17,7 +17,8 @@ using namespace cv;
 
 namespace cp
 {
-
+//TODO: support OpenCV4
+#if CV_MAJOR_VERSION <= 3
 	void cvWiener2(const void* srcArr, void* dstArr, int szWindowX, int szWindowY)
 	{
 		CV_FUNCNAME("cvWiener2");
@@ -105,4 +106,5 @@ namespace cp
 		if (dest.empty())dest.create(src.size(), src.type());
 		cvWiener2(&IplImage(src), &IplImage(dest), szWindowX, szWindowY);
 	}
+#endif
 }

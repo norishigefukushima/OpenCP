@@ -141,7 +141,7 @@ void imshowAnalysis(String winname, Mat& src)
 {
 	static bool isFirst = true;
 	Mat im;
-	if (src.channels() == 1)cvtColor(src, im, CV_GRAY2BGR);
+	if (src.channels() == 1)cvtColor(src, im, COLOR_GRAY2BGR);
 	else src.copyTo(im);
 
 	namedWindow(winname);
@@ -207,7 +207,7 @@ void imshowAnalysis(String winname, vector<Mat>& s)
 	vector<Mat> im(s.size());
 	for (int i = 0; i < (int)s.size(); i++)
 	{
-		if (src.channels() == 1)cvtColor(s[i], im[i], CV_GRAY2BGR);
+		if (src.channels() == 1)cvtColor(s[i], im[i], COLOR_GRAY2BGR);
 		else s[i].copyTo(im[i]);
 	}
 
@@ -349,9 +349,9 @@ void imshowAnalysisCompare(String winname, Mat& src1, Mat& src2)
 		if (channel < 0 || channel >2)
 		{
 			Mat temp, temp2;
-			cvtColor(tt, temp, CV_BGR2GRAY);
+			cvtColor(tt, temp, COLOR_BGR2GRAY);
 			threshold(temp, temp2, alpha - 1, 255, THRESH_BINARY);
-			cvtColor(temp2, show, CV_GRAY2BGR);
+			cvtColor(temp2, show, COLOR_GRAY2BGR);
 		}
 		else
 		{
@@ -359,7 +359,7 @@ void imshowAnalysisCompare(String winname, Mat& src1, Mat& src2)
 			vector<Mat> vv;
 			split(tt, vv);
 			threshold(vv[channel], temp, alpha - 1, 255, THRESH_BINARY);
-			cvtColor(temp, show, CV_GRAY2BGR);
+			cvtColor(temp, show, COLOR_GRAY2BGR);
 		}
 	}
 	rectangle(show, Point(pt.x - step, pt.y - ystep), Point(pt.x + step, pt.y + ystep), COLOR_GREEN);
@@ -482,7 +482,7 @@ void imshowAnalysisCompare(String winname, Mat& src1, Mat& src2)
 			if (channel < 0 || channel >2)
 			{
 				Mat temp, temp2;
-				cvtColor(tt, temp, CV_BGR2GRAY);
+				cvtColor(tt, temp, COLOR_BGR2GRAY);
 				threshold(temp, temp2, infoth - 1, 255, THRESH_BINARY);
 				threshmask = Mat(~temp2);
 			}
@@ -589,7 +589,7 @@ void imshowAnalysisCompare(String winname, Mat& src1, Mat& src2)
 void guiPreviewMouse2(int event, int x, int y, int flags, void* param)
 {
 	Point* ret = (Point*)param;
-	if (flags == CV_EVENT_FLAG_LBUTTON)
+	if (flags == EVENT_FLAG_LBUTTON)
 	{
 		ret->x = x;
 		ret->y = y;
@@ -605,7 +605,7 @@ void guiAnalysisImage(InputArray src_)
 	moveWindow(winname.c_str(), src.cols * 2, 0);
 
 	Mat im;
-	if (src.channels() == 1)cvtColor(src, im, CV_GRAY2BGR);
+	if (src.channels() == 1)cvtColor(src, im, COLOR_GRAY2BGR);
 	else src.copyTo(im);
 
 	Point pt = Point(src.cols / 2, src.rows / 2);
@@ -655,7 +655,7 @@ void guiAnalysisImage(InputArray src_)
 	Mat transY;
 	while (key != 'q')
 	{
-		if (src.channels() == 1)cvtColor(src, im, CV_GRAY2BGR);
+		if (src.channels() == 1)cvtColor(src, im, COLOR_GRAY2BGR);
 		else src.copyTo(im);
 
 		drawSignalX(src, (DRAW_SIGNAL_CHANNEL)channel, dest, Size(src.cols, 350), pt.y, pt.x, shifty, step, stepy);

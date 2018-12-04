@@ -2797,7 +2797,7 @@ namespace cp
 	void setRectficatedInvalidMask(Mat& disp, Mat& image, int invalidvalue)
 	{
 		Mat im;
-		if (image.channels() != 1)cvtColor(image, im, CV_BGR2GRAY);
+		if (image.channels() != 1)cvtColor(image, im, COLOR_BGR2GRAY);
 		else im = image;
 
 

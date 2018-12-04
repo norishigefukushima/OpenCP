@@ -57,7 +57,7 @@ namespace cp
 		tmp.copyTo(q2);
 
 		//showMatInfo(magI);
-		normalize(magI, magI, 0, 1, CV_MINMAX); // Transform the matrix with float values into a
+		normalize(magI, magI, 0, 1, NORM_MINMAX); // Transform the matrix with float values into a
 		// viewable image form (float between values 0 and 1).
 
 		Mat b, show;

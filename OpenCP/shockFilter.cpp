@@ -14,7 +14,7 @@ namespace cp
 		for (int i = 0; i < iter; i++)
 		{
 			Mat gray;
-			if (src.channels() == 3)cvtColor(dest, gray, CV_BGR2GRAY);
+			if (src.channels() == 3)cvtColor(dest, gray, COLOR_BGR2GRAY);
 			else gray = dest;
 
 			Mat eigen;
