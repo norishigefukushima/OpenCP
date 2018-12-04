@@ -26,4 +26,7 @@ namespace cp
 
 	//color correction colorcorrection whilebalance
 	CP_EXPORT void findColorMatrixAvgStdDev(cv::InputArray ref_image, cv::InputArray target_image, cv::OutputArray colorMatrix, const double validMin, const double validMax);
+
+	CP_EXPORT void splitConvert(cv::InputArray src, cv::OutputArrayOfArrays dest, const int depth=-1, const double scale=1.0, const double offset=0.0, const bool isCache=true);
+	CP_EXPORT void mergeConvert(cv::InputArrayOfArrays src, cv::OutputArray dest, const int depth=-1, const double scale=1.0, const double offset=0.0, const bool isCache=true);
 }

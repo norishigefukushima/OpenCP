@@ -112,7 +112,8 @@ namespace cp
 		void setPlotLineType(int plotnum, int linetype);
 		void setPlotKeyName(int plotnum, std::string name);
 
-		void setLinetypeALL(int linetype);
+		void setPlotSymbolALL(int symboltype);
+		void setPlotLineTypeALL(int linetype);
 
 		void plotPoint(cv::Point2d = cv::Point2d(0.0, 0.0), cv::Scalar color = COLOR_BLACK, int thickness_ = 1, int linetype = LINE_LINEAR);
 		void plotGrid(int level);

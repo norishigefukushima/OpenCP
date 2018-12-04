@@ -11,7 +11,7 @@ namespace cp
 
 		if ((fp = _popen(gnuplotpath.c_str(), "w")) == NULL)
 		{
-			fprintf(stderr, "Cannot open gnuplot @ %s\n", gnuplotpath);
+			fprintf(stderr, "Cannot open gnuplot @ %s\n", gnuplotpath.c_str());
 			exit(1);
 		}
 	}
@@ -29,10 +29,11 @@ namespace cp
 	}
 
 	void plotGraph(OutputArray graph_, vector<Point2d>& data, double xmin, double xmax, double ymin, double ymax,
-		Scalar color, int lt, int isLine, int thickness, int ps)
+		Scalar color, int lt, int isLine, int thickness, int pointSize)
 
 	{
 		CV_Assert(!graph_.empty());
+		const int ps = pointSize;
 
 		Mat graph = graph_.getMat();
 		double x = (double)graph.cols / (xmax - xmin);
@@ -40,19 +41,25 @@ namespace cp
 
 		int H = graph.rows - 1;
 		const int size = (int)data.size();
+		
 		for (int i = 0; i < size; i++)
 		{
 			double src = data[i].x;
 			double dest = data[i].y;
 
-			cv::Point p = cvPoint(cvRound(x*(src - xmin)), H - cvRound(y*(dest - ymin)));
-			if (isLine == Plot::LINE_LINEAR)
+			cv::Point p = Point(cvRound(x*(src - xmin)), H - cvRound(y*(dest - ymin)));
+
+			if (isLine == Plot::LINE_NONE)
+			{
+				;
+			}
+			else if (isLine == Plot::LINE_LINEAR)
 			{
 				if (i != size - 1)
 				{
 					double nsrc = data[i + 1].x;
 					double ndest = data[i + 1].y;
-					line(graph, p, cvPoint(cvRound(x*(nsrc - xmin)), H - cvRound(y*(ndest - ymin))),
+					line(graph, p, Point(cvRound(x*(nsrc - xmin)), H - cvRound(y*(ndest - ymin))),
 						color, thickness);
 				}
 			}
@@ -77,7 +84,11 @@ namespace cp
 				}
 			}
 
-			if (lt == Plot::SYMBOL_PLUS)
+			if (lt == Plot::SYMBOL_NOPOINT)
+			{
+				;
+			}
+			else if (lt == Plot::SYMBOL_PLUS)
 			{
 				drawPlus(graph, p, 2 * ps + 1, color, thickness);
 			}
@@ -370,7 +381,15 @@ namespace cp
 		setPlotThickness(plotnum, thickness);
 	}
 
-	void Plot::setLinetypeALL(int linetype)
+	void Plot::setPlotSymbolALL(int symboltype)
+	{
+		for (int i = 0; i < pinfo.size(); i++)
+		{
+			pinfo[i].symbolType = symboltype;
+		}
+	}
+
+	void Plot::setPlotLineTypeALL(int linetype)
 	{
 		for (int i = 0; i < pinfo.size(); i++)
 		{
@@ -488,8 +507,6 @@ namespace cp
 
 	void Plot::plotPoint(Point2d point, Scalar color_, int thickness_, int linetype)
 	{
-		CvMat* temp = cvCreateMat(5, 2, CV_64F);
-
 		vector<Point2d> data;
 
 		data.push_back(Point2d(point.x, ymin));
@@ -545,7 +562,6 @@ namespace cp
 		keyImage.setTo(background_color);
 
 		int height = (int)(0.8*keyImage.rows);
-		CvMat* data = cvCreateMat(2, 2, CV_64F);
 		for (int i = 0; i < num; i++)
 		{
 			vector<Point2d> data;
@@ -846,12 +862,14 @@ namespace cp
 	{
 		graphBase = Mat::zeros(Size(countx, county), CV_64F);
 	}
+
 	void Plot2D::setMinMaxX(double minv, double maxv, int count)
 	{
 		minx = minv;
 		maxx = maxv;
 		countx = count;
 	}
+
 	void Plot2D::setMinMaxY(double minv, double maxv, int count)
 	{
 		miny = minv;

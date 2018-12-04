@@ -1,7 +1,6 @@
 #pragma once
 
 #include <opencv2/opencv.hpp>
-
 #ifdef CP_API
 #define CP_EXPORT __declspec(dllexport)
 #else 

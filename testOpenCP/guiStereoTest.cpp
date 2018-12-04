@@ -52,7 +52,7 @@ void guiDisparityPlaneFitSLICTest(Mat& leftim, Mat& rightim, Mat& GT)
 	{
 		{
 			CalcTime t;
-			disparityFitPlane(disparity, leftim, refine, S, (float)m, mrs / 100.0f, iter, nransac, transac);
+			disparityFitPlane(disparity, leftim, refine, S, (float)m, (int)(mrs / 100.0f), iter, nransac, (float)transac);
 		}
 		
 		//binalyWeightedRangeFilter(disparity, disparity, Size(7, 7), 16);
@@ -87,7 +87,88 @@ void guiDisparityPlaneFitSLICTest(Mat& leftim, Mat& rightim, Mat& GT)
 
 }
 
-void guiStereo()
+void guiStereoBMTest(Mat& leftim , Mat& rightim, int numDisparities)
 {
-	;
+	String wname = "Stereo BM Test";
+	namedWindow(wname);
+	int blockRadius = 4; createTrackbar("bs", wname, &blockRadius, 30);
+	int prefilterCap = 31; createTrackbar("pre cap", wname, &prefilterCap, 63);
+	int textureThreshold = 10; createTrackbar("Tx thresh", wname, &textureThreshold, 255);
+	int uniquenessRatio = 15; createTrackbar("uniqueness", wname, &uniquenessRatio, 100);
+	int lrThreshold = 1; createTrackbar("LR thresh", wname, &lrThreshold, 20);
+	int spWindow = 100; createTrackbar("speckle win", wname, &spWindow, 2550);
+	int spRange = 32; createTrackbar("speck range", wname, &spRange, 255);
+	
+	Ptr<StereoBM> bm = StereoBM::create(numDisparities, 2* blockRadius+1);
+
+	Mat disp, dispshow;
+	int key = 0;
+	while (key != 'q')
+	{
+		int SADWindowSize = 2 * blockRadius + 1;
+		bm->setPreFilterCap(max(1, prefilterCap));
+		bm->setBlockSize(max(SADWindowSize,5));
+		bm->setTextureThreshold(textureThreshold);
+		bm->setUniquenessRatio(uniquenessRatio);
+		bm->setDisp12MaxDiff(lrThreshold);
+		bm->setSpeckleWindowSize(spWindow);
+		bm->setSpeckleRange(spRange);
+		/*
+		bm->setROI1(roi1);
+		bm->setROI2(roi2);
+		bm->setMinDisparity(0);
+		bm->setNumDisparities(numberOfDisparities);
+		*/
+		bm->compute(leftim, rightim, disp);
+		disp.convertTo(dispshow, CV_8U, 255.0/(16.0*numDisparities));
+		imshow(wname, dispshow);
+		key = waitKey(1);
+	}
+}
+
+void guiStereoSGBMTest(Mat& leftim, Mat& rightim, int numDisparities)
+{
+	String wname = "Stereo BM Test";
+	namedWindow(wname);
+	int blockRadius = 1; createTrackbar("bs", wname, &blockRadius, 30);
+	
+	int P1 = 8; createTrackbar("P1", wname, &P1, 255);
+	int P2 = 32; createTrackbar("P2", wname, &P2, 255);
+	int prefilterCap = 31; createTrackbar("pre cap", wname, &prefilterCap, 63);
+	//int textureThreshold = 10; createTrackbar("Tx thresh", wname, &textureThreshold, 255);
+	int uniquenessRatio = 15; createTrackbar("uniqueness", wname, &uniquenessRatio, 100);
+	int lrThreshold = 1; createTrackbar("LR thresh", wname, &lrThreshold, 20);
+	int spWindow = 100; createTrackbar("speckle win", wname, &spWindow, 2550);
+	int spRange = 32; createTrackbar("speck range", wname, &spRange, 255);
+
+	Ptr<StereoSGBM> bm = StereoSGBM::create(0, numDisparities, 2 * blockRadius + 1);
+
+	Mat lim; copyMakeBorder(leftim, lim, 0, 0, numDisparities, 0, BORDER_REPLICATE);
+	Mat rim; copyMakeBorder(rightim, rim, 0, 0, numDisparities, 0, BORDER_REPLICATE);
+	Mat disp, dispshowROI, dispshow;
+	int key = 0;
+	while (key != 'q')
+	{
+		int SADWindowSize = 2 * blockRadius + 1;
+		bm->setPreFilterCap(max(1, prefilterCap));
+		bm->setP1(P1);
+		bm->setP2(P2);
+		bm->setBlockSize(SADWindowSize);
+		//bm->setTextureThreshold(textureThreshold);
+		bm->setUniquenessRatio(uniquenessRatio);
+		bm->setDisp12MaxDiff(lrThreshold);
+		bm->setSpeckleWindowSize(spWindow);
+		bm->setSpeckleRange(spRange);
+		/*
+		bm->setROI1(roi1);
+		bm->setROI2(roi2);
+		bm->setMinDisparity(0);
+		bm->setNumDisparities(numberOfDisparities);
+		*/
+		bm->compute(lim, rim, disp);
+		disp.convertTo(dispshowROI, CV_8U, 255.0 / (16.0*numDisparities));
+		Mat(dispshowROI(Rect(numDisparities, 0, leftim.cols, leftim.rows))).copyTo(dispshow);
+		imshow(wname, dispshow);
+		key = waitKey(1);
+	}
 }

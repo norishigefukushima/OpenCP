@@ -1956,6 +1956,426 @@ namespace cp
 		float *space_weight, *color_weight;
 	};
 
+	class JointBilateralFilter_32f_InvokerAVX : public cv::ParallelLoopBody
+	{
+	public:
+		JointBilateralFilter_32f_InvokerAVX(Mat& _dest, const Mat& _temp, const Mat& _guide, int _radiusH, int _radiusV, int _maxk,
+			int* _space_ofs, int* _space_guide_ofs, float *_space_weight, float *_color_weight) :
+			temp(&_temp), dest(&_dest), guide(&_guide), radiusH(_radiusH), radiusV(_radiusV),
+			maxk(_maxk), space_ofs(_space_ofs), space_guide_ofs(_space_guide_ofs), space_weight(_space_weight), color_weight(_color_weight)
+		{
+		}
+
+		virtual void operator() (const Range& range) const
+		{
+			int i, j, cn = dest->channels(), k;
+			int cng = (guide->rows - 2 * radiusV) / dest->rows;
+			Size size = dest->size();
+
+			static int CV_DECL_ALIGNED(32) v32f_absmask[] = { 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff,0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff };
+
+
+			bool haveAVX = checkHardwareSupport(CV_CPU_AVX2);
+
+			if (cn == 1 && cng == 1)
+			{
+				const int unroll = 8;
+
+				float* sptr = (float*)temp->ptr<float>(range.start + radiusV) + unroll * (radiusH / unroll + 1);
+				float* gptr = (float*)guide->ptr<float>(range.start + radiusV) + unroll * (radiusH / unroll + 1);
+				float* dptr = dest->ptr<float>(range.start);
+				const int sstep = temp->cols;
+				const int gstep = guide->cols;
+				const int dstep = dest->cols;
+				for (i = range.start; i != range.end; i++, dptr += dstep, sptr += sstep, gptr += gstep)
+				{
+					j = 0;
+
+					if (haveAVX)
+					{
+						for (; j < size.width; j += unroll)//8 pixel unit 
+						{
+							int* ofs = &space_ofs[0];
+							int* gofs = &space_guide_ofs[0];
+							float* spw = space_weight;
+							const float* sptrj = sptr + j;
+							const float* gptrj = gptr + j;
+							const __m256 sval1 = _mm256_load_ps((gptrj+0));
+							const __m256 sval2 = _mm256_load_ps((gptrj+8));
+							const __m256 sval3 = _mm256_load_ps((gptrj+16));
+							const __m256 sval4 = _mm256_load_ps((gptrj+24));
+
+							__m256 clip = _mm256_set1_ps(200);
+							__m256 wval1 = _mm256_setzero_ps();
+							__m256 tval1 = _mm256_setzero_ps();
+							/*
+							__m256 wval2 = _mm256_setzero_ps();
+							__m256 tval2 = _mm256_setzero_ps();
+
+							__m256 wval3 = _mm256_setzero_ps();
+							__m256 tval3 = _mm256_setzero_ps();
+							__m256 wval4 = _mm256_setzero_ps();
+							__m256 tval4 = _mm256_setzero_ps();
+							*/
+							for (k = 0; k < maxk; k++, ofs++, gofs++, spw++)
+							{
+								const __m256 _sw = _mm256_set1_ps(*spw);
+
+								__m256 sref = _mm256_loadu_ps((gptrj + *gofs));
+								__m256 diff = _mm256_min_ps(clip,_mm256_and_ps(_mm256_sub_ps(sval1, sref), *(const __m256*)v32f_absmask));
+								__m256 vref = _mm256_loadu_ps((sptrj + *ofs));			
+
+								__m256 _w = _mm256_mul_ps(_sw, _mm256_i32gather_ps(color_weight, _mm256_cvtps_epi32(diff), 4));
+								vref = _mm256_mul_ps(_w, vref);
+								tval1 = _mm256_add_ps(tval1, vref);
+								wval1 = _mm256_add_ps(wval1, _w);
+
+								/*
+								sref = _mm256_loadu_ps((gptrj + *gofs + 8));
+								diff = _mm256_min_ps(clip, _mm256_and_ps(_mm256_sub_ps(sval2, sref), *(const __m256*)v32f_absmask));
+								vref = _mm256_loadu_ps((sptrj + *ofs + 8));
+
+								_w = _mm256_mul_ps(_sw, _mm256_i32gather_ps(color_weight, _mm256_cvtps_epi32(diff), 4));
+								vref = _mm256_mul_ps(_w, vref);
+								tval2 = _mm256_add_ps(tval2, vref);
+								wval2 = _mm256_add_ps(wval2, _w);
+								*/
+							}
+							tval1 = _mm256_div_ps(tval1, wval1);
+							_mm256_store_ps((dptr + j), tval1);
+							//tval2 = _mm256_div_ps(tval2, wval2);
+							//_mm256_store_ps((dptr + j + 8), tval2);
+						}
+					}
+					for (; j < size.width; j++)
+					{
+						const float val0 = gptr[j];
+						float sum = 0.0f;
+						float wsum = 0.0f;
+						for (k = 0; k < maxk; k++)
+						{
+							float gval = gptr[j + space_guide_ofs[k]];
+							float val = sptr[j + space_ofs[k]];
+							float w = space_weight[k] * color_weight[cvRound(std::abs(gval - val0))];
+							sum += val*w;
+							wsum += w;
+						}
+						dptr[j] = sum / wsum;
+					}
+				}
+			}
+			else if (cn == 1 && cng == 3)
+			{
+				assert(cng == 3);//color
+				int CV_DECL_ALIGNED(16) buf[4];
+
+				const int sstep = temp->cols;
+				const int gstep = 3 * guide->cols;
+				const int dstep = dest->cols;
+
+				float* sptr = (float*)temp->ptr<float>(range.start + radiusV) + 4 * (radiusH / 4 + 1);
+				float* gptrr = (float*)guide->ptr<float>(3 * radiusV + 3 * range.start) + 4 * (radiusH / 4 + 1);
+				float* gptrg = (float*)guide->ptr<float>(3 * radiusV + 3 * range.start + 1) + 4 * (radiusH / 4 + 1);
+				float* gptrb = (float*)guide->ptr<float>(3 * radiusV + 3 * range.start + 2) + 4 * (radiusH / 4 + 1);
+
+				float* dptr = dest->ptr<float>(range.start);
+				for (i = range.start; i != range.end; i++, gptrr += gstep, gptrg += gstep, gptrb += gstep, sptr += sstep, dptr += dstep)
+				{
+					j = 0;
+#if CV_SSE4_1
+					if (haveSSE4)
+					{
+						for (; j < size.width; j += 4)//4 pixel unit
+						{
+							int* ofs = &space_ofs[0];
+							int* gofs = &space_guide_ofs[0];
+							float* spw = space_weight;
+							const float* sptrj = sptr + j;
+							const float* gptrrj = gptrr + j;
+							const float* gptrgj = gptrg + j;
+							const float* gptrbj = gptrb + j;
+							const __m128 bval = _mm_load_ps((gptrbj));
+							const __m128 gval = _mm_load_ps((gptrgj));
+							const __m128 rval = _mm_load_ps((gptrrj));
+
+							__m128 wval1 = _mm_setzero_ps();
+							__m128 tval1 = _mm_setzero_ps();
+							for (k = 0; k < maxk; k++, ofs++, gofs++, spw++)
+							{
+								const __m128 bref = _mm_loadu_ps((gptrbj + *gofs));
+								const __m128 gref = _mm_loadu_ps((gptrgj + *gofs));
+								const __m128 rref = _mm_loadu_ps((gptrrj + *gofs));
+
+								_mm_store_si128((__m128i*)buf,
+									_mm_cvtps_epi32(
+										_mm_add_ps(
+											_mm_add_ps(
+												_mm_and_ps(_mm_sub_ps(rval, rref), *(const __m128*)v32f_absmask),
+												_mm_and_ps(_mm_sub_ps(gval, gref), *(const __m128*)v32f_absmask)),
+											_mm_and_ps(_mm_sub_ps(bval, bref), *(const __m128*)v32f_absmask)
+										)
+									));
+								__m128 vref = _mm_loadu_ps((sptrj + *ofs));
+								const __m128 _sw = _mm_set1_ps(*spw);
+								__m128 _w = _mm_mul_ps(_sw, _mm_set_ps(color_weight[buf[3]], color_weight[buf[2]], color_weight[buf[1]], color_weight[buf[0]]));
+
+								vref = _mm_mul_ps(_w, vref);
+								tval1 = _mm_add_ps(tval1, vref);
+								wval1 = _mm_add_ps(wval1, _w);
+							}
+							tval1 = _mm_div_ps(tval1, wval1);
+							_mm_stream_ps((dptr + j), tval1);
+						}
+					}
+#endif
+					for (; j < size.width; j++)
+					{
+						const float* sptrj = sptr + j;
+						const float* gptrrj = gptrr + j;
+						const float* gptrgj = gptrg + j;
+						const float* gptrbj = gptrb + j;
+
+						const float r0 = gptrrj[0];
+						const float g0 = gptrgj[0];
+						const float b0 = gptrbj[0];
+
+						float sum = 0.0f;
+						float wsum = 0.0f;
+						for (k = 0; k < maxk; k++)
+						{
+							const float r = gptrrj[space_guide_ofs[k]], g = gptrgj[space_guide_ofs[k]], b = gptrbj[space_guide_ofs[k]];
+							float w = space_weight[k] * color_weight[cvRound(std::abs(b - b0) + std::abs(g - g0) + std::abs(r - r0))];
+							sum += sptrj[space_ofs[k]] * w;
+							wsum += w;
+						}
+						dptr[j] = sum / wsum;
+					}
+				}
+			}
+			else if (cn == 3 && cng == 3)
+			{
+				assert(cng == 3);// color
+				int CV_DECL_ALIGNED(16) buf[4];
+
+				const int sstep = 3 * temp->cols;
+				const int gstep = 3 * guide->cols;
+				const int dstep = 3 * dest->cols;
+
+				float* sptrr = (float*)temp->ptr<float>(3 * radiusV + 3 * range.start) + 4 * (radiusH / 4 + 1);
+				float* sptrg = (float*)temp->ptr<float>(3 * radiusV + 3 * range.start + 1) + 4 * (radiusH / 4 + 1);
+				float* sptrb = (float*)temp->ptr<float>(3 * radiusV + 3 * range.start + 2) + 4 * (radiusH / 4 + 1);
+				float* gptrr = (float*)guide->ptr<float>(3 * radiusV + 3 * range.start) + 4 * (radiusH / 4 + 1);
+				float* gptrg = (float*)guide->ptr<float>(3 * radiusV + 3 * range.start + 1) + 4 * (radiusH / 4 + 1);
+				float* gptrb = (float*)guide->ptr<float>(3 * radiusV + 3 * range.start + 2) + 4 * (radiusH / 4 + 1);
+				float* dptr = dest->ptr<float>(range.start);
+				for (i = range.start; i != range.end; i++, gptrr += gstep, gptrg += gstep, gptrb += gstep, sptrr += sstep, sptrg += sstep, sptrb += sstep, dptr += dstep)
+				{
+					j = 0;
+#if CV_SSE4_1
+					if (haveSSE4)
+					{
+						for (; j < size.width; j += 4)//4 pixel unit
+						{
+							int* ofs = &space_ofs[0];
+							int* gofs = &space_guide_ofs[0];
+							float* spw = space_weight;
+							const float* sptrrj = sptrr + j;
+							const float* sptrgj = sptrg + j;
+							const float* sptrbj = sptrb + j;
+							const float* gptrrj = gptrr + j;
+							const float* gptrgj = gptrg + j;
+							const float* gptrbj = gptrb + j;
+							const __m128 bval = _mm_load_ps((gptrbj));
+							const __m128 gval = _mm_load_ps((gptrgj));
+							const __m128 rval = _mm_load_ps((gptrrj));
+
+							__m128 wval1 = _mm_setzero_ps();
+							__m128 rval1 = _mm_setzero_ps();
+							__m128 gval1 = _mm_setzero_ps();
+							__m128 bval1 = _mm_setzero_ps();
+
+							for (k = 0; k < maxk; k++, ofs++, gofs++, spw++)
+							{
+								__m128 bref = _mm_loadu_ps((gptrbj + *gofs));
+								__m128 gref = _mm_loadu_ps((gptrgj + *gofs));
+								__m128 rref = _mm_loadu_ps((gptrrj + *gofs));
+
+								_mm_store_si128((__m128i*)buf,
+									_mm_cvtps_epi32(
+										_mm_add_ps(
+											_mm_add_ps(
+												_mm_and_ps(_mm_sub_ps(rval, rref), *(const __m128*)v32f_absmask),
+												_mm_and_ps(_mm_sub_ps(gval, gref), *(const __m128*)v32f_absmask)),
+											_mm_and_ps(_mm_sub_ps(bval, bref), *(const __m128*)v32f_absmask)
+										)
+									));
+
+								rref = _mm_loadu_ps((sptrbj + *ofs));
+								gref = _mm_loadu_ps((sptrgj + *ofs));
+								bref = _mm_loadu_ps((sptrrj + *ofs));
+
+								const __m128 _sw = _mm_set1_ps(*spw);
+								__m128 _w = _mm_mul_ps(_sw, _mm_set_ps(color_weight[buf[3]], color_weight[buf[2]], color_weight[buf[1]], color_weight[buf[0]]));
+
+								rref = _mm_mul_ps(_w, rref);
+								gref = _mm_mul_ps(_w, gref);
+								bref = _mm_mul_ps(_w, bref);
+
+								rval1 = _mm_add_ps(rval1, rref);
+								gval1 = _mm_add_ps(gval1, gref);
+								bval1 = _mm_add_ps(bval1, bref);
+								wval1 = _mm_add_ps(wval1, _w);
+							}
+							rval1 = _mm_div_ps(rval1, wval1);
+							gval1 = _mm_div_ps(gval1, wval1);
+							bval1 = _mm_div_ps(bval1, wval1);
+
+							__m128 a = _mm_shuffle_ps(rval1, rval1, _MM_SHUFFLE(3, 0, 1, 2));
+							__m128 b = _mm_shuffle_ps(bval1, bval1, _MM_SHUFFLE(1, 2, 3, 0));
+							__m128 c = _mm_shuffle_ps(gval1, gval1, _MM_SHUFFLE(2, 3, 0, 1));
+							float* dptrc = dptr + 3 * j;
+							_mm_stream_ps((dptrc), _mm_blend_ps(_mm_blend_ps(b, a, 4), c, 2));
+							_mm_stream_ps((dptrc + 4), _mm_blend_ps(_mm_blend_ps(c, b, 4), a, 2));
+							_mm_stream_ps((dptrc + 8), _mm_blend_ps(_mm_blend_ps(a, c, 4), b, 2));
+						}
+					}
+#endif
+					for (; j < size.width; j++)
+					{
+						const float* sptrrj = sptrr + j;
+						const float* sptrgj = sptrg + j;
+						const float* sptrbj = sptrb + j;
+						const float* gptrrj = gptrr + j;
+						const float* gptrgj = gptrg + j;
+						const float* gptrbj = gptrb + j;
+
+						const float r0 = gptrrj[0];
+						const float g0 = gptrgj[0];
+						const float b0 = gptrbj[0];
+
+						float sum_r = 0.0f, sum_b = 0.0f, sum_g = 0.0f;
+						float wsum = 0.0f;
+						for (k = 0; k < maxk; k++)
+						{
+							const float r = gptrrj[space_guide_ofs[k]], g = gptrgj[space_guide_ofs[k]], b = gptrbj[space_guide_ofs[k]];
+							float w = space_weight[k] * color_weight[cvRound(std::abs(b - b0) + std::abs(g - g0) + std::abs(r - r0))];
+							sum_b += sptrrj[space_ofs[k]] * w;
+							sum_g += sptrgj[space_ofs[k]] * w;
+							sum_r += sptrbj[space_ofs[k]] * w;
+							wsum += w;
+						}
+						wsum = 1.f / wsum;
+						dptr[3 * j] = sum_b*wsum;
+						dptr[3 * j + 1] = sum_g*wsum;
+						dptr[3 * j + 2] = sum_r*wsum;
+					}
+				}
+
+			}
+			else if (cn == 3 && cng == 1)
+			{
+				int CV_DECL_ALIGNED(16) buf[4];
+
+				const int sstep = 3 * temp->cols;
+				const int gstep = guide->cols;
+				const int dstep = 3 * dest->cols;
+
+				float* sptrr = (float*)temp->ptr<float>(3 * radiusV + 3 * range.start) + 4 * (radiusH / 4 + 1);
+				float* sptrg = (float*)temp->ptr<float>(3 * radiusV + 3 * range.start + 1) + 4 * (radiusH / 4 + 1);
+				float* sptrb = (float*)temp->ptr<float>(3 * radiusV + 3 * range.start + 2) + 4 * (radiusH / 4 + 1);
+				float* gptr = (float*)guide->ptr<float>(radiusV + range.start) + 4 * (radiusH / 4 + 1);
+				float* dptr = dest->ptr<float>(range.start);
+				for (i = range.start; i != range.end; i++, gptr += gstep, sptrr += sstep, sptrg += sstep, sptrb += sstep, dptr += dstep)
+				{
+					j = 0;
+#if CV_SSE4_1
+					if (haveSSE4)
+					{
+						for (; j < size.width; j += 4)//4 pixel unit
+						{
+							int* ofs = &space_ofs[0];
+							int* gofs = &space_guide_ofs[0];
+							float* spw = space_weight;
+							const float* sptrrj = sptrr + j;
+							const float* sptrgj = sptrg + j;
+							const float* sptrbj = sptrb + j;
+							const float* gptrj = gptr + j;
+							const __m128 sval = _mm_load_ps((gptrj));
+
+							__m128 wval1 = _mm_set1_ps(0.0f);
+							__m128 rval1 = _mm_set1_ps(0.0f);
+							__m128 gval1 = _mm_set1_ps(0.0f);
+							__m128 bval1 = _mm_set1_ps(0.0f);
+							for (k = 0; k < maxk; k++, ofs++, gofs++, spw++)
+							{
+								__m128 sref = _mm_loadu_ps((gptrj + *gofs));
+								_mm_store_si128((__m128i*)buf, _mm_cvtps_epi32(_mm_and_ps(_mm_sub_ps(sval, sref), *(const __m128*)v32f_absmask)));
+
+								__m128 rref = _mm_loadu_ps((sptrbj + *ofs));
+								__m128 gref = _mm_loadu_ps((sptrgj + *ofs));
+								__m128 bref = _mm_loadu_ps((sptrrj + *ofs));
+
+								const __m128 _sw = _mm_set1_ps(*spw);
+								__m128 _w = _mm_mul_ps(_sw, _mm_set_ps(color_weight[buf[3]], color_weight[buf[2]], color_weight[buf[1]], color_weight[buf[0]]));
+
+								bref = _mm_mul_ps(_w, bref);
+								gref = _mm_mul_ps(_w, gref);
+								rref = _mm_mul_ps(_w, rref);
+
+								bval1 = _mm_add_ps(bval1, bref);
+								gval1 = _mm_add_ps(gval1, gref);
+								rval1 = _mm_add_ps(rval1, rref);
+								wval1 = _mm_add_ps(wval1, _w);
+							}
+							rval1 = _mm_div_ps(rval1, wval1);
+							gval1 = _mm_div_ps(gval1, wval1);
+							bval1 = _mm_div_ps(bval1, wval1);
+
+							__m128 a = _mm_shuffle_ps(rval1, rval1, _MM_SHUFFLE(3, 0, 1, 2));
+							__m128 b = _mm_shuffle_ps(bval1, bval1, _MM_SHUFFLE(1, 2, 3, 0));
+							__m128 c = _mm_shuffle_ps(gval1, gval1, _MM_SHUFFLE(2, 3, 0, 1));
+							float* dptrc = dptr + 3 * j;
+							_mm_stream_ps((dptrc), _mm_blend_ps(_mm_blend_ps(b, a, 4), c, 2));
+							_mm_stream_ps((dptrc + 4), _mm_blend_ps(_mm_blend_ps(c, b, 4), a, 2));
+							_mm_stream_ps((dptrc + 8), _mm_blend_ps(_mm_blend_ps(a, c, 4), b, 2));
+						}
+					}
+#endif
+					for (; j < size.width; j++)
+					{
+						const float* sptrrj = sptrr + j;
+						const float* sptrgj = sptrg + j;
+						const float* sptrbj = sptrb + j;
+						const float* gptrj = gptr + j;
+
+						const float r0 = gptrj[0];
+						float sum_r = 0.0f, sum_b = 0.0f, sum_g = 0.0f;
+						float wsum = 0.0f;
+						for (k = 0; k < maxk; k++)
+						{
+							const float r = gptrj[space_guide_ofs[k]];
+							float w = space_weight[k] * color_weight[cvRound(std::abs(r - r0))];
+							sum_b += sptrrj[space_ofs[k]] * w;
+							sum_g += sptrgj[space_ofs[k]] * w;
+							sum_r += sptrbj[space_ofs[k]] * w;
+							wsum += w;
+						}
+						wsum = 1.f / wsum;
+						dptr[3 * j] = sum_b*wsum;
+						dptr[3 * j + 1] = sum_g*wsum;
+						dptr[3 * j + 2] = sum_r*wsum;
+					}
+				}
+			}
+		}
+	private:
+		const Mat *temp;
+		Mat *dest;
+		const Mat* guide;
+		int radiusH, radiusV, maxk, *space_ofs, *space_guide_ofs;
+		float *space_weight, *color_weight;
+	};
+
 	class JointBilateralFilter_8u_InvokerSSE4 : public cv::ParallelLoopBody
 	{
 	public:
@@ -2797,7 +3217,7 @@ namespace cp
 
 		Mat dest = Mat::zeros(Size(src.cols + dpad, src.rows), dst.type());
 		WeightedJointBilateralFilter_32f_InvokerSSE4 body(dest, temp, tempw, tempg, radiusH, radiusV, maxk, space_ofs, space_w_ofs, space_guide_ofs, space_weight, color_weight);
-		parallel_for_(Range(0, size.height), body,1);
+		parallel_for_(Range(0, size.height), body);
 		Mat(dest(Rect(0, 0, dst.cols, dst.rows))).copyTo(dst);
 	}
 
@@ -3013,8 +3433,9 @@ namespace cp
 		setSpaceKernel(space_weight, space_ofs, space_guide_ofs, maxk, radiusH, radiusV, gauss_space_coeff, temp.cols*cn, tempg.cols*cng, isRectangle);
 
 		Mat dest = Mat::zeros(Size(src.cols + dpad, src.rows), dst.type());
-		JointBilateralFilter_32f_InvokerSSE4 body(dest, temp, tempg, radiusH, radiusV, maxk, space_ofs, space_guide_ofs, space_weight, color_weight);
-		parallel_for_(Range(0, size.height), body);
+		//JointBilateralFilter_32f_InvokerSSE4 body(dest, temp, tempg, radiusH, radiusV, maxk, space_ofs, space_guide_ofs, space_weight, color_weight);
+		JointBilateralFilter_32f_InvokerAVX body(dest, temp, tempg, radiusH, radiusV, maxk, space_ofs, space_guide_ofs, space_weight, color_weight);
+		parallel_for_(Range(0, size.height), body, 8);
 		Mat(dest(Rect(0, 0, dst.cols, dst.rows))).copyTo(dst);
 	}
 

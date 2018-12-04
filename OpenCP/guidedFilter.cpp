@@ -1442,7 +1442,7 @@ namespace cp
 		const int ssesize = imsize.area() / 4; //const int ssesize = 0;
 		const int nn = imsize.area() - ssesize * 4;
 		const float e = eps;
-
+	
 		STATICMAT x1(imsize, CV_32F), x2(imsize, CV_32F), x3(imsize, CV_32F);
 		STATICMAT mJoint(imsize, CV_32F);//mean_I
 		STATICMAT mSrc(imsize, CV_32F);//mean_p

@@ -1,12 +1,14 @@
-#include "../opencp.hpp"
+#include <opencp.hpp>
 #include <fstream>
 using namespace std;
+using namespace cv;
+using namespace cp;
 
 void guiDenoiseTest(Mat& src)
 {
 	Mat dest,dest2;
 
-	string wname = "non local means";
+	string wname = "denoise";
 	namedWindow(wname);
 
 	int a=0;createTrackbar("a",wname,&a,100);
@@ -36,7 +38,7 @@ void guiDenoiseTest(Mat& src)
 		if(sw==0)
 		{
 			CalcTime t("bilateral filter");
-			bilateralFilter(noise,dest,Size(d,d),sigma_color*1.5,sigma_space, FILTER_SEPARABLE);
+			bilateralFilter(noise,dest,Size(d,d),sigma_color*1.5,sigma_space, FILTER_RECTANGLE);
 		}
 		else if(sw==1)
 		{
@@ -63,7 +65,7 @@ void guiDenoiseTest(Mat& src)
 
 		cout<<"before:"<<PSNR(src,noise)<<endl;
 		cout<<"filter:"<<PSNR(src,dest)<<endl<<endl;
-
+			
 		patchBlendImage(noise,dest,dest,Scalar(255,255,255));
 		alphaBlend(src, dest,a/100.0, show);
 		cv::imshow(wname,show);

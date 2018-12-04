@@ -2156,9 +2156,9 @@ namespace cp
 
 	void buid_dxdyL2_8u(const Mat& src, Mat& dx, Mat& dy, const float ratio)
 	{
-		int width = src.cols;
-		int height = src.rows;
-		int dim = src.channels();
+		const int width = src.cols;
+		const int height = src.rows;
+		const int dim = src.channels();
 
 		Mat joint = src;
 		const float ratio2 = ratio*ratio;
@@ -2315,13 +2315,13 @@ namespace cp
 		Mat img;
 		cvtColorBGR8u2BGRA32f(src, img);
 
-		int width = img.cols;
-		int height = img.rows;
+		const int width = img.cols;
+		const int height = img.rows;
 
 		// compute derivatives of transformed domain "dct"
 		cv::Mat dctx = cv::Mat::zeros(height, width - 1, CV_32FC1);
 		cv::Mat dcty = cv::Mat::zeros(height - 1, width, CV_32FC1);
-		float ratio = (sigma_s / sigma_r);
+		const float ratio = (sigma_s / sigma_r);
 
 		if (guide.depth() == CV_8U)
 		{
@@ -2342,24 +2342,23 @@ namespace cp
 
 		// Apply recursive folter maxiter times
 		int i = maxiter;
-		Mat out = img.clone();
+		
 		while (i--)
 		{
 			float sigma_h = (float)(sigma_s * sqrt(3.0) * pow(2.0, (maxiter - (i + 1))) / sqrt(pow(4.0, maxiter) - 1));
 			// and a = exp(-sqrt(2) / sigma_H) to the power of "dct"
 
-			float a = exp(-sqrt(2.f) / sigma_h);
+			const float a = exp(-sqrt(2.f) / sigma_h);
 			{
-				DomainTransformPowHorizontalBGRA_SSE_Invoker H(out, dctx, a);
+				DomainTransformPowHorizontalBGRA_SSE_Invoker H(img, dctx, a);
 				parallel_for_(Range(0, height), H);
 			}
-		{
-			DomainTransformPowVerticalBGRA_SSE_Invoker V(out, dcty, a);
-			parallel_for_(Range(0, width), V);
+			{
+				DomainTransformPowVerticalBGRA_SSE_Invoker V(img, dcty, a);
+				parallel_for_(Range(0, width), V);
+			}
 		}
-
-		}
-		cvtColorBGRA32f2BGR8u(out, dest);
+		cvtColorBGRA32f2BGR8u(img, dest);
 	}
 
 	//single rgba
@@ -2368,8 +2367,6 @@ namespace cp
 	{
 		Mat img;
 		cvtColorBGR8u2BGRA32f(src, img);
-
-
 
 		int width = img.cols;
 		int height = img.rows;
@@ -3709,8 +3706,6 @@ namespace cp
 		domainTransformFilterIC(src, src, dst, sigma_r, sigma_s, maxiter, norm, implementation);
 	}
 
-
-
 	void domainTransformFilter(InputArray srcImage, InputArray guideImage, OutputArray destImage, const float sigma_r, const float sigma_s, const int maxiter, const int norm, const int convolutionType, const int implementation)
 	{
 		Mat src = srcImage.getMat();
@@ -3724,8 +3719,6 @@ namespace cp
 			domainTransformFilterNC(src, guide, dst, sigma_r, sigma_s, maxiter, norm, implementation);
 		if (convolutionType == DTF_IC)
 			domainTransformFilterIC(src, guide, dst, sigma_r, sigma_s, maxiter, norm, implementation);
-
-
 	}
 
 	void domainTransformFilter(InputArray srcImage, OutputArray destImage, const float sigma_r, const float sigma_s, const int maxiter, const int norm, const int convolutionType, const int implementation)

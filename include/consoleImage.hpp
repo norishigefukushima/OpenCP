@@ -11,7 +11,12 @@ namespace cp
 		std::string windowName;
 		std::vector<std::string> strings;
 		bool isLineNumber;
+		int fontSize;
+		int lineSpaceSize;
 	public:
+		void setFontSize(int size);
+		void setLineSpaceSize(int size);
+
 		void setIsLineNumber(bool isLine = true);
 		bool getIsLineNumber();
 		cv::Mat show;

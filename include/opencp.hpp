@@ -13,6 +13,7 @@
 #include "crossBasedLocalMultipointFilter.hpp"
 #include "domainTransformFilter.hpp"
 #include "dualBilateralFilter.hpp"
+#include "dualExponentialSmoothing.hpp"
 #include "dxtDenoise.hpp"
 #include "GaussianFilter.hpp"
 #include "GaussianFilterSpectralRecursive.hpp"
@@ -31,6 +32,9 @@
 #include "shockFilter.hpp"
 #include "weightedModeFilter.hpp"
 #include "Wiener2.hpp"
+#include "fftFilter.hpp"
+#include "dctFilter.hpp"
+
 //GaussianFilter
 #include "GaussianBlurIPOL.hpp"
 //upsapmle

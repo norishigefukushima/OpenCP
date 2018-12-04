@@ -26,7 +26,6 @@ void drawHistogramImageGray(cv::InputArray src, cv::OutputArray histogram, cv::S
 
 	double maxVal = 0;
 	minMaxLoc(hist, 0, &maxVal, 0, 0);
-	cout << maxVal << endl;
 	const int hist_height = 200;
 	int shift = 1;
 	Mat hist_img = Mat::zeros(Size(bin_num + 2 * shift, hist_height), CV_8UC3);

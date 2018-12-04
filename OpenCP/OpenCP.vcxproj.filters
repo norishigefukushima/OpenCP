@@ -73,6 +73,12 @@
     <Filter Include="ヘッダー ファイル\headers\stereo\view synthesis">
       <UniqueIdentifier>{9348453f-43e5-4f7d-bc39-466a584b8b56}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\filter\filterCore">
+      <UniqueIdentifier>{133bf247-7cf3-4d5a-94c6-aaa42d83b177}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\filter\edgePreservingFilter">
+      <UniqueIdentifier>{d4aaffff-9b56-49d0-b921-13de8f8bacee}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="color.cpp">
@@ -99,12 +105,6 @@
     <ClCompile Include="noise.cpp">
       <Filter>ソース ファイル\utilty functions</Filter>
     </ClCompile>
-    <ClCompile Include="bilateralFilter.cpp">
-      <Filter>ソース ファイル\filter</Filter>
-    </ClCompile>
-    <ClCompile Include="binalyWeightedRangeFilter.cpp">
-      <Filter>ソース ファイル\filter</Filter>
-    </ClCompile>
     <ClCompile Include="nonLocalMeans.cpp">
       <Filter>ソース ファイル\filter</Filter>
     </ClCompile>
@@ -114,14 +114,8 @@
     <ClCompile Include="detailEnhancement.cpp">
       <Filter>ソース ファイル\imgproc</Filter>
     </ClCompile>
-    <ClCompile Include="recursiveBilateralFilter.cpp">
-      <Filter>ソース ファイル\filter</Filter>
-    </ClCompile>
     <ClCompile Include="sse_util.cpp">
       <Filter>ソース ファイル\utilty functions</Filter>
-    </ClCompile>
-    <ClCompile Include="guidedFilter.cpp">
-      <Filter>ソース ファイル\filter</Filter>
     </ClCompile>
     <ClCompile Include="stencil.cpp">
       <Filter>ソース ファイル\utilty functions</Filter>
@@ -153,47 +147,17 @@
     <ClCompile Include="imagediff.cpp">
       <Filter>ソース ファイル\utilty functions</Filter>
     </ClCompile>
-    <ClCompile Include="jointNearestFilter.cpp">
-      <Filter>ソース ファイル\filter</Filter>
-    </ClCompile>
     <ClCompile Include="weightedModeFilter.cpp">
-      <Filter>ソース ファイル\filter</Filter>
-    </ClCompile>
-    <ClCompile Include="localLaplacianFilter.cpp">
       <Filter>ソース ファイル\filter</Filter>
     </ClCompile>
     <ClCompile Include="PermutohedralLattice.cpp">
       <Filter>ソース ファイル\filter</Filter>
     </ClCompile>
-    <ClCompile Include="adaptiveManifold.cpp">
-      <Filter>ソース ファイル\filter</Filter>
-    </ClCompile>
-    <ClCompile Include="realtimeO1BilateralFilter.cpp">
-      <Filter>ソース ファイル\filter</Filter>
-    </ClCompile>
-    <ClCompile Include="jointNonLocalMeans.cpp">
-      <Filter>ソース ファイル\filter</Filter>
-    </ClCompile>
     <ClCompile Include="GaussianFilterSpectralRecursive.cpp">
       <Filter>ソース ファイル\filter</Filter>
     </ClCompile>
-    <ClCompile Include="jointBilateralFilter.cpp">
-      <Filter>ソース ファイル\filter</Filter>
-    </ClCompile>
-    <ClCompile Include="dualBilateralFilter.cpp">
-      <Filter>ソース ファイル\filter</Filter>
-    </ClCompile>
-    <ClCompile Include="filterCore.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="hazeRemove.cpp">
       <Filter>ソース ファイル\imgproc</Filter>
-    </ClCompile>
-    <ClCompile Include="L0Smoothing.cpp">
-      <Filter>ソース ファイル\filter</Filter>
-    </ClCompile>
-    <ClCompile Include="jointDualBilateralFilter.cpp">
-      <Filter>ソース ファイル\filter</Filter>
     </ClCompile>
     <ClCompile Include="zoom.cpp">
       <Filter>ソース ファイル\utilty functions</Filter>
@@ -309,9 +273,6 @@
     <ClCompile Include="video.cpp">
       <Filter>ソース ファイル\utilty functions</Filter>
     </ClCompile>
-    <ClCompile Include="crossBasedLocalFilter.cpp">
-      <Filter>ソース ファイル\filter</Filter>
-    </ClCompile>
     <ClCompile Include="speckle.cpp">
       <Filter>ソース ファイル\imgproc</Filter>
     </ClCompile>
@@ -351,9 +312,6 @@
     <ClCompile Include="costVolumeFilter.cpp">
       <Filter>ソース ファイル\filter</Filter>
     </ClCompile>
-    <ClCompile Include="crossBasedLocalMultipointFilter.cpp">
-      <Filter>ソース ファイル\filter</Filter>
-    </ClCompile>
     <ClCompile Include="StereoBase.cpp">
       <Filter>ソース ファイル\stereo</Filter>
     </ClCompile>
@@ -386,6 +344,63 @@
     </ClCompile>
     <ClCompile Include="boundaryReconstructionFilter.cpp">
       <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="dualExponentialSmoothing.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="filterCore.cpp">
+      <Filter>ソース ファイル\filter\filterCore</Filter>
+    </ClCompile>
+    <ClCompile Include="fftFilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="adaptiveManifold.cpp">
+      <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="binalyWeightedRangeFilter.cpp">
+      <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="bilateralFilter.cpp">
+      <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="crossBasedLocalFilter.cpp">
+      <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="crossBasedLocalMultipointFilter.cpp">
+      <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="dualBilateralFilter.cpp">
+      <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="L0Smoothing.cpp">
+      <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="jointNonLocalMeans.cpp">
+      <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="jointNearestFilter.cpp">
+      <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="jointDualBilateralFilter.cpp">
+      <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="localLaplacianFilter.cpp">
+      <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="jointBilateralFilter.cpp">
+      <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="guidedFilter.cpp">
+      <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="realtimeO1BilateralFilter.cpp">
+      <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="recursiveBilateralFilter.cpp">
+      <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="dctFilter.cpp">
+      <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -644,14 +659,23 @@
     <ClInclude Include="filterengine.hpp">
       <Filter>ヘッダー ファイル\headers</Filter>
     </ClInclude>
-    <ClInclude Include="filterCore.h">
-      <Filter>ソース ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\stereoDisplay.hpp">
       <Filter>ヘッダー ファイル\headers\stereo</Filter>
     </ClInclude>
     <ClInclude Include="..\include\stereoDP.hpp">
       <Filter>ヘッダー ファイル\headers\stereo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\dualExponentialSmoothing.hpp">
+      <Filter>ヘッダー ファイル\headers\filter</Filter>
+    </ClInclude>
+    <ClInclude Include="filterCore.h">
+      <Filter>ソース ファイル\filter\filterCore</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\fftFilter.hpp">
+      <Filter>ヘッダー ファイル\headers\filter</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\dctFilter.hpp">
+      <Filter>ヘッダー ファイル\headers\filter</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

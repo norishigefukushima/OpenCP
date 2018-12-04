@@ -6,6 +6,388 @@ using namespace cv;
 
 namespace cp
 {
+	template<class T>
+	void mergeBase_(vector<Mat>& src, Mat& dest)
+	{
+		if (dest.empty())dest.create(src[0].size(), src[0].depth());
+		const int size = src[0].size().area();
+		T* d = dest.ptr<T>(0);
+		T* s0 = src[0].ptr<T>(0);
+		T* s1 = src[1].ptr<T>(0);
+		T* s2 = src[2].ptr<T>(0);
+		for (int i = 0; i < size; i++)
+		{
+			d[0] = s0[0];
+			d[1] = s1[0];
+			d[2] = s2[0];
+			d += 3;
+			s0++;
+			s1++;
+			s2++;
+		}
+	}
+
+	void mergeStore_8U(vector<Mat>& src, Mat& dest)
+	{
+		if (dest.empty())dest.create(src[0].size(), src[0].depth());
+
+		const uchar* bptr = src[0].ptr<uchar>(0);
+		const uchar* gptr = src[1].ptr<uchar>(0);
+		const uchar* rptr = src[2].ptr<uchar>(0);
+		uchar* dptr = dest.ptr<uchar>(0);
+
+		const __m256i mask1 = _mm256_set_epi8(5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0);
+		const __m256i mask2 = _mm256_set_epi8(10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5);
+		const __m256i mask3 = _mm256_set_epi8(15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5, 10);
+
+		const __m256i bmask1 = _mm256_set_epi8
+		(255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0);
+		const __m256i bmask2 = _mm256_set_epi8
+		(255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255);
+
+		const int size = src[0].size().area();
+		const int sizeavx = src[0].size().area() / 32;
+		const int rem = sizeavx * 32;
+
+		for (int i = 0; i < sizeavx; i++)
+		{
+			__m256i a = _mm256_load_si256((__m256i*)(bptr));
+			__m256i b = _mm256_load_si256((__m256i*)(gptr));
+			__m256i c = _mm256_load_si256((__m256i*)(rptr));
+
+			a = _mm256_shuffle_epi8(a, mask1);
+			b = _mm256_shuffle_epi8(b, mask2);
+			c = _mm256_shuffle_epi8(c, mask3);
+			__m256i aa = _mm256_permute2x128_si256(a, a, 0x00);
+			__m256i bb = _mm256_permute2x128_si256(b, b, 0x00);
+			__m256i cc = _mm256_permute2x128_si256(c, c, 0x00);
+
+			_mm256_store_si256((__m256i*)(dptr), _mm256_blendv_epi8(cc, _mm256_blendv_epi8(aa, bb, bmask1), bmask2));
+			_mm256_store_si256((__m256i*)(dptr + 32), _mm256_blendv_epi8(c, _mm256_blendv_epi8(b, a, bmask2), bmask1));
+			aa = _mm256_permute2x128_si256(a, a, 0x11);
+			bb = _mm256_permute2x128_si256(b, b, 0x11);
+			cc = _mm256_permute2x128_si256(c, c, 0x11);
+			_mm256_store_si256((__m256i*)(dptr + 64), _mm256_blendv_epi8(aa, _mm256_blendv_epi8(bb, cc, bmask1), bmask2));
+
+			bptr += 32;
+			gptr += 32;
+			rptr += 32;
+			dptr += 96;
+		}
+
+		const int f = size - rem;
+		for (int i = 0; i < f; i++)
+		{
+			dptr[i] = bptr[3 * i];
+			dptr[i] = gptr[3 * i + 1];
+			dptr[i] = rptr[3 * i + 2];
+		}
+	}
+
+	void mergeStream_8U(vector<Mat>& src, Mat& dest)
+	{
+		if (dest.empty())dest.create(src[0].size(), src[0].depth());
+
+		const uchar* bptr = src[0].ptr<uchar>(0);
+		const uchar* gptr = src[1].ptr<uchar>(0);
+		const uchar* rptr = src[2].ptr<uchar>(0);
+		uchar* dptr = dest.ptr<uchar>(0);
+
+		const __m256i mask1 = _mm256_set_epi8(5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0);
+		const __m256i mask2 = _mm256_set_epi8(10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5);
+		const __m256i mask3 = _mm256_set_epi8(15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5, 10);
+
+		const __m256i bmask1 = _mm256_set_epi8
+		(255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0);
+		const __m256i bmask2 = _mm256_set_epi8
+		(255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255);
+
+		const int size = src[0].size().area();
+		const int sizeavx = src[0].size().area() / 32;
+		const int rem = sizeavx * 32;
+
+		for (int i = 0; i < sizeavx; i++)
+		{
+			__m256i a = _mm256_load_si256((__m256i*)(bptr));
+			__m256i b = _mm256_load_si256((__m256i*)(gptr));
+			__m256i c = _mm256_load_si256((__m256i*)(rptr));
+
+			a = _mm256_shuffle_epi8(a, mask1);
+			b = _mm256_shuffle_epi8(b, mask2);
+			c = _mm256_shuffle_epi8(c, mask3);
+			__m256i aa = _mm256_permute2x128_si256(a, a, 0x00);
+			__m256i bb = _mm256_permute2x128_si256(b, b, 0x00);
+			__m256i cc = _mm256_permute2x128_si256(c, c, 0x00);
+
+			_mm256_stream_si256((__m256i*)(dptr), _mm256_blendv_epi8(cc, _mm256_blendv_epi8(aa, bb, bmask1), bmask2));
+			_mm256_stream_si256((__m256i*)(dptr + 32), _mm256_blendv_epi8(c, _mm256_blendv_epi8(b, a, bmask2), bmask1));
+			aa = _mm256_permute2x128_si256(a, a, 0x11);
+			bb = _mm256_permute2x128_si256(b, b, 0x11);
+			cc = _mm256_permute2x128_si256(c, c, 0x11);
+			_mm256_stream_si256((__m256i*)(dptr + 64), _mm256_blendv_epi8(aa, _mm256_blendv_epi8(bb, cc, bmask1), bmask2));
+
+			bptr += 32;
+			gptr += 32;
+			rptr += 32;
+			dptr += 96;
+		}
+
+		const int f = size - rem;
+		for (int i = 0; i < f; i++)
+		{
+			dptr[i] = bptr[3 * i];
+			dptr[i] = gptr[3 * i + 1];
+			dptr[i] = rptr[3 * i + 2];
+		}
+	}
+
+	void mergeConvert(cv::InputArrayOfArrays src, cv::OutputArray dest, const int depth, const double scale, const double offset, const bool isCache)
+	{
+		vector<Mat> s;
+		src.getMatVector(s);
+		if (dest.empty())
+		{
+			dest.create(s[0].size(), s[0].type());
+		}
+		Mat dst = dest.getMat();
+
+		switch (s[0].depth())
+		{
+		case CV_8U:
+			if (isCache)mergeStore_8U(s, dst);
+			else mergeStream_8U(s, dst);
+			break;
+		case CV_32F:
+			mergeBase_<float>(s, dst);
+			break;
+		default:
+			cout << "not support type" << endl;
+			break;
+		}
+	}
+
+
+	template<class T>
+	void splitBase_(Mat& src, vector<Mat>& dst)
+	{
+		const int size = src.size().area();
+		T* s = src.ptr<T>(0);
+		T* d0 = dst[0].ptr<T>(0);
+		T* d1 = dst[1].ptr<T>(0);
+		T* d2 = dst[2].ptr<T>(0);
+		for (int i = 0; i < size; i++)
+		{
+			d0[0] = s[0];
+			d1[0] = s[1];
+			d2[0] = s[2];
+			s += 3;
+			d0++;
+			d1++;
+			d2++;
+		}
+	}
+
+	void splitStore_8U(Mat& src, vector<Mat>& dst)
+	{
+		uchar* s = src.ptr<uchar>(0);
+		uchar* B = dst[0].ptr<uchar>(0);
+		uchar* G = dst[1].ptr<uchar>(0);
+		uchar* R = dst[2].ptr<uchar>(0);
+
+		//BGR BGR BGR BGR BGR B x2
+		//GR BGR BGR BGR BGR BG x2
+		//R BGR BGR BGR BGR BGR x2
+		//BBBBBBGGGGGRRRRR shuffle
+		const __m256i mask1 = _mm256_setr_epi8(0, 3, 6, 9, 12, 15, 1, 4, 7, 10, 13, 2, 5, 8, 11, 14,
+			0, 3, 6, 9, 12, 15, 1, 4, 7, 10, 13, 2, 5, 8, 11, 14);
+		//GGGGGBBBBBBRRRRR shuffle
+		const __m256i smask1 = _mm256_setr_epi8(6, 7, 8, 9, 10, 0, 1, 2, 3, 4, 5, 11, 12, 13, 14, 15,
+			6, 7, 8, 9, 10, 0, 1, 2, 3, 4, 5, 11, 12, 13, 14, 15);
+		const __m256i ssmask1 = _mm256_setr_epi8(11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+			11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+
+		//GGGGGGBBBBBRRRRR shuffle
+		const __m256i mask2 = _mm256_setr_epi8(0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13,
+			0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13);
+		const __m256i ssmask2 = _mm256_setr_epi8(0, 1, 2, 3, 4, 11, 12, 13, 14, 15, 5, 6, 7, 8, 9, 10,
+			0, 1, 2, 3, 4, 11, 12, 13, 14, 15, 5, 6, 7, 8, 9, 10);
+
+		const __m256i bmask1 = _mm256_setr_epi8
+		(255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+
+		const __m256i bmask2 = _mm256_setr_epi8
+		(255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0,
+			255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0);
+
+		const __m256i bmask3 = _mm256_setr_epi8
+		(255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+
+		const __m256i bmask4 = _mm256_setr_epi8
+		(255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0,
+			255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0);
+
+		const int size = src.size().area();
+		const int sizeavx = size / 32;
+		const int rem = sizeavx * 32;
+		for (int i = 0; i < sizeavx; i++)
+		{
+			const __m256i _a = _mm256_load_si256((__m256i*)(s + 0));
+			const __m256i _b = _mm256_load_si256((__m256i*)(s + 32));
+			const __m256i _c = _mm256_load_si256((__m256i*)(s + 64));
+			__m256i a = _mm256_permute2x128_si256(_a, _b, 0x30);
+			__m256i b = _mm256_permute2x128_si256(_a, _c, 0x21);
+			__m256i c = _mm256_permute2x128_si256(_b, _c, 0x30);
+			a = _mm256_shuffle_epi8(a, mask1);
+			b = _mm256_shuffle_epi8(b, mask2);
+			c = _mm256_shuffle_epi8(c, mask2);
+			_mm256_store_si256((__m256i*)(B), _mm256_blendv_epi8(c, _mm256_blendv_epi8(b, a, bmask1), bmask2));
+
+			a = _mm256_shuffle_epi8(a, smask1);
+			b = _mm256_shuffle_epi8(b, smask1);
+			c = _mm256_shuffle_epi8(c, ssmask1);
+			_mm256_store_si256((__m256i*)(G), _mm256_blendv_epi8(c, _mm256_blendv_epi8(b, a, bmask3), bmask2));
+
+			a = _mm256_shuffle_epi8(a, ssmask1);
+			b = _mm256_shuffle_epi8(b, ssmask2);
+			c = _mm256_shuffle_epi8(c, ssmask1);
+			_mm256_store_si256((__m256i*)(R), _mm256_blendv_epi8(c, _mm256_blendv_epi8(b, a, bmask3), bmask4));
+
+			B += 32;
+			G += 32;
+			R += 32;
+			s += 96;
+		}
+
+		const int f = size - rem;
+		for (int i = 0; i < f; i++)
+		{
+			B[i] = s[3 * i];
+			G[i] = s[3 * i + 1];
+			R[i] = s[3 * i + 2];
+		}
+	}
+
+	void splitStream_8U(Mat& src, vector<Mat>& dst)
+	{
+		uchar* s = src.ptr<uchar>(0);
+		uchar* B = dst[0].ptr<uchar>(0);
+		uchar* G = dst[1].ptr<uchar>(0);
+		uchar* R = dst[2].ptr<uchar>(0);
+
+		//BGR BGR BGR BGR BGR B x2
+		//GR BGR BGR BGR BGR BG x2
+		//R BGR BGR BGR BGR BGR x2
+		//BBBBBBGGGGGRRRRR shuffle
+		const __m256i mask1 = _mm256_setr_epi8(0, 3, 6, 9, 12, 15, 1, 4, 7, 10, 13, 2, 5, 8, 11, 14,
+			0, 3, 6, 9, 12, 15, 1, 4, 7, 10, 13, 2, 5, 8, 11, 14);
+		//GGGGGBBBBBBRRRRR shuffle
+		const __m256i smask1 = _mm256_setr_epi8(6, 7, 8, 9, 10, 0, 1, 2, 3, 4, 5, 11, 12, 13, 14, 15,
+			6, 7, 8, 9, 10, 0, 1, 2, 3, 4, 5, 11, 12, 13, 14, 15);
+		const __m256i ssmask1 = _mm256_setr_epi8(11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+			11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+
+		//GGGGGGBBBBBRRRRR shuffle
+		const __m256i mask2 = _mm256_setr_epi8(0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13,
+			0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13);
+		const __m256i ssmask2 = _mm256_setr_epi8(0, 1, 2, 3, 4, 11, 12, 13, 14, 15, 5, 6, 7, 8, 9, 10,
+			0, 1, 2, 3, 4, 11, 12, 13, 14, 15, 5, 6, 7, 8, 9, 10);
+
+		const __m256i bmask1 = _mm256_setr_epi8
+		(255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+
+		const __m256i bmask2 = _mm256_setr_epi8
+		(255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0,
+			255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0);
+
+		const __m256i bmask3 = _mm256_setr_epi8
+		(255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+
+		const __m256i bmask4 = _mm256_setr_epi8
+		(255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0,
+			255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0);
+
+		const int size = src.size().area();
+		const int sizeavx = size / 32;
+		const int rem = sizeavx * 32;
+		for (int i = 0; i < sizeavx; i++)
+		{
+			const __m256i _a = _mm256_load_si256((__m256i*)(s + 0));
+			const __m256i _b = _mm256_load_si256((__m256i*)(s + 32));
+			const __m256i _c = _mm256_load_si256((__m256i*)(s + 64));
+			__m256i a = _mm256_permute2x128_si256(_a, _b, 0x30);
+			__m256i b = _mm256_permute2x128_si256(_a, _c, 0x21);
+			__m256i c = _mm256_permute2x128_si256(_b, _c, 0x30);
+			a = _mm256_shuffle_epi8(a, mask1);
+			b = _mm256_shuffle_epi8(b, mask2);
+			c = _mm256_shuffle_epi8(c, mask2);
+			_mm256_stream_si256((__m256i*)(B), _mm256_blendv_epi8(c, _mm256_blendv_epi8(b, a, bmask1), bmask2));
+
+			a = _mm256_shuffle_epi8(a, smask1);
+			b = _mm256_shuffle_epi8(b, smask1);
+			c = _mm256_shuffle_epi8(c, ssmask1);
+			_mm256_stream_si256((__m256i*)(G), _mm256_blendv_epi8(c, _mm256_blendv_epi8(b, a, bmask3), bmask2));
+
+			a = _mm256_shuffle_epi8(a, ssmask1);
+			b = _mm256_shuffle_epi8(b, ssmask2);
+			c = _mm256_shuffle_epi8(c, ssmask1);
+			_mm256_stream_si256((__m256i*)(R), _mm256_blendv_epi8(c, _mm256_blendv_epi8(b, a, bmask3), bmask4));
+
+			B += 32;
+			G += 32;
+			R += 32;
+			s += 96;
+		}
+
+		const int f = size - rem;
+		for (int i = 0; i < f; i++)
+		{
+			B[i] = s[3 * i];
+			G[i] = s[3 * i + 1];
+			R[i] = s[3 * i + 2];
+		}
+	}
+
+	void splitConvert(cv::InputArray src, cv::OutputArrayOfArrays dest, const int depth, const double scale, const double offset, const bool isCache)
+	{
+		Mat s = src.getMat();
+
+		vector<Mat> dst;
+		if (dest.empty())
+		{
+			dest.create(3, 1, src.type());
+			dest.getMatVector(dst);
+			dst[0].create(src.size(), src.depth());
+			dst[1].create(src.size(), src.depth());
+			dst[2].create(src.size(), src.depth());
+
+			dest.getMatRef(0) = dst[0];
+			dest.getMatRef(1) = dst[1];
+			dest.getMatRef(2) = dst[2];
+		}
+		else
+		{
+			dest.getMatVector(dst);
+		}
+
+		switch (s.depth())
+		{
+		case CV_8U:
+			if (isCache)splitStore_8U(s, dst);
+			else splitStream_8U(s, dst);
+			break;
+		case CV_32F:
+			splitBase_<float>(s, dst);
+			break;
+		default:
+			cout << "not support type" << endl;
+			break;
+		}
+	}
+
 	void cvtBGR2RawVector(cv::InputArray src, vector<float>& dest)
 	{
 		if (dest.size() < src.size().area()*src.channels())dest.resize(src.size().area()*src.channels());

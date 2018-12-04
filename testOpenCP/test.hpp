@@ -14,7 +14,8 @@ void fitPlaneTest();
 void guiEdgePresevingFilterOpenCV(cv::Mat& src);
 void guiWeightMapTest();
 void guiCrossBasedLocalFilter(cv::Mat& src);
-void guiStereo();
+void guiStereoBMTest(cv::Mat& leftim, cv::Mat& rightim, int numDisparities);
+void guiStereoSGBMTest(cv::Mat& leftim, cv::Mat& rightim, int numDisparities);
 
 void guiSLICTest(cv::Mat& src);
 
@@ -44,6 +45,8 @@ void guiCodingDistortionRemoveTest(cv::Mat& src);
 void guiBinalyWeightedRangeFilterTest(cv::Mat& src);
 void guiJointBinalyWeightedRangeFilterTest(cv::Mat& src, cv::Mat& guide);
 
+void guiDomainTransformFilter(cv::Mat& src);
+
 void guiNonLocalMeansTest(cv::Mat& src);
 void guiSeparableNLMTest(cv::Mat& src);
 
@@ -70,11 +73,12 @@ void guiPlotTest();
 
 void guiHistgramTest(cv::Mat& src);
 
+void guiUpsampleTest(cv::Mat& src_);
 
 void guiAnalysisCompare(cv::Mat& src1, cv::Mat& src2);
-void imshowAnalysisCompare(std::string winname, cv::Mat& src1, cv::Mat& src2);
-void imshowAnalysis(std::string winname, std::vector<cv::Mat>& s);
-void imshowAnalysis(std::string winname, cv::Mat& src);
+void imshowAnalysisCompare(cv::String winname, cv::Mat& src1, cv::Mat& src2);
+void imshowAnalysis(cv::String winname, std::vector<cv::Mat>& s);
+void imshowAnalysis(cv::String winname, cv::Mat& src);
 
 enum DRAW_SIGNAL_CHANNEL
 {
@@ -84,8 +88,7 @@ enum DRAW_SIGNAL_CHANNEL
 	Y
 };
 void drawSignalX(cv::Mat& src1, cv::Mat& src2, DRAW_SIGNAL_CHANNEL color, cv::Mat& dest, cv::Size outputImageSize, int line_height, int shiftx, int shiftvalue, int rangex, int rangevalue, int linetype = cp::Plot::LINE_LINEAR);// color 0:B, 1:G, 2:R, 3:Y
-void drawSignalX(cv::Mat& src, DRAW_SIGNAL_CHANNEL color, cv::Mat& dest, cv::Size outputImageSize, int line_height, int shiftx, int shiftvalue, int rangex, int rangevalue, int linetype = cp::Plot::LINE_LINEAR);// color 0:B, 1:G, 2:R, 3:Y
-void drawSignalX(std::vector<cv::Mat>& src, DRAW_SIGNAL_CHANNEL color, cv::Mat& dest, cv::Size outputImageSize, int analysisLineHeight, int shiftx, int shiftvalue, int rangex, int rangevalue, int linetype = cp::Plot::LINE_LINEAR);// color 0:B, 1:G, 2:R, 3:Y
+void drawSignalX(cv::InputArray src, DRAW_SIGNAL_CHANNEL color, cv::Mat& dest, cv::Size outputImageSize, int analysisLineHeight, int shiftx, int shiftvalue, int rangex, int rangevalue, int linetype = cp::Plot::LINE_LINEAR);// color 0:B, 1:G, 2:R, 3:Y
 
 void drawSignalY(cv::Mat& src1, cv::Mat& src2, DRAW_SIGNAL_CHANNEL color, cv::Mat& dest, cv::Size size, int line_height, int shiftx, int shiftvalue, int rangex, int rangevalue, int linetype = cp::Plot::LINE_LINEAR);// color 0:B, 1:G, 2:R, 3:Y
 void drawSignalY(cv::Mat& src, DRAW_SIGNAL_CHANNEL color, cv::Mat& dest, cv::Size size, int line_height, int shiftx, int shiftvalue, int rangex, int rangevalue, int linetype = cp::Plot::LINE_LINEAR);// color 0:B, 1:G, 2:R, 3:Y

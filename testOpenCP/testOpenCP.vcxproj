@@ -139,14 +139,17 @@
       <WarningLevel>Level3</WarningLevel>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
+      <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>
       </AdditionalIncludeDirectories>
       <OpenMPSupport>true</OpenMPSupport>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -164,15 +167,21 @@
     </ClCompile>
     <ClCompile Include="bilateralfilter\bilateralFilterTest.cpp" />
     <ClCompile Include="colorCorrectionTest.cpp" />
+    <ClCompile Include="denoise\denoiseTest.cpp" />
     <ClCompile Include="disparityRefinement\disparityRefinementTest.cpp" />
+    <ClCompile Include="dualExponentialSmoothingTest.cpp" />
     <ClCompile Include="fitPlaneTest.cpp" />
     <ClCompile Include="guiCrossBasedLocalFilterTest.cpp" />
     <ClCompile Include="GaussianFilter\GaussianFilterTest.cpp" />
+    <ClCompile Include="guiDomainTransformTest.cpp" />
     <ClCompile Include="guiEdgePreservingFilter.cpp" />
     <ClCompile Include="guiEPFWeightMapTest.cpp" />
+    <ClCompile Include="guiHazeRemoveTest.cpp" />
     <ClCompile Include="guiStereoTest.cpp" />
+    <ClCompile Include="guiUpsampleTest.cpp" />
     <ClCompile Include="guiWeightedHistogramFilterTest.cpp" />
     <ClCompile Include="histogram\guiHistogramTest.cpp" />
+    <ClCompile Include="iterativeBackProjection\iterativeBackProjectionTest.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="plotTest\guiPlotTest.cpp" />
     <ClCompile Include="qualityMetricsTest\qualityMetricsTest.cpp" />
@@ -182,6 +191,8 @@
     <ClCompile Include="viewSynthesis\viewSynthesisTest.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="sugimoto2017.hpp" />
+    <ClInclude Include="sugimoto2017_params_2d.hpp" />
     <ClInclude Include="test.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

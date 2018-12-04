@@ -7,14 +7,12 @@ using namespace cv;
 
 namespace cp
 {
-
 	template <class T>
 	static void nnUpsample_(Mat& src, Mat& dest)
 	{
 		const int dw = dest.cols / (src.cols);
 		const int dh = dest.rows / (src.rows);
 
-		Mat dst = Mat::zeros(Size(dw*src.cols, dh*src.rows), src.type());
 		Mat sim; copyMakeBorder(src, sim, 0, 1, 0, 1, cv::BORDER_REPLICATE);
 		const int hdw = dw >> 1;
 		const int hdh = dh >> 1;
@@ -26,25 +24,17 @@ namespace cp
 
 			for (int i = 0, m = 0; i < src.cols; i++, m += dw)
 			{
+				const T ltd = s[i];
 				for (int l = 0; l < dh; l++)
 				{
-					T* d = dst.ptr<T>(n + l);
+					T* d = dest.ptr<T>(n + l);
 					for (int k = 0; k < dw; k++)
 					{
-						if (k < hdw && l < hdh)
-							d[m + k] = s[i];
-						else if (k >= hdw&&l < hdh)
-							d[m + k] = s[i + 1];
-						else if (k < hdw&&l >= hdh)
-							d[m + k] = s[i + sim.cols];
-						else
-							d[m + k] = s[i + 1 + sim.cols];
+						d[m + k] = ltd;
 					}
-
 				}
 			}
 		}
-		copyMakeBorder(dst, dest, 0, dest.rows % (src.rows), 0, dest.cols % (src.cols), cv::BORDER_REPLICATE);
 	}
 
 	void nnUpsample(InputArray src_, OutputArray dest_)
@@ -60,15 +50,15 @@ namespace cp
 		else if (src.depth() == CV_64F) nnUpsample_<double>(src, dest);
 	}
 
-	inline int linearinterpolate(int lt, int rt, int lb, int rb, double a, double b)
+	inline int linearinterpolate_(int lt, int rt, int lb, int rb, double a, double b)
 	{
 		return (int)((b*a*lt + b*(1.0 - a)*rt + (1.0 - b)*a*lb + (1.0 - b)*(1.0 - a)*rb) + 0.5);
 	}
 
 	template <class T>
-	inline T linearinterpolate_(T lt, T rt, T lb, T rb, double a, double b)
+	inline double linearinterpolate_(T lt, T rt, T lb, T rb, double a, double b)
 	{
-		return (T)((b*a*lt + b*(1.0 - a)*rt + (1.0 - b)*a*lb + (1.0 - b)*(1.0 - a)*rb) + 0.5);
+		return (b*a*lt + b*(1.0 - a)*rt + (1.0 - b)*a*lb + (1.0 - b)*(1.0 - a)*rb);
 	}
 
 	template <class T>
@@ -79,17 +69,19 @@ namespace cp
 		const int hdw = dw >> 1;
 		const int hdh = dh >> 1;
 
-		for (int j = 0; j < src.rows - 1; j++)
+		Mat sim;
+		copyMakeBorder(src, sim, 0, 1, 0, 1, BORDER_REPLICATE);
+		for (int j = 0; j < src.rows; j++)
 		{
 			int n = j*dh;
-			T* s = src.ptr<T>(j);
+			T* s = sim.ptr<T>(j);
 
-			for (int i = 0, m = 0; i < src.cols - 1; i++, m += dw)
+			for (int i = 0, m = 0; i < src.cols; i++, m += dw)
 			{
 				const T ltd = s[i];
 				const T rtd = s[i + 1];
-				const T lbd = s[i + src.cols];
-				const T rbd = s[i + 1 + src.cols];
+				const T lbd = s[i + sim.cols];
+				const T rbd = s[i + 1 + sim.cols];
 				for (int l = 0; l < dh; l++)
 				{
 					double beta = 1.0 - (double)l / dh;
@@ -97,7 +89,7 @@ namespace cp
 					for (int k = 0; k < dw; k++)
 					{
 						double alpha = 1.0 - (double)k / dw;
-						d[m + k] = (T)linearinterpolate_<T>(ltd, rtd, lbd, rbd, alpha, beta);
+						d[m + k] = saturate_cast<T> (linearinterpolate_<T>(ltd, rtd, lbd, rbd, alpha, beta));
 					}
 				}
 			}
@@ -115,6 +107,125 @@ namespace cp
 		else if (src.depth() == CV_32S) linearUpsample_<int>(src, dest);
 		else if (src.depth() == CV_32F) linearUpsample_<float>(src, dest);
 		else if (src.depth() == CV_64F) linearUpsample_<double>(src, dest);
+	}
+
+
+	inline double cubicfunc(double x, double a = -1.0)
+	{
+		double X = abs(x);
+		if (X <= 1)
+			return ((a + 2.0)*x*x*x - (a + 3.0)*x*x + 1.0);
+		else if (X <= 2)
+			return (a*x*x*x - 5.0*a*x*x + 8.0*a*x - 4.0*a);
+		else
+			return 0.0;
+	}
+
+	template <class T>
+	static void cubicUpsample_(Mat& src, Mat& dest, double a)
+	{
+		const int dw = dest.cols / (src.cols - 1);
+		const int dh = dest.rows / (src.rows - 1);
+		const int hdw = dw >> 1;
+		const int hdh = dh >> 1;
+
+		vector<vector<double>> weight(dh*dw);
+		for (int i = 0; i < weight.size(); i++)weight[i].resize(16);
+
+		int idx = 0;
+
+		for (int l = 0; l < dh; l++)
+		{
+			const double y = (double)l / (double)dh;
+			for (int k = 0; k < dw; k++)
+			{
+				const double x = (double)k / (double)dw;
+
+				weight[idx][0] = cubicfunc(1.0 + x, a)*cubicfunc(1.0 + y, a);
+				weight[idx][1] = cubicfunc(0.0 + x, a)*cubicfunc(1.0 + y, a);
+				weight[idx][2] = cubicfunc(1.0 - x, a)*cubicfunc(1.0 + y, a);
+				weight[idx][3] = cubicfunc(2.0 - x, a)*cubicfunc(1.0 + y, a);
+
+				weight[idx][4] = cubicfunc(1.0 + x, a)*cubicfunc(0.0 + y, a);
+				weight[idx][5] = cubicfunc(0.0 + x, a)*cubicfunc(0.0 + y, a);
+				weight[idx][6] = cubicfunc(1.0 - x, a)*cubicfunc(0.0 + y, a);
+				weight[idx][7] = cubicfunc(2.0 - x, a)*cubicfunc(0.0 + y, a);
+
+				weight[idx][8] = cubicfunc(1.0 + x, a)*cubicfunc(1.0 - y, a);
+				weight[idx][9] = cubicfunc(0.0 + x, a)*cubicfunc(1.0 - y, a);
+				weight[idx][10] = cubicfunc(1.0 - x, a)*cubicfunc(1.0 - y, a);
+				weight[idx][11] = cubicfunc(2.0 - x, a)*cubicfunc(1.0 - y, a);
+
+				weight[idx][12] = cubicfunc(1.0 + x, a)*cubicfunc(2.0 - y, a);
+				weight[idx][13] = cubicfunc(0.0 + x, a)*cubicfunc(2.0 - y, a);
+				weight[idx][14] = cubicfunc(1.0 - x, a)*cubicfunc(2.0 - y, a);
+				weight[idx][15] = cubicfunc(2.0 - x, a)*cubicfunc(2.0 - y, a);
+
+				double wsum = 0.0;
+				for (int i = 0; i < 16; i++)wsum += weight[idx][i];
+				for (int i = 0; i < 16; i++)weight[idx][i] /= wsum;
+
+				idx++;
+			}
+		}
+
+		Mat sim;
+		copyMakeBorder(src, sim, 1, 2, 1, 2, BORDER_REPLICATE);
+		for (int j = 0; j < src.rows; j++)
+		{
+			int n = j*dh;
+			T* s = sim.ptr<T>(j + 1) + 1;
+
+			for (int i = 0, m = 0; i < src.cols; i++, m += dw)
+			{
+				const T v00 = s[i - 1 - sim.cols];
+				const T v01 = s[i - 0 - sim.cols];
+				const T v02 = s[i + 1 - sim.cols];
+				const T v03 = s[i + 2 - sim.cols];
+				const T v10 = s[i - 1];
+				const T v11 = s[i - 0];
+				const T v12 = s[i + 1];
+				const T v13 = s[i + 2];
+				const T v20 = s[i - 1 + sim.cols];
+				const T v21 = s[i - 0 + sim.cols];
+				const T v22 = s[i + 1 + sim.cols];
+				const T v23 = s[i + 2 + sim.cols];
+				const T v30 = s[i - 1 + 2 * sim.cols];
+				const T v31 = s[i - 0 + 2 * sim.cols];
+				const T v32 = s[i + 1 + 2 * sim.cols];
+				const T v33 = s[i + 2 + 2 * sim.cols];
+
+				int idx = 0;
+				for (int l = 0; l < dh; l++)
+				{
+					T* d = dest.ptr<T>(n + l);
+					for (int k = 0; k < dw; k++)
+					{
+						
+						d[m + k] = saturate_cast<T>(
+							weight[idx][0] * v00 + weight[idx][1] * v01 + weight[idx][2] * v02 + weight[idx][3] * v03
+							+ weight[idx][4] * v10 + weight[idx][5] * v11 + weight[idx][6] * v12 + weight[idx][7] * v13
+							+ weight[idx][8] * v20 + weight[idx][9] * v21 + weight[idx][10] * v22 + weight[idx][11] * v23
+							+ weight[idx][12] * v30 + weight[idx][13] * v31 + weight[idx][14] * v32 + weight[idx][15] * v33
+							);
+						idx++;
+					}
+				}
+			}
+		}
+	}
+
+	void cubicUpsample(InputArray src_, OutputArray dest_, double a)
+	{
+		Mat dest = dest_.getMat();
+		Mat src = src_.getMat();
+
+		if (src.depth() == CV_8U) cubicUpsample_<uchar>(src, dest, a);
+		else if (src.depth() == CV_16S) cubicUpsample_<short>(src, dest, a);
+		else if (src.depth() == CV_16U) cubicUpsample_<ushort>(src, dest, a);
+		else if (src.depth() == CV_32S) cubicUpsample_<int>(src, dest, a);
+		else if (src.depth() == CV_32F) cubicUpsample_<float>(src, dest, a);
+		else if (src.depth() == CV_64F) cubicUpsample_<double>(src, dest, a);
 	}
 
 	void setUpsampleMask(InputArray src, OutputArray dst)

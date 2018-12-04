@@ -110,6 +110,7 @@
       <AdditionalIncludeDirectories>
       </AdditionalIncludeDirectories>
       <OpenMPSupport>false</OpenMPSupport>
+      <SDLCheck>false</SDLCheck>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -150,7 +151,7 @@
       <OpenMPSupport>false</OpenMPSupport>
       <DisableSpecificWarnings>4251;4309; 4819;4324</DisableSpecificWarnings>
       <AdditionalOptions>/MP %(AdditionalOptions)</AdditionalOptions>
-      <FloatingPointModel>Fast</FloatingPointModel>
+      <FloatingPointModel>Precise</FloatingPointModel>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <EnableFiberSafeOptimizations>
@@ -160,6 +161,8 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <WholeProgramOptimization>
       </WholeProgramOptimization>
+      <SDLCheck>false</SDLCheck>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -195,6 +198,7 @@
     <ClCompile Include="crossBasedLocalFilter.cpp" />
     <ClCompile Include="crossBasedLocalMultipointFilter.cpp" />
     <ClCompile Include="csv.cpp" />
+    <ClCompile Include="dctFilter.cpp" />
     <ClCompile Include="dct_simd.cpp" />
     <ClCompile Include="depth2disparity.cpp" />
     <ClCompile Include="depthEval.cpp" />
@@ -205,7 +209,9 @@
     <ClCompile Include="domainTransformFilter.cpp" />
     <ClCompile Include="draw.cpp" />
     <ClCompile Include="dualBilateralFilter.cpp" />
+    <ClCompile Include="dualExponentialSmoothing.cpp" />
     <ClCompile Include="dxtDenoise.cpp" />
+    <ClCompile Include="fftFilter.cpp" />
     <ClCompile Include="fftinfo.cpp" />
     <ClCompile Include="filterCore.cpp" />
     <ClCompile Include="fitPlane.cpp" />
@@ -303,6 +309,7 @@
     <ClInclude Include="..\include\crossBasedLocalFilter.hpp" />
     <ClInclude Include="..\include\crossBasedLocalMultipointFilter.hpp" />
     <ClInclude Include="..\include\csv.hpp" />
+    <ClInclude Include="..\include\dctFilter.hpp" />
     <ClInclude Include="..\include\depth2disparity.hpp" />
     <ClInclude Include="..\include\depthEval.hpp" />
     <ClInclude Include="..\include\depthfilter.hpp" />
@@ -312,7 +319,9 @@
     <ClInclude Include="..\include\domainTransformFilter.hpp" />
     <ClInclude Include="..\include\draw.hpp" />
     <ClInclude Include="..\include\dualBilateralFilter.hpp" />
+    <ClInclude Include="..\include\dualExponentialSmoothing.hpp" />
     <ClInclude Include="..\include\dxtDenoise.hpp" />
+    <ClInclude Include="..\include\fftFilter.hpp" />
     <ClInclude Include="..\include\fftinfo.hpp" />
     <ClInclude Include="..\include\fitPlane.hpp" />
     <ClInclude Include="..\include\GaussianBlurIPOL.hpp" />

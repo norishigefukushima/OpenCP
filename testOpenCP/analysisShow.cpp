@@ -46,6 +46,7 @@ void getImageLine_(Mat& src, int channel, vector<Point>& v, const int line)
 		}
 	}
 }
+
 static void getImageLine(Mat& src, vector<Point>& v, const int line, int channel)
 {
 	if (v.size() == 0)
@@ -72,32 +73,16 @@ static void getImageVLine(Mat& src, vector<Point>& v, const int line, int channe
 	else if (src.type() == CV_64F || src.type() == CV_64FC3)getImageLine_<double>(srct, channel, v, line);
 }
 
-void drawSignalX(vector<Mat>& src, DRAW_SIGNAL_CHANNEL color, Mat& dest, Size size, int line_height, int shiftx, int shiftvalue, int rangex, int rangevalue, int linetype, int enhance)
+void drawSignalX(InputArray src_, DRAW_SIGNAL_CHANNEL color, Mat& dest, Size outputImageSize, int line_height, int shiftx, int shiftvalue, int rangex, int rangevalue, int linetype)
 {
-	Plot p(size);
-
-	p.setPlotProfile(false, false, false);
-	p.setLinetypeALL(linetype);
-	p.setPlotThickness(enhance, 2);
-	p.setXYMinMax(shiftx - max(rangex, 1), shiftx + max(rangex, 1), shiftvalue - rangevalue, shiftvalue + rangevalue);
-	vector<vector<Point>> v((int)src.size());
-
-	for (int i = 0; i < (int)src.size(); i++)
-	{
-		getImageLine(src[i], v[i], line_height, color);
-		p.push_back(v[i], i);
-		p.plotData(2, 0);
-	}
-
-	p.render.copyTo(dest);
-}
-
-void drawSignalX(vector<Mat>& src, DRAW_SIGNAL_CHANNEL color, Mat& dest, Size outputImageSize, int line_height, int shiftx, int shiftvalue, int rangex, int rangevalue, int linetype)
-{
+	vector<Mat> src;
+	src_.getMatVector(src);
+	
 	Plot p(outputImageSize);
-
 	p.setPlotProfile(false, false, false);
-	p.setLinetypeALL(linetype);
+	p.setPlotSymbolALL(Plot::SYMBOL_NOPOINT);
+	p.setPlotLineTypeALL(linetype);
+	
 	p.setXYMinMax(shiftx - max(rangex, 1), shiftx + max(rangex, 1), shiftvalue - rangevalue, shiftvalue + rangevalue);
 	vector<vector<Point>> v((int)src.size());
 
@@ -105,17 +90,10 @@ void drawSignalX(vector<Mat>& src, DRAW_SIGNAL_CHANNEL color, Mat& dest, Size ou
 	{
 		getImageLine(src[i], v[i], line_height, color);
 		p.push_back(v[i], i);
-		p.plotData(2, 0);
+		p.plotData();
 	}
 
 	p.render.copyTo(dest);
-}
-
-void drawSignalX(Mat& src, DRAW_SIGNAL_CHANNEL color, Mat& dest, Size size, int line_height, int shiftx, int shiftvalue, int rangex, int rangevalue, int linetype)
-{
-	vector<Mat> s;
-	s.push_back(src);
-	drawSignalX(s, color, dest, size, line_height, shiftx, shiftvalue, rangex, rangevalue, linetype);
 }
 
 void drawSignalX(Mat& src1, Mat& src2, DRAW_SIGNAL_CHANNEL color, Mat& dest, Size size, int line_height, int shiftx, int shiftvalue, int rangex, int rangevalue, int linetype)
@@ -129,15 +107,17 @@ void drawSignalX(Mat& src1, Mat& src2, DRAW_SIGNAL_CHANNEL color, Mat& dest, Siz
 void drawSignalY(vector<Mat>& src, DRAW_SIGNAL_CHANNEL color, Mat& dest, Size size, int line_height, int shiftx, int shiftvalue, int rangex, int rangevalue, int linetype)
 {
 	Plot p(size);
+
 	p.setPlotProfile(false, false, false);
-	p.setLinetypeALL(linetype);
+	p.setPlotSymbolALL(Plot::SYMBOL_NOPOINT);
+	p.setPlotLineTypeALL(linetype);
 	p.setXYMinMax(shiftx - max(rangex, 1), shiftx + max(rangex, 1), shiftvalue - rangevalue, shiftvalue + rangevalue);
 	vector<vector<Point>> v((int)src.size());
 	for (int i = 0; i < (int)src.size(); i++)
 	{
 		getImageVLine(src[i], v[i], line_height, color);
 		p.push_back(v[i], i);
-		p.plotData(2, 0);
+		p.plotData();
 	}
 	p.render.copyTo(dest);
 }
@@ -157,7 +137,7 @@ void drawSignalY(Mat& src1, Mat& src2, DRAW_SIGNAL_CHANNEL color, Mat& dest, Siz
 	drawSignalY(s, color, dest, size, line_height, shiftx, shiftvalue, rangex, rangevalue, linetype);
 }
 
-void imshowAnalysis(std::string winname, Mat& src)
+void imshowAnalysis(String winname, Mat& src)
 {
 	static bool isFirst = true;
 	Mat im;
@@ -199,8 +179,7 @@ void imshowAnalysis(std::string winname, Mat& src)
 	namedWindow(winnameHist);
 
 	Mat dest;
-
-	drawSignalX(src, (DRAW_SIGNAL_CHANNEL)channel, dest, Size(src.cols, 350), pt.y, pt.x, shifty, step, stepy);
+	drawSignalX(src, (DRAW_SIGNAL_CHANNEL)channel, dest, Size(src.cols, 350), pt.y, pt.x, shifty, step, stepy, 1);
 	imshow(winnameSigx, dest);
 	drawSignalY(src, (DRAW_SIGNAL_CHANNEL)channel, dest, Size(src.rows, 350), pt.x, pt.y, yshifty, ystep, ystepy);
 	Mat temp;
@@ -210,7 +189,7 @@ void imshowAnalysis(std::string winname, Mat& src)
 	rectangle(im, Point(pt.x - step, pt.y - ystep), Point(pt.x + step, pt.y + ystep), COLOR_GREEN);
 	drawGrid(im, pt, COLOR_RED);
 	imshow(winname, im);
-
+	
 	Mat hist;
 	if (src.channels() == 1)
 		drawHistogramImageGray(src, hist, COLOR_GRAY200, COLOR_ORANGE);
@@ -221,7 +200,7 @@ void imshowAnalysis(std::string winname, Mat& src)
 	isFirst = false;
 }
 
-void imshowAnalysis(std::string winname, vector<Mat>& s)
+void imshowAnalysis(String winname, vector<Mat>& s)
 {
 	Mat src = s[0];
 	static bool isFirst = true;
@@ -273,32 +252,41 @@ void imshowAnalysis(std::string winname, vector<Mat>& s)
 	namedWindow(winnameHist);
 
 	Mat dest;
-
-	drawSignalX(s, (DRAW_SIGNAL_CHANNEL)channel, dest, Size(src.cols, 350), pt.y, pt.x, shifty, step, stepy, 2, nov);
+	
+	drawSignalX(s, (DRAW_SIGNAL_CHANNEL)channel, dest, Size(src.cols, 350), pt.y, pt.x, shifty, step, stepy, 1);
 	imshow(winnameSigx, dest);
-	drawSignalY(s, (DRAW_SIGNAL_CHANNEL)channel, dest, Size(src.rows, 350), pt.x, pt.y, yshifty, ystep, ystepy);
+	drawSignalY(s, (DRAW_SIGNAL_CHANNEL)channel, dest, Size(src.rows, 350), pt.x, pt.y, yshifty, ystep, ystepy, 1);
 	Mat temp;
 	flip(dest.t(), temp, 0);
 	imshow(winnameSigy, temp);
-
+	
 	Mat show;
 	im[nov].convertTo(show, -1, max(amp, 1));
-
+	
+	//crop
+	{
+		int x = max(0, pt.x - step);
+		int y = max(0, pt.y - ystep);
+		int w = min(show.cols, x + 2 * step) - x;
+		int h = min(show.rows, y + 2 * ystep) - y;
+		Mat rectimage = Mat(show(Rect(x, y, w, h)));
+		imshow("crop", rectimage);
+	}
 	rectangle(show, Point(pt.x - step, pt.y - ystep), Point(pt.x + step, pt.y + ystep), COLOR_GREEN);
 	drawGrid(show, pt, COLOR_RED);
 	imshow(winname, show);
-
+	
 	Mat hist;
 	if (src.channels() == 1)
 		drawHistogramImageGray(src, hist, COLOR_GRAY200, COLOR_ORANGE);
 	else
 		drawHistogramImage(src, hist, COLOR_ORANGE);
-
+	
 	imshow(winnameHist, hist);
 	isFirst = false;
 }
 
-void imshowAnalysisCompare(std::string winname, Mat& src1, Mat& src2)
+void imshowAnalysisCompare(String winname, Mat& src1, Mat& src2)
 {
 	static bool isFirst = true;
 

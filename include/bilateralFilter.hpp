@@ -4,10 +4,13 @@
 
 namespace cp
 {
+	//In RANGE_NORM_L1, range norm is mesured in L1, and this is the same as OpenCV. This implementation can save LUT size, but is not accurate implementation of bilateral filter's paper.
+	//In RANGE_NORM_L2 range norm is mesured in L2, This implementation is accurate implementation of bilateral filter's paper.
 	enum
 	{
-		BILATERAL_ORDER2,//underconstruction
-		BILATERAL_ORDER2_SEPARABLE//underconstruction
+		RANGE_NORM_L1 = 1,//exp(-0.5*sigma^2*(|r|+|g|+|b|)^2)
+		RANGE_NORM_L2 = 2,//exp(-0.5*sigma^2*(sqrt(r^2+g^2+b^2))^2)
+
 	};
 
 	CP_EXPORT void bilateralFilter(cv::InputArray src, cv::OutputArray dest, cv::Size kernelSize, double sigma_color, double sigma_space, int kernel_type = FILTER_DEFAULT, int borderType = cv::BORDER_REPLICATE);

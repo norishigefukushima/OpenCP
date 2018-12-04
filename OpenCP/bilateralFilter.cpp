@@ -4754,9 +4754,9 @@ namespace cp
 				bilateralWeightMapSP_32f(src, dst, kernelSize, sigma_color, sigma_space, borderType);
 			}
 		}
-		else if (method == BILATERAL_ORDER2)
+/*		else if (method == BILATERAL_ORDER2)
 		{
 			;
-		}
+		}*/
 	}
 }
