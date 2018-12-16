@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common.hpp"
+#include "stat.hpp"
 
 namespace cp
 {
@@ -26,19 +27,24 @@ namespace cp
 
 		int autoMode;
 		int autoTimeMode();
-		std::vector<std::string> lap_mes;
+		cp::Stat stat;
+		
+		void convertTime(bool isPrint, std::string message);
 	public:
 
-		void start();
+		void init(std::string message, int mode, bool isShow);
+	
 		void setMode(int mode);
 		void setMessage(std::string& src);
-		void restart();
-		double getTime();
-		void show();
-		void show(std::string message);
-		void lap(std::string message);
-		void init(std::string message, int mode, bool isShow);
 
+		void start();
+		void restart();
+
+		double getTime(bool isPrint=false, std::string message = "");
+		double getLapTime(bool isPrint = false, std::string message="");
+		double getLapTimeMedian(bool isPrint = false, std::string message = "");
+		double getLapTimeMean(bool isPrint = false, std::string message = "");
+		
 		CalcTime(std::string message, int mode = TIME_AUTO, bool isShow = true);
 		CalcTime(char* message, int mode = TIME_AUTO, bool isShow = true);
 		CalcTime();

@@ -15,103 +15,7 @@ namespace cp
 	{
 		start();
 	}
-
-	void CalcTime::lap(string message)
-	{
-		string v = message + format(" %f", getTime());
-		switch (timeMode)
-		{
-		case TIME_NSEC:
-			v += " NSEC";
-			break;
-		case TIME_SEC:
-			v += " SEC";
-			break;
-		case TIME_MIN:
-			v += " MIN";
-			break;
-		case TIME_HOUR:
-			v += " HOUR";
-			break;
-
-		case TIME_MSEC:
-		default:
-			v += " msec";
-			break;
-		}
-
-
-		lap_mes.push_back(v);
-		restart();
-	}
-
-	void CalcTime::show()
-	{
-		getTime();
-
-		int mode = timeMode;
-		if (timeMode == TIME_AUTO)
-		{
-			mode = autoMode;
-		}
-
-		switch (mode)
-		{
-		case TIME_NSEC:
-			cout << mes << ": " << cTime << " nsec" << endl;
-			break;
-		case TIME_SEC:
-			cout << mes << ": " << cTime << " sec" << endl;
-			break;
-		case TIME_MIN:
-			cout << mes << ": " << cTime << " minute" << endl;
-			break;
-		case TIME_HOUR:
-			cout << mes << ": " << cTime << " hour" << endl;
-			break;
-
-		case TIME_MSEC:
-		default:
-			cout << mes << ": " << cTime << " msec" << endl;
-			break;
-		}
-	}
-
-	void CalcTime::show(string mes)
-	{
-		getTime();
-
-		int mode = timeMode;
-		if (timeMode == TIME_AUTO)
-		{
-			mode = autoMode;
-		}
-
-		switch (mode)
-		{
-		case TIME_NSEC:
-			cout << mes << ": " << cTime << " nsec" << endl;
-			break;
-		case TIME_SEC:
-			cout << mes << ": " << cTime << " sec" << endl;
-			break;
-		case TIME_MIN:
-			cout << mes << ": " << cTime << " minute" << endl;
-			break;
-		case TIME_HOUR:
-			cout << mes << ": " << cTime << " hour" << endl;
-			break;
-		case TIME_DAY:
-			cout << mes << ": " << cTime << " day" << endl;
-		case TIME_MSEC:
-			cout << mes << ": " << cTime << " msec" << endl;
-			break;
-		default:
-			cout << mes << ": error" << endl;
-			break;
-		}
-	}
-
+	
 	int CalcTime::autoTimeMode()
 	{
 		if (cTime > 60.0*60.0*24.0)
@@ -136,15 +40,12 @@ namespace cp
 		}
 		else
 		{
-
 			return TIME_NSEC;
 		}
 	}
 
-	double CalcTime::getTime()
+	void CalcTime::convertTime(bool isPrint, std::string message)
 	{
-		cTime = (getTickCount() - pre) / (getTickFrequency());
-
 		int mode = timeMode;
 		if (mode == TIME_AUTO)
 		{
@@ -174,6 +75,67 @@ namespace cp
 			cTime *= 1000.0;
 			break;
 		}
+
+		if (isPrint)
+		{
+			if (message == "")message = mes;
+			switch (mode)
+			{
+			case TIME_NSEC:
+				cout << message << ": " << cTime << " nsec" << endl;
+				break;
+			case TIME_SEC:
+				cout << message << ": " << cTime << " sec" << endl;
+				break;
+			case TIME_MIN:
+				cout << message << ": " << cTime << " minute" << endl;
+				break;
+			case TIME_HOUR:
+				cout << message << ": " << cTime << " hour" << endl;
+				break;
+			case TIME_DAY:
+				cout << message << ": " << cTime << " day" << endl;
+				break;
+			case TIME_MSEC:
+				cout << message << ": " << cTime << " msec" << endl;
+				break;
+			default:
+				cout << message << ": error" << endl;
+				break;
+			}
+		}
+	}
+
+	double CalcTime::getTime(bool isPrint, std::string message)
+	{
+		cTime = (getTickCount() - pre) / (getTickFrequency());
+		convertTime(isPrint, message);
+		return cTime;
+	}
+
+	double CalcTime::getLapTime(bool isPrint, string message)
+	{
+		double time = (getTickCount() - pre) / (getTickFrequency());
+		stat.push_back(time);
+
+		cTime = time;
+		convertTime(isPrint, message);
+
+		restart();
+		return cTime;
+	}
+
+	double CalcTime::getLapTimeMedian(bool isPrint, string message)
+	{
+		cTime = stat.getMedian();
+		convertTime(isPrint, message);
+		return cTime;
+	}
+
+	double CalcTime::getLapTimeMean(bool isPrint, string message)
+	{
+		cTime = stat.getMean();
+		convertTime(isPrint, message);
 		return cTime;
 	}
 
@@ -215,18 +177,8 @@ namespace cp
 
 	CalcTime::~CalcTime()
 	{
-		getTime();
-		if (_isShow)	show();
-		if (lap_mes.size() != 0)
-		{
-			for (int i = 0; i < lap_mes.size(); i++)
-			{
-				cout << lap_mes[i] << endl;
-			}
-		}
+		if (_isShow)	getTime(true); 
 	}
-
-
 
 	void DestinationTimePrediction::init(int DestinationCount)
 	{
