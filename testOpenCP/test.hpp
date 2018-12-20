@@ -8,6 +8,7 @@
 #pragma comment(lib, "opencp.lib")
 #endif
 
+void testAddNoise(cv::Mat& src);
 void guiConsoleTest();
 void splitmergeTest(cv::Mat& src);
 

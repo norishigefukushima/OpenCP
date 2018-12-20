@@ -4,5 +4,5 @@
 
 namespace cp
 {
-	CP_EXPORT void addNoise(cv::InputArray src, cv::OutputArray dest, double sigma, double solt_papper_ratio = 0.0);
+	CP_EXPORT void addNoise(cv::InputArray src, cv::OutputArray dest, const double sigma, const double solt_papper_ratio = 0.0, const int seed=0);
 }

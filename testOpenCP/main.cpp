@@ -4,20 +4,23 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-	//guiConsoleTest();
+	
+	
 	Mat left = imread("img/stereo/Dolls/view1.png");
 	Mat right = imread("img/stereo/Dolls/view5.png");
-
 	Mat dmap = imread("img/stereo/Dolls/disp1.png", 0);
-	guiDissolveSlide(left, dmap);
-
 	Mat img = imread("img/lenna.png");
 	Mat a;
-	resize(img, a, Size(513, 513));
-	splitmergeTest(a); return 0;
+	
+	//resize(img, a, Size(513, 513));
+	//splitmergeTest(a); return 0;
 	//Mat img = imread("img/Kodak/kodim07.png");
 	//Mat img = imread("img/b.png");
 	
+	testAddNoise(img);
+	//guiConsoleTest();
+	//guiDissolveSlide(left, dmap);
+
 	//guiUpsampleTest(img);return 0;
 	//guiDomainTransformFilterTest(img);
 	//guiMedianFilterTest(img);
@@ -49,6 +52,7 @@ int main(int argc, char** argv)
 	//Mat ff3 = imread("img/pixelart/ff3.png");
 
 	Mat src = imread("img/lenna.png",0);
+	
 	//Mat src = imread("img/Kodak/kodim07.png",0);
 	guiIterativeBackProjectionTest(src);
 	//Mat src = imread("img/Kodak/kodim15.png",0);

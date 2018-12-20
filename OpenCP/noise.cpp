@@ -7,9 +7,11 @@ namespace cp
 {
 
 template <class T>
-void addNoiseSoltPepperMono_(Mat& src, Mat& dest, double per)
+void addNoiseSoltPepperMono_(Mat& src, Mat& dest, const double per, const int seed)
 {
 	cv::RNG rng;
+	if (seed != 0) rng.state = seed;
+	else rng.state = cv::getTickCount();
 	for (int j = 0; j < src.rows; j++)
 	{
 		T* s = src.ptr<T>(j);
@@ -30,14 +32,14 @@ void addNoiseSoltPepperMono_(Mat& src, Mat& dest, double per)
 	}
 }
 
-void addNoiseSoltPepperMono(Mat& src, Mat& dest, double per)
+void addNoiseSoltPepperMono(Mat& src, Mat& dest, double per, int seed=0)
 {
-	if (src.type() == CV_8U) addNoiseSoltPepperMono_<uchar>(src, dest, per);
-	if (src.type() == CV_16U) addNoiseSoltPepperMono_<ushort>(src, dest, per);
-	if (src.type() == CV_16S) addNoiseSoltPepperMono_<short>(src, dest, per);
-	if (src.type() == CV_32S) addNoiseSoltPepperMono_<int>(src, dest, per);
-	if (src.type() == CV_32F) addNoiseSoltPepperMono_<float>(src, dest, per);
-	if (src.type() == CV_64F) addNoiseSoltPepperMono_<double>(src, dest, per);
+	if (src.type() == CV_8U) addNoiseSoltPepperMono_<uchar>(src, dest, per, seed);
+	if (src.type() == CV_16U) addNoiseSoltPepperMono_<ushort>(src, dest, per, seed);
+	if (src.type() == CV_16S) addNoiseSoltPepperMono_<short>(src, dest, per, seed);
+	if (src.type() == CV_32S) addNoiseSoltPepperMono_<int>(src, dest, per, seed);
+	if (src.type() == CV_32F) addNoiseSoltPepperMono_<float>(src, dest, per, seed);
+	if (src.type() == CV_64F) addNoiseSoltPepperMono_<double>(src, dest, per, seed);
 }
 
 void addNoiseMono_nf(Mat& src, Mat& dest, double sigma)
@@ -72,15 +74,16 @@ void addNoiseMono(Mat& src, Mat& dest, double sigma)
 	}
 }
 
-void addNoise(InputArray src_, OutputArray dest_, double sigma, double sprate)
+void addNoise(InputArray src_, OutputArray dest_, const double sigma, const double sprate, const int seed)
 {
+	if(seed!=0) cv::theRNG().state = seed;
 	if (dest_.empty() || dest_.size() != src_.size() || dest_.type() != src_.type()) dest_.create(src_.size(), src_.type());
 	Mat src = src_.getMat();
 	Mat dest = dest_.getMat();
 	if (src.channels() == 1)
 	{
 		addNoiseMono(src, dest, sigma);
-		if (sprate != 0)addNoiseSoltPepperMono(dest, dest, sprate);
+		if (sprate != 0)addNoiseSoltPepperMono(dest, dest, sprate, seed);
 		return;
 	}
 	else
@@ -91,9 +94,10 @@ void addNoise(InputArray src_, OutputArray dest_, double sigma, double sprate)
 		for (int i = 0; i < src.channels(); i++)
 		{
 			addNoiseMono(s[i], d[i], sigma);
-			if (sprate != 0)addNoiseSoltPepperMono(d[i], d[i], sprate);
+			if (sprate != 0)addNoiseSoltPepperMono(d[i], d[i], sprate, seed);
 		}
 		cv::merge(d, dest);
 	}
+	if (seed != 0) cv::theRNG().state = cv::getTickCount();
 }
 }

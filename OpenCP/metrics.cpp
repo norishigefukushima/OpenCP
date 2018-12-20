@@ -6,23 +6,24 @@ using namespace cv;
 namespace cp
 {
 
+	double YPSNR(InputArray src1, InputArray src2)
+	{
+		Mat g1, g2;
+		if (src1.channels() == 1) g1 = src1.getMat();
+		else cvtColor(src1, g1, COLOR_BGR2GRAY);
+		if (src2.channels() == 1) g2 = src2.getMat();
+		else cvtColor(src2, g2, COLOR_BGR2GRAY);
+
+		return PSNR64F(g1, g2);
+	}
+
 	double PSNR64F(InputArray I1_, InputArray I2_)
 	{
+		CV_Assert(I1_.channels() == I2_.channels());
 
 		Mat I1, I2;
-		if (I1_.channels() == 1 && I2_.channels() == 1)
-		{
-			I1_.getMat().convertTo(I1, CV_64F);
-			I2_.getMat().convertTo(I2, CV_64F);
-		}
-		if (I1_.channels() == 3 && I2_.channels() == 3)
-		{
-			Mat temp;
-			cvtColor(I1_, temp, COLOR_BGR2GRAY);
-			temp.convertTo(I1, CV_64F);
-			cvtColor(I2_, temp, COLOR_BGR2GRAY);
-			temp.convertTo(I2, CV_64F);
-		}
+		I1_.getMat().convertTo(I1, CV_64F);
+		I2_.getMat().convertTo(I2, CV_64F);
 
 		Mat s1;
 		absdiff(I1, I2, s1);       // |I1 - I2|
@@ -78,17 +79,6 @@ namespace cp
 		else sse = s.val[0] + s.val[1] + s.val[2]; // sum channels
 
 		return sse / (double)(I1.channels() * I1.total());
-	}
-
-	double YPSNR(InputArray src1, InputArray src2)
-	{
-		Mat g1, g2;
-		if (src1.channels() == 1) g1 = src1.getMat();
-		else cvtColor(src1, g1, COLOR_BGR2GRAY);
-		if (src2.channels() == 1) g2 = src2.getMat();
-		else cvtColor(src2, g2, COLOR_BGR2GRAY);
-
-		return PSNR(g1, g2);
 	}
 
 	double calcBadPixel(const Mat& src, const Mat& ref, int threshold)

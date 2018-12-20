@@ -9,11 +9,12 @@ namespace cp
 	void CalcTime::start()
 	{
 		pre = getTickCount();
+		stat.clear();
 	}
 
 	void CalcTime::restart()
 	{
-		start();
+		pre = getTickCount();
 	}
 	
 	int CalcTime::autoTimeMode()
