@@ -3,7 +3,7 @@
 #include "common.hpp"
 
 namespace cp
-{	
+{
 	class CP_EXPORT gnuplot
 	{
 		FILE* fp;
@@ -58,6 +58,7 @@ namespace cp
 		cv::Scalar getPseudoColor(uchar val);
 		cv::Mat plotImage;
 		cv::Mat keyImage;
+
 	public:
 		//symbolType
 		enum
@@ -74,6 +75,10 @@ namespace cp
 			SYMBOL_TRIANGLE_FILL,
 			SYMBOL_TRIANGLE_INV,
 			SYMBOL_TRIANGLE_INV_FILL,
+			SYMBOL_DIAMOND,
+			SYMBOL_DIAMOND_FILL,
+			SYMBOL_PENTAGON,
+			SYMBOL_PENTAGON_FILL,
 		};
 
 		//lineType
@@ -120,7 +125,7 @@ namespace cp
 		void plotData(int gridlevel = 0, int isKey = 0);
 
 		void plotMat(cv::InputArray src, std::string name = "Plot", bool isWait = true, std::string gnuplotpath = "pgnuplot.exe");
-		void plot(std::string name = "Plot", bool isWait = true, std::string gnuplotpath = "pgnuplot.exe");
+		void plot(std::string name = "Plot", bool isWait = true, std::string gnuplotpath = "pgnuplot.exe", std::string message = "");
 
 		void makeKey(int num);
 
@@ -189,7 +194,7 @@ namespace cp
 		void projectPointsParallel(const cv::Mat& xyz, const cv::Mat& R, const cv::Mat& t, const cv::Mat& K, std::vector<cv::Point2f>& dest, const bool isRotationThenTranspose);
 		void projectPoints(const cv::Mat& xyz, const cv::Mat& R, const cv::Mat& t, const cv::Mat& K, std::vector<cv::Point2f>& dest, const bool isRotationThenTranspose);
 		void projectPoint(cv::Point3d& xyz, const cv::Mat& R, const cv::Mat& t, const cv::Mat& K, cv::Point2d& dest);
-		
+
 
 		void convertRGBto3D(cv::Mat& src, cv::Mat& rgb);
 		cv::Mat additionalPoints;
@@ -201,7 +206,7 @@ namespace cp
 		void push_back(cv::Mat& src);
 		void push_back(cv::Vec3f src);
 		void push_back(const float b, const float g, const float r);
-		
+
 
 		void clear();
 		void plot(cv::Mat& src, bool isWait = true, std::string wname = "RGB histogram");

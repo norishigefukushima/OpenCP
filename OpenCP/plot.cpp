@@ -17,18 +17,21 @@ namespace cp
 			exit(1);
 		}
 	}
+
 	void gnuplot::cmd(string name)
 	{
 		fprintf(fp, name.c_str());
 		fprintf(fp, "\n");
 		fflush(fp);
 	}
+
 	gnuplot::~gnuplot()
 	{
 		//fclose(fp);
 		cmd("exit");
 		_pclose(fp);
 	}
+
 
 	void plotGraph(OutputArray graph_, vector<Point2d>& data, double xmin, double xmax, double ymin, double ymax,
 		Scalar color, int lt, int isLine, int thickness, int pointSize)
@@ -136,6 +139,22 @@ namespace cp
 			{
 				triangleinv(graph, p, 2 * ps, color, FILLED);
 			}
+			else if (lt == Plot::SYMBOL_DIAMOND)
+			{
+				diamond(graph, p, 2 * ps, color, thickness);
+			}
+			else if (lt == Plot::SYMBOL_DIAMOND_FILL)
+			{
+				diamond(graph, p, 2 * ps, color, FILLED);
+			}
+			else if (lt == Plot::SYMBOL_PENTAGON)
+			{
+				pentagon(graph, p, 2 * ps, color, thickness);
+			}
+			else if (lt == Plot::SYMBOL_PENTAGON_FILL)
+			{
+				pentagon(graph, p, 2 * ps, color, FILLED);
+			}
 		}
 	}
 
@@ -179,54 +198,62 @@ namespace cp
 	{
 		const int DefaultPlotInfoSize = 64;
 		pinfo.resize(DefaultPlotInfoSize);
+
+		vector<Scalar> c;
+		//default gnuplot5.0
+		c.push_back(CV_RGB(148, 0, 211));
+		c.push_back(CV_RGB(0, 158, 115));
+		c.push_back(CV_RGB(86, 180, 233));
+		c.push_back(CV_RGB(230, 159, 0));
+		c.push_back(CV_RGB(240, 228, 66));
+		c.push_back(CV_RGB(0, 114, 178));
+		c.push_back(CV_RGB(229, 30, 16));
+		c.push_back(COLOR_BLACK);
+		/*
+		//classic
+		c.push_back(COLOR_RED);
+		c.push_back(COLOR_GREEN);
+		c.push_back(COLOR_BLUE);
+		c.push_back(COLOR_MAGENDA);
+		c.push_back(COLOR_CYAN);
+		c.push_back(COLOR_YELLOW);
+		c.push_back(COLOR_BLACK);
+		c.push_back(CV_RGB(0, 76, 255));
+		c.push_back(COLOR_GRAY128);
+		*/
+		vector<int> s;
+		s.push_back(SYMBOL_PLUS);
+		s.push_back(SYMBOL_TIMES);
+		s.push_back(SYMBOL_ASTERRISK);
+		s.push_back(SYMBOL_RECTANGLE);
+		s.push_back(SYMBOL_RECTANGLE_FILL);
+		s.push_back(SYMBOL_CIRCLE);
+		s.push_back(SYMBOL_CIRCLE_FILL);
+		s.push_back(SYMBOL_TRIANGLE);
+		s.push_back(SYMBOL_TRIANGLE_FILL);
+		s.push_back(SYMBOL_TRIANGLE_INV);
+		s.push_back(SYMBOL_TRIANGLE_INV_FILL);
+		s.push_back(SYMBOL_DIAMOND);
+		s.push_back(SYMBOL_DIAMOND_FILL);
+		s.push_back(SYMBOL_PENTAGON);
+		s.push_back(SYMBOL_PENTAGON_FILL);
+
 		for (int i = 0; i < pinfo.size(); i++)
 		{
-			pinfo[i].symbolType = Plot::SYMBOL_PLUS;
+			pinfo[i].symbolType = s[i%s.size()];
 			pinfo[i].lineType = Plot::LINE_LINEAR;
 			pinfo[i].thickness = 1;
 
 			double v = (double)i / DefaultPlotInfoSize * 255.0;
-			pinfo[i].color = getPseudoColor(cv::saturate_cast<uchar>(v));
+			pinfo[i].color = c[i%c.size()];
 
 			pinfo[i].keyname = format("data %02d", i);
 		}
 
-		pinfo[0].color = COLOR_RED;
-		pinfo[0].symbolType = SYMBOL_PLUS;
-
-		pinfo[1].color = COLOR_GREEN;
-		pinfo[1].symbolType = SYMBOL_TIMES;
-
-		pinfo[2].color = COLOR_BLUE;
-		pinfo[2].symbolType = SYMBOL_ASTERRISK;
-
-		pinfo[3].color = COLOR_MAGENDA;
-		pinfo[3].symbolType = SYMBOL_RECTANGLE;
-
-		pinfo[4].color = CV_RGB(0, 0, 128);
-		pinfo[4].symbolType = SYMBOL_RECTANGLE_FILL;
-
-		pinfo[5].color = CV_RGB(128, 0, 0);
-		pinfo[5].symbolType = SYMBOL_CIRCLE;
-
-		pinfo[6].color = CV_RGB(0, 128, 128);
-		pinfo[6].symbolType = SYMBOL_CIRCLE_FILL;
-
-		pinfo[7].color = CV_RGB(0, 0, 0);
-		pinfo[7].symbolType = SYMBOL_TRIANGLE;
-
-		pinfo[8].color = CV_RGB(128, 128, 128);
-		pinfo[8].symbolType = SYMBOL_TRIANGLE_FILL;
-
-		pinfo[9].color = CV_RGB(0, 128, 64);
-		pinfo[9].symbolType = SYMBOL_TRIANGLE_INV;
-
-		pinfo[10].color = CV_RGB(128, 128, 0);
-		pinfo[10].symbolType = SYMBOL_TRIANGLE_INV_FILL;
-
 		setPlotProfile(false, true, false);
 		graphImage = render;
 	}
+
 	void Plot::setPlotProfile(bool isXYCenter_, bool isXYMAXMIN_, bool isZeroCross_)
 	{
 		isZeroCross = isZeroCross_;
@@ -374,8 +401,7 @@ namespace cp
 		pinfo[plotnum].keyname = name;
 	}
 
-	void Plot::setPlot(int plotnum, Scalar color, int symboltype, int
-		linetype, int thickness)
+	void Plot::setPlot(int plotnum, Scalar color, int symboltype, int linetype, int thickness)
 	{
 		setPlotColor(plotnum, color);
 		setPlotSymbol(plotnum, symboltype);
@@ -609,7 +635,16 @@ namespace cp
 			{
 				roi = render(Rect(160, render.rows - keyImage.rows - 150, keyImage.cols, keyImage.rows));
 			}
-			keyImage.copyTo(roi);
+
+			if (isKey == 5)
+			{
+				imshow("key", keyImage);
+			}
+			else
+			{
+				keyImage.copyTo(roi);
+				destroyWindow("key");
+			}
 		}
 		addWeighted(render, 0.8, temp, 0.2, 0.0, render);
 	}
@@ -725,7 +760,7 @@ namespace cp
 		plot(wname, isWait, gnuplotpath);
 	}
 
-	void Plot::plot(string wname, bool isWait, string gnuplotpath)
+	void Plot::plot(string wname, bool isWait, string gnuplotpath, string message)
 	{
 		Point pt = Point(0, 0);
 		namedWindow(wname);
@@ -737,7 +772,7 @@ namespace cp
 		//createTrackbar("ymin",wname,&yn,ymax*2);
 		setMouseCallback(wname, (MouseCallback)guiPreviewMouse, (void*)&pt);
 		int key = 0;
-		int isKey = 1;
+		static int isKey = 1;
 		int gridlevel = 0;
 		makeKey(data_max);
 
@@ -758,7 +793,7 @@ namespace cp
 					xx = 0.0;
 					yy = 0.0;
 				}
-				string text = format("(%f,%f)", xx, yy);
+				string text = format("(%f,%f) ", xx, yy) + message;
 				putText(render, text, Point(100, 30), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_BLACK);
 			}
 
@@ -815,7 +850,7 @@ namespace cp
 			if (key == 'k')
 			{
 				isKey++;
-				if (isKey == 5)
+				if (isKey == 6)
 					isKey = 0;
 			}
 			if (key == 'g')
@@ -827,7 +862,7 @@ namespace cp
 			{
 				save("plot");
 				std::string a("plot ");
-				gnuplot gplot(gnuplotpath);
+				//gnuplot gplot(gnuplotpath);
 				for (int i = 0; i < data_max; i++)
 				{
 					char name[64];
@@ -837,7 +872,7 @@ namespace cp
 						sprintf(name, "'plot' u %d:%d w lp\n", 2 * i + 1, 2 * i + 2);
 					a += name;
 				}
-				gplot.cmd(a.c_str());
+				//gplot.cmd(a.c_str());
 			}
 			if (key == 's')
 			{
@@ -853,12 +888,17 @@ namespace cp
 					cout << i << pinfo[0].data[i] << endl;
 				}
 			}
+			if (key == 'w')
+			{
+				isWait = false;
+			}
 
 			if (!isWait) break;
 		}
 
 		if (isWait) destroyWindow(wname);
 	}
+
 
 	void Plot2D::createPlot()
 	{
@@ -898,6 +938,7 @@ namespace cp
 		graphBase.at<double>(y, x) = val;
 		//getchar();
 	}
+
 	void Plot2D::writeGraph(bool isColor, int arg_min_max, double minvalue, double maxvalue, bool isMinMaxSet)
 	{
 		Mat temp;
@@ -1044,6 +1085,7 @@ namespace cp
 	}
 	}
 	*/
+
 
 	static void onMouseHistogram3D(int event, int x, int y, int flags, void* param)
 	{
@@ -1275,7 +1317,6 @@ namespace cp
 		}
 	}
 
-
 	RGBHistogram::RGBHistogram()
 	{
 		center.create(1, 3, CV_32F);
@@ -1297,6 +1338,7 @@ namespace cp
 			additionalPoints.push_back(Vec3f(src.at<float>(i, 0), src.at<float>(i, 1), src.at<float>(i, 2)) - centerv);
 		}
 	}
+
 	void RGBHistogram::push_back(Vec3f src)
 	{
 		additionalPoints.push_back(src - Vec3f(127.5f, 127.5f, 127.5f));
