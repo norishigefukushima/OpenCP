@@ -3,6 +3,25 @@
 using namespace std;
 using namespace cv;
 
+/*
+src：入力画像
+guide:guide画像（srcと同じでもOK）
+dst:出力画像
+r:カーネル半径
+truncate: ヒストグラムを加算するときの半径．±truncate分加算．加算の仕方はmetricで指定
+sigmaColor：カラーのガウシアンのパラメータ
+sigmaSpace：空間のガウシアンのパラメータ
+metric:
+L0_NORM:何もしない．今の実装はたぶんこれ
+L1_NORM:L1ノルムでヒストグラムを加算
+L1_NORM:L2ノルムでヒストグラムを加算
+EXP:ガウシアンでヒストグラムを加算
+
+method:
+Histogram::BILATERAL　バイラテラルの加算：現在の実装はたぶんこれ
+Histogram::GAUSSIAN　ガウシアンフィルタで加算
+Histogram::NO_WEIGHT　ボックスフィルタで加算
+*/
 namespace cp
 {
 #define sqr(a) ((a)*(a))
@@ -43,7 +62,6 @@ namespace cp
 		void add(float addval, int bin, int metric = 0);
 		void addWithRange(float addval, int bin, int metric = 0);
 
-		
 		enum
 		{
 			MAX = 0,
@@ -51,7 +69,7 @@ namespace cp
 		};
 		int mode;
 		int returnVal();
-		
+
 		int returnMax();
 		int returnMedian();
 		int returnMaxwithRange();
@@ -108,7 +126,7 @@ namespace cp
 			{
 				for (int i = 1; i < truncate; i++)
 				{
-					val = addval*((float)(truncate - i) / (float)truncate);
+					val = addval * ((float)(truncate - i) / (float)truncate);
 					hist[bin + i] += val;
 					hist[bin - i] += val;
 				}
@@ -118,7 +136,7 @@ namespace cp
 				float div = 1.f / (float)(sqr(truncate));
 				for (int i = 1; i < truncate; i++)
 				{
-					val = addval*((float)sqr((truncate - i))*div);
+					val = addval * ((float)sqr((truncate - i))*div);
 					hist[bin + i] += val;
 					hist[bin - i] += val;
 				}
@@ -127,7 +145,7 @@ namespace cp
 			{
 				for (int i = 1; i < truncate; i++)
 				{
-					val = addval*(1 - exp(-((float)sqr(i) / (float)(2 * sqr(truncate)))));
+					val = addval * (1 - exp(-((float)sqr(i) / (float)(2 * sqr(truncate)))));
 					hist[bin + i] += val;
 					hist[bin - i] += val;
 				}
@@ -146,7 +164,7 @@ namespace cp
 			{
 				for (int i = 1; i < truncate; i++)
 				{
-					val = addval*((float)(truncate - i) / (float)truncate);
+					val = addval * ((float)(truncate - i) / (float)truncate);
 					hist[bin + i] += val;
 					hist[bin - i] += val;
 				}
@@ -156,7 +174,7 @@ namespace cp
 				float div = 1.f / (float)(sqr(truncate));
 				for (int i = 1; i < truncate; i++)
 				{
-					val = addval*((float)sqr((truncate - i))*div);
+					val = addval * ((float)sqr((truncate - i))*div);
 					hist[bin + i] += val;
 					hist[bin - i] += val;
 				}
@@ -165,7 +183,7 @@ namespace cp
 			{
 				for (int i = 1; i < truncate; i++)
 				{
-					val = addval*(1 - exp(-((float)sqr(i) / (float)(2 * sqr(truncate)))));
+					val = addval * (1 - exp(-((float)sqr(i) / (float)(2 * sqr(truncate)))));
 					hist[bin + i] += val;
 					hist[bin - i] += val;
 				}
@@ -196,7 +214,7 @@ namespace cp
 		{
 			maxval += hist[i];
 		}
-		const float half_max = maxval*0.5f;
+		const float half_max = maxval * 0.5f;
 
 		int maxbin;
 		maxval = 0.f;
@@ -239,7 +257,7 @@ namespace cp
 		{
 			maxval += hist[i];
 		}
-		const float half_max = maxval*0.5f;
+		const float half_max = maxval * 0.5f;
 
 		int maxbin;
 		maxval = 0.f;

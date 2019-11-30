@@ -13,7 +13,7 @@ namespace cp
 	{
 		void threshmap_init();
 	public:
-		bool isInit;
+		bool isInit = false;
 		std::string message;
 		cv::Mat state_all;
 		cv::Mat state_nonocc;

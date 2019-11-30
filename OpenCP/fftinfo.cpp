@@ -5,7 +5,7 @@ using namespace cv;
 
 namespace cp
 {
-	void imshowFFT(string wname, InputArray src__)
+	void imshowFFT(string wname, InputArray src__, const float amp)
 	{
 		Mat src_ = src__.getMat();
 		Mat src;
@@ -57,7 +57,8 @@ namespace cp
 		tmp.copyTo(q2);
 
 		//showMatInfo(magI);
-		normalize(magI, magI, 0, 1, NORM_MINMAX); // Transform the matrix with float values into a
+		if(amp==0) normalize(magI, magI, 0, 1, NORM_MINMAX); // Transform the matrix with float values into a
+		else multiply(magI, amp, magI);
 		// viewable image form (float between values 0 and 1).
 
 		Mat b, show;

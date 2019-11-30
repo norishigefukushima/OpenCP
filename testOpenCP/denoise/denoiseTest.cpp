@@ -12,7 +12,7 @@ void guiDenoiseTest(Mat& src)
 	namedWindow(wname);
 
 	int a=0;createTrackbar("a",wname,&a,100);
-	int sw = 1; createTrackbar("switch",wname,&sw, 4);
+	int sw = 5; createTrackbar("switch",wname,&sw, 5);
 
 	int sigma_color10 = 100; createTrackbar("sigma_color",wname,&sigma_color10,2550);
 	int sigma_space10 = 120; createTrackbar("sigma_space",wname,&sigma_color10,2550);
@@ -20,7 +20,7 @@ void guiDenoiseTest(Mat& src)
 
 	int tr = 1; createTrackbar("tr",wname,&tr,20);
 	
-	int noise_s10 = 100; createTrackbar("noise",wname,&noise_s10,2550);
+	int noise_s10 = 200; createTrackbar("noise",wname,&noise_s10,2550);
 	int key = 0;
 	Mat show;
 
@@ -34,17 +34,18 @@ void guiDenoiseTest(Mat& src)
 		int td = 2*tr+1;
 
 		Mat noise;
+		Mat srcf; src.convertTo(srcf, CV_32F);
 		addNoise(src,noise,noise_s10/10.0);
 		if(sw==0)
 		{
 			CalcTime t("bilateral filter");
-			bilateralFilter(noise,dest,Size(d,d),sigma_color*1.5,sigma_space, FILTER_RECTANGLE);
+			bilateralFilter(noise, dest, Size(d, d), sigma_color, sigma_space, FILTER_RECTANGLE);
 		}
 		else if(sw==1)
 		{
 			CalcTime t("bilateral filter: separable ");
 			//GaussianBlur(noise,dest,Size(d,d),sigma_space);
-			guidedFilter(noise,dest,r,sigma_color);
+			guidedFilter(noise,dest,r,sigma_color*10.f);
 			//bilateralFilter(noise,dest,Size(d,d),sigma_color,sigma_space,FILTER_SEPARABLE);
 		}
 		else if(sw==2)
@@ -61,6 +62,18 @@ void guiDenoiseTest(Mat& src)
 		{
 			CalcTime t("recursive birateral filter");
 			recbf(noise,dest,sigma_color,sigma_space);
+		}
+		else if (sw == 5)
+		{
+			/*
+			CalcTime t("DCT Denoising");
+			Mat temp;
+			copyMakeBorder(noise, temp, 8, 8, 8, 8, BORDER_REFLECT);
+			xphoto::dctDenoising(temp, temp, sigma_color, 16);
+			Mat(temp(Rect(8, 8, noise.cols, noise.rows))).copyTo(dest);
+			*/
+			CalcTime t("BM3D");
+			xphoto::bm3dDenoising(noise, dest, sigma_color, 8, 16, 2500, 400, 16, 1, 2.f, 4, 1, cv::xphoto::HAAR);
 		}
 
 		cout<<"before:"<<PSNR(src,noise)<<endl;

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <opencv2/opencv.hpp>
+#include <opencv2/ximgproc.hpp>
+#include <opencv2/xphoto.hpp>
 #ifdef CP_API
 #define CP_EXPORT __declspec(dllexport)
 #else 
@@ -21,6 +23,8 @@
 
 #define CV_LIBRARY(lib_name) CV_LIB_PREFIX CVAUX_STR(lib_name) CV_LIB_SUFFIX
 
+//#define OPENCV_WORLD 
+#ifndef OPENCV_WORLD
 //#pragma CV_LIBRARY(aruco)
 //#pragma CV_LIBRARY(bgsegm)
 //#pragma CV_LIBRARY(bioinspired)
@@ -83,7 +87,9 @@
 #pragma CV_LIBRARY(ximgproc)
 //#pragma CV_LIBRARY(xobjdetect)
 #pragma CV_LIBRARY(xphoto)
-
+#else
+#pragma CV_LIBRARY(world)
+#endif
 //FFTW
 #pragma comment(lib, "libfftw3-3.lib")
 #pragma comment(lib, "libfftw3f-3.lib")

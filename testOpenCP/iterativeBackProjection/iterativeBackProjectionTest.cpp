@@ -7,6 +7,48 @@ using namespace cp;
 
 void deblurring(Mat& src, Mat& dest, float sigma, int sw, float sigmanoise, const float eps, bool isSobolev);
 
+void ibp_demo(const Mat& src, Mat& dest, const Size ksize, const float sigma, const float backprojection_sigma, const float lambda, const int iteration, Mat& init=Mat())
+{
+	Mat srcf;
+	Mat destf;
+	Mat subf;
+	src.convertTo(srcf, CV_32FC3);
+
+	if (init.empty()) src.convertTo(destf, CV_32FC3);
+	else init.convertTo(destf, CV_32F);
+	Mat bdest;
+	Mat show;
+	int key = 0;
+	while (true)
+	{
+		srcf.copyTo(destf);
+		for (int i = 0; i < iteration; i++)
+		{
+			GaussianBlur(destf, bdest, ksize, sigma);
+			subtract(srcf, bdest, subf);
+			//double e = norm(subf);
+
+			if (backprojection_sigma > 0.f)
+				GaussianBlur(subf, subf, ksize, backprojection_sigma);
+
+
+			destf += lambda * subf;
+			/*if(i==0)fma(subf, 3, destf);
+			else if (i==1)fma(subf, 2, destf);
+			else	fma(subf, lambda, destf);*/
+			//fma(subf, lambda, destf);
+
+			//l *= lambdaamp;
+			destf.convertTo(show, CV_8U);
+			putText(show, format("iteration %03d", i), Point(50, 50), cv::FONT_HERSHEY_SIMPLEX, 1, Scalar::all(0), 2);
+			imshow("ibp demo", show);
+			key = waitKey(30);
+			if (key == 'q') break;
+		}
+		if (key == 'q') break;
+	}
+	destf.convertTo(dest, src.depth());
+}
 void guiIterativeBackProjectionTest(Mat& src)
 {
 	Mat dest, dest2;
@@ -33,7 +75,7 @@ void guiIterativeBackProjectionTest(Mat& src)
 
 	//int denormal = 80; createTrackbar("denormal", wname, &denormal, 90);
 	int d_sigma = 15; createTrackbar("d_sigma", wname, &d_sigma, 200);
-	int noise_s = 100; createTrackbar("d_noise", wname, &noise_s, 2000);
+	int noise_s = 0; createTrackbar("d_noise", wname, &noise_s, 2000);
 	int noise_th = 100; createTrackbar("th_noise", wname, &noise_th, 2000);
 
 	int ds = 2;  createTrackbar("BFs", wname, &ds, 20);
@@ -58,7 +100,7 @@ void guiIterativeBackProjectionTest(Mat& src)
 		e2 = e2 * e2;
 		double noiselevel = noise_s * 0.01;
 		double color_sigma = cs / 10.0;
-		int r = (d_sigma / 10.0) * 3.0;
+		int r = int((d_sigma / 10.0) * 3.0);
 		int d = 2 * r + 1;
 		double lambda = l / 10.0;
 
@@ -70,6 +112,11 @@ void guiIterativeBackProjectionTest(Mat& src)
 		Mat show;
 		Mat raw;
 		addNoise(blurred, raw, noiselevel);
+
+		if (key == 'd')
+		{
+			ibp_demo(raw, dest, Size(d, d), r_sigma / 10.0, bss*0.1, lambda, 100);
+		}
 
 		float denoiseth = nth * 0.01;
 		{
@@ -98,16 +145,16 @@ void guiIterativeBackProjectionTest(Mat& src)
 			//LucyRichardsonGauss(blurred, dest, Size(d, d), r_sigma / 10.0, iter);
 
 
-			deblurring(blurred, dest, r_sigma / 10.0, 0, denoiseth, e2, false);
+			//deblurring(blurred, dest, r_sigma / 10.0, 0, denoiseth, e2, false);
 			//LucyRichardsonGaussTikhonov(dest, dest, Size(d, d), r_sigma / 10.0, lambda*0.0001, iter);
-			iterativeBackProjectionDeblurGaussian(dest, dest, Size(d, d), r_sigma / 10.0, bss*0.1, lambda, iter);
+			iterativeBackProjectionDeblurGaussian(blurred, dest, Size(d, d), r_sigma / 10.0, bss*0.1, lambda, iter);
 			//Mat temp;
 			//GaussianBlur(blurred, temp, Size(d, d), r_sigma / 10.0);
 			//dest = blurred + lambda*(blurred- temp);
 			//bool flag = (sovolev == 0) ? false: true;
 			//deblurring(blurred, dest, r_sigma / 10.0, psw, denoiseth, e2, flag);
 			double time = t.getTime();
-			ci(format("DCT: %05.2f %0.2f", time, cp::PSNR64F(dest, src)));
+			ci(format("IBP: %05.2f %0.2f", time, cp::PSNR64F(dest, src)));
 			//ci(format("DCT: %05.2f %0.2f", time, calcImageQualityMetric(dest, src, IQM_PSNR, 10)));
 			//ci(format("DCT: %05.2f %0.2f %0.4f", t.getTime(), cp::PSNR64F(dest, src), cp::calcImageQualityMetric(dest, src, IQM_CWSSIM)));
 			if (sw == 2) dest.copyTo(show);
@@ -298,7 +345,7 @@ static void createGaussianDCTIMax(Mat& src, const float sigma, const float eps, 
 	{
 		for (int i = 0; i <= 7; i++)
 		{
-			float d = i * i + j * j;
+			float d = (float)(i * i + j * j);
 			float v = exp(a*d);
 
 			src.at<float>(j, i) = max(v, eps);

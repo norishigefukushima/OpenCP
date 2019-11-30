@@ -98,6 +98,8 @@ void guiStereoBMTest(Mat& leftim , Mat& rightim, int numDisparities)
 	int lrThreshold = 1; createTrackbar("LR thresh", wname, &lrThreshold, 20);
 	int spWindow = 100; createTrackbar("speckle win", wname, &spWindow, 2550);
 	int spRange = 32; createTrackbar("speck range", wname, &spRange, 255);
+	int minDisp = 0; createTrackbar("min disp", wname, &minDisp, 255);
+	int numDisp = numDisparities/16; createTrackbar("num disp", wname, &numDisp, numDisparities/16*2);
 	
 	Ptr<StereoBM> bm = StereoBM::create(numDisparities, 2* blockRadius+1);
 
@@ -113,6 +115,9 @@ void guiStereoBMTest(Mat& leftim , Mat& rightim, int numDisparities)
 		bm->setDisp12MaxDiff(lrThreshold);
 		bm->setSpeckleWindowSize(spWindow);
 		bm->setSpeckleRange(spRange);
+		bm->setMinDisparity(minDisp);
+		bm->setNumDisparities(numDisp*16);
+			
 		/*
 		bm->setROI1(roi1);
 		bm->setROI2(roi2);
@@ -128,7 +133,7 @@ void guiStereoBMTest(Mat& leftim , Mat& rightim, int numDisparities)
 
 void guiStereoSGBMTest(Mat& leftim, Mat& rightim, int numDisparities)
 {
-	String wname = "Stereo BM Test";
+	String wname = "Stereo SGBM Test";
 	namedWindow(wname);
 	int blockRadius = 1; createTrackbar("bs", wname, &blockRadius, 30);
 	

@@ -408,8 +408,7 @@ namespace cp
 	}
 
 #define  CV_CAST_8U(t)  (uchar)(!((t) & ~255) ? (t) : (t) > 0 ? 255 : 0)
-	static void
-		prefilterXSobel(Mat& src, Mat& dst, int ftzero)
+	static void prefilterXSobel(Mat& src, Mat& dst, int ftzero)
 	{
 		if (dst.empty())dst.create(src.size(), CV_8U);
 		int x, y;
@@ -1562,6 +1561,7 @@ namespace cp
 		}
 		{
 			CalcTime t("Cost computation");
+//#pragma omp parallel for
 			for (int i = 0; i < numberOfDisparities; i++)
 			{
 				const int d = minDisparity + i;
@@ -1571,6 +1571,7 @@ namespace cp
 		}
 		{
 			CalcTime t("Cost aggregation");
+//#pragma omp parallel for
 			for (int i = 0; i < numberOfDisparities; i++)
 			{
 				Mat dsi = DSI[i];
@@ -3155,7 +3156,6 @@ namespace cp
 	}
 
 	//TODO: support OpenCV 4
-#if CV_MAJOR_VERSION <= 3
 	void StereoBMSimple::check(Mat& leftim, Mat& rightim, Mat& dest, StereoEval& eval)
 	{
 		//checkFilter(leftim);
@@ -3165,11 +3165,11 @@ namespace cp
 
 		//alphaBtest(leftim,rightim);
 		ConsoleImage ci(Size(640, 480));
-		string wname = "BM Disp";
-		int SADWinR = 4;
-		int SADWinRH = 0;
-		namedWindow(wname);
-		moveWindow(wname, 200, 200);
+		string wname = "";
+		string wname2 = "BM Disp";
+		
+		namedWindow(wname2);
+		moveWindow(wname2, 200, 200);
 		int alpha = 0;
 
 		createTrackbar("alpha1", wname, &alpha, 100);
@@ -3185,8 +3185,9 @@ namespace cp
 
 		createTrackbar("sa", wname, &sobelAlpha, 100);
 		createTrackbar("trunc", wname, &error_truncate, 255);
-		createTrackbar("r", wname, &SADWinR, 20);
-		createTrackbar("rH", wname, &SADWinRH, 20);
+		
+		int SADWinR = SADWindowSize; createTrackbar("r width", wname, &SADWinR, 20);
+		int SADWinRH = SADWindowSizeH; createTrackbar("r height", wname, &SADWinRH, 20);
 
 		uniquenessRatio = 10;
 		createTrackbar("uniq", wname, &uniquenessRatio, 100);
@@ -3196,11 +3197,11 @@ namespace cp
 
 		//int spsize = 300;
 		speckleWindowSize = 20;
-		createTrackbar("spsize", wname, &speckleWindowSize, 1000);
+		createTrackbar("speckleSize", wname, &speckleWindowSize, 1000);
 		speckleRange = 16;
-		createTrackbar("spdiff", wname, &speckleRange, 100);
-		int isOcc = 2;
-		createTrackbar("occ", wname, &isOcc, 3);
+		createTrackbar("speckleDiff", wname, &speckleRange, 100);
+		int occlusionMethod = 1;
+		createTrackbar("occlusionMethod", wname, &occlusionMethod, 3);
 
 		int occsearch2 = 4;
 		createTrackbar("occs2", wname, &occsearch2, 15);
@@ -3216,8 +3217,8 @@ namespace cp
 		createTrackbar("occiter", wname, &occiter, 10);
 
 		int key = 0;
-		StereoBMEx sbm(0, numberOfDisparities, SADWindowSize);
-		sbm.minDisparity = minDisparity;
+		//StereoBMEx sbm(0, numberOfDisparities, SADWindowSize);
+		//sbm.minDisparity = minDisparity;
 
 		Mat lim, rim;
 		Mat bmdisp;
@@ -3245,7 +3246,6 @@ namespace cp
 		int pr = 1;
 		createTrackbar("poss r", wname, &pr, 10);
 
-
 		int boxb = 1;
 		createTrackbar("boxb", wname, &boxb, 10);
 
@@ -3263,7 +3263,7 @@ namespace cp
 		int maskPrec = 0;
 		bool dispColor = false;
 
-		setMouseCallback(wname, onMouse, &mpt);
+		setMouseCallback(wname2, onMouse, &mpt);
 
 		namedWindow("flat");
 		int th1 = 5;
@@ -3311,12 +3311,12 @@ namespace cp
 				fillOcclusion(base);
 
 				CalcTime t("Post 2");
-				if (isOcc == 1)
+				if (occlusionMethod == 1)
 				{
 					CalcTime t("occ");
 					fillOcclusion(dest, (minDisparity - 1) * 16);
 				}
-				else if (isOcc == 2)
+				else if (occlusionMethod == 2)
 				{
 					/*Mat mask;
 					Mat destfill = dest.clone();
@@ -3366,7 +3366,7 @@ namespace cp
 
 					//medianBlur(dest,dest,3);*/
 				}
-				else if (isOcc == 3)
+				else if (occlusionMethod == 3)
 				{
 					/*Mat mask;
 					Mat destfill = dest.clone();
@@ -3417,7 +3417,7 @@ namespace cp
 					cv::rectangle(mask, Rect(40, 40, dest.cols - 80, dest.rows - 80), 255, FILLED);
 					dest2.copyTo(dest, mask);
 				}
-				else if (isOcc == 4)
+				else if (occlusionMethod == 4)
 				{
 					/*Mat mask;
 					Mat destfill = dest.clone();
@@ -3543,6 +3543,7 @@ namespace cp
 			setTrackbarPos("py", wname, mpt.y);
 			key = waitKey(1);
 
+			if(eval.isInit)
 			{
 				p.clear();
 				p.setXYMinMax(0, numberOfDisparities + minDisparity + 1, 0, 64);
@@ -3570,6 +3571,7 @@ namespace cp
 				p.plotData();
 				imshow("cost", p.render);
 			}
+			if (eval.isInit)
 			{
 				signal.clear();
 				const int mindisp = 15;
@@ -3657,11 +3659,11 @@ namespace cp
 			}
 
 
-			Mat temp;
+			Mat dispOutput;
 			if (dispColor)
-				cvtDisparityColor(dest, temp, minDisparity, numberOfDisparities - 10, 2, 16);
+				cvtDisparityColor(dest, dispOutput, minDisparity, numberOfDisparities - 10, 2, 16);
 			else
-				cvtDisparityColor(dest, temp, 0, 64, 0);
+				cvtDisparityColor(dest, dispOutput, 0, numberOfDisparities, 0);
 
 			if (eval.isInit)
 			{
@@ -3699,24 +3701,22 @@ namespace cp
 				imshow("eval", eshow);
 				if (isShowGT)
 				{
-					if (dispColor) { Mat a; eval.ground_truth.convertTo(a, CV_16S, 4); cvtDisparityColor(a, temp, minDisparity, numberOfDisparities - 10, 2, 16); }
-					else eval.ground_truth.copyTo(temp);
+					if (dispColor) { Mat a; eval.ground_truth.convertTo(a, CV_16S, 4); cvtDisparityColor(a, dispOutput, minDisparity, numberOfDisparities - 10, 2, 16); }
+					else eval.ground_truth.copyTo(dispOutput);
 				}
 				else
 				{
-					temp.setTo(Scalar(0, 0, 255), maskbadpixel);
+					dispOutput.setTo(Scalar(0, 0, 255), maskbadpixel);
 				}
 			}
-			else
-			{
-			}
-			alphaBlend(leftim, temp, alpha / 100.0, temp);
+
+			alphaBlend(leftim, dispOutput, alpha / 100.0, dispOutput);
 			if (isGrid)
 			{
-				line(temp, Point(0, mpt.y), Point(leftim.cols, mpt.y), CV_RGB(0, 255, 0));
-				line(temp, Point(mpt.x, 0), Point(mpt.x, leftim.rows), CV_RGB(0, 255, 0));
+				line(dispOutput, Point(0, mpt.y), Point(leftim.cols, mpt.y), CV_RGB(0, 255, 0));
+				line(dispOutput, Point(mpt.x, 0), Point(mpt.x, leftim.rows), CV_RGB(0, 255, 0));
 			}
-			imshow(wname, temp);
+			imshow(wname2, dispOutput);
 			//state
 			ci(CV_RGB(255, 0, 0), "Subpex: %d", subpixMethod);
 			if (isStreak)ci(CV_RGB(255, 0, 0), "Streak: true");
@@ -3762,30 +3762,27 @@ namespace cp
 				}
 			}
 
-		imshow("console", ci.image);
-		if (key == 'l')isProcessLBorder = (isProcessLBorder) ? false : true;
-		if (key == 'g')isGrid = (isGrid) ? false : true;
-		if (key == 'f')isGuided = (isGuided) ? false : true;
-		if (key == 'v')isMedian = (isMedian) ? false : true;
-		if (key == 'd') isStreak = (isStreak) ? false : true;
-		if (key == 's')isBoxRefinement = (isBoxRefinement) ? false : true;
-		if (key == 'a')isReCost = (isReCost) ? false : true;
-		if (key == 'm')isMinCostFilter = isMinCostFilter ? false : true;
-		if (key == 'c')guiAlphaBlend(temp, leftim);
-		if (key == 'p'){ subpixMethod++; subpixMethod = (subpixMethod > 2) ? 0 : subpixMethod; }
-		if (key == '@'){ subpixMethod--; subpixMethod = (subpixMethod < 0) ? 2 : subpixMethod; }
-		if (key == 'b')isBT = isBT ? false : true;
+			imshow("console", ci.image);
+			if (key == 'l')isProcessLBorder = (isProcessLBorder) ? false : true;
+			if (key == 'g')isGrid = (isGrid) ? false : true;
+			if (key == 'f')isGuided = (isGuided) ? false : true;
+			if (key == 'v')isMedian = (isMedian) ? false : true;
+			if (key == 'd') isStreak = (isStreak) ? false : true;
+			if (key == 's')isBoxRefinement = (isBoxRefinement) ? false : true;
+			if (key == 'a')isReCost = (isReCost) ? false : true;
+			if (key == 'm')isMinCostFilter = isMinCostFilter ? false : true;
+			if (key == 'c')guiAlphaBlend(dispOutput, leftim);
+			if (key == 'p') { subpixMethod++; subpixMethod = (subpixMethod > 2) ? 0 : subpixMethod; }
+			if (key == '@') { subpixMethod--; subpixMethod = (subpixMethod < 0) ? 2 : subpixMethod; }
+			if (key == 'b')isBT = isBT ? false : true;
 
-		if (key == 'w')dispColor = (dispColor) ? false : true;
-		if (key == 'e')isShowGT = (isShowGT) ? false : true;
-		if (key == 'r')maskType++; maskType = maskType > 4 ? 0 : maskType;
-		if (key == 't')maskType--; maskType = maskType < 0 ? 3 : maskType;
-		if (key == 'y')maskPrec++; maskPrec = maskPrec > 3 ? 0 : maskPrec;
-		if (key == 'u')maskPrec--; maskPrec = maskPrec < 0 ? 2 : maskPrec;
+			if (key == 'w')dispColor = (dispColor) ? false : true;
+			if (key == 'e')isShowGT = (isShowGT) ? false : true;
+			if (key == 'r')maskType++; maskType = maskType > 4 ? 0 : maskType;
+			if (key == 't')maskType--; maskType = maskType < 0 ? 3 : maskType;
+			if (key == 'y')maskPrec++; maskPrec = maskPrec > 3 ? 0 : maskPrec;
+			if (key == 'u')maskPrec--; maskPrec = maskPrec < 0 ? 2 : maskPrec;
 
 		}
-
 	}
-#endif
-
 }

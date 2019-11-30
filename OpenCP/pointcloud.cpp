@@ -1857,7 +1857,7 @@ namespace cp
 			loolatx = (image.cols - 1) / 2;
 			loolaty = (image.rows - 1) / 2;
 
-			renderOpt = 2;
+			renderOpt = 0;
 			viewSW = 0;
 
 			br = 5;
@@ -1928,7 +1928,7 @@ namespace cp
 			//lookat(look, srcview, R);
 			Mat r;
 			Eular2Rotation(pitch - 90.0, 0.0, yaw - 90, r);
-			R = r*R;
+			R = r * R;
 
 			//*********************************** left
 
@@ -2020,6 +2020,7 @@ namespace cp
 			if (loopcount > 0 && num_loop > loopcount) break;
 		}
 	}
+
 
 	void PointCloudShow::loopDepth(cv::InputArray image__, cv::InputArray srcDepth__, cv::InputArray K_, cv::InputArray dist_, int loopcount)
 	{

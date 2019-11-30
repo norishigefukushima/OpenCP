@@ -110,6 +110,7 @@
       <AdditionalIncludeDirectories>
       </AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -194,6 +195,7 @@
     <ClCompile Include="slic\guiSLICTest.cpp" />
     <ClCompile Include="splitmergeTest.cpp" />
     <ClCompile Include="testAddNoise.cpp" />
+    <ClCompile Include="testRGBHistogram.cpp" />
     <ClCompile Include="viewSynthesis\viewSynthesisTest.cpp" />
   </ItemGroup>
   <ItemGroup>

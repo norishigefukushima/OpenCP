@@ -209,7 +209,7 @@ bool convolve(float *image, _INT32 width, _INT32 height, float* kernel, _INT32 k
 					} // for u = 
 				} // for v =
 
-				pixels[x + y*width] = float(sum*scale);
+				pixels[x + y * width] = float(sum*scale);
 
 			}
 		}
@@ -240,10 +240,10 @@ bool convolve(float *image, _INT32 width, _INT32 height, float* kernel, _INT32 k
 						} // for u = 
 					} // for v =
 
-					pixels[x + y*width] = float(sum*scale);
+					pixels[x + y * width] = float(sum*scale);
 				}
 				else // if x % and y %
-					pixels[x + y*width] = 0.0f;
+					pixels[x + y * width] = 0.0f;
 
 			}
 		}
@@ -302,8 +302,8 @@ double MS_SSIMF(float *forig_img, float *fcomp_img, _INT32 PX, _INT32 PY, bool a
 		double total = 0.0;
 		double sigma_sq = sigma_gauss * sigma_gauss;
 
-		for (_INT32 y = 0; y < filter_width; ++y){
-			for (_INT32 x = 0; x < filter_width; ++x){
+		for (_INT32 y = 0; y < filter_width; ++y) {
+			for (_INT32 x = 0; x < filter_width; ++x) {
 				distance = abs(x - center) * abs(x - center) + abs(y - center) * abs(y - center);
 				pointer = y * filter_width + x;
 				array_gauss_window[pointer] = (float)exp(-0.5 * distance / sigma_sq);
@@ -588,41 +588,39 @@ double MS_SSIMF(float *forig_img, float *fcomp_img, _INT32 PX, _INT32 PY, bool a
 		// IF SSIM INDEX SELECTED, NO OTHER LEVELS NEEDED
 		//
 
-		if (SSIM) {
-
+		if (SSIM)
+		{
 			_INT32 i, j, count = 0;
 			suma = 0.0;
-			if ((aa == 1.0f) && (bb == 1.0f) && (gg == 1.0f)) {
-				if (fast) {
+			if ((aa == 1.0f) && (bb == 1.0f) && (gg == 1.0f))
+			{
+				if (fast)
+				{
 					for (i = 0; i < image_height; ++i)
+					{
 						for (j = 0; j < image_width; ++j) if ((i % filter_width == 0) || (j % filter_width == 0))
 						{
 							pointer = j + i * image_width;
 							++count;
 							suma += ((2.0 * mu1_mu2[pointer] + C1) * (2.0 * sigma12[pointer] + C2)) /
 								((mu1_sq[pointer] + mu2_sq[pointer] + C1) * (sigma1_sq[pointer] + sigma2_sq[pointer] + C2));
-
-
-
 						}
+					}
 				}
 				else // if not fast
 				{
-					for (pointer = 0; pointer < image_dimension; ++pointer) {
+					for (pointer = 0; pointer < image_dimension; ++pointer)
+					{
 						suma += ((2.0 * mu1_mu2[pointer] + C1) * (2.0 * sigma12[pointer] + C2)) /
 							((mu1_sq[pointer] + mu2_sq[pointer] + C1) * (sigma1_sq[pointer] + sigma2_sq[pointer] + C2));
 					}
 					count = image_dimension;
-
 				}
-
-
 			}
 			else // setting ABG weights
 			{
-
-
-				if (fast) {
+				if (fast) 
+				{
 					for (i = 0; i < image_height; ++i)
 						for (j = 0; j < image_width; ++j) if ((i % filter_width == 0) || (j % filter_width == 0))
 						{
@@ -668,10 +666,10 @@ double MS_SSIMF(float *forig_img, float *fcomp_img, _INT32 PX, _INT32 PY, bool a
 			return result;
 		}
 
-		if (algorithm_selection_Wang) {
-
-			for (pointer = 0; pointer < image_dimension; ++pointer) {
-
+		if (algorithm_selection_Wang) 
+		{
+			for (pointer = 0; pointer < image_dimension; ++pointer) 
+			{
 				luminance_point = ((2.0 * mu1_mu2[pointer] + C1) / (mu1_sq[pointer] + mu2_sq[pointer] + C1));
 				luminance[level] += luminance_point;
 
@@ -680,13 +678,12 @@ double MS_SSIMF(float *forig_img, float *fcomp_img, _INT32 PX, _INT32 PY, bool a
 
 				structure_point = ((sigma12[pointer] + C2 / 2.0) / (sqrt(sigma1_sq[pointer] * sigma2_sq[pointer]) + C2 / 2.0));
 				structure[level] += structure_point;
-
 			}
 		}
-
-		else {   // ROUSE/HEMAMI
-
-			for (pointer = 0; pointer < image_dimension; ++pointer) {
+		else 
+		{   // ROUSE/HEMAMI
+			for (pointer = 0; pointer < image_dimension; ++pointer)
+			{
 
 				if ((mu1_sq[pointer] + mu2_sq[pointer]) == 0.0f)
 					luminance_point = 1.0;
@@ -740,7 +737,6 @@ double MS_SSIMF(float *forig_img, float *fcomp_img, _INT32 PX, _INT32 PY, bool a
 		array_mu1_ip = NULL;
 		array_mu2_ip = NULL;
 		mu1_mu2 = NULL;
-
 	}
 
 	for (level = 1; level <= number_of_levels; ++level) {
@@ -886,7 +882,7 @@ double DoMS_SSIMY(_INT32 *orig_img, _INT32 *comp_img, _INT32 PX, _INT32 PY, _INT
 		result = DoMS_SSIM(orig_img, comp_img, PX, PY, BPP, Wang, fast);
 		break;
 
-	case 24:  {
+	case 24: {
 
 		float *orig_imgb = NULL;
 		float *comp_imgb = NULL;
@@ -907,7 +903,7 @@ double DoMS_SSIMY(_INT32 *orig_img, _INT32 *comp_img, _INT32 PX, _INT32 PY, _INT
 		delete[] orig_imgb;
 		delete[] comp_imgb;
 	};
-			  break;
+			 break;
 
 	default: break;
 
@@ -930,7 +926,7 @@ double DoMS_SSIMY(_BYTE *orig_img, _BYTE *comp_img, _INT32 PX, _INT32 PY, _INT32
 
 	switch (BPP) {
 
-	case 24:  {
+	case 24: {
 
 		float *orig_imgb = NULL;
 		float *comp_imgb = NULL;
@@ -953,7 +949,7 @@ double DoMS_SSIMY(_BYTE *orig_img, _BYTE *comp_img, _INT32 PX, _INT32 PY, _INT32
 		delete[] orig_imgb;
 		delete[] comp_imgb;
 	};
-			  break;
+			 break;
 
 	default: break;
 

@@ -8,6 +8,8 @@
 #pragma comment(lib, "opencp.lib")
 #endif
 
+void testRGBHistogram();
+void testRGBHistogram2();
 void testAddNoise(cv::Mat& src);
 void guiConsoleTest();
 void splitmergeTest(cv::Mat& src);
@@ -103,5 +105,7 @@ void guiAnalysisImage(cv::InputArray src);
 void guiColorCorrectionTest(cv::Mat& src, cv::Mat& ref);
 
 void guiWeightedHistogramFilterTest(cv::Mat& src, cv::Mat& guide);
+
+
 using namespace cv;
 using namespace cp;

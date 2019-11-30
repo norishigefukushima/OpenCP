@@ -49,8 +49,8 @@ void guiWeightedHistogramFilterTest(Mat& src_, Mat& guide_)
 		if (sw==0)
 		{
 			CalcTime t;
-			//weightedModeFilter(src, guide, show, r, tranc, space / 10.0, color / 10.0, 2, 2);
-			weightedweightedModeFilter(src, guide, weight, show, r, tranc, space / 10.0, color / 10.0, 2, 2);
+			weightedModeFilter(src, guide, show, r, tranc, space / 10.0, color / 10.0, 2, 2);
+			//weightedweightedModeFilter(src, guide, weight, show, r, tranc, space / 10.0, color / 10.0, 2, 2);
 		}
 		else if (sw==1)
 		{

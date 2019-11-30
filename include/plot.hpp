@@ -177,4 +177,33 @@ namespace cp
 
 	CP_EXPORT void plotGraph(cv::OutputArray graph, std::vector<cv::Point2d>& data, double xmin, double xmax, double ymin, double ymax,
 		cv::Scalar color = COLOR_RED, int lt = Plot::SYMBOL_PLUS, int isLine = Plot::LINE_LINEAR, int thickness = 1, int ps = 4);
+
+	class CP_EXPORT RGBHistogram
+	{
+	private:
+		cv::Size size = cv::Size(512, 512);
+		cv::Mat k = cv::Mat::eye(3, 3, CV_64F);
+		cv::Mat R = cv::Mat::eye(3, 3, CV_64F);
+		cv::Mat t = cv::Mat::zeros(3, 1, CV_64F);
+
+		void projectPointsParallel(const cv::Mat& xyz, const cv::Mat& R, const cv::Mat& t, const cv::Mat& K, std::vector<cv::Point2f>& dest, const bool isRotationThenTranspose);
+		void projectPoints(const cv::Mat& xyz, const cv::Mat& R, const cv::Mat& t, const cv::Mat& K, std::vector<cv::Point2f>& dest, const bool isRotationThenTranspose);
+		void projectPoint(cv::Point3d& xyz, const cv::Mat& R, const cv::Mat& t, const cv::Mat& K, cv::Point2d& dest);
+		
+
+		void convertRGBto3D(cv::Mat& src, cv::Mat& rgb);
+		cv::Mat additionalPoints;
+		cv::Mat additionalPointsDest;
+		cv::Mat center;
+	public:
+		RGBHistogram();
+		void setCenter(cv::Mat& src);
+		void push_back(cv::Mat& src);
+		void push_back(cv::Vec3f src);
+		void push_back(const float b, const float g, const float r);
+		
+
+		void clear();
+		void plot(cv::Mat& src, bool isWait = true, std::string wname = "RGB histogram");
+	};
 }

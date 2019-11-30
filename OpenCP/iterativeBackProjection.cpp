@@ -66,9 +66,9 @@ namespace cp
 		Mat destf;
 		Mat ratio;
 		src.convertTo(srcf, CV_32FC3);
-		src.convertTo(destf, CV_32FC3);
+			
 		Mat bdest;
-
+		srcf.copyTo(destf, CV_32FC3);
 		for (int i = 0; i < iteration; i++)
 		{
 			GaussianBlur(destf, bdest, ksize, sigma);

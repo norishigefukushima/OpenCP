@@ -1,5 +1,7 @@
 #include "plot.hpp"
 #include "draw.hpp"
+#include "stereo_core.hpp"//for RGB histogram
+#include "pointcloud.hpp"//for RGB histogram
 #include <iostream>
 using namespace std;
 using namespace cv;
@@ -41,7 +43,7 @@ namespace cp
 
 		int H = graph.rows - 1;
 		const int size = (int)data.size();
-		
+
 		for (int i = 0; i < size; i++)
 		{
 			double src = data[i].x;
@@ -183,7 +185,7 @@ namespace cp
 			pinfo[i].lineType = Plot::LINE_LINEAR;
 			pinfo[i].thickness = 1;
 
-			double v = (double)i / DefaultPlotInfoSize*255.0;
+			double v = (double)i / DefaultPlotInfoSize * 255.0;
 			pinfo[i].color = getPseudoColor(cv::saturate_cast<uchar>(v));
 
 			pinfo[i].keyname = format("data %02d", i);
@@ -372,7 +374,7 @@ namespace cp
 		pinfo[plotnum].keyname = name;
 	}
 
-	void Plot::setPlot(int plotnum, Scalar color, int symboltype, int 
+	void Plot::setPlot(int plotnum, Scalar color, int symboltype, int
 		linetype, int thickness)
 	{
 		setPlotColor(plotnum, color);
@@ -663,7 +665,7 @@ namespace cp
 			for (int i = 64; i < 192; i++)
 				lr[i] = 255;
 			for (int i = 192; i < 256; i++)
-				lr[i] = cvRound(255 - d*(i - 192));
+				lr[i] = cvRound(255 - d * (i - 192));
 
 			ret.val[1] = lr[val];
 		}
@@ -683,7 +685,7 @@ namespace cp
 			for (int i = 0; i < 64; i++)
 				lr[i] = 255;
 			for (int i = 64; i < 128; i++)
-				lr[i] = cvRound(255 - d*(i - 64));
+				lr[i] = cvRound(255 - d * (i - 64));
 			for (int i = 128; i < 256; i++)
 				lr[i] = 0;
 			ret.val[2] = lr[val];
@@ -706,8 +708,8 @@ namespace cp
 	{
 		Mat src = src_.getMat();
 		clear();
-	
-		if (src.depth()==CV_32F)
+
+		if (src.depth() == CV_32F)
 			for (int i = 0; i < src.size().area(); i++) push_back(i, src.at<float>(i));
 		else if (src.depth() == CV_64F)
 			for (int i = 0; i < src.size().area(); i++)push_back(i, src.at<double>(i));
@@ -719,8 +721,8 @@ namespace cp
 			for (int i = 0; i < src.size().area(); i++)push_back(i, src.at<short>(i));
 		else if (src.depth() == CV_32S)
 			for (int i = 0; i < src.size().area(); i++)push_back(i, src.at<int>(i));
-		
-		plot(wname, isWait, gnuplotpath);	
+
+		plot(wname, isWait, gnuplotpath);
 	}
 
 	void Plot::plot(string wname, bool isWait, string gnuplotpath)
@@ -762,7 +764,7 @@ namespace cp
 
 			if (isPosition)drawGrid(render, pt, Scalar(180, 180, 255), 1, 4, 0);
 
-			if (isWait) imshow(wname, render);
+			imshow(wname, render);
 			key = waitKey(1);
 
 			if (key == '?')
@@ -1042,4 +1044,459 @@ namespace cp
 	}
 	}
 	*/
+
+	static void onMouseHistogram3D(int event, int x, int y, int flags, void* param)
+	{
+		Point* ret = (Point*)param;
+
+		if (flags == EVENT_FLAG_LBUTTON)
+		{
+			ret->x = x;
+			ret->y = y;
+		}
+	}
+
+	void RGBHistogram::projectPointsParallel(const Mat& xyz, const Mat& R, const Mat& t, const Mat& K, vector<Point2f>& dest, const bool isRotationThenTranspose)
+	{
+		float* data = (float*)xyz.ptr<float>(0);
+		Point2f* dst = &dest[0];
+		int size2 = xyz.size().area();
+		int i;
+		float tt[3];
+		tt[0] = (float)t.at<double>(0, 0);
+		tt[1] = (float)t.at<double>(1, 0);
+		tt[2] = (float)t.at<double>(2, 0);
+
+		float r[3][3];
+		if (isRotationThenTranspose)
+		{
+			const float f00 = (float)K.at<double>(0, 0);
+			const float xc = (float)K.at<double>(0, 2);
+			const float f11 = (float)K.at<double>(1, 1);
+			const float yc = (float)K.at<double>(1, 2);
+
+			r[0][0] = (float)R.at<double>(0, 0);
+			r[0][1] = (float)R.at<double>(0, 1);
+			r[0][2] = (float)R.at<double>(0, 2);
+
+			r[1][0] = (float)R.at<double>(1, 0);
+			r[1][1] = (float)R.at<double>(1, 1);
+			r[1][2] = (float)R.at<double>(1, 2);
+
+			r[2][0] = (float)R.at<double>(2, 0);
+			r[2][1] = (float)R.at<double>(2, 1);
+			r[2][2] = (float)R.at<double>(2, 2);
+
+			for (i = 0; i < size2; i++)
+			{
+				const float x = data[0];
+				const float y = data[1];
+				//const float z = data[2];
+				const float z = 0.f;
+
+				const float px = r[0][0] * x + r[0][1] * y + r[0][2] * z + tt[0];
+				const float py = r[1][0] * x + r[1][1] * y + r[1][2] * z + tt[1];
+				const float pz = r[2][0] * x + r[2][1] * y + r[2][2] * z + tt[2];
+
+				const float div = 1.f / pz;
+
+				dst->x = (f00*px + xc * pz) * div;
+				dst->y = (f11*py + yc * pz) * div;
+
+				data += 3;
+				dst++;
+			}
+		}
+		else
+		{
+			Mat kr = K * R;
+
+			r[0][0] = (float)kr.at<double>(0, 0);
+			r[0][1] = (float)kr.at<double>(0, 1);
+			r[0][2] = (float)kr.at<double>(0, 2);
+
+			r[1][0] = (float)kr.at<double>(1, 0);
+			r[1][1] = (float)kr.at<double>(1, 1);
+			r[1][2] = (float)kr.at<double>(1, 2);
+
+			r[2][0] = (float)kr.at<double>(2, 0);
+			r[2][1] = (float)kr.at<double>(2, 1);
+			r[2][2] = (float)kr.at<double>(2, 2);
+
+			for (i = 0; i < size2; i++)
+			{
+				const float x = data[0] + tt[0];
+				const float y = data[1] + tt[1];
+				const float z = data[2] + tt[2];
+
+				const float div = 1.f / (r[2][0] * x + r[2][1] * y + r[2][2] * z);
+
+				dst->x = (r[0][0] * x + r[0][1] * y + r[0][2] * z) * div;
+				dst->y = (r[1][0] * x + r[1][1] * y + r[1][2] * z) * div;
+
+				data += 3;
+				dst++;
+			}
+		}
+	}
+
+	void RGBHistogram::projectPoints(const Mat& xyz, const Mat& R, const Mat& t, const Mat& K, vector<Point2f>& dest, const bool isRotationThenTranspose)
+	{
+		float* data = (float*)xyz.ptr<float>(0);
+		Point2f* dst = &dest[0];
+		int size2 = xyz.size().area();
+		int i;
+		float tt[3];
+		tt[0] = (float)t.at<double>(0, 0);
+		tt[1] = (float)t.at<double>(1, 0);
+		tt[2] = (float)t.at<double>(2, 0);
+
+		float r[3][3];
+		if (isRotationThenTranspose)
+		{
+			const float f00 = (float)K.at<double>(0, 0);
+			const float xc = (float)K.at<double>(0, 2);
+			const float f11 = (float)K.at<double>(1, 1);
+			const float yc = (float)K.at<double>(1, 2);
+
+			r[0][0] = (float)R.at<double>(0, 0);
+			r[0][1] = (float)R.at<double>(0, 1);
+			r[0][2] = (float)R.at<double>(0, 2);
+
+			r[1][0] = (float)R.at<double>(1, 0);
+			r[1][1] = (float)R.at<double>(1, 1);
+			r[1][2] = (float)R.at<double>(1, 2);
+
+			r[2][0] = (float)R.at<double>(2, 0);
+			r[2][1] = (float)R.at<double>(2, 1);
+			r[2][2] = (float)R.at<double>(2, 2);
+
+			for (i = 0; i < size2; i++)
+			{
+				const float x = data[0];
+				const float y = data[1];
+				const float z = data[2];
+				//const float z = 0.f;
+
+				const float px = r[0][0] * x + r[0][1] * y + r[0][2] * z + tt[0];
+				const float py = r[1][0] * x + r[1][1] * y + r[1][2] * z + tt[1];
+				const float pz = r[2][0] * x + r[2][1] * y + r[2][2] * z + tt[2];
+
+				const float div = 1.f / pz;
+
+				dst->x = (f00*px + xc * pz) * div;
+				dst->y = (f11*py + yc * pz) * div;
+
+				data += 3;
+				dst++;
+			}
+		}
+		else
+		{
+			Mat kr = K * R;
+
+			r[0][0] = (float)kr.at<double>(0, 0);
+			r[0][1] = (float)kr.at<double>(0, 1);
+			r[0][2] = (float)kr.at<double>(0, 2);
+
+			r[1][0] = (float)kr.at<double>(1, 0);
+			r[1][1] = (float)kr.at<double>(1, 1);
+			r[1][2] = (float)kr.at<double>(1, 2);
+
+			r[2][0] = (float)kr.at<double>(2, 0);
+			r[2][1] = (float)kr.at<double>(2, 1);
+			r[2][2] = (float)kr.at<double>(2, 2);
+
+			for (i = 0; i < size2; i++)
+			{
+				const float x = data[0] + tt[0];
+				const float y = data[1] + tt[1];
+				const float z = data[2] + tt[2];
+
+				const float div = 1.f / (r[2][0] * x + r[2][1] * y + r[2][2] * z);
+
+				dst->x = (r[0][0] * x + r[0][1] * y + r[0][2] * z) * div;
+				dst->y = (r[1][0] * x + r[1][1] * y + r[1][2] * z) * div;
+
+				data += 3;
+				dst++;
+			}
+		}
+	}
+
+	void RGBHistogram::projectPoint(Point3d& xyz, const Mat& R, const Mat& t, const Mat& K, Point2d& dest)
+	{
+		float r[3][3];
+		Mat kr = K * R;
+		r[0][0] = (float)kr.at<double>(0);
+		r[0][1] = (float)kr.at<double>(1);
+		r[0][2] = (float)kr.at<double>(2);
+
+		r[1][0] = (float)kr.at<double>(3);
+		r[1][1] = (float)kr.at<double>(4);
+		r[1][2] = (float)kr.at<double>(5);
+
+		r[2][0] = (float)kr.at<double>(6);
+		r[2][1] = (float)kr.at<double>(7);
+		r[2][2] = (float)kr.at<double>(8);
+
+		float tt[3];
+		tt[0] = (float)t.at<double>(0);
+		tt[1] = (float)t.at<double>(1);
+		tt[2] = (float)t.at<double>(2);
+
+		const float x = (float)xyz.x + tt[0];
+		const float y = (float)xyz.y + tt[1];
+		const float z = (float)xyz.z + tt[2];
+
+		const float div = 1.f / (r[2][0] * x + r[2][1] * y + r[2][2] * z);
+		dest.x = (r[0][0] * x + r[0][1] * y + r[0][2] * z) * div;
+		dest.y = (r[1][0] * x + r[1][1] * y + r[1][2] * z) * div;
+	}
+
+	void RGBHistogram::convertRGBto3D(Mat& src, Mat& rgb)
+	{
+		if (rgb.size().area() != src.size().area()) rgb.create(src.size().area(), 1, CV_32FC3);
+
+		const Vec3f centerv = Vec3f(center.at<float>(0), center.at<float>(1), center.at<float>(2));
+		if (src.depth() == CV_8U)
+		{
+			for (int i = 0; i < src.size().area(); i++)
+			{
+				rgb.at<Vec3f>(i) = Vec3f(src.at<Vec3b>(i)) - centerv;
+			}
+		}
+		else if (src.depth() == CV_32F)
+		{
+			for (int i = 0; i < src.size().area(); i++)
+			{
+				rgb.at<Vec3f>(i) = src.at<Vec3f>(i) - centerv;
+			}
+		}
+	}
+
+
+	RGBHistogram::RGBHistogram()
+	{
+		center.create(1, 3, CV_32F);
+		center.at<float>(0) = 127.5f;
+		center.at<float>(1) = 127.5f;
+		center.at<float>(2) = 127.5f;
+	}
+
+	void RGBHistogram::setCenter(Mat& src)
+	{
+		src.copyTo(center);
+	}
+
+	void RGBHistogram::push_back(Mat& src)
+	{
+		const Vec3f centerv = Vec3f(center.at<float>(0), center.at<float>(1), center.at<float>(2));
+		for (int i = 0; i < src.rows; i++)
+		{
+			additionalPoints.push_back(Vec3f(src.at<float>(i, 0), src.at<float>(i, 1), src.at<float>(i, 2)) - centerv);
+		}
+	}
+	void RGBHistogram::push_back(Vec3f src)
+	{
+		additionalPoints.push_back(src - Vec3f(127.5f, 127.5f, 127.5f));
+	}
+
+	void RGBHistogram::push_back(const float b, const float g, const float r)
+	{
+		push_back(Vec3f(b, g, r));
+	}
+
+	void RGBHistogram::clear()
+	{
+		additionalPoints.release();
+	}
+
+	void RGBHistogram::plot(Mat& src, bool isWait, string wname)
+	{
+		//setup gui
+		namedWindow(wname);
+		static int sw = 0; createTrackbar("sw", wname, &sw, 2);
+		static int sw_projection = 0; createTrackbar("projection", wname, &sw_projection, 1);
+		static int f = 1000;  createTrackbar("f", wname, &f, 2000);
+		static int z = 1250; createTrackbar("z", wname, &z, 2000);
+		static int pitch = 90; createTrackbar("pitch", wname, &pitch, 360);
+		static int roll = 0; createTrackbar("roll", wname, &roll, 180);
+		static int yaw = 90; createTrackbar("yaw", wname, &yaw, 360);
+		static Point ptMouse = Point((size.width - 1)*0.75, (size.height - 1)*0.25);
+
+		cv::setMouseCallback(wname, (MouseCallback)onMouseHistogram3D, (void*)&ptMouse);
+
+		//project RGB2XYZ
+		Mat rgb;
+		convertRGBto3D(src, rgb);
+
+		Mat xyz;
+		vector<Point2f> pt(rgb.size().area());
+
+		//set up etc plots
+		Mat guide, guideDest;
+		guide.push_back(Point3f(-127.5f, -127.5f, -127.5f)); //rgbzerof;
+		guide.push_back(Point3f(-127.5, -127.5, 127.5)); //rmax
+		guide.push_back(Point3f(-127.5, 127.5, -127.5)); //gmax
+		guide.push_back(Point3f(127.5, -127.5, -127.5)); //rmax
+		guide.push_back(Point3f(127.5, 127.5, 127.5)); //rgbmax
+		guide.push_back(Point3f(-127.5, 127.5, 127.5)); //grmax
+		guide.push_back(Point3f(127.5, -127.5, 127.5)); //brmax
+		guide.push_back(Point3f(127.5, 127.5, -127.5)); //bgmax
+
+		vector<Point2f> guidept(guide.rows);
+		vector<Point2f> additionalpt(additionalPoints.rows);
+		int key = 0;
+		Mat show = Mat::zeros(size, CV_8UC3);
+		while (key != 'q')
+		{
+			pitch = (int)(180 * (double)ptMouse.y / (double)(size.height - 1) + 0.5);
+			yaw = (int)(180 * (double)ptMouse.x / (double)(size.width - 1) + 0.5);
+			setTrackbarPos("pitch", wname, pitch);
+			setTrackbarPos("yaw", wname, yaw);
+
+			//intrinsic
+			k.at<double>(0, 2) = (size.width - 1)*0.5;
+			k.at<double>(1, 2) = (size.height - 1)*0.5;
+			k.at<double>(0, 0) = show.cols*0.001*f;
+			k.at<double>(1, 1) = show.cols*0.001*f;
+			t.at<double>(2) = z - 800;
+
+			//rotate & plot RGB plots
+			Mat rot;
+			cp::Eular2Rotation(pitch - 90.0, roll - 90, yaw - 90, rot);
+			cp::moveXYZ(rgb, xyz, rot, Mat::zeros(3, 1, CV_64F), true);
+			if (sw_projection == 0) projectPointsParallel(xyz, R, t, k, pt, true);
+			if (sw_projection == 1) projectPoints(xyz, R, t, k, pt, true);
+
+			//rotate & plot guide information
+			cp::moveXYZ(guide, guideDest, rot, Mat::zeros(3, 1, CV_64F), true);
+			if (sw_projection == 0) projectPointsParallel(guideDest, R, t, k, guidept, true);
+			if (sw_projection == 1) projectPoints(guideDest, R, t, k, guidept, true);
+
+			//rotate & plot additionalPoint
+			if (!additionalPoints.empty())
+			{
+				cp::moveXYZ(additionalPoints, additionalPointsDest, rot, Mat::zeros(3, 1, CV_64F), true);
+				if (sw_projection == 0) projectPointsParallel(additionalPointsDest, R, t, k, additionalpt, true);
+				if (sw_projection == 1) projectPoints(additionalPointsDest, R, t, k, additionalpt, true);
+			}
+
+			//draw lines for etc points
+			Point rgbzero = Point(cvRound(guidept[0].x), cvRound(guidept[0].y));
+			Point rmax = Point(cvRound(guidept[1].x), cvRound(guidept[1].y));
+			Point gmax = Point(cvRound(guidept[2].x), cvRound(guidept[2].y));
+			Point bmax = Point(cvRound(guidept[3].x), cvRound(guidept[3].y));
+			Point bgrmax = Point(cvRound(guidept[4].x), cvRound(guidept[4].y));
+			Point grmax = Point(cvRound(guidept[5].x), cvRound(guidept[5].y));
+			Point brmax = Point(cvRound(guidept[6].x), cvRound(guidept[6].y));
+			Point bgmax = Point(cvRound(guidept[7].x), cvRound(guidept[7].y));
+			line(show, bgmax, bgrmax, COLOR_WHITE);
+			line(show, brmax, bgrmax, COLOR_WHITE);
+			line(show, grmax, bgrmax, COLOR_WHITE);
+			line(show, bgmax, bmax, COLOR_WHITE);
+			line(show, brmax, bmax, COLOR_WHITE);
+			line(show, brmax, rmax, COLOR_WHITE);
+			line(show, grmax, rmax, COLOR_WHITE);
+			line(show, grmax, gmax, COLOR_WHITE);
+			line(show, bgmax, gmax, COLOR_WHITE);
+			circle(show, rgbzero, 3, COLOR_WHITE, cv::FILLED);
+			arrowedLine(show, rgbzero, rmax, COLOR_RED, 2);
+			arrowedLine(show, rgbzero, gmax, COLOR_GREEN, 2);
+			arrowedLine(show, rgbzero, bmax, COLOR_BLUE, 2);
+			//arrowedLine(show, rgbzero, bgrmax, Scalar::all(50), 1);
+
+
+			//rendering RGB plots
+			if (sw == 0)
+			{
+				for (int i = 0; i < src.size().area(); i++)
+				{
+					const int x = cvRound(pt[i].x);
+					const int y = cvRound(pt[i].y);
+					int inc = 2;
+					if (x >= 0 && x < show.cols&&y >= 0 && y < show.rows)
+					{
+						show.at<Vec3b>(Point(x, y)) += Vec3b(inc, inc, inc);
+					}
+				}
+
+			}
+			else if (sw == 1)
+			{
+				for (int i = 0; i < src.size().area(); i++)
+				{
+					const int x = cvRound(pt[i].x);
+					const int y = cvRound(pt[i].y);
+					if (x >= 0 && x < show.cols&&y >= 0 && y < show.rows)
+					{
+						Vec3f v = rgb.at<Vec3f>(i);
+						show.at<Vec3b>(Point(x, y)) = v;
+					}
+				}
+			}
+			else if (sw == 2)
+			{
+				for (int i = 0; i < src.size().area(); i++)
+				{
+					const int x = cvRound(pt[i].x);
+					const int y = cvRound(pt[i].y);
+					int inc = 2;
+					if (x >= 0 && x < show.cols&&y >= 0 && y < show.rows)
+					{
+						show.at<Vec3b>(Point(x, y)) = Vec3b(128, 128, 128);
+					}
+				}
+			}
+
+			//rendering additional points
+			if (!additionalPoints.empty())
+			{
+				for (int i = 0; i < additionalPoints.size().area(); i++)
+				{
+					const int x = cvRound(additionalpt[i].x);
+					const int y = cvRound(additionalpt[i].y);
+
+					if (x >= 0 && x < show.cols&&y >= 0 && y < show.rows)
+					{
+						circle(show, Point(x, y), 2, COLOR_WHITE);
+					}
+				}
+			}
+
+			imshow(wname, show);
+			key = waitKeyEx(1);
+			if (key == 'v')
+			{
+				sw++;
+				if (sw > 2)sw = 0;
+				setTrackbarPos("sw", wname, sw);
+			}
+			if (key == 's')
+			{
+				cout << "write rgb_histogram.png" << endl;
+				imwrite("rgb_histogram.png", show);
+			}
+			if (key == 't')
+			{
+				ptMouse.x = (size.width - 1)*0.5;
+				ptMouse.y = (size.height - 1)*0.5;
+			}
+			if (key == 'r')
+			{
+				ptMouse.x = (size.width - 1)*0.75;
+				ptMouse.y = (size.height - 1)*0.25;
+			}
+			if (key == '?')
+			{
+				cout << "v: switching rendering method" << endl;
+				cout << "r: reset viewing direction for parallel view" << endl;
+				cout << "t: reset viewing direction for paspective view" << endl;
+				cout << "s: save 3D RGB plot" << endl;
+			}
+			show.setTo(0);
+			if (!isWait)break;
+		}
+	}
 }
