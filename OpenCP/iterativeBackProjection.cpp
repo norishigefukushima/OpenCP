@@ -11,7 +11,7 @@ namespace cp
 	void normL1(Mat& src, Mat& dest, float lambda)
 	{
 		const int v = src.cols;
-			
+
 #pragma omp parallel for
 		for (int j = 1; j < src.rows - 1; j++)
 		{
@@ -27,7 +27,7 @@ namespace cp
 					+ abs(s[i + v] - s[i])
 					+ abs(s[i - v] - s[i]);
 */
-				d[i] *= 1.f/(1.f +lambda*diff);
+				d[i] *= 1.f / (1.f + lambda * diff);
 			}
 		}
 	}
@@ -42,7 +42,7 @@ namespace cp
 		Mat bdest;
 
 		int i;
-		Mat denominator = Mat::ones(srcf.size(),CV_32F);
+		Mat denominator = Mat::ones(srcf.size(), CV_32F);
 		for (i = 0; i < iteration; i++)
 		{
 			GaussianBlur(destf, bdest, ksize, sigma);
@@ -66,7 +66,7 @@ namespace cp
 		Mat destf;
 		Mat ratio;
 		src.convertTo(srcf, CV_32FC3);
-			
+
 		Mat bdest;
 		srcf.copyTo(destf, CV_32FC3);
 		for (int i = 0; i < iteration; i++)
@@ -86,7 +86,7 @@ namespace cp
 		const float* s = src.ptr<float>(0);
 		const float* l = lambda.ptr<float>(0);
 		float* d = dest.ptr<float>(0);
-		
+
 		for (int i = 0; i < src.size().area(); i += 8)
 		{
 			__m256 ma = _mm256_load_ps(l + i);
@@ -170,21 +170,21 @@ namespace cp
 #pragma omp parallel for
 		for (int j = 1; j < src.rows; j++)
 		{
-			float* s = (float*) src.ptr<float>(j);
+			float* s = (float*)src.ptr<float>(j);
 			float* d = dest.ptr<float>(j);
-			for (int i = 1; i < src.cols; i+=8)
+			for (int i = 1; i < src.cols; i += 8)
 			{
 				__m256 ms = _mm256_load_ps(s + i);
 				__m256 px = _mm256_loadu_ps(s - 1 + i);
 				__m256 py = _mm256_loadu_ps(s - v + i);
-				
+
 				__m256 a = _mm256_sub_ps(ms, px);
 				px = _mm256_mul_ps(a, a);
 				a = _mm256_sub_ps(ms, py);
 				py = _mm256_mul_ps(a, a);
 				a = _mm256_sqrt_ps(_mm256_add_ps(px, py));
 				_mm256_storeu_ps(d + i, a);
-				
+
 				//float dx = s[i] - s[i - 1];
 				//float dy = s[i] - s[i - v];
 				//float grad = sqrt(dx*dx + dy*dy);
@@ -203,7 +203,7 @@ namespace cp
 			float* s1 = cgrad.ptr<float>(j);
 			float* d = dest.ptr<float>(j);
 			for (int i = 0; i < pgrad.cols; i++)
-			{	
+			{
 				//d[i] = lambda +s0[i] / s1[i];
 				//d[i] = lambda + min(2.f, 1.f*abs(s0[i]-s1[i]));
 				d[i] = min(3.f, lambda + 1.f*abs(s0[i] - s1[i]));
@@ -260,7 +260,7 @@ namespace cp
 		Mat subf;
 		src.convertTo(srcf, CV_32FC3);
 
-		if(init.empty()) src.convertTo(destf, CV_32FC3);
+		if (init.empty()) src.convertTo(destf, CV_32FC3);
 		else init.convertTo(destf, CV_32F);
 		Mat bdest;
 
@@ -288,6 +288,11 @@ namespace cp
 		destf.convertTo(dest, src.depth());
 	}
 
+	void iterativeBackProjectionDeblurGaussian(const Mat& src, Mat& dest, const Size ksize, const float sigma, const float backprojection_sigma, const float lambda, const int iteration)
+	{
+		iterativeBackProjectionDeblurGaussian(src, dest, ksize, sigma, backprojection_sigma, lambda, iteration, Mat());
+	}
+
 	void iterativeBackProjectionDeblurBilateral(const cv::Mat& src, cv::Mat& dest, const cv::Size ksize, const float sigma, const float backprojection_sigma_space, const float backprojection_sigma_color, const float lambda, const int iteration, cv::Mat& init)
 	{
 		Mat srcf;
@@ -296,11 +301,11 @@ namespace cp
 		Mat subf;
 
 		src.convertTo(srcf, CV_32FC3);
-		if (init.empty()) src.convertTo(destf, CV_32FC3);		
+		if (init.empty()) src.convertTo(destf, CV_32FC3);
 		else init.convertTo(destf, CV_32FC3);
 
 		for (int i = 0; i < iteration; i++)
-		{			
+		{
 			GaussianBlur(destf, bdest, ksize, sigma);
 			subtract(srcf, bdest, subf);
 
@@ -308,9 +313,14 @@ namespace cp
 
 			//fma(subf, lambda, destf);
 			destf += ((float)lambda)*subf;
-			
+
 		}
 		destf.convertTo(dest, src.type());
+	}
+
+	void iterativeBackProjectionDeblurBilateral(const cv::Mat& src, cv::Mat& dest, const cv::Size ksize, const float sigma, const float backprojection_sigma_space, const float backprojection_sigma_color, const float lambda, const int iteration)
+	{
+		iterativeBackProjectionDeblurBilateral(src, dest, ksize, sigma, backprojection_sigma_space, backprojection_sigma_color, lambda, iteration, Mat());
 	}
 
 	/*void iterativeBackProjectionDeblurBilateral(const Mat& src, Mat& dest, const Size ksize, const double sigma_space, const double backprojection_sigma_space, const double backprojection_sigma_color, const double lambda, const int iteration, Mat& init)

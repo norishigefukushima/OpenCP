@@ -6,8 +6,15 @@ namespace cp
 {
 	class CP_EXPORT CrossBasedLocalFilter
 	{
-		int minSearch;
-		struct cross
+		//private:
+	public:
+		int minSearch = 0;
+
+		cv::Size size;
+		int r;
+		int thresh;
+
+		struct CP_EXPORT cross
 		{
 			uchar hp;
 			uchar hm;
@@ -16,20 +23,8 @@ namespace cp
 			uchar vm;
 			float divv;
 		};
-		cv::Size size;
-		int r;
-		int thresh;
-		cross* crossdata;
-		template <class T>
-		void orthogonalIntegralImageFilterF_(cv::Mat& src, cv::Mat& dest);
-		template <class T>
-		void orthogonalIntegralImageFilterF_(cv::Mat& src, cv::Mat& weight, cv::Mat& dest);
-		template <class T>
-		void orthogonalIntegralImageFilterI_(cv::Mat& src, cv::Mat& dest);
-		template <class T>
-		void orthogonalIntegralImageFilterI_(cv::Mat& src, cv::Mat& weight, cv::Mat& dest);
+		cross* crossdata = nullptr;
 
-	public:
 		enum
 		{
 			CROSS_BASED_LOCAL_FILTER_ARM_BASIC = 0,
@@ -38,8 +33,8 @@ namespace cp
 		};
 		void setMinSearch(int val);
 		cv::Mat areaMap;
-		~CrossBasedLocalFilter();
-		CrossBasedLocalFilter();
+		~CrossBasedLocalFilter() {delete[] crossdata;}
+		CrossBasedLocalFilter() {;}
 		CrossBasedLocalFilter(cv::Mat& guide, const int r_, const int thresh_);
 
 		void getCrossAreaCountMap(cv::Mat& dest, int type = CV_8U);
@@ -52,6 +47,7 @@ namespace cp
 		void operator()(cv::Mat& src, cv::Mat& dest);
 		void operator()(cv::Mat& src, cv::Mat& weight, cv::Mat& guide, cv::Mat& dest, const int r, int thresh, int iteration = 1);
 		void operator()(cv::Mat& src, cv::Mat& weight, cv::Mat& dest);
+
 	};
 
 }

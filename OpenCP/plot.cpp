@@ -159,6 +159,11 @@ namespace cp
 	}
 
 
+	Plot::Plot()
+	{
+		Plot::Plot(cv::Size(1024, 768));
+	}
+
 	Plot::Plot(Size plotsize_)
 	{
 		data_max = 1;
@@ -167,8 +172,6 @@ namespace cp
 		setBackGoundColor(COLOR_WHITE);
 
 		origin = Point(64, 64);//default
-		plotImage = NULL;
-		render = NULL;
 		setPlotImageSize(plotsize_);
 
 		keyImage.create(Size(256, 256), CV_8UC3);
@@ -1365,7 +1368,7 @@ namespace cp
 		static int pitch = 90; createTrackbar("pitch", wname, &pitch, 360);
 		static int roll = 0; createTrackbar("roll", wname, &roll, 180);
 		static int yaw = 90; createTrackbar("yaw", wname, &yaw, 360);
-		static Point ptMouse = Point((size.width - 1)*0.75, (size.height - 1)*0.25);
+		static Point ptMouse = Point(cvRound((size.width - 1)*0.75), cvRound((size.height - 1)*0.25));
 
 		cv::setMouseCallback(wname, (MouseCallback)onMouseHistogram3D, (void*)&ptMouse);
 
@@ -1522,13 +1525,13 @@ namespace cp
 			}
 			if (key == 't')
 			{
-				ptMouse.x = (size.width - 1)*0.5;
-				ptMouse.y = (size.height - 1)*0.5;
+				ptMouse.x = cvRound((size.width - 1)*0.5);
+				ptMouse.y = cvRound((size.height - 1)*0.5);
 			}
 			if (key == 'r')
 			{
-				ptMouse.x = (size.width - 1)*0.75;
-				ptMouse.y = (size.height - 1)*0.25;
+				ptMouse.x = cvRound((size.width - 1)*0.75);
+				ptMouse.y = cvRound((size.height - 1)*0.25);
 			}
 			if (key == '?')
 			{

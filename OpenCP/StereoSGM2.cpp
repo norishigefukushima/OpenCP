@@ -105,11 +105,6 @@ namespace cp
 	}
 
 
-	StereoSGBM2::~StereoSGBM2()
-	{
-		;
-	}
-
 	/*
 	For each pixel row1[x], max(-maxD, 0) <= minX <= x < maxX <= width - max(0, -minD),
 	and for each disparity minD<=d<maxD the function

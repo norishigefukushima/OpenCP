@@ -9,8 +9,7 @@ namespace cp
 	public:
 		std::vector<double> data;
 		int num_data;
-		Stat();
-		~Stat();
+
 		double getMin();
 		double getMax();
 		double getMean();

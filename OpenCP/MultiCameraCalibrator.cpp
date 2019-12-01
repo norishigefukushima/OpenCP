@@ -188,6 +188,12 @@ namespace cp
 		return ret;
 	}
 
+	bool MultiCameraCalibrator::findChess(vector<Mat>& im)
+	{
+		std::vector <cv::Mat> dest = std::vector<cv::Mat>(0);
+		return findChess(im, dest);
+	}
+	
 	void MultiCameraCalibrator::printParameters()
 	{
 		for (int i = 0; i < numofcamera; i++)

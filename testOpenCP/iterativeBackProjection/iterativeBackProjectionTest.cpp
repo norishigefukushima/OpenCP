@@ -49,6 +49,7 @@ void ibp_demo(const Mat& src, Mat& dest, const Size ksize, const float sigma, co
 	}
 	destf.convertTo(dest, src.depth());
 }
+
 void guiIterativeBackProjectionTest(Mat& src)
 {
 	Mat dest, dest2;

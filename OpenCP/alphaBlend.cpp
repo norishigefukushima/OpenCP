@@ -605,7 +605,7 @@ namespace cp
 
 		if (direction == 0)//v split
 		{
-			int w = s1.cols*ratio;
+			int w = cvRound(s1.cols*ratio);
 			Rect roi = Rect(0, 0, w, s1.rows);
 			Mat(s1(roi)).copyTo(dst(roi));
 
@@ -613,7 +613,7 @@ namespace cp
 		}
 		else if (direction == 1)//h split
 		{
-			int h = s1.rows*ratio;
+			int h = cvRound(s1.rows*ratio);
 			Rect roi = Rect(0, 0, s1.cols, h);
 			Mat(s1(roi)).copyTo(dst(roi));
 			if (isBorderLine) line(dst, Point(0, h), Point(s1.cols - 1, h), Scalar::all(255), 2);

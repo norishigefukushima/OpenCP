@@ -42,11 +42,9 @@ namespace cp
 		StereoEval(cv::Mat& groundtruth, cv::Mat& maskNonocc, cv::Mat& maskAll, cv::Mat& maskDisc, double amp);
 		StereoEval(cv::Mat& groundtruth, double amp);
 
-		~StereoEval(){ ; }
-
 		void getBadPixel(cv::Mat& src, double threshold = 1.0, bool isPrint = true);
 		void getMSE(cv::Mat& src, bool isPrint = true);
-		virtual void operator() (cv::InputArray src, double threshold = 1.0, bool isPrint = true, int disparity_scale = 1);
+		void operator() (cv::InputArray src, double threshold = 1.0, bool isPrint = true, int disparity_scale = 1);
 		void compare(cv::Mat& before, cv::Mat& after, double threshold = 1.0, bool isPrint = true);
 	};
 }

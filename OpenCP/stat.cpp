@@ -8,10 +8,6 @@ using namespace cv;
 namespace cp
 {
 
-
-	Stat::Stat(){ ; }
-	Stat::~Stat(){ ; }
-
 	double Stat::getMin()
 	{
 		double minv = DBL_MAX;

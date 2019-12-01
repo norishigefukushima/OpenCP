@@ -17,5 +17,6 @@ namespace cp
 
 		void operator()(cv::Mat& src, cv::Mat& guidance, cv::Mat& dest, const int radius, const int thresh, const float eps, bool initCLF = true);
 	};
-	void  crossBasedLocalMultipointFilter(cv::Mat& src, cv::Mat& guidance, cv::Mat& dest, const int radius, const int thresh, const float eps);
+
+	void  CP_EXPORT crossBasedLocalMultipointFilter(cv::Mat& src, cv::Mat& guidance, cv::Mat& dest, const int radius, const int thresh, const float eps);
 }

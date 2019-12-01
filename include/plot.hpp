@@ -93,7 +93,8 @@ namespace cp
 		cv::Mat render;
 		cv::Mat graphImage;
 
-		Plot(cv::Size window_size = cv::Size(1024, 768));
+		Plot(cv::Size window_size);//cv::Size(1024, 768)
+		Plot();
 		~Plot();
 
 		void setXYOriginZERO();

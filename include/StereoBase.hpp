@@ -60,7 +60,7 @@ namespace cp
 		cv::Mat weightMap;
 
 		StereoBMSimple(int blockSize, int minDisp, int disparityRange);
-		void StereoBMSimple::imshowDisparity(std::string wname, cv::Mat& disp, int option, cv::Mat& output, int mindis, int range);
+		void imshowDisparity(std::string wname, cv::Mat& disp, int option, cv::Mat& output, int mindis, int range);
 
 		void prefilter(cv::Mat& src1, cv::Mat& src2);
 		void preFilter(cv::Mat& src, cv::Mat& dest, int param);

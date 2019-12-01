@@ -48,7 +48,8 @@ namespace cp
 		~MultiCameraCalibrator();
 
 		//MultiCameraCalibrator cloneParameters();
-		bool findChess(std::vector<cv::Mat>& im, std::vector <cv::Mat>& dest = std::vector<cv::Mat>(0));
+		bool findChess(std::vector<cv::Mat>& im);
+		bool findChess(std::vector<cv::Mat>& im, std::vector <cv::Mat>& dest);
 
 		void printParameters();
 

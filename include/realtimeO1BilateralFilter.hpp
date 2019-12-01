@@ -37,7 +37,7 @@ namespace cp
 		int radius;
 		int filterK;
 		int filter_type;
-		virtual void blurring(const cv::Mat& src, cv::Mat& dest);
+		void blurring(const cv::Mat& src, cv::Mat& dest);
 
 		template <typename T, typename S>
 		void bodySaveMemorySize_(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dest);

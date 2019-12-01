@@ -18,13 +18,12 @@ namespace cp
 			int preFilterCap = 0, int uniquenessRatio = 0,
 			int speckleWindowSize = 0, int speckleRange = 0,
 			bool fullDP = false, double _costAlpha = 1.0, int _ad_max = 31, int _subpixel_r = 4, int _subpixel_th = 32);
-		//! the destructor
-		virtual ~StereoSGBM2();
 
 		//! the stereo correspondence operator that computes disparity map for the specified rectified stereo pair
-		virtual void operator()(const cv::Mat& left, const cv::Mat& right, cv::Mat& disp_l, cv::Mat& disp_r);
-		virtual void operator()(const cv::Mat& left, const cv::Mat& right, cv::Mat& disp_l);
+		void operator()(const cv::Mat& left, const cv::Mat& right, cv::Mat& disp_l, cv::Mat& disp_r);
+		void operator()(const cv::Mat& left, const cv::Mat& right, cv::Mat& disp_l);
 		void test(const cv::Mat& left, const cv::Mat& right, cv::Mat& disp_l, cv::Point& pt, cv::Mat& gt);
+
 		int minDisparity;
 		int numberOfDisparities;
 		cv::Size SADWindowSize;
@@ -40,7 +39,7 @@ namespace cp
 		int ad_max;
 		double costAlpha;
 
-	protected:
+		//protected:
 		cv::Mat buffer;
 	};
 }
