@@ -1,4 +1,5 @@
 #include <opencp.hpp>
+
 using namespace std;
 using namespace cv;
 using namespace cp;
@@ -51,7 +52,7 @@ void guiDisparityPlaneFitSLICTest(Mat& leftim, Mat& rightim, Mat& GT)
 	while (key != 'q')
 	{
 		{
-			CalcTime t;
+			Timer t;
 			disparityFitPlane(disparity, leftim, refine, S, (float)m, (int)(mrs / 100.0f), iter, nransac, (float)transac);
 		}
 		

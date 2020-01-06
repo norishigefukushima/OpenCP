@@ -85,7 +85,7 @@
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)\lib\</OutDir>
     <IncludePath>$(OPENCV_INCLUDE_DIR);$(FFTW_INCLUDE_DIR);../include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(OPENCV_LIB_DIR);$(FFTW_LIB_DIR);$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(OPENCP_LIB_DIR);$(OPENCV_LIB_DIR);$(FFTW_LIB_DIR);$(LibraryPath)</LibraryPath>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -197,6 +197,7 @@
     <ClCompile Include="color.cpp" />
     <ClCompile Include="consoleImage.cpp" />
     <ClCompile Include="costVolumeFilter.cpp" />
+    <ClCompile Include="countDenormalizedNumber.cpp" />
     <ClCompile Include="crossBasedLocalFilter.cpp" />
     <ClCompile Include="crossBasedLocalMultipointFilter.cpp" />
     <ClCompile Include="csv.cpp" />
@@ -225,7 +226,7 @@
     <ClCompile Include="hadamard.cpp" />
     <ClCompile Include="hazeRemove.cpp" />
     <ClCompile Include="histogram.cpp" />
-    <ClCompile Include="imagediff.cpp" />
+    <ClCompile Include="diff.cpp" />
     <ClCompile Include="imqc.cpp" />
     <ClCompile Include="iterativeBackProjection.cpp" />
     <ClCompile Include="jointBilateralFilter.cpp" />
@@ -289,6 +290,7 @@
     <ClCompile Include="StereoSGM2.cpp" />
     <ClCompile Include="stereo_core.cpp" />
     <ClCompile Include="timer.cpp" />
+    <ClCompile Include="updateCheck.cpp" />
     <ClCompile Include="video.cpp" />
     <ClCompile Include="viewsynthesis.cpp" />
     <ClCompile Include="weightedModeFilter.cpp" />
@@ -308,6 +310,7 @@
     <ClInclude Include="..\include\common.hpp" />
     <ClInclude Include="..\include\consoleImage.hpp" />
     <ClInclude Include="..\include\costVolumeFilter.hpp" />
+    <ClInclude Include="..\include\countDenormalizedNumber.hpp" />
     <ClInclude Include="..\include\crossBasedLocalFilter.hpp" />
     <ClInclude Include="..\include\crossBasedLocalMultipointFilter.hpp" />
     <ClInclude Include="..\include\csv.hpp" />
@@ -376,6 +379,7 @@
     <ClInclude Include="..\include\stereoDisplay.hpp" />
     <ClInclude Include="..\include\stereoDP.hpp" />
     <ClInclude Include="..\include\timer.hpp" />
+    <ClInclude Include="..\include\updateCheck.hpp" />
     <ClInclude Include="..\include\video.hpp" />
     <ClInclude Include="..\include\viewsynthesis.hpp" />
     <ClInclude Include="..\include\weightedModeFilter.hpp" />

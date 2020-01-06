@@ -25,7 +25,6 @@ namespace cp
 		fontSize = 20;
 		lineSpaceSize = 5;
 		clear();
-		namedWindow(windowName);
 	}
 
 	ConsoleImage::ConsoleImage()
@@ -71,6 +70,7 @@ namespace cp
 
 	void ConsoleImage::show(bool isClear)
 	{
+		namedWindow(windowName);
 		imshow(windowName, image);
 		if (isClear)clear();
 	}

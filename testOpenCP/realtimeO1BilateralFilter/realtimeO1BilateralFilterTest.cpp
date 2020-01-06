@@ -29,14 +29,14 @@ void guiMaxMinFilter(Mat& src_)
 
 		if (sw == 0)
 		{
-			CalcTime t("max filter", 0, false);
+			Timer t("max filter", 0, false);
 			maxFilter(src, dest, Size(2 * r + 1, 2 * r + 1), MORPH_ELLIPSE);
 			tim = t.getTime();
 		}
 
 		if (sw == 1)
 		{
-			CalcTime t("min filter", 0, false);
+			Timer t("min filter", 0, false);
 			minFilter(src, dest, Size(2 * r + 1, 2 * r + 1), MORPH_ELLIPSE);
 			tim = t.getTime();
 		}
@@ -95,7 +95,7 @@ static double getPSNRRealtimeO1BilateralFilter(Mat& src, Mat ref, double sigmaSp
 	Mat srcf; src.convertTo(srcf, CV_32F);
 	
 
-	CalcTime t;
+	Timer t;
 	RealtimeO1BilateralFilter rbf;
 	rbf.setColorNorm(RealtimeO1BilateralFilter::L2);
 	rbf.setBinDepth(CV_64F);
@@ -191,7 +191,7 @@ void guiRealtimeO1BilateralFilterTest(Mat& src)
 		if (key == 'r')
 		{
 
-			CalcTime t("reftime");
+			Timer t("reftime");
 #ifdef DEBUG_32F_RTBF
 			//bilateralFilter(srcf, ref, d, color / 10.f, space / 10.0f, BORDER_REPLICATE);
 			bilateralFilterL2(srcf, ref, cvRound(3.f*space / 10.f), color / 10.f, space / 10.0f, BORDER_REPLICATE);
@@ -202,7 +202,7 @@ void guiRealtimeO1BilateralFilterTest(Mat& src)
 		}
 		if (sw == 0)
 		{
-			CalcTime t("FIR SP", 0, false);
+			Timer t("FIR SP", 0, false);
 
 #ifdef DEBUG_32F_RTBF
 			rbf.gaussFIR(srcf, dest, d / 2, sigma_color, sigma_space, bin);
@@ -213,7 +213,7 @@ void guiRealtimeO1BilateralFilterTest(Mat& src)
 		}
 		if (sw == 1)
 		{
-			CalcTime t("IIR AM", 0, false);
+			Timer t("IIR AM", 0, false);
 
 #ifdef DEBUG_32F_RTBF
 			rbf.gaussIIR(srcf, dest, sigma_color, sigma_space, bin, RealtimeO1BilateralFilter::IIR_AM, iter);
@@ -224,7 +224,7 @@ void guiRealtimeO1BilateralFilterTest(Mat& src)
 		}
 		if (sw == 2)
 		{
-			CalcTime t("IIR SR", 0, false);
+			Timer t("IIR SR", 0, false);
 
 #ifdef DEBUG_32F_RTBF
 			rbf.gaussIIR(srcf, dest, sigma_color, sigma_space, bin, RealtimeO1BilateralFilter::IIR_SR, iter);
@@ -235,7 +235,7 @@ void guiRealtimeO1BilateralFilterTest(Mat& src)
 		}
 		if (sw == 3)
 		{
-			CalcTime t("IIR Deriche", 0, false);
+			Timer t("IIR Deriche", 0, false);
 
 #ifdef DEBUG_32F_RTBF
 			rbf.gaussIIR(srcf, dest, sigma_color, sigma_space, bin, RealtimeO1BilateralFilter::IIR_Deriche, iter);
@@ -246,7 +246,7 @@ void guiRealtimeO1BilateralFilterTest(Mat& src)
 		}
 		if (sw == 4)
 		{
-			CalcTime t("IIR YVY", 0, false);
+			Timer t("IIR YVY", 0, false);
 
 #ifdef DEBUG_32F_RTBF
 			rbf.gaussIIR(srcf, dest, sigma_color, sigma_space, bin, RealtimeO1BilateralFilter::IIR_YVY, iter);
@@ -384,7 +384,7 @@ void guiJointRealtimeO1BilateralFilterTest(Mat& src_, Mat& guide_)
 
 		if (sw == 0)
 		{
-			CalcTime t("FIR SP", 0, false);
+			Timer t("FIR SP", 0, false);
 
 #ifdef DEBUG_32F_RTBF
 			rbf.gaussFIR(srcf, guide, dest, d / 2, sigma_color, sigma_space, bin);
@@ -395,7 +395,7 @@ void guiJointRealtimeO1BilateralFilterTest(Mat& src_, Mat& guide_)
 		}
 		if (sw == 1)
 		{
-			CalcTime t("IIR AM", 0, false);
+			Timer t("IIR AM", 0, false);
 
 #ifdef DEBUG_32F_RTBF
 			rbf.gaussIIR(srcf, guide, dest, sigma_color, sigma_space, bin, RealtimeO1BilateralFilter::IIR_AM, iter);
@@ -406,7 +406,7 @@ void guiJointRealtimeO1BilateralFilterTest(Mat& src_, Mat& guide_)
 		}
 		if (sw == 2)
 		{
-			CalcTime t("IIR SR", 0, false);
+			Timer t("IIR SR", 0, false);
 
 #ifdef DEBUG_32F_RTBF
 			rbf.gaussIIR(srcf, guide, dest, sigma_color, sigma_space, bin, RealtimeO1BilateralFilter::IIR_SR, iter);
@@ -417,7 +417,7 @@ void guiJointRealtimeO1BilateralFilterTest(Mat& src_, Mat& guide_)
 		}
 		if (sw == 3)
 		{
-			CalcTime t("IIR Deriche", 0, false);
+			Timer t("IIR Deriche", 0, false);
 
 #ifdef DEBUG_32F_RTBF
 			rbf.gaussIIR(srcf, guide, dest, sigma_color, sigma_space, bin, RealtimeO1BilateralFilter::IIR_Deriche, iter);
@@ -428,7 +428,7 @@ void guiJointRealtimeO1BilateralFilterTest(Mat& src_, Mat& guide_)
 		}
 		if (sw == 4)
 		{
-			CalcTime t("IIR YVY", 0, false);
+			Timer t("IIR YVY", 0, false);
 
 #ifdef DEBUG_32F_RTBF
 			rbf.gaussIIR(srcf, guide, dest, sigma_color, sigma_space, bin, RealtimeO1BilateralFilter::IIR_YVY, iter);

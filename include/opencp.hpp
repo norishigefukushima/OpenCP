@@ -95,6 +95,7 @@
 #include "arithmetic.hpp"
 #include "bitconvert.hpp"
 #include "consoleImage.hpp"
+#include "countDenormalizedNumber.hpp"
 #include "csv.hpp"
 #include "draw.hpp"
 #include "getContrast.hpp"
@@ -108,6 +109,7 @@
 #include "stat.hpp"
 #include "stencil.hpp"
 #include "timer.hpp"
+#include "updateCheck.hpp"
 #include "video.hpp"
 #include "yuvio.hpp"
 #include "zoom.hpp"
@@ -119,6 +121,10 @@
 #include "fftinfo.hpp"
 #include "fitPlane.hpp"
 
+/*************************************************************
+ inline functions
+*************************************************************/
+#include "inlineMathFunctions.hpp"
 
 
 //template for new files

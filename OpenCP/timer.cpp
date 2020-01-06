@@ -6,18 +6,18 @@ using namespace cv;
 namespace cp
 {
 
-	void CalcTime::start()
+	void Timer::start()
+	{
+		pre = getTickCount();
+	}
+
+	void Timer::startAndClearStat()
 	{
 		pre = getTickCount();
 		stat.clear();
 	}
 
-	void CalcTime::restart()
-	{
-		pre = getTickCount();
-	}
-	
-	int CalcTime::autoTimeMode()
+	int Timer::autoTimeMode()
 	{
 		if (cTime > 60.0*60.0*24.0)
 		{
@@ -45,7 +45,7 @@ namespace cp
 		}
 	}
 
-	void CalcTime::convertTime(bool isPrint, std::string message)
+	void Timer::convertTime(bool isPrint, std::string message)
 	{
 		int mode = timeMode;
 		if (mode == TIME_AUTO)
@@ -107,78 +107,126 @@ namespace cp
 		}
 	}
 
-	double CalcTime::getTime(bool isPrint, std::string message)
+	double Timer::getTime(bool isPrint, std::string message)
 	{
 		cTime = (getTickCount() - pre) / (getTickFrequency());
 		convertTime(isPrint, message);
 		return cTime;
 	}
 
-	double CalcTime::getLapTime(bool isPrint, string message)
+	double Timer::getpushLapTime(bool isPrint, string message)
 	{
 		double time = (getTickCount() - pre) / (getTickFrequency());
-		stat.push_back(time);
+		countIndex++;
+		if (countIndex >= countIgnoringThreshold)
+		{
+			if (countMax == 0)
+			{
+				stat.push_back(time);
+			}
+			else
+			{
+				if (stat.num_data < countMax)
+				{
+					stat.push_back(time);
+				}
+				else
+				{
+					countIndex = countIndex % countMax;
+					stat.data[countIndex] = time;
+				}
+			}
+		}
 
 		cTime = time;
 		convertTime(isPrint, message);
 
-		restart();
+		start();
 		return cTime;
 	}
 
-	double CalcTime::getLapTimeMedian(bool isPrint, string message)
+	double Timer::getLapTimeMedian(bool isPrint, string message)
 	{
 		cTime = stat.getMedian();
 		convertTime(isPrint, message);
 		return cTime;
 	}
 
-	double CalcTime::getLapTimeMean(bool isPrint, string message)
+	double Timer::getLapTimeMean(bool isPrint, string message)
 	{
 		cTime = stat.getMean();
 		convertTime(isPrint, message);
 		return cTime;
 	}
 
-	void CalcTime::setMessage(string& src)
+	int Timer::getStatSize()
+	{
+		return stat.num_data;
+	}
+
+	void Timer::drawDistribution(string wname, int div)
+	{
+		if (stat.num_data > 1)
+			stat.drawDistribution(wname, div);
+	}
+
+	void Timer::drawDistribution(string wname, int div, double minv, double maxv)
+	{
+		if (stat.num_data > 1)
+			stat.drawDistribution(wname, div, minv, maxv);
+	}
+
+	void Timer::setMessage(string& src)
 	{
 		mes = src;
 	}
 
-	void CalcTime::setMode(int mode)
+	void Timer::setMode(int mode)
 	{
 		timeMode = mode;
 	}
 
-	void CalcTime::init(string message, int mode, bool isShow)
+	void Timer::setCountMax(const int value)
+	{
+		countMax = value;
+	}
+
+	void Timer::setIgnoringThreshold(const int value)
+	{
+		countIgnoringThreshold = value;
+	}
+
+	void Timer::init(string message, int mode, bool isShow)
 	{
 		_isShow = isShow;
 		timeMode = mode;
-
+		countIgnoringThreshold = 1;
+		countMax = 0;
+		countIndex = 0;
 		setMessage(message);
 		start();
 	}
 
-	CalcTime::CalcTime()
+	Timer::Timer()
 	{
 		string t = "time ";
 		init(t, TIME_AUTO, true);
 	}
 
-	CalcTime::CalcTime(char* message, int mode, bool isShow)
+	Timer::Timer(char* message, int mode, bool isShow)
 	{
 		string m = message;
 		init(m, mode, isShow);
 	}
 
-	CalcTime::CalcTime(string message, int mode, bool isShow)
+	Timer::Timer(string message, int mode, bool isShow)
 	{
 		init(message, mode, isShow);
 	}
 
-	CalcTime::~CalcTime()
+	Timer::~Timer()
 	{
-		if (_isShow)	getTime(true); 
+		if (_isShow)	getTime(true);
 	}
 
 	void DestinationTimePrediction::init(int DestinationCount)

@@ -11,6 +11,7 @@
 void testRGBHistogram();
 void testRGBHistogram2();
 void testAddNoise(cv::Mat& src);
+void testTimer(cv::Mat& src);
 void guiConsoleTest();
 void splitmergeTest(cv::Mat& src);
 
@@ -77,7 +78,7 @@ void guiCoherenceEnhancingShockFilter(cv::Mat& src, cv::Mat& dest);
 
 void guiPlotTest();
 
-void guiHistgramTest(cv::Mat& src);
+void testHistgram(cv::Mat& src);
 
 void guiUpsampleTest(cv::Mat& src_);
 

@@ -42,28 +42,28 @@ void guiBilateralFilterTest(Mat& src)
 
 		if (sw == 0)
 		{
-			CalcTime t("bilateral filter: opencv");
+			Timer t("bilateral filter: opencv");
 			bilateralFilter(src, dest, d, sigma_color, sigma_space);
 		}
 		else if (sw == 1)
 		{
-			CalcTime t("bilateral filter: fastest opencp implimentation");
+			Timer t("bilateral filter: fastest opencp implimentation");
 			cp::bilateralFilter(src, dest, Size(d, d), sigma_color, sigma_space, FILTER_CIRCLE);
 		}
 		else if (sw == 2)
 		{
-			CalcTime t("bi;ateral filter: fastest opencp implimentation with rectangle kernel");
+			Timer t("bi;ateral filter: fastest opencp implimentation with rectangle kernel");
 			cp::bilateralFilter(src, dest, Size(d, d), sigma_color, sigma_space, FILTER_RECTANGLE);
 		}
 		else if (sw == 3)
 		{
-			CalcTime t("birateral filter: fastest: sepalable approximation of opencp");
+			Timer t("birateral filter: fastest: sepalable approximation of opencp");
 			bilateralFilter(src, dest, Size(d, d), sigma_color, sigma_space, FILTER_SEPARABLE);
 
 		}
 		else if (sw == 4)
 		{
-			CalcTime t("birateral filter: slowest: non-parallel and inefficient implimentation");
+			Timer t("birateral filter: slowest: non-parallel and inefficient implimentation");
 			bilateralFilter(src, dest, Size(d, d), sigma_color, sigma_space, FILTER_SLOWEST);
 		}
 
@@ -127,32 +127,32 @@ void guiSeparableBilateralFilterTest(Mat& src)
 
 		if (sw == 0)
 		{
-			CalcTime t("bilateral filter: opencv");
+			Timer t("bilateral filter: opencv");
 			bilateralFilter(src, dest, Size(d, d), sigma_color, sigma_space, FILTER_RECTANGLE);
 		}
 		else if (sw == 1)
 		{
-			CalcTime t("bilateral filter: opencv sp");
+			Timer t("bilateral filter: opencv sp");
 			bilateralFilter(src, dest, Size(d, d), sigma_color, sigma_space, FILTER_SEPARABLE);
 		}
 		else if (sw == 2)
 		{
-			CalcTime t("bilateral filter: opencv sp HV");
+			Timer t("bilateral filter: opencv sp HV");
 			separableBilateralFilter(src, dest, Size(d, d), sigma_color, sigma_space, rate / 100.0, DUAL_KERNEL_HV);
 		}
 		else if (sw == 3)
 		{
-			CalcTime t("bilateral filter: opencv sp HVVH");
+			Timer t("bilateral filter: opencv sp HVVH");
 			separableBilateralFilter(src, dest, Size(d, d), sigma_color, sigma_space, rate / 100.0, DUAL_KERNEL_HVVH);
 		}
 		else if (sw == 4)
 		{
-			CalcTime t("bilateral filter: opencv sp HVVH");
+			Timer t("bilateral filter: opencv sp HVVH");
 			separableBilateralFilter(src, dest, Size(d, d), sigma_color, sigma_space, rate / 100.0, DUAL_KERNEL_CROSS);
 		}
 		else if (sw == 5)
 		{
-			CalcTime t("bilateral filter: opencv sp HVVH");
+			Timer t("bilateral filter: opencv sp HVVH");
 			separableBilateralFilter(src, dest, Size(d, d), sigma_color, sigma_space, rate / 100.0, DUAL_KERNEL_CROSSCROSS);
 		}
 		else if (sw == 6)
@@ -199,7 +199,7 @@ void timeBilateralTest(Mat& src)
 			Stat st;
 			for (int i = 0; i < iteration; i++)
 			{
-				CalcTime t("time", TIME_SEC, false);
+				Timer t("time", TIME_SEC, false);
 				bilateralFilter(src, dest, d, sigma_color, sigma_space);
 				st.push_back(t.getTime());
 			}
@@ -210,7 +210,7 @@ void timeBilateralTest(Mat& src)
 			Stat st;
 			for (int i = 0; i < iteration; i++)
 			{
-				CalcTime t("time", TIME_SEC, false);
+				Timer t("time", TIME_SEC, false);
 				bilateralFilter(src, dest, Size(d, d), sigma_color, sigma_space, FILTER_DEFAULT);
 				st.push_back(t.getTime());
 			}
@@ -221,7 +221,7 @@ void timeBilateralTest(Mat& src)
 			Stat st;
 			for (int i = 0; i < iteration; i++)
 			{
-				CalcTime t("time", TIME_SEC, false);
+				Timer t("time", TIME_SEC, false);
 				bilateralFilter(src, dest, Size(d, d), sigma_color, sigma_space, FILTER_SEPARABLE);
 				st.push_back(t.getTime());
 			}
@@ -232,7 +232,7 @@ void timeBilateralTest(Mat& src)
 			Stat st;
 			for (int i = 0; i < iteration; i++)
 			{
-				CalcTime t("time", TIME_SEC, false);
+				Timer t("time", TIME_SEC, false);
 				bilateralFilter(src, dest, Size(d, d), sigma_color, sigma_space, FILTER_SLOWEST);
 				st.push_back(t.getTime());
 			}
@@ -270,30 +270,30 @@ void guiRecursiveBilateralFilterTest(Mat& src)
 
 		if (sw == 0)
 		{
-			CalcTime t("birateral filter: separable");
+			Timer t("birateral filter: separable");
 			rbf(src, dest, sigma_color, sigma_space);
 		}
 		else if (sw == 1)
 		{
-			CalcTime t("recursiveBilateralFilter: fastest opencp implimentation");
+			Timer t("recursiveBilateralFilter: fastest opencp implimentation");
 			bilateralFilter(src, dest, (int)(sigma_space*3.f), sigma_color, sigma_space, FILTER_SEPARABLE);
 			//recursiveBilateralFilter(src, dest, sigma_color, sigma_space,0);
 			//recursiveBilateralFilter(src, dest, sigma_color, sigma_space,1);
 		}
 		else if (sw == 2)
 		{
-			CalcTime t("birateral filter: fastest opencp implimentation with rectangle kernel");
+			Timer t("birateral filter: fastest opencp implimentation with rectangle kernel");
 
 		}
 		else if (sw == 3)
 		{
-			CalcTime t("birateral filter: fastest: sepalable approximation of opencp");
+			Timer t("birateral filter: fastest: sepalable approximation of opencp");
 			bilateralFilter(src, dest, Size(d, d), sigma_color, sigma_space, FILTER_SEPARABLE);
 
 		}
 		else if (sw == 4)
 		{
-			CalcTime t("birateral filter: slowest: non-parallel and inefficient implimentation");
+			Timer t("birateral filter: slowest: non-parallel and inefficient implimentation");
 			bilateralFilter(src, dest, Size(d, d), sigma_color, sigma_space, FILTER_SLOWEST);
 		}
 

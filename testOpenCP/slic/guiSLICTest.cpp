@@ -37,7 +37,7 @@ void guiSLICTest(Mat& src)
 	{
 		Mat show;
 		{
-			CalcTime t("slic all");
+			Timer t("slic all");
 			cvtColor(src, lab, COLOR_BGR2Lab);
 			SLIC(lab, seg, S, (float)m, mrs / 100.0f, iter);
 		}

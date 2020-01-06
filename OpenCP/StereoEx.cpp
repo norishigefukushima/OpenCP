@@ -313,7 +313,7 @@ namespace cp
 			svs.large_jump = lj;
 			fullDP = (isfullDP != 0) ? true : false;
 			{
-				CalcTime t("SGBM");
+				Timer t("SGBM");
 				this->operator()(leftim, rightim, dispL, dispR, bd, cross_check_threshold);
 			}
 
@@ -341,7 +341,7 @@ namespace cp
 					dispL.convertTo(dispL, CV_16S, (double)dcomp);
 					dispR.convertTo(dispR, CV_16S, 1.0 / dcomp);
 					dispR.convertTo(dispR, CV_16S, dcomp);
-					CalcTime t("synth sub");
+					Timer t("synth sub");
 					//
 
 					/*dispL.convertTo(dl,CV_16S,1.0/16);
@@ -375,7 +375,7 @@ namespace cp
 					dispR.convertTo(dr, CV_16S, 1.0 / 16);
 					//dl.convertTo(dispL,CV_16S,16);
 					dr.convertTo(dispR, CV_16S, 16);
-					CalcTime t("synth");
+					Timer t("synth");
 					svs(leftim, rightim, dl, dr, synth, synthd, 0.5, 0, 1);
 
 					//svs(leftim,dl,synth,synthd,0.5,0,1.0);
@@ -499,7 +499,7 @@ namespace cp
 			addNoise(rightim, rim, noise / 10.0);
 
 			{
-				CalcTime t("SGBM");
+				Timer t("SGBM");
 				this->operator()(lim, rim, disp, bd);
 
 				Mat pre;

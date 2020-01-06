@@ -653,7 +653,7 @@ void guiUpsampleTest(Mat& src_)
 			downsampleMethod = "NN";
 			break;
 		}
-		CalcTime t;
+		Timer t;
 		{
 			dest.setTo(0);
 			t.start();

@@ -1555,12 +1555,12 @@ namespace cp
 		cvtColor(leftim, joint, COLOR_BGR2GRAY);
 
 		{
-			CalcTime t("pre filter");
+			Timer t("pre filter");
 			prefilter(leftim, rightim);
 			cout << "pref end" << endl;
 		}
 		{
-			CalcTime t("Cost computation");
+			Timer t("Cost computation");
 //#pragma omp parallel for
 			for (int i = 0; i < numberOfDisparities; i++)
 			{
@@ -1570,7 +1570,7 @@ namespace cp
 			}
 		}
 		{
-			CalcTime t("Cost aggregation");
+			Timer t("Cost aggregation");
 //#pragma omp parallel for
 			for (int i = 0; i < numberOfDisparities; i++)
 			{
@@ -1581,7 +1581,7 @@ namespace cp
 		}
 
 		{
-			CalcTime t("Cost Optimization");
+			Timer t("Cost Optimization");
 			if (P1 != 0 && P2 != 0)
 				getOptScanline();
 		}
@@ -1589,36 +1589,36 @@ namespace cp
 
 		const int imsize = DSI[0].size().area();
 		{
-			CalcTime t("DisparityComputation");
+			Timer t("DisparityComputation");
 			getWTA(DSI, dest);
 		}
 
 		{
-			CalcTime t("Post Filterings");
+			Timer t("Post Filterings");
 
 			//medianBlur(dest,dest,3);
 			{
-				CalcTime t("Post: uniqueness");
+				Timer t("Post: uniqueness");
 				uniquenessFilter(minCostMap, dest);
 			}
 			//subpix;
 			{
-				CalcTime t("Post: subpix");
+				Timer t("Post: subpix");
 				subpixelInterpolation(dest, subpixMethod);
 				binalyWeightedRangeFilter(dest, dest, subboxWindowR, subboxRange);
 			}
 			//R depth map;
 			//OpenCV�̓R�X�g�ƃf�v�X�̃��[�v�Ŏ����D�΂߂�min�R�X�g�ł͂Ȃ��D
 			{
-				CalcTime t("Post: LR");
+				Timer t("Post: LR");
 				fastLRCheck(minCostMap, dest);
 			}
 			{
-				CalcTime t("Post: mincost");
+				Timer t("Post: mincost");
 				minCostFilter(minCostMap, dest);
 			}
 			{
-				CalcTime t("Post: filterSpeckles");
+				Timer t("Post: filterSpeckles");
 				filterSpeckles(dest, 0, speckleWindowSize, speckleRange, specklebuffer);
 			}
 
@@ -3093,13 +3093,13 @@ namespace cp
 
 				if (isColor)
 				{
-					CalcTime t("time");
+					Timer t("time");
 					cbabf.makeKernel(src, r, thresh, 1);
 					cbabf(src, dest);
 				}
 				else
 				{
-					CalcTime t("time");
+					Timer t("time");
 					cbabf.makeKernel(gray, r, thresh, 1);
 					cbabf(gray, dest);
 				}
@@ -3109,13 +3109,13 @@ namespace cp
 			{
 				if (isColor)
 				{
-					CalcTime t("time");
+					Timer t("time");
 					cbabf.makeKernel(src, r, thresh, 0);
 					cbabf(src, dest);
 				}
 				else
 				{
-					CalcTime t("time");
+					Timer t("time");
 					cbabf.makeKernel(gray, r, thresh, 0);
 					cbabf(gray, dest);
 				}
@@ -3296,7 +3296,7 @@ namespace cp
 			SADWindowSizeH = 2 * SADWinRH + 1;
 
 			{
-				CalcTime t("BM");
+				Timer t("BM");
 				operator()(leftim, rightim, dest);
 				ci("time: %f", t.getTime());
 			}
@@ -3310,10 +3310,10 @@ namespace cp
 				Mat base = dest.clone();
 				fillOcclusion(base);
 
-				CalcTime t("Post 2");
+				Timer t("Post 2");
 				if (occlusionMethod == 1)
 				{
-					CalcTime t("occ");
+					Timer t("occ");
 					fillOcclusion(dest, (minDisparity - 1) * 16);
 				}
 				else if (occlusionMethod == 2)
@@ -3339,7 +3339,7 @@ namespace cp
 
 					fillOcclusion(dest);
 					{
-						CalcTime t("border");
+						Timer t("border");
 						correctDisparityBoundaryE<short>(dest, leftim, occsearch, occth, dest, occsearch2, 32);
 						ci("post Border: %f", t.getTime());
 					}
@@ -3484,7 +3484,7 @@ namespace cp
 
 				if (isGuided)
 				{
-					CalcTime t("guided");
+					Timer t("guided");
 					crossBasedAdaptiveBoxFilter(dest, leftim, dest, Size(2 * gr + 1, 2 * gr + 1), ge);
 					ci("cross: %f", t.getTime());
 					/*Mat base = dest.clone();

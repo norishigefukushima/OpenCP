@@ -15,7 +15,7 @@ namespace cp
 		TIME_HOUR,
 		TIME_DAY
 	};
-	class CP_EXPORT CalcTime
+	class CP_EXPORT Timer
 	{
 		int64 pre;
 		std::string mes;
@@ -28,28 +28,37 @@ namespace cp
 		int autoMode;
 		int autoTimeMode();
 		cp::Stat stat;
-		
+
+		int countIgnoringThreshold;
+		int countMax;
+		int countIndex;
+
 		void convertTime(bool isPrint, std::string message);
 	public:
 
 		void init(std::string message, int mode, bool isShow);
-	
+
 		void setMode(int mode);
 		void setMessage(std::string& src);
 
 		void start();
-		void restart();
+		void startAndClearStat();
 
-		double getTime(bool isPrint=false, std::string message = "");
-		double getLapTime(bool isPrint = false, std::string message="");
+		void setCountMax(const int value);
+		void setIgnoringThreshold(const int value);
+		double getTime(bool isPrint = false, std::string message = "");
+		double getpushLapTime(bool isPrint = false, std::string message = "");
 		double getLapTimeMedian(bool isPrint = false, std::string message = "");
 		double getLapTimeMean(bool isPrint = false, std::string message = "");
-		
-		CalcTime(std::string message, int mode = TIME_AUTO, bool isShow = true);
-		CalcTime(char* message, int mode = TIME_AUTO, bool isShow = true);
-		CalcTime();
+		int getStatSize();
+		void drawDistribution(std::string wname = "Stat distribution", int div = 100);
+		void drawDistribution(std::string wname, int div, double minv, double maxv);
 
-		~CalcTime();
+		Timer(std::string message, int mode = TIME_AUTO, bool isShow = true);
+		Timer(char* message, int mode = TIME_AUTO, bool isShow = true);
+		Timer();
+
+		~Timer();
 	};
 
 	class CP_EXPORT DestinationTimePrediction

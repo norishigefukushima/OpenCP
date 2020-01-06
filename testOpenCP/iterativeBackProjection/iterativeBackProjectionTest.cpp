@@ -141,7 +141,7 @@ void guiIterativeBackProjectionTest(Mat& src)
 		dest.setTo(0);
 		//if(sw==0)
 		{
-			CalcTime t("Prop");
+			Timer t("Prop");
 			//iterativeBackProjectionDeblurDelta(blurred, dest, Size(d, d), r_sigma / 10.0, lambda, iter);
 			//LucyRichardsonGauss(blurred, dest, Size(d, d), r_sigma / 10.0, iter);
 
@@ -163,7 +163,7 @@ void guiIterativeBackProjectionTest(Mat& src)
 
 		//if(sw==0)
 		{
-			CalcTime t("ibp");
+			Timer t("ibp");
 			//LucyRichardsonGaussTikhonov(blurred, dest, Size(d, d), r_sigma / 10.0, th*0.0001, iter);
 			//iterativeBackProjectionDeblurGaussian(blurred, dest, Size(d, d), r_sigma / 10.0, bss*0.1, lambda, iter);
 
@@ -182,7 +182,7 @@ void guiIterativeBackProjectionTest(Mat& src)
 
 		ci(format("FFT: %0.4f %0.4f", e, (noiselevel*noiselevel) / (std[0] * std[0])));
 		{
-			CalcTime t("wiener");
+			Timer t("wiener");
 
 			//deblurring(blurred, dest, r_sigma / 10.0, psw, denoiseth, e2);
 			//iterativeBackProjectionDeblurGaussian(blurred, dest, Size(d, d), r_sigma / 10.0, bss*0.1, lambda, iter, dest);
@@ -198,7 +198,7 @@ void guiIterativeBackProjectionTest(Mat& src)
 
 		//if(sw==1)
 		{
-			CalcTime t("DCT ");
+			Timer t("DCT ");
 			//iterativeBackProjectionDeblurGaussianFast(blurred, dest, Size(d, d), r_sigma / 10.0, bss*0.1, lambda, iter);
 			//iterativeBackProjectionDeblurGaussianTV(blurred, dest, Size(d, d), r_sigma / 10.0, bss*0.1, lambda, th,iter);
 			//iterativeBackProjectionDeblurBilateral(blurred, dest, Size(d, d), r_sigma / 10.0, bss*0.1, color_sigma, lambda, iter);
@@ -210,7 +210,7 @@ void guiIterativeBackProjectionTest(Mat& src)
 		}
 
 		{
-			CalcTime t("DCT ");
+			Timer t("DCT ");
 			//iterativeBackProjectionDeblurGaussianFast(blurred, dest, Size(d, d), r_sigma / 10.0, bss*0.1, lambda, iter);
 			//iterativeBackProjectionDeblurGaussianTV(blurred, dest, Size(d, d), r_sigma / 10.0, bss*0.1, lambda, th,iter);
 			//iterativeBackProjectionDeblurBilateral(blurred, dest, Size(d, d), r_sigma / 10.0, bss*0.1, color_sigma, lambda, iter);
@@ -222,7 +222,7 @@ void guiIterativeBackProjectionTest(Mat& src)
 		}
 
 		{
-			CalcTime t("DCT ");
+			Timer t("DCT ");
 			//iterativeBackProjectionDeblurGaussianFast(blurred, dest, Size(d, d), r_sigma / 10.0, bss*0.1, lambda, iter);
 			//iterativeBackProjectionDeblurGaussianTV(blurred, dest, Size(d, d), r_sigma / 10.0, bss*0.1, lambda, th,iter);
 

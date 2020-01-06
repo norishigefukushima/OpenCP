@@ -91,7 +91,7 @@ void guiGausianFilterTest(Mat& src__)
 		{
 			string mes = "DCT Gaussian";
 			ci(mes);
-			CalcTime t(mes, 0, false);
+			Timer t(mes, 0, false);
 			GaussianFilter(src64F, ref, sigma_space, GAUSSIAN_FILTER_DCT);
 			tim = t.getTime();
 			ci("time: %f", tim);
@@ -101,7 +101,7 @@ void guiGausianFilterTest(Mat& src__)
 		{
 			string mes = format("OpenCV Gaussian");
 			ci(mes);
-			CalcTime t(mes, 0, false);
+			Timer t(mes, 0, false);
 			GaussianBlur2(src, dest, sigma_space, 6, (type == 0) ? CV_32F : CV_64F);// six sigma
 			tim = t.getTime();
 		}
@@ -109,7 +109,7 @@ void guiGausianFilterTest(Mat& src__)
 		{
 			string mes = format("FIR");
 			ci(mes);
-			CalcTime t(mes, 0, false);
+			Timer t(mes, 0, false);
 			GaussianFilter(src, dest, (double)sigma_space, GAUSSIAN_FILTER_FIR, 0, 1.0e-9);
 			tim = t.getTime();
 		}
@@ -117,7 +117,7 @@ void guiGausianFilterTest(Mat& src__)
 		{
 			string mes = "Alvarez-Mazorra";
 			ci(mes);
-			CalcTime t(mes, 0, false);
+			Timer t(mes, 0, false);
 
 			GaussianFilter(src, dest, sigma_space, GAUSSIAN_FILTER_AM2, step, 1e-2);
 			tim = t.getTime();
@@ -126,7 +126,7 @@ void guiGausianFilterTest(Mat& src__)
 		{
 			string mes = "Alvarez-Mazorra Fast";
 			ci(mes);
-			CalcTime t(mes, 0, false);
+			Timer t(mes, 0, false);
 
 			GaussianFilter(src, dest, sigma_space, GAUSSIAN_FILTER_AM, step);
 			tim = t.getTime();
@@ -135,7 +135,7 @@ void guiGausianFilterTest(Mat& src__)
 		{
 			string mes = "Box";
 			ci(mes);
-			CalcTime t(mes, 0, false);
+			Timer t(mes, 0, false);
 
 			GaussianFilter(src, dest, sigma_space, GAUSSIAN_FILTER_BOX, step);
 			tim = t.getTime();
@@ -144,7 +144,7 @@ void guiGausianFilterTest(Mat& src__)
 		{
 			string mes = "EBox";
 			ci(mes);
-			CalcTime t(mes, 0, false);
+			Timer t(mes, 0, false);
 			GaussianFilter(src, dest, sigma_space, GAUSSIAN_FILTER_EBOX, step);
 			tim = t.getTime();
 		}
@@ -152,7 +152,7 @@ void guiGausianFilterTest(Mat& src__)
 		{
 			string mes = "SII";
 			ci(mes);
-			CalcTime t(mes, 0, false);
+			Timer t(mes, 0, false);
 			GaussianFilter(src, dest, (double)sigma_space, GAUSSIAN_FILTER_SII, min(max(step, 3), 5));
 			tim = t.getTime();
 		}
@@ -160,7 +160,7 @@ void guiGausianFilterTest(Mat& src__)
 		{
 			string mes = "Deriche";
 			ci(mes);
-			CalcTime t(mes, 0, false);
+			Timer t(mes, 0, false);
 
 			GaussianFilter(src, dest, sigma_space, GAUSSIAN_FILTER_DERICHE, min(max(step, 2), 4));
 			tim = t.getTime();
@@ -169,7 +169,7 @@ void guiGausianFilterTest(Mat& src__)
 		{
 			string mes = "YVY";
 			ci(mes);
-			CalcTime t(mes, 0, false);
+			Timer t(mes, 0, false);
 
 			GaussianFilter(src, dest, (double)sigma_space, GAUSSIAN_FILTER_VYV, step, 1.0e-6);
 			tim = t.getTime();
@@ -178,7 +178,7 @@ void guiGausianFilterTest(Mat& src__)
 		{
 			string mes = "Sugimoto";
 			ci(mes);
-			CalcTime t(mes, 0, false);
+			Timer t(mes, 0, false);
 
 			GaussianFilter(src, dest, sigma_space, GAUSSIAN_FILTER_SR);
 			tim = t.getTime();

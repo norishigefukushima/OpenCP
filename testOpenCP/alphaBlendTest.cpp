@@ -58,20 +58,20 @@ void alphaBtest(Mat& src1, Mat& src2)
 		ci.clear();
 		alpha.setTo(a);
 		{
-			CalcTime t("alpha sse");
+			Timer t("alpha sse");
 			for (int i = 0; i < iter; i++)
 				alphaBlend(s1, s2, alpha, dest);
 			ci("SSE %f ms", t.getTime());
 
 		}
 		{
-			CalcTime t("alpha bf");
+			Timer t("alpha bf");
 			for (int i = 0; i < iter; i++)
 				alphablend1(s1, s2, alpha, destbf);
 			ci("BF %f ms", t.getTime());
 		}
 		{
-			CalcTime t("alpha shift");
+			Timer t("alpha shift");
 			for (int i = 0; i < iter; i++)
 				alphablend2(s1, s2, alpha, destshift);
 			//alphaBlend(s1,s2,alpha,destshift);

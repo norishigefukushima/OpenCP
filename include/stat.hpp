@@ -8,7 +8,7 @@ namespace cp
 	{
 	public:
 		std::vector<double> data;
-		int num_data;
+		int num_data = 0;
 
 		double getMin();
 		double getMax();
@@ -20,7 +20,7 @@ namespace cp
 
 		void clear();
 		void show();
-		void showDistribution();
+		void drawDistribution(std::string wname = "Stat distribution", int div = 100);
+		void drawDistribution(std::string wname, int div, double minv, double maxv);
 	};
-
 }

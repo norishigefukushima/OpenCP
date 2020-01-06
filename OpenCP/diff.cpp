@@ -17,13 +17,132 @@ namespace cp
 		imshow(wname, show);
 	}
 
+	void guiDiff(InputArray src, InputArray ref, const bool isWait, string wname)
+	{
+		namedWindow(wname);
+
+		static int diff_a = 0; createTrackbar("a", wname, &diff_a, 100);
+		static int diff_channel = 3; createTrackbar("channel", wname, &diff_channel, 4);
+		static int diff_boost = 10; createTrackbar("boost*0.1", wname, &diff_boost, 100);
+		static int diff_abs_sw = 1; createTrackbar("diff_abs_sw", wname, &diff_abs_sw, 1);
+
+		Mat sf, rf;
+		src.getMat().convertTo(sf, CV_32F);
+		ref.getMat().convertTo(rf, CV_32F);
+		vector<Mat> vsf(3);
+		vector<Mat> vrf(3);
+		Mat grays;
+		Mat grayr;
+
+		if (src.channels() == 3)
+		{
+			cvtColor(sf, grays, COLOR_BGR2GRAY);
+			cvtColor(rf, grayr, COLOR_BGR2GRAY);
+			split(sf, vsf);
+			split(rf, vrf);
+		}
+		else
+		{
+			sf.copyTo(grays);
+			rf.copyTo(grayr);
+			for (int i = 0; i < 3; i++)
+			{
+				sf.copyTo(vsf[0]);
+				rf.copyTo(vrf[0]);
+			}
+		}
+
+		static bool isGuiDiffInfo = true;
+		int key = 0;
+		while (key != 'q')
+		{
+			Mat diff;
+			string text = "";
+			if (diff_abs_sw == 0)
+			{
+				if (diff_channel < 3)
+				{
+					if (diff_channel == 0)text = "B";
+					if (diff_channel == 1)text = "G";
+					if (diff_channel == 2)text = "R";
+					diff = 0.1*diff_boost * (vsf[diff_channel] - vrf[diff_channel] + 128);
+				}
+				else if (diff_channel == 3)
+				{
+					text = "Y";
+					diff = 0.1*diff_boost * (grayr - grays + 128.0);
+				}
+				else if (diff_channel == 4)
+				{
+					text = "All";
+					subtract(sf, rf, diff);
+					diff = 0.1*diff_boost * (diff + Scalar::all(128.0));
+				}
+			}
+			else
+			{
+				if (diff_channel < 3)
+				{
+					if (diff_channel == 0)text = "B";
+					if (diff_channel == 1)text = "G";
+					if (diff_channel == 2)text = "R";
+					diff = 0.1*diff_boost * abs(vsf[diff_channel] - vrf[diff_channel]);
+				}
+				else if (diff_channel == 3)
+				{
+					text = "Y";
+					diff = 0.1*diff_boost * abs(grayr - grays);
+				}
+				else if (diff_channel == 4)
+				{
+					text = "All";
+					subtract(sf, rf, diff);
+					diff = 0.1*diff_boost * abs(diff);
+				}
+			}
+
+			Mat show; diff.convertTo(show, CV_8U);
+			alphaBlend(src, show, 0.01*diff_a, show);
+
+			if(isGuiDiffInfo)putText(show, text, Point(30, 30), FONT_HERSHEY_SIMPLEX, 1, COLOR_WHITE, 2);
+			imshow(wname, show);
+			key = waitKey(1);
+
+			if (key == 'i')
+			{
+				isGuiDiffInfo = (isGuiDiffInfo) ? false : true;
+			}
+			if (key == 'd')
+			{
+				diff_abs_sw = (diff_abs_sw == 0) ? 1 : 0;
+				setTrackbarPos("diff_abs_sw", wname, diff_abs_sw);
+			}
+			if (key == 'f')
+			{
+				diff_a = (diff_a != 0) ? 0 : 100;
+				setTrackbarPos("a", wname, diff_a);
+			}
+			if (key == '?')
+			{
+				cout << "d: swich abs diff or not" << endl;
+				cout << "i: show or not info" << endl;
+				cout << "f: flip diff or src" << endl;
+				cout << "q: quit" << endl;
+			}
+
+			if (!isWait)break;
+		}
+
+		if (isWait) destroyWindow(wname);
+	}
+
 	void guiCompareDiff(const Mat& before, const Mat& after, const Mat& ref)
 	{
 		string wname = "comp diff";
 		namedWindow(wname);
-		static int sw = 0; createTrackbar("switch", wname, &sw, 2);
-		static int a = 0; createTrackbar("alpha", wname, &a, 100);
-		static int th = 0; createTrackbar("thresh", wname, &th, 255);
+		static int compare_diff_sw = 0; createTrackbar("switch", wname, &compare_diff_sw, 2);
+		static int compare_diff_a = 0; createTrackbar("alpha", wname, &compare_diff_a, 100);
+		static int compare_diff_th = 0; createTrackbar("thresh", wname, &compare_diff_th, 255);
 
 		int key = 0;
 		Mat show;
@@ -48,7 +167,7 @@ namespace cp
 		while (key != 'q')
 		{
 			cmap.setTo(0);
-			compare(d, th, zmask, cv::CMP_LE);
+			compare(d, compare_diff_th, zmask, cv::CMP_LE);
 
 			compare(da, db, maskB, cv::CMP_GT);
 			maskB.setTo(0, zmask);
@@ -58,12 +177,12 @@ namespace cp
 			maskA.setTo(0, zmask);
 			cmap.setTo(Scalar(0, 255, 0), maskA);
 
-			if (sw == 0)
-				alphaBlend(ref, cmap, a / 100.0, show);
-			else if (sw == 1)
-				alphaBlend(ref, before, a / 100.0, show);
-			else if (sw == 2)
-				alphaBlend(ref, after, a / 100.0, show);
+			if (compare_diff_sw == 0)
+				alphaBlend(ref, cmap, compare_diff_a / 100.0, show);
+			else if (compare_diff_sw == 1)
+				alphaBlend(ref, before, compare_diff_a / 100.0, show);
+			else if (compare_diff_sw == 2)
+				alphaBlend(ref, after, compare_diff_a / 100.0, show);
 
 			imshow(wname, show);
 			key = waitKey(1);
@@ -80,8 +199,8 @@ namespace cp
 			}
 			if (key == 'f')
 			{
-				a = (a > 0) ? 0 : 100;
-				setTrackbarPos("alpha", wname, a);
+				compare_diff_a = (compare_diff_a > 0) ? 0 : 100;
+				setTrackbarPos("alpha", wname, compare_diff_a);
 			}
 			if (key == 'h')
 			{

@@ -10,7 +10,7 @@ void splitmergeTest(Mat& src)
 	Mat dest(src.size(), src.type());
 	for (int i = 0; i < iter; i++)
 	{
-		CalcTime t("base");
+		Timer t("base");
 		vector<Mat> dst(3);
 
 		split(src, dst);
@@ -19,7 +19,7 @@ void splitmergeTest(Mat& src)
 	Mat dest2(src.size(), src.type());
 	for (int i = 0; i < iter; i++)
 	{
-		CalcTime t("my");
+		Timer t("my");
 		vector<Mat> dst;
 
 		splitConvert(src, dst);

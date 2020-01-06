@@ -366,7 +366,7 @@ namespace cp
 			float *refPtr = ref.ptr<float>(0);
 
 			{
-				CalcTime t("Splatting");
+				Timer t("Splatting");
 				for (int y = 0; y < im.rows; y++)
 				{
 					for (int x = 0; x < im.cols; x++)
@@ -382,14 +382,14 @@ namespace cp
 
 			// Blur the lattice
 		{
-			CalcTime t("Blurring");
+			Timer t("Blurring");
 			lattice.blur();
 		}
 
 
 		// Slice from the lattice
 		{
-			CalcTime t("Slicing");
+			Timer t("Slicing");
 			lattice.beginSlice();
 			float* dst = dest.ptr<float>(0);
 			for (int y = 0; y < im.rows; y++)
@@ -430,7 +430,7 @@ namespace cp
 			float *refPtr = ref(0, 0, 0);
 
 			{
-				CalcTime t("Splatting");
+				Timer t("Splatting");
 				for (int t = 0; t < im.frames; t++)
 				{
 					for (int y = 0; y < im.height; y++)
@@ -449,14 +449,14 @@ namespace cp
 
 			// Blur the lattice
 		{
-			CalcTime t("Blurring");
+			Timer t("Blurring");
 			lattice.blur();
 		}
 
 		Image out(im.frames, im.width, im.height, im.channels);
 		// Slice from the lattice
 		{
-			CalcTime t("Slicing");
+			Timer t("Slicing");
 			lattice.beginSlice();
 			float *outPtr = out(0, 0, 0);
 			for (int t = 0; t < im.frames; t++)

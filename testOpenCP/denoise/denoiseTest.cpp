@@ -38,29 +38,29 @@ void guiDenoiseTest(Mat& src)
 		addNoise(src,noise,noise_s10/10.0);
 		if(sw==0)
 		{
-			CalcTime t("bilateral filter");
+			Timer t("bilateral filter");
 			bilateralFilter(noise, dest, Size(d, d), sigma_color, sigma_space, FILTER_RECTANGLE);
 		}
 		else if(sw==1)
 		{
-			CalcTime t("bilateral filter: separable ");
+			Timer t("bilateral filter: separable ");
 			//GaussianBlur(noise,dest,Size(d,d),sigma_space);
 			guidedFilter(noise,dest,r,sigma_color*10.f);
 			//bilateralFilter(noise,dest,Size(d,d),sigma_color,sigma_space,FILTER_SEPARABLE);
 		}
 		else if(sw==2)
 		{
-			CalcTime t("binary weighted range filter");
+			Timer t("binary weighted range filter");
 			binalyWeightedRangeFilter(noise,dest,Size(d,d),sigma_color);
 		}
 		else if(sw==3)
 		{
-			CalcTime t("non local means");
+			Timer t("non local means");
 			nonLocalMeansFilter(noise,dest,td,d,sigma_color,sigma_color,0);
 		}
 		else if(sw==4)
 		{
-			CalcTime t("recursive birateral filter");
+			Timer t("recursive birateral filter");
 			recbf(noise,dest,sigma_color,sigma_space);
 		}
 		else if (sw == 5)
@@ -72,7 +72,7 @@ void guiDenoiseTest(Mat& src)
 			xphoto::dctDenoising(temp, temp, sigma_color, 16);
 			Mat(temp(Rect(8, 8, noise.cols, noise.rows))).copyTo(dest);
 			*/
-			CalcTime t("BM3D");
+			Timer t("BM3D");
 			xphoto::bm3dDenoising(noise, dest, sigma_color, 8, 16, 2500, 400, 16, 1, 2.f, 4, 1, cv::xphoto::HAAR);
 		}
 

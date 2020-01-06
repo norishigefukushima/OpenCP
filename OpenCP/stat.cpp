@@ -10,6 +10,7 @@ namespace cp
 
 	double Stat::getMin()
 	{
+		if (num_data == 0)return 0.0;
 		double minv = DBL_MAX;
 		for (int i = 0; i < num_data; i++)
 		{
@@ -20,6 +21,7 @@ namespace cp
 
 	double Stat::getMax()
 	{
+		if (num_data == 0)return 0.0;
 		double maxv = DBL_MIN;
 		for (int i = 0; i < num_data; i++)
 		{
@@ -30,6 +32,7 @@ namespace cp
 
 	double Stat::getMean()
 	{
+		if (num_data == 0)return 0.0;
 		double sum = 0.0;
 		for (int i = 0; i < num_data; i++)
 		{
@@ -40,6 +43,7 @@ namespace cp
 
 	double Stat::getStd()
 	{
+		if (num_data == 0)return 0.0;
 		double std = 0.0;
 		double mean = getMean();
 		for (int i = 0; i < num_data; i++)
@@ -51,7 +55,7 @@ namespace cp
 
 	double Stat::getMedian()
 	{
-		if (data.size() == 0) return 0.0;
+		if (num_data == 0)return 0.0;
 		vector<double> v;
 		vector<double> s;
 		for (int i = 0; i < data.size(); i++)
@@ -73,7 +77,7 @@ namespace cp
 		data.clear();
 		num_data = 0;
 	}
-	
+
 	void Stat::show()
 	{
 		cout << "mean " << getMean() << endl;
@@ -83,12 +87,87 @@ namespace cp
 		cout << "std  " << getStd() << endl;
 	}
 
-	void Stat::showDistribution()
+	void Stat::drawDistribution(string wname, int div)
 	{
-		Mat hist;
+		double min = getMin();
+		double max = getMax();
+		drawDistribution(wname, div, min, max);
+	}
+
+	void Stat::drawDistribution(string wname, int div, double minv, double maxv)
+	{
+		double med = getMedian();
+		double mean = getMean();
+
+		vector<int> hist(div);
+		for (int i = 0; i < div; i++)hist[i] = 0;
+
+		double interval = (maxv - minv) / (div - 1);
+		for (int i = 0; i < data.size(); i++)
+		{
+			double n = min(max((data[i] - minv), 0.0), maxv - minv);
+			int v = (int)(n / interval + 0.5);
+			hist[v]++;
+		}
+
+		int medv = (int)((med - minv) / interval);
+		int meanv = (int)((mean - minv) / interval);
+
+		int hmax = 0;
+		for (int i = 0; i < div; i++)
+		{
+			if (hmax < hist[i])hmax = hist[i];
+		}
+
+		Mat draw = Mat::zeros(Size(div, 256), CV_8UC3);
+
+		/*double hmaxl = log(hmax+1);
+		for (int i = 0; i < div; i++)
+		{
+			int h = (1.0 - (double)log(hist[i]+1) / (double)hmaxl)*(draw.rows - 1);
+
+			cv::line(draw, Point(i, h), Point(i, draw.rows - 1), cv::Scalar(230, 230, 230));
+		}
+		Mat text();
+		addText(text, "mean", Point(10, 20), "Consolas", 20, cv::Scalar::all(255))
+	*/
+
+		for (int i = 0; i < div; i++)
+		{
+			if (i % (div / 10) == 0)cv::line(draw, Point(i, 0), Point(i, draw.rows - 1), cv::Scalar::all(50));
+			int h = int((1.0 - (double)hist[i] / (double)hmax)*draw.rows - 1);
+			cv::line(draw, Point(i, h), Point(i, draw.rows - 1), cv::Scalar(230, 230, 230));
+
+			if (i == meanv) cv::line(draw, Point(i, h), Point(i, draw.rows - 1), cv::Scalar(255, 0, 0));
+			if (i == medv)cv::line(draw, Point(i, h), Point(i, draw.rows - 1), cv::Scalar(0, 0, 255));
+			if (i == medv && i == meanv)cv::line(draw, Point(i, h), Point(i, draw.rows - 1), cv::Scalar(128, 0, 128));
+		}
+
+		Mat text_img = Mat::zeros(Size(draw.cols, 30), CV_8UC3);
+
+		string text = format("ave%f", mean);
+		putText(text_img, text, Point(10, 20), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_WHITE);
+		vconcat(draw, text_img, draw);
+
+		text_img.setTo(0);
+		text = format("med%f", med);
+		putText(text_img, text, Point(10, 20), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_WHITE);
+		vconcat(draw, text_img, draw);
+
+		text_img.setTo(0);
+		text = format("min%f", minv);
+		putText(text_img, text, Point(10, 20), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_WHITE);
+		vconcat(draw, text_img, draw);
+
+		text_img.setTo(0);
+		text = format("max%f", maxv);
+		putText(text_img, text, Point(10, 20), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_WHITE);
+		vconcat(draw, text_img, draw);
 		
-		drawHistogramImage(data, hist, CV_RGB(255, 255, 255));
-		showMatInfo(hist);
-		imshow("dist", hist);
+
+		//static int idx = 0;
+		//imwrite(format("%04d.png", idx++), draw);
+		//show();
+		imshow(wname, draw);
 	}
 }

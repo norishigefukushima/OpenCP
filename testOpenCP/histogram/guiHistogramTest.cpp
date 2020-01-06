@@ -3,7 +3,7 @@ using namespace std;
 using namespace cv;
 using namespace cp;
 
-void guiHistgramTest(Mat& src)
+void testHistgram(Mat& src)
 {
 	Mat gray, hist;
 	cvtColor(src, gray, COLOR_BGR2GRAY);

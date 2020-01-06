@@ -25,7 +25,7 @@ void guiCrossBasedLocalFilter(Mat& src_)
 	{
 		CrossBasedLocalFilter clf(src_, r, thresh);
 		{
-			CalcTime t;
+			Timer t;
 			clf(src, dest);
 		}
 

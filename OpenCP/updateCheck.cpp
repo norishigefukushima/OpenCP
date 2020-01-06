@@ -1,0 +1,193 @@
+#include "updateCheck.hpp"
+
+using namespace std;
+using namespace cv;
+
+namespace cp
+{
+	UpdateCheck::UpdateCheck(double p0, double p1, double p2, double p3, double p4, double p5)
+	{
+		parameters.push_back(p0);
+		parameters.push_back(p1);
+		parameters.push_back(p2);
+		parameters.push_back(p3);
+		parameters.push_back(p4);
+		parameters.push_back(p5);
+	}
+
+	UpdateCheck::UpdateCheck(double p0, double p1, double p2, double p3, double p4)
+	{
+		parameters.push_back(p0);
+		parameters.push_back(p1);
+		parameters.push_back(p2);
+		parameters.push_back(p3);
+		parameters.push_back(p4);
+	}
+
+	UpdateCheck::UpdateCheck(double p0, double p1, double p2, double p3)
+	{
+		parameters.push_back(p0);
+		parameters.push_back(p1);
+		parameters.push_back(p2);
+		parameters.push_back(p3);
+	}
+
+	UpdateCheck::UpdateCheck(double p0, double p1, double p2)
+	{
+		parameters.push_back(p0);
+		parameters.push_back(p1);
+		parameters.push_back(p2);
+	}
+
+	UpdateCheck::UpdateCheck(double p0, double p1)
+	{
+		parameters.push_back(p0);
+		parameters.push_back(p1);
+	}
+
+	UpdateCheck::UpdateCheck(double p0)
+	{
+		parameters.push_back(p0);
+	}
+
+	bool UpdateCheck::isUpdate(double p0)
+	{
+		bool ret = false;
+		if (parameters[0] != p0)
+		{
+			parameters[0] = p0;
+			ret = true;
+		}
+		return ret;
+	}
+
+	bool UpdateCheck::isUpdate(double p0, double p1)
+	{
+		bool ret = false;
+		if (parameters[0] != p0)
+		{
+			parameters[0] = p0;
+			ret = true;
+		}
+		if (parameters[1] != p1)
+		{
+			parameters[1] = p1;
+			ret = true;
+		}
+		return ret;
+	}
+
+	bool UpdateCheck::isUpdate(double p0, double p1, double p2)
+	{
+		bool ret = false;
+		if (parameters[0] != p0)
+		{
+			parameters[0] = p0;
+			ret = true;
+		}
+		if (parameters[1] != p1)
+		{
+			parameters[1] = p1;
+			ret = true;
+		}
+		if (parameters[2] != p2)
+		{
+			parameters[2] = p2;
+			ret = true;
+		}
+		return ret;
+	}
+
+	bool UpdateCheck::isUpdate(double p0, double p1, double p2, double p3)
+	{
+		bool ret = false;
+		if (parameters[0] != p0)
+		{
+			parameters[0] = p0;
+			ret = true;
+		}
+		if (parameters[1] != p1)
+		{
+			parameters[1] = p1;
+			ret = true;
+		}
+		if (parameters[2] != p2)
+		{
+			parameters[2] = p2;
+			ret = true;
+		}
+		if (parameters[3] != p3)
+		{
+			parameters[3] = p3;
+			ret = true;
+		}
+		return ret;
+	}
+
+	bool UpdateCheck::isUpdate(double p0, double p1, double p2, double p3, double p4)
+	{
+		bool ret = false;
+		if (parameters[0] != p0)
+		{
+			parameters[0] = p0;
+			ret = true;
+		}
+		if (parameters[1] != p1)
+		{
+			parameters[1] = p1;
+			ret = true;
+		}
+		if (parameters[2] != p2)
+		{
+			parameters[2] = p2;
+			ret = true;
+		}
+		if (parameters[3] != p3)
+		{
+			parameters[3] = p3;
+			ret = true;
+		}
+		if (parameters[4] != p4)
+		{
+			parameters[4] = p4;
+			ret = true;
+		}
+		return ret;
+	}
+
+	bool UpdateCheck::isUpdate(double p0, double p1, double p2, double p3, double p4, double p5)
+	{
+		bool ret = false;
+		if (parameters[0] != p0)
+		{
+			parameters[0] = p0;
+			ret = true;
+		}
+		if (parameters[1] != p1)
+		{
+			parameters[1] = p1;
+			ret = true;
+		}
+		if (parameters[2] != p2)
+		{
+			parameters[2] = p2;
+			ret = true;
+		}
+		if (parameters[3] != p3)
+		{
+			parameters[3] = p3;
+			ret = true;
+		}
+		if (parameters[4] != p4)
+		{
+			parameters[4] = p4;
+			ret = true;
+		}
+		if (parameters[5] != p5)
+		{
+			parameters[5] = p5;
+			ret = true;
+		}
+		return ret;
+	}
+}

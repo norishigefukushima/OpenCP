@@ -287,7 +287,7 @@ void guiViewSynthesis()
 		//
 		svs.warpInterpolationMethod = inter;
 		{
-			CalcTime t("time",0,false);
+			Timer t("time",0,false);
 			maxFilter(matdiL, max_disp_l,dilation_rad);
 			maxFilter(matdiR, max_disp_r,dilation_rad);
 			svs(matimL,matimR,max_disp_l,max_disp_r, dest, destdisp,alphaPos*0.001,0,dispAmp);

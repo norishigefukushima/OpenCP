@@ -147,9 +147,6 @@
     <ClCompile Include="minmaxfilter.cpp">
       <Filter>ソース ファイル\filter</Filter>
     </ClCompile>
-    <ClCompile Include="imagediff.cpp">
-      <Filter>ソース ファイル\utilty functions</Filter>
-    </ClCompile>
     <ClCompile Include="weightedModeFilter.cpp">
       <Filter>ソース ファイル\filter</Filter>
     </ClCompile>
@@ -404,6 +401,15 @@
     </ClCompile>
     <ClCompile Include="dctFilter.cpp">
       <Filter>ソース ファイル\filter\dct-fft</Filter>
+    </ClCompile>
+    <ClCompile Include="updateCheck.cpp">
+      <Filter>ソース ファイル\utilty functions</Filter>
+    </ClCompile>
+    <ClCompile Include="countDenormalizedNumber.cpp">
+      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+    </ClCompile>
+    <ClCompile Include="diff.cpp">
+      <Filter>ソース ファイル\utilty functions</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -679,6 +685,12 @@
     </ClInclude>
     <ClInclude Include="..\include\dctFilter.hpp">
       <Filter>ヘッダー ファイル\headers\filter</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\updateCheck.hpp">
+      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\countDenormalizedNumber.hpp">
+      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

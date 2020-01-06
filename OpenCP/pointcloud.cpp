@@ -1693,7 +1693,7 @@ namespace cp
 		Mat destImage(size, CV_8UC3);	//rendered image
 
 		int count = 0;
-		CalcTime tm("total");
+		Timer tm("total");
 		int key = 0;
 
 		int num_loop = 0;
@@ -1896,7 +1896,7 @@ namespace cp
 		Mat destImage(image.size(), CV_8UC3);	//rendered image
 
 		int count = 0;
-		CalcTime tm("total");
+		Timer tm("total");
 		int key = 0;
 
 		int num_loop = 0;
@@ -2125,7 +2125,7 @@ namespace cp
 		depth2XYZ(srcDepth, focal);
 
 		int count = 0;
-		CalcTime tm("total");
+		Timer tm("total");
 		int key = 0;
 
 		int num_loop = 0;
@@ -2389,7 +2389,7 @@ namespace cp
 		depth2XYZ(srcDepth, focal);
 
 		int count = 0;
-		CalcTime tm("total");
+		Timer tm("total");
 		int key = 0;
 
 		int num_loop = 0;
@@ -2686,7 +2686,7 @@ namespace cp
 		disparity2XYZ(srcDisparity, disp_amp, focal, baseline);
 
 		int count = 0;
-		CalcTime tm("total");
+		Timer tm("total");
 		int key = 0;
 
 		int num_loop = 0;

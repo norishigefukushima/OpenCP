@@ -61,7 +61,7 @@ void fitPlaneTest()
 
 	Mat noise;
 	addNoise(plane, noise, 2, 0.0);
-	{CalcTime t("PCA");
+	{Timer t("PCA");
 	//PCA from noisy input without solt pepper noise;
 	vector<Point3f> input;
 	mat2vec3f(noise, input);
@@ -69,7 +69,7 @@ void fitPlaneTest()
 	cout << "pca without solt pepper:" << dest << endl;
 	}
 	addNoise(plane, noise, 2, 0.1);
-	{CalcTime t("PCA");
+	{Timer t("PCA");
 	//PCA from noisy input without solt pepper noise;
 	vector<Point3f> input;
 	mat2vec3f(noise, input);
@@ -77,14 +77,14 @@ void fitPlaneTest()
 	cout << "pca with solt pepper:" << dest << endl;
 	}
 	//RANSAC	
-	{CalcTime t("RANSAC");
+	{Timer t("RANSAC");
 	vector<Point3f> points;
 	mat2vec3f(noise, points);
 	fitPlaneRANSAC(points, dest, 50, 5.f, 0);
 	cout << "ransac:" << dest << endl;
 	}
 	//RANSAC
-	{CalcTime t("RANSAC+1 iter");
+	{Timer t("RANSAC+1 iter");
 	vector<Point3f> points;
 	mat2vec3f(noise, points);
 	fitPlaneRANSAC(points, dest, 50, 5.f, 1);

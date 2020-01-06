@@ -17,8 +17,10 @@ int main(int argc, char** argv)
 	//Mat img = imread("img/Kodak/kodim07.png");
 	//Mat img = imread("img/b.png");
 
-	testRGBHistogram();
-	testRGBHistogram2();
+	//testHistgram(img);
+	//testRGBHistogram();
+	//testRGBHistogram2();
+	testTimer(img);
 	//testAddNoise(img);
 	//guiConsoleTest();
 	//guiDissolveSlide(left, dmap);

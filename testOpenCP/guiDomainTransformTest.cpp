@@ -28,17 +28,17 @@ void guiDomainTransformFilterTest(Mat& src)
 
 		if (sw == 0)
 		{
-			CalcTime t("epf: domain transform in namespace cv");
+			Timer t("epf: domain transform in namespace cv");
 			edgePreservingFilter(src, dest, RECURS_FILTER, sigma_space, sigma_color / 255.f);
 		}
 		else if (sw == 1)
 		{
-			CalcTime t("domain transform in namespace xphoto");
+			Timer t("domain transform in namespace xphoto");
 			ximgproc::dtFilter(src, src, dest, sigma_space, sigma_color, 1, iter);//NC, RF, IC
 		}
 		else if (sw == 2)
 		{
-			CalcTime t("domain transform in opencp");
+			Timer t("domain transform in opencp");
 			domainTransformFilter(src, dest, sigma_color, sigma_space, iter, 1, DTF_RF, DTF_BGRA_SSE_PARALLEL);
 		}
 		

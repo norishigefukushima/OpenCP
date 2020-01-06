@@ -1,5 +1,5 @@
 #pragma once
-#include <fftw3.h>
+#include "fftw/fftw3.h"
 /**
 * \author Pascal Getreuer <getreuer@cmla.ens-cachan.fr>
 *

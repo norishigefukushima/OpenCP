@@ -7,7 +7,7 @@ using namespace cv;
 namespace cp
 {
 
-void drawHistogramImageGray(cv::InputArray src, cv::OutputArray histogram, cv::Scalar color, cv::Scalar color2, bool isGrid)
+void drawHistogramImageGray(cv::InputArray src, cv::OutputArray histogramImage, cv::Scalar color, cv::Scalar color2, bool isGrid)
 {
 	Scalar mean, stddev;
 	meanStdDev(src, mean, stddev);
@@ -15,17 +15,18 @@ void drawHistogramImageGray(cv::InputArray src, cv::OutputArray histogram, cv::S
 
 	int image_num = 1;      // number of input image
 	int channels[] = { 0 }; // index of channels 
-	cv::MatND hist;         // output histogram
+	cv::MatND histogram;         // output histogram
 	int dim_num = 1;        // output histogram dimension
 	int bin_num = 256;       // number of bin
 	int bin_nums[] = { bin_num };
 	float range[] = { 0, 256*20 };        // range
 	const float *ranges[] = { range }; // 
 	Mat src_ = src.getMat();
-	cv::calcHist(&src_, image_num, channels, cv::Mat(), hist, dim_num, bin_nums, ranges);
+	cv::calcHist(&src_, image_num, channels, cv::Mat(), histogram, dim_num, bin_nums, ranges);
 
-	double maxVal = 0;
-	minMaxLoc(hist, 0, &maxVal, 0, 0);
+	double minVal;
+	double maxVal;
+	minMaxLoc(histogram, 0, &maxVal, 0, 0);
 	const int hist_height = 200;
 	int shift = 1;
 	Mat hist_img = Mat::zeros(Size(bin_num + 2 * shift, hist_height), CV_8UC3);
@@ -33,7 +34,7 @@ void drawHistogramImageGray(cv::InputArray src, cv::OutputArray histogram, cv::S
 	for (int i = 0; i < bin_num; i++)
 	{
 		int n = i + 1;
-		line(hist_img, Point(n, 0), Point(n, cvRound(hist_height*hist.at<float>(i) / maxVal)), color);
+		line(hist_img, Point(n, 0), Point(n, cvRound(hist_height*histogram.at<float>(i) / maxVal)), color);
 	}
 	if (isGrid)
 	{
@@ -43,7 +44,7 @@ void drawHistogramImageGray(cv::InputArray src, cv::OutputArray histogram, cv::S
 		drawGrid(hist_img, Point(hist_img.cols / 2, hist_height * 1 / 4), Scalar::all(200), 1);
 		drawGrid(hist_img, Point(hist_img.cols / 2, hist_height * 3 / 4), Scalar::all(200), 1);
 	}
-	line(hist_img, Point(ave + shift, 0), Point(ave + shift, cvRound(hist_height*hist.at<float>(ave) / maxVal)), color2);
+	line(hist_img, Point(ave + shift, 0), Point(ave + shift, cvRound(hist_height*histogram.at<float>(ave) / maxVal)), color2);
 	flip(hist_img, hist_img, 0);
 
 	Mat text_img = Mat::zeros(Size(bin_num + 2 * shift, 30), CV_8UC3);
@@ -52,7 +53,15 @@ void drawHistogramImageGray(cv::InputArray src, cv::OutputArray histogram, cv::S
 	putText(text_img, text, Point(10, 20), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_WHITE);
 	text = format("sdv%05.1f", stddev.val[0]);
 	putText(text_img, text, Point(10 + bin_num / 2, 20), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_WHITE);
-	vconcat(hist_img, text_img, histogram);
+	vconcat(hist_img, text_img, histogramImage);
+
+	minMaxLoc(src, &minVal, &maxVal, 0, 0);
+	text_img.setTo(0);
+	text = format("min%05.1f", minVal);
+	putText(text_img, text, Point(10, 20), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_WHITE);
+	text = format("max%05.1f", maxVal);
+	putText(text_img, text, Point(10 + bin_num / 2, 20), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_WHITE);
+	vconcat(histogramImage, text_img, histogramImage);	
 }
 
 void drawAccumulateHistogramImageGray(cv::InputArray src, cv::OutputArray histogram, cv::Scalar color, cv::Scalar color2, bool isGrid)
