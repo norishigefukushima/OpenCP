@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <fftw3.h>
+#include "fftw/fftw3.h"
 #include <math.h>
 #include <stdlib.h>
 
