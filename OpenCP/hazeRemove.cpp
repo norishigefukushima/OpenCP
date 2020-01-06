@@ -192,13 +192,13 @@ namespace cp
 		int alpha = 0;
 		createTrackbar("alpha", wname, &alpha, 100);
 		int hazerate = 10;
-		createTrackbar("hazerate", wname, &hazerate, 100);
-		int hazesize = 4;
-		createTrackbar("hazesize", wname, &hazesize, 100);
-		int ksize = 15;
-		createTrackbar("ksize", wname, &ksize, 100);
+		createTrackbar("hazerate*0.01", wname, &hazerate, 100);
+		int r_dark = 4;
+		createTrackbar("r_dark", wname, &r_dark, 100);
+		int r_joint = 15;
+		createTrackbar("r_joint", wname, &r_joint, 100);
 		int e = 6;
-		createTrackbar("e", wname, &e, 255);
+		createTrackbar("e*0.1", wname, &e, 255);
 
 		int key = 0;
 		while (key != 'q')
@@ -210,7 +210,7 @@ namespace cp
 				Mat destDark;
 				{
 					//CalcTime t("dehaze");
-					operator()(src, show, hazesize, hazerate / 100.0, ksize, e / 10.0);
+					operator()(src, show, r_dark, hazerate / 100.0, r_joint, e / 10.0);
 
 				}
 				showTransmissionMap(destC, true);

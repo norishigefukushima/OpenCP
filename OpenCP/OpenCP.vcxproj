@@ -75,7 +75,7 @@
     <OutDir>$(SolutionDir)\lib\</OutDir>
     <TargetName>$(ProjectName)d</TargetName>
     <IncludePath>$(OPENCV_INCLUDE_DIR);$(FFTW_INCLUDE_DIR);../include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(OPENCV_LIB_DIR);$(FFTW_LIB_DIR);$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(OPENCP_LIB_DIR);$(OPENCV_LIB_DIR);$(FFTW_LIB_DIR);$(LibraryPath)</LibraryPath>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
