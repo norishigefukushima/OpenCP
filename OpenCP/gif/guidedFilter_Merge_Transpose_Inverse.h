@@ -1,0 +1,378 @@
+#pragma once
+
+#include "guidedFilter_Merge.h"
+
+class guidedFilter_Merge_Transpose_Inverse_nonVec : public guidedFilter_Merge_nonVec
+{
+protected:
+	cv::Size t_size;
+	std::vector<cv::Mat> temp_ab;
+
+	void filter_Guide1(cv::Mat& input, cv::Mat& output) override;
+	void filter_Guide3(cv::Mat& input, cv::Mat& output) override;
+public:
+	guidedFilter_Merge_Transpose_Inverse_nonVec(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps, int _parallelType, const bool isInit=true)
+		: guidedFilter_Merge_nonVec(_src, _guide, _dest, _r, _eps, _parallelType, false)
+	{
+		implementation = cp::GUIDED_MERGE_TRANSPOSE_INVERSE;
+		t_size = cv::Size(src.rows, src.cols);
+		if (isInit) init();
+	}
+	void init() override;
+};
+
+class guidedFilter_Merge_Transpose_Inverse_SSE : public guidedFilter_Merge_Transpose_Inverse_nonVec
+{
+private:
+	void filter_Guide1(cv::Mat& input, cv::Mat& output) override;
+	void filter_Guide3(cv::Mat& input, cv::Mat& output) override;
+public:
+	guidedFilter_Merge_Transpose_Inverse_SSE(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps, int _parallelType)
+		: guidedFilter_Merge_Transpose_Inverse_nonVec(_src, _guide, _dest, _r, _eps, _parallelType, false)
+	{
+		implementation = cp::GUIDED_MERGE_TRANSPOSE_INVERSE_SSE;
+		t_size = cv::Size(src.rows * 4, src.cols / 4);
+		init();
+	}
+};
+
+class guidedFilter_Merge_Transpose_Inverse_AVX : public guidedFilter_Merge_Transpose_Inverse_nonVec
+{
+private:
+	void filter_Guide1(cv::Mat& input, cv::Mat& output) override;
+	void filter_Guide3(cv::Mat& input, cv::Mat& output) override;
+public:
+	guidedFilter_Merge_Transpose_Inverse_AVX(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps, int _parallelType)
+		: guidedFilter_Merge_Transpose_Inverse_nonVec(_src, _guide, _dest, _r, _eps, _parallelType, false)
+	{
+		implementation = cp::GUIDED_MERGE_TRANSPOSE_INVERSE_AVX;
+		t_size = cv::Size(src.rows * 8, src.cols / 8);
+		init();
+	}
+};
+
+
+
+/*
+ * Guide1
+ */
+struct RowSumFilter_Ip2ab_Guide1_Transpose_Inverse_nonVec : public RowSumFilter_Ip2ab_Guide1
+{
+protected:
+	int step;
+
+	void filter_naive_impl() override;
+	void filter_omp_impl() override;
+	void operator()(const cv::Range& range) const override;
+public:
+	RowSumFilter_Ip2ab_Guide1_Transpose_Inverse_nonVec(cv::Mat& _p, cv::Mat& _I, std::vector<cv::Mat>& _tempVec, int _r, int _parallelType)
+		: RowSumFilter_Ip2ab_Guide1(_p, _I, _tempVec, _r, _parallelType)
+	{
+		img_row = p.rows;
+		img_col = p.cols;
+		step = tempVec[0].cols;
+	}
+};
+
+struct RowSumFilter_Ip2ab_Guide1_Transpose_Inverse_SSE : public RowSumFilter_Ip2ab_Guide1_Transpose_Inverse_nonVec
+{
+private:
+	void filter_naive_impl() override;
+	void filter_omp_impl() override;
+	void operator()(const cv::Range& range) const override;
+public:
+	RowSumFilter_Ip2ab_Guide1_Transpose_Inverse_SSE(cv::Mat& _p, cv::Mat& _I, std::vector<cv::Mat>& _tempVec, int _r, int _parallelType)
+		: RowSumFilter_Ip2ab_Guide1_Transpose_Inverse_nonVec(_p, _I, _tempVec, _r, _parallelType)
+	{
+		step = tempVec[0].cols - 3;
+	}
+};
+
+struct RowSumFilter_Ip2ab_Guide1_Transpose_Inverse_AVX : public RowSumFilter_Ip2ab_Guide1_Transpose_Inverse_nonVec
+{
+private:
+	void filter_naive_impl() override;
+	void filter_omp_impl() override;
+	void operator()(const cv::Range& range) const override;
+public:
+	RowSumFilter_Ip2ab_Guide1_Transpose_Inverse_AVX(cv::Mat& _p, cv::Mat& _I, std::vector<cv::Mat>& _tempVec, int _r, int _parallelType)
+		: RowSumFilter_Ip2ab_Guide1_Transpose_Inverse_nonVec(_p, _I, _tempVec, _r, _parallelType)
+	{
+		step = tempVec[0].cols - 7;
+	}
+};
+
+struct ColumnSumFilter_Ip2ab_Guide1_Transpose_Inverse_nonVec : public ColumnSumFilter_Ip2ab_Guide1_nonVec
+{
+protected:
+	void filter_naive_impl() override;
+	void filter_omp_impl() override;
+	void operator()(const cv::Range& range) const override;
+public:
+	ColumnSumFilter_Ip2ab_Guide1_Transpose_Inverse_nonVec(std::vector<cv::Mat>& _tempVec, cv::Mat& _a, cv::Mat& _b, int _r, float _eps, int _parallelType)
+		: ColumnSumFilter_Ip2ab_Guide1_nonVec(_tempVec, _a, _b, _r, _eps, _parallelType)
+	{
+		img_row = tempVec[0].cols;
+		img_col = tempVec[0].rows;
+	}
+};
+
+struct ColumnSumFilter_Ip2ab_Guide1_Transpose_Inverse_SSE : public ColumnSumFilter_Ip2ab_Guide1_Transpose_Inverse_nonVec
+{
+private:
+	const __m128 mDiv = _mm_set1_ps(div);
+	const __m128 mEps = _mm_set1_ps(eps);
+	const __m128 mBorder = _mm_set1_ps((float)(r + 1));
+
+	void filter_naive_impl() override;
+	void filter_omp_impl() override;
+	void operator()(const cv::Range& range) const override;
+public:
+	ColumnSumFilter_Ip2ab_Guide1_Transpose_Inverse_SSE(std::vector<cv::Mat>& _tempVec, cv::Mat& _a, cv::Mat& _b, int _r, float _eps, int _parallelType)
+		: ColumnSumFilter_Ip2ab_Guide1_Transpose_Inverse_nonVec(_tempVec, _a, _b, _r, _eps, _parallelType) {}
+};
+
+struct ColumnSumFilter_Ip2ab_Guide1_Transpose_Inverse_AVX : public ColumnSumFilter_Ip2ab_Guide1_Transpose_Inverse_nonVec
+{
+private:
+	const __m256 mDiv = _mm256_set1_ps(div);
+	const __m256 mEps = _mm256_set1_ps(eps);
+	const __m256 mBorder = _mm256_set1_ps((float)(r + 1));
+
+	void filter_naive_impl() override;
+	void filter_omp_impl() override;
+	void operator()(const cv::Range& range) const override;
+public:
+	ColumnSumFilter_Ip2ab_Guide1_Transpose_Inverse_AVX(std::vector<cv::Mat>& _tempVec, cv::Mat& _a, cv::Mat& _b, int _r, float _eps, int _parallelType)
+		: ColumnSumFilter_Ip2ab_Guide1_Transpose_Inverse_nonVec(_tempVec, _a, _b, _r, _eps, _parallelType) {}
+};
+
+
+
+struct ColumnSumFilter_ab2q_Guide1_Transpose_Inverse_nonVec : public ColumnSumFilter_base
+{
+protected:
+	cv::Mat& a;
+	cv::Mat& b;
+
+	void filter_naive_impl() override;
+	void filter_omp_impl() override;
+	void operator()(const cv::Range& range) const override;
+public:
+	ColumnSumFilter_ab2q_Guide1_Transpose_Inverse_nonVec(cv::Mat& _a, cv::Mat& _b, std::vector<cv::Mat>& _tempVec, int _r, int _parallelType)
+		: a(_a), b(_b), ColumnSumFilter_base(_tempVec, _r, _parallelType)
+	{
+		img_row = a.cols;
+		img_col = a.rows;
+		step = tempVec[0].cols;
+	}
+};
+
+struct ColumnSumFilter_ab2q_Guide1_Transpose_Inverse_SSE : public ColumnSumFilter_ab2q_Guide1_Transpose_Inverse_nonVec
+{
+private:
+	const __m128 mBorder = _mm_set1_ps((float)(r + 1));
+
+	void filter_naive_impl() override;
+	void filter_omp_impl() override;
+	void operator()(const cv::Range& range) const override;
+public:
+	ColumnSumFilter_ab2q_Guide1_Transpose_Inverse_SSE(cv::Mat& _a, cv::Mat& _b, std::vector<cv::Mat>& _tempVec, int _r, int _parallelType)
+		: ColumnSumFilter_ab2q_Guide1_Transpose_Inverse_nonVec(_a, _b, _tempVec, _r, _parallelType) {}
+};
+
+struct ColumnSumFilter_ab2q_Guide1_Transpose_Inverse_AVX : public ColumnSumFilter_ab2q_Guide1_Transpose_Inverse_nonVec
+{
+private:
+	const __m256 mBorder = _mm256_set1_ps((float)(r + 1));
+
+	void filter_naive_impl() override;
+	void filter_omp_impl() override;
+	void operator()(const cv::Range& range) const override;
+public:
+	ColumnSumFilter_ab2q_Guide1_Transpose_Inverse_AVX(cv::Mat& _a, cv::Mat& _b, std::vector<cv::Mat>& _tempVec, int _r, int _parallelType)
+		: ColumnSumFilter_ab2q_Guide1_Transpose_Inverse_nonVec(_a, _b, _tempVec, _r, _parallelType) {}
+};
+
+struct RowSumFilter_ab2q_Guide1_Transpose_Inverse : public RowSumFilter_base
+{
+private:
+	float div;
+	cv::Mat& I;
+	cv::Mat& q;
+
+	void filter_naive_impl() override;
+	void filter_omp_impl() override;
+	void operator()(const cv::Range& range) const override;
+public:
+	RowSumFilter_ab2q_Guide1_Transpose_Inverse(std::vector<cv::Mat>& _tempVec, cv::Mat& _I, cv::Mat& _q, int _r, int _parallelType)
+		: I(_I), q(_q), RowSumFilter_base(_tempVec, _r, _parallelType)
+	{
+		div = 1.f / ((2 * r + 1)*(2 * r + 1));
+		img_row = q.rows;
+		img_col = q.cols;
+	}
+};
+
+
+
+/*
+ * Guide3
+ */
+struct RowSumFilter_Ip2ab_Guide3_Transpose_Inverse_nonVec : public RowSumFilter_Ip2ab_Guide3
+{
+protected:
+	int step;
+
+	void filter_naive_impl() override;
+	void filter_omp_impl() override;
+	void operator()(const cv::Range& range) const override;
+public:
+	RowSumFilter_Ip2ab_Guide3_Transpose_Inverse_nonVec(cv::Mat& _p, std::vector<cv::Mat>& _vI, std::vector<cv::Mat>& _tempVec, int _r, int _parallelType)
+		: RowSumFilter_Ip2ab_Guide3(_p, _vI, _tempVec, _r, _parallelType)
+	{
+		img_row = p.rows;
+		img_col = p.cols;
+		step = tempVec[0].cols;
+	}
+};
+
+struct RowSumFilter_Ip2ab_Guide3_Transpose_Inverse_SSE : public RowSumFilter_Ip2ab_Guide3_Transpose_Inverse_nonVec
+{
+private:
+	void filter_naive_impl() override;
+	void filter_omp_impl() override;
+	void operator()(const cv::Range& range) const override;
+public:
+	RowSumFilter_Ip2ab_Guide3_Transpose_Inverse_SSE(cv::Mat& _p, std::vector<cv::Mat>& _vI, std::vector<cv::Mat>& _tempVec, int _r, int _parallelType)
+		: RowSumFilter_Ip2ab_Guide3_Transpose_Inverse_nonVec(_p, _vI, _tempVec, _r, _parallelType)
+	{
+		step = tempVec[0].cols - 3;
+	}
+};
+
+struct RowSumFilter_Ip2ab_Guide3_Transpose_Inverse_AVX : public RowSumFilter_Ip2ab_Guide3_Transpose_Inverse_nonVec
+{
+private:
+	void filter_naive_impl() override;
+	void filter_omp_impl() override;
+	void operator()(const cv::Range& range) const override;
+public:
+	RowSumFilter_Ip2ab_Guide3_Transpose_Inverse_AVX(cv::Mat& _p, std::vector<cv::Mat>& _vI, std::vector<cv::Mat>& _tempVec, int _r, int _parallelType)
+		: RowSumFilter_Ip2ab_Guide3_Transpose_Inverse_nonVec(_p, _vI, _tempVec, _r, _parallelType)
+	{
+		step = tempVec[0].cols - 7;
+	}
+};
+
+struct ColumnSumFilter_Ip2ab_Guide3_Transpose_Inverse_nonVec : public ColumnSumFilter_Ip2ab_Guide3_nonVec
+{
+protected:
+	void filter_naive_impl() override;
+	void filter_omp_impl() override;
+	void operator()(const cv::Range& range) const override;
+public:
+	ColumnSumFilter_Ip2ab_Guide3_Transpose_Inverse_nonVec(std::vector<cv::Mat>& _tempVec, std::vector<cv::Mat>& _va, cv::Mat& _b, int _r, float _eps, int _parallelType)
+		: ColumnSumFilter_Ip2ab_Guide3_nonVec(_tempVec, _va, _b, _r, _eps, _parallelType)
+	{
+		img_row = tempVec[0].cols;
+		img_col = tempVec[0].rows;
+	}
+};
+
+struct ColumnSumFilter_Ip2ab_Guide3_Transpose_Inverse_SSE : public ColumnSumFilter_Ip2ab_Guide3_Transpose_Inverse_nonVec
+{
+private:
+	const __m128 mDiv = _mm_set1_ps(div);
+	const __m128 mEps = _mm_set1_ps(eps);
+	const __m128 mBorder = _mm_set1_ps((float)(r + 1));
+
+	void filter_naive_impl() override;
+	void filter_omp_impl() override;
+	void operator()(const cv::Range& range) const override;
+public:
+	ColumnSumFilter_Ip2ab_Guide3_Transpose_Inverse_SSE(std::vector<cv::Mat>& _tempVec, std::vector<cv::Mat>& _va, cv::Mat& _b, int _r, float _eps, int _parallelType)
+		: ColumnSumFilter_Ip2ab_Guide3_Transpose_Inverse_nonVec(_tempVec, _va, _b, _r, _eps, _parallelType) {}
+};
+
+struct ColumnSumFilter_Ip2ab_Guide3_Transpose_Inverse_AVX : public ColumnSumFilter_Ip2ab_Guide3_Transpose_Inverse_nonVec
+{
+private:
+	const __m256 mDiv = _mm256_set1_ps(div);
+	const __m256 mEps = _mm256_set1_ps(eps);
+	const __m256 mBorder = _mm256_set1_ps((float)(r + 1));
+
+	void filter_naive_impl() override;
+	void filter_omp_impl() override;
+	void operator()(const cv::Range& range) const override;
+public:
+	ColumnSumFilter_Ip2ab_Guide3_Transpose_Inverse_AVX(std::vector<cv::Mat>& _tempVec, std::vector<cv::Mat>& _va, cv::Mat& _b, int _r, float _eps, int _parallelType)
+		: ColumnSumFilter_Ip2ab_Guide3_Transpose_Inverse_nonVec(_tempVec, _va, _b, _r, _eps, _parallelType) {}
+};
+
+
+
+struct ColumnSumFilter_ab2q_Guide3_Transpose_Inverse_nonVec : public ColumnSumFilter_base
+{
+protected:
+	std::vector<cv::Mat>& va;
+	cv::Mat& b;
+
+	void filter_naive_impl() override;
+	void filter_omp_impl() override;
+	void operator()(const cv::Range& range) const override;
+public:
+	ColumnSumFilter_ab2q_Guide3_Transpose_Inverse_nonVec(std::vector<cv::Mat>& _va, cv::Mat& _b, std::vector<cv::Mat>& _tempVec, int _r, int _parallelType)
+		: va(_va), b(_b), ColumnSumFilter_base(_tempVec, _r, _parallelType)
+	{
+		img_row = va[0].cols;
+		img_col = va[0].rows;
+		step = tempVec[0].cols;
+	}
+};
+
+struct ColumnSumFilter_ab2q_Guide3_Transpose_Inverse_SSE : public ColumnSumFilter_ab2q_Guide3_Transpose_Inverse_nonVec
+{
+private:
+	const __m128 mBorder = _mm_set1_ps((float)(r + 1));
+
+	void filter_naive_impl() override;
+	void filter_omp_impl() override;
+	void operator()(const cv::Range& range) const override;
+public:
+	ColumnSumFilter_ab2q_Guide3_Transpose_Inverse_SSE(std::vector<cv::Mat>& _va, cv::Mat& _b, std::vector<cv::Mat>& _tempVec, int _r, int _parallelType)
+		: ColumnSumFilter_ab2q_Guide3_Transpose_Inverse_nonVec(_va, _b, _tempVec, _r, _parallelType) {}
+};
+
+struct ColumnSumFilter_ab2q_Guide3_Transpose_Inverse_AVX : public ColumnSumFilter_ab2q_Guide3_Transpose_Inverse_nonVec
+{
+private:
+	const __m256 mBorder = _mm256_set1_ps((float)(r + 1));
+
+	void filter_naive_impl() override;
+	void filter_omp_impl() override;
+	void operator()(const cv::Range& range) const override;
+public:
+	ColumnSumFilter_ab2q_Guide3_Transpose_Inverse_AVX(std::vector<cv::Mat>& _va, cv::Mat& _b, std::vector<cv::Mat>& _tempVec, int _r, int _parallelType)
+		: ColumnSumFilter_ab2q_Guide3_Transpose_Inverse_nonVec(_va, _b, _tempVec, _r, _parallelType) {}
+};
+
+struct RowSumFilter_ab2q_Guide3_Transpose_Inverse : public RowSumFilter_base
+{
+private:
+	float div;
+	std::vector<cv::Mat>& vI;
+	cv::Mat& q;
+
+	void filter_naive_impl() override;
+	void filter_omp_impl() override;
+	void operator()(const cv::Range& range) const override;
+public:
+	RowSumFilter_ab2q_Guide3_Transpose_Inverse(std::vector<cv::Mat>& _tempVec, std::vector<cv::Mat>& _vI, cv::Mat& _q, int _r, int _parallelType)
+		: vI(_vI), q(_q), RowSumFilter_base(_tempVec, _r, _parallelType)
+	{
+		div = 1.f / ((2 * r + 1)*(2 * r + 1));
+		img_row = q.rows;
+		img_col = q.cols;
+	}
+};

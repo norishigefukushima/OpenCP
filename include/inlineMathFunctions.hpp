@@ -62,11 +62,12 @@ namespace cp
 		cv::Rect roi = cv::Rect(bb, bb, src.cols - 2 * bb, src.rows - 2 * bb);
 		return cv::PSNR(src(roi), dest(roi));
 	}
-}
 
-inline float _mm256_reduceadd_ps(__m256 src)
-{
-	src = _mm256_hadd_ps(src, src);
-	src = _mm256_hadd_ps(src, src);
-	return (src.m256_f32[0] + src.m256_f32[4]);
+	inline void absdiffScale(cv::Mat& src, cv::Mat& ref, cv::Mat& dest, const double scale, const int depth = CV_8U)
+	{
+		cv::Mat subf;
+		cv::subtract(src, ref, subf, cv::noArray(), CV_64F);
+		subf = cv::abs(subf)* scale;
+		subf.convertTo(dest, depth);
+	}
 }

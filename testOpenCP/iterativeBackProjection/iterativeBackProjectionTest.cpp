@@ -121,7 +121,7 @@ void guiIterativeBackProjectionTest(Mat& src)
 
 		float denoiseth = nth * 0.01;
 		{
-			ci(format("src: %05.2f %0.2f", 0, PSNR64F(raw, src)));
+			ci(format("src: %05.2f %0.2f", 0, getPSNR(raw, src)));
 			if (sw == 0) raw.copyTo(show);
 		}
 
@@ -155,7 +155,7 @@ void guiIterativeBackProjectionTest(Mat& src)
 			//bool flag = (sovolev == 0) ? false: true;
 			//deblurring(blurred, dest, r_sigma / 10.0, psw, denoiseth, e2, flag);
 			double time = t.getTime();
-			ci(format("IBP: %05.2f %0.2f", time, cp::PSNR64F(dest, src)));
+			ci(format("IBP: %05.2f %0.2f", time, cp::getPSNR(dest, src)));
 			//ci(format("DCT: %05.2f %0.2f", time, calcImageQualityMetric(dest, src, IQM_PSNR, 10)));
 			//ci(format("DCT: %05.2f %0.2f %0.4f", t.getTime(), cp::PSNR64F(dest, src), cp::calcImageQualityMetric(dest, src, IQM_CWSSIM)));
 			if (sw == 2) dest.copyTo(show);
@@ -171,7 +171,7 @@ void guiIterativeBackProjectionTest(Mat& src)
 			deblurDCTWiener(blurred, dest, r_sigma / 10.0, e2);
 			//deblurDCTWiener(dest, dest, r_sigma / 10.0, e2);
 			double time = t.getTime();
-			ci(format("IBP: %05.2f %0.2f", time, PSNR64F(dest, src)));
+			ci(format("IBP: %05.2f %0.2f", time, getPSNR(dest, src)));
 			//ci(format("IBP: %05.2f %0.2f %0.4f", t.getTime(), PSNR64F(dest, src), cp::calcImageQualityMetric(dest, src, IQM_MSSSIM_FAST)));
 			if (sw == 3) dest.copyTo(show);
 		}
@@ -192,7 +192,7 @@ void guiIterativeBackProjectionTest(Mat& src)
 			//wienerDeconvolutionGauss(blurred, dest, Size(d, d), r_sigma / 10.f, e);
 			//iterativeBackProjectionDeblurGuidedImageFilter(blurred, dest, Size(d, d), eps*0.1, r_sigma/10.0,  lambda, iter);
 			//ci(format("FFT: %0.2f %0.2f", t.getTime(), PSNR64F(dest, src)));
-			ci(format("FFT: %0.2f %0.2f %0.4f", t.getTime(), PSNR64F(dest, src), cp::calcImageQualityMetric(dest, src, IQM_CWSSIM)));
+			ci(format("FFT: %0.2f %0.2f %0.4f", t.getTime(), getPSNR(dest, src), cp::calcImageQualityMetric(dest, src, IQM_CWSSIM)));
 			if (sw == 4) dest.copyTo(show);
 		}
 
@@ -204,7 +204,7 @@ void guiIterativeBackProjectionTest(Mat& src)
 			//iterativeBackProjectionDeblurBilateral(blurred, dest, Size(d, d), r_sigma / 10.0, bss*0.1, color_sigma, lambda, iter);
 			//deblurDCT32f(blurred, dest, r_sigma / 10.f, e2, 1);
 //			deblurdenoiseDCT32f(blurred, dest, r_sigma / 10.f, e2, denoiseth);
-			ci(format("F-DCT inv: %05.2f %0.2f", t.getTime(), PSNR64F(dest, src)));
+			ci(format("F-DCT inv: %05.2f %0.2f", t.getTime(), getPSNR(dest, src)));
 			//ci(format("F-DCT: %05.2f %0.2f", t.getTime(), PSNR64F(dest, src)));
 			if (sw == 5) dest.copyTo(show);
 		}
@@ -216,7 +216,7 @@ void guiIterativeBackProjectionTest(Mat& src)
 			//iterativeBackProjectionDeblurBilateral(blurred, dest, Size(d, d), r_sigma / 10.0, bss*0.1, color_sigma, lambda, iter);
 			//deblurDCT32f(blurred, dest, r_sigma / 10.f, e2, 1);
 //			deblurdenoiseDCTWiener32f(blurred, dest, r_sigma / 10.f, e2, denoiseth);
-			ci(format("F-DCT wie: %05.2f %0.2f", t.getTime(), PSNR64F(dest, src)));
+			ci(format("F-DCT wie: %05.2f %0.2f", t.getTime(), getPSNR(dest, src)));
 			//ci(format("F-DCT: %05.2f %0.2f", t.getTime(), PSNR64F(dest, src)));
 			if (sw == 6) dest.copyTo(show);
 		}
@@ -230,7 +230,7 @@ void guiIterativeBackProjectionTest(Mat& src)
 			iterativeBackProjectionDeblurBilateral(blurred, dest, Size(d, d), r_sigma / 10.0, bss*0.1, color_sigma, lambda, iter, dest);
 			//deblurDCT32f(blurred, dest, r_sigma / 10.f, e2, 1);
 			//deblurdenoiseDCTWiener32f(blurred, dest, r_sigma / 10.f, e2, denoiseth);
-			ci(format("BBP wie: %05.2f %0.2f", t.getTime(), PSNR64F(dest, src)));
+			ci(format("BBP wie: %05.2f %0.2f", t.getTime(), getPSNR(dest, src)));
 			//ci(format("F-DCT: %05.2f %0.2f", t.getTime(), PSNR64F(dest, src)));
 			if (sw == 7) dest.copyTo(show);
 		}

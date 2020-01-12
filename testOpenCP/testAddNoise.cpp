@@ -17,7 +17,7 @@ void testAddNoise(Mat& src)
 	while (key != 'q')
 	{
 		addNoise(src, dest, (double)sigma_g, (double)spnoise*0.01, seed);
-		cout << PSNR64F(src, dest) << endl;
+		cout << getPSNR(src, dest) << endl;
 		imshow(wname, dest);
 		key = waitKey(1);
 	}

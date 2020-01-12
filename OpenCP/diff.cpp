@@ -23,7 +23,7 @@ namespace cp
 
 		static int diff_a = 0; createTrackbar("a", wname, &diff_a, 100);
 		static int diff_channel = 3; createTrackbar("channel", wname, &diff_channel, 4);
-		static int diff_boost = 10; createTrackbar("boost*0.1", wname, &diff_boost, 100);
+		static int diff_boost = 10; createTrackbar("boost*0.1", wname, &diff_boost, 1000);
 		static int diff_abs_sw = 1; createTrackbar("diff_abs_sw", wname, &diff_abs_sw, 1);
 
 		Mat sf, rf;
@@ -54,6 +54,8 @@ namespace cp
 
 		static bool isGuiDiffInfo = true;
 		int key = 0;
+		Mat show;
+
 		while (key != 'q')
 		{
 			Mat diff;
@@ -65,18 +67,18 @@ namespace cp
 					if (diff_channel == 0)text = "B";
 					if (diff_channel == 1)text = "G";
 					if (diff_channel == 2)text = "R";
-					diff = 0.1*diff_boost * (vsf[diff_channel] - vrf[diff_channel] + 128);
+					diff = 0.1f*diff_boost * (vsf[diff_channel] - vrf[diff_channel]) + 128.f;
 				}
 				else if (diff_channel == 3)
 				{
 					text = "Y";
-					diff = 0.1*diff_boost * (grayr - grays + 128.0);
+					diff = 0.1f*diff_boost * (grayr - grays) + 128.f;
 				}
 				else if (diff_channel == 4)
 				{
 					text = "All";
 					subtract(sf, rf, diff);
-					diff = 0.1*diff_boost * (diff + Scalar::all(128.0));
+					diff = 0.1f*diff_boost * diff + Scalar::all(128.f);
 				}
 			}
 			else
@@ -101,9 +103,9 @@ namespace cp
 				}
 			}
 
-			Mat show; diff.convertTo(show, CV_8U);
-			alphaBlend(src, show, 0.01*diff_a, show);
-
+			alphaBlend(sf, diff, 0.01*diff_a, diff);
+			diff.convertTo(show, CV_8U);
+			
 			if(isGuiDiffInfo)putText(show, text, Point(30, 30), FONT_HERSHEY_SIMPLEX, 1, COLOR_WHITE, 2);
 			imshow(wname, show);
 			key = waitKey(1);

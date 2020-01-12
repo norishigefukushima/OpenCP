@@ -4,5 +4,5 @@
 
 namespace cp
 {
-	CP_EXPORT void showMatInfo(cv::InputArray src, std::string name = "Mat");
+	CP_EXPORT void showMatInfo(cv::InputArray src, std::string name = "Mat", const bool isStatInfo = true);
 }

@@ -4186,7 +4186,7 @@ namespace cp
 				this->operator()(srcL, srcR, dispL, dispR, dest, destdisp, a / 100.0, invalidvalue, disp_amp);
 				//alphaSynth(srcL,srcR,dispL,dispR, dest, destdisp, alpha, invalidvalue, disp_amp);
 			}
-			std::cout << YPSNR(dest, ref) << std::endl;
+			std::cout << getPSNR(dest, ref) << std::endl;
 			/*
 			double minv,maxv;
 			minMaxLoc(dst,&minv,&maxv);

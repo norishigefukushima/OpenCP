@@ -1,7 +1,521 @@
 #include "guidedFilter.hpp"
+
+#include "guidedFilter_Naive.h"
+#include "guidedFilter_Naive_Share.h"
+
+#include "guidedFilter_SepVHI.h"
+#include "guidedFilter_SepVHI_Share.h"
+
+#include "guidedFilter_Merge.h"
+#include "guidedFilter_Merge_Share.h"
+#include "guidedFilter_Merge_Share_Transpose.h"
+#include "guidedFilter_Merge_Share_Ex.h"
+#include "guidedFilter_Merge_Transpose.h"
+#include "guidedFilter_Merge_Transpose_Inverse.h"
+#include "guidedFilter_Merge_Share_Transpose_Inverse.h"
+#include "guidedFilter_Merge_nonSplit.h"
+
+#include "guidedFilter_Merge_OnePass.h"
+#include "guidedFilter_Merge_OnePass_2Div.h"
+
+#include "guidedFilter_Merge_OnePath_Fast.h"
+
+#include <opencv2/ximgproc.hpp>
+
+namespace cp
+{
+	void guidedImageFilter(cv::InputArray src_, cv::InputArray guide_, cv::OutputArray dest, const int r, const float eps, const int guidedType, const int boxType, const int parallelType)
+	{
+		cv::Mat src = src_.getMat();
+		cv::Mat guide = guide_.getMat();
+
+		GuidedImageFilter gf;
+		gf.setBoxType(boxType);
+		gf.filter(src, guide, dest, r, eps, guidedType, parallelType);
+	}
+
+	//for ximg proc function
+	class guidedFilter_ximgproc : public GuidedFilterBase
+	{
+	public:
+		guidedFilter_ximgproc(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps)
+			: GuidedFilterBase(_src, _guide, _dest, _r, _eps)
+		{
+			implementation = GUIDED_XIMGPROC;
+		}
+
+		void filter()
+		{
+			cv::ximgproc::guidedFilter(guide, src, dest, r, eps);
+		}
+
+		void filterVector()
+		{
+			cv::merge(vsrc, src);
+			cv::merge(vguide, guide);
+			cv::ximgproc::guidedFilter(guide, src, dest, r, eps);
+			split(dest, vdest);
+		}
+	};
+
+	void GuidedImageFilter::setDownsampleMethod(const int method)
+	{
+		downsample_method = method;
+		if (!gf[0].empty())
+		{
+			gf[0]->setDownsampleMethod(method);
+		}
+		if (!gf[1].empty())
+		{
+			gf[1]->setDownsampleMethod(method);
+		}
+		if (!gf[2].empty())
+		{
+			gf[2]->setDownsampleMethod(method);
+		}
+
+	}
+	void GuidedImageFilter::setUpsampleMethod(const int method)
+	{
+		upsample_method = method;
+		if (!gf[0].empty())
+		{
+			gf[0]->setUpsampleMethod(method);
+		}
+		if (!gf[1].empty())
+		{
+			gf[1]->setUpsampleMethod(method);
+		}
+		if (!gf[2].empty())
+		{
+			gf[2]->setUpsampleMethod(method);
+		}
+	}
+
+	void GuidedImageFilter::setBoxType(const int type)
+	{
+		box_type = type;
+	}
+
+	cv::Ptr<GuidedFilterBase> GuidedImageFilter::getGuidedFilter(cv::Mat& src, cv::Mat& guide, cv::Mat& dest, const int r, const float eps, const int guided_type)
+	{
+		//GuidedFilterBase* ret;
+		cv::Ptr<GuidedFilterBase> ret;
+
+		switch (guided_type)
+		{
+		case GUIDED_XIMGPROC:
+			ret = new guidedFilter_ximgproc(src, guide, dest, r, eps); break;
+		case GUIDED_NAIVE:
+		default:
+			ret = new guidedFilter_Naive(src, guide, dest, r, eps, box_type, parallel_type); break;
+		case GUIDED_NAIVE_SHARE:
+			ret = new guidedFilter_Naive_Share(src, guide, dest, r, eps, box_type, parallel_type); break;
+		case GUIDED_NAIVE_ONEPASS:
+			ret = new guidedFilter_Naive_OnePass(src, guide, dest, r, eps, parallel_type); break;
+		case GUIDED_SEP_VHI:
+			ret = new guidedFilter_SepVHI(src, guide, dest, r, eps, parallel_type); break;
+		case GUIDED_SEP_VHI_SHARE:
+			ret = new guidedFilter_SepVHI_Share(src, guide, dest, r, eps, parallel_type); break;
+		case GUIDED_MERGE:
+			ret = new guidedFilter_Merge_nonVec(src, guide, dest, r, eps, parallel_type); break;
+		case GUIDED_MERGE_SSE:
+			ret = new guidedFilter_Merge_SSE(src, guide, dest, r, eps, parallel_type); break;
+		case GUIDED_MERGE_AVX:
+			ret = new guidedFilter_Merge_AVX(src, guide, dest, r, eps, parallel_type); break;
+		case GUIDED_MERGE_TRANSPOSE:
+			ret = new guidedFilter_Merge_Transpose_nonVec(src, guide, dest, r, eps, parallel_type); break;
+		case GUIDED_MERGE_TRANSPOSE_SSE:
+			ret = new guidedFilter_Merge_Transpose_SSE(src, guide, dest, r, eps, parallel_type); break;
+		case GUIDED_MERGE_TRANSPOSE_AVX:
+			ret = new guidedFilter_Merge_Transpose_AVX(src, guide, dest, r, eps, parallel_type); break;
+		case GUIDED_MERGE_TRANSPOSE_INVERSE:
+			ret = new guidedFilter_Merge_Transpose_Inverse_nonVec(src, guide, dest, r, eps, parallel_type); break;
+		case GUIDED_MERGE_TRANSPOSE_INVERSE_SSE:
+			ret = new guidedFilter_Merge_Transpose_Inverse_SSE(src, guide, dest, r, eps, parallel_type); break;
+		case GUIDED_MERGE_TRANSPOSE_INVERSE_AVX:
+			ret = new guidedFilter_Merge_Transpose_Inverse_AVX(src, guide, dest, r, eps, parallel_type); break;
+		case GUIDED_MERGE_SHARE:
+			ret = new guidedFilter_Merge_Share_nonVec(src, guide, dest, r, eps, parallel_type); break;
+		case GUIDED_MERGE_SHARE_SSE:
+			ret = new guidedFilter_Merge_Share_SSE(src, guide, dest, r, eps, parallel_type); break;
+		case GUIDED_MERGE_SHARE_AVX:
+			ret = new guidedFilter_Merge_Share_AVX(src, guide, dest, r, eps, parallel_type); break;
+		case GUIDED_MERGE_SHARE_EX:
+			ret = new guidedFilter_Merge_Share_Mixed_nonVec(src, guide, dest, r, eps, parallel_type); break;
+		case GUIDED_MERGE_SHARE_EX_SSE:
+			ret = new guidedFilter_Merge_Share_Mixed_SSE(src, guide, dest, r, eps, parallel_type); break;
+		case GUIDED_MERGE_SHARE_EX_AVX:
+			ret = new guidedFilter_Merge_Share_Mixed_AVX(src, guide, dest, r, eps, parallel_type); break;
+		case GUIDED_MERGE_SHARE_TRANSPOSE:
+			ret = new guidedFilter_Merge_Share_Transpose_nonVec(src, guide, dest, r, eps, parallel_type); break;
+		case GUIDED_MERGE_SHARE_TRANSPOSE_SSE:
+			ret = new guidedFilter_Merge_Share_Transpose_SSE(src, guide, dest, r, eps, parallel_type); break;
+		case GUIDED_MERGE_SHARE_TRANSPOSE_AVX:
+			ret = new guidedFilter_Merge_Share_Transpose_AVX(src, guide, dest, r, eps, parallel_type); break;
+		case GUIDED_MERGE_SHARE_TRANSPOSE_INVERSE:
+			ret = new guidedFilter_Merge_Share_Transpose_Inverse_nonVec(src, guide, dest, r, eps, parallel_type); break;
+		case GUIDED_MERGE_SHARE_TRANSPOSE_INVERSE_SSE:
+			ret = new guidedFilter_Merge_Share_Transpose_Inverse_SSE(src, guide, dest, r, eps, parallel_type); break;
+		case GUIDED_MERGE_SHARE_TRANSPOSE_INVERSE_AVX:
+			ret = new guidedFilter_Merge_Share_Transpose_Inverse_AVX(src, guide, dest, r, eps, parallel_type); break;
+
+		case GUIDED_MERGE_ONEPASS:
+			ret = new guidedFilter_Merge_OnePass(src, guide, dest, r, eps, parallel_type); break;
+			//gf = new guidedFilter_Merge_OnePass_LoopFusion(src, guide, dest, r, eps, parallel_type); break;
+
+		case GUIDED_MERGE_ONEPASS_SIMD:
+			ret = new guidedFilter_Merge_OnePass_SIMD(src, guide, dest, r, eps, parallel_type); break;
+		}
+
+		ret->setUpsampleMethod(upsample_method);
+		ret->setDownsampleMethod(downsample_method);
+		return ret;
+	}
+
+	bool GuidedImageFilter::initialize(cv::Mat& src, cv::Mat& guide, cv::OutputArray dest)
+	{
+		if (src.depth() == CV_32F || src.depth() == CV_64F)
+		{
+			srcImage = src;
+		}
+		else
+		{
+			src.convertTo(srcImage, CV_32F);
+		}
+
+		if (guide.depth() == CV_32F || guide.depth() == CV_64F)
+		{
+			guideImage = guide;
+		}
+		else
+		{
+			guide.convertTo(guideImage, CV_32F);
+		}
+
+		bool ret = false;
+		if (dest.depth() == CV_32F || dest.depth() == CV_64F)
+		{
+			if (src.type() != dest.type() || src.channels() != dest.channels())
+			{
+				if (src.channels() == CV_64F)
+					destImage.create(guide.size(), CV_MAKETYPE(CV_64F, src.channels()));
+				else
+					destImage.create(guide.size(), CV_MAKETYPE(CV_32F, src.channels()));
+
+				ret = true;
+			}
+			else
+			{
+				destImage = dest.getMat();
+			}
+		}
+		else
+		{
+			if (src.channels() == CV_64F)
+				destImage.create(guide.size(), CV_MAKETYPE(CV_64F, src.channels()));
+			else
+				destImage.create(guide.size(), CV_MAKETYPE(CV_32F, src.channels()));
+
+			ret = true;
+		}
+
+		return ret;
+	}
+
+	void GuidedImageFilter::filter(cv::Mat& src, cv::Mat& guide, cv::OutputArray dest, const int r, const float eps, const int guided_type, const int parallel_type_current)
+	{
+		bool isdestinit = initialize(src, guide, dest);
+
+		bool init = false;
+		
+		if (gf[0].empty())
+		{
+			init = true;
+		}
+		else if (
+			gf[0]->getImplementation() != guided_type ||
+			parallel_type != parallel_type_current ||
+			gf[0]->src_channels() != src.channels() ||
+			gf[0]->guide_channels() != guide.channels() ||
+			gf[0]->size() != src.size()
+			)
+		{
+			init = true;
+		}
+
+		if (init)
+		{
+			parallel_type = parallel_type_current;
+			gf[0] = getGuidedFilter(srcImage, guideImage, destImage, r, eps, guided_type);
+			gf[0]->filter();
+		}
+		else
+		{
+			gf[0]->filter(srcImage, guideImage, destImage, r, eps);
+		}
+
+		if (isdestinit) destImage.convertTo(dest, src.depth());
+	}
+
+	void GuidedImageFilter::filterColorParallel(cv::Mat& src, cv::Mat& guide, cv::OutputArray dest, const int r, const float eps, const int guided_type, const int parallel_type_current)
+	{
+		if (src.channels() == 1)
+		{
+			filter(src, guide, dest, r, eps, guided_type, parallel_type_current);
+			return;
+		}
+
+		bool init = false;
+
+		if (gf[0].empty() || gf[1].empty() || gf[2].empty())
+		{
+			init = true;
+		}
+		else  if (
+			gf[0]->getImplementation() != guided_type ||
+			parallel_type != parallel_type_current ||
+			gf[0]->src_channels() != 1 ||
+			gf[0]->guide_channels() != guide.channels() ||
+			gf[0]->size() != src.size() ||
+			gf[1]->getImplementation() != guided_type ||
+			gf[1]->src_channels() != 1 ||
+			gf[1]->guide_channels() != guide.channels() ||
+			gf[1]->size() != src.size()
+			)
+		{
+			init = true;
+		}
+
+		if (init)
+		{
+			parallel_type = parallel_type_current;
+
+			cv::split(src, vsrc);
+			cv::split(dest, vdest);
+
+#pragma omp parallel for
+			for (int c = 0; c < 3; c++)
+			{
+				gf[c] = getGuidedFilter(vsrc[c], guide, vdest[c], r, eps, guided_type);
+				gf[c]->filter();
+			}
+
+			merge(vdest, dest);
+		}
+		else
+		{
+			cv::split(src, vsrc);
+
+#pragma omp parallel for
+			for (int c = 0; c < 3; c++)
+			{
+				gf[c]->filter(vsrc[c], guide, vdest[c], r, eps);
+			}
+			merge(vdest, dest);
+		}
+
+	}
+
+
+	void GuidedImageFilter::filterFast(cv::Mat& src, cv::Mat& guide, cv::OutputArray dest, const int r, const float eps, const int ratio, const int guided_type, const int parallel_type_current)
+	{
+		bool isdestinit = initialize(src, guide, dest);
+
+		bool init = false;
+
+		if (gf[0].empty())
+		{
+			init = true;
+		}
+		else if (
+			gf[0]->getImplementation() != guided_type ||
+			parallel_type != parallel_type_current ||
+			gf[0]->src_channels() != src.channels() ||
+			gf[0]->guide_channels() != guide.channels() ||
+			gf[0]->size() != src.size()
+			)
+		{
+			init = true;
+		}
+
+		if (init)
+		{
+			parallel_type = parallel_type_current;
+
+			gf[0] = getGuidedFilter(srcImage, guideImage, destImage, r, eps, guided_type);
+			gf[0]->filterFast(ratio);
+		}
+		else
+		{
+			gf[0]->filterFast(srcImage, guideImage, destImage, r, eps, ratio);
+		}
+
+		if (isdestinit) destImage.convertTo(dest, src.depth());
+	}
+
+	void GuidedImageFilter::upsample(cv::Mat& src, cv::Mat& guide, cv::OutputArray dest, const int r, const float eps, const int guided_type, const int parallel_type_current)
+	{
+		bool isdestinit = initialize(src, guide, dest);
+
+		bool init = false;
+
+		if (gf[0].empty())
+		{
+			init = true;
+		}
+		else if (
+			gf[0]->getImplementation() != guided_type ||
+			parallel_type != parallel_type_current ||
+			gf[0]->src_channels() != src.channels() ||
+			gf[0]->guide_channels() != guide.channels() ||
+			gf[0]->size() != src.size()
+			)
+		{
+			init = true;
+		}
+
+		if (init)
+		{
+			parallel_type = parallel_type_current;
+
+			gf[0] = getGuidedFilter(srcImage, guideImage, destImage, r, eps, guided_type);
+			gf[0]->upsample();
+		}
+		else
+		{
+			cv::Mat show;
+			srcImage.convertTo(show, CV_8U);
+			
+			gf[0]->upsample(srcImage, guideImage, destImage, r, eps);
+		}
+
+		if (isdestinit) destImage.convertTo(dest, src.depth());
+	}
+
+	void GuidedImageFilter::filter(cv::Mat& src, std::vector<cv::Mat>& vguide, cv::Mat& dest, const int r, const float eps, const int guided_type, const int parallel_type_current)
+	{
+		bool init = false;
+
+		if (gf[0].empty())
+		{
+			init = true;
+		}
+		else if (
+			gf[0]->getImplementation() != guided_type ||
+			parallel_type != parallel_type_current ||
+			gf[0]->src_channels() != src.channels() ||
+			gf[0]->guide_channels() != vguide.size() ||
+			gf[0]->size() != src.size()
+			)
+		{
+			init = true;
+		}
+
+		if (init)
+		{
+			parallel_type = parallel_type_current;
+
+			cv::Mat guide;
+			merge(vguide, guide);
+
+			gf[0] = getGuidedFilter(src, guide, dest, r, eps, guided_type);
+
+
+			gf[0]->filter();
+		}
+		else
+		{
+			std::vector<cv::Mat> s(1);
+			std::vector<cv::Mat> d(1);
+			s[0] = src;
+			d[0] = dest;
+			gf[0]->filterVector(s, vguide, d, r, eps);
+		}
+	}
+
+	void GuidedImageFilter::filter(std::vector<cv::Mat>& vsrc, cv::Mat& guide, std::vector<cv::Mat>& vdest, const int r, const float eps, const int guided_type, const int parallel_type_current)
+	{
+		bool init = false;
+
+		if (gf[0].empty())
+		{
+			init = true;
+		}
+		else if (
+			gf[0]->getImplementation() != guided_type ||
+			parallel_type != parallel_type_current ||
+			gf[0]->src_channels() != vsrc.size() ||
+			gf[0]->guide_channels() != guide.channels() ||
+			gf[0]->size() != vsrc[0].size()
+			)
+		{
+			init = true;
+		}
+
+		if (init)
+		{
+			parallel_type = parallel_type_current;
+
+			cv::Mat src, dest;
+			merge(vsrc, src);
+			merge(vdest, dest);
+			gf[0] = getGuidedFilter(src, guide, dest, r, eps, guided_type);
+
+			gf[0]->filter();
+		}
+		else
+		{
+			std::vector<cv::Mat> g(1);
+			g[0] = guide;
+			gf[0]->filterVector(vsrc, g, vdest, r, eps);
+		}
+	}
+
+	void GuidedImageFilter::filter(std::vector<cv::Mat>& vsrc, std::vector<cv::Mat>& vguide, std::vector<cv::Mat>& vdest, const int r, const float eps, const int guided_type, const int parallel_type_current)
+	{
+		bool init = false;
+
+		if (gf[0].empty())
+		{
+			init = true;
+		}
+		else if (
+			gf[0]->getImplementation() != guided_type ||
+			parallel_type != parallel_type_current ||
+			gf[0]->src_channels() != vsrc.size() ||
+			gf[0]->guide_channels() != vguide.size() ||
+			gf[0]->size() != vsrc[0].size()
+			)
+		{
+			init = true;
+		}
+
+		if (init)
+		{
+			parallel_type = parallel_type_current;
+
+			cv::Mat src, dest, guide;
+			merge(vsrc, src);
+			merge(vdest, dest);
+			merge(vguide, guide);
+
+			gf[0] = getGuidedFilter(src, guide, dest, r, eps, guided_type);
+
+			gf[0]->filter();
+		}
+		else
+		{
+			gf[0]->filterVector(vsrc, vguide, vdest, r, eps);
+		}
+	}
+}
+
+
+#include "guidedFilter.hpp"
 #include "stencil.hpp"
 #include "bitconvert.hpp"
-#include "filterengine.hpp"
+#include "../filterengine.hpp"
 using namespace std;
 using namespace cv;
 
@@ -235,13 +749,13 @@ int FilterEngine::start(Size _wholeSize, Rect _roi, int _maxBufRows)
 				(*rowFilter)(&srcRow[0], dst, maxWidth, cn);
 		}
 
-		int maxBufStep = bufElemSize*(int)alignSize(maxWidth +
+		int maxBufStep = bufElemSize * (int)alignSize(maxWidth +
 			(!isSeparable() ? ksize.width - 1 : 0), VEC_ALIGN);
 		ringBuf.resize(maxBufStep*rows.size() + VEC_ALIGN);
 	}
 
 	// adjust bufstep so that the used part of the ring buffer stays compact in memory
-	bufStep = bufElemSize*(int)alignSize(roi.width + (!isSeparable() ? ksize.width - 1 : 0), 16);
+	bufStep = bufElemSize * (int)alignSize(roi.width + (!isSeparable() ? ksize.width - 1 : 0), 16);
 
 	dx1 = std::max(anchor.x - roi.x, 0);
 	dx2 = std::max(ksize.width - anchor.x - 1 + roi.x + roi.width - wholeSize.width, 0);
@@ -254,7 +768,7 @@ int FilterEngine::start(Size _wholeSize, Rect _roi, int _maxBufRows)
 			int nr = isSeparable() ? 1 : (int)rows.size();
 			for (i = 0; i < nr; i++)
 			{
-				uchar* dst = isSeparable() ? &srcRow[0] : alignPtr(&ringBuf[0], VEC_ALIGN) + bufStep*i;
+				uchar* dst = isSeparable() ? &srcRow[0] : alignPtr(&ringBuf[0], VEC_ALIGN) + bufStep * i;
 				memcpy(dst, constVal, dx1*esz);
 				memcpy(dst + (roi.width + ksize.width - 1 - dx2)*esz, constVal, dx2*esz);
 			}
@@ -346,12 +860,12 @@ int FilterEngine::proceed(const uchar* src, int srcstep, int count,
 	bool makeBorder = (_dx1 > 0 || _dx2 > 0) && rowBorderType != BORDER_CONSTANT;
 	int dy = 0, i = 0;
 
-	src -= xofs1*esz;
+	src -= xofs1 * esz;
 	count = std::min(count, remainingInputRows());
 
 	CV_Assert(src && dst && count > 0);
 
-	for (;; dst += dststep*i, dy += i)
+	for (;; dst += dststep * i, dy += i)
 	{
 		int dcount = bufRows - ay - startY - rowCount + roi.y;
 		dcount = dcount > 0 ? dcount : bufRows - kheight + 1;
@@ -360,7 +874,7 @@ int FilterEngine::proceed(const uchar* src, int srcstep, int count,
 		for (; dcount-- > 0; src += srcstep)
 		{
 			int bi = (startY - startY0 + rowCount) % bufRows;
-			uchar* brow = alignPtr(&ringBuf[0], VEC_ALIGN) + bi*bufStep;
+			uchar* brow = alignPtr(&ringBuf[0], VEC_ALIGN) + bi * bufStep;
 			uchar* row = isSep ? &srcRow[0] : brow;
 
 			if (++rowCount > bufRows)
@@ -369,7 +883,7 @@ int FilterEngine::proceed(const uchar* src, int srcstep, int count,
 				++startY;
 			}
 
-			memcpy(row + _dx1*esz, src, (width1 - _dx2 - _dx1)*esz);
+			memcpy(row + _dx1 * esz, src, (width1 - _dx2 - _dx1)*esz);
 
 			if (makeBorder)
 			{
@@ -381,14 +895,14 @@ int FilterEngine::proceed(const uchar* src, int srcstep, int count,
 					for (i = 0; i < _dx1*btab_esz; i++)
 						irow[i] = isrc[btab[i]];
 					for (i = 0; i < _dx2*btab_esz; i++)
-						irow[i + (width1 - _dx2)*btab_esz] = isrc[btab[i + _dx1*btab_esz]];
+						irow[i + (width1 - _dx2)*btab_esz] = isrc[btab[i + _dx1 * btab_esz]];
 				}
 				else
 				{
 					for (i = 0; i < _dx1*esz; i++)
 						row[i] = src[btab[i]];
 					for (i = 0; i < _dx2*esz; i++)
-						row[i + (width1 - _dx2)*esz] = src[btab[i + _dx1*esz]];
+						row[i + (width1 - _dx2)*esz] = src[btab[i + _dx1 * esz]];
 				}
 			}
 
@@ -409,7 +923,7 @@ int FilterEngine::proceed(const uchar* src, int srcstep, int count,
 				if (srcY >= startY + rowCount)
 					break;
 				int bi = (srcY - startY0) % bufRows;
-				brows[i] = alignPtr(&ringBuf[0], VEC_ALIGN) + bi*bufStep;
+				brows[i] = alignPtr(&ringBuf[0], VEC_ALIGN) + bi * bufStep;
 			}
 		}
 		if (i < kheight)
@@ -444,7 +958,7 @@ void FilterEngine::apply(const Mat& src, Mat& dst,
 		dstOfs.y + srcRoi.height <= dst.rows);
 
 	int y = start(src, srcRoi, isolated);
-	proceed(src.ptr() + y*src.step + srcRoi.x*src.elemSize(),
+	proceed(src.ptr() + y * src.step + srcRoi.x*src.elemSize(),
 		(int)src.step, endY - startY,
 		dst.ptr(dstOfs.y) +
 		dstOfs.x*dst.elemSize(), (int)dst.step);
@@ -468,7 +982,7 @@ template<typename T, typename ST> struct RowSum : public BaseRowFilter
 	{
 		const T* S = (const T*)src;
 		ST* D = (ST*)dst;
-		int i = 0, k, ksz_cn = ksize*cn;
+		int i = 0, k, ksz_cn = ksize * cn;
 
 		width = (width - 1)*cn;
 		for (k = 0; k < cn; k++, S++, D++)
@@ -521,7 +1035,7 @@ struct ColumnSumFF : public BaseColumnFilter
 		SUM = &sum[0];
 		if (sumCount == 0)
 		{
-			memset((void*)SUM, 0, width*sizeof(float));
+			memset((void*)SUM, 0, width * sizeof(float));
 			for (; sumCount < ksize - 1; sumCount++, src++)
 			{
 				const float* Sp = (const float*)src[0];
@@ -1018,210 +1532,210 @@ namespace cp
 			}
 		}
 
-	{
-		float* rr = var_I_rr.ptr<float>(0);
-		float* rg = var_I_rg.ptr<float>(0);
-		float* rb = var_I_rb.ptr<float>(0);
-		float* gg = var_I_gg.ptr<float>(0);
-		float* gb = var_I_gb.ptr<float>(0);
-		float* bb = var_I_bb.ptr<float>(0);
-
-		float* covr = cov_Ip_r.ptr<float>(0);
-		float* covg = cov_Ip_g.ptr<float>(0);
-		float* covb = cov_Ip_b.ptr<float>(0);
-
-
-		//float CV_DECL_ALIGNED(16) buf[4];
-		//for(int i=ssesize;i--;rr+=4,rg+=4,rb+=4,gg+=4,gb+=4,bb+=4,covr+=4,covg+=4,covb+=4)
-		for (int i = size; i--; rr++, rg++, rb++, gg++, gb++, bb++, covr++, covg++, covb++)
 		{
-			const float c0 = *gg * *bb - *gb * *gb;
-			const float c1 = *rb * *gb - *rg * *bb;
-			const float c2 = *rg * *gb - *rb * *gg;
-			const float c4 = *rr * *bb - *rb * *rb;
-			const float c5 = *rb * *rg - *rr * *gb;
-			const float c8 = *rr * *gg - *rg * *rg;
+			float* rr = var_I_rr.ptr<float>(0);
+			float* rg = var_I_rg.ptr<float>(0);
+			float* rb = var_I_rb.ptr<float>(0);
+			float* gg = var_I_gg.ptr<float>(0);
+			float* gb = var_I_gb.ptr<float>(0);
+			float* bb = var_I_bb.ptr<float>(0);
 
-			const float det = (*rr * *gg * *bb) + (*rg * *gb * *rb) + (*rb * *rg * *gb) - (*rr * *gb * *gb) - (*rb * *gg * *rb) - (*rg * *rg* *bb);
-			const float id = 1.f / det;
-
-
-			const float r = *covr;
-			const float g = *covg;
-			const float b = *covb;
-
-			*covr = id* (r*c0 + g*c1 + b*c2);
-			*covg = id* (r*c1 + g*c4 + b*c5);
-			*covb = id* (r*c2 + g*c5 + b*c8);
-
-			//SSE4 vc2010 make faster code... 
-			/*const __m128 v = _mm_set_ps(r,g,b,0.f);
-			const __m128 v2 = _mm_set1_ps(id);
-			__m128 a = _mm_mul_ps(v2,_mm_add_ps(_mm_add_ps(_mm_dp_ps(v, _mm_set_ps(c0,c1,c2,0.f),225),_mm_dp_ps(v, _mm_set_ps(c1,c4,c5,0.f),226)),_mm_dp_ps(v, _mm_set_ps(c2,c5,c8,0.f),228)));
-			_mm_store_ps(buf,a);
-
-			*covr = buf[0];
-			*covg = buf[1];
-			*covb = buf[2];*/
+			float* covr = cov_Ip_r.ptr<float>(0);
+			float* covg = cov_Ip_g.ptr<float>(0);
+			float* covb = cov_Ip_b.ptr<float>(0);
 
 
+			//float CV_DECL_ALIGNED(16) buf[4];
+			//for(int i=ssesize;i--;rr+=4,rg+=4,rb+=4,gg+=4,gb+=4,bb+=4,covr+=4,covg+=4,covb+=4)
+			for (int i = size; i--; rr++, rg++, rb++, gg++, gb++, bb++, covr++, covg++, covb++)
+			{
+				const float c0 = *gg * *bb - *gb * *gb;
+				const float c1 = *rb * *gb - *rg * *bb;
+				const float c2 = *rg * *gb - *rb * *gg;
+				const float c4 = *rr * *bb - *rb * *rb;
+				const float c5 = *rb * *rg - *rr * *gb;
+				const float c8 = *rr * *gg - *rg * *rg;
+
+				const float det = (*rr * *gg * *bb) + (*rg * *gb * *rb) + (*rb * *rg * *gb) - (*rr * *gb * *gb) - (*rb * *gg * *rb) - (*rg * *rg* *bb);
+				const float id = 1.f / det;
+
+
+				const float r = *covr;
+				const float g = *covg;
+				const float b = *covb;
+
+				*covr = id * (r*c0 + g * c1 + b * c2);
+				*covg = id * (r*c1 + g * c4 + b * c5);
+				*covb = id * (r*c2 + g * c5 + b * c8);
+
+				//SSE4 vc2010 make faster code... 
+				/*const __m128 v = _mm_set_ps(r,g,b,0.f);
+				const __m128 v2 = _mm_set1_ps(id);
+				__m128 a = _mm_mul_ps(v2,_mm_add_ps(_mm_add_ps(_mm_dp_ps(v, _mm_set_ps(c0,c1,c2,0.f),225),_mm_dp_ps(v, _mm_set_ps(c1,c4,c5,0.f),226)),_mm_dp_ps(v, _mm_set_ps(c2,c5,c8,0.f),228)));
+				_mm_store_ps(buf,a);
+
+				*covr = buf[0];
+				*covg = buf[1];
+				*covb = buf[2];*/
 
 
 
-			//over flow...
-			/*
-			__m128 mrr = _mm_load_ps(rr);
-			__m128 mrg = _mm_load_ps(rg);
-			__m128 mrb = _mm_load_ps(rb);
-			__m128 mgg = _mm_load_ps(gg);
-			__m128 mgb = _mm_load_ps(gb);
-			__m128 mbb = _mm_load_ps(bb);
 
-			__m128 ggbb = _mm_mul_ps(mgg,mbb);
-			__m128 gbgb = _mm_mul_ps(mgb,mgb);
-			//float c0 = *gg * *bb - *gb * *gb;
-			__m128 mc0 = _mm_sub_ps(ggbb,gbgb);
 
-			__m128 rbgb = _mm_mul_ps(mrb,mgb);
-			__m128 rgbb = _mm_mul_ps(mrg,mbb);
-			//float c1 = *rb * *gb - *rg * *bb;
-			__m128 mc1 = _mm_sub_ps(rbgb,rgbb);
+				//over flow...
+				/*
+				__m128 mrr = _mm_load_ps(rr);
+				__m128 mrg = _mm_load_ps(rg);
+				__m128 mrb = _mm_load_ps(rb);
+				__m128 mgg = _mm_load_ps(gg);
+				__m128 mgb = _mm_load_ps(gb);
+				__m128 mbb = _mm_load_ps(bb);
 
-			__m128 rggb = _mm_mul_ps(mrg,mgb);
-			__m128 rbgg = _mm_mul_ps(mrb,mgg);
-			//float c2 = *rg * *gb - *rb * *gg;
-			__m128 mc2 = _mm_sub_ps(rbgb,rbgg);
+				__m128 ggbb = _mm_mul_ps(mgg,mbb);
+				__m128 gbgb = _mm_mul_ps(mgb,mgb);
+				//float c0 = *gg * *bb - *gb * *gb;
+				__m128 mc0 = _mm_sub_ps(ggbb,gbgb);
 
-			__m128 rrbb = _mm_mul_ps(mrr,mbb);
-			__m128 rbrb = _mm_mul_ps(mrb,mrb);
-			//float c4 = *rr * *bb - *rb * *rb;
-			__m128 mc4 = _mm_sub_ps(rrbb,rbrb);
+				__m128 rbgb = _mm_mul_ps(mrb,mgb);
+				__m128 rgbb = _mm_mul_ps(mrg,mbb);
+				//float c1 = *rb * *gb - *rg * *bb;
+				__m128 mc1 = _mm_sub_ps(rbgb,rgbb);
 
-			__m128 rbrg = _mm_mul_ps(mrb,mrg);
-			__m128 rrgb = _mm_mul_ps(mrr,mgb);
-			//float c5 = *rb * *rg - *rr * *gb;
-			__m128 mc5 = _mm_sub_ps(rbrg,rrgb);
+				__m128 rggb = _mm_mul_ps(mrg,mgb);
+				__m128 rbgg = _mm_mul_ps(mrb,mgg);
+				//float c2 = *rg * *gb - *rb * *gg;
+				__m128 mc2 = _mm_sub_ps(rbgb,rbgg);
 
-			__m128 rrgg = _mm_mul_ps(mrr,mgg);
-			__m128 rgrg = _mm_mul_ps(mrg,mrg);
-			//float c8 = *rr * *gg - *rg * *rg;
-			__m128 mc8 = _mm_sub_ps(rrgg,rgrg);
+				__m128 rrbb = _mm_mul_ps(mrr,mbb);
+				__m128 rbrb = _mm_mul_ps(mrb,mrb);
+				//float c4 = *rr * *bb - *rb * *rb;
+				__m128 mc4 = _mm_sub_ps(rrbb,rbrb);
 
-			//__m128 m1 = _mm_set1_ps(1.0f);
-			const __m128 iv = _mm_sub_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(rrgg,mbb),_mm_mul_ps(rggb,mrb)),_mm_mul_ps(rbrg,mgb)),
-			_mm_add_ps(_mm_add_ps(_mm_mul_ps(rrgb,mgb),_mm_mul_ps(rbgg,mrb)),_mm_mul_ps(rgrg,mbb)));
-			//const float det = (*rr * *gg * *bb) + (*rg * *gb * *rb) + (*rb * *rg * *gb)  -(*rr * *gb * *gb) - (*rb * *gg * *rb) - (*rg * *rg* *bb);
-			//const float id = 1.f/det;
+				__m128 rbrg = _mm_mul_ps(mrb,mrg);
+				__m128 rrgb = _mm_mul_ps(mrr,mgb);
+				//float c5 = *rb * *rg - *rr * *gb;
+				__m128 mc5 = _mm_sub_ps(rbrg,rrgb);
 
-			//const float r = *covr;
-			//const float g = *covg;
-			//const float b = *covb;
-			const __m128 mcvr = _mm_load_ps(covr);
-			const __m128 mcvg = _mm_load_ps(covg);
-			const __m128 mcvb = _mm_load_ps(covb);
+				__m128 rrgg = _mm_mul_ps(mrr,mgg);
+				__m128 rgrg = _mm_mul_ps(mrg,mrg);
+				//float c8 = *rr * *gg - *rg * *rg;
+				__m128 mc8 = _mm_sub_ps(rrgg,rgrg);
 
-			mrr = _mm_div_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(mcvr,mc0),_mm_mul_ps(mcvg,mc1)),_mm_mul_ps(mcvb,mc2)),iv);
-			mrg = _mm_div_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(mcvr,mc1),_mm_mul_ps(mcvg,mc4)),_mm_mul_ps(mcvb,mc5)),iv);
-			mrb = _mm_div_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(mcvr,mc2),_mm_mul_ps(mcvg,mc5)),_mm_mul_ps(mcvb,mc8)),iv);
-			//*covr = id* (r*c0 + g*c1 + b*c2);
-			//*covg = id* (r*c1 + g*c4 + b*c5);
-			//*covb = id* (r*c2 + g*c5 + b*c8);
+				//__m128 m1 = _mm_set1_ps(1.0f);
+				const __m128 iv = _mm_sub_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(rrgg,mbb),_mm_mul_ps(rggb,mrb)),_mm_mul_ps(rbrg,mgb)),
+				_mm_add_ps(_mm_add_ps(_mm_mul_ps(rrgb,mgb),_mm_mul_ps(rbgg,mrb)),_mm_mul_ps(rgrg,mbb)));
+				//const float det = (*rr * *gg * *bb) + (*rg * *gb * *rb) + (*rb * *rg * *gb)  -(*rr * *gb * *gb) - (*rb * *gg * *rb) - (*rg * *rg* *bb);
+				//const float id = 1.f/det;
 
-			_mm_store_ps(covr,mrr);
-			_mm_store_ps(covg,mrg);
-			_mm_store_ps(covb,mrb);
-			*/
+				//const float r = *covr;
+				//const float g = *covg;
+				//const float b = *covb;
+				const __m128 mcvr = _mm_load_ps(covr);
+				const __m128 mcvg = _mm_load_ps(covg);
+				const __m128 mcvb = _mm_load_ps(covb);
+
+				mrr = _mm_div_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(mcvr,mc0),_mm_mul_ps(mcvg,mc1)),_mm_mul_ps(mcvb,mc2)),iv);
+				mrg = _mm_div_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(mcvr,mc1),_mm_mul_ps(mcvg,mc4)),_mm_mul_ps(mcvb,mc5)),iv);
+				mrb = _mm_div_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(mcvr,mc2),_mm_mul_ps(mcvg,mc5)),_mm_mul_ps(mcvb,mc8)),iv);
+				//*covr = id* (r*c0 + g*c1 + b*c2);
+				//*covg = id* (r*c1 + g*c4 + b*c5);
+				//*covb = id* (r*c2 + g*c5 + b*c8);
+
+				_mm_store_ps(covr,mrr);
+				_mm_store_ps(covg,mrg);
+				_mm_store_ps(covb,mrb);
+				*/
+			}
 		}
-	}
 
-	Mat a_r = cov_Ip_r;
-	Mat a_g = cov_Ip_g;
-	Mat a_b = cov_Ip_b;
+		Mat a_r = cov_Ip_r;
+		Mat a_g = cov_Ip_g;
+		Mat a_b = cov_Ip_b;
 
-	{
-		float* s0 = mean_p.ptr<float>(0);
-		float* s1 = mean_I_r.ptr<float>(0);
-		float* s2 = mean_I_g.ptr<float>(0);
-		float* s3 = mean_I_b.ptr<float>(0);
-		float* a1 = a_r.ptr<float>(0);
-		float* a2 = a_g.ptr<float>(0);
-		float* a3 = a_b.ptr<float>(0);
-		for (int i = ssesize; i--;)
 		{
-			__m128 ms3 = _mm_load_ps(s0);
+			float* s0 = mean_p.ptr<float>(0);
+			float* s1 = mean_I_r.ptr<float>(0);
+			float* s2 = mean_I_g.ptr<float>(0);
+			float* s3 = mean_I_b.ptr<float>(0);
+			float* a1 = a_r.ptr<float>(0);
+			float* a2 = a_g.ptr<float>(0);
+			float* a3 = a_b.ptr<float>(0);
+			for (int i = ssesize; i--;)
+			{
+				__m128 ms3 = _mm_load_ps(s0);
 
-			__m128 ms1 = _mm_load_ps(s1);
-			__m128 ms2 = _mm_load_ps(a1);
-			ms1 = _mm_mul_ps(ms2, ms1);
-			ms3 = _mm_sub_ps(ms3, ms1);
+				__m128 ms1 = _mm_load_ps(s1);
+				__m128 ms2 = _mm_load_ps(a1);
+				ms1 = _mm_mul_ps(ms2, ms1);
+				ms3 = _mm_sub_ps(ms3, ms1);
 
-			ms1 = _mm_load_ps(s2);
-			ms2 = _mm_load_ps(a2);
-			ms1 = _mm_mul_ps(ms2, ms1);
-			ms3 = _mm_sub_ps(ms3, ms1);
+				ms1 = _mm_load_ps(s2);
+				ms2 = _mm_load_ps(a2);
+				ms1 = _mm_mul_ps(ms2, ms1);
+				ms3 = _mm_sub_ps(ms3, ms1);
 
-			ms1 = _mm_load_ps(s3);
-			ms2 = _mm_load_ps(a3);
-			ms1 = _mm_mul_ps(ms2, ms1);
-			ms3 = _mm_sub_ps(ms3, ms1);
+				ms1 = _mm_load_ps(s3);
+				ms2 = _mm_load_ps(a3);
+				ms1 = _mm_mul_ps(ms2, ms1);
+				ms3 = _mm_sub_ps(ms3, ms1);
 
-			_mm_store_ps(s0, ms3);
+				_mm_store_ps(s0, ms3);
 
-			s0 += 4, s1 += 4, s2 += 4, s3 += 4, a1 += 4, a2 += 4, a3 += 4;
+				s0 += 4, s1 += 4, s2 += 4, s3 += 4, a1 += 4, a2 += 4, a3 += 4;
+			}
+			for (int i = 0; i < nn; i++)
+			{
+				*s0 = *s0 - (*a1 * *s1) - ((*a2 * *s2)) - (*a3 * *s3);
+				s0++, s1++, s2++, s3++, a1++, a2++, a3++;
+			}
 		}
-		for (int i = 0; i < nn; i++)
+
+		Mat b = mean_p;
+		boxFilter2(a_r, a_r, CV_32F, ksize, PT, true, BORDER_TYPE);//break a_r
+		boxFilter2(a_g, a_g, CV_32F, ksize, PT, true, BORDER_TYPE);//break a_g
+		boxFilter2(a_b, a_b, CV_32F, ksize, PT, true, BORDER_TYPE);//break a_b
+		boxFilter2(b, temp, CV_32F, ksize, PT, true, BORDER_TYPE);
+		float amp = 1.f;
 		{
-			*s0 = *s0 - (*a1 * *s1) - ((*a2 * *s2)) - (*a3 * *s3);
-			s0++, s1++, s2++, s3++, a1++, a2++, a3++;
+			float* s0 = temp.ptr<float>(0);
+			float* s1 = If[0].ptr<float>(0);
+			float* s2 = If[1].ptr<float>(0);
+			float* s3 = If[2].ptr<float>(0);
+			float* d1 = a_r.ptr<float>(0);
+			float* d2 = a_g.ptr<float>(0);
+			float* d3 = a_b.ptr<float>(0);
+			const __m128 me = _mm_set1_ps(amp);
+			for (int i = ssesize; i--;)
+			{
+				__m128 ms1 = _mm_load_ps(s0);
+
+				__m128 ms2 = _mm_load_ps(s1);
+				__m128 ms3 = _mm_load_ps(d1);
+				ms2 = _mm_mul_ps(ms2, ms3);
+				ms1 = _mm_add_ps(ms1, ms2);
+
+				ms2 = _mm_load_ps(s2);
+				ms3 = _mm_load_ps(d2);
+				ms2 = _mm_mul_ps(ms2, ms3);
+				ms1 = _mm_add_ps(ms1, ms2);
+
+				ms2 = _mm_load_ps(s3);
+				ms3 = _mm_load_ps(d3);
+				ms2 = _mm_mul_ps(ms2, ms3);
+				ms1 = _mm_add_ps(ms1, ms2);
+
+				ms1 = _mm_mul_ps(ms1, me);
+				_mm_store_ps(s0, ms1);
+
+				s0 += 4, s1 += 4, s2 += 4, s3 += 4, d1 += 4, d2 += 4, d3 += 4;
+			}
+			for (int i = 0; i < nn; i++)
+			{
+				*s0 = amp* (*s0 + (*s1 * *d1) + (*s2 * *d2) + (*s3 * *d3));
+				s0++, s1++, s2++, s3++, d1++, d2++, d3++;
+			}
 		}
-	}
-
-	Mat b = mean_p;
-	boxFilter2(a_r, a_r, CV_32F, ksize, PT, true, BORDER_TYPE);//break a_r
-	boxFilter2(a_g, a_g, CV_32F, ksize, PT, true, BORDER_TYPE);//break a_g
-	boxFilter2(a_b, a_b, CV_32F, ksize, PT, true, BORDER_TYPE);//break a_b
-	boxFilter2(b, temp, CV_32F, ksize, PT, true, BORDER_TYPE);
-	float amp = 1.f;
-	{
-		float* s0 = temp.ptr<float>(0);
-		float* s1 = If[0].ptr<float>(0);
-		float* s2 = If[1].ptr<float>(0);
-		float* s3 = If[2].ptr<float>(0);
-		float* d1 = a_r.ptr<float>(0);
-		float* d2 = a_g.ptr<float>(0);
-		float* d3 = a_b.ptr<float>(0);
-		const __m128 me = _mm_set1_ps(amp);
-		for (int i = ssesize; i--;)
-		{
-			__m128 ms1 = _mm_load_ps(s0);
-
-			__m128 ms2 = _mm_load_ps(s1);
-			__m128 ms3 = _mm_load_ps(d1);
-			ms2 = _mm_mul_ps(ms2, ms3);
-			ms1 = _mm_add_ps(ms1, ms2);
-
-			ms2 = _mm_load_ps(s2);
-			ms3 = _mm_load_ps(d2);
-			ms2 = _mm_mul_ps(ms2, ms3);
-			ms1 = _mm_add_ps(ms1, ms2);
-
-			ms2 = _mm_load_ps(s3);
-			ms3 = _mm_load_ps(d3);
-			ms2 = _mm_mul_ps(ms2, ms3);
-			ms1 = _mm_add_ps(ms1, ms2);
-
-			ms1 = _mm_mul_ps(ms1, me);
-			_mm_store_ps(s0, ms1);
-
-			s0 += 4, s1 += 4, s2 += 4, s3 += 4, d1 += 4, d2 += 4, d3 += 4;
-		}
-		for (int i = 0; i < nn; i++)
-		{
-			*s0 = amp* (*s0 + (*s1 * *d1) + (*s2 * *d2) + (*s3 * *d3));
-			s0++, s1++, s2++, s3++, d1++, d2++, d3++;
-		}
-	}
-	temp.convertTo(dest, src.type());
+		temp.convertTo(dest, src.type());
 	}
 
 
@@ -1384,9 +1898,9 @@ namespace cp
 				const float r = *covr;
 				const float g = *covg;
 				const float b = *covb;
-				*covr = id* (r*c0 + g*c1 + b*c2);
-				*covg = id* (r*c1 + g*c4 + b*c5);
-				*covb = id* (r*c2 + g*c5 + b*c8);
+				*covr = id * (r*c0 + g * c1 + b * c2);
+				*covg = id * (r*c1 + g * c4 + b * c5);
+				*covb = id * (r*c2 + g * c5 + b * c8);
 
 				/*cout<<format("%f %f %f \n %f %f %f \n %f %f %f \n",
 				id*(*gg * *bb - *gb * *gb),//c0
@@ -1442,7 +1956,7 @@ namespace cp
 		const int ssesize = imsize.area() / 4; //const int ssesize = 0;
 		const int nn = imsize.area() - ssesize * 4;
 		const float e = eps;
-	
+
 		STATICMAT x1(imsize, CV_32F), x2(imsize, CV_32F), x3(imsize, CV_32F);
 		STATICMAT mJoint(imsize, CV_32F);//mean_I
 		STATICMAT mSrc(imsize, CV_32F);//mean_p
@@ -1461,101 +1975,101 @@ namespace cp
 			joint.convertTo(jf, CV_32F);
 		}
 
-	{
-		float* s1 = jf.ptr<float>(0);
-		float* s2 = sf.ptr<float>(0);
-		float* d = x2.ptr<float>(0);
-		float* d2 = x1.ptr<float>(0);
-
-		for (int i = ssesize; i--;)
 		{
-			__m128 ms1 = _mm_load_ps(s1);
-			__m128 ms2 = _mm_load_ps(s2);
-			ms2 = _mm_mul_ps(ms1, ms2);
-			_mm_store_ps(d, ms2);
+			float* s1 = jf.ptr<float>(0);
+			float* s2 = sf.ptr<float>(0);
+			float* d = x2.ptr<float>(0);
+			float* d2 = x1.ptr<float>(0);
 
-			ms1 = _mm_mul_ps(ms1, ms1);
-			_mm_store_ps(d2, ms1);
-			s1 += 4, s2 += 4, d += 4, d2 += 4;
+			for (int i = ssesize; i--;)
+			{
+				__m128 ms1 = _mm_load_ps(s1);
+				__m128 ms2 = _mm_load_ps(s2);
+				ms2 = _mm_mul_ps(ms1, ms2);
+				_mm_store_ps(d, ms2);
+
+				ms1 = _mm_mul_ps(ms1, ms1);
+				_mm_store_ps(d2, ms1);
+				s1 += 4, s2 += 4, d += 4, d2 += 4;
+			}
+			for (int i = 0; i < nn; i++)
+			{
+				*d2++ = *s1 * *s1;
+				*d++ = *s1++ * *s2++;
+			}
 		}
-		for (int i = 0; i < nn; i++)
+
+		boxFilter2(jf, mJoint, CV_32F, ksize, Point(-1, -1), true, BORDER_TYPE);//mJoint*K
+		boxFilter2(sf, mSrc, CV_32F, ksize, Point(-1, -1), true, BORDER_TYPE);//mSrc*K
+		boxFilter2(x2, x3, CV_32F, ksize, Point(-1, -1), true, BORDER_TYPE);//x3*K
+		boxFilter2(x1, x2, CV_32F, ksize, Point(-1, -1), true, BORDER_TYPE);//x2*K	
+
 		{
-			*d2++ = *s1 * *s1;
-			*d++ = *s1++ * *s2++;
+			float* s1 = mJoint.ptr<float>(0);
+			float* s2 = x2.ptr<float>(0);
+			float* s3 = x3.ptr<float>(0);//*s1 = *s3 - *s1 * *s5;
+			float* s4 = x1.ptr<float>(0);
+			float* s5 = mSrc.ptr<float>(0);
+			const __m128 ms4 = _mm_set1_ps(e);
+			for (int i = ssesize; i--;)
+			{
+				//mjoint*mjoint
+				const __m128 ms1 = _mm_load_ps(s1);
+				const __m128 ms5 = _mm_load_ps(s5);
+				__m128 ms2 = _mm_mul_ps(ms1, ms1);
+				//x2-x1+e
+				__m128 ms3 = _mm_load_ps(s2);
+				ms2 = _mm_sub_ps(ms3, ms2);
+				ms2 = _mm_add_ps(ms2, ms4);
+				//x3/xx
+				ms3 = _mm_load_ps(s3);
+				ms3 = _mm_sub_ps(ms3, _mm_mul_ps(ms1, ms5));
+
+				ms2 = _mm_div_ps(ms3, ms2);
+				_mm_store_ps(s3, ms2);
+				//ms
+				ms2 = _mm_mul_ps(ms2, ms1);
+				ms3 = _mm_sub_ps(ms2, ms5);
+				_mm_store_ps(s4, ms3);
+
+				s1 += 4, s2 += 4, s3 += 4, s4 += 4, s5 += 4;
+			}
+			for (int i = 0; i < nn; i++)
+			{
+				*s3 = (*s3 - (*s1 * *s5)) / (*s2 - (*s1 * *s1) + e);
+				*s4 = (*s3 * *s1) - *s5;
+				s1++, s2++, s3++, s4++, s5++;
+			}
 		}
-	}
 
-	boxFilter2(jf, mJoint, CV_32F, ksize, Point(-1, -1), true, BORDER_TYPE);//mJoint*K
-	boxFilter2(sf, mSrc, CV_32F, ksize, Point(-1, -1), true, BORDER_TYPE);//mSrc*K
-	boxFilter2(x2, x3, CV_32F, ksize, Point(-1, -1), true, BORDER_TYPE);//x3*K
-	boxFilter2(x1, x2, CV_32F, ksize, Point(-1, -1), true, BORDER_TYPE);//x2*K	
+		boxFilter2(x3, x2, CV_32F, ksize, Point(-1, -1), true, BORDER_TYPE);//x2*k
+		boxFilter2(x1, x3, CV_32F, ksize, Point(-1, -1), true, BORDER_TYPE);//x3*k
 
-	{
-		float* s1 = mJoint.ptr<float>(0);
-		float* s2 = x2.ptr<float>(0);
-		float* s3 = x3.ptr<float>(0);//*s1 = *s3 - *s1 * *s5;
-		float* s4 = x1.ptr<float>(0);
-		float* s5 = mSrc.ptr<float>(0);
-		const __m128 ms4 = _mm_set1_ps(e);
-		for (int i = ssesize; i--;)
 		{
-			//mjoint*mjoint
-			const __m128 ms1 = _mm_load_ps(s1);
-			const __m128 ms5 = _mm_load_ps(s5);
-			__m128 ms2 = _mm_mul_ps(ms1, ms1);
-			//x2-x1+e
-			__m128 ms3 = _mm_load_ps(s2);
-			ms2 = _mm_sub_ps(ms3, ms2);
-			ms2 = _mm_add_ps(ms2, ms4);
-			//x3/xx
-			ms3 = _mm_load_ps(s3);
-			ms3 = _mm_sub_ps(ms3, _mm_mul_ps(ms1, ms5));
+			float* s1 = x2.ptr<float>(0);
+			float* s2 = jf.ptr<float>(0);
+			float* s3 = x3.ptr<float>(0);
 
-			ms2 = _mm_div_ps(ms3, ms2);
-			_mm_store_ps(s3, ms2);
-			//ms
-			ms2 = _mm_mul_ps(ms2, ms1);
-			ms3 = _mm_sub_ps(ms2, ms5);
-			_mm_store_ps(s4, ms3);
+			for (int i = ssesize; i--;)
+			{
+				__m128 ms1 = _mm_load_ps(s1);
+				__m128 ms2 = _mm_load_ps(s2);
+				ms1 = _mm_mul_ps(ms1, ms2);
 
-			s1 += 4, s2 += 4, s3 += 4, s4 += 4, s5 += 4;
+				ms2 = _mm_load_ps(s3);
+				ms1 = _mm_sub_ps(ms1, ms2);
+
+				_mm_store_ps(s1, ms1);
+
+				s1 += 4, s2 += 4, s3 += 4;
+			}
+			for (int i = 0; i < nn; i++)
+			{
+				*s1 = ((*s1 * *s2) - *s3);
+				s1++, s2++, s3++;
+			}
 		}
-		for (int i = 0; i < nn; i++)
-		{
-			*s3 = (*s3 - (*s1 * *s5)) / (*s2 - (*s1 * *s1) + e);
-			*s4 = (*s3 * *s1) - *s5;
-			s1++, s2++, s3++, s4++, s5++;
-		}
-	}
-
-	boxFilter2(x3, x2, CV_32F, ksize, Point(-1, -1), true, BORDER_TYPE);//x2*k
-	boxFilter2(x1, x3, CV_32F, ksize, Point(-1, -1), true, BORDER_TYPE);//x3*k
-
-	{
-		float* s1 = x2.ptr<float>(0);
-		float* s2 = jf.ptr<float>(0);
-		float* s3 = x3.ptr<float>(0);
-
-		for (int i = ssesize; i--;)
-		{
-			__m128 ms1 = _mm_load_ps(s1);
-			__m128 ms2 = _mm_load_ps(s2);
-			ms1 = _mm_mul_ps(ms1, ms2);
-
-			ms2 = _mm_load_ps(s3);
-			ms1 = _mm_sub_ps(ms1, ms2);
-
-			_mm_store_ps(s1, ms1);
-
-			s1 += 4, s2 += 4, s3 += 4;
-		}
-		for (int i = 0; i < nn; i++)
-		{
-			*s1 = ((*s1 * *s2) - *s3);
-			s1++, s2++, s3++;
-		}
-	}
-	x2.convertTo(dest, src.type());
+		x2.convertTo(dest, src.type());
 	}
 
 	static void guidedFilterSrc1Guidance1_(const Mat& src, const Mat& joint, Mat& dest, const int radius, const float eps)
@@ -1784,7 +2298,7 @@ namespace cp
 
 	void guidedFilter(const Mat& src, const Mat& guidance, Mat& dest, const int radius, const float eps)
 	{
-		if (radius == 0){ src.copyTo(dest); return; }
+		if (radius == 0) { src.copyTo(dest); return; }
 		bool sse = checkHardwareSupport(CV_CPU_SSE2);
 
 		if (src.channels() == 1 && guidance.channels() == 3)
@@ -1813,16 +2327,16 @@ namespace cp
 			if (sse)
 			{
 #pragma omp parallel for
-				for (int i = 0; i < 3;i++) 
+				for (int i = 0; i < 3; i++)
 					guidedFilterSrc1Guidance3SSE_(v[i], guidance, d[i], radius, eps);
-				
+
 			}
 			else
 			{
 #pragma omp parallel for
 				for (int i = 0; i < 3; i++)
-				guidedFilterSrc1Guidance3_(v[i], guidance, d[i], radius, eps);
-				
+					guidedFilterSrc1Guidance3_(v[i], guidance, d[i], radius, eps);
+
 			}
 			merge(d, dest);
 		}
@@ -1835,15 +2349,15 @@ namespace cp
 			{
 #pragma omp parallel for
 				for (int i = 0; i < 3; i++)
-				guidedFilterSrc1Guidance1SSE_(v[i], guidance, d[i], radius, eps);
-				
+					guidedFilterSrc1Guidance1SSE_(v[i], guidance, d[i], radius, eps);
+
 			}
 			else
 			{
 #pragma omp parallel for
 				for (int i = 0; i < 3; i++)
-				guidedFilterSrc1Guidance1_(v[i], guidance, d[i], radius, eps);
-				
+					guidedFilterSrc1Guidance1_(v[i], guidance, d[i], radius, eps);
+
 			}
 			merge(d, dest);
 		}
@@ -1947,7 +2461,7 @@ namespace cp
 		Size imsize = src.size();
 		const float e = eps;
 		Mat sf; src.convertTo(sf, CV_32F);
-		
+
 		Mat mSrc(imsize, CV_32F);//mean_p
 		boxFilter(sf, mSrc, CV_32F, ksize, Point(-1, -1), true, BORDER_TYPE);//meanImSrc*K
 
@@ -1972,7 +2486,7 @@ namespace cp
 
 	void guidedFilter(const Mat& src, Mat& dest, const int radius, const float eps)
 	{
-		if (radius == 0){ src.copyTo(dest); return; }
+		if (radius == 0) { src.copyTo(dest); return; }
 		bool sse = checkHardwareSupport(CV_CPU_SSE2);
 		if (radius == 0)
 			src.copyTo(dest);
@@ -2191,7 +2705,7 @@ namespace cp
 		{
 			for (int i = 0; i < channels; i++)
 			{
-				int idx = channels*j + i;
+				int idx = channels * j + i;
 				multiply(If[i], If[j], temp);
 				boxFilter(temp, var_I_vec[idx], CV_32F, ksize, PT, true, BORDER_TYPE);
 				multiply(mean_I_vec[i], mean_I_vec[j], temp);
@@ -2205,68 +2719,68 @@ namespace cp
 			{
 				if (i == j)
 				{
-					int idx = channels*j + i;
+					int idx = channels * j + i;
 					var_I_vec[idx] += e;
 				}
 			}
 		}
 
-	{
-		Mat sigmaEps = Mat::zeros(channels, channels, CV_32F);
-
-		//CalcTime t("cov");
-		for (int i = 0; i < size; i++)
 		{
-			for (int n = 0; n < channels*channels; n++)
+			Mat sigmaEps = Mat::zeros(channels, channels, CV_32F);
+
+			//CalcTime t("cov");
+			for (int i = 0; i < size; i++)
 			{
-				sigmaEps.at<float>(n) = var_I_vec[n].at<float>(i);
-			}
-
-			Mat inv = sigmaEps.inv(cv::DECOMP_LU);
-
-			//reuse for buffer
-			Mat vec = Mat::zeros(channels, 1, CV_32F);
-
-			for (int m = 0; m < channels; m++)
-			{
-				for (int n = 0; n < channels; n++)
+				for (int n = 0; n < channels*channels; n++)
 				{
-					int idx = channels*m + n;
-					vec.at<float>(n) += inv.at<float>(m, n)*cov_Ip_vec[n].at<float>(i);
+					sigmaEps.at<float>(n) = var_I_vec[n].at<float>(i);
 				}
+
+				Mat inv = sigmaEps.inv(cv::DECOMP_LU);
+
+				//reuse for buffer
+				Mat vec = Mat::zeros(channels, 1, CV_32F);
+
+				for (int m = 0; m < channels; m++)
+				{
+					for (int n = 0; n < channels; n++)
+					{
+						int idx = channels * m + n;
+						vec.at<float>(n) += inv.at<float>(m, n)*cov_Ip_vec[n].at<float>(i);
+					}
+				}
+
+				for (int n = 0; n < channels; n++)
+					cov_Ip_vec[n].at<float>(i) = vec.at<float>(n);
+
 			}
-
-			for (int n = 0; n < channels; n++)
-				cov_Ip_vec[n].at<float>(i) = vec.at<float>(n);
-
 		}
-	}
 
-	vector<Mat> a_vec(channels);
-	for (int i = 0; i < channels; i++)
-	{
-		a_vec[i] = cov_Ip_vec[i];
-		multiply(a_vec[i], mean_I_vec[i], mean_I_vec[i]);//break mean_I_r;
-	}
+		vector<Mat> a_vec(channels);
+		for (int i = 0; i < channels; i++)
+		{
+			a_vec[i] = cov_Ip_vec[i];
+			multiply(a_vec[i], mean_I_vec[i], mean_I_vec[i]);//break mean_I_r;
+		}
 
-	Mat mean_vec = Mat::zeros(mean_p.size(), CV_32F);
-	for (int i = 0; i < channels; i++)
-	{
-		mean_vec += mean_I_vec[i];
-	}
-	mean_p -= mean_vec;
+		Mat mean_vec = Mat::zeros(mean_p.size(), CV_32F);
+		for (int i = 0; i < channels; i++)
+		{
+			mean_vec += mean_I_vec[i];
+		}
+		mean_p -= mean_vec;
 
 
-	Mat b = mean_p;
+		Mat b = mean_p;
 
-	boxFilter(b, temp, CV_32F, ksize, PT, true, BORDER_TYPE);
-	for (int i = 0; i < channels; i++)
-	{
-		boxFilter(a_vec[i], a_vec[i], CV_32F, ksize, PT, true, BORDER_TYPE);//break a_r
-		multiply(a_vec[i], If[i], a_vec[i]);
-		temp += a_vec[i];
-	}
-	temp.convertTo(dest, src.type());
+		boxFilter(b, temp, CV_32F, ksize, PT, true, BORDER_TYPE);
+		for (int i = 0; i < channels; i++)
+		{
+			boxFilter(a_vec[i], a_vec[i], CV_32F, ksize, PT, true, BORDER_TYPE);//break a_r
+			multiply(a_vec[i], If[i], a_vec[i]);
+			temp += a_vec[i];
+		}
+		temp.convertTo(dest, src.type());
 	}
 
 	void guidedFilterBase(const Mat& src, const Mat& guidance, Mat& dest, const int radius, const float eps)
@@ -2306,7 +2820,7 @@ namespace cp
 	}
 	void guidedFilterBase(const Mat& src, Mat& dest, const int radius, const float eps)
 	{
-		if (radius == 0){ src.copyTo(dest); return; }
+		if (radius == 0) { src.copyTo(dest); return; }
 
 		if (radius == 0)
 			src.copyTo(dest);

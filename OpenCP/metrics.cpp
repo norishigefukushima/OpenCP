@@ -1,46 +1,456 @@
 #include "metrics.hpp"
-
+#include "inlineSIMDFunctions.hpp"
 using namespace std;
 using namespace cv;
 
 namespace cp
 {
-
-	double YPSNR(InputArray src1, InputArray src2)
+	double MSE_64F(cv::Mat& src, cv::Mat& reference, bool isKahan = true)
 	{
-		Mat g1, g2;
-		if (src1.channels() == 1) g1 = src1.getMat();
-		else cvtColor(src1, g1, COLOR_BGR2GRAY);
-		if (src2.channels() == 1) g2 = src2.getMat();
-		else cvtColor(src2, g2, COLOR_BGR2GRAY);
+		CV_Assert(!src.empty());
+		CV_Assert(!reference.empty());
+		CV_Assert(src.size() == reference.size());
+		CV_Assert(src.channels() == reference.channels());
+		CV_Assert(src.depth() == CV_64F);
+		CV_Assert(reference.depth() == CV_64F);
 
-		return PSNR64F(g1, g2);
-	}
+		int pixels = src.size().area()*src.channels();
 
-	double PSNR64F(InputArray I1_, InputArray I2_)
-	{
-		CV_Assert(I1_.channels() == I2_.channels());
+		double MSE = 0.0;
 
-		Mat I1, I2;
-		I1_.getMat().convertTo(I1, CV_64F);
-		I2_.getMat().convertTo(I2, CV_64F);
+		double* ptr1 = src.ptr<double>(0);
+		double* ptr2 = reference.ptr<double>(0);
+		const int simdsize = (pixels / 4) * 4;
+		const int rem = pixels - simdsize;
 
-		Mat s1;
-		absdiff(I1, I2, s1);       // |I1 - I2|
-		s1 = s1.mul(s1);           // |I1 - I2|^2
+		__m256d mmse = _mm256_setzero_pd();
 
-		Scalar s = sum(s1);        // sum elements per channel
+		if (isKahan)
+		{
+			__m256d c = _mm256_setzero_pd();
+			for (int i = 0; i < simdsize; i += 4)
+			{
+				__m256d m1 = _mm256_load_pd(ptr1 + i);
+				__m256d m2 = _mm256_load_pd(ptr2 + i);
+				__m256d v = _mm256_sub_pd(m1, m2);
 
-		double sse = s.val[0] + s.val[1] + s.val[2]; // sum channels
-
-		if (sse <= 1e-10) // for small values return zero
-			return 0;
+				__m256d y = _mm256_fmsub_pd(v, v, c);
+				__m256d t = _mm256_add_pd(mmse, y);
+				c = _mm256_sub_pd(_mm256_sub_pd(t, mmse), y);
+				mmse = t;
+			}
+		}
 		else
 		{
-			double mse = sse / (double)(I1.channels() * I1.total());
-			double psnr = 10.0 * log10((255.0 * 255.0) / mse);
-			return psnr;
+			for (int i = 0; i < simdsize; i += 4)
+			{
+				__m256d m1 = _mm256_load_pd(ptr1 + i);
+				__m256d m2 = _mm256_load_pd(ptr2 + i);
+				__m256d t = _mm256_sub_pd(m1, m2);
+				mmse = _mm256_fmadd_pd(t, t, mmse);
+			}
 		}
+
+		MSE += mmse.m256d_f64[0];
+		MSE += mmse.m256d_f64[1];
+		MSE += mmse.m256d_f64[2];
+		MSE += mmse.m256d_f64[3];
+
+		//for (int i = 0; i < pixels; ++i)
+		for (int i = simdsize; i < pixels; ++i)
+		{
+			MSE += (ptr1[i] - ptr2[i])*(ptr1[i] - ptr2[i]);
+		}
+		MSE /= (double)pixels;
+
+		return MSE;
+	}
+
+	double MSE_32F(cv::Mat& src, cv::Mat& reference)
+	{
+		CV_Assert(!src.empty());
+		CV_Assert(!reference.empty());
+		CV_Assert(src.size() == reference.size());
+		CV_Assert(src.channels() == reference.channels());
+		CV_Assert(src.depth() == CV_32F);
+		CV_Assert(reference.depth() == CV_32F);
+
+		int pixels = src.size().area()*src.channels();
+
+		double MSE = 0.0;
+
+		float* ptr1 = src.ptr<float>(0);
+		float* ptr2 = reference.ptr<float>(0);
+		const int simdsize = (pixels / 8) * 8;
+		const int rem = pixels - simdsize;
+
+		__m256 mmse = _mm256_setzero_ps();
+
+		for (int i = 0; i < simdsize; i += 8)
+		{
+			__m256 m1 = _mm256_load_ps(ptr1 + i);
+			__m256 m2 = _mm256_load_ps(ptr2 + i);
+			__m256 t = _mm256_sub_ps(m1, m2);
+			mmse = _mm256_fmadd_ps(t, t, mmse);
+		}
+
+		for (int i = 0; i < 8; i++)
+		{
+			MSE += (double)mmse.m256_f32[i];
+		}
+		//for (int i = 0; i < pixels; ++i)
+		for (int i = simdsize; i < pixels; ++i)
+		{
+			MSE += (ptr1[i] - ptr2[i])*(ptr1[i] - ptr2[i]);
+		}
+		MSE /= (double)pixels;
+
+		return MSE;
+	}
+
+	double MSE_8U(cv::Mat& src, cv::Mat& reference)
+	{
+		CV_Assert(!src.empty());
+		CV_Assert(!reference.empty());
+		CV_Assert(src.size() == reference.size());
+		CV_Assert(src.channels() == reference.channels());
+		CV_Assert(src.depth() == CV_8U);
+		CV_Assert(reference.depth() == CV_8U);
+
+		int pixels = src.size().area()*src.channels();
+
+		double MSE = 0.0;
+
+		uchar* ptr1 = src.ptr<uchar>(0);
+		uchar* ptr2 = reference.ptr<uchar>(0);
+		const int simdsize = (pixels / 8) * 8;
+		const int rem = pixels - simdsize;
+
+		__m256 mmse = _mm256_setzero_ps();
+
+		for (int i = 0; i < simdsize; i += 8)
+		{
+			__m256 m1 = _mm256_load_epu8cvtps((__m128i*)(ptr1 + i));
+			__m256 m2 = _mm256_load_epu8cvtps((__m128i*)(ptr2 + i));
+			__m256 t = _mm256_sub_ps(m1, m2);
+			mmse = _mm256_fmadd_ps(t, t, mmse);
+		}
+
+		for (int i = 0; i < 8; i++)
+		{
+			MSE += (double)mmse.m256_f32[i];
+		}
+		//for (int i = 0; i < pixels; ++i)
+		for (int i = simdsize; i < pixels; ++i)
+		{
+			MSE += (ptr1[i] - ptr2[i])*(ptr1[i] - ptr2[i]);
+		}
+		MSE /= (double)pixels;
+
+		return MSE;
+	}
+
+
+
+	void PSNRMetrics::cvtImageForPSNR64F(const Mat& src, Mat& dest, const int cmethod)
+	{
+		if (src.depth() == CV_64F)
+		{
+			switch (cmethod)
+			{
+			case PSNR_ALL:
+			default:
+			{
+				src.copyTo(dest); break;
+			}
+			case PSNR_Y:
+			{
+				//cvtColor do not support 64F 
+				cv::Matx13d mt(0.299, 0.587, 0.114);
+				cv::transform(src, dest, mt); break;
+			}
+			case PSNR_B:
+			{
+				cv::split(src, vtemp);
+				vtemp[0].copyTo(dest); break;
+			}
+			case PSNR_G:
+			{
+				cv::split(src, vtemp);
+				vtemp[1].copyTo(dest); break;
+			}
+			case PSNR_R:
+			{
+				cv::split(src, vtemp);
+				vtemp[2].copyTo(dest); break;
+			}
+			}
+		}
+		else
+		{
+			switch (cmethod)
+			{
+			case PSNR_ALL:
+			default:
+			{
+				src.convertTo(dest, CV_64F); break;
+			}
+			case PSNR_Y:
+			{
+				cvtColor(src, temp, COLOR_BGR2GRAY);
+				temp.convertTo(dest, CV_64F); break;
+			}
+			case PSNR_B:
+			{
+				split(src, vtemp);
+				vtemp[0].convertTo(dest, CV_64F); break;
+			}
+			case PSNR_G:
+			{
+				cv::split(src, vtemp);
+				vtemp[1].convertTo(dest, CV_64F); break;
+			}
+			case PSNR_R:
+			{
+				cv::split(src, vtemp);
+				vtemp[2].convertTo(dest, CV_64F); break;
+			}
+			}
+		}
+	}
+
+	void PSNRMetrics::cvtImageForPSNR32F(const Mat& src, Mat& dest, const int cmethod)
+	{
+		if (src.depth() == CV_32F)
+		{
+			switch (cmethod)
+			{
+			case PSNR_ALL:
+			default:
+			{
+				src.copyTo(dest); break;
+			}
+			case PSNR_Y:
+			{
+				cvtColor(src, dest, COLOR_BGR2GRAY); break;
+			}
+			case PSNR_B:
+			{
+				cv::split(src, vtemp);
+				vtemp[0].copyTo(dest); break;
+			}
+			case PSNR_G:
+			{
+				cv::split(src, vtemp);
+				vtemp[1].copyTo(dest); break;
+			}
+			case PSNR_R:
+			{
+				cv::split(src, vtemp);
+				vtemp[2].copyTo(dest); break;
+			}
+			}
+		}
+		else
+		{
+			switch (cmethod)
+			{
+			case PSNR_ALL:
+			default:
+			{
+				src.convertTo(dest, CV_32F); break;
+			}
+			case PSNR_Y:
+			{
+				src.convertTo(temp, CV_32F);
+				cvtColor(temp, dest, COLOR_BGR2GRAY);
+				break;
+			}
+			case PSNR_B:
+			{
+				split(src, vtemp);
+				vtemp[0].convertTo(dest, CV_32F); break;
+			}
+			case PSNR_G:
+			{
+				cv::split(src, vtemp);
+				vtemp[1].convertTo(dest, CV_32F); break;
+			}
+			case PSNR_R:
+			{
+				cv::split(src, vtemp);
+				vtemp[2].convertTo(dest, CV_32F); break;
+			}
+			}
+		}
+	}
+
+	void PSNRMetrics::cvtImageForPSNR8U(const Mat& src, Mat& dest, const int cmethod)
+	{
+		if (src.depth() == CV_8U)
+		{
+			switch (cmethod)
+			{
+			case PSNR_ALL:
+			default:
+			{
+				src.copyTo(dest); break;
+			}
+			case PSNR_Y:
+			{
+				cvtColor(src, dest, COLOR_BGR2GRAY); break;
+			}
+			case PSNR_B:
+			{
+				cv::split(src, vtemp);
+				vtemp[0].copyTo(dest); break;
+			}
+			case PSNR_G:
+			{
+				cv::split(src, vtemp);
+				vtemp[1].copyTo(dest); break;
+			}
+			case PSNR_R:
+			{
+				cv::split(src, vtemp);
+				vtemp[2].copyTo(dest); break;
+			}
+			}
+		}
+		else
+		{
+			switch (cmethod)
+			{
+			case PSNR_ALL:
+			default:
+			{
+				src.convertTo(dest, CV_8U); break;
+			}
+			case PSNR_Y:
+			{
+				src.convertTo(temp, CV_8U);
+				cvtColor(temp, dest, COLOR_BGR2GRAY);
+				break;
+			}
+			case PSNR_B:
+			{
+				split(src, vtemp);
+				vtemp[0].convertTo(dest, CV_8U); break;
+			}
+			case PSNR_G:
+			{
+				cv::split(src, vtemp);
+				vtemp[1].convertTo(dest, CV_8U); break;
+			}
+			case PSNR_R:
+			{
+				cv::split(src, vtemp);
+				vtemp[2].convertTo(dest, CV_8U); break;
+			}
+			}
+		}
+	}
+
+	double PSNRMetrics::getPSNR(cv::InputArray src, cv::InputArray ref, const int boundingBox, const int precision, const int compare_method)
+	{
+		CV_Assert(!ref.empty());
+		CV_Assert(!src.empty());
+		CV_Assert(src.channels() == ref.channels());
+		CV_Assert(src.size() == ref.size());
+
+		setReference(ref, boundingBox, compare_method);
+		return getPSNRPreset(src, boundingBox, precision, compare_method);
+	}
+
+	double PSNRMetrics::operator()(cv::InputArray src, cv::InputArray ref, const int boundingBox, const int precision, const int compare_method)
+	{
+		return getPSNR(src, ref, boundingBox, precision, compare_method);
+	}
+
+	//set reference image for acceleration
+	void PSNRMetrics::setReference(cv::InputArray src, const int boundingBox, const int precision, const int compare_method)
+	{
+		const int cmethod = (src.channels() == 1) ? PSNR_ALL : compare_method;
+
+		Mat r = src.getMat();
+
+		if (boundingBox != 0)
+		{
+			r(Rect(boundingBox, boundingBox, r.cols - 2 * boundingBox, r.rows - 2 * boundingBox)).copyTo(cropr);
+		}
+		else
+		{
+			cropr = r;
+		}
+
+		if (precision == PSNR_32F)
+		{
+			cvtImageForPSNR32F(cropr, reference, cmethod);
+		}
+		else if (precision == PSNR_8U)
+		{
+			cvtImageForPSNR8U(cropr, reference, cmethod);
+		}
+		else
+		{
+			cvtImageForPSNR64F(cropr, reference, cmethod);
+		}
+	}
+
+	//using preset reference image for acceleration
+	double PSNRMetrics::getPSNRPreset(cv::InputArray src, const int boundingBox, const int precision, const int compare_method)
+	{
+		CV_Assert(!reference.empty());
+		CV_Assert(!src.empty());
+		Mat s = src.getMat();
+
+		const int cmethod = (src.channels() == 1) ? PSNR_ALL : compare_method;
+
+		if (boundingBox != 0)
+		{
+			s(Rect(boundingBox, boundingBox, s.cols - 2 * boundingBox, s.rows - 2 * boundingBox)).copyTo(crops);
+		}
+		else
+		{
+			crops = s;
+		}
+
+
+		double MSE = 0.0;
+		if (precision == PSNR_32F)
+		{
+			cvtImageForPSNR32F(crops, source, cmethod);
+			MSE = MSE_32F(source, reference);
+		}
+		else if (precision == PSNR_8U)
+		{
+			cvtImageForPSNR8U(crops, source, cmethod);
+			MSE = MSE_8U(source, reference);
+		}
+		else
+		{
+			cvtImageForPSNR64F(crops, source, cmethod);
+			MSE = MSE_64F(source, reference, precision == PSNR_KAHAN_64F);
+		}
+
+		if (MSE == 0.0)
+		{
+			return 0;
+		}
+		else if (cvIsNaN(MSE) || cvIsInf(MSE))
+		{
+			return -1.0;
+		}
+		else
+		{
+			return 10.0 * log10(255.0*255.0 / MSE);
+		}
+	}
+
+	double getPSNR(cv::InputArray src, cv::InputArray ref, const int boundingBox , const int precision, const int compare_method)
+	{
+		PSNRMetrics psnr;
+		return psnr(src, ref, boundingBox, precision, compare_method);
 	}
 
 	double MSE(InputArray I1_, InputArray I2_, InputArray mask)
@@ -240,7 +650,7 @@ namespace cp
 			for (int j = 0; j < 512; ++j)
 			{
 				const double v = (double)hist[j] * invsum;
-				if (v != 0) ret -= v*log2(v);
+				if (v != 0) ret -= v * log2(v);
 			}
 		}
 		return ret;
@@ -250,15 +660,15 @@ namespace cp
 	{
 		vector<Mat> im;
 		cv::split(src, im);
-		
+
 		double ret = 0.0;
 		for (int i = 0; i < src.channels(); i++)
 		{
 			cv::Mat hist;
-			const int hdims[] = { 256 }; 
+			const int hdims[] = { 256 };
 			const float hranges[] = { 0, 256 };
 			//const float hranges[] = {-minv,maxv};
-			const float* ranges[] = { hranges }; 
+			const float* ranges[] = { hranges };
 
 			cv::calcHist(&im[i], 1, 0, mask, hist, 1, hdims, ranges);
 
@@ -269,11 +679,11 @@ namespace cp
 			}
 
 			double invsum = 1.0 / sum;
-			
+
 			for (int j = 0; j < hdims[0]; ++j)
 			{
 				const double v = (double)hist.at<float>(j)*invsum;
-				if (v != 0) ret -= v*log2(v);	
+				if (v != 0) ret -= v * log2(v);
 			}
 		}
 		return ret;

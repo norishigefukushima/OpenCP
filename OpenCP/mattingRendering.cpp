@@ -7,7 +7,6 @@ using namespace cv;
 
 namespace cp
 {
-
 	dispRefinement::dispRefinement()
 	{
 		r = 4;

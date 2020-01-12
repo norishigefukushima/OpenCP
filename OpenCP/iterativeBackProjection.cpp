@@ -2,7 +2,7 @@
 #include "jointBilateralFilter.hpp"
 #include "guidedFilter.hpp"
 #include "timer.hpp"
-#include "fftw3.h"
+#include "fftw/fftw3.h"
 using namespace cv;
 using namespace std;
 

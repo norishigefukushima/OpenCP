@@ -82,6 +82,12 @@
     <Filter Include="ソース ファイル\filter\dct-fft">
       <UniqueIdentifier>{58c7015d-a5f2-455d-bd1a-3808a64f3337}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\filter\guidedImageFilter">
+      <UniqueIdentifier>{35adffd9-8c6d-4577-b1e6-1262cb040548}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\filter\boxFilter">
+      <UniqueIdentifier>{e731fd72-a424-452c-ba70-1047e0ce8118}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="color.cpp">
@@ -98,9 +104,6 @@
     </ClCompile>
     <ClCompile Include="alphaBlend.cpp">
       <Filter>ソース ファイル\imgproc</Filter>
-    </ClCompile>
-    <ClCompile Include="matInfo.cpp">
-      <Filter>ソース ファイル\utilty functions</Filter>
     </ClCompile>
     <ClCompile Include="stat.cpp">
       <Filter>ソース ファイル\utilty functions</Filter>
@@ -387,9 +390,6 @@
     <ClCompile Include="jointBilateralFilter.cpp">
       <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
     </ClCompile>
-    <ClCompile Include="guidedFilter.cpp">
-      <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
-    </ClCompile>
     <ClCompile Include="realtimeO1BilateralFilter.cpp">
       <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
     </ClCompile>
@@ -410,6 +410,126 @@
     </ClCompile>
     <ClCompile Include="diff.cpp">
       <Filter>ソース ファイル\utilty functions</Filter>
+    </ClCompile>
+    <ClCompile Include="tiling.cpp">
+      <Filter>ソース ファイル\utilty functions</Filter>
+    </ClCompile>
+    <ClCompile Include="showmatInfo.cpp">
+      <Filter>ソース ファイル\utilty functions</Filter>
+    </ClCompile>
+    <ClCompile Include="gif\guidedFilter_Merge_Transpose_Inverse.cpp">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="gif\guidedFilter_Merge_Transpose.cpp">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="gif\guidedFilter_Merge_Share_Ex.cpp">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="gif\guidedFilter_Merge_OnePass_Fast.cpp">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="gif\guidedFilter_Merge_nonSplit.cpp">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="gif\guidedFilter_Merge_OnePass.cpp">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="gif\guidedFilter_Div.cpp">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="gif\guidedFilter_Merge_Share.cpp">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="gif\guidedFilter_Merge_Share_Transpose_Inverse.cpp">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="gif\guidedFilter_Merge_Share_Transpose.cpp">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="gif\guidedFilter_Merge.cpp">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="gif\guidedFilter.cpp">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="gif\guidedFilter_Merge_forTiling.cpp">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="gif\guidedFilter_Merge_OnePass_2Div.cpp">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="gif\guidedFilter_Naive_Share.cpp">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="gif\guidedFilter_Naive.cpp">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="gif\guidedFilter_SepVHI.cpp">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="gif\guidedFilter_SepVHI_Share.cpp">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="gif\guidedFilter_tiling.cpp">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="box\boxFilter_OPSAT_AoS.cpp">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="box\boxFilter_OPSAT_SoA.cpp">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="box\boxFilter_OPSAT_AoS_2Div.cpp">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="box\boxFilter_Separable.cpp">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="box\boxFilter_OPSAT_SoA_2Div.cpp">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="box\boxFilter_SSAT_HV.cpp">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="box\boxFilter_SSAT_HtH.cpp">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="box\boxFilter_SSAT_HV_8x8.cpp">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="box\boxFilter_SSAT_HV_4x4.cpp">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="box\boxFilter_SSAT_RowSumGather.cpp">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="box\boxFilter_SSAT_VH.cpp">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="box\boxFilter_SSAT_SoA.cpp">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="box\boxFilter_SSAT_VtV.cpp">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="box\boxFilter_Naive.cpp">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="box\boxFilter_Integral_OnePass.cpp">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="box\boxFilter_Integral.cpp">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="box\boxFilter_SSAT_HV_CacheBlocking.cpp">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="box\boxFilter.cpp">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="box\boxFilter_Separable_Interleave.cpp">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -465,9 +585,6 @@
       <Filter>ヘッダー ファイル\headers\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\GaussianFilterSpectralRecursive.hpp">
-      <Filter>ヘッダー ファイル\headers\filter</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\guidedFilter.hpp">
       <Filter>ヘッダー ファイル\headers\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\jointBilateralFilter.hpp">
@@ -691,6 +808,135 @@
     </ClInclude>
     <ClInclude Include="..\include\countDenormalizedNumber.hpp">
       <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\inlineMathFunctions.hpp">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\inlineSIMDFunctions.hpp">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\tiling.hpp">
+      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\boxFilter.hpp">
+      <Filter>ヘッダー ファイル\headers\filter</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\parallel_type.hpp">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="gif\guidedFilter_Merge_nonSplit.h">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="gif\guidedFilter_Merge_OnePath_Fast.h">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="gif\guidedFilter_Merge_forTiling.h">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="gif\guidedFilter_Merge_Transpose.h">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="gif\guidedFilter_Merge_Transpose_Inverse.h">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="gif\guidedFilter_Merge_Share_Ex.h">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="gif\guidedFilter_Merge_Share.h">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="gif\guidedFilter_Merge_Share_Transpose.h">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="gif\guidedFilter_Merge_Share_Transpose_Inverse.h">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="gif\guidedFilter_Naive_Share.h">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="gif\guidedFilter_Merge_Base.h">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="gif\guidedFilter_Div.h">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="gif\guidedFilter_Merge.h">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="gif\guidedFilter_Merge_OnePass.h">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="gif\guidedFilter_Merge_OnePass_2Div.h">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="gif\guidedFilter_Naive.h">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="gif\guidedFilter_SepVHI.h">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="gif\guidedFilter_SepVHI_Share.h">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_OPSAT_AoS_2Div.h">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_Separable.h">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_SSAT_HtH.h">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_Separable_Interleave.h">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_SSAT_HV.h">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_SSAT_VtV.h">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_SSAT_VH.h">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_Integral_OnePass.h">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_SSAT_SoA.h">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_SSAT_HV_CacheBlocking.h">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_SSAT_HV_8x8.h">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_SSAT_HV_4x4.h">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_OPSAT_SoA_2Div.h">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_OPSAT_SoA.h">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_OPSAT_AoS.h">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_Naive.h">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_Integral.h">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_Base.h">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_SSAT_RowSumGather.h">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\guidedFilter.hpp">
+      <Filter>ヘッダー ファイル\headers\filter</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

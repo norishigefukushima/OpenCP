@@ -69,9 +69,9 @@ double psnrRGBave(Mat& src, Mat& ref)
 	vector<Mat> reffs;
 	split(srcf, srcfs);
 	split(reff, reffs);
-	double b = PSNR64F(srcfs[0], reffs[0]);
-	double g = PSNR64F(srcfs[1], reffs[0]);
-	double r = PSNR64F(srcfs[2], reffs[0]);
+	double b = getPSNR(srcfs[0], reffs[0]);
+	double g = getPSNR(srcfs[1], reffs[0]);
+	double r = getPSNR(srcfs[2], reffs[0]);
 
 	return(b + g + r) / 3;
 }
@@ -86,7 +86,7 @@ double psnrRGBone(Mat& src, Mat& ref)
 	cvtColorBGR2PLANE(srcf, srcfs);
 	cvtColorBGR2PLANE(reff, reffs);
 
-	double a = PSNR64F(srcfs, reffs);
+	double a = getPSNR(srcfs, reffs);
 	return a;
 }
 
@@ -440,7 +440,7 @@ void guiJointRealtimeO1BilateralFilterTest(Mat& src_, Mat& guide_)
 
 		ci("d: %d", d);
 		//ci("PSNR: %f", PSNRBB(dest, ref, 100, 100));
-		ci("PSNR: %f", PSNR64F(dest, ref));
+		ci("PSNR: %f", getPSNR(dest, ref));
 		ci("MSE:  %f", norm(dest, ref, NORM_L2SQR) / (double)dest.size().area());
 		ci("time: %f", tim);
 		ci.show();

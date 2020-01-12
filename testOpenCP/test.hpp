@@ -18,6 +18,8 @@ void splitmergeTest(cv::Mat& src);
 void guiDisparityPlaneFitSLICTest(cv::Mat& leftim, cv::Mat& rightim, cv::Mat& GT);
 void fitPlaneTest();
 
+void guiHazeRemoveTest();
+void guiGuidedImageFilterTest();
 void guiEdgePresevingFilterOpenCV(cv::Mat& src);
 void guiWeightMapTest();
 void guiCrossBasedLocalFilter(cv::Mat& src);

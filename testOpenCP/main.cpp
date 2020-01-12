@@ -4,6 +4,9 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
+	guiGuidedImageFilterTest();
+	guiHazeRemoveTest();
+	
 	Mat left = imread("img/stereo/Dolls/view1.png");
 	Mat right = imread("img/stereo/Dolls/view5.png");
 	Mat dmap = imread("img/stereo/Dolls/disp1.png", 0);
@@ -33,11 +36,7 @@ int main(int argc, char** argv)
 	//return 0;
 	//VizKernel vk;
 	//vk.run(img, 2);
-	//HazeRemove2 hz;
-	//Mat haze = imread("img/haze/swans.png");
-	//Mat haze = imread("img/haze/canyon.png");
-
-	//hz.gui(haze, "haze");
+	
 	/*Mat aa = imread("temp/disp16.bmp", IMREAD_GRAYSCALE);
 	Mat aaa = Mat(Size(1248, 978), CV_16S);
 	unsigned short* s = aa.ptr<unsigned short>(0);

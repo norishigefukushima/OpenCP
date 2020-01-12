@@ -10,4 +10,12 @@ namespace cp
 	CP_EXPORT void compareRange(cv::InputArray src, cv::OutputArray destMask, const double validMin, const double validMax);
 	CP_EXPORT void setTypeMaxValue(cv::InputOutputArray src);
 	CP_EXPORT void setTypeMinValue(cv::InputOutputArray src);
+
+	CP_EXPORT void fmadd(cv::Mat& a, cv::Mat& x, cv::Mat& b, cv::Mat& dest);
+	CP_EXPORT void fmsub(cv::Mat& a, cv::Mat& x, cv::Mat& b, cv::Mat& dest);
+	CP_EXPORT void fnmadd(cv::Mat& a, cv::Mat& x, cv::Mat& b, cv::Mat& dest);
+	CP_EXPORT void fnmsub(cv::Mat& a, cv::Mat& x, cv::Mat& b, cv::Mat& dest);
+
+	CP_EXPORT void bitshiftRight(cv::InputArray src_, cv::OutputArray dest_, cv::OutputArray lostbit_, const int shift);
+	CP_EXPORT void bitshiftRight(cv::InputArray src_, cv::OutputArray dest_, const int shift);
 }

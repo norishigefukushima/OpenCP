@@ -5,6 +5,7 @@
 /*************************************************************
  filter
 *************************************************************/
+#include "boxFilter.hpp"
 #include "bilateralFilter.hpp"
 #include "binalyWeightedRangeFilter.hpp"
 #include "boundaryReconstructionFilter.hpp"
@@ -109,6 +110,7 @@
 #include "stat.hpp"
 #include "stencil.hpp"
 #include "timer.hpp"
+#include "tiling.hpp"
 #include "updateCheck.hpp"
 #include "video.hpp"
 #include "yuvio.hpp"
@@ -124,6 +126,7 @@
 /*************************************************************
  inline functions
 *************************************************************/
+#include "inlineSIMDFunctions.hpp"
 #include "inlineMathFunctions.hpp"
 
 

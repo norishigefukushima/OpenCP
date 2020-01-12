@@ -108,8 +108,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>CP_API;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>
-      </AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../include</AdditionalIncludeDirectories>
       <OpenMPSupport>true</OpenMPSupport>
       <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -193,6 +192,25 @@
     <ClCompile Include="binalyWeightedRangeFilter.cpp" />
     <ClCompile Include="bitconvert.cpp" />
     <ClCompile Include="boundaryReconstructionFilter.cpp" />
+    <ClCompile Include="box\boxFilter.cpp" />
+    <ClCompile Include="box\boxFilter_Integral.cpp" />
+    <ClCompile Include="box\boxFilter_Integral_OnePass.cpp" />
+    <ClCompile Include="box\boxFilter_Naive.cpp" />
+    <ClCompile Include="box\boxFilter_OPSAT_AoS.cpp" />
+    <ClCompile Include="box\boxFilter_OPSAT_AoS_2Div.cpp" />
+    <ClCompile Include="box\boxFilter_OPSAT_SoA.cpp" />
+    <ClCompile Include="box\boxFilter_OPSAT_SoA_2Div.cpp" />
+    <ClCompile Include="box\boxFilter_Separable.cpp" />
+    <ClCompile Include="box\boxFilter_Separable_Interleave.cpp" />
+    <ClCompile Include="box\boxFilter_SSAT_HtH.cpp" />
+    <ClCompile Include="box\boxFilter_SSAT_HV.cpp" />
+    <ClCompile Include="box\boxFilter_SSAT_HV_4x4.cpp" />
+    <ClCompile Include="box\boxFilter_SSAT_HV_8x8.cpp" />
+    <ClCompile Include="box\boxFilter_SSAT_HV_CacheBlocking.cpp" />
+    <ClCompile Include="box\boxFilter_SSAT_RowSumGather.cpp" />
+    <ClCompile Include="box\boxFilter_SSAT_SoA.cpp" />
+    <ClCompile Include="box\boxFilter_SSAT_VH.cpp" />
+    <ClCompile Include="box\boxFilter_SSAT_VtV.cpp" />
     <ClCompile Include="Calibrator.cpp" />
     <ClCompile Include="color.cpp" />
     <ClCompile Include="consoleImage.cpp" />
@@ -221,8 +239,26 @@
     <ClCompile Include="GaussianBlurIPOL.cpp" />
     <ClCompile Include="GaussianFilter.cpp" />
     <ClCompile Include="GaussianFilterSpectralRecursive.cpp" />
+    <ClCompile Include="gif\guidedFilter.cpp" />
+    <ClCompile Include="gif\guidedFilter_Div.cpp" />
+    <ClCompile Include="gif\guidedFilter_Merge.cpp" />
+    <ClCompile Include="gif\guidedFilter_Merge_forTiling.cpp" />
+    <ClCompile Include="gif\guidedFilter_Merge_nonSplit.cpp" />
+    <ClCompile Include="gif\guidedFilter_Merge_OnePass.cpp" />
+    <ClCompile Include="gif\guidedFilter_Merge_OnePass_2Div.cpp" />
+    <ClCompile Include="gif\guidedFilter_Merge_OnePass_Fast.cpp" />
+    <ClCompile Include="gif\guidedFilter_Merge_Share.cpp" />
+    <ClCompile Include="gif\guidedFilter_Merge_Share_Ex.cpp" />
+    <ClCompile Include="gif\guidedFilter_Merge_Share_Transpose.cpp" />
+    <ClCompile Include="gif\guidedFilter_Merge_Share_Transpose_Inverse.cpp" />
+    <ClCompile Include="gif\guidedFilter_Merge_Transpose.cpp" />
+    <ClCompile Include="gif\guidedFilter_Merge_Transpose_Inverse.cpp" />
+    <ClCompile Include="gif\guidedFilter_Naive.cpp" />
+    <ClCompile Include="gif\guidedFilter_Naive_Share.cpp" />
+    <ClCompile Include="gif\guidedFilter_SepVHI.cpp" />
+    <ClCompile Include="gif\guidedFilter_SepVHI_Share.cpp" />
+    <ClCompile Include="gif\guidedFilter_tiling.cpp" />
     <ClCompile Include="guiContrast.cpp" />
-    <ClCompile Include="guidedFilter.cpp" />
     <ClCompile Include="hadamard.cpp" />
     <ClCompile Include="hazeRemove.cpp" />
     <ClCompile Include="histogram.cpp" />
@@ -257,7 +293,7 @@
     <ClCompile Include="libimq\wssim.cpp" />
     <ClCompile Include="localLaplacianFilter.cpp" />
     <ClCompile Include="maskoperation.cpp" />
-    <ClCompile Include="matInfo.cpp" />
+    <ClCompile Include="showmatInfo.cpp" />
     <ClCompile Include="matrixsimdutil.cpp" />
     <ClCompile Include="mattingRendering.cpp" />
     <ClCompile Include="metrics.cpp" />
@@ -289,6 +325,7 @@
     <ClCompile Include="StereoIterativeBM.cpp" />
     <ClCompile Include="StereoSGM2.cpp" />
     <ClCompile Include="stereo_core.cpp" />
+    <ClCompile Include="tiling.cpp" />
     <ClCompile Include="timer.cpp" />
     <ClCompile Include="updateCheck.cpp" />
     <ClCompile Include="video.cpp" />
@@ -305,6 +342,7 @@
     <ClInclude Include="..\include\binalyWeightedRangeFilter.hpp" />
     <ClInclude Include="..\include\bitconvert.hpp" />
     <ClInclude Include="..\include\boundaryReconstructionFilter.hpp" />
+    <ClInclude Include="..\include\boxFilter.hpp" />
     <ClInclude Include="..\include\Calibrator.hpp" />
     <ClInclude Include="..\include\color.hpp" />
     <ClInclude Include="..\include\common.hpp" />
@@ -338,6 +376,8 @@
     <ClInclude Include="..\include\histogram.hpp" />
     <ClInclude Include="..\include\imagediff.hpp" />
     <ClInclude Include="..\include\imqc.hpp" />
+    <ClInclude Include="..\include\inlineMathFunctions.hpp" />
+    <ClInclude Include="..\include\inlineSIMDFunctions.hpp" />
     <ClInclude Include="..\include\iterativeBackProjection.hpp" />
     <ClInclude Include="..\include\jointBilateralFilter.hpp" />
     <ClInclude Include="..\include\jointBilateralUpsample.hpp" />
@@ -355,6 +395,7 @@
     <ClInclude Include="..\include\nonLocalMeans.hpp" />
     <ClInclude Include="..\include\opencp.hpp" />
     <ClInclude Include="..\include\opticalFlow.hpp" />
+    <ClInclude Include="..\include\parallel_type.hpp" />
     <ClInclude Include="..\include\PermutohedralLattice.hpp" />
     <ClInclude Include="..\include\plot.hpp" />
     <ClInclude Include="..\include\pointcloud.hpp" />
@@ -378,6 +419,7 @@
     <ClInclude Include="..\include\stereo_core.hpp" />
     <ClInclude Include="..\include\stereoDisplay.hpp" />
     <ClInclude Include="..\include\stereoDP.hpp" />
+    <ClInclude Include="..\include\tiling.hpp" />
     <ClInclude Include="..\include\timer.hpp" />
     <ClInclude Include="..\include\updateCheck.hpp" />
     <ClInclude Include="..\include\video.hpp" />
@@ -386,9 +428,46 @@
     <ClInclude Include="..\include\Wiener2.hpp" />
     <ClInclude Include="..\include\yuvio.hpp" />
     <ClInclude Include="..\include\zoom.hpp" />
+    <ClInclude Include="box\boxFilter_Base.h" />
+    <ClInclude Include="box\boxFilter_Integral.h" />
+    <ClInclude Include="box\boxFilter_Integral_OnePass.h" />
+    <ClInclude Include="box\boxFilter_Naive.h" />
+    <ClInclude Include="box\boxFilter_OPSAT_AoS.h" />
+    <ClInclude Include="box\boxFilter_OPSAT_AoS_2Div.h" />
+    <ClInclude Include="box\boxFilter_OPSAT_SoA.h" />
+    <ClInclude Include="box\boxFilter_OPSAT_SoA_2Div.h" />
+    <ClInclude Include="box\boxFilter_Separable.h" />
+    <ClInclude Include="box\boxFilter_Separable_Interleave.h" />
+    <ClInclude Include="box\boxFilter_SSAT_HtH.h" />
+    <ClInclude Include="box\boxFilter_SSAT_HV.h" />
+    <ClInclude Include="box\boxFilter_SSAT_HV_4x4.h" />
+    <ClInclude Include="box\boxFilter_SSAT_HV_8x8.h" />
+    <ClInclude Include="box\boxFilter_SSAT_HV_CacheBlocking.h" />
+    <ClInclude Include="box\boxFilter_SSAT_RowSumGather.h" />
+    <ClInclude Include="box\boxFilter_SSAT_SoA.h" />
+    <ClInclude Include="box\boxFilter_SSAT_VH.h" />
+    <ClInclude Include="box\boxFilter_SSAT_VtV.h" />
     <ClInclude Include="filterCore.h" />
     <ClInclude Include="filterengine.hpp" />
     <ClInclude Include="fmath.hpp" />
+    <ClInclude Include="gif\guidedFilter_Div.h" />
+    <ClInclude Include="gif\guidedFilter_Merge.h" />
+    <ClInclude Include="gif\guidedFilter_Merge_Base.h" />
+    <ClInclude Include="gif\guidedFilter_Merge_forTiling.h" />
+    <ClInclude Include="gif\guidedFilter_Merge_nonSplit.h" />
+    <ClInclude Include="gif\guidedFilter_Merge_OnePass.h" />
+    <ClInclude Include="gif\guidedFilter_Merge_OnePass_2Div.h" />
+    <ClInclude Include="gif\guidedFilter_Merge_OnePath_Fast.h" />
+    <ClInclude Include="gif\guidedFilter_Merge_Share.h" />
+    <ClInclude Include="gif\guidedFilter_Merge_Share_Ex.h" />
+    <ClInclude Include="gif\guidedFilter_Merge_Share_Transpose.h" />
+    <ClInclude Include="gif\guidedFilter_Merge_Share_Transpose_Inverse.h" />
+    <ClInclude Include="gif\guidedFilter_Merge_Transpose.h" />
+    <ClInclude Include="gif\guidedFilter_Merge_Transpose_Inverse.h" />
+    <ClInclude Include="gif\guidedFilter_Naive.h" />
+    <ClInclude Include="gif\guidedFilter_Naive_Share.h" />
+    <ClInclude Include="gif\guidedFilter_SepVHI.h" />
+    <ClInclude Include="gif\guidedFilter_SepVHI_Share.h" />
     <ClInclude Include="libGaussian\complex_arith.h" />
     <ClInclude Include="libGaussian\gaussian_conv.h" />
     <ClInclude Include="libimq\imq.h" />

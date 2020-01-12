@@ -4,6 +4,7 @@
 
 using namespace std;
 using namespace cv;
+#include "opencp.hpp"
 
 namespace cp
 {
@@ -170,7 +171,26 @@ namespace cp
 		else applyColorMap(dark, dest, 2);
 	}
 
-	void HazeRemove::operator() (Mat& src, Mat& dest, int r_dark, double toprate, int r_joint, double e_joint)
+	void HazeRemove::removeFastGlobalSmootherFilter(Mat& src, Mat& dest, int r_dark, double top_rate, const double lambda, const double sigma_color, const double lambda_attenuation, const int iteration)
+	{
+		size = src.size();
+
+		darkChannel(src, r_dark);
+		getAtmosphericLight(src, top_rate);
+		getTransmissionMap();
+		Mat srcg;
+		cvtColor(src, srcg, COLOR_BGR2GRAY);
+		ximgproc::fastGlobalSmootherFilter(srcg, tmap, tmap, lambda, sigma_color, lambda_attenuation, max(iteration, 1));
+		
+		/*Mat temp;
+		cout << lambda << endl;
+		ximgproc::fastGlobalSmootherFilter(srcg, srcg, temp, lambda, sigma_color, lambda_attenuation, max(iteration, 1));
+		cv::imshow("a", temp);
+		*/
+		removeHaze(src, tmap, A, dest);		
+	}
+
+	void HazeRemove::removeGuidedFilter(Mat& src, Mat& dest, int r_dark, double toprate, int r_joint, double e_joint)
 	{
 		size = src.size();
 
@@ -183,22 +203,36 @@ namespace cp
 		removeHaze(src, tmap, A, dest);
 	}
 
+	void HazeRemove::operator() (Mat& src, Mat& dest, const int r_dark, const double top_rate, const int r_joint, const double e_joint)
+	{
+		removeGuidedFilter(src, dest, r_dark, top_rate, r_joint, e_joint);
+	}
+
 	void HazeRemove::gui(Mat& src, string wname)
 	{
+		string wnalight = "a light";
+		string wnhaze = "dehaze";
+		
+		namedWindow(wnalight);
+		namedWindow(wnhaze);
 		namedWindow(wname);
 
 		int mode = 0;
-		createTrackbar("mode", wname, &mode, 1);
+		createTrackbar("mode", wname, &mode, 2);
 		int alpha = 0;
 		createTrackbar("alpha", wname, &alpha, 100);
-		int hazerate = 10;
-		createTrackbar("hazerate*0.01", wname, &hazerate, 100);
 		int r_dark = 4;
 		createTrackbar("r_dark", wname, &r_dark, 100);
-		int r_joint = 15;
-		createTrackbar("r_joint", wname, &r_joint, 100);
-		int e = 6;
-		createTrackbar("e*0.1", wname, &e, 255);
+		int hazerate = 10;
+		createTrackbar("hazerate*0.01", wname, &hazerate, 100);
+		
+		int r_joint = 15; createTrackbar("r_joint", wname, &r_joint, 100);
+		int e = 6; createTrackbar("e*0.1", wname, &e, 255);
+
+		int lambda = 100; createTrackbar("lambda", wname, &lambda, 50000);
+		int sigma_range = 30; createTrackbar("sigma_r", wname, &sigma_range, 500);
+		int lambda_a = 25; createTrackbar("lambda_a*0.01", wname, &lambda_a, 100);
+		int iteration = 3; createTrackbar("iteration", wname, &iteration, 10);
 
 		int key = 0;
 		while (key != 'q')
@@ -209,18 +243,38 @@ namespace cp
 				Mat destC;
 				Mat destDark;
 				{
-					//CalcTime t("dehaze");
+					//Timer t("removeGuidedFilter");
 					operator()(src, show, r_dark, hazerate / 100.0, r_joint, e / 10.0);
 
 				}
 				showTransmissionMap(destC, true);
 				Mat a;
 				getAtmosphericLightImage(a);
-				imshow("a light", a);
+				
 				addWeighted(src, alpha / 100.0, destC, 1.0 - alpha / 100.0, 0.0, destC);
+				
+				imshow(wnalight, a);
+				imshow(wnhaze, show);
 				imshow(wname, destC);
-				imshow("dehaze", show);
+			}
+			else if (mode == 1)
+			{
+				Mat show;
+				Mat destC;
+				Mat destDark;
+				{
+					//Timer t("removeFastGlobalSmootherFilter");
+					removeFastGlobalSmootherFilter(src, show, r_dark, hazerate / 100.0, lambda, sigma_range*0.01, lambda_a*0.01, iteration);
 
+				}
+				showTransmissionMap(destC, true);
+				Mat a;
+				getAtmosphericLightImage(a);
+				addWeighted(src, alpha / 100.0, destC, 1.0 - alpha / 100.0, 0.0, destC);
+				
+				imshow(wnalight, a);
+				imshow(wnhaze, show);
+				imshow(wname, destC);
 			}
 			else
 			{
@@ -231,10 +285,10 @@ namespace cp
 				Mat dest = src - CV_RGB(mn, mn, mn);
 
 				dest.convertTo(dest, CV_8UC3, 255 / (mx - mn));
-				imshow("dehaze", dest);
+				imshow(wnhaze, dest);
 			}
 
-			key = waitKey(33);
+			key = waitKey(1);
 		}
 	}
 }

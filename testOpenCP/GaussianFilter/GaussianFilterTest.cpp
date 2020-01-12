@@ -200,7 +200,7 @@ void guiGausianFilterTest(Mat& src__)
 		if (src.depth() == CV_32F || src.depth() == CV_64F)
 		{
 			ci("MSE: %f", MSE(dest, ref));
-			ci("PSNR: %f", PSNR64F(dest, ref));
+			ci("PSNR: %f", getPSNR(dest, ref));
 			show.convertTo(show, CV_8U, 1.0, 0.5);
 		}
 		else
