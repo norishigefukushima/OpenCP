@@ -15,6 +15,45 @@ namespace cp
 		TIME_HOUR,
 		TIME_DAY
 	};
+
+	/*
+	Sample 1: compute time by using constructor and destructor for scope
+	{	//must use scope
+	Timer t;
+	//some function
+	}
+
+	Sample 2: manually start timer
+	Timer t;
+	t.start()
+	//some function
+	t.getTime()
+
+	Sample 3: skip start timer (start function is called by constructor) 
+	Timer t;
+	//some function
+	t.getTime()
+
+	Sample 4: compute mean or median value of trails
+	Timer t;
+	for(int i=0;i<loop;i++)
+	{
+		t.start()
+		//some function
+		t.getpushLapTime()
+	}
+	t.getLapTimeMean();
+	t.getLapTimeMedian();
+	e.clearStat();//clear stat and then re compute computing time
+	for(int i=0;i<loop;i++)
+	{
+		t.start()
+		//some function
+		t.getpushLapTime()
+	}
+	t.getLapTimeMean();
+	t.getLapTimeMedian();
+	*/
 	class CP_EXPORT Timer
 	{
 		int64 pre;
@@ -42,7 +81,7 @@ namespace cp
 		void setMessage(std::string& src);
 
 		void start();
-		void startAndClearStat();
+		void clearStat();
 
 		void setCountMax(const int value);
 		void setIgnoringThreshold(const int value);

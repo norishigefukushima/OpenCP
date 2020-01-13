@@ -11,7 +11,7 @@ namespace cp
 		pre = getTickCount();
 	}
 
-	void Timer::startAndClearStat()
+	void Timer::clearStat()
 	{
 		pre = getTickCount();
 		stat.clear();

@@ -1174,9 +1174,11 @@ namespace cp
 			int i, j, cn = dest->channels(), k;
 			int cng = (guide->rows - 2 * radiusV) / dest->rows;
 			Size size = dest->size();
-#if CV_SSE4_1
+
 			bool haveSSE4 = checkHardwareSupport(CV_CPU_SSE4_1);
-#endif
+
+			short CV_DECL_ALIGNED(16) buf[16];
+
 			if (cn == 1 && cng == 1)
 			{
 				uchar* sptr = (uchar*)temp->ptr(range.start + radiusV) + 16 * (radiusH / 16 + 1);
@@ -1437,7 +1439,7 @@ namespace cp
 				for (i = range.start; i != range.end; i++, gptrr += gstep, gptrg += gstep, gptrb += gstep, sptrr += sstep, sptrg += sstep, sptrb += sstep, dptr += dstep)
 				{
 					j = 0;
-#if CV_SSE4_1
+
 					if (haveSSE4)
 					{
 						for (; j < size.width; j += 16)//16 pixel unit
@@ -1622,7 +1624,7 @@ namespace cp
 							_mm_stream_si128((__m128i*)(dptrc + 32), _mm_blendv_epi8(c, _mm_blendv_epi8(b, a, bmask2), bmask1));
 						}
 					}
-#endif
+
 					for (; j < size.width; j++)
 					{
 						const uchar* sptrrj = sptrr + j;

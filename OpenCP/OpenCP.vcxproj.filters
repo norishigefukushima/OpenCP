@@ -764,9 +764,6 @@
     <ClInclude Include="..\include\timer.hpp">
       <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
     </ClInclude>
-    <ClInclude Include="fmath.hpp">
-      <Filter>ヘッダー ファイル\headers</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\GaussianBlurIPOL.hpp">
       <Filter>ヘッダー ファイル\headers\filter\GaussianFilter</Filter>
     </ClInclude>
@@ -937,6 +934,9 @@
     </ClInclude>
     <ClInclude Include="..\include\guidedFilter.hpp">
       <Filter>ヘッダー ファイル\headers\filter</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\fmath\fmath.hpp">
+      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -181,9 +181,9 @@ namespace cp
 
 		int implementation = -1;
 	public:
-		cv::Size size() { return src.size(); };
-		int src_channels() { return src.channels(); };
-		int guide_channels() { return guide.channels(); };
+		cv::Size size();
+		int src_channels();
+		int guide_channels();
 
 		GuidedFilterBase(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps)
 			: src(_src), guide(_guide), dest(_dest), r(_r), eps(_eps)
@@ -191,87 +191,20 @@ namespace cp
 			vsrc.resize(3);
 			vdest.resize(3);
 		}
-		void setUpsampleMethod(const int method) { upsample_method = method; }
-		void setDownsampleMethod(const int method) { downsample_method = method; }
+		void setUpsampleMethod(const int method);
+		void setDownsampleMethod(const int method);
+
+		int getImplementation();
 
 		virtual void filter() = 0;
 		virtual void filterVector() = 0;
-		virtual void filterFast(const int ratio)
-		{
-			cv::resize(src, src_low, src.size() / ratio, 0, 0, downsample_method);
-
-			r = cv::max(r / ratio, 1);
-
-			upsample();
-		}
-
-		virtual void upsample()
-		{
-			printf("%s: this type of GIU is not implemented\n", cp::getGuidedType(implementation).c_str());
-			guide.copyTo(dest);
-		}
-
-		int getImplementation()
-		{
-			return implementation;
-		}
-
-		void filter(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps)
-		{
-			src = _src;
-			guide = _guide;
-			dest = _dest;
-			r = _r;
-			eps = _eps;
-			/*src = _src.clone();
-			guide = _guide.clone();
-			dest = _dest.clone();*/
-
-			filter();
-		}
-
-		void filterVector(std::vector<cv::Mat>& _src, std::vector <cv::Mat>& _guide, std::vector <cv::Mat>& _dest, int _r, float _eps)
-		{
-			vsrc = _src;
-			vguide = _guide;
-			vdest = _dest;
-			r = _r;
-			eps = _eps;
-			/*src = _src.clone();
-			guide = _guide.clone();
-			dest = _dest.clone();*/
-
-			filterVector();
-		}
-
-		void filterFast(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps, const int ratio)
-		{
-			src = _src;
-			guide = _guide;
-			dest = _dest;
-			r = _r;
-			eps = _eps;
-
-			filterFast(ratio);
-		}
-
-		void upsample(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps)
-		{
-			src = _src;
-			guide = _guide;
-			dest = _dest;
-			r = _r;
-			eps = _eps;
-
-			upsample();
-		}
-
-		/*void* operator new(size_t i) {
-			return _mm_malloc(i, 32);
-		}
-		void operator delete(void* p) {
-			_mm_free(p);
-		}*/
+		void filter(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps);
+		void filterVector(std::vector<cv::Mat>& _src, std::vector <cv::Mat>& _guide, std::vector <cv::Mat>& _dest, int _r, float _eps);
+		void filterFast(const int ratio);
+		void filterFast(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps, const int ratio);
+		virtual void upsample();
+		void upsample(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps);
+		void upsample(cv::Mat& _src, cv::Mat& _guide_low, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps);
 	};
 
 	void CP_EXPORT guidedImageFilter(cv::InputArray src, cv::InputArray guide, cv::OutputArray dest, const int r, const float eps, const int guidedType, const int boxType, const int parallelType);
@@ -281,6 +214,8 @@ namespace cp
 		cv::Mat srcImage;
 		cv::Mat guideImage;
 		cv::Mat destImage;
+
+		cv::Mat guidelowImage;
 
 		int downsample_method = cv::INTER_LINEAR;
 		int upsample_method = cv::INTER_CUBIC;
@@ -308,6 +243,7 @@ namespace cp
 		void filter(cv::Mat& src, cv::Mat& guide, cv::OutputArray dest, const int r, const float eps, const int guided_type = GuidedTypes::GUIDED_SEP_VHI_SHARE, const int parallel_type = ParallelTypes::OMP);
 		void filterFast(cv::Mat& src, cv::Mat& guide, cv::OutputArray dest, const int r, const float eps, const int ratio, const int guided_type = GuidedTypes::GUIDED_SEP_VHI_SHARE, const int parallel_type = ParallelTypes::OMP);
 		void upsample(cv::Mat& src, cv::Mat& guide, cv::OutputArray dest, const int r, const float eps, const int guided_type = GuidedTypes::GUIDED_SEP_VHI_SHARE, const int parallel_type = ParallelTypes::OMP);
+		void upsample(cv::Mat& src, cv::Mat& guide_low, cv::Mat& guide, cv::OutputArray dest, const int r, const float eps, const int guided_type = GuidedTypes::GUIDED_SEP_VHI_SHARE, const int parallel_type = ParallelTypes::OMP);
 
 
 		void filter(cv::Mat& src, std::vector<cv::Mat>& guide, cv::Mat& dest, const int r, const float eps, const int guided_type = GuidedTypes::GUIDED_SEP_VHI_SHARE, const int parallel_type = ParallelTypes::OMP);

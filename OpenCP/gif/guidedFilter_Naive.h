@@ -85,7 +85,6 @@ public:
 	void filter();
 	void filterVector();
 
-	void filterFast(const int ratio) override;
 	std::string getMethodName() { return "Naive"; };
 };
 

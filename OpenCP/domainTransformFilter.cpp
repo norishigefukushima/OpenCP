@@ -3,6 +3,8 @@
 using namespace std;
 using namespace cv;
 
+#include "fmath/fmath.hpp"
+using namespace fmath;
 namespace cp
 {
 
@@ -947,8 +949,6 @@ namespace cp
 		}
 	}
 
-#include "fmath.hpp"
-	using namespace fmath;
 	inline __m128 _mm_pow_ps(__m128 a, __m128 b)
 	{
 		return exp_ps(_mm_mul_ps(b, log_ps(a)));
@@ -2348,7 +2348,7 @@ namespace cp
 			float sigma_h = (float)(sigma_s * sqrt(3.0) * pow(2.0, (maxiter - (i + 1))) / sqrt(pow(4.0, maxiter) - 1));
 			// and a = exp(-sqrt(2) / sigma_H) to the power of "dct"
 
-			const float a = exp(-sqrt(2.f) / sigma_h);
+			const float a = fmath::exp(-sqrt(2.f) / sigma_h);
 			{
 				DomainTransformPowHorizontalBGRA_SSE_Invoker H(img, dctx, a);
 				parallel_for_(Range(0, height), H);
@@ -2396,7 +2396,7 @@ namespace cp
 		{
 			float sigma_h = (float)(sigma_s * sqrt(3.0) * pow(2.0, (maxiter - (i + 1))) / sqrt(pow(4.0, maxiter) - 1));
 			// and a = exp(-sqrt(2) / sigma_H) to the power of "dct"
-			float a = exp(-sqrt(2.f) / sigma_h);
+			float a = fmath::exp(-sqrt(2.f) / sigma_h);
 			recursiveFilterPowHorizontalBGRA_SSE(img, dctx, a);
 
 			recursiveFilterPowVerticalBGRA_SSE(img, dcty, a);
@@ -2713,7 +2713,7 @@ namespace cp
 		while (i--)
 		{
 			float sigma_h = (float)(sigma_s * sqrt(3.0) * pow(2.0, (maxiter - (i + 1))) / sqrt(pow(4.0, maxiter) - 1));
-			float a = exp(-sqrt(2.f) / sigma_h);
+			float a = fmath::exp(-sqrt(2.f) / sigma_h);
 
 			// and a = exp(-sqrt(2) / sigma_H) to the power of "dct"
 			pow_fmath(a, dctx, amat);
@@ -2772,7 +2772,7 @@ namespace cp
 		while (i--)
 		{
 			float sigma_h = (float)(sigma_s * sqrt(3.0) * pow(2.0, (maxiter - (i + 1))) / sqrt(pow(4.0, maxiter) - 1));
-			float a = exp(-sqrt(2.f) / sigma_h);
+			float a = fmath::exp(-sqrt(2.f) / sigma_h);
 
 			// and a = exp(-sqrt(2) / sigma_H) to the power of "dct"
 			//powMat(a,dctx, amat);

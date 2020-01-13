@@ -4952,8 +4952,6 @@ void guidedFilter_SepVHI::upsample()
 		src_low = src;
 	}
 
-	resize(guide, guide_low, src_low.size(), 0, 0, downsample_method);
-
 	if (src.channels() == 1)
 	{
 		if (guide.channels() == 1)

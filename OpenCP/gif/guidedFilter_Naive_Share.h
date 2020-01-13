@@ -88,5 +88,4 @@ public:
 	void filterVector();
 
 	void upsample() override;
-	void filterFast(const int ratio) override;
 };

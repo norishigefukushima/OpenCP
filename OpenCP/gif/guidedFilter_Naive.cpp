@@ -107,25 +107,12 @@ void guidedFilter_Naive::filterVector()
 	}
 }
 
-void guidedFilter_Naive::filterFast(const int ratio)
-{
-	resize(src, src_low, src.size() / ratio, 0, 0, downsample_method);
-
-	r = max(r / ratio, 1);
-
-	upsample();
-}
-
 void guidedFilter_Naive::upsample()
 {
-	//cout << "Naive: parallel type" << parallelType << endl;
-
 	if (guide.size() != src.size())
 	{
 		src_low = src;
 	}
-
-	resize(guide, guide_low, src_low.size(), 0, 0, downsample_method);
 
 	if (src.depth() == CV_32F)
 	{

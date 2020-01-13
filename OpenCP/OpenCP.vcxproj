@@ -367,6 +367,7 @@
     <ClInclude Include="..\include\fftFilter.hpp" />
     <ClInclude Include="..\include\fftinfo.hpp" />
     <ClInclude Include="..\include\fitPlane.hpp" />
+    <ClInclude Include="..\include\fmath\fmath.hpp" />
     <ClInclude Include="..\include\GaussianBlurIPOL.hpp" />
     <ClInclude Include="..\include\GaussianFilter.hpp" />
     <ClInclude Include="..\include\GaussianFilterSpectralRecursive.hpp" />
@@ -449,7 +450,6 @@
     <ClInclude Include="box\boxFilter_SSAT_VtV.h" />
     <ClInclude Include="filterCore.h" />
     <ClInclude Include="filterengine.hpp" />
-    <ClInclude Include="fmath.hpp" />
     <ClInclude Include="gif\guidedFilter_Div.h" />
     <ClInclude Include="gif\guidedFilter_Merge.h" />
     <ClInclude Include="gif\guidedFilter_Merge_Base.h" />

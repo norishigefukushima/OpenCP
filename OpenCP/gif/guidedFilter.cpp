@@ -24,6 +24,126 @@
 
 namespace cp
 {
+	//base class
+
+	cv::Size GuidedFilterBase::size()
+	{
+		return src.size();
+	}
+
+	int GuidedFilterBase::src_channels()
+	{
+		return src.channels();
+	}
+
+	int GuidedFilterBase::guide_channels()
+	{
+		return guide.channels();
+	}
+
+	void GuidedFilterBase::setUpsampleMethod(const int method)
+	{
+		upsample_method = method;
+	}
+
+	void GuidedFilterBase::setDownsampleMethod(const int method)
+	{
+		downsample_method = method;
+	}
+
+	int GuidedFilterBase::getImplementation()
+	{
+		return implementation;
+	}
+
+	void GuidedFilterBase::filter(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps)
+	{
+		src = _src;
+		guide = _guide;
+		dest = _dest;
+		r = _r;
+		eps = _eps;
+		/*src = _src.clone();
+		guide = _guide.clone();
+		dest = _dest.clone();*/
+
+		filter();
+	}
+
+	void GuidedFilterBase::filterVector(std::vector<cv::Mat>& _src, std::vector <cv::Mat>& _guide, std::vector <cv::Mat>& _dest, int _r, float _eps)
+	{
+		vsrc = _src;
+		vguide = _guide;
+		vdest = _dest;
+		r = _r;
+		eps = _eps;
+		/*src = _src.clone();
+		guide = _guide.clone();
+		dest = _dest.clone();*/
+
+		filterVector();
+	}
+
+	void GuidedFilterBase::filterFast(const int ratio)
+	{
+		cv::resize(src, src_low, src.size() / ratio, 0, 0, downsample_method);
+		cv::resize(guide, guide_low, guide.size() / ratio, 0, 0, downsample_method);
+
+		r = cv::max(r / ratio, 1);
+
+		upsample();
+	}
+
+	void GuidedFilterBase::filterFast(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps, const int ratio)
+	{
+		src = _src;
+		guide = _guide;
+		dest = _dest;
+		r = _r;
+		eps = _eps;
+
+		filterFast(ratio);
+	}
+
+	void GuidedFilterBase::upsample()
+	{
+		printf("%s: this type of GIU is not implemented\n", cp::getGuidedType(implementation).c_str());
+		guide.copyTo(dest);
+	}
+
+	void GuidedFilterBase::upsample(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps)
+	{
+		src = _src;
+		guide = _guide;
+		dest = _dest;
+		r = _r;
+		eps = _eps;
+
+		int ratio = _guide.cols / _src.cols;
+		cv::resize(_guide, guide_low, _guide.size() / ratio, 0, 0, downsample_method);
+
+		upsample();
+	}
+
+	void GuidedFilterBase::upsample(cv::Mat& _src, cv::Mat& _guide_low, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps)
+	{
+		src = _src;
+		guide = _guide;
+		dest = _dest;
+		r = _r;
+		eps = _eps;
+
+		int ratio = _guide.cols / _src.cols;
+		guide_low = _guide_low;
+
+		upsample();
+	}
+
+	//end class GuideFilterBase
+	//////////////////////////////////////////////////////////////////////
+
+
+
 	void guidedImageFilter(cv::InputArray src_, cv::InputArray guide_, cv::OutputArray dest, const int r, const float eps, const int guidedType, const int boxType, const int parallelType)
 	{
 		cv::Mat src = src_.getMat();
@@ -228,7 +348,7 @@ namespace cp
 		bool isdestinit = initialize(src, guide, dest);
 
 		bool init = false;
-		
+
 		if (gf[0].empty())
 		{
 			init = true;
@@ -378,17 +498,52 @@ namespace cp
 		if (init)
 		{
 			parallel_type = parallel_type_current;
-
 			gf[0] = getGuidedFilter(srcImage, guideImage, destImage, r, eps, guided_type);
-			gf[0]->upsample();
+		}
+		
+		gf[0]->upsample(srcImage, guideImage, destImage, r, eps);
+
+		if (isdestinit) destImage.convertTo(dest, src.depth());
+	}
+
+	void GuidedImageFilter::upsample(cv::Mat& src, cv::Mat& guide_low, cv::Mat& guide, cv::OutputArray dest, const int r, const float eps, const int guided_type, const int parallel_type_current)
+	{
+		bool isdestinit = initialize(src, guide, dest);
+
+		if (guide_low.depth() == CV_32F || guide_low.depth() == CV_64F)
+		{
+			guidelowImage = guide_low;
 		}
 		else
 		{
-			cv::Mat show;
-			srcImage.convertTo(show, CV_8U);
-			
-			gf[0]->upsample(srcImage, guideImage, destImage, r, eps);
+			guide_low.convertTo(guidelowImage, CV_32F);
 		}
+
+		bool init = false;
+
+		if (gf[0].empty())
+		{
+			init = true;
+		}
+		else if (
+			gf[0]->getImplementation() != guided_type ||
+			parallel_type != parallel_type_current ||
+			gf[0]->src_channels() != src.channels() ||
+			gf[0]->guide_channels() != guide.channels() ||
+			gf[0]->size() != src.size()
+			)
+		{
+			init = true;
+		}
+
+		if (init)
+		{
+			parallel_type = parallel_type_current;
+			gf[0] = getGuidedFilter(srcImage, guideImage, destImage, r, eps, guided_type);
+		}
+
+
+		gf[0]->upsample(srcImage, guidelowImage, guideImage, destImage, r, eps);
 
 		if (isdestinit) destImage.convertTo(dest, src.depth());
 	}
