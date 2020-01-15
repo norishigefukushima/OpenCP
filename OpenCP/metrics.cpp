@@ -1,10 +1,29 @@
 #include "metrics.hpp"
 #include "inlineSIMDFunctions.hpp"
+#include "debugcp.hpp"
 using namespace std;
 using namespace cv;
 
 namespace cp
 {
+	std::string getPSNR_PRECISION(const int precision)
+	{
+		string ret;
+		switch (precision)
+		{
+		case PSNR_8U:
+			ret = "PSNR_8U"; break;
+		case PSNR_32F:
+			ret = "PSNR_32F"; break;
+		case PSNR_64F:
+			ret = "PSNR_64F"; break;
+		case PSNR_KAHAN_64F:
+			ret = "PSNR_KAHAN_64F"; break;
+			break;
+		}
+		return ret;
+	}
+
 	double MSE_64F(cv::Mat& src, cv::Mat& reference, bool isKahan = true)
 	{
 		CV_Assert(!src.empty());
@@ -151,7 +170,6 @@ namespace cp
 	}
 
 
-
 	void PSNRMetrics::cvtImageForPSNR64F(const Mat& src, Mat& dest, const int cmethod)
 	{
 		if (src.depth() == CV_64F)
@@ -161,13 +179,15 @@ namespace cp
 			case PSNR_ALL:
 			default:
 			{
-				src.copyTo(dest); break;
+				//src.copyTo(dest); break;
+				dest = src; break;
 			}
 			case PSNR_Y:
 			{
 				//cvtColor do not support 64F 
-				cv::Matx13d mt(0.299, 0.587, 0.114);
-				cv::transform(src, dest, mt); break;
+				cv::Matx13d mt(0.114, 0.587, 0.299);
+				cv::transform(src, dest, mt); 
+				break;
 			}
 			case PSNR_B:
 			{
@@ -228,7 +248,8 @@ namespace cp
 			case PSNR_ALL:
 			default:
 			{
-				src.copyTo(dest); break;
+				//src.copyTo(dest); break;
+				dest = src; break;
 			}
 			case PSNR_Y:
 			{
@@ -294,7 +315,8 @@ namespace cp
 			case PSNR_ALL:
 			default:
 			{
-				src.copyTo(dest); break;
+				//src.copyTo(dest); break;
+				dest = src; break;
 			}
 			case PSNR_Y:
 			{
@@ -358,7 +380,7 @@ namespace cp
 		CV_Assert(src.channels() == ref.channels());
 		CV_Assert(src.size() == ref.size());
 
-		setReference(ref, boundingBox, compare_method);
+		setReference(ref, boundingBox, precision, compare_method);
 		return getPSNRPreset(src, boundingBox, precision, compare_method);
 	}
 
@@ -415,21 +437,40 @@ namespace cp
 			crops = s;
 		}
 
-
+		
 		double MSE = 0.0;
 		if (precision == PSNR_32F)
 		{
 			cvtImageForPSNR32F(crops, source, cmethod);
+
+			if (source.depth() != reference.depth())
+			{
+				cout << "argments are boundingBox, precision, compare_method." << endl;
+				cout << "do not forget boundingBox argment" << endl;
+			}
 			MSE = MSE_32F(source, reference);
 		}
 		else if (precision == PSNR_8U)
 		{
 			cvtImageForPSNR8U(crops, source, cmethod);
+
+			if (source.depth() != reference.depth())
+			{
+				cout << "argments are boundingBox, precision, compare_method." << endl;
+				cout << "do not forget boundingBox argment" << endl;
+			}
 			MSE = MSE_8U(source, reference);
 		}
 		else
 		{
 			cvtImageForPSNR64F(crops, source, cmethod);
+
+			if (source.depth() != reference.depth())
+			{
+				cout << "argments are boundingBox, precision, compare_method." << endl;
+				cout << "do not forget boundingBox argment" << endl;
+			}
+
 			MSE = MSE_64F(source, reference, precision == PSNR_KAHAN_64F);
 		}
 

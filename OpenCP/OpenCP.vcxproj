@@ -448,6 +448,7 @@
     <ClInclude Include="box\boxFilter_SSAT_SoA.h" />
     <ClInclude Include="box\boxFilter_SSAT_VH.h" />
     <ClInclude Include="box\boxFilter_SSAT_VtV.h" />
+    <ClInclude Include="debugcp.hpp" />
     <ClInclude Include="filterCore.h" />
     <ClInclude Include="filterengine.hpp" />
     <ClInclude Include="gif\guidedFilter_Div.h" />

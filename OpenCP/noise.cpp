@@ -48,8 +48,7 @@ void addNoiseMono_nf(Mat& src, Mat& dest, double sigma)
 	src.convertTo(s, CV_32S);
 	Mat n(s.size(), CV_32S);
 	randn(n, 0, sigma);
-	Mat temp = s + n;
-	temp.convertTo(dest, src.type());
+	add(s, n, dest, noArray(), src.depth());
 }
 
 void addNoiseMono_f(Mat& src, Mat& dest, double sigma)
@@ -57,9 +56,8 @@ void addNoiseMono_f(Mat& src, Mat& dest, double sigma)
 	Mat s;
 	src.convertTo(s, CV_64F);
 	Mat n(s.size(), CV_64F);
-	randn(n, 0, sigma);
-	Mat temp = s + n;
-	temp.convertTo(dest, src.type());
+	randn(n, 0, sigma);	
+	add(s, n, dest, noArray(), src.depth());
 }
 
 void addNoiseMono(Mat& src, Mat& dest, double sigma)

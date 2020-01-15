@@ -19,14 +19,21 @@ namespace cp
 		PSNR_B,
 		PSNR_G,
 		PSNR_R,
+
+		PSNR_CHANNEL_SIZE
 	};
 	enum PSNR_PRECISION
 	{
 		PSNR_8U,
 		PSNR_32F,
 		PSNR_64F,
-		PSNR_KAHAN_64F
+		PSNR_KAHAN_64F,
+
+		PSNR_PRECISION_SIZE
 	};
+
+	std::string CP_EXPORT getPSNR_PRECISION(const int precision);
+	
 	class CP_EXPORT PSNRMetrics
 	{
 		cv::Mat source;

@@ -4,8 +4,9 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-	guiGuidedImageFilterTest();
-	guiHazeRemoveTest();
+
+	//guiGuidedImageFilterTest();
+	//guiHazeRemoveTest();
 	
 	Mat left = imread("img/stereo/Dolls/view1.png");
 	Mat right = imread("img/stereo/Dolls/view5.png");
@@ -15,6 +16,7 @@ int main(int argc, char** argv)
 	//Mat img = imread("img/cameraman.png",0);
 	//Mat img = imread("img/barbara.png", 0);
 
+	testPSNR(img); return 0;
 	//resize(img, a, Size(513, 513));
 	//splitmergeTest(a); return 0;
 	//Mat img = imread("img/Kodak/kodim07.png");
