@@ -5,7 +5,7 @@ using namespace std;
 int main(int argc, char** argv)
 {
 
-	//guiGuidedImageFilterTest();
+	guiGuidedImageFilterTest();
 	//guiHazeRemoveTest();
 	
 	Mat left = imread("img/stereo/Dolls/view1.png");

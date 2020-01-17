@@ -24,10 +24,10 @@ inline void copyMakeBorderReplicateForLineBuffers(cv::Mat& buffer, const int R)
 }
 
 
-void Ip2ab_Guide1_sep_VHIShare_AVX(cv::Mat& I, cv::Mat& p, const int r, float eps, cv::Mat& a, cv::Mat& b);
-void Ip2ab_Guide1_sep_VHIShare_AVX_omp(cv::Mat& I, cv::Mat& p, const int r, float eps, cv::Mat& a, cv::Mat& b);
-void ab2q_Guide1_sep_VHIShare_AVX(cv::Mat& a, cv::Mat& b, cv::Mat& guide, const int r, cv::Mat& dest);
-void ab2q_Guide1_sep_VHIShare_AVX_omp(cv::Mat& a, cv::Mat& b, cv::Mat& guide, const int r, cv::Mat& dest);
+void Ip2ab_Guide1_sep_VHI_AVX(cv::Mat& I, cv::Mat& p, const int r, float eps, cv::Mat& a, cv::Mat& b);
+void Ip2ab_Guide1_sep_VHI_AVX_omp(cv::Mat& I, cv::Mat& p, const int r, float eps, cv::Mat& a, cv::Mat& b);
+void ab2q_Guide1_sep_VHI_AVX(cv::Mat& a, cv::Mat& b, cv::Mat& guide, const int r, cv::Mat& dest);
+void ab2q_Guide1_sep_VHI_AVX_omp(cv::Mat& a, cv::Mat& b, cv::Mat& guide, const int r, cv::Mat& dest);
 
 void Ip2ab_Guide3_sep_VHI_AVX(cv::Mat& I_b, cv::Mat& I_g, cv::Mat& I_r, cv::Mat& p, const int r, float eps,
 	cv::Mat& a_b, cv::Mat& a_g, cv::Mat& a_r, cv::Mat& b);

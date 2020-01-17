@@ -4255,13 +4255,13 @@ void guidedFilter_SepVHI_Share::filter()
 		{
 			if (parallelType == NAIVE)
 			{
-				Ip2ab_Guide1_sep_VHIShare_AVX(guide, src, r, eps, ab_p[0], b_p[0]);
-				ab2q_Guide1_sep_VHIShare_AVX(ab_p[0], b_p[0], guide, r, dest);
+				Ip2ab_Guide1_sep_VHI_AVX(guide, src, r, eps, ab_p[0], b_p[0]);
+				ab2q_Guide1_sep_VHI_AVX(ab_p[0], b_p[0], guide, r, dest);
 			}
 			else
 			{
-				Ip2ab_Guide1_sep_VHIShare_AVX_omp(guide, src, r, eps, ab_p[0], b_p[0]);
-				ab2q_Guide1_sep_VHIShare_AVX_omp(ab_p[0], b_p[0], guide, r, dest);
+				Ip2ab_Guide1_sep_VHI_AVX_omp(guide, src, r, eps, ab_p[0], b_p[0]);
+				ab2q_Guide1_sep_VHI_AVX_omp(ab_p[0], b_p[0], guide, r, dest);
 			}
 		}
 		else if (guide.channels() == 3)
@@ -4295,17 +4295,17 @@ void guidedFilter_SepVHI_Share::filter()
 			{
 				Ip2ab_Guide1Src3_sep_VHIShare_AVX(guide, vsrc, r, eps, ab_p, b_p);
 
-				ab2q_Guide1_sep_VHIShare_AVX(ab_p[0], b_p[0], guide, r, vdest[0]);
-				ab2q_Guide1_sep_VHIShare_AVX(ab_p[1], b_p[1], guide, r, vdest[1]);
-				ab2q_Guide1_sep_VHIShare_AVX(ab_p[2], b_p[2], guide, r, vdest[2]);
+				ab2q_Guide1_sep_VHI_AVX(ab_p[0], b_p[0], guide, r, vdest[0]);
+				ab2q_Guide1_sep_VHI_AVX(ab_p[1], b_p[1], guide, r, vdest[1]);
+				ab2q_Guide1_sep_VHI_AVX(ab_p[2], b_p[2], guide, r, vdest[2]);
 			}
 			else
 			{
 				Ip2ab_Guide1Src3_sep_VHIShare_AVX_omp(guide, vsrc, r, eps, ab_p, b_p);
 
-				ab2q_Guide1_sep_VHIShare_AVX_omp(ab_p[0], b_p[0], guide, r, vdest[0]);
-				ab2q_Guide1_sep_VHIShare_AVX_omp(ab_p[1], b_p[1], guide, r, vdest[1]);
-				ab2q_Guide1_sep_VHIShare_AVX_omp(ab_p[2], b_p[2], guide, r, vdest[2]);
+				ab2q_Guide1_sep_VHI_AVX_omp(ab_p[0], b_p[0], guide, r, vdest[0]);
+				ab2q_Guide1_sep_VHI_AVX_omp(ab_p[1], b_p[1], guide, r, vdest[1]);
+				ab2q_Guide1_sep_VHI_AVX_omp(ab_p[2], b_p[2], guide, r, vdest[2]);
 			}
 		}
 		else if (guide.channels() == 3)
@@ -4347,13 +4347,13 @@ void guidedFilter_SepVHI_Share::filterVector()
 		{
 			if (parallelType == NAIVE)
 			{
-				Ip2ab_Guide1_sep_VHIShare_AVX(vguide[0], vsrc[0], r, eps, ab_p[0], b_p[0]);
-				ab2q_Guide1_sep_VHIShare_AVX(ab_p[0], b_p[0], vguide[0], r, vdest[0]);
+				Ip2ab_Guide1_sep_VHI_AVX(vguide[0], vsrc[0], r, eps, ab_p[0], b_p[0]);
+				ab2q_Guide1_sep_VHI_AVX(ab_p[0], b_p[0], vguide[0], r, vdest[0]);
 			}
 			else
 			{
-				Ip2ab_Guide1_sep_VHIShare_AVX_omp(vguide[0], vsrc[0], r, eps, ab_p[0], b_p[0]);
-				ab2q_Guide1_sep_VHIShare_AVX_omp(ab_p[0], b_p[0], vguide[0], r, vdest[0]);
+				Ip2ab_Guide1_sep_VHI_AVX_omp(vguide[0], vsrc[0], r, eps, ab_p[0], b_p[0]);
+				ab2q_Guide1_sep_VHI_AVX_omp(ab_p[0], b_p[0], vguide[0], r, vdest[0]);
 			}
 		}
 		else if (guide.channels() == 3)
@@ -4378,17 +4378,17 @@ void guidedFilter_SepVHI_Share::filterVector()
 			{
 				Ip2ab_Guide1Src3_sep_VHIShare_AVX(vguide[0], vsrc, r, eps, ab_p, b_p);
 
-				ab2q_Guide1_sep_VHIShare_AVX(ab_p[0], b_p[0], vguide[0], r, vdest[0]);
-				ab2q_Guide1_sep_VHIShare_AVX(ab_p[1], b_p[1], vguide[0], r, vdest[1]);
-				ab2q_Guide1_sep_VHIShare_AVX(ab_p[2], b_p[2], vguide[0], r, vdest[2]);
+				ab2q_Guide1_sep_VHI_AVX(ab_p[0], b_p[0], vguide[0], r, vdest[0]);
+				ab2q_Guide1_sep_VHI_AVX(ab_p[1], b_p[1], vguide[0], r, vdest[1]);
+				ab2q_Guide1_sep_VHI_AVX(ab_p[2], b_p[2], vguide[0], r, vdest[2]);
 			}
 			else
 			{
 				Ip2ab_Guide1Src3_sep_VHIShare_AVX_omp(vguide[0], vsrc, r, eps, ab_p, b_p);
 
-				ab2q_Guide1_sep_VHIShare_AVX_omp(ab_p[0], b_p[0], vguide[0], r, vdest[0]);
-				ab2q_Guide1_sep_VHIShare_AVX_omp(ab_p[1], b_p[1], vguide[0], r, vdest[1]);
-				ab2q_Guide1_sep_VHIShare_AVX_omp(ab_p[2], b_p[2], vguide[0], r, vdest[2]);
+				ab2q_Guide1_sep_VHI_AVX_omp(ab_p[0], b_p[0], vguide[0], r, vdest[0]);
+				ab2q_Guide1_sep_VHI_AVX_omp(ab_p[1], b_p[1], vguide[0], r, vdest[1]);
+				ab2q_Guide1_sep_VHI_AVX_omp(ab_p[2], b_p[2], vguide[0], r, vdest[2]);
 			}
 		}
 		else if (guide.channels() == 3)
@@ -4426,7 +4426,7 @@ void guidedFilter_SepVHI_Share::upsample()
 		{
 			if (parallelType == NAIVE)
 			{
-				Ip2ab_Guide1_sep_VHIShare_AVX(guide_low, src_low, r, eps, ab_p[0], b_p[0]);
+				Ip2ab_Guide1_sep_VHI_AVX(guide_low, src_low, r, eps, ab_p[0], b_p[0]);
 
 				blurSeparableVHI(ab_p[0], b_p[0], r, mean_a_b, mean_b);
 
@@ -4438,7 +4438,7 @@ void guidedFilter_SepVHI_Share::upsample()
 			}
 			else
 			{
-				Ip2ab_Guide1_sep_VHIShare_AVX_omp(guide_low, src_low, r, eps, ab_p[0], b_p[0]);
+				Ip2ab_Guide1_sep_VHI_AVX_omp(guide_low, src_low, r, eps, ab_p[0], b_p[0]);
 
 				blurSeparableVHI_omp(ab_p[0], b_p[0], r, mean_a_b, mean_b);
 
