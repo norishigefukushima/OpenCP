@@ -543,6 +543,7 @@ void Ip2ab_Guide1_sep_VHI_CenterAvoid_AVX_omp(cv::Mat& I, cv::Mat& p, const int 
 
 				for (int k = 1; k < d; k++)
 				{
+					if (k == r) continue;
 					int v = max(0, min(height - 1, i - r + k));
 					float* Iptr = I.ptr<float>(v, j);
 					float* pptr = p.ptr<float>(v, j);
@@ -586,6 +587,7 @@ void Ip2ab_Guide1_sep_VHI_CenterAvoid_AVX_omp(cv::Mat& I, cv::Mat& p, const int 
 
 				for (int k = 1; k < d; k++)
 				{
+					if (k == r) continue;
 					mSum_I = _mm256_add_ps(mSum_I, _mm256_loadu_ps(tp__I + k));
 					mSum_p = _mm256_add_ps(mSum_p, _mm256_loadu_ps(tp__p + k));
 					mSum_II = _mm256_add_ps(mSum_II, _mm256_loadu_ps(tp_II + k));
@@ -922,7 +924,7 @@ void ab2q_Guide1_sep_VHI_CenterAboid_AVX_omp(cv::Mat& a, cv::Mat& b, cv::Mat& gu
 	const int d = 2 * r + 1;
 	const int R = get_simd_ceil(r, 8);
 	const int roffset = R - r;//R-r
-	const __m256 mDiv = _mm256_set1_ps(1.f / (d*d));
+	const __m256 mDiv = _mm256_set1_ps(1.f / (4*r*r));
 
 	Mat buff(Size(width + 2 * R, 2 * omp_get_max_threads()), CV_32FC1);
 
@@ -5383,7 +5385,8 @@ void guidedFilter_SepVHI::filter_Guide1(cv::Mat& input, cv::Mat& guide, cv::Mat&
 	else
 	{
 		//ab2q_Guide1_sep_VHI_AVX_omp(a, b, guide, r, output);
-		ab2q_Guide1_sep_VHI_CenterAboid_AVX_omp(a, b, guide, r, output);
+		cp::fmadd(a, guide, b, output);
+		//ab2q_Guide1_sep_VHI_CenterAboid_AVX_omp(a, b, guide, r, output);
 	}
 }
 

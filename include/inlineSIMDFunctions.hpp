@@ -1,5 +1,13 @@
 #pragma once
 
+#define SSE_ALIGN 16
+#define AVX_ALIGN 32
+#define AVX512_ALIGN 64
+
+//template for array
+//const int CV_DECL_ALIGNED(AVX_ALIGN) a[10]
+
+
 inline int get_simd_ceil(const int val, const int simdwidth)
 {
 	return (val%simdwidth == 0) ? val : (val / simdwidth + 1)*simdwidth;
@@ -15,6 +23,17 @@ inline float _mm256_reduceadd_ps(__m256 src)
 	src = _mm256_hadd_ps(src, src);
 	src = _mm256_hadd_ps(src, src);
 	return (src.m256_f32[0] + src.m256_f32[4]);
+}
+
+inline float _mm256_reduceadd_pd(__m256d src)
+{
+	src = _mm256_hadd_pd(src, src);
+	return (src.m256d_f64[0] + src.m256d_f64[2]);
+}
+
+inline __m128i _mm256_cvtepi32x2_epu8(const __m256i v0, const __m256i v1)
+{
+	return _mm256_castsi256_si128(_mm256_permutevar8x32_epi32(_mm256_packus_epi16(_mm256_packs_epi32(v0, v1), _mm256_setzero_si256()), _mm256_setr_epi32(0, 4, 1, 5, 2, 6, 3, 7)));
 }
 
 inline __m256 _mm256_load_epu8cvtps(const __m128i* P)

@@ -38,8 +38,8 @@ void guiGuidedImageFilterTest()
 	int boxType = BoxTypes::BOX_OPENCV;
 	int parallelType = ParallelTypes::OMP;
 	//int parallelType = ParallelTypes::NAIVE;
-	int src_GRAY_RGB = 1;
-	int guide_GRAY_RGB = 1;
+	int src_GRAY_RGB = 0;
+	int guide_GRAY_RGB = 0;
 
 	//#define RANDOM_SHIFT
 
@@ -47,7 +47,7 @@ void guiGuidedImageFilterTest()
 #define CLASS_TEST
 #define CLASS_COLORPARALLEL_TEST
 #define FAST_TEST
-#define TILE_TEST
+//#define TILE_TEST
 
 	ConsoleImage ci(Size(900, 500), "param");
 	namedWindow("param");
@@ -257,21 +257,20 @@ void guiGuidedImageFilterTest()
 
 		{
 			Timer t;
-			psnr.setReference(ref64f, bb, PSNR_8U);
 #ifdef NORMAL_TEST
-			ci("PSNR (32F)      : %f", psnr.getPSNRPreset(destf, bb, PSNR_8U));
+			ci("PSNR (32F)      : %f", psnr.getPSNR(destf, ref64f, bb));
 #endif
 #ifdef CLASS_TEST
-			ci("PSNR (32F)c     : %f", psnr.getPSNRPreset(destf_class, bb, PSNR_8U));
+			ci("PSNR (32F)c     : %f", psnr.getPSNR(destf_class, ref64f, bb));
 #endif
 #ifdef CLASSCP_TEST
-			ci("PSNR (32F)cp    : %f", psnr.getPSNRPreset(destf_classcp, bb));
+			ci("PSNR (32F)cp    : %f", psnr.getPSNR(destf_classcp, bb));
 #endif
 #ifdef FAST_TEST
-			ci("PSNR (32F)FS    : %f", psnr.getPSNRPreset(destf_fast, bb, PSNR_8U));
+			ci("PSNR (32F)FS    : %f", psnr.getPSNR(destf_fast, ref64f, bb));
 #endif
 #ifdef TILE_TEST
-			ci("PSNR (32F)t1    : %f", psnr.getPSNRPreset(destf_tile, bb, PSNR_8U));
+			ci("PSNR (32F)t1    : %f", psnr.getPSNR(destf_tile, ref64f, bb));
 #endif
 		}
 		ci.show();

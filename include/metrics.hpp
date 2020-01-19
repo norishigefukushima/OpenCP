@@ -24,6 +24,7 @@ namespace cp
 	};
 	enum PSNR_PRECISION
 	{
+		PSNR_UP_CAST,
 		PSNR_8U,
 		PSNR_32F,
 		PSNR_64F,
@@ -44,6 +45,7 @@ namespace cp
 		cv::Mat temp;
 		std::vector<cv::Mat> vtemp;
 
+		inline int getPrecisionUpCast(cv::InputArray src, cv::InputArray ref);
 		void cvtImageForPSNR64F(const cv::Mat& src, cv::Mat& dest, const int cmethod);
 		void cvtImageForPSNR32F(const cv::Mat& src, cv::Mat& dest, const int cmethod);
 		void cvtImageForPSNR8U(const cv::Mat& src, cv::Mat& dest, const int cmethod);

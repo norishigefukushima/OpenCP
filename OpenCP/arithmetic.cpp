@@ -1,5 +1,5 @@
 #include "arithmetic.hpp"
-#include "fmath.hpp"
+#include "fmath/fmath.hpp"
 using namespace std;
 using namespace cv;
 using namespace fmath;

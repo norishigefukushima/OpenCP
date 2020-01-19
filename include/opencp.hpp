@@ -144,8 +144,44 @@ namespace cp
 
 
 }
+*/
 
 
+//template for parallel_for_
+/*
+class Template_ParallelBody : public cv::ParallelLoopBody
+{
+private:
+	const cv::Mat* src;
+	cv::Mat* dest;
 
+	int parameter;
 
+public:
+	Template_ParallelBody(const cv::Mat& src, cv::Mat& dst, const int parameter)
+		: src(&src), dest(&dst), parameter(parameter)
+	{
+	}
+
+	void operator() (const cv::Range& range) const
+	{
+		const int width = src->cols;
+		for (int y = range.start; y < range.end; y++)
+		{
+			for (int x = 0; x < width; x++)
+			{
+				dest->at<uchar>(y, x) = src->at<uchar>(y, x);
+			}
+		}
+	}
+};
+void parallel_template(Mat& src, Mat& dest, const int parameter)
+{
+	cv::parallel_for_
+	(
+		cv::Range(0, dest.rows),
+		Template_ParallelBody(src, dest, parameter),
+		8
+	);
+}
 */

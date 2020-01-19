@@ -11,6 +11,9 @@ namespace cp
 		string ret;
 		switch (precision)
 		{
+
+		case PSNR_UP_CAST:
+			ret = "PSNR_UP_CAST"; break;
 		case PSNR_8U:
 			ret = "PSNR_8U"; break;
 		case PSNR_32F:
@@ -373,6 +376,30 @@ namespace cp
 		}
 	}
 
+	inline int PSNRMetrics::getPrecisionUpCast(cv::InputArray src, cv::InputArray ref)
+	{
+		int prec = PSNR_8U;
+		if (ref.depth() == CV_8U && src.depth() == CV_8U)
+		{
+			prec = PSNR_8U;
+		}
+		else if (ref.depth() == CV_32F && src.depth() == CV_8U ||
+			ref.depth() == CV_8U && src.depth() == CV_32F)
+		{
+			prec = PSNR_32F;
+		}
+		else if (
+			ref.depth() == CV_64F && src.depth() == CV_8U ||
+			ref.depth() == CV_64F && src.depth() == CV_32F ||
+			ref.depth() == CV_8U && src.depth() == CV_64F ||
+			ref.depth() == CV_32F && src.depth() == CV_64F)
+		{
+			prec = PSNR_64F;
+		}
+
+		return prec;
+	}
+	
 	double PSNRMetrics::getPSNR(cv::InputArray src, cv::InputArray ref, const int boundingBox, const int precision, const int compare_method)
 	{
 		CV_Assert(!ref.empty());
@@ -380,6 +407,13 @@ namespace cp
 		CV_Assert(src.channels() == ref.channels());
 		CV_Assert(src.size() == ref.size());
 
+		int prec=precision;
+
+		if (precision == PSNR_UP_CAST)
+		{
+			prec = getPrecisionUpCast(src, ref);
+		}
+		
 		setReference(ref, boundingBox, precision, compare_method);
 		return getPSNRPreset(src, boundingBox, precision, compare_method);
 	}
@@ -392,6 +426,8 @@ namespace cp
 	//set reference image for acceleration
 	void PSNRMetrics::setReference(cv::InputArray src, const int boundingBox, const int precision, const int compare_method)
 	{
+		CV_Assert(precision != PSNR_UP_CAST);
+		
 		const int cmethod = (src.channels() == 1) ? PSNR_ALL : compare_method;
 
 		Mat r = src.getMat();
@@ -424,6 +460,8 @@ namespace cp
 	{
 		CV_Assert(!reference.empty());
 		CV_Assert(!src.empty());
+		CV_Assert(src.depth() == reference.depth());
+
 		Mat s = src.getMat();
 
 		const int cmethod = (src.channels() == 1) ? PSNR_ALL : compare_method;
