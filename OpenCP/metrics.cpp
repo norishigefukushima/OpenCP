@@ -769,7 +769,7 @@ namespace cp
 
 
 
-	double MSE(InputArray I1_, InputArray I2_, InputArray mask)
+	double getMSE(InputArray I1_, InputArray I2_, InputArray mask)
 	{
 		Mat I1, I2;
 		I1_.getMat().convertTo(I1, CV_64F);
@@ -790,7 +790,7 @@ namespace cp
 		return sse / (double)(I1.channels() * count);
 	}
 
-	double MSE(InputArray I1_, InputArray I2_)
+	double getMSE(InputArray I1_, InputArray I2_)
 	{
 		Mat I1, I2;
 		I1_.getMat().convertTo(I1, CV_64F);
@@ -807,7 +807,7 @@ namespace cp
 		return sse / (double)(I1.channels() * I1.total());
 	}
 
-	double calcBadPixel(const Mat& src, const Mat& ref, int threshold)
+	double getBadPixel(const Mat& src, const Mat& ref, int threshold)
 	{
 		Mat g1, g2;
 		if (src.channels() == 3)
@@ -911,7 +911,7 @@ namespace cp
 		}
 	}
 
-	double calcTV(Mat& src)
+	double getTotalVariation(Mat& src)
 	{
 		Mat gray;
 		cvtColor(src, gray, COLOR_BGR2GRAY);
@@ -1005,7 +1005,7 @@ namespace cp
 		return ret;
 	}
 
-	double calcEntropy(cv::InputArray src, cv::InputArray mask_)
+	double getEntropy(cv::InputArray src, cv::InputArray mask_)
 	{
 		CV_Assert(src.depth() == CV_8U || src.depth() == CV_16S);
 		Mat mask = mask_.getMat();

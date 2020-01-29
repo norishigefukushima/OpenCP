@@ -4,14 +4,6 @@
 
 namespace cp
 {
-
-	CP_EXPORT double MSE(cv::InputArray src1, cv::InputArray src2);
-	CP_EXPORT double MSE(cv::InputArray src1, cv::InputArray src2, cv::InputArray mask);
-	CP_EXPORT double calcBadPixel(const cv::Mat& src, const cv::Mat& ref, int threshold);
-	CP_EXPORT double SSIM(cv::Mat& src, cv::Mat& ref, double sigma = 1.5);
-	CP_EXPORT double calcTV(cv::Mat& src);
-	CP_EXPORT double calcEntropy(cv::InputArray src, cv::InputArray mask = cv::noArray());
-
 	enum PSNR_CHANNEL
 	{
 		PSNR_ALL,
@@ -82,8 +74,17 @@ namespace cp
 	precision: computing precision, default PSNR_32F(1), other PSNR_8U(0),PSNR_64F(2), PSNR_KAHAN_64F(3)
 	compare_method: default compute MSE all channele and then logged PSNR_ALL(0), PSNR_Y(1), PSNR_B(2), PSNR_G(3), PSNR_R(4),
 	*/
-	CP_EXPORT double getPSNR(cv::InputArray src, cv::InputArray ref, const int boundingBox = 0, const int precision = PSNR_UP_CAST, const int compare_method = PSNR_ALL);
+	CP_EXPORT double getPSNR(cv::InputArray src, cv::InputArray reference, const int boundingBox = 0, const int precision = PSNR_UP_CAST, const int compare_channel = PSNR_ALL);
 
 	CP_EXPORT void localPSNRMap(cv::InputArray src1, cv::InputArray src2, cv::OutputArray dest, const int r, const int channel);
 	CP_EXPORT void guiLocalPSNRMap(cv::InputArray src1, cv::InputArray src2, const bool isWait = true, std::string wname = "AreaPSNR");
+
+
+	CP_EXPORT double getMSE(cv::InputArray src1, cv::InputArray src2);
+	CP_EXPORT double getMSE(cv::InputArray src1, cv::InputArray src2, cv::InputArray mask);
+	CP_EXPORT double getBadPixel(const cv::Mat& src, const cv::Mat& ref, int threshold);
+
+	CP_EXPORT double SSIM(cv::Mat& src, cv::Mat& ref, double sigma = 1.5);
+	CP_EXPORT double getTotalVariation(cv::Mat& src);
+	CP_EXPORT double getEntropy(cv::InputArray src, cv::InputArray mask = cv::noArray());
 }

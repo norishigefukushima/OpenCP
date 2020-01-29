@@ -14,15 +14,15 @@ void testLocalPSNR(Mat& ref)
 	guiLocalPSNRMap(ref, noise);
 }
 
-void testPSNR(Mat& ref_)
+void testPSNRTime(Mat& src)
 {
-	CV_Assert(ref_.channels() == 3);
+	CV_Assert(src.channels() == 3);
 
 	//some image processing 
-	Mat ref; ref_.convertTo(ref, CV_64F);
+	Mat ref; src.convertTo(ref, CV_64F);
 	Mat dst;
 	addNoise(ref, dst, 1, 0);
-	addNoise(ref, dst, 0.0000001, 0);//for double
+	//addNoise(ref, dst, 0.0000001, 0);//for double
 	/*
 	GaussianBlur(ref, ref, Size(19, 19), 10);
 	ref.convertTo(dst, CV_32F);
@@ -39,20 +39,9 @@ void testPSNR(Mat& ref_)
 	ref.convertTo(ref64FC3, CV_64F);
 	dst.convertTo(dst64FC3, CV_64F);
 
-	int bb;
-	int compare_method;
-	cout << "function call test" << endl;
-	cout << "==================" << endl;
-	cout << "opencv ref function of PSNR()" << endl;
-	cout << " 8U  8U: " << PSNR(dst_8UC3, ref_8UC3) << endl;
-	cout << "32F 32F: " << PSNR(dst32FC3, ref32FC3) << endl;
-	cout << "64F 64F: " << PSNR(dst64FC3, ref64FC3) << endl;
-	cout << "OpenCV supports only the same depth type of inputs." << endl;
-	cout << endl;
-
 	const int iteration = 100;
 	{
-		Timer t("OpenCV 8U", 0 ,false);
+		Timer t("OpenCV 8U", 0, false);
 		for (int i = 0; i < iteration; i++)
 		{
 			t.start();
@@ -76,7 +65,7 @@ void testPSNR(Mat& ref_)
 	{
 		Timer t("PropC 8U", 0, false);
 		PSNRMetrics psnr;
-		psnr.setReference(ref_8UC3, 0 ,PSNR_8U);
+		psnr.setReference(ref_8UC3, 0, PSNR_8U);
 		for (int i = 0; i < iteration; i++)
 		{
 			t.start();
@@ -152,7 +141,7 @@ void testPSNR(Mat& ref_)
 		for (int i = 0; i < iteration; i++)
 		{
 			t.start();
-			psnr.getPSNRPreset(dst64FC3,0 ,PSNR_64F);
+			psnr.getPSNRPreset(dst64FC3, 0, PSNR_64F);
 			t.getpushLapTime();
 		}
 		t.getLapTimeMedian(true);
@@ -160,16 +149,54 @@ void testPSNR(Mat& ref_)
 	}
 
 	return;
-	
+}
+
+void testPSNRAccuracy(Mat& src)
+{
+
+	CV_Assert(src.channels() == 3);
+
+	//some image processing 
+	Mat ref; src.convertTo(ref, CV_64F);
+	Mat dst;
+	addNoise(ref, dst, 1, 0);
+	//addNoise(ref, dst, 0.0000001, 0);//for double
+	/*
+	GaussianBlur(ref, ref, Size(19, 19), 10);
+	ref.convertTo(dst, CV_32F);
+	dst.convertTo(dst, CV_64F);
+	*/
+
+	Mat ref_8UC3, dst_8UC3;
+	ref.convertTo(ref_8UC3, CV_8U);
+	dst.convertTo(dst_8UC3, CV_8U);
+	Mat ref32FC3, dst32FC3;
+	ref.convertTo(ref32FC3, CV_32F);
+	dst.convertTo(dst32FC3, CV_32F);
+	Mat ref64FC3, dst64FC3;
+	ref.convertTo(ref64FC3, CV_64F);
+	dst.convertTo(dst64FC3, CV_64F);
+
+	int bb;
+	int compare_method;
+	cout << "function call test" << endl;
+	cout << "==================" << endl;
+	cout << "opencv ref function of PSNR()" << endl;
+	cout << " 8U  8U: " << PSNR(dst_8UC3, ref_8UC3) << endl;
+	cout << "32F 32F: " << PSNR(dst32FC3, ref32FC3) << endl;
+	cout << "64F 64F: " << PSNR(dst64FC3, ref64FC3) << endl;
+	cout << "OpenCV supports only the same depth type of inputs." << endl;
+	cout << endl;
+
 	for (int precision = 0; precision < PSNR_PRECISION_SIZE; precision++)
-	{	
+	{
 		//if (precision == PSNR_8U)continue;
 		//if (precision == PSNR_32F)continue;
 		//if (precision == PSNR_64F)continue;
 		//if (precision == PSNR_KAHAN_64F)continue;
 		cout << getPSNR_PRECISION(precision) << endl;
-		
-		cout << "bounding_box=0, precision="+ getPSNR_PRECISION(precision)+"compare=PSNR_ALL" << endl;
+
+		cout << "bounding_box=0, precision=" + getPSNR_PRECISION(precision) + "compare=PSNR_ALL" << endl;
 		bb = 0;
 		compare_method = PSNR_ALL;
 		cout << "dst ref: PSNR [dB]" << endl;
@@ -182,7 +209,7 @@ void testPSNR(Mat& ref_)
 		cout << "64F  8U: " << getPSNR(dst64FC3, ref_8UC3, bb, precision, compare_method) << endl;
 		cout << "64F 32F: " << getPSNR(dst64FC3, ref32FC3, bb, precision, compare_method) << endl;
 		cout << "64F 64F: " << getPSNR(dst64FC3, ref64FC3, bb, precision, compare_method) << endl;
-		
+
 		cout << endl;
 		cout << "bounding_box=0, precision=" + getPSNR_PRECISION(precision) + "compare=PSNR_Y" << endl;
 		bb = 0;
@@ -260,4 +287,10 @@ void testPSNR(Mat& ref_)
 
 		cout << "==================" << endl;
 	}
+}
+
+void testPSNR(Mat& src)
+{
+	testPSNRAccuracy(src);
+	testPSNRTime(src);
 }

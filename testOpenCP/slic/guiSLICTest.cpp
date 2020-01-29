@@ -13,7 +13,7 @@ void SLICTestSegment2Vector(Mat& src)
 	Mat segout;
 	SLICVector2Segment(pts, src.size(), segout);
 
-	if (MSE(seg, segout) == 0.0)cout << "segmentation seg2vec test:OK\n";
+	if (getMSE(seg, segout) == 0.0)cout << "segmentation seg2vec test:OK\n";
 }
 
 
