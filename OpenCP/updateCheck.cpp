@@ -5,6 +5,32 @@ using namespace cv;
 
 namespace cp
 {
+	bool UpdateCheck::firstTimeCheck(const bool flag)
+	{
+		if (isFourceRetTrueFirstTime)
+		{
+			if (isSkip)
+			{
+				isSkip = false;
+				return true;
+			}
+			else
+			{
+				return flag;
+			}
+		}
+		else
+		{
+			return flag;
+		}
+	}
+
+	void UpdateCheck::setIsFourceRetTrueFirstTime(const bool flag)
+	{
+		isFourceRetTrueFirstTime = flag;
+	}
+
+
 	UpdateCheck::UpdateCheck(double p0, double p1, double p2, double p3, double p4, double p5, double p6, double p7, double p8)
 	{
 		parameters.push_back(p0);
@@ -86,6 +112,7 @@ namespace cp
 		parameters.push_back(p0);
 	}
 
+
 	bool UpdateCheck::isUpdate(double p0)
 	{
 		bool ret = false;
@@ -94,7 +121,7 @@ namespace cp
 			parameters[0] = p0;
 			ret = true;
 		}
-		return ret;
+		return firstTimeCheck(ret);
 	}
 
 	bool UpdateCheck::isUpdate(double p0, double p1)
@@ -110,7 +137,7 @@ namespace cp
 			parameters[1] = p1;
 			ret = true;
 		}
-		return ret;
+		return firstTimeCheck(ret);
 	}
 
 	bool UpdateCheck::isUpdate(double p0, double p1, double p2)
@@ -131,7 +158,7 @@ namespace cp
 			parameters[2] = p2;
 			ret = true;
 		}
-		return ret;
+		return firstTimeCheck(ret);
 	}
 
 	bool UpdateCheck::isUpdate(double p0, double p1, double p2, double p3)
@@ -157,7 +184,7 @@ namespace cp
 			parameters[3] = p3;
 			ret = true;
 		}
-		return ret;
+		return firstTimeCheck(ret);
 	}
 
 	bool UpdateCheck::isUpdate(double p0, double p1, double p2, double p3, double p4)
@@ -188,7 +215,7 @@ namespace cp
 			parameters[4] = p4;
 			ret = true;
 		}
-		return ret;
+		return firstTimeCheck(ret);
 	}
 
 	bool UpdateCheck::isUpdate(double p0, double p1, double p2, double p3, double p4, double p5)
@@ -224,7 +251,7 @@ namespace cp
 			parameters[5] = p5;
 			ret = true;
 		}
-		return ret;
+		return firstTimeCheck(ret);
 	}
 
 	bool UpdateCheck::isUpdate(double p0, double p1, double p2, double p3, double p4, double p5, double p6)
@@ -265,7 +292,7 @@ namespace cp
 			parameters[6] = p6;
 			ret = true;
 		}
-		return ret;
+		return firstTimeCheck(ret);
 	}
 
 	bool UpdateCheck::isUpdate(double p0, double p1, double p2, double p3, double p4, double p5, double p6, double p7)
@@ -311,7 +338,7 @@ namespace cp
 			parameters[7] = p7;
 			ret = true;
 		}
-		return ret;
+		return firstTimeCheck(ret);
 	}
 
 	bool UpdateCheck::isUpdate(double p0, double p1, double p2, double p3, double p4, double p5, double p6, double p7, double p8)
@@ -362,6 +389,6 @@ namespace cp
 			parameters[8] = p8;
 			ret = true;
 		}
-		return ret;
+		return firstTimeCheck(ret);
 	}
 }

@@ -13,6 +13,7 @@ void testRGBHistogram2();
 void testAddNoise(cv::Mat& src);
 void testTimer(cv::Mat& src);
 void testPSNR(cv::Mat& ref);
+void testLocalPSNR(cv::Mat& ref);
 void guiConsoleTest();
 void splitmergeTest(cv::Mat& src);
 

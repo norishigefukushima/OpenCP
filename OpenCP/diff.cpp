@@ -105,8 +105,8 @@ namespace cp
 
 			alphaBlend(sf, diff, 0.01*diff_a, diff);
 			diff.convertTo(show, CV_8U);
-			
-			if(isGuiDiffInfo)putText(show, text, Point(30, 30), FONT_HERSHEY_SIMPLEX, 1, COLOR_WHITE, 2);
+
+			if (isGuiDiffInfo)putText(show, text, Point(30, 30), FONT_HERSHEY_SIMPLEX, 1, COLOR_WHITE, 2);
 			imshow(wname, show);
 			key = waitKey(1);
 
@@ -138,23 +138,22 @@ namespace cp
 		if (isWait) destroyWindow(wname);
 	}
 
-	void guiCompareDiff(const Mat& before, const Mat& after, const Mat& ref)
+	void guiCompareDiff(cv::InputArray before, cv::InputArray after, cv::InputArray ref, std::string name_before, std::string name_after, std::string wname)
 	{
-		string wname = "comp diff";
 		namedWindow(wname);
-		static int compare_diff_sw = 0; createTrackbar("switch", wname, &compare_diff_sw, 2);
-		static int compare_diff_a = 0; createTrackbar("alpha", wname, &compare_diff_a, 100);
-		static int compare_diff_th = 0; createTrackbar("thresh", wname, &compare_diff_th, 255);
+		static int compare_diff_sw = 0; createTrackbar("switch:compare", wname, &compare_diff_sw, 2);
+		static int compare_diff_a = 0; createTrackbar("alpha:compare", wname, &compare_diff_a, 100);
+		static int compare_diff_th = 0; createTrackbar("thresh:comapre", wname, &compare_diff_th, 255);
 
 		int key = 0;
 		Mat show;
 		Mat g1, g2, g;
 		if (before.channels() == 3)cvtColor(before, g1, COLOR_BGR2GRAY);
-		else  g1 = before;
+		else  g1 = before.getMat();
 		if (after.channels() == 3)cvtColor(after, g2, COLOR_BGR2GRAY);
-		else  g2 = after;
+		else  g2 = after.getMat();
 		if (ref.channels() == 3)cvtColor(ref, g, COLOR_BGR2GRAY);
-		else  g = ref;
+		else  g = ref.getMat();
 
 		Mat cmap(before.size(), CV_8UC3);
 
@@ -165,7 +164,7 @@ namespace cp
 		Mat maskA;
 		Mat zmask;
 
-
+		int prev_sw = compare_diff_sw;
 		while (key != 'q')
 		{
 			cmap.setTo(0);
@@ -180,11 +179,24 @@ namespace cp
 			cmap.setTo(Scalar(0, 255, 0), maskA);
 
 			if (compare_diff_sw == 0)
+			{
+
+				if (prev_sw != compare_diff_sw)displayOverlay(wname, "compare", 1000);
+				prev_sw = compare_diff_sw;
 				alphaBlend(ref, cmap, compare_diff_a / 100.0, show);
+			}
 			else if (compare_diff_sw == 1)
+			{
+				if (prev_sw != compare_diff_sw)displayOverlay(wname, name_before, 1000);
+				prev_sw = compare_diff_sw;
 				alphaBlend(ref, before, compare_diff_a / 100.0, show);
+			}
 			else if (compare_diff_sw == 2)
+			{
+				if (prev_sw != compare_diff_sw)displayOverlay(wname, name_after, 1000);
+				prev_sw = compare_diff_sw;
 				alphaBlend(ref, after, compare_diff_a / 100.0, show);
+			}
 
 			imshow(wname, show);
 			key = waitKey(1);
@@ -204,11 +216,15 @@ namespace cp
 				compare_diff_a = (compare_diff_a > 0) ? 0 : 100;
 				setTrackbarPos("alpha", wname, compare_diff_a);
 			}
-			if (key == 'h')
+			if (key == 'h' || key == '?')
 			{
 				cout << "red: before is better (degraded)" << endl;
 				cout << "green: after is better (improved)" << endl;
+				cout << "c: compute comparing image stats" << endl;
+				cout << "f: flip alpha blend" << endl;
 			}
+			string mes = "red: " + name_before + " is better" + " green: " + name_after + " is better";
+			displayStatusBar(wname, mes);
 		}
 		destroyWindow(wname);
 	}

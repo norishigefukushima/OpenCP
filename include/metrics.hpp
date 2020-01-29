@@ -34,7 +34,9 @@ namespace cp
 	};
 
 	std::string CP_EXPORT getPSNR_PRECISION(const int precision);
-	
+
+	std::string CP_EXPORT getPSNR_CHANNEL(const int channel);
+
 	class CP_EXPORT PSNRMetrics
 	{
 		cv::Mat source;
@@ -80,5 +82,8 @@ namespace cp
 	precision: computing precision, default PSNR_32F(1), other PSNR_8U(0),PSNR_64F(2), PSNR_KAHAN_64F(3)
 	compare_method: default compute MSE all channele and then logged PSNR_ALL(0), PSNR_Y(1), PSNR_B(2), PSNR_G(3), PSNR_R(4),
 	*/
-	CP_EXPORT double getPSNR(cv::InputArray src, cv::InputArray ref, const int boundingBox = 0, const int precision = PSNR_32F, const int compare_method = PSNR_ALL);
+	CP_EXPORT double getPSNR(cv::InputArray src, cv::InputArray ref, const int boundingBox = 0, const int precision = PSNR_UP_CAST, const int compare_method = PSNR_ALL);
+
+	CP_EXPORT void localPSNRMap(cv::InputArray src1, cv::InputArray src2, cv::OutputArray dest, const int r, const int channel);
+	CP_EXPORT void guiLocalPSNRMap(cv::InputArray src1, cv::InputArray src2, const bool isWait = true, std::string wname = "AreaPSNR");
 }

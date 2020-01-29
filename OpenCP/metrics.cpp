@@ -1,17 +1,40 @@
 #include "metrics.hpp"
 #include "inlineSIMDFunctions.hpp"
+#include "arithmetic.hpp"
+#include "updateCheck.hpp"
 #include "debugcp.hpp"
+
 using namespace std;
 using namespace cv;
 
 namespace cp
 {
+	std::string getPSNR_CHANNEL(const int channel)
+	{
+		string ret;
+		switch (channel)
+		{
+		case PSNR_ALL:
+			ret = "PSNR_ALL"; break;
+		case PSNR_Y:
+			ret = "PSNR_Y"; break;
+		case PSNR_B:
+			ret = "PSNR_B"; break;
+		case PSNR_G:
+			ret = "PSNR_G"; break;
+		case PSNR_R:
+			ret = "PSNR_R"; break;
+		default:
+			ret = "NO SUPPORT"; break;
+		}
+		return ret;
+	}
+
 	std::string getPSNR_PRECISION(const int precision)
 	{
 		string ret;
 		switch (precision)
 		{
-
 		case PSNR_UP_CAST:
 			ret = "PSNR_UP_CAST"; break;
 		case PSNR_8U:
@@ -22,6 +45,8 @@ namespace cp
 			ret = "PSNR_64F"; break;
 		case PSNR_KAHAN_64F:
 			ret = "PSNR_KAHAN_64F"; break;
+		default:
+			ret = "NO SUPPORT"; break;
 			break;
 		}
 		return ret;
@@ -189,7 +214,7 @@ namespace cp
 			{
 				//cvtColor do not support 64F 
 				cv::Matx13d mt(0.114, 0.587, 0.299);
-				cv::transform(src, dest, mt); 
+				cv::transform(src, dest, mt);
 				break;
 			}
 			case PSNR_B:
@@ -399,7 +424,7 @@ namespace cp
 
 		return prec;
 	}
-	
+
 	double PSNRMetrics::getPSNR(cv::InputArray src, cv::InputArray ref, const int boundingBox, const int precision, const int compare_method)
 	{
 		CV_Assert(!ref.empty());
@@ -407,15 +432,15 @@ namespace cp
 		CV_Assert(src.channels() == ref.channels());
 		CV_Assert(src.size() == ref.size());
 
-		int prec=precision;
+		int prec = precision;
 
 		if (precision == PSNR_UP_CAST)
 		{
 			prec = getPrecisionUpCast(src, ref);
 		}
-		
-		setReference(ref, boundingBox, precision, compare_method);
-		return getPSNRPreset(src, boundingBox, precision, compare_method);
+
+		setReference(ref, boundingBox, prec, compare_method);
+		return getPSNRPreset(src, boundingBox, prec, compare_method);
 	}
 
 	double PSNRMetrics::operator()(cv::InputArray src, cv::InputArray ref, const int boundingBox, const int precision, const int compare_method)
@@ -427,7 +452,7 @@ namespace cp
 	void PSNRMetrics::setReference(cv::InputArray src, const int boundingBox, const int precision, const int compare_method)
 	{
 		CV_Assert(precision != PSNR_UP_CAST);
-		
+
 		const int cmethod = (src.channels() == 1) ? PSNR_ALL : compare_method;
 
 		Mat r = src.getMat();
@@ -475,7 +500,7 @@ namespace cp
 			crops = s;
 		}
 
-		
+
 		double MSE = 0.0;
 		if (precision == PSNR_32F)
 		{
@@ -526,11 +551,223 @@ namespace cp
 		}
 	}
 
-	double getPSNR(cv::InputArray src, cv::InputArray ref, const int boundingBox , const int precision, const int compare_method)
+	double getPSNR(cv::InputArray src, cv::InputArray ref, const int boundingBox, const int precision, const int compare_method)
 	{
 		PSNRMetrics psnr;
 		return psnr(src, ref, boundingBox, precision, compare_method);
 	}
+
+	//internal
+	void localPSNRMapColor_64F(vector<Mat>& s1, vector<Mat>& s2, Mat& dest, const int r)
+	{
+		CV_Assert(s1[0].depth() == CV_64F);
+		CV_Assert(s2[0].depth() == CV_64F);
+
+		Size kernel = Size(2 * r + 1, 2 * r + 1);
+
+		subtract(s1[0], s2[0], s1[0]);
+		multiply(s1[0], s1[0], s1[0]);
+		for (int c = 1; c < s1.size(); c++)
+		{
+			subtract(s1[c], s2[c], s1[c]);
+			fmadd(s1[c], s1[c], s1[0], s1[0]);
+		}
+		divide(s1[0], 3.0, s1[0]);
+		blur(s1[0], s1[0], kernel);
+
+		for (int j = 0; j < s1[0].rows; j++)
+		{
+			double* sptr1 = s1[0].ptr<double>(j);
+			double* dptr = dest.ptr<double>(j);
+			for (int i = 0; i < s1[0].cols; i++)
+			{
+				double mse = sptr1[i];
+
+				double psnr;
+				if (mse == 0.0)
+				{
+					psnr = 0.0;
+				}
+				else if (cvIsNaN(mse) || cvIsInf(mse))
+				{
+					psnr = 0.0;
+				}
+				else if (cvIsInf(mse))
+				{
+					psnr = 0.0;
+				}
+				else
+				{
+					psnr = 10.0 * log10(255.0 * 255.0 / mse);
+				}
+
+				dptr[i] = psnr;
+			}
+		}
+	}
+
+	//internal
+	void localPSNRMapGray_64F(Mat& s1, Mat& s2, Mat& dest, const int r)
+	{
+		CV_Assert(s1.depth() == CV_64F);
+		CV_Assert(s2.depth() == CV_64F);
+
+		Size kernel = Size(2 * r + 1, 2 * r + 1);
+		subtract(s1, s2, s1);
+		multiply(s1, s1, s1);
+		blur(s1, s1, kernel);
+
+		for (int j = 0; j < s1.rows; j++)
+		{
+			double* sptr1 = s1.ptr<double>(j);
+			double* dptr = dest.ptr<double>(j);
+			for (int i = 0; i < s1.cols; i++)
+			{
+				double mse = sptr1[i];
+
+				double psnr;
+				if (mse == 0.0)
+				{
+					psnr = 0.0;
+				}
+				else if (cvIsNaN(mse) || cvIsInf(mse))
+				{
+					psnr = 0.0;
+				}
+				else if (cvIsInf(mse))
+				{
+					psnr = 0.0;
+				}
+				else
+				{
+					psnr = 10.0 * log10(255.0 * 255.0 / mse);
+				}
+
+				dptr[i] = psnr;
+			}
+		}
+	}
+
+	void localPSNRMap(InputArray src1, InputArray src2, OutputArray dest, const int r, const int channel)
+	{
+		dest.create(src1.size(), CV_64F);
+		Mat dst = dest.getMat();
+		Mat s1, s2;
+		src1.getMat().convertTo(s1, CV_64F);
+		src2.getMat().convertTo(s2, CV_64F);
+
+		if (src1.channels() == 1)
+		{
+			localPSNRMapGray_64F(s1, s2, dst, r);
+		}
+		else if (src1.channels() == 3)
+		{
+			Mat g1, g2;
+			if (channel == PSNR_ALL)
+			{
+				vector<Mat> vs1;
+				vector<Mat> vs2;
+				split(s1, vs1);
+				split(s2, vs2);
+				localPSNRMapColor_64F(vs1, vs2, dst, r);
+			}
+			else
+			{
+				if (channel == PSNR_Y)
+				{
+					if (s1.depth() == CV_64F)
+					{
+						//cvtColor do not support 64F 
+						cv::Matx13d mt(0.114, 0.587, 0.299);
+						cv::transform(s1, g1, mt);
+						cv::transform(s2, g2, mt);
+					}
+					else
+					{
+						cvtColor(s1, g1, COLOR_BGR2GRAY);
+						cvtColor(s2, g2, COLOR_BGR2GRAY);
+					}
+				}
+				else
+				{
+					vector<Mat> vs1;
+					vector<Mat> vs2;
+					split(s1, vs1);
+					split(s2, vs2);
+					if (channel == PSNR_B)
+					{
+						g1 = vs1[0];
+						g2 = vs2[0];
+					}
+					else if (channel == PSNR_G)
+					{
+						g1 = vs1[1];
+						g2 = vs2[1];
+					}
+					else if (channel == PSNR_R)
+					{
+						g1 = vs1[2];
+						g2 = vs2[2];
+					}
+				}
+
+				localPSNRMapGray_64F(g1, g2, dst, r);
+			}
+		}
+	}
+
+	void guiLocalPSNRMap(InputArray src1, InputArray src2, const bool isWait, string wname)
+	{
+		namedWindow(wname);
+		static int is_normalize = 1; createTrackbar("l_psnr_is_norm", wname, &is_normalize, 1);
+		static int local_psnr_r = 5; createTrackbar("l_psnr_r", wname, &local_psnr_r, 50);
+		static int local_psnr_vamp = 10; createTrackbar("l_psnr_vamp*0.1", wname, &local_psnr_vamp, 30);
+		static int local_psnr_chananel = 0; createTrackbar("l_psnr_channel", wname, &local_psnr_chananel, PSNR_CHANNEL_SIZE - 1);
+		int key = 0;
+		Mat show;
+		Mat dest;
+
+		cp::UpdateCheck uc(local_psnr_chananel);
+		while (key != 'q')
+		{
+			if (uc.isUpdate(local_psnr_chananel))displayOverlay(wname, getPSNR_CHANNEL(local_psnr_chananel) + format(": %f dB", getPSNR(src1, src2, 0, 0, local_psnr_chananel)), 3000);
+
+			localPSNRMap(src1, src2, dest, local_psnr_r, local_psnr_chananel);
+
+			if (local_psnr_vamp == 0 || is_normalize == 1)
+			{
+				normalize(dest, show, 255, 0, NORM_MINMAX, CV_8U);
+			}
+			else
+			{
+				dest.convertTo(show, CV_8U, local_psnr_vamp*0.1);
+			}
+
+			imshow(wname, show);
+
+			if (isWait) key = waitKey(1);
+			else key = 'q';
+
+			if (key == 'p')
+			{
+				displayOverlay(wname, format("%f dB", getPSNR(src1, src2, 0, 0, local_psnr_chananel)), 3000);
+			}
+			if (key == 'f')
+			{
+				is_normalize = (is_normalize == 1) ? 0 : 1;
+				setTrackbarPos("l_psnr_is_norm", wname, is_normalize);
+			}
+			if (key == '?')
+			{
+				cout << "f: flip normalize flag" << endl;
+				cout << "p: show normal PSNR" << endl;
+				cout << "q: quit" << endl;
+			}
+		}
+		if (isWait) destroyWindow(wname);
+	}
+
+
 
 	double MSE(InputArray I1_, InputArray I2_, InputArray mask)
 	{

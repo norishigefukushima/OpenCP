@@ -6,9 +6,12 @@ namespace cp
 {
 	class CP_EXPORT UpdateCheck
 	{
+		bool isSkip = true;
 		std::vector<double> parameters;
+		bool firstTimeCheck(const bool flag);
 	public:
-
+		bool isFourceRetTrueFirstTime = true;
+		void setIsFourceRetTrueFirstTime(const bool flag);
 		UpdateCheck(double p0);
 		UpdateCheck(double p0, double p1);
 		UpdateCheck(double p0, double p1, double p2);

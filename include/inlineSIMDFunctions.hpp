@@ -25,7 +25,7 @@ inline float _mm256_reduceadd_ps(__m256 src)
 	return (src.m256_f32[0] + src.m256_f32[4]);
 }
 
-inline float _mm256_reduceadd_pd(__m256d src)
+inline double _mm256_reduceadd_pd(__m256d src)
 {
 	src = _mm256_hadd_pd(src, src);
 	return (src.m256d_f64[0] + src.m256d_f64[2]);

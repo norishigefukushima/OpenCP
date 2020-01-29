@@ -4,6 +4,16 @@ using namespace std;
 using namespace cv;
 using namespace cp;
 
+void testLocalPSNR(Mat& ref)
+{
+	Mat noise;
+	addJPEGNoise(ref, noise, 30);
+	//addNoise(ref, noise, 50);
+	//blur(ref, noise, Size(5, 5));
+
+	guiLocalPSNRMap(ref, noise);
+}
+
 void testPSNR(Mat& ref_)
 {
 	CV_Assert(ref_.channels() == 3);
