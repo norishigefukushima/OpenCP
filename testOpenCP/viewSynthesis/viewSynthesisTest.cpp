@@ -530,14 +530,14 @@ void guiViewSynthesis()
 
 		int thresh = 10;
 		ci("basic %f", getPSNR(basic, ref));
-		ci("basic %f", getBadPixel(basic, ref, thresh));
+		ci("basic %f", getInacceptableRatio(basic, ref, thresh));
 		ci("max.  %f", getPSNR(dilateSynth, ref));
-		ci("max.  %f", getBadPixel(dilateSynth, ref, thresh));
+		ci("max.  %f", getInacceptableRatio(dilateSynth, ref, thresh));
 
 		//ci("Base. %f",YPSNR(base,ref));
 
 		ci("Matt. %f", getPSNR(FVdest, ref));
-		ci("Matt. %f", getBadPixel(FVdest, ref, thresh));
+		ci("Matt. %f", getInacceptableRatio(FVdest, ref, thresh));
 
 		if (key == 'o')guiAlphaBlend(FVdest, dilateSynth);
 		ci.show();

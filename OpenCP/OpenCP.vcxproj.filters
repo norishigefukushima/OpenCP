@@ -731,9 +731,6 @@
     <ClInclude Include="..\include\imagediff.hpp">
       <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\markoperation.hpp">
-      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\matinfo.hpp">
       <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
     </ClInclude>
@@ -940,6 +937,9 @@
     </ClInclude>
     <ClInclude Include="debugcp.hpp">
       <Filter>ソース ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\maskoperation.hpp">
+      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

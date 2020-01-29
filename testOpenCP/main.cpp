@@ -4,8 +4,6 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-
-	
 	//guiGuidedImageFilterTest();
 	//guiHazeRemoveTest();
 	
@@ -17,6 +15,7 @@ int main(int argc, char** argv)
 	//Mat img = imread("img/cameraman.png",0);
 	//Mat img = imread("img/barbara.png", 0);
 
+	guiZoom(img);
 	//testAddNoise(img); return 0;
 	testLocalPSNR(img); return 0;
 	testPSNR(img); return 0;
@@ -79,7 +78,7 @@ int main(int argc, char** argv)
 	//guiWeightMapTest(); return 0;
 
 	guiPlotTest(); return 0;
-	//zoom(argc, argv);return 0;
+	
 
 	//guiGeightedJointBilateralFilterTest();
 	//Mat haze = imread("img/haze/haze2.jpg"); guiHazeRemoveTest(haze);

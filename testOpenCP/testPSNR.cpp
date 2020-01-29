@@ -10,7 +10,7 @@ void testLocalPSNR(Mat& ref)
 	addJPEGNoise(ref, noise, 30);
 	//addNoise(ref, noise, 50);
 	//blur(ref, noise, Size(5, 5));
-
+	
 	guiLocalPSNRMap(ref, noise);
 }
 

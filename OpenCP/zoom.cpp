@@ -6,7 +6,7 @@ using namespace cv;
 namespace cp
 {
 
-	static void onMouse(int events, int x, int y, int flags, void *param)
+	static void onMouseGUIZoom(int events, int x, int y, int flags, void *param)
 	{
 		Point* pt = (Point*)param;
 		//if(events==CV_EVENT_LBUTTONDOWN)
@@ -36,7 +36,7 @@ namespace cp
 		createTrackbar("zoom", wname, &z, 20);
 		int key = 0;
 
-		setMouseCallback(wname, onMouse, &mpt);
+		setMouseCallback(wname, onMouseGUIZoom, &mpt);
 
 		Mat dest;
 		Mat input = src.getMat();

@@ -70,4 +70,24 @@ namespace cp
 		subf = cv::abs(subf)* scale;
 		subf.convertTo(dest, depth);
 	}
+
+	inline double MSEtoPSNR(const double mse)
+	{
+		if (mse == 0.0)
+		{
+			return 0;
+		}
+		else if (cvIsNaN(mse))
+		{
+			return -1.0;
+		}
+		else if (cvIsInf(mse))
+		{
+			return -2.0;
+		}
+		else
+		{
+			return 10.0 * log10(255.0*255.0 / mse);
+		}
+	}
 }

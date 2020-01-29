@@ -1,4 +1,5 @@
 #include "metrics.hpp"
+#include "inlineMathFunctions.hpp"
 #include "inlineSIMDFunctions.hpp"
 #include "arithmetic.hpp"
 #include "updateCheck.hpp"
@@ -52,7 +53,11 @@ namespace cp
 		return ret;
 	}
 
-	double MSE_64F(cv::Mat& src, cv::Mat& reference, bool isKahan = true)
+	///////////////////////////////////////////////////////////////////////////////////////////////////
+	//class PSNRMetrics
+	///////////////////////////////////////////////////////////////////////////////////////////////////
+
+	double PSNRMetrics::MSE_64F(cv::Mat& src, cv::Mat& reference, bool isKahan)
 	{
 		CV_Assert(!src.empty());
 		CV_Assert(!reference.empty());
@@ -113,7 +118,7 @@ namespace cp
 		return MSE;
 	}
 
-	double MSE_32F(cv::Mat& src, cv::Mat& reference)
+	double PSNRMetrics::MSE_32F(cv::Mat& src, cv::Mat& reference)
 	{
 		CV_Assert(!src.empty());
 		CV_Assert(!reference.empty());
@@ -154,8 +159,8 @@ namespace cp
 
 		return MSE;
 	}
-
-	double MSE_8U(cv::Mat& src, cv::Mat& reference)
+	
+	double PSNRMetrics::MSE_8U(cv::Mat& src, cv::Mat& reference)
 	{
 		CV_Assert(!src.empty());
 		CV_Assert(!reference.empty());
@@ -197,8 +202,7 @@ namespace cp
 		return MSE;
 	}
 
-
-	void PSNRMetrics::cvtImageForPSNR64F(const Mat& src, Mat& dest, const int cmethod)
+	void PSNRMetrics::cvtImageForMSE64F(const Mat& src, Mat& dest, const int cmethod)
 	{
 		if (src.depth() == CV_64F)
 		{
@@ -267,7 +271,7 @@ namespace cp
 		}
 	}
 
-	void PSNRMetrics::cvtImageForPSNR32F(const Mat& src, Mat& dest, const int cmethod)
+	void PSNRMetrics::cvtImageForMSE32F(const Mat& src, Mat& dest, const int cmethod)
 	{
 		if (src.depth() == CV_32F)
 		{
@@ -334,7 +338,7 @@ namespace cp
 		}
 	}
 
-	void PSNRMetrics::cvtImageForPSNR8U(const Mat& src, Mat& dest, const int cmethod)
+	void PSNRMetrics::cvtImageForMSE8U(const Mat& src, Mat& dest, const int cmethod)
 	{
 		if (src.depth() == CV_8U)
 		{
@@ -425,7 +429,8 @@ namespace cp
 		return prec;
 	}
 
-	double PSNRMetrics::getPSNR(cv::InputArray src, cv::InputArray ref, const int boundingBox, const int precision, const int compare_method)
+
+	double PSNRMetrics::getMSE(cv::InputArray src, cv::InputArray ref, const int boundingBox, const int precision, const int compare_channel)
 	{
 		CV_Assert(!ref.empty());
 		CV_Assert(!src.empty());
@@ -439,13 +444,20 @@ namespace cp
 			prec = getPrecisionUpCast(src, ref);
 		}
 
-		setReference(ref, boundingBox, prec, compare_method);
-		return getPSNRPreset(src, boundingBox, prec, compare_method);
+		setReference(ref, boundingBox, prec, compare_channel);
+		return getMSEPreset(src, boundingBox, prec, compare_channel);
 	}
 
-	double PSNRMetrics::operator()(cv::InputArray src, cv::InputArray ref, const int boundingBox, const int precision, const int compare_method)
+	double PSNRMetrics::getPSNR(cv::InputArray src, cv::InputArray ref, const int boundingBox, const int precision, const int compare_channel)
 	{
-		return getPSNR(src, ref, boundingBox, precision, compare_method);
+		double mse = getMSE(src, ref, boundingBox, precision, compare_channel);
+
+		return MSEtoPSNR(mse);
+	}
+
+	double PSNRMetrics::operator()(cv::InputArray src, cv::InputArray ref, const int boundingBox, const int precision, const int compare_channel)
+	{
+		return getPSNR(src, ref, boundingBox, precision, compare_channel);
 	}
 
 	//set reference image for acceleration
@@ -468,20 +480,20 @@ namespace cp
 
 		if (precision == PSNR_32F)
 		{
-			cvtImageForPSNR32F(cropr, reference, cmethod);
+			cvtImageForMSE32F(cropr, reference, cmethod);
 		}
 		else if (precision == PSNR_8U)
 		{
-			cvtImageForPSNR8U(cropr, reference, cmethod);
+			cvtImageForMSE8U(cropr, reference, cmethod);
 		}
 		else
 		{
-			cvtImageForPSNR64F(cropr, reference, cmethod);
+			cvtImageForMSE64F(cropr, reference, cmethod);
 		}
 	}
 
 	//using preset reference image for acceleration
-	double PSNRMetrics::getPSNRPreset(cv::InputArray src, const int boundingBox, const int precision, const int compare_method)
+	double PSNRMetrics::getMSEPreset(cv::InputArray src, const int boundingBox, const int precision, const int compare_method)
 	{
 		CV_Assert(!reference.empty());
 		CV_Assert(!src.empty());
@@ -500,11 +512,10 @@ namespace cp
 			crops = s;
 		}
 
-
 		double MSE = 0.0;
 		if (precision == PSNR_32F)
 		{
-			cvtImageForPSNR32F(crops, source, cmethod);
+			cvtImageForMSE32F(crops, source, cmethod);
 
 			if (source.depth() != reference.depth())
 			{
@@ -515,7 +526,7 @@ namespace cp
 		}
 		else if (precision == PSNR_8U)
 		{
-			cvtImageForPSNR8U(crops, source, cmethod);
+			cvtImageForMSE8U(crops, source, cmethod);
 
 			if (source.depth() != reference.depth())
 			{
@@ -526,7 +537,7 @@ namespace cp
 		}
 		else
 		{
-			cvtImageForPSNR64F(crops, source, cmethod);
+			cvtImageForMSE64F(crops, source, cmethod);
 
 			if (source.depth() != reference.depth())
 			{
@@ -537,24 +548,21 @@ namespace cp
 			MSE = MSE_64F(source, reference, precision == PSNR_KAHAN_64F);
 		}
 
-		if (MSE == 0.0)
-		{
-			return 0;
-		}
-		else if (cvIsNaN(MSE) || cvIsInf(MSE))
-		{
-			return -1.0;
-		}
-		else
-		{
-			return 10.0 * log10(255.0*255.0 / MSE);
-		}
+		return MSE;
 	}
 
-	double getPSNR(cv::InputArray src, cv::InputArray ref, const int boundingBox, const int precision, const int compare_method)
+	double PSNRMetrics::getPSNRPreset(cv::InputArray src, const int boundingBox, const int precision, const int compare_channel)
+	{
+		double mse = getMSEPreset(src, boundingBox, precision, compare_channel);
+
+		return MSEtoPSNR(mse);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+
+	double getPSNR(cv::InputArray src, cv::InputArray ref, const int boundingBox, const int precision, const int compare_channel)
 	{
 		PSNRMetrics psnr;
-		return psnr(src, ref, boundingBox, precision, compare_method);
+		return psnr(src, ref, boundingBox, precision, compare_channel);
 	}
 
 	//internal
@@ -768,7 +776,6 @@ namespace cp
 	}
 
 
-
 	double getMSE(InputArray I1_, InputArray I2_, InputArray mask)
 	{
 		Mat I1, I2;
@@ -790,24 +797,13 @@ namespace cp
 		return sse / (double)(I1.channels() * count);
 	}
 
-	double getMSE(InputArray I1_, InputArray I2_)
+	double getMSE(InputArray src, InputArray ref, const int boundingBox, const int precision, const int compare_channel)
 	{
-		Mat I1, I2;
-		I1_.getMat().convertTo(I1, CV_64F);
-		I2_.getMat().convertTo(I2, CV_64F);
-
-		Mat s1;
-		absdiff(I1, I2, s1);       // |I1 - I2|
-		s1 = s1.mul(s1);           // |I1 - I2|^2
-		Scalar s = sum(s1);        // sum elements per channel
-		double sse;
-		if (I1.channels() == 1) sse = s.val[0];
-		else sse = s.val[0] + s.val[1] + s.val[2]; // sum channels
-
-		return sse / (double)(I1.channels() * I1.total());
+		PSNRMetrics mse;
+		return mse.getMSE(src, ref, boundingBox, precision, compare_channel);
 	}
 
-	double getBadPixel(const Mat& src, const Mat& ref, int threshold)
+	double getInacceptableRatio(InputArray src, InputArray ref, const int threshold)
 	{
 		Mat g1, g2;
 		if (src.channels() == 3)
@@ -817,8 +813,8 @@ namespace cp
 		}
 		else
 		{
-			g1 = src;
-			g2 = ref;
+			g1 = src.getMat();
+			g2 = ref.getMat();
 		}
 		Mat temp;
 		absdiff(g1, g2, temp);
@@ -911,7 +907,7 @@ namespace cp
 		}
 	}
 
-	double getTotalVariation(Mat& src)
+	double getTotalVariation(cv::InputArray src)
 	{
 		Mat gray;
 		cvtColor(src, gray, COLOR_BGR2GRAY);
@@ -922,11 +918,11 @@ namespace cp
 		int count = 0;
 
 		int NRM = 0;
-		for (int j = 0; j < src.rows; j++)
+		for (int j = 0; j < gray.rows; j++)
 		{
 			uchar* pb = bb.ptr(j);
 			uchar* b = bb.ptr(j + 1);
-			for (int i = 0; i < src.rows; i++)
+			for (int i = 0; i < gray.cols; i++)
 			{
 				sum += norm_l(pb[i], b[i], NRM);
 				sum += norm_l(b[i], b[i + 1], NRM);

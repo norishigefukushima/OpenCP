@@ -386,7 +386,7 @@
     <ClInclude Include="..\include\jointNearestFilter.hpp" />
     <ClInclude Include="..\include\jointNonLocalMeans.hpp" />
     <ClInclude Include="..\include\L0Smoothing.hpp" />
-    <ClInclude Include="..\include\markoperation.hpp" />
+    <ClInclude Include="..\include\maskoperation.hpp" />
     <ClInclude Include="..\include\matinfo.hpp" />
     <ClInclude Include="..\include\mattingRendering.hpp" />
     <ClInclude Include="..\include\metrics.hpp" />
