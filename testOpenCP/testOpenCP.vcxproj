@@ -196,6 +196,7 @@
     <ClCompile Include="slic\guiSLICTest.cpp" />
     <ClCompile Include="splitmergeTest.cpp" />
     <ClCompile Include="testAddNoise.cpp" />
+    <ClCompile Include="testCropZoom.cpp" />
     <ClCompile Include="testPSNR.cpp" />
     <ClCompile Include="testRGBHistogram.cpp" />
     <ClCompile Include="testTimer.cpp" />

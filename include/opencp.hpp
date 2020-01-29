@@ -97,6 +97,7 @@
 #include "bitconvert.hpp"
 #include "consoleImage.hpp"
 #include "countDenormalizedNumber.hpp"
+#include "crop.hpp"
 #include "csv.hpp"
 #include "draw.hpp"
 #include "getContrast.hpp"
@@ -114,7 +115,7 @@
 #include "updateCheck.hpp"
 #include "video.hpp"
 #include "yuvio.hpp"
-#include "zoom.hpp"
+
 
 
 /*************************************************************

@@ -15,7 +15,7 @@ int main(int argc, char** argv)
 	//Mat img = imread("img/cameraman.png",0);
 	//Mat img = imread("img/barbara.png", 0);
 
-	guiZoom(img);
+	testCropZoom(); return 0;
 	//testAddNoise(img); return 0;
 	testLocalPSNR(img); return 0;
 	testPSNR(img); return 0;

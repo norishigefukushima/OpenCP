@@ -8,6 +8,7 @@
 #pragma comment(lib, "opencp.lib")
 #endif
 
+void testCropZoom();
 void testRGBHistogram();
 void testRGBHistogram2();
 void testAddNoise(cv::Mat& src);

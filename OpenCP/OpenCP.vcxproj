@@ -333,7 +333,7 @@
     <ClCompile Include="weightedModeFilter.cpp" />
     <ClCompile Include="Wiener2.cpp" />
     <ClCompile Include="yuvio.cpp" />
-    <ClCompile Include="zoom.cpp" />
+    <ClCompile Include="crop.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\alphaBlend.hpp" />
@@ -428,7 +428,7 @@
     <ClInclude Include="..\include\weightedModeFilter.hpp" />
     <ClInclude Include="..\include\Wiener2.hpp" />
     <ClInclude Include="..\include\yuvio.hpp" />
-    <ClInclude Include="..\include\zoom.hpp" />
+    <ClInclude Include="..\include\crop.hpp" />
     <ClInclude Include="box\boxFilter_Base.h" />
     <ClInclude Include="box\boxFilter_Integral.h" />
     <ClInclude Include="box\boxFilter_Integral_OnePass.h" />

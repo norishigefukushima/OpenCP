@@ -162,9 +162,6 @@
     <ClCompile Include="hazeRemove.cpp">
       <Filter>ソース ファイル\imgproc</Filter>
     </ClCompile>
-    <ClCompile Include="zoom.cpp">
-      <Filter>ソース ファイル\utilty functions</Filter>
-    </ClCompile>
     <ClCompile Include="GaussianBlurIPOL.cpp">
       <Filter>ソース ファイル\filter\GaussianFilter</Filter>
     </ClCompile>
@@ -531,6 +528,9 @@
     <ClCompile Include="box\boxFilter_Separable_Interleave.cpp">
       <Filter>ソース ファイル\filter\boxFilter</Filter>
     </ClCompile>
+    <ClCompile Include="crop.cpp">
+      <Filter>ソース ファイル\utilty functions</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libGaussian\gaussian_conv.h">
@@ -749,9 +749,6 @@
     <ClInclude Include="..\include\stencil.hpp">
       <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\zoom.hpp">
-      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\yuvio.hpp">
       <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
     </ClInclude>
@@ -939,6 +936,9 @@
       <Filter>ソース ファイル</Filter>
     </ClInclude>
     <ClInclude Include="..\include\maskoperation.hpp">
+      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\crop.hpp">
       <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
     </ClInclude>
   </ItemGroup>
