@@ -96,7 +96,7 @@
 #include "arithmetic.hpp"
 #include "bitconvert.hpp"
 #include "consoleImage.hpp"
-#include "countDenormalizedNumber.hpp"
+#include "count.hpp"
 #include "crop.hpp"
 #include "csv.hpp"
 #include "draw.hpp"
@@ -185,4 +185,63 @@ void parallel_template(Mat& src, Mat& dest, const int parameter)
 		8
 	);
 }
+*/
+
+/*
+template for mouse
+
+struct MouseTemplateParameter
+{
+	cv::Rect pt;
+	std::string wname;
+	MouseTemplateParameter(int x, int y, int width, int height, std::string name)
+	{
+		pt = cv::Rect(x, y, width, height);
+		wname = name;
+	}
+};
+
+void guiMouseTemplateOnMouse(int event, int x, int y, int flags, void* param)
+{
+	MouseTemplateParameter* retp = (MouseTemplateParameter*)param;
+
+	if (flags == EVENT_FLAG_LBUTTON)
+	{
+		retp->pt.x = max(0, min(retp->pt.width - 1, x));
+		retp->pt.y = max(0, min(retp->pt.height - 1, y));
+
+		setTrackbarPos("x", retp->wname, x);
+		setTrackbarPos("y", retp->wname, y);
+	}
+}
+
+void guiMouseTemplate(Mat& src, bool isWait=true, string wname="gui");
+void guiMouseTemplate(Mat& src, bool isWait, string wname)
+{
+	namedWindow(wname);
+
+	static MouseTemplateParameter param(src.cols / 2, src.rows / 2, src.cols, src.rows, wname);
+
+	setMouseCallback(wname, (MouseCallback)guiMouseTemplateOnMouse, (void*)&param);
+	createTrackbar("x", wname, &param.pt.x, src.cols - 1);
+	createTrackbar("y", wname, &param.pt.y, src.rows - 1);
+
+	int key = 0;
+	Mat show;
+	while (key != 'q')
+	{
+		Point pt = Point(param.pt.x, param.pt.y);
+
+		src.copyTo(show);
+		cp::drawGrid(show, pt, COLOR_RED);
+
+		imshow(wname, show);
+		key = waitKey(1);
+
+		if (!isWait)break;
+	}
+
+	if (!isWait)destroyWindow(wname);
+}
+
 */

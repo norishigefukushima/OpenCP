@@ -159,7 +159,7 @@ namespace cp
 
 		return MSE;
 	}
-	
+
 	double PSNRMetrics::MSE_8U(cv::Mat& src, cv::Mat& reference)
 	{
 		CV_Assert(!src.empty());
@@ -408,20 +408,16 @@ namespace cp
 	inline int PSNRMetrics::getPrecisionUpCast(cv::InputArray src, cv::InputArray ref)
 	{
 		int prec = PSNR_8U;
-		if (ref.depth() == CV_8U && src.depth() == CV_8U)
+		const int depth = max(ref.depth(), src.depth());
+		if (depth == CV_8U)
 		{
 			prec = PSNR_8U;
 		}
-		else if (ref.depth() == CV_32F && src.depth() == CV_8U ||
-			ref.depth() == CV_8U && src.depth() == CV_32F)
+		else if (depth == CV_32F)
 		{
 			prec = PSNR_32F;
 		}
-		else if (
-			ref.depth() == CV_64F && src.depth() == CV_8U ||
-			ref.depth() == CV_64F && src.depth() == CV_32F ||
-			ref.depth() == CV_8U && src.depth() == CV_64F ||
-			ref.depth() == CV_32F && src.depth() == CV_64F)
+		else
 		{
 			prec = PSNR_64F;
 		}
@@ -497,7 +493,14 @@ namespace cp
 	{
 		CV_Assert(!reference.empty());
 		CV_Assert(!src.empty());
-		CV_Assert(src.depth() == reference.depth());
+		if (src.depth() != reference.depth())
+		{
+			cout << "precision: " << getPSNR_PRECISION(precision) << endl;
+			cp::showMatInfo(src, "src");
+			cp::showMatInfo(reference, "reference");
+			CV_Assert(src.depth() == reference.depth());
+		}
+
 
 		Mat s = src.getMat();
 
@@ -566,7 +569,7 @@ namespace cp
 	}
 
 	//internal
-	void localPSNRMapColor_64F(vector<Mat>& s1, vector<Mat>& s2, Mat& dest, const int r)
+	void localPSNRMapColor_64F(vector<Mat>& s1, vector<Mat>& s2, Mat& dest, const int r, const double psnr_inf)
 	{
 		CV_Assert(s1[0].depth() == CV_64F);
 		CV_Assert(s2[0].depth() == CV_64F);
@@ -594,15 +597,15 @@ namespace cp
 				double psnr;
 				if (mse == 0.0)
 				{
-					psnr = 0.0;
+					psnr = psnr_inf;
 				}
-				else if (cvIsNaN(mse) || cvIsInf(mse))
+				else if (cvIsNaN(mse))
 				{
-					psnr = 0.0;
+					psnr = -1.0;
 				}
 				else if (cvIsInf(mse))
 				{
-					psnr = 0.0;
+					psnr = -2.0;
 				}
 				else
 				{
@@ -615,7 +618,7 @@ namespace cp
 	}
 
 	//internal
-	void localPSNRMapGray_64F(Mat& s1, Mat& s2, Mat& dest, const int r)
+	void localPSNRMapGray_64F(Mat& s1, Mat& s2, Mat& dest, const int r, const double psnr_inf)
 	{
 		CV_Assert(s1.depth() == CV_64F);
 		CV_Assert(s2.depth() == CV_64F);
@@ -623,7 +626,7 @@ namespace cp
 		Size kernel = Size(2 * r + 1, 2 * r + 1);
 		subtract(s1, s2, s1);
 		multiply(s1, s1, s1);
-		blur(s1, s1, kernel);
+		blur(s1, s1, kernel, Point(-1, -1), BORDER_REFLECT101);
 
 		for (int j = 0; j < s1.rows; j++)
 		{
@@ -636,15 +639,15 @@ namespace cp
 				double psnr;
 				if (mse == 0.0)
 				{
-					psnr = 0.0;
+					psnr = psnr_inf;
 				}
-				else if (cvIsNaN(mse) || cvIsInf(mse))
+				else if (cvIsNaN(mse))
 				{
-					psnr = 0.0;
+					psnr = -1.0;
 				}
 				else if (cvIsInf(mse))
 				{
-					psnr = 0.0;
+					psnr = -2.0;
 				}
 				else
 				{
@@ -656,7 +659,7 @@ namespace cp
 		}
 	}
 
-	void localPSNRMap(InputArray src1, InputArray src2, OutputArray dest, const int r, const int channel)
+	void localPSNRMap(InputArray src1, InputArray src2, OutputArray dest, const int r, const int channel, const double psnr_infinity_value)
 	{
 		dest.create(src1.size(), CV_64F);
 		Mat dst = dest.getMat();
@@ -666,7 +669,7 @@ namespace cp
 
 		if (src1.channels() == 1)
 		{
-			localPSNRMapGray_64F(s1, s2, dst, r);
+			localPSNRMapGray_64F(s1, s2, dst, r, psnr_infinity_value);
 		}
 		else if (src1.channels() == 3)
 		{
@@ -677,7 +680,7 @@ namespace cp
 				vector<Mat> vs2;
 				split(s1, vs1);
 				split(s2, vs2);
-				localPSNRMapColor_64F(vs1, vs2, dst, r);
+				localPSNRMapColor_64F(vs1, vs2, dst, r, psnr_infinity_value);
 			}
 			else
 			{
@@ -719,7 +722,7 @@ namespace cp
 					}
 				}
 
-				localPSNRMapGray_64F(g1, g2, dst, r);
+				localPSNRMapGray_64F(g1, g2, dst, r, psnr_infinity_value);
 			}
 		}
 	}
@@ -728,6 +731,7 @@ namespace cp
 	{
 		namedWindow(wname);
 		static int is_normalize = 1; createTrackbar("l_psnr_is_norm", wname, &is_normalize, 1);
+		static int local_psnr_inf = 255; createTrackbar("l_psnr_inf", wname, &local_psnr_inf, 255);
 		static int local_psnr_r = 5; createTrackbar("l_psnr_r", wname, &local_psnr_r, 50);
 		static int local_psnr_vamp = 10; createTrackbar("l_psnr_vamp*0.1", wname, &local_psnr_vamp, 30);
 		static int local_psnr_chananel = 0; createTrackbar("l_psnr_channel", wname, &local_psnr_chananel, PSNR_CHANNEL_SIZE - 1);
@@ -738,9 +742,13 @@ namespace cp
 		cp::UpdateCheck uc(local_psnr_chananel);
 		while (key != 'q')
 		{
-			if (uc.isUpdate(local_psnr_chananel))displayOverlay(wname, getPSNR_CHANNEL(local_psnr_chananel) + format(": %f dB", getPSNR(src1, src2, 0, 0, local_psnr_chananel)), 3000);
+			if (uc.isUpdate(local_psnr_chananel))
+			{
+				if(isWait)
+				displayOverlay(wname, getPSNR_CHANNEL(local_psnr_chananel) + format(": %f dB", getPSNR(src1, src2, 0, 0, local_psnr_chananel)), 3000);
+			}
 
-			localPSNRMap(src1, src2, dest, local_psnr_r, local_psnr_chananel);
+			localPSNRMap(src1, src2, dest, local_psnr_r, local_psnr_chananel, local_psnr_inf);
 
 			if (local_psnr_vamp == 0 || is_normalize == 1)
 			{

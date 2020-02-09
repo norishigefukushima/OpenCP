@@ -215,7 +215,7 @@
     <ClCompile Include="color.cpp" />
     <ClCompile Include="consoleImage.cpp" />
     <ClCompile Include="costVolumeFilter.cpp" />
-    <ClCompile Include="countDenormalizedNumber.cpp" />
+    <ClCompile Include="count.cpp" />
     <ClCompile Include="crossBasedLocalFilter.cpp" />
     <ClCompile Include="crossBasedLocalMultipointFilter.cpp" />
     <ClCompile Include="csv.cpp" />
@@ -348,7 +348,7 @@
     <ClInclude Include="..\include\common.hpp" />
     <ClInclude Include="..\include\consoleImage.hpp" />
     <ClInclude Include="..\include\costVolumeFilter.hpp" />
-    <ClInclude Include="..\include\countDenormalizedNumber.hpp" />
+    <ClInclude Include="..\include\count.hpp" />
     <ClInclude Include="..\include\crossBasedLocalFilter.hpp" />
     <ClInclude Include="..\include\crossBasedLocalMultipointFilter.hpp" />
     <ClInclude Include="..\include\csv.hpp" />

@@ -1,5 +1,5 @@
 #include "getContrast.hpp"
-
+#include "arithmetic.hpp"
 using namespace std;
 using namespace cv;
 
@@ -13,25 +13,26 @@ namespace cp
 		namedWindow(window_name);
 		int a = 10;
 		int b = 0;
-		cv::createTrackbar("a/10", window_name, &a, 1024);
+		cv::createTrackbar("a*0.1", window_name, &a, 1024);
 		cv::createTrackbar("b", window_name, &b, 256);
 		int key = 0;
+
 		cv::Mat show;
 		while (key != 'q')
 		{
-			show = a / 10.0*src + b;
+			show = a *0.1*src + b;
 			imshow(window_name, show);
-			key = waitKey(33);
+			key = waitKey(1);
 
 			if (key == 'l')
 			{
 				a--;
-				setTrackbarPos("a/10", window_name, a);
+				setTrackbarPos("a*0.1", window_name, a);
 			}
 			if (key == 'j')
 			{
 				a++;
-				setTrackbarPos("a/10", window_name, a);
+				setTrackbarPos("a*0.1", window_name, a);
 			}
 			if (key == 'i')
 			{

@@ -143,7 +143,7 @@ public:
 
 # localPSNRMap
 ```cpp
-void localPSNRMap(cv::InputArray src1, cv::InputArray src2, cv::OutputArray dest, const int r, const int compare_channel);
+void localPSNRMap(cv::InputArray src1, cv::InputArray src2, cv::OutputArray dest, const int r, const int compare_channel, const double psnr_infinity_value = 0.0);
 ```
 ## Usage
 局所ウィンドウのPSNRを計算し，画像として出力します．  
@@ -151,6 +151,8 @@ void localPSNRMap(cv::InputArray src1, cv::InputArray src2, cv::OutputArray dest
 
 `r`が局所ウィンドウの半径，compare_channelは`getPSNR`関数と同じ意味です．  
 内部ですべてdoubleにアップキャストしたのちにPSNRを計算するため，`precision`のオプションはありません．
+最後の引数でPSNRが無限大の時の値を指定できます．デフォルトは0.0です．  
+
 ## Optimization
 * OpenCV/single
 * upcast double, any color
@@ -183,7 +185,7 @@ double getInacceptableRatio(cv::InputArray src, const cv::Mat& ref, const int th
 ## Optimization
 * グレイ画像のみ対応です．カラー画像は強制的にグレイスケールに変換されます．
 * 型は任意の型で動作します．ただし，内部のcvtColorがdoubleで動作しないため，doubleの入力は受け付けません．
-* 高速ははされていません．
+* 高速化はされていません．
 
 # getEntropy
 ```cpp

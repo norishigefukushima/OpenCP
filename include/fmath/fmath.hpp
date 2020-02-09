@@ -1,23 +1,28 @@
 #pragma once
 /**
-@brief fast math library for float
-@author herumi
-@url https://github.com/herumi/fmath/
-@note modified new BSD license
-http://opensource.org/licenses/BSD-3-Clause
-cl /Ox /Ob2 /arch:SSE2 /fp:fast bench.cpp -I../xbyak /EHsc /DNOMINMAX
-g++ -O3 -fomit-frame-pointer -fno-operator-names -march=core2 -mssse3 -mfpmath=sse -ffast-math -fexcess-precision=fast
+	@brief fast math library for float
+	@author herumi
+	@url https://github.com/herumi/fmath/
+	@note modified new BSD license
+	http://opensource.org/licenses/BSD-3-Clause
+
+	cl /Ox /Ob2 /arch:SSE2 /fp:fast bench.cpp -I../xbyak /EHsc /DNOMINMAX
+	g++ -O3 -fomit-frame-pointer -fno-operator-names -march=core2 -mssse3 -mfpmath=sse -ffast-math -fexcess-precision=fast
 */
 /*
-function prototype list
-float fmath::exp(float);
-double fmath::expd(double);
-float fmath::log(float);
-__m128 fmath::exp_ps(__m128);
-__m256 fmath::exp_ps256(__m256);
-__m128 fmath::log_ps(__m128);
-double fmath::expd_v(double *, size_t n);
-if FMATH_USE_XBYAK is defined then Xbyak version are used
+	function prototype list
+
+	float fmath::exp(float);
+	double fmath::expd(double);
+	float fmath::log(float);
+
+	__m128 fmath::exp_ps(__m128);
+	__m256 fmath::exp_ps256(__m256);
+	__m128 fmath::log_ps(__m128);
+
+	double fmath::expd_v(double *, size_t n);
+
+	if FMATH_USE_XBYAK is defined then Xbyak version are used
 */
 //#define FMATH_USE_XBYAK
 
@@ -38,10 +43,10 @@ if FMATH_USE_XBYAK is defined then Xbyak version are used
 #define __GNUC_PREREQ(major, minor) ((((__GNUC__) << 16) + (__GNUC_MINOR__)) >= (((major) << 16) + (minor)))
 #endif
 #if __GNUC_PREREQ(4, 4) || (__clang__ > 0 && __clang_major__ >= 3) || !defined(__GNUC__)
-/* GCC >= 4.4 or clang or non-GCC compilers */
+	/* GCC >= 4.4 or clang or non-GCC compilers */
 #include <x86intrin.h>
 #elif __GNUC_PREREQ(4, 1)
-/* GCC 4.1, 4.2, and 4.3 do not have x86intrin.h, directly include SSE2 header */
+	/* GCC 4.1, 4.2, and 4.3 do not have x86intrin.h, directly include SSE2 header */
 #include <emmintrin.h>
 #endif
 #ifndef MIE_ALIGN
@@ -97,9 +102,9 @@ namespace fmath {
 		size_t NumOfArray(const T(&)[N]) { return N; }
 
 		/*
-		exp(88.722839f) = inf ; 0x42b17218
-		exp(-87.33655f) = 1.175491e-038f(007fffe6) denormal ; 0xc2aeac50
-		exp(-103.972081f) = 0 ; 0xc2cff1b5
+			exp(88.722839f) = inf ; 0x42b17218
+			exp(-87.33655f) = 1.175491e-038f(007fffe6) denormal ; 0xc2aeac50
+			exp(-103.972081f) = 0 ; 0xc2cff1b5
 		*/
 		template<size_t N = EXP_TABLE_SIZE>
 		struct ExpVar {
@@ -315,8 +320,8 @@ namespace fmath {
 #endif
 
 				/*
-				if abs(x) >= maxX then x = max(min(x, maxX), -maxX) and try
-				minps, maxps are very slow then avoid them
+					if abs(x) >= maxX then x = max(min(x, maxX), -maxX) and try
+					minps, maxps are very slow then avoid them
 				*/
 				const bool useSSE41 = cpu.has(Xbyak::util::Cpu::tSSE41);
 #if defined(XBYAK64_WIN) && !defined(__INTEL_COMPILER)
@@ -469,24 +474,33 @@ namespace fmath {
 		return y * did;
 #else
 		/*
-		remark : -ffast-math option of gcc may generate bad code for fmath::expd
+			remark : -ffast-math option of gcc may generate bad code for fmath::expd
 		*/
 		const uint64_t b = 3ULL << 51;
 		di di;
 		di.d = x * c.a + b;
 		uint64_t iax = c.tbl[di.i & mask(c.sbit)];
+
 		double t = (di.d - b) * c.ra - x;
 		uint64_t u = ((di.i + c.adj) >> c.sbit) << 52;
 		double y = (c.C3[0] - t) * (t * t) * c.C2[0] - t + c.C1[0];
+
 		di.i = u | iax;
 		return y * di.d;
 #endif
 	}
 
-	// not fast
-#if 0
 	inline __m128d exp_pd(__m128d x)
 	{
+#if 0 // faster on Haswell
+		MIE_ALIGN(16) double buf[2];
+		memcpy(buf, &x, sizeof(buf));
+		buf[0] = expd(buf[0]);
+		buf[1] = expd(buf[1]);
+		__m128d y;
+		memcpy(&y, buf, sizeof(buf));
+		return y;
+#else // faster on Skeylake
 		using namespace local;
 		const ExpdVar<>& c = C<>::expdVar;
 		const double b = double(3ULL << 51);
@@ -500,6 +514,7 @@ namespace fmath {
 		MIE_ALIGN(16) const double expMin[2] = { -708.39641853226408, -708.39641853226408 };
 		x = _mm_min_pd(x, *(const __m128d*)expMax);
 		x = _mm_max_pd(x, *(const __m128d*)expMin);
+
 		__m128d d = _mm_mul_pd(x, ma);
 		d = _mm_add_pd(d, _mm_set1_pd(b));
 		int adr0 = _mm_cvtsi128_si32(_mm_castpd_si128(d)) & mask(c.sbit);
@@ -507,6 +522,7 @@ namespace fmath {
 		__m128i iaxL = _mm_castpd_si128(_mm_load_sd((const double*)&c.tbl[adr0]));
 		__m128i iax = _mm_castpd_si128(_mm_load_sd((const double*)&c.tbl[adr1]));
 		iax = _mm_unpacklo_epi64(iaxL, iax);
+
 		__m128d t = _mm_sub_pd(_mm_mul_pd(_mm_sub_pd(d, _mm_set1_pd(b)), mra), x);
 		__m128i u = _mm_castpd_si128(d);
 		u = _mm_add_epi64(u, madj);
@@ -518,12 +534,12 @@ namespace fmath {
 		y = _mm_add_pd(_mm_sub_pd(y, t), mC1);
 		y = _mm_mul_pd(y, _mm_castsi128_pd(u));
 		return y;
-	}
 #endif
+	}
 
 	/*
-	px : pointer to array of double
-	n : size of array(assume multiple of 2 or 4)
+		px : pointer to array of double
+		n : size of array
 	*/
 	inline void expd_v(double *px, size_t n)
 	{
@@ -756,8 +772,10 @@ namespace fmath {
 #else
 		idx = _mm_srli_si128(idx, 4);
 		unsigned int i1 = _mm_cvtsi128_si32(idx);
+
 		idx = _mm_srli_si128(idx, 4);
 		unsigned int i2 = _mm_cvtsi128_si32(idx);
+
 		idx = _mm_srli_si128(idx, 4);
 		unsigned int i3 = _mm_cvtsi128_si32(idx);
 #endif
@@ -784,8 +802,8 @@ namespace fmath {
 #endif
 
 	/*
-	for given y > 0
-	get f_y(x) := pow(x, y) for x >= 0
+		for given y > 0
+		get f_y(x) := pow(x, y) for x >= 0
 	*/
 	class PowGenerator {
 		enum {
@@ -838,4 +856,34 @@ namespace fmath {
 	// exp2(x) = pow(2, x)
 	inline float exp2(float x) { return fmath::exp(x * 0.6931472f); }
 
+	/*
+		this function may be optimized in the future
+	*/
+	inline __m128d log_pd(__m128d x)
+	{
+		double d[2];
+		memcpy(d, &x, sizeof(d));
+		d[0] = ::log(d[0]);
+		d[1] = ::log(d[1]);
+		__m128d m;
+		memcpy(&m, d, sizeof(m));
+		return m;
+	}
+
+	inline __m128 pow_ps(__m128 x, __m128 y)
+	{
+		return exp_ps(_mm_mul_ps(y, log_ps(x)));
+	}
+
+	inline __m128d pow_pd(__m128d x, __m128d y)
+	{
+		return exp_pd(_mm_mul_pd(y, log_pd(x)));
+	}
+
+	inline __m256 log_ps256(__m256 x)
+	{
+		__m128 a = fmath::log_ps(_mm256_extractf128_ps(x, 1));
+		__m128 b = fmath::log_ps(_mm256_extractf128_ps(x, 0));
+		return _mm256_set_m128(a, b);
+	}
 } // fmath

@@ -190,8 +190,6 @@ namespace cp
 
 	void imshowNormalize(string wname, InputArray src)
 	{
-		//CV_Assert(src.depth() != CV_8U);
-		//CV_Assert(src.channels() == 1);
 		Mat show;
 		normalize(src.getMat(), show, 255, 0, NORM_MINMAX, CV_8U);
 		imshow(wname, show);

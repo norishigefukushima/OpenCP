@@ -2,11 +2,115 @@
 #include "test.hpp"
 using namespace std;
 
+struct MouseLocalDiffHistogramParameter
+{
+	cv::Rect pt;
+	std::string wname;
+	MouseLocalDiffHistogramParameter(int x, int y, int width, int height, std::string name)
+	{
+		pt = cv::Rect(x, y, width, height);
+		wname = name;
+	}
+};
+
+void guiLocalDiffHistogramOnMouse(int event, int x, int y, int flags, void* param)
+{
+	MouseLocalDiffHistogramParameter* retp = (MouseLocalDiffHistogramParameter*)param;
+
+	if (flags == EVENT_FLAG_LBUTTON)
+	{
+		retp->pt.x = max(0, min(retp->pt.width - 1, x));
+		retp->pt.y = max(0, min(retp->pt.height - 1, y));
+
+		setTrackbarPos("x", retp->wname, x);
+		setTrackbarPos("y", retp->wname, y);
+	}
+}
+
+void guiLocalDiffHistogram(Mat& src, bool isWait = true, string wname = "gui");
+void guiLocalDiffHistogram(Mat& src, bool isWait, string wname)
+{
+	Mat img;
+	if (src.channels() == 3)
+	{
+		cvtColor(src, img, COLOR_BGR2GRAY);
+	}
+	else
+	{
+		img = src;
+	}
+
+
+	namedWindow(wname);
+
+	static MouseLocalDiffHistogramParameter param(src.cols / 2, src.rows / 2, src.cols, src.rows, wname);
+
+	setMouseCallback(wname, (MouseCallback)guiLocalDiffHistogramOnMouse, (void*)&param);
+	createTrackbar("x", wname, &param.pt.x, src.cols - 1);
+	createTrackbar("y", wname, &param.pt.y, src.rows - 1);
+	int r = 0;  createTrackbar("r", wname, &r, 50);
+	int histmax = 100; createTrackbar("histmax", wname, &histmax, 255);
+	int key = 0;
+	Mat show;
+
+	int hist[512];
+
+	Plot pt;
+	Mat hist_img(Size(512, 512), CV_8UC3);
+	while (key != 'q')
+	{
+
+		hist_img.setTo(0);
+		img.copyTo(show);
+		Mat crop;
+		Point pt = Point(param.pt.x, param.pt.y);
+
+		const int d = 2 * r + 1;
+		cropZoom(img, crop, pt, d);
+		rectangle(show, Rect(pt.x - r, pt.y - r, d, d), COLOR_WHITE);
+		for (int i = 0; i < 512; i++)hist[i] = 0;
+
+		int b = crop.at<uchar>(r, r);
+
+		int minv = 255;
+		int maxv = -255;
+		for (int j = 0; j < d; j++)
+		{
+			for (int i = 0; i < d; i++)
+			{
+				int val = (int)crop.at<uchar>(j, i) - b + 255;
+				hist[val]++;
+
+				maxv = max(maxv, val - 255);
+				minv = min(minv, val - 255);
+			}
+		}
+
+		line(hist_img, Point(255, hist_img.rows - 1), Point(255, 0), COLOR_GRAY50);
+		line(hist_img, Point(minv + 255, hist_img.rows - 1), Point(minv + 255, 0), COLOR_GRAY40);
+		line(hist_img, Point(maxv + 255, hist_img.rows - 1), Point(maxv + 255, 0), COLOR_GRAY40);
+		for (int i = 0; i < 512; i++)
+		{
+			int v = (hist_img.rows - 1)*(histmax - min(histmax, hist[i])) / (double)histmax;
+			line(hist_img, Point(i, hist_img.rows - 1), Point(i, v), COLOR_WHITE);
+		}
+
+		displayOverlay(wname, format("%d %d", minv, maxv));
+		imshow("hist", hist_img);
+		imshow(wname, show);
+		key = waitKey(1);
+
+		if (!isWait)break;
+	}
+
+	if (!isWait)destroyWindow(wname);
+}
+
 int main(int argc, char** argv)
 {
 	//guiGuidedImageFilterTest();
 	//guiHazeRemoveTest();
-	
+
 	Mat left = imread("img/stereo/Dolls/view1.png");
 	Mat right = imread("img/stereo/Dolls/view5.png");
 	Mat dmap = imread("img/stereo/Dolls/disp1.png", 0);
@@ -15,7 +119,8 @@ int main(int argc, char** argv)
 	//Mat img = imread("img/cameraman.png",0);
 	//Mat img = imread("img/barbara.png", 0);
 
-	testCropZoom(); return 0;
+	guiLocalDiffHistogram(img);
+	//testCropZoom(); return 0;
 	//testAddNoise(img); return 0;
 	testLocalPSNR(img); return 0;
 	testPSNR(img); return 0;
@@ -28,7 +133,7 @@ int main(int argc, char** argv)
 	//testRGBHistogram();
 	//testRGBHistogram2();
 	testTimer(img);
-	
+
 	//guiConsoleTest();
 	//guiDissolveSlide(left, dmap);
 
@@ -40,7 +145,7 @@ int main(int argc, char** argv)
 	//return 0;
 	//VizKernel vk;
 	//vk.run(img, 2);
-	
+
 	/*Mat aa = imread("temp/disp16.bmp", IMREAD_GRAYSCALE);
 	Mat aaa = Mat(Size(1248, 978), CV_16S);
 	unsigned short* s = aa.ptr<unsigned short>(0);
@@ -78,7 +183,7 @@ int main(int argc, char** argv)
 	//guiWeightMapTest(); return 0;
 
 	guiPlotTest(); return 0;
-	
+
 
 	//guiGeightedJointBilateralFilterTest();
 	//Mat haze = imread("img/haze/haze2.jpg"); guiHazeRemoveTest(haze);

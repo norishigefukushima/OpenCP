@@ -402,9 +402,6 @@
     <ClCompile Include="updateCheck.cpp">
       <Filter>ソース ファイル\utilty functions</Filter>
     </ClCompile>
-    <ClCompile Include="countDenormalizedNumber.cpp">
-      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
-    </ClCompile>
     <ClCompile Include="diff.cpp">
       <Filter>ソース ファイル\utilty functions</Filter>
     </ClCompile>
@@ -529,6 +526,9 @@
       <Filter>ソース ファイル\filter\boxFilter</Filter>
     </ClCompile>
     <ClCompile Include="crop.cpp">
+      <Filter>ソース ファイル\utilty functions</Filter>
+    </ClCompile>
+    <ClCompile Include="count.cpp">
       <Filter>ソース ファイル\utilty functions</Filter>
     </ClCompile>
   </ItemGroup>
@@ -797,9 +797,6 @@
     <ClInclude Include="..\include\updateCheck.hpp">
       <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\countDenormalizedNumber.hpp">
-      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\inlineMathFunctions.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -939,6 +936,9 @@
       <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
     </ClInclude>
     <ClInclude Include="..\include\crop.hpp">
+      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\count.hpp">
       <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
     </ClInclude>
   </ItemGroup>
