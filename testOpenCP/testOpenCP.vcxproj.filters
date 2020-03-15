@@ -27,9 +27,6 @@
     <ClCompile Include="GaussianFilter\GaussianFilterTest.cpp">
       <Filter>ソース ファイル\test</Filter>
     </ClCompile>
-    <ClCompile Include="plotTest\guiPlotTest.cpp">
-      <Filter>ソース ファイル\test</Filter>
-    </ClCompile>
     <ClCompile Include="shockFilterTest\coherenceEnhancingShockFilterTest.cpp">
       <Filter>ソース ファイル\test</Filter>
     </ClCompile>
@@ -118,6 +115,9 @@
       <Filter>ソース ファイル\test</Filter>
     </ClCompile>
     <ClCompile Include="testCropZoom.cpp">
+      <Filter>ソース ファイル\test</Filter>
+    </ClCompile>
+    <ClCompile Include="plotTest\testPlot.cpp">
       <Filter>ソース ファイル\test</Filter>
     </ClCompile>
   </ItemGroup>

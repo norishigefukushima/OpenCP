@@ -189,7 +189,7 @@
     <ClCompile Include="histogram\guiHistogramTest.cpp" />
     <ClCompile Include="iterativeBackProjection\iterativeBackProjectionTest.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="plotTest\guiPlotTest.cpp" />
+    <ClCompile Include="plotTest\testPlot.cpp" />
     <ClCompile Include="qualityMetricsTest\qualityMetricsTest.cpp" />
     <ClCompile Include="realtimeO1BilateralFilter\realtimeO1BilateralFilterTest.cpp" />
     <ClCompile Include="shockFilterTest\coherenceEnhancingShockFilterTest.cpp" />

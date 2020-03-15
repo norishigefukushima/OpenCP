@@ -26,8 +26,8 @@ void guiGuidedImageFilterTest();
 void guiEdgePresevingFilterOpenCV(cv::Mat& src);
 void guiWeightMapTest();
 void guiCrossBasedLocalFilter(cv::Mat& src);
-void guiStereoBMTest(cv::Mat& leftim, cv::Mat& rightim, int numDisparities);
-void guiStereoSGBMTest(cv::Mat& leftim, cv::Mat& rightim, int numDisparities);
+void guiStereoBMTest(cv::Mat& leftim, cv::Mat& rightim, const int numDisparities, const int disparity_min);
+void guiStereoSGBMTest(cv::Mat& leftim, cv::Mat& rightim, const int numDisparities, const int disparity_min);
 
 void guiSLICTest(cv::Mat& src);
 
@@ -81,7 +81,7 @@ void qualityMetricsTest();
 
 void guiCoherenceEnhancingShockFilter(cv::Mat& src, cv::Mat& dest);
 
-void guiPlotTest();
+void testPlot();
 
 void testHistgram(cv::Mat& src);
 

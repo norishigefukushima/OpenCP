@@ -3,10 +3,12 @@ using namespace std;
 using namespace cv;
 using namespace cp;
 
-void guiPlotTest()
+void testPlot()
 {
 	{
 		Plot test;
+		test.setXLabel("x label");
+		test.setYLabel("y label");
 		for (int i = 0; i < 10; i++)
 		{
 			test.push_back(i, 2 * i);

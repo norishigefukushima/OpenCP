@@ -161,25 +161,12 @@ namespace cp
 
 	Plot::Plot()
 	{
-		Plot::Plot(cv::Size(1024, 768));
+		init(cv::Size(1024, 768));
 	}
 
 	Plot::Plot(Size plotsize_)
 	{
-		data_max = 1;
-		xlabel = "x";
-		ylabel = "y";
-		setBackGoundColor(COLOR_WHITE);
-
-		origin = Point(64, 64);//default
-		setPlotImageSize(plotsize_);
-
-		keyImage.create(Size(256, 256), CV_8UC3);
-		keyImage.setTo(background_color);
-
-		setXYMinMax(0, plotsize.width, 0, plotsize.height);
-		isPosition = true;
-		init();
+		init(plotsize_);
 	}
 
 	Plot::~Plot()
@@ -197,8 +184,26 @@ namespace cp
 		*valy = (H - (pt.y - origin.y)) / y + ymin;
 	}
 
-	void Plot::init()
+	void Plot::init(cv::Size imsize)
 	{
+		font = "Consolas";
+		fontSize = 20;
+		fontSize2 = 18;
+
+		data_max = 1;
+		xlabel = "x";
+		ylabel = "y";
+		setBackGoundColor(COLOR_WHITE);
+
+		origin = Point(64, 64);//default
+		setPlotImageSize(imsize);
+
+		keyImage.create(Size(256, 256), CV_8UC3);
+		keyImage.setTo(background_color);
+
+		//setXYMinMax(0, plotsize.width, 0, plotsize.height);
+		isPosition = true;
+
 		const int DefaultPlotInfoSize = 64;
 		pinfo.resize(DefaultPlotInfoSize);
 
@@ -273,30 +278,107 @@ namespace cp
 
 	void Plot::setXYOriginZERO()
 	{
-		recomputeXYMAXMIN(false);
+		recomputeXYRangeMAXMIN(false);
 		xmin = 0;
 		ymin = 0;
 	}
 
 	void Plot::setYOriginZERO()
 	{
-		recomputeXYMAXMIN(false);
+		recomputeXYRangeMAXMIN(false);
 		ymin = 0;
 	}
 
 	void Plot::setXOriginZERO()
 	{
-		recomputeXYMAXMIN(false);
+		recomputeXYRangeMAXMIN(false);
 		xmin = 0;
 	}
 
-	void Plot::recomputeXYMAXMIN(bool isCenter, double marginrate)
+	void Plot::recomputeXRangeMAXMIN(bool isCenter, double marginrate)
 	{
 		if (marginrate<0.0 || marginrate>1.0)marginrate = 1.0;
-		xmax = -INT_MAX;
-		xmin = INT_MAX;
-		ymax = -INT_MAX;
-		ymin = INT_MAX;
+		xmax = -DBL_MAX;
+		xmin = DBL_MAX;
+		
+		for (int i = 0; i < data_max; i++)
+		{
+			for (int j = 0; j < pinfo[i].data.size(); j++)
+			{
+				double x = pinfo[i].data[j].x;
+				xmax = (xmax < x) ? x : xmax;
+				xmin = (xmin > x) ? x : xmin;
+			}
+		}
+		xmax_no_margin = xmax;
+		xmin_no_margin = xmin;
+
+		double xmargin = (xmax - xmin)*(1.0 - marginrate)*0.5;
+		xmax += xmargin;
+		xmin -= xmargin;
+
+		if (isCenter)
+		{
+			double xxx = abs(xmax);
+			xxx = (xxx < abs(xmin)) ? abs(xmin) : xxx;
+
+			xmax = xxx;
+			xmin = -xxx;
+			
+			xxx = abs(xmax_no_margin);
+			xxx = (xxx < abs(xmin_no_margin)) ? abs(xmin_no_margin) : xxx;
+
+			xmax_no_margin = xxx;
+			xmin_no_margin = -xxx;
+		}
+	}
+
+	void Plot::recomputeYRangeMAXMIN(bool isCenter, double marginrate)
+	{
+		if (marginrate<0.0 || marginrate>1.0)marginrate = 1.0;
+		
+		ymax = -DBL_MAX;
+		ymin = DBL_MAX;
+
+		for (int i = 0; i < data_max; i++)
+		{
+			for (int j = 0; j < pinfo[i].data.size(); j++)
+			{
+				double y = pinfo[i].data[j].y;
+				ymax = (ymax < y) ? y : ymax;
+				ymin = (ymin > y) ? y : ymin;
+			}
+		}
+		ymax_no_margin = ymax;
+		ymin_no_margin = ymin;
+
+		double ymargin = (ymax - ymin)*(1.0 - marginrate)*0.5;
+		ymax += ymargin;
+		ymin -= ymargin;
+
+		if (isCenter)
+		{
+			double yyy = abs(ymax);
+			yyy = (yyy < abs(ymin)) ? abs(ymin) : yyy;
+
+			ymax = yyy;
+			ymin = -yyy;
+
+			yyy = abs(ymax_no_margin);
+			yyy = (yyy < abs(ymin_no_margin)) ? abs(ymin_no_margin) : yyy;
+
+			ymax_no_margin = yyy;
+			ymin_no_margin = -yyy;
+		}
+	}
+
+	void Plot::recomputeXYRangeMAXMIN(bool isCenter, double marginrate)
+	{
+		if (marginrate<0.0 || marginrate>1.0)marginrate = 1.0;
+		xmax = -DBL_MAX;
+		xmin = DBL_MAX;
+		ymax = -DBL_MAX;
+		ymin = DBL_MAX;
 		for (int i = 0; i < data_max; i++)
 		{
 			for (int j = 0; j < pinfo[i].data.size(); j++)
@@ -349,6 +431,8 @@ namespace cp
 
 	void Plot::setXYMinMax(double xmin_, double xmax_, double ymin_, double ymax_)
 	{
+		isSetXRange = true;
+		isSetYRange = true;
 		xmin = xmin_;
 		xmax = xmax_;
 		ymin = ymin_;
@@ -362,14 +446,16 @@ namespace cp
 
 	void Plot::setXMinMax(double xmin_, double xmax_)
 	{
-		recomputeXYMAXMIN(isXYCenter);
+		isSetXRange = true;
+		recomputeXYRangeMAXMIN(isXYCenter);
 		xmin = xmin_;
 		xmax = xmax_;
 	}
 
 	void Plot::setYMinMax(double ymin_, double ymax_)
 	{
-		recomputeXYMAXMIN(isXYCenter);
+		isSetYRange = true;
+		recomputeXYRangeMAXMIN(isXYCenter);
 		ymin = ymin_;
 		ymax = ymax_;
 	}
@@ -426,6 +512,16 @@ namespace cp
 		{
 			pinfo[i].lineType = linetype;
 		}
+	}
+
+	void Plot::setXLabel(string xlabel)
+	{
+		this->xlabel = xlabel;
+	}
+
+	void Plot::setYLabel(string ylabel)
+	{
+		this->ylabel = ylabel;
 	}
 
 	void Plot::push_back(double x, double y, int plotIndex)
@@ -489,6 +585,34 @@ namespace cp
 		swap(pinfo[plotIndex1].data, pinfo[plotIndex2].data);
 	}
 
+	void boundingRectImage(InputArray src_, OutputArray dest)
+	{
+		Mat src = src_.getMat();
+		CV_Assert(src.depth() == CV_8U);
+		
+
+		vector<Point> v;
+		const int ch = src.channels();
+		for (int j = 0; j < src.rows; j++)
+		{
+			for (int i = 0; i < src.cols; i++)
+			{
+				bool flag = false;
+				for (int c = 0; c < ch; c++)
+				{
+					if (src.at<uchar>(j, ch*i + c) != 0)
+					{
+						flag = true;
+					}
+				}
+				if (flag) v.push_back(Point(i, j));
+			}
+		}
+		
+		Rect r = boundingRect(v);
+		src(r).copyTo(dest);
+	}
+
 	void Plot::makeBB(bool isFont)
 	{
 		render.setTo(background_color);
@@ -496,43 +620,60 @@ namespace cp
 		rectangle(plotImage, Point(0, 0), Point(plotImage.cols - 1, plotImage.rows - 1), COLOR_BLACK, 1);
 		plotImage.copyTo(roi);
 
+		Mat label = Mat::zeros(plotImage.size(), CV_8UC3);
+		Mat labelximage;
+		Mat labelyimage;
 		if (isFont)
 		{
-			putText(render, xlabel, Point(render.cols / 2, (int)(origin.y*1.85 + plotImage.rows)), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_BLACK);
-			putText(render, ylabel, Point(20, (int)(origin.y*0.25 + plotImage.rows / 2)), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_BLACK);
+			cv::addText(label, xlabel, Point(0, 100), font, fontSize, COLOR_WHITE);
+			boundingRectImage(label, labelximage);
+			label.setTo(0);
+			cv::addText(label, ylabel, Point(0, 100), font, fontSize, COLOR_WHITE);
+			boundingRectImage(label, labelyimage);
+			
+			//putText(render, xlabel, Point(render.cols / 2, (int)(origin.y*1.85 + plotImage.rows)), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_BLACK);
+			//cv::addText(render, xlabel, Point(render.cols / 2, (int)(origin.y*1.85 + plotImage.rows)), font, fontSize, COLOR_BLACK);
+		
+			Mat(~labelximage).copyTo(render(Rect(render.cols / 2 - labelximage.cols / 2, (int)(origin.y*1.85 + plotImage.rows - 20), labelximage.cols, labelximage.rows)));
+
+			labelyimage = labelyimage.t();
+			flip(labelyimage, labelyimage, 0);
+			//putText(render, ylabel, Point(20, (int)(origin.y*0.25 + plotImage.rows / 2)), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_BLACK);
+			//cv::addText(render, ylabel, Point(20, (int)(origin.y*0.25 + plotImage.rows / 2)), font, fontSize, COLOR_BLACK);
+			Mat(~labelyimage).copyTo(render(Rect(20, (int)(origin.y*0.25 + plotImage.rows / 2 - labelyimage.rows/2), labelyimage.cols, labelyimage.rows)));
 
 			string buff;
 			//x coordinate
 			buff = format("%.2f", xmin);
-			putText(render, buff, Point(origin.x, (int)(origin.y*1.35 + plotImage.rows)), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_BLACK);
+			cv::addText(render, buff, Point(origin.x+ 30, (int)(origin.y*1.35 + plotImage.rows)), font, fontSize2, COLOR_BLACK);
 
 			buff = format("%.2f", (xmax - xmin)*0.25 + xmin);
-			putText(render, buff, Point((int)(origin.x + plotImage.cols*0.25 + 15), (int)(origin.y*1.35 + plotImage.rows)), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_BLACK);
+			cv::addText(render, buff, Point((int)(origin.x + plotImage.cols*0.25 + 40), (int)(origin.y*1.35 + plotImage.rows)), font, fontSize2, COLOR_BLACK);
 
 			buff = format("%.2f", (xmax - xmin)*0.5 + xmin);
-			putText(render, buff, Point((int)(origin.x + plotImage.cols*0.5 + 45), (int)(origin.y*1.35 + plotImage.rows)), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_BLACK);
+			cv::addText(render, buff, Point((int)(origin.x + plotImage.cols*0.5 + 45), (int)(origin.y*1.35 + plotImage.rows)), font, fontSize2, COLOR_BLACK);
 
 			buff = format("%.2f", (xmax - xmin)*0.75 + xmin);
-			putText(render, buff, Point((int)(origin.x + plotImage.cols*0.75 + 35), (int)(origin.y*1.35 + plotImage.rows)), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_BLACK);
+			cv::addText(render, buff, Point((int)(origin.x + plotImage.cols*0.75 + 45), (int)(origin.y*1.35 + plotImage.rows)), font, fontSize2, COLOR_BLACK);
 
 			buff = format("%.2f", xmax);
-			putText(render, buff, Point(origin.x + plotImage.cols, (int)(origin.y*1.35 + plotImage.rows)), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_BLACK);
+			cv::addText(render, buff, Point(origin.x + plotImage.cols + 30, (int)(origin.y*1.35 + plotImage.rows)), font, fontSize2, COLOR_BLACK);
 
 			//y coordinate
 			buff = format("%.2f", ymin);
-			putText(render, buff, Point(origin.x, (int)(origin.y*1.0 + plotImage.rows)), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_BLACK);
+			cv::addText(render, buff, Point(origin.x, (int)(origin.y*1.0 + plotImage.rows)), font, fontSize2, COLOR_BLACK);
 
 			buff = format("%.2f", (ymax - ymin)*0.5 + ymin);
-			putText(render, buff, Point(origin.x, (int)(origin.y*1.0 + plotImage.rows*0.5)), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_BLACK);
+			cv::addText(render, buff, Point(origin.x, (int)(origin.y*1.0 + plotImage.rows*0.5)), font, fontSize2, COLOR_BLACK);
 
 			buff = format("%.2f", (ymax - ymin)*0.25 + ymin);
-			putText(render, buff, Point(origin.x, (int)(origin.y*1.0 + plotImage.rows*0.75)), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_BLACK);
+			cv::addText(render, buff, Point(origin.x, (int)(origin.y*1.0 + plotImage.rows*0.75)), font, fontSize2, COLOR_BLACK);
 
 			buff = format("%.2f", (ymax - ymin)*0.75 + ymin);
-			putText(render, buff, Point(origin.x, (int)(origin.y*1.0 + plotImage.rows*0.25)), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_BLACK);
+			cv::addText(render, buff, Point(origin.x, (int)(origin.y*1.0 + plotImage.rows*0.25)), font, fontSize2, COLOR_BLACK);
 
 			buff = format("%.2f", ymax);
-			putText(render, buff, Point(origin.x, origin.y), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_BLACK);
+			cv::addText(render, buff, Point(origin.x, origin.y), font, fontSize2, COLOR_BLACK);
 		}
 	}
 
@@ -588,20 +729,20 @@ namespace cp
 
 	void Plot::makeKey(int num)
 	{
-		int step = 20;
-		keyImage.create(Size(256, 20 * (num + 1) + 3), CV_8UC3);
+		int step = 24;
+		keyImage.create(Size(256, step * (num + 1) + 3), CV_8UC3);
 		keyImage.setTo(background_color);
 
 		int height = (int)(0.8*keyImage.rows);
 		for (int i = 0; i < num; i++)
 		{
 			vector<Point2d> data;
-			data.push_back(Point2d(192.0, keyImage.rows - (i + 1) * 20));
-			data.push_back(Point2d(keyImage.cols - 20, keyImage.rows - (i + 1) * 20));
-
+			data.push_back(Point2d(192.0, keyImage.rows - (i + 1) * step));
+			data.push_back(Point2d(keyImage.cols - step, keyImage.rows - (i + 1) * step));
 
 			plotGraph(keyImage, data, 0, keyImage.cols, 0, keyImage.rows, pinfo[i].color, pinfo[i].symbolType, pinfo[i].lineType, pinfo[i].thickness);
-			putText(keyImage, pinfo[i].keyname, Point(0, (i + 1) * 20 + 3), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, pinfo[i].color);
+			//putText(keyImage, pinfo[i].keyname, Point(0, (i + 1) * step + 3), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, pinfo[i].color);
+			cv::addText(keyImage, pinfo[i].keyname, Point(0, (i + 1) * step + 3), font, fontSize, pinfo[i].color);
 		}
 	}
 
@@ -769,21 +910,28 @@ namespace cp
 		namedWindow(wname);
 
 		plotData(0, false);
-		//int ym=ymax;
-		//int yn=ymin;
-		//createTrackbar("ymax",wname,&ym,ymax*2);
-		//createTrackbar("ymin",wname,&yn,ymax*2);
+
 		setMouseCallback(wname, (MouseCallback)guiPreviewMouse, (void*)&pt);
 		int key = 0;
 		static int isKey = 1;
 		int gridlevel = 0;
 		makeKey(data_max);
 
-		recomputeXYMAXMIN();
+		if (!isSetXRange && !isSetYRange)
+		{
+			recomputeXYRangeMAXMIN(false, 0.9);
+		}
+		else if (!isSetXRange)
+		{
+			recomputeXRangeMAXMIN(false, 0.9);
+		}
+		else if (!isSetYRange)
+		{
+			recomputeYRangeMAXMIN(false, 0.9);
+		}
+
 		while (key != 'q')
 		{
-			//ymax=ym+1;
-			//ymin=yn;
 			plotData(gridlevel, isKey);
 			if (isPosition)
 			{
@@ -796,8 +944,9 @@ namespace cp
 					xx = 0.0;
 					yy = 0.0;
 				}
-				string text = format("(%f,%f) ", xx, yy) + message;
-				putText(render, text, Point(100, 30), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_BLACK);
+				string text = format("(%.02f,%.02f) ", xx, yy) + message;
+				//putText(render, text, Point(100, 30), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_BLACK);
+				cv::addText(render, text, Point(100, 30), font, fontSize, COLOR_BLACK);
 			}
 
 			if (isPosition)drawGrid(render, pt, Scalar(180, 180, 255), 1, 4, 0);
@@ -832,11 +981,11 @@ namespace cp
 
 			if (key == 'r')
 			{
-				recomputeXYMAXMIN(false);
+				recomputeXYRangeMAXMIN(false);
 			}
 			if (key == 'c')
 			{
-				recomputeXYMAXMIN(true);
+				recomputeXYRangeMAXMIN(true);
 			}
 			if (key == 'x')
 			{

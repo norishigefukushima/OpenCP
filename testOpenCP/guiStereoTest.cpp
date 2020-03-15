@@ -88,7 +88,7 @@ void guiDisparityPlaneFitSLICTest(Mat& leftim, Mat& rightim, Mat& GT)
 
 }
 
-void guiStereoBMTest(Mat& leftim , Mat& rightim, int numDisparities)
+void guiStereoBMTest(Mat& leftim , Mat& rightim, const int numDisparities, const int disparity_min)
 {
 	String wname = "Stereo BM Test";
 	namedWindow(wname);
@@ -99,7 +99,7 @@ void guiStereoBMTest(Mat& leftim , Mat& rightim, int numDisparities)
 	int lrThreshold = 1; createTrackbar("LR thresh", wname, &lrThreshold, 20);
 	int spWindow = 100; createTrackbar("speckle win", wname, &spWindow, 2550);
 	int spRange = 32; createTrackbar("speck range", wname, &spRange, 255);
-	int minDisp = 0; createTrackbar("min disp", wname, &minDisp, 255);
+	int minDisp = disparity_min; createTrackbar("min disp", wname, &minDisp, 255);
 	int numDisp = numDisparities/16; createTrackbar("num disp", wname, &numDisp, numDisparities/16*2);
 	
 	Ptr<StereoBM> bm = StereoBM::create(numDisparities, 2* blockRadius+1);
@@ -119,20 +119,15 @@ void guiStereoBMTest(Mat& leftim , Mat& rightim, int numDisparities)
 		bm->setMinDisparity(minDisp);
 		bm->setNumDisparities(numDisp*16);
 			
-		/*
-		bm->setROI1(roi1);
-		bm->setROI2(roi2);
-		bm->setMinDisparity(0);
-		bm->setNumDisparities(numberOfDisparities);
-		*/
 		bm->compute(leftim, rightim, disp);
-		disp.convertTo(dispshow, CV_8U, 255.0/(16.0*numDisparities));
+		normalize(disp, dispshow, minDisp, numDisp * 16, NORM_MINMAX, CV_8U);
+		//disp.convertTo(dispshow, CV_8U, 255.0/(16.0*numDisparities));
 		imshow(wname, dispshow);
 		key = waitKey(1);
 	}
 }
 
-void guiStereoSGBMTest(Mat& leftim, Mat& rightim, int numDisparities)
+void guiStereoSGBMTest(Mat& leftim, Mat& rightim, const int numDisparities, const int disparity_min)
 {
 	String wname = "Stereo SGBM Test";
 	namedWindow(wname);
@@ -147,7 +142,7 @@ void guiStereoSGBMTest(Mat& leftim, Mat& rightim, int numDisparities)
 	int spWindow = 100; createTrackbar("speckle win", wname, &spWindow, 2550);
 	int spRange = 32; createTrackbar("speck range", wname, &spRange, 255);
 
-	Ptr<StereoSGBM> bm = StereoSGBM::create(0, numDisparities, 2 * blockRadius + 1);
+	Ptr<StereoSGBM> bm = StereoSGBM::create(disparity_min, numDisparities, 2 * blockRadius + 1);
 
 	Mat lim; copyMakeBorder(leftim, lim, 0, 0, numDisparities, 0, BORDER_REPLICATE);
 	Mat rim; copyMakeBorder(rightim, rim, 0, 0, numDisparities, 0, BORDER_REPLICATE);

@@ -108,16 +108,30 @@ void guiLocalDiffHistogram(Mat& src, bool isWait, string wname)
 
 int main(int argc, char** argv)
 {
+	testPlot(); return 0;
 	//guiGuidedImageFilterTest();
 	//guiHazeRemoveTest();
 
-	Mat left = imread("img/stereo/Dolls/view1.png");
-	Mat right = imread("img/stereo/Dolls/view5.png");
-	Mat dmap = imread("img/stereo/Dolls/disp1.png", 0);
+	Mat right = imread("left.png");
+	Mat left = imread("right.png");
+	//Mat left = imread("img/stereo/Dolls/view1.png");
+	//Mat right = imread("img/stereo/Dolls/view5.png");
+	//Mat dmap = imread("img/stereo/Dolls/disp1.png", 0);
 	Mat img = imread("img/lenna.png");
 	//Mat img = imread("img/Kodak/kodim05.png");	
 	//Mat img = imread("img/cameraman.png",0);
 	//Mat img = imread("img/barbara.png", 0);
+
+	Mat leftg, rightg;
+	//guiShift(left, right, 300);
+	cvtColor(left, leftg, COLOR_BGR2GRAY);
+	cvtColor(right, rightg, COLOR_BGR2GRAY);
+
+	StereoBMEx sbm(0, get_simd_ceil(120, 16), get_simd_ceil(100, 16), 5);
+	Mat disp;
+	sbm.check(leftg, rightg, disp);
+	guiStereoBMTest(leftg, rightg, get_simd_ceil(326, 16), get_simd_ceil(100, 16)); return 0;
+	guiStereoSGBMTest(left, right, get_simd_ceil(326, 16), get_simd_ceil(100, 16)); return 0;
 
 	guiLocalDiffHistogram(img);
 	//testCropZoom(); return 0;
@@ -165,12 +179,7 @@ int main(int argc, char** argv)
 	StereoEval eval;
 	sbm.check(left, right, disp2, eval);
 	*/
-	Mat leftg, rightg;
-	guiShift(left, right);
-	cvtColor(left, leftg, COLOR_BGR2GRAY);
-	cvtColor(right, rightg, COLOR_BGR2GRAY);
-	//guiStereoBMTest(leftg, rightg, 16 * 16); return 0;
-	guiStereoSGBMTest(left, right, 16 * 8); return 0;
+	
 
 
 	//guiShift(left,right); return 0;
@@ -181,8 +190,6 @@ int main(int argc, char** argv)
 	//iirGuidedFilterTest(left); return 0;
 	//fitPlaneTest(); return 0;
 	//guiWeightMapTest(); return 0;
-
-	guiPlotTest(); return 0;
 
 
 	//guiGeightedJointBilateralFilterTest();
@@ -222,7 +229,7 @@ int main(int argc, char** argv)
 	//guiAnalysisImage(src);
 	Mat dst = src.clone();
 	//paralleldenoise(src, dst, 5);
-	Mat disp = imread("img/stereo/Dolls/disp1.png", 0);
+	//Mat disp = imread("img/stereo/Dolls/disp1.png", 0);
 	//	Mat src;
 	Mat dest;
 

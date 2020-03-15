@@ -155,3 +155,28 @@ void inline _mm256_store_ps_color(void* dst, const __m256 b, const __m256 g, con
 	_mm256_store_ps((float*)dst + 8, _mm256_permute2f128_ps(gval, bval, pmask2));
 	_mm256_store_ps((float*)dst + 16, _mm256_permute2f128_ps(rval, gval, pmask3));
 }
+
+inline void _mm256_stream_pd_color(void* dst, const __m256d b, const __m256d g, const __m256d r)
+{
+	const __m256d b0 = _mm256_permute2f128_pd(b, b, 0b00000000);
+	const __m256d b1 = _mm256_permute2f128_pd(b, b, 0b00010001);
+
+	const __m256d g0 = _mm256_shuffle_pd(g, g, 0b0101);
+
+	const __m256d r0 = _mm256_permute2f128_pd(r, r, 0b00000000);
+	const __m256d r1 = _mm256_permute2f128_pd(r, r, 0b00010001);
+
+	_mm256_stream_pd(static_cast<double*>(dst) + 0, _mm256_blend_pd(_mm256_blend_pd(b0, g0, 0b0010), r0, 0b0100));
+	_mm256_stream_pd(static_cast<double*>(dst) + 4, _mm256_blend_pd(_mm256_blend_pd(b1, g0, 0b1001), r0, 0b0010));
+	_mm256_stream_pd(static_cast<double*>(dst) + 8, _mm256_blend_pd(_mm256_blend_pd(b1, g0, 0b0100), r1, 0b1001));
+}
+
+inline __m256 _mm256_div_avoidzerodiv_ps(const __m256 src1, const __m256 src2)
+{
+	return _mm256_div_ps(src1, _mm256_blendv_ps(src2, _mm256_set1_ps(FLT_MIN), _mm256_cmp_ps(src2, _mm256_setzero_ps(), 0)));
+}
+
+inline __m256 _mm256_div_zerodivzero_ps(const __m256 src1, const __m256 src2)
+{
+	return _mm256_blendv_ps(_mm256_div_ps(src1, src2), _mm256_set1_ps(FLT_MIN), _mm256_cmp_ps(src2, _mm256_setzero_ps(), 0));
+}

@@ -16,6 +16,10 @@ namespace cp
 	class CP_EXPORT Plot
 	{
 	protected:
+		std::string font;
+		int fontSize;
+		int fontSize2;
+
 		struct PlotInfo
 		{
 			std::vector<cv::Point2d> data;
@@ -38,6 +42,8 @@ namespace cp
 		cv::Size plotsize;
 		cv::Point origin;
 
+		bool isSetXRange = false;
+		bool isSetYRange = false;
 		double xmin;
 		double xmax;
 		double ymin;
@@ -47,7 +53,7 @@ namespace cp
 		double ymax_no_margin;
 		double ymin_no_margin;
 
-		void init();
+		void init(cv::Size imsize);
 		void point2val(cv::Point pt, double* valx, double* valy);
 
 		bool isZeroCross;
@@ -101,7 +107,9 @@ namespace cp
 		void setXOriginZERO();
 		void setYOriginZERO();
 
-		void recomputeXYMAXMIN(bool isCenter = false, double marginrate = 0.9);
+		void recomputeXRangeMAXMIN(bool isCenter = false, double marginrate = 0.9);
+		void recomputeYRangeMAXMIN(bool isCenter = false, double marginrate = 0.9);
+		void recomputeXYRangeMAXMIN(bool isCenter = false, double marginrate = 0.9);
 		void setPlotProfile(bool isXYCenter_, bool isXYMAXMIN_, bool isZeroCross_);
 		void setPlotImageSize(cv::Size s);
 		void setXYMinMax(double xmin_, double xmax_, double ymin_, double ymax_);
@@ -120,6 +128,9 @@ namespace cp
 
 		void setPlotSymbolALL(int symboltype);
 		void setPlotLineTypeALL(int linetype);
+
+		void setXLabel(std::string xlabel);
+		void setYLabel(std::string ylabel);
 
 		void plotPoint(cv::Point2d = cv::Point2d(0.0, 0.0), cv::Scalar color = COLOR_BLACK, int thickness_ = 1, int linetype = LINE_LINEAR);
 		void plotGrid(int level);

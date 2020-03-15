@@ -3528,7 +3528,6 @@ namespace cp
 				bbdest.copyTo(dest, mask);
 			}
 
-
 			Mat disp8, edge;
 			dest.convertTo(disp8, CV_8U, 1.0 / 16);
 			Mat b1, b2;
@@ -3651,7 +3650,7 @@ namespace cp
 				{
 					histp.push_back(i, hist[(i + 8) % 16]);
 				}
-				histp.recomputeXYMAXMIN();
+				histp.recomputeXYRangeMAXMIN();
 				histp.setYOriginZERO();
 
 				histp.plotData();

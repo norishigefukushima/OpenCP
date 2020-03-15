@@ -7,12 +7,302 @@
 #include "stat.hpp"
 #include "timer.hpp"
 #include "alphaBlend.hpp"
-
+#include "inlineSIMDfunctions.hpp"
 using namespace std;
 using namespace cv;
 
 namespace cp
 {
+	//////////////////////////////////////////////////////////////////////////////////////////
+	//StereoBMEx::
+	StereoBMEx::StereoBMEx(int preset, const int ndisparities, const int disparity_min, const int SADWindowSize_)
+	{
+		prefilterAlpha = 1.0;
+		SADWindowSize = SADWindowSize_;
+		numberOfDisparities = ndisparities;
+
+		bm = StereoBM::create(ndisparities, SADWindowSize);
+		bm->setMinDisparity(disparity_min);
+
+		preFilterType = bm->getPreFilterType();
+		preFilterSize = bm->getPreFilterSize();
+		preFilterCap = bm->getPreFilterCap();
+		SADWindowSize = bm->getBlockSize();
+		minDisparity = bm->getMinDisparity();
+		numberOfDisparities = bm->getNumDisparities();
+		textureThreshold = bm->getTextureThreshold();
+		uniquenessRatio = bm->getUniquenessRatio();
+		speckleWindowSize = bm->getSpeckleWindowSize();
+		speckleRange = bm->getSpeckleRange();
+		//trySmallerWindows = bm->getSmallerBlockSize();
+		disp12MaxDiff = bm->getDisp12MaxDiff();
+
+		medianKernel = 0;
+		isOcclusion = 0;
+	}
+	void StereoBMEx::showPostFilter()
+	{
+		std::cout << "textureThreshold: " << textureThreshold << "uniquenessRatio: " << uniquenessRatio << "disp12MaxDiff:" << disp12MaxDiff << std::endl;
+		std::cout << "Speckle Window: " << speckleWindowSize << "Speckle Range: " << speckleRange << std::endl;
+	}
+	void StereoBMEx::showPreFilter()
+	{
+		std::cout << "Type: " << preFilterType << " Size: " << preFilterSize << " Cap: " << preFilterCap << std::endl;
+	}
+	void StereoBMEx::setPreFilter(int preFilterType_, int preFilterSize_, int preFilterCap_)
+	{
+		preFilterType = std::max(std::min(preFilterType_, (int)StereoBM::PREFILTER_XSOBEL), (int)StereoBM::PREFILTER_NORMALIZED_RESPONSE);
+		preFilterSize = max(min(preFilterSize_, 21), 5);
+		preFilterCap = std::min(std::max(preFilterCap_, 1), 63);
+	}
+	void StereoBMEx::parameterUpdate()
+	{
+		bm->setPreFilterCap(preFilterCap);
+		bm->setPreFilterSize(preFilterSize);
+		
+		bm->setPreFilterType(preFilterType);//PREFILTER_NORMALIZED_RESPONSE=0 or PREFILTER_XSOBEL=1
+		bm->setBlockSize(max(SADWindowSize, 5));
+		bm->setMinDisparity(minDisparity);
+		bm->setNumDisparities(get_simd_ceil(numberOfDisparities, 16));
+		bm->setTextureThreshold(textureThreshold);
+		bm->setUniquenessRatio(uniquenessRatio);
+		bm->setSpeckleWindowSize(speckleWindowSize);
+		bm->setSpeckleRange(speckleRange);
+		//bm->setSmallerBlockSize(trySmallerWindows);
+		bm->setDisp12MaxDiff(disp12MaxDiff);
+	}
+
+	void StereoBMEx::prefilter(Mat& sl, Mat& sr)
+	{
+		if (prefilterAlpha < 1.0)
+		{
+			Mat sobel;
+			Mat temp1;
+			cv::Sobel(sl, sobel, CV_16S, 1, 0, 1, (1.0 - prefilterAlpha)*127.0 / 256.0);
+			//cv::Sobel(sl,sobel,CV_16S,1,0,3);
+			sl.convertTo(temp1, CV_16S);
+			cv::add(temp1, sobel, sl, Mat(), CV_8U);
+
+			cv::Sobel(sr, sobel, CV_16S, 1, 0, 1, (1.0 - prefilterAlpha)*127.0 / 256.0);
+			sr.convertTo(temp1, CV_16S);
+			cv::add(temp1, sobel, sr, Mat(), CV_8U);
+		}
+		imshow("R", sr);
+		imshow("L", sl);
+	}
+
+	void StereoBMEx::operator()(Mat& leftim, Mat& rightim, Mat& dispL, Mat& dispR, int bd)
+	{
+		parameterUpdate();
+		int bs = SADWindowSize >> 1;
+		Mat sl, sr;
+		Mat slb, srb;
+		Mat disp2;
+		if (leftim.channels() == 3)
+			cvtColor(leftim, sl, COLOR_BGR2GRAY);
+		else
+			sl = leftim;
+		if (rightim.channels() == 3)
+			cvtColor(rightim, sr, COLOR_BGR2GRAY);
+		else
+			sr = rightim;
+
+		//prefilter(sl,sr);
+		cv::copyMakeBorder(sl, slb, bs, bs, bd, bd, cv::BORDER_REPLICATE);
+		cv::copyMakeBorder(sr, srb, bs, bs, bd, bd, cv::BORDER_REPLICATE);
+
+		bm->compute(slb, srb, disp2);
+		Mat(disp2(cv::Rect(bd, bs, leftim.cols, leftim.rows))).copyTo(dispL);
+		cv::threshold(dispL, dispL, (minDisparity << 4) - 1, 0, cv::THRESH_TOZERO);
+
+		cv::flip(slb, slb, -1);
+		cv::flip(srb, srb, -1);
+		disp2.setTo(0);
+		bm->compute(srb, slb, disp2);
+		Mat(disp2(cv::Rect(bd, bs, leftim.cols, leftim.rows))).copyTo(dispR);
+		cv::flip(dispR, dispR, -1);
+		cv::threshold(dispR, dispR, (minDisparity << 4) - 1, 0, cv::THRESH_TOZERO);
+
+		LRCheckDisparity(dispL, dispR, 0, lr_thresh, 0, 16);
+
+
+		if (isOcclusion)
+		{
+			fillOcclusion(dispL);
+			Mat a = dispL.t();
+			fillOcclusion(a);
+			Mat(a.t()).copyTo(dispL);
+
+			fillOcclusion(dispR);
+			a = dispR.t();
+			fillOcclusion(a);
+			Mat(a.t()).copyTo(dispR);
+		}
+
+		if (medianKernel > 1)
+		{
+			medianBlur(dispL, dispL, 2 * (medianKernel >> 1) + 1);
+			medianBlur(dispR, dispR, 2 * (medianKernel >> 1) + 1);
+		}
+		/*if(isStreakingRemove)
+		{
+		removeStreakingNoise(dispL,dispL);
+		removeStreakingNoise(dispR,dispR);
+		}*/
+	}
+
+	void StereoBMEx::operator()(Mat& leftim, Mat& rightim, Mat& disp, int bd)
+	{
+		int bs = SADWindowSize >> 1;
+		Mat sl, sr;
+		Mat slb, srb;
+		Mat disp2;
+
+		if (leftim.channels() == 3)
+			cvtColor(leftim, sl, COLOR_BGR2GRAY);
+		else
+			sl = leftim;
+
+		if (rightim.channels() == 3)
+			cvtColor(rightim, sr, COLOR_BGR2GRAY);
+		else
+			sr = rightim;
+
+		//prefilter(sl,sr);
+
+		cv::copyMakeBorder(sl, slb, bs, bs, bd, bd, cv::BORDER_REPLICATE);
+		cv::copyMakeBorder(sr, srb, bs, bs, bd, bd, cv::BORDER_REPLICATE);
+
+		parameterUpdate();
+
+		bm->compute(slb, srb, disp2);
+		Mat(disp2(cv::Rect(bd, bs, leftim.cols, leftim.rows))).copyTo(disp);
+		cv::threshold(disp, disp, (minDisparity << 4) - 1, 0, cv::THRESH_TOZERO);
+
+		if (isOcclusion == 1)
+		{
+			fillOcclusion(disp);
+
+			Mat a = disp.t();
+			fillOcclusion(a);
+			Mat(a.t()).copyTo(disp);
+		}
+		if (isOcclusion == 2)
+		{
+			Mat disp2 = disp.clone();
+			fillOcclusion(disp);
+
+			Mat a = disp2.t();
+			fillOcclusion(a);
+			Mat(a.t()).copyTo(disp2);
+			min(disp, disp2, disp);
+		}
+		if (medianKernel > 1)
+		{
+			medianBlur(disp, disp, 2 * (medianKernel >> 1) + 1);
+		}
+	}
+
+	void StereoBMEx::check(Mat& leftim, Mat& rightim, Mat& disp)
+	{
+		StereoEval eval;
+		check(leftim, rightim, disp, eval);
+	}
+
+	void StereoBMEx::check(Mat& leftim, Mat& rightim, Mat& disp, StereoEval& eval)
+	{
+		string wname = "StereoBMEx";
+		namedWindow(wname);
+
+		int preFilterType = StereoBM::PREFILTER_NORMALIZED_RESPONSE; // =CV_STEREO_BM_NORMALIZED_RESPONSE now
+
+		int preA = 100;
+		createTrackbar("pre A", wname, &preA, 100);
+
+		preFilterType = 1;
+		createTrackbar("pre type", wname, &preFilterType, 1);
+		int preFilterSize = 4; // averaging window size: ~5x5..21x21
+		createTrackbar("pre size", wname, &preFilterSize, 10);
+		int preFilterCap = 80; // the output of pre-filtering is clipped by [-preFilterCap,preFilterCap]
+		createTrackbar("pre cap", wname, &preFilterCap, 255);
+
+		// correspondence using Sum of Absolute Difference (SAD)
+		int SADWindowSize = 11; // ~5x5..21x21
+		createTrackbar("window", wname, &SADWindowSize, 30);
+		// post-filtering
+		int textureThreshold = 10;  // the disparity is only computed for pixels
+		// with textured enough neighborhood
+		createTrackbar("texture thresh", wname, &textureThreshold, 10000);
+		int uniquenessRatio = 10;   // accept the computed disparity d* only if
+		// SAD(d) >= SAD(d*)*(1 + uniquenessRatio/100.)
+		// for any d != d*+/-1 within the search range.
+		createTrackbar("post uniq", wname, &uniquenessRatio, 100);
+		int speckleWindowSize = 0; // disparity variation window
+		createTrackbar("speckle window", wname, &speckleWindowSize, 100);
+		int speckleRange = 100; // acceptable range of variation in window
+		createTrackbar("speckle range", wname, &speckleRange, 100);
+
+		createTrackbar("mindisp", wname, &this->minDisparity, leftim.cols - 1);
+		createTrackbar("numdisp", wname, &this->numberOfDisparities, leftim.cols - 1);
+		
+		int trySmallerWindows; // if 1, the results may be more accurate,
+		// at the expense of slower processing 
+		createTrackbar("small window", wname, &trySmallerWindows, 1);
+		int disp12MaxDiff = 0; createTrackbar("disp12", wname, &disp12MaxDiff, 100);
+
+		int bd = this->minDisparity;
+		createTrackbar("border", wname, &bd, 300);
+		createTrackbar("occlusion", wname, &isOcclusion, 2);
+		createTrackbar("post med", wname, &medianKernel, 15);
+
+		int alpha = 100; createTrackbar("alpha", wname, &alpha, 100);
+		int isColor = 0; createTrackbar("color", wname, &isColor, 2);
+		int noise = 0; createTrackbar("noise", wname, &noise, 1000);
+
+		Mat dshow;
+		Mat show;
+		int key = 0;
+		while (key != 'q')
+		{
+			this->prefilterAlpha = preA / 100.0;
+			this->setPreFilter(preFilterType, 2 * preFilterSize + 1, preFilterCap);
+			this->SADWindowSize = 2 * SADWindowSize + 1;
+			this->uniquenessRatio = uniquenessRatio;
+			this->textureThreshold = textureThreshold;
+			this->speckleWindowSize = speckleWindowSize;
+			this->speckleRange = speckleRange;
+			this->disp12MaxDiff = disp12MaxDiff;
+			this->trySmallerWindows = trySmallerWindows;
+
+			//Mat lim, rim;
+			//addNoise(leftim,lim,noise/10.0);
+			//cout<<calcPSNR(leftim,lim)<<endl;;
+			//addNoise(rightim,rim,noise/10.0);
+
+			{
+				cp::Timer t("BM");
+				operator()(leftim, rightim, disp, bd);
+				//operator()(lim,rim,disp,bd);
+			}
+
+			/*if(eval.isInit)
+			{
+			Mat dd;
+			disp.convertTo(dd,CV_8U,eval.amp/16.0);
+			eval(dd);
+
+			imshow("eval",eval.all_th);
+			}*/
+
+			cvtDisparityColor(disp, dshow, minDisparity, numberOfDisparities, isColor);
+
+			alphaBlend(leftim, dshow, 1.0 - (alpha / 100.0), show);
+			imshow(wname, show);
+			key = waitKey(1);
+		}
+		destroyWindow(wname);
+	}
+
 
 	StereoSGBMEx::StereoSGBMEx(int minDisparity_, int numDisparities_, Size SADWindowSize_,
 		int P1_, int P2_, int disp12MaxDiff_,

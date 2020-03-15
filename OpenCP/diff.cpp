@@ -9,10 +9,10 @@ namespace cp
 	void diffshow(string wname, InputArray src, InputArray ref, const double scale)
 	{
 		Mat show;
-		Mat diff = Mat::zeros(src.size(), CV_64F);
+		Mat diff = Mat::zeros(src.size(), CV_MAKE_TYPE(CV_64F, src.channels()));
 		subtract(src.getMat(), ref.getMat(), diff, noArray(), CV_64F);
 		diff *= scale;
-		diff += 128.0;
+		diff += Scalar::all(128.0);
 		diff.convertTo(show, CV_8U, 1.0, 0.5);
 		imshow(wname, show);
 	}

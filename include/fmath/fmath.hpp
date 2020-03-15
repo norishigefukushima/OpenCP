@@ -695,14 +695,15 @@ namespace fmath {
 
 		__m256i limit = _mm256_castps_si256(_mm256_and_ps(x, *reinterpret_cast<const __m256*>(expVar.i7fffffff)));
 		int over = _mm256_movemask_epi8(_mm256_cmpgt_epi32(limit, *reinterpret_cast<const __m256i*>(expVar.maxX)));
-		if (over) {
+		if (over) 
+		{
 			x = _mm256_min_ps(x, _mm256_load_ps(expVar.maxX));
 			x = _mm256_max_ps(x, _mm256_load_ps(expVar.minX));
 		}
-		__m256i r = _mm256_cvtps_epi32(_mm256_mul_ps(x, *reinterpret_cast<const __m256*>(expVar.a)));
-		__m256 t = _mm256_sub_ps(x, _mm256_mul_ps(_mm256_cvtepi32_ps(r), *reinterpret_cast<const __m256*>(expVar.b)));
+		const __m256i r = _mm256_cvtps_epi32(_mm256_mul_ps(x, *reinterpret_cast<const __m256*>(expVar.a)));
+		__m256 t = _mm256_fnmadd_ps(_mm256_cvtepi32_ps(r), *reinterpret_cast<const __m256*>(expVar.b), x);
 		t = _mm256_add_ps(t, *reinterpret_cast<const __m256*>(expVar.f1));
-		__m256i v8 = _mm256_and_si256(r, *reinterpret_cast<const __m256i*>(expVar.mask_s));
+		const __m256i v8 = _mm256_and_si256(r, *reinterpret_cast<const __m256i*>(expVar.mask_s));
 		__m256i u8 = _mm256_add_epi32(r, *reinterpret_cast<const __m256i*>(expVar.i127s));
 		u8 = _mm256_srli_epi32(u8, expVar.s);
 		u8 = _mm256_slli_epi32(u8, 23);
@@ -880,10 +881,17 @@ namespace fmath {
 		return exp_pd(_mm_mul_pd(y, log_pd(x)));
 	}
 
+#ifdef __AVX2__
 	inline __m256 log_ps256(__m256 x)
 	{
 		__m128 a = fmath::log_ps(_mm256_extractf128_ps(x, 1));
 		__m128 b = fmath::log_ps(_mm256_extractf128_ps(x, 0));
 		return _mm256_set_m128(a, b);
 	}
+
+	inline __m256 pow_ps256(__m256 x, __m256 y)
+	{
+		return exp_ps256(_mm256_mul_ps(y, log_ps256(x)));
+	}
+#endif
 } // fmath
