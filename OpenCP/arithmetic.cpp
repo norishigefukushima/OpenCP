@@ -87,8 +87,6 @@ namespace cp
 	{
 		if (dest.empty())dest.create(src1.size(), CV_32F);
 
-		int width = src1.cols;
-		int height = src1.rows;
 
 		int size = src1.size().area();
 		int i = 0;
