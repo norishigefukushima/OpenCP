@@ -1671,7 +1671,10 @@ public:
 		for (int i = range.start; i != range.end; i++)
 		{
 			//Mat g;
-			guidedFilter((Mat)src[i], *guide, (Mat)dest[i], radius, eps);
+			//cp::guidedFilter((const Mat)src[i], (const Mat)(*guide), (Mat)dest[i], radius, eps);
+			Mat dst;
+			cp::guidedFilter(src[i], *guide, dst, radius, eps);
+			dst.copyTo(dest[i]);			
 		}
 	}
 private:

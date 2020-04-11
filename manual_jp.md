@@ -1,7 +1,12 @@
 Reference Manual
 ================
 
+マニュアルは，みんなで更新していってください．  
+福嶋が更新するのを期待して待っても，ほぼ更新されません．
+（バグを発見したときについでに更新するくらい）
+
 # Metrics.hpp
+画質評価関数群
  * [getPSNR](metrics_jp.md "#getPSNR")
  * [getPSNR_PRECISION](metrics_jp.md "getPSNR_PRECISION")
  * [getPSNR_CHANNEL](metrics_jp.md "#getPSNR_CHANNEL")
@@ -15,16 +20,25 @@ Reference Manual
  * SSIM：関数修正中
  
 # crop.hpp
+画像の切り抜き（クロップ）用関数群
  * [cropZoom](crop_jp.md "#cropZoom")
  * [cropZoomWithBoundingBox](crop_jp.md "#cropZoomWithBoundingBox")
  * [cropZoomWithSrcMarkAndBoundingBox](crop_jp.md "#cropZoomWithSrcMarkAndBoundingBox")
  * [guiCropZoom](crop_jp.md "#guiCropZoom")
 
 # count.hpp
+画像の画素の属性をカウントする関数群
  * [countNaN](count_jp.md "#countNaN")
  * [countInf](count_jp.md "#countInf")
  * [countDenormalizedNumber](count_jp.md "#countDenormalizedNumber")
  * [countDenormalizedNumberRatio](count_jp.md "#countDenormalizedNumberRatio")
+
+# histogram.hpp
+ヒストグラムの描画関数群
+ * [drawHistogramImage](histogram_jp.md "#drawHistogramImage")
+ * [drawHistogramImageGray](histogram_jp.md "#drawHistogramImageGray")
+ * [drawAccumulateHistogramImage](histogram_jp.md "#drawAccumulateHistogramImage")
+ * [drawAccumulateHistogramImageGray](histogram_jp.md "#drawAccumulateHistogramImageGray")
 
 # memo
 Optimization

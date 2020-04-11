@@ -7,6 +7,8 @@ using namespace cv;
 
 namespace cp
 {
+	void alphaBlendSSE_8u(const Mat& src1, const Mat& src2, const uchar alpha, Mat& dest);
+	void alphaBlendSSE_8u(const Mat& src1, const Mat& src2, const Mat& alpha, Mat& dest);
 
 	void alphaBlend(InputArray src1, InputArray src2, const double alpha, OutputArray dest)
 	{
@@ -257,7 +259,8 @@ namespace cp
 	{
 		if (dest.empty() || dest.size() != src1.size() || dest.type() != src1.type()) dest.create(src1.size(), src1.type());
 
-		alphaBlendSSE_8u(src1.getMat(), src2.getMat(), alpha, dest.getMat());
+		Mat dst = dest.getMat();
+		alphaBlendSSE_8u(src1.getMat(), src2.getMat(), alpha, dst);
 	}
 
 	void alphaBlendApproximate(InputArray src1, InputArray src2, InputArray alpha, OutputArray dest)
@@ -265,7 +268,8 @@ namespace cp
 		CV_Assert(alpha.depth() == CV_8U);
 		if (dest.empty() || dest.size() != src1.size() || dest.type() != src1.type()) dest.create(src1.size(), src1.type());
 
-		alphaBlendSSE_8u(src1.getMat(), src2.getMat(), alpha.getMat(), dest.getMat());
+		Mat dst = dest.getMat();
+		alphaBlendSSE_8u(src1.getMat(), src2.getMat(), alpha.getMat(), dst);
 	}
 
 	void alphaBlend(const Mat& src1, const Mat& src2, const Mat& alpha, Mat& dest)

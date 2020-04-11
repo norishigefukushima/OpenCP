@@ -9,6 +9,7 @@
 #endif
 
 void testCropZoom();
+void testHistogram();
 void testRGBHistogram();
 void testRGBHistogram2();
 void testAddNoise(cv::Mat& src);

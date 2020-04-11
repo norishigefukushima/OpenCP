@@ -975,7 +975,7 @@ namespace cp
 		const __m128 ma = _mm_set1_ps(a);
 		for (i = 0; i <= size - 4; i += 4)
 		{
-			_mm_store_ps(d + i, _mm_pow_ps(ma, _mm_load_ps(s + i)));
+			_mm_store_ps(d + i, cp::_mm_pow_ps(ma, _mm_load_ps(s + i)));
 		}
 		for (; i < size; i++)
 		{
@@ -1018,7 +1018,7 @@ namespace cp
 				for (; n <= height - 1 - 4; n += 4)
 				{
 					__m128 mp = _mm_set_ps(dt[(n + 3)*dtstep], dt[(n + 2)*dtstep], dt[(n + 1)*dtstep], dt[(n)*dtstep]);
-					_mm_store_ps(dtb + n, _mm_pow_ps(ma, mp));
+					_mm_store_ps(dtb + n, cp::_mm_pow_ps(ma, mp));
 					//pow(a, *dt);
 				}
 				for (; n < height - 1; n++)
@@ -1110,7 +1110,7 @@ namespace cp
 			for (; n <= height - 1 - 4; n += 4)
 			{
 				__m128 mp = _mm_set_ps(dt[(n + 3)*dtstep], dt[(n + 2)*dtstep], dt[(n + 1)*dtstep], dt[(n)*dtstep]);
-				_mm_store_ps(dtb + n, _mm_pow_ps(ma, mp));
+				_mm_store_ps(dtb + n, cp::_mm_pow_ps(ma, mp));
 			}
 			for (; n < height - 1; n++)
 			{
@@ -1279,7 +1279,7 @@ namespace cp
 				for (; x <= width - 4; x += 4)
 				{
 					__m128 mps = _mm_loadu_ps(dt + x - 1);
-					mps = _mm_pow_ps(ma, mps);
+					mps = cp::_mm_pow_ps(ma, mps);
 					_mm_storeu_ps(dtb + x - 1, mps);
 
 					__m128 mo = _mm_loadu_ps(d + 4 * x);
@@ -1385,7 +1385,7 @@ namespace cp
 			for (; x <= width - 4; x += 4)
 			{
 				__m128 mps = _mm_loadu_ps(dt + x - 1);
-				mps = _mm_pow_ps(ma, mps);
+				mps = cp::_mm_pow_ps(ma, mps);
 				_mm_storeu_ps(dtb + x - 1, mps);
 
 				__m128 mo = _mm_loadu_ps(d + 4 * x);
@@ -2451,7 +2451,7 @@ namespace cp
 
 				//float p = dct.at<float>(y-1, x);
 				__m128 mp = _mm_loadu_ps(pdct + x);
-				mp = _mm_pow_ps(ma, mp);
+				mp = cp::_mm_pow_ps(ma, mp);
 				__m128 mo = _mm_loadu_ps(pout + x);
 				__m128 muo = _mm_loadu_ps(puout + x);
 

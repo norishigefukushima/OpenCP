@@ -47,9 +47,6 @@ namespace cp
 	{
 		if (dest.empty())dest.create(src.size(), CV_32F);
 
-		int width = src.cols;
-		int height = src.rows;
-
 		int size = src.size().area();
 		int i = 0;
 
@@ -58,7 +55,7 @@ namespace cp
 		const __m128 ma = _mm_set1_ps(a);
 		for (i = 0; i <= size - 4; i += 4)
 		{
-			_mm_store_ps(d + i, _mm_pow_ps(ma, _mm_load_ps(s + i)));
+			_mm_store_ps(d + i, cp::_mm_pow_ps(ma, _mm_load_ps(s + i)));
 		}
 		for (; i < size; i++)
 		{
@@ -70,9 +67,6 @@ namespace cp
 	{
 		if (dest.empty())dest.create(src.size(), CV_32F);
 
-		int width = src.cols;
-		int height = src.rows;
-
 		int size = src.size().area();
 		int i = 0;
 
@@ -81,7 +75,7 @@ namespace cp
 		const __m128 ma = _mm_set1_ps(a);
 		for (i = 0; i <= size - 4; i += 4)
 		{
-			_mm_store_ps(d + i, _mm_pow_ps(_mm_load_ps(s + i), ma));
+			_mm_store_ps(d + i, cp::_mm_pow_ps(_mm_load_ps(s + i), ma));
 		}
 		for (; i < size; i++)
 		{
@@ -105,7 +99,7 @@ namespace cp
 
 		for (i = 0; i <= size - 4; i += 4)
 		{
-			_mm_store_ps(d + i, _mm_pow_ps(_mm_load_ps(s1 + i), _mm_load_ps(s2 + i)));
+			_mm_store_ps(d + i, cp::_mm_pow_ps(_mm_load_ps(s1 + i), _mm_load_ps(s2 + i)));
 		}
 		for (; i < size; i++)
 		{

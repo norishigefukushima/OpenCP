@@ -5,6 +5,21 @@
 using namespace std;
 using namespace cv;
 
+void _mm256_vstore_ps(float* dst, const int width, __m256 src)
+{
+	float CV_DECL_ALIGNED(16) buf[8];
+	_mm256_store_ps(buf, src);
+	*dst = buf[0];
+	*(dst + width) = buf[1];
+	*(dst + width * 2) = buf[2];
+	*(dst + width * 3) = buf[3];
+	*(dst + width * 4) = buf[4];
+	*(dst + width * 5) = buf[5];
+	*(dst + width * 6) = buf[6];
+	*(dst + width * 7) = buf[7];
+}
+
+
 boxFilter_SSAT_HV_RowSumGather_AVX::boxFilter_SSAT_HV_RowSumGather_AVX(cv::Mat& _src, cv::Mat& _dest, int _r, int _parallelType)
 	: src(_src), dest(_dest), r(_r), parallelType(_parallelType)
 {
@@ -53,6 +68,9 @@ void RowSumFilter_HV_AVXgather::filter_naive_impl()
 			mSum = _mm256_add_ps(mSum, mRef_next);
 			sp_next += cn;
 		}
+
+		_mm256_vstore_ps(dp, step, mSum);
+		/*
 		mTmp = mSum;
 		*dp = mTmp.m256_f32[0];
 		*(dp + step) = mTmp.m256_f32[1];
@@ -62,8 +80,9 @@ void RowSumFilter_HV_AVXgather::filter_naive_impl()
 		*(dp + step * 5) = mTmp.m256_f32[5];
 		*(dp + step * 6) = mTmp.m256_f32[6];
 		*(dp + step * 7) = mTmp.m256_f32[7];
+		*/
 		dp++;
-
+		
 		for (int j = 1; j <= r; j++)
 		{
 #ifndef _USE_GATHER_
@@ -77,6 +96,8 @@ void RowSumFilter_HV_AVXgather::filter_naive_impl()
 			mSum = _mm256_add_ps(mSum, mRef_next);
 			mSum = _mm256_sub_ps(mSum, mRef_prev);
 
+			_mm256_vstore_ps(dp, step, mSum);
+			/*
 			mTmp = mSum;
 			*dp = mTmp.m256_f32[0];
 			*(dp + step) = mTmp.m256_f32[1];
@@ -86,6 +107,7 @@ void RowSumFilter_HV_AVXgather::filter_naive_impl()
 			*(dp + step * 5) = mTmp.m256_f32[5];
 			*(dp + step * 6) = mTmp.m256_f32[6];
 			*(dp + step * 7) = mTmp.m256_f32[7];
+			*/
 			dp++;
 		}
 		for (int j = r + 1; j < col - r; j++)
@@ -105,6 +127,8 @@ void RowSumFilter_HV_AVXgather::filter_naive_impl()
 			mSum = _mm256_add_ps(mSum, mRef_next);
 			mSum = _mm256_sub_ps(mSum, mRef_prev);
 
+			_mm256_vstore_ps(dp, step, mSum);
+			/*
 			mTmp = mSum;
 			*dp = mTmp.m256_f32[0];
 			*(dp + step) = mTmp.m256_f32[1];
@@ -114,7 +138,9 @@ void RowSumFilter_HV_AVXgather::filter_naive_impl()
 			*(dp + step * 5) = mTmp.m256_f32[5];
 			*(dp + step * 6) = mTmp.m256_f32[6];
 			*(dp + step * 7) = mTmp.m256_f32[7];
+			*/
 			dp++;
+			
 		}
 		for (int j = col - r; j < col; j++)
 		{
@@ -129,6 +155,8 @@ void RowSumFilter_HV_AVXgather::filter_naive_impl()
 			mSum = _mm256_add_ps(mSum, mRef_next);
 			mSum = _mm256_sub_ps(mSum, mRef_prev);
 
+			_mm256_vstore_ps(dp, step, mSum);
+			/*
 			mTmp = mSum;
 			*dp = mTmp.m256_f32[0];
 			*(dp + step) = mTmp.m256_f32[1];
@@ -138,6 +166,7 @@ void RowSumFilter_HV_AVXgather::filter_naive_impl()
 			*(dp + step * 5) = mTmp.m256_f32[5];
 			*(dp + step * 6) = mTmp.m256_f32[6];
 			*(dp + step * 7) = mTmp.m256_f32[7];
+			*/
 			dp++;
 		}
 	}
@@ -179,6 +208,8 @@ void RowSumFilter_HV_AVXgather::filter_omp_impl()
 			sp_next += cn;
 		}
 		mTmp = mSum;
+		_mm256_vstore_ps(dp, step, mSum);
+		/*
 		*dp = mTmp.m256_f32[0];
 		*(dp + step) = mTmp.m256_f32[1];
 		*(dp + step * 2) = mTmp.m256_f32[2];
@@ -187,6 +218,7 @@ void RowSumFilter_HV_AVXgather::filter_omp_impl()
 		*(dp + step * 5) = mTmp.m256_f32[5];
 		*(dp + step * 6) = mTmp.m256_f32[6];
 		*(dp + step * 7) = mTmp.m256_f32[7];
+		*/
 		dp++;
 
 		for (int j = 1; j <= r; j++)
@@ -203,6 +235,8 @@ void RowSumFilter_HV_AVXgather::filter_omp_impl()
 			mSum = _mm256_sub_ps(mSum, mRef_prev);
 
 			mTmp = mSum;
+			_mm256_vstore_ps(dp, step, mSum);
+			/*
 			*dp = mTmp.m256_f32[0];
 			*(dp + step) = mTmp.m256_f32[1];
 			*(dp + step * 2) = mTmp.m256_f32[2];
@@ -211,6 +245,7 @@ void RowSumFilter_HV_AVXgather::filter_omp_impl()
 			*(dp + step * 5) = mTmp.m256_f32[5];
 			*(dp + step * 6) = mTmp.m256_f32[6];
 			*(dp + step * 7) = mTmp.m256_f32[7];
+			*/
 			dp++;
 		}
 		for (int j = r + 1; j < col - r; j++)
@@ -231,6 +266,8 @@ void RowSumFilter_HV_AVXgather::filter_omp_impl()
 			mSum = _mm256_sub_ps(mSum, mRef_prev);
 
 			mTmp = mSum;
+			_mm256_vstore_ps(dp, step, mSum);
+			/*
 			*dp = mTmp.m256_f32[0];
 			*(dp + step) = mTmp.m256_f32[1];
 			*(dp + step * 2) = mTmp.m256_f32[2];
@@ -239,6 +276,7 @@ void RowSumFilter_HV_AVXgather::filter_omp_impl()
 			*(dp + step * 5) = mTmp.m256_f32[5];
 			*(dp + step * 6) = mTmp.m256_f32[6];
 			*(dp + step * 7) = mTmp.m256_f32[7];
+			*/
 			dp++;
 		}
 		for (int j = col - r; j < col; j++)
@@ -255,6 +293,8 @@ void RowSumFilter_HV_AVXgather::filter_omp_impl()
 			mSum = _mm256_sub_ps(mSum, mRef_prev);
 
 			mTmp = mSum;
+			_mm256_vstore_ps(dp, step, mSum);
+			/*
 			*dp = mTmp.m256_f32[0];
 			*(dp + step) = mTmp.m256_f32[1];
 			*(dp + step * 2) = mTmp.m256_f32[2];
@@ -263,6 +303,7 @@ void RowSumFilter_HV_AVXgather::filter_omp_impl()
 			*(dp + step * 5) = mTmp.m256_f32[5];
 			*(dp + step * 6) = mTmp.m256_f32[6];
 			*(dp + step * 7) = mTmp.m256_f32[7];
+			*/
 			dp++;
 		}
 	}
@@ -326,10 +367,17 @@ void RowSumFilter_VH_SSEgather::filter_naive_impl()
 			sp_next += cn;
 		}
 		mTmp = _mm_mul_ps(mSum, mDiv);
+		
+		*dp0++ = _mm_extract_ps(mTmp, 0);
+		*dp1++ = _mm_extract_ps(mTmp, 1);
+		*dp2++ = _mm_extract_ps(mTmp, 2);
+		*dp3++ = _mm_extract_ps(mTmp, 3);
+		/*
 		*dp0++ = mTmp.m128_f32[0];
 		*dp1++ = mTmp.m128_f32[1];
 		*dp2++ = mTmp.m128_f32[2];
 		*dp3++ = mTmp.m128_f32[3];
+		*/
 
 		for (int j = 1; j <= r; j++)
 		{
@@ -344,10 +392,16 @@ void RowSumFilter_VH_SSEgather::filter_naive_impl()
 			mSum = _mm_sub_ps(mSum, mRef_prev);
 
 			mTmp = _mm_mul_ps(mSum, mDiv);
+			*dp0++ = _mm_extract_ps(mTmp, 0);
+			*dp1++ = _mm_extract_ps(mTmp, 1);
+			*dp2++ = _mm_extract_ps(mTmp, 2);
+			*dp3++ = _mm_extract_ps(mTmp, 3);
+			/*
 			*dp0++ = mTmp.m128_f32[0];
 			*dp1++ = mTmp.m128_f32[1];
 			*dp2++ = mTmp.m128_f32[2];
 			*dp3++ = mTmp.m128_f32[3];
+			*/
 		}
 		for (int j = r + 1; j < col - r; j++)
 		{
@@ -365,10 +419,16 @@ void RowSumFilter_VH_SSEgather::filter_naive_impl()
 			mSum = _mm_sub_ps(mSum, mRef_prev);
 
 			mTmp = _mm_mul_ps(mSum, mDiv);
+			*dp0++ = _mm_extract_ps(mTmp, 0);
+			*dp1++ = _mm_extract_ps(mTmp, 1);
+			*dp2++ = _mm_extract_ps(mTmp, 2);
+			*dp3++ = _mm_extract_ps(mTmp, 3);
+			/*
 			*dp0++ = mTmp.m128_f32[0];
 			*dp1++ = mTmp.m128_f32[1];
 			*dp2++ = mTmp.m128_f32[2];
 			*dp3++ = mTmp.m128_f32[3];
+			*/
 		}
 		for (int j = col - r; j < col; j++)
 		{
@@ -426,7 +486,7 @@ void RowSumFilter_VH_SSEgather::filter_omp_impl()
 #endif
 			mSum = _mm_add_ps(mSum, mRef_next);
 			sp_next += cn;
-	}
+		}
 		mTmp = _mm_mul_ps(mSum, mDiv);
 		*dp0++ = mTmp.m128_f32[0];
 		*dp1++ = mTmp.m128_f32[1];
@@ -450,7 +510,7 @@ void RowSumFilter_VH_SSEgather::filter_omp_impl()
 			*dp1++ = mTmp.m128_f32[1];
 			*dp2++ = mTmp.m128_f32[2];
 			*dp3++ = mTmp.m128_f32[3];
-}
+		}
 		for (int j = r + 1; j < col - r; j++)
 		{
 #ifndef _USE_GATHER_
@@ -645,7 +705,7 @@ void RowSumFilter_VH_AVXgather::filter_omp_impl()
 
 #pragma omp parallel for
 	for (int i = 0; i < row; i += 8)
-	//for (int I = 0; I < row / 8; I++)
+		//for (int I = 0; I < row / 8; I++)
 	{
 		//int i = 8 * I;
 		__m256 mTmp;
@@ -752,6 +812,8 @@ void RowSumFilter_VH_AVXgather::filter_omp_impl()
 			mSum = _mm256_sub_ps(mSum, mRef_prev);
 
 			mTmp = _mm256_mul_ps(mSum, mDiv);
+
+
 			*dp = mTmp.m256_f32[0];
 			*(dp + step) = mTmp.m256_f32[1];
 			*(dp + step * 2) = mTmp.m256_f32[2];
@@ -767,5 +829,5 @@ void RowSumFilter_VH_AVXgather::filter_omp_impl()
 
 void RowSumFilter_VH_AVXgather::operator()(const cv::Range& range) const
 {
-	
+
 }

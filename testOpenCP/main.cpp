@@ -106,8 +106,20 @@ void guiLocalDiffHistogram(Mat& src, bool isWait, string wname)
 	if (!isWait)destroyWindow(wname);
 }
 
+/*
+#include <immintrin.h>
+void testsimd()
+{
+	__m256 a = _mm256_exp_ps(_mm256_set1_ps(1.f));
+	cout << a.m256_f32[0] << endl;
+	//cp::print_m128(a);
+}*/
+
 int main(int argc, char** argv)
 {
+	//testsimd(); return 0;
+
+	testHistogram(); return 0;
 	testPlot(); return 0;
 	//guiGuidedImageFilterTest();
 	//guiHazeRemoveTest();

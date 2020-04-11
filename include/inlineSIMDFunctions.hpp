@@ -1,12 +1,13 @@
 #pragma once
 
+#pragma warning(disable:4309)
+
 #define SSE_ALIGN 16
 #define AVX_ALIGN 32
 #define AVX512_ALIGN 64
 
 //template for array
 //const int CV_DECL_ALIGNED(AVX_ALIGN) a[10]
-
 
 inline int get_simd_ceil(const int val, const int simdwidth)
 {

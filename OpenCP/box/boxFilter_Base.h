@@ -2,6 +2,7 @@
 
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
+#include <immintrin.h>//AVX/AVX2/FMA
 #include "parallel_type.hpp"
 
 #define BOX_FILTER_BORDER_TYPE cv::BORDER_REPLICATE
