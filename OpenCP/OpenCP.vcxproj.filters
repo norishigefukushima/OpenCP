@@ -929,9 +929,6 @@
     <ClInclude Include="..\include\fmath\fmath.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="debugcp.hpp">
-      <Filter>ソース ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\maskoperation.hpp">
       <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
     </ClInclude>
@@ -940,6 +937,9 @@
     </ClInclude>
     <ClInclude Include="..\include\count.hpp">
       <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+    </ClInclude>
+    <ClInclude Include="debugcp.hpp">
+      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

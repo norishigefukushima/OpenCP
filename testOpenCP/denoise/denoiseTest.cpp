@@ -78,8 +78,8 @@ void guiDenoiseTest(Mat& src)
 
 		cout<<"before:"<<PSNR(src,noise)<<endl;
 		cout<<"filter:"<<PSNR(src,dest)<<endl<<endl;
-			
-		patchBlendImage(noise,dest,dest,Scalar(255,255,255));
+		
+		dissolveSlideBlend(noise, dest, dest);
 		alphaBlend(src, dest,a/100.0, show);
 		cv::imshow(wname,show);
 		key = waitKey(1);

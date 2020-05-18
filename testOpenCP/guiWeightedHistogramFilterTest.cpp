@@ -1,12 +1,11 @@
 #include <opencp.hpp>
-#include <fstream>
+
 using namespace std;
 using namespace cv;
 using namespace cp;
 
 void guiWeightedHistogramFilterTest(Mat& src_, Mat& guide_)
 {
-
 	Mat src, guide;
 	if (src_.channels() == 3)
 	{
@@ -37,6 +36,8 @@ void guiWeightedHistogramFilterTest(Mat& src_, Mat& guide_)
 	int tranc = 10; createTrackbar("tranc", wname, &color, 255);
 	int r = 1; createTrackbar("r", wname, &r, 20);
 
+	int sp = 0; createTrackbar("sp noise", wname, &sp, 100);
+
 	int key = 0;
 	Mat show;
 
@@ -44,19 +45,35 @@ void guiWeightedHistogramFilterTest(Mat& src_, Mat& guide_)
 	Mat ref;
 	Mat srcf; src.convertTo(srcf, CV_32F);
 	Mat weight = Mat::ones(src.size(), CV_8U);
+
+	cp::UpdateCheck uc(sw);
 	while (key != 'q')
 	{
+		Mat img;
+		cp::addNoise(src, img, 0, sp * 0.01);
+		if (uc.isUpdate(sw))
+		{
+			switch(sw)
+			{
+			case 0:
+				displayOverlay(wname, "weighted mode", 5000); break;
+			case 1:
+				displayOverlay(wname, "weighted median", 5000); break;
+			}
+			
+		}
 		if (sw==0)
 		{
 			Timer t;
-			weightedModeFilter(src, guide, show, r, tranc, space / 10.0, color / 10.0, 2, 2);
+			weightedModeFilter(img, guide, show, r, tranc, space / 10.0, color / 10.0, 2, 2);
 			//weightedweightedModeFilter(src, guide, weight, show, r, tranc, space / 10.0, color / 10.0, 2, 2);
 		}
 		else if (sw==1)
 		{
 			Timer t;
 			//weightedModeFilter(src, guide, show, r, tranc, space / 10.0, color / 10.0, 2, 2);
-			weightedweightedMedianFilter(src, guide, weight, show, r, tranc, space / 10.0, color / 10.0, 2, 2);
+			//weightedweightedMedianFilter(src, guide, weight, show, r, tranc, space / 10.0, color / 10.0, 2, 2);
+			weightedMedianFilter(img, guide,  show, r, tranc, space / 10.0, color / 10.0, 2, 2);
 		}
 		imshow(wname, show);
 

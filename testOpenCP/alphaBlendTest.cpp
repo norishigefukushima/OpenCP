@@ -18,6 +18,7 @@ void alphablend1(Mat& src1, Mat& src2, Mat& alpha, Mat& dest)
 		d[i] = (uchar)((a[i] * s1[i] + (255 - a[i])*s2[i])*div + 0.5);
 	}
 }
+
 void alphablend2(Mat& src1, Mat& src2, Mat& alpha, Mat& dest)
 {
 	if (dest.empty())dest.create(src1.size(), CV_8U);

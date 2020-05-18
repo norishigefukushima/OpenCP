@@ -119,21 +119,25 @@ int main(int argc, char** argv)
 {
 	//testsimd(); return 0;
 
-	testHistogram(); return 0;
-	testPlot(); return 0;
+	//testHistogram(); return 0;
+	//testPlot(); return 0;
 	//guiGuidedImageFilterTest();
 	//guiHazeRemoveTest();
 
-	Mat right = imread("left.png");
-	Mat left = imread("right.png");
-	//Mat left = imread("img/stereo/Dolls/view1.png");
-	//Mat right = imread("img/stereo/Dolls/view5.png");
+	//Mat right = imread("left.png");
+	//Mat left = imread("right.png");
+	//guiPatchBlend(right, left);
+	
+	Mat left = imread("img/stereo/Dolls/view1.png");
+	Mat right = imread("img/stereo/Dolls/view5.png");
+	guiDissolveSlideBlend(right, left);
 	//Mat dmap = imread("img/stereo/Dolls/disp1.png", 0);
-	Mat img = imread("img/lenna.png");
-	//Mat img = imread("img/Kodak/kodim05.png");	
+	//Mat img = imread("img/lenna.png");
+	Mat img = imread("img/Kodak/kodim07.png",0);	
 	//Mat img = imread("img/cameraman.png",0);
 	//Mat img = imread("img/barbara.png", 0);
 
+	guiWeightedHistogramFilterTest(img,img);
 	Mat leftg, rightg;
 	//guiShift(left, right, 300);
 	cvtColor(left, leftg, COLOR_BGR2GRAY);

@@ -47,8 +47,7 @@ void guiSLICTest(Mat& src)
 		SLIC(lab, seg, S * 2, (float)m, mrs / 100.f, iter);
 		drawSLIC(src, seg, dest2, true, true, Scalar(255, 255, 0));
 
-		patchBlendImage(dest, dest2, show, Scalar(255, 255, 255));
-
+		dissolveSlideBlend(dest, dest2, show);
 		alphaBlend(src, show, a / 100.0, show);
 		imshow(wname, show);
 		key = waitKey(1);

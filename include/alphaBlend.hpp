@@ -9,6 +9,7 @@ namespace cp
 	CP_EXPORT void alphaBlendApproxmate(cv::InputArray src1, cv::InputArray src2, const uchar alpha, cv::OutputArray dest);
 	CP_EXPORT void guiAlphaBlend(cv::InputArray src1, cv::InputArray src2, bool isShowImageStats = false);
 
-	CP_EXPORT void guiDissolveSlide(cv::InputArray src1, cv::InputArray src2, std::string wname = "dissolveSlide");
-	CP_EXPORT void dissolveSlide(cv::InputArray src1, cv::InputArray src2, cv::OutputArray dest, const double ratio, const int direction, const bool isBorderLine = true);
+	CP_EXPORT void guiDissolveSlideBlend(cv::InputArray src1, cv::InputArray src2, std::string wname = "dissolveSlide");
+
+	CP_EXPORT void dissolveSlideBlend(cv::InputArray src1, cv::InputArray src2, cv::OutputArray dest, const double ratio = 0.5, const double slant_ratio = 0.4, const int direction = 0, cv::Scalar line_color = cv::Scalar::all(255), const int line_thickness = 2);
 }

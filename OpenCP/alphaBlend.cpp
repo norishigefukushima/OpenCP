@@ -137,15 +137,15 @@ namespace cp
 			}
 		}
 
-	{
-		uchar* s1 = (uchar*)src1.data;
-		uchar* s2 = (uchar*)src2.data;
-		uchar* d = dest.data;
-		for (int n = i * 16; n < src1.size().area(); n++)
 		{
-			d[n] = (alpha * s1[n] + (255 - alpha)*s2[n]) >> 8;
+			uchar* s1 = (uchar*)src1.data;
+			uchar* s2 = (uchar*)src2.data;
+			uchar* d = dest.data;
+			for (int n = i * 16; n < src1.size().area(); n++)
+			{
+				d[n] = (alpha * s1[n] + (255 - alpha) * s2[n]) >> 8;
+			}
 		}
-	}
 	}
 
 	void alphaBlendSSE_8u(const Mat& src1, const Mat& src2, const Mat& alpha, Mat& dest)
@@ -243,16 +243,16 @@ namespace cp
 			}
 		}
 
-	{
-		uchar* s1 = (uchar*)src1.data;
-		uchar* s2 = (uchar*)src2.data;
-		uchar* a = (uchar*)alpha.data;
-		uchar* d = dest.data;
-		for (int n = i * 16; n < src1.size().area(); n++)
 		{
-			d[n] = (a[n] * s1[n] + (255 - a[n])*s2[n]) >> 8;
+			uchar* s1 = (uchar*)src1.data;
+			uchar* s2 = (uchar*)src2.data;
+			uchar* a = (uchar*)alpha.data;
+			uchar* d = dest.data;
+			for (int n = i * 16; n < src1.size().area(); n++)
+			{
+				d[n] = (a[n] * s1[n] + (255 - a[n]) * s2[n]) >> 8;
+			}
 		}
-	}
 	}
 
 	void alphaBlendApproximate(InputArray src1, InputArray src2, const uchar alpha, OutputArray dest)
@@ -322,64 +322,64 @@ namespace cp
 				ss1[c].convertTo(ss1f[c], CV_32F);
 				ss2[c].convertTo(ss2f[c], CV_32F);
 			}
-		{
-			float* s1r = ss1f[0].ptr<float>(0);
-			float* s2r = ss2f[0].ptr<float>(0);
-
-			float* s1g = ss1f[1].ptr<float>(0);
-			float* s2g = ss2f[1].ptr<float>(0);
-
-			float* s1b = ss1f[2].ptr<float>(0);
-			float* s2b = ss2f[2].ptr<float>(0);
-
-
-			float* al = a.ptr<float>(0);
-			const int size = src1.size().area() / 4;
-			const int sizeRem = src1.size().area() - size * 4;
-
-			const __m128 ones = _mm_set1_ps(1.0f);
-
-			for (int i = size; i--;)
 			{
-				const __m128 msa = _mm_load_ps(al);
-				const __m128 imsa = _mm_sub_ps(ones, msa);
-				__m128 ms1 = _mm_load_ps(s1r);
-				__m128 ms2 = _mm_load_ps(s2r);
-				ms1 = _mm_mul_ps(ms1, msa);
-				ms2 = _mm_mul_ps(ms2, imsa);
-				ms1 = _mm_add_ps(ms1, ms2);
-				_mm_store_ps(s1r, ms1);//store ss1f
+				float* s1r = ss1f[0].ptr<float>(0);
+				float* s2r = ss2f[0].ptr<float>(0);
 
-				ms1 = _mm_load_ps(s1g);
-				ms2 = _mm_load_ps(s2g);
-				ms1 = _mm_mul_ps(ms1, msa);
-				ms2 = _mm_mul_ps(ms2, imsa);
-				ms1 = _mm_add_ps(ms1, ms2);
-				_mm_store_ps(s1g, ms1);//store ss1f
+				float* s1g = ss1f[1].ptr<float>(0);
+				float* s2g = ss2f[1].ptr<float>(0);
 
-				ms1 = _mm_load_ps(s1b);
-				ms2 = _mm_load_ps(s2b);
-				ms1 = _mm_mul_ps(ms1, msa);
-				ms2 = _mm_mul_ps(ms2, imsa);
-				ms1 = _mm_add_ps(ms1, ms2);
-				_mm_store_ps(s1b, ms1);//store ss1f
+				float* s1b = ss1f[2].ptr<float>(0);
+				float* s2b = ss2f[2].ptr<float>(0);
 
-				al += 4, s1r += 4, s2r += 4, s1g += 4, s2g += 4, s1b += 4, s2b += 4;
+
+				float* al = a.ptr<float>(0);
+				const int size = src1.size().area() / 4;
+				const int sizeRem = src1.size().area() - size * 4;
+
+				const __m128 ones = _mm_set1_ps(1.0f);
+
+				for (int i = size; i--;)
+				{
+					const __m128 msa = _mm_load_ps(al);
+					const __m128 imsa = _mm_sub_ps(ones, msa);
+					__m128 ms1 = _mm_load_ps(s1r);
+					__m128 ms2 = _mm_load_ps(s2r);
+					ms1 = _mm_mul_ps(ms1, msa);
+					ms2 = _mm_mul_ps(ms2, imsa);
+					ms1 = _mm_add_ps(ms1, ms2);
+					_mm_store_ps(s1r, ms1);//store ss1f
+
+					ms1 = _mm_load_ps(s1g);
+					ms2 = _mm_load_ps(s2g);
+					ms1 = _mm_mul_ps(ms1, msa);
+					ms2 = _mm_mul_ps(ms2, imsa);
+					ms1 = _mm_add_ps(ms1, ms2);
+					_mm_store_ps(s1g, ms1);//store ss1f
+
+					ms1 = _mm_load_ps(s1b);
+					ms2 = _mm_load_ps(s2b);
+					ms1 = _mm_mul_ps(ms1, msa);
+					ms2 = _mm_mul_ps(ms2, imsa);
+					ms1 = _mm_add_ps(ms1, ms2);
+					_mm_store_ps(s1b, ms1);//store ss1f
+
+					al += 4, s1r += 4, s2r += 4, s1g += 4, s2g += 4, s1b += 4, s2b += 4;
+				}
+				for (int i = 0; i < sizeRem; i++)
+				{
+					*s1r = *al * *s1r + (1.f - *al) * *s2r;
+					*s1g = *al * *s1g + (1.f - *al) * *s2g;
+					*s1b = *al * *s1b + (1.f - *al) * *s2b;
+
+					al++, s1r++, s2r++, s1g++, s2g++, s1b++, s2b++;
+				}
+				for (int c = 0; c < 3; c++)
+				{
+					ss1f[c].convertTo(ss1[c], CV_8U);
+				}
+				merge(ss1, dest);
 			}
-			for (int i = 0; i < sizeRem; i++)
-			{
-				*s1r = *al * *s1r + (1.f - *al) * *s2r;
-				*s1g = *al * *s1g + (1.f - *al) * *s2g;
-				*s1b = *al * *s1b + (1.f - *al) * *s2b;
-
-				al++, s1r++, s2r++, s1g++, s2g++, s1b++, s2b++;
-			}
-			for (int c = 0; c < 3; c++)
-			{
-				ss1f[c].convertTo(ss1[c], CV_8U);
-			}
-			merge(ss1, dest);
-		}
 		}
 		else if (dest.channels() == 1)
 		{
@@ -408,7 +408,7 @@ namespace cp
 				}
 				for (int i = nn; i--;)
 				{
-					*s1r = *al * *s1r + (1.0f - *al)* *s2r;
+					*s1r = *al * *s1r + (1.0f - *al) * *s2r;
 					al++, s1r++, s2r++;
 				}
 				if (src1.depth() == CV_32F)
@@ -515,7 +515,7 @@ namespace cp
 		}
 		double minv, maxv;
 		minMaxLoc(src1, &minv, &maxv);
-		bool isNormirized = (maxv <= 1.0 &&minv >= 0.0) ? true : false;
+		bool isNormirized = (maxv <= 1.0 && minv >= 0.0) ? true : false;
 		Mat s1, s2;
 
 		if (src1.depth() == CV_8U || src1.depth() == CV_32F)
@@ -583,8 +583,116 @@ namespace cp
 		destroyWindow("alphaBlend");
 	}
 
-	void dissolveSlide(InputArray src1, InputArray src2, OutputArray dest, const double ratio, const int direction, const bool isBorderLine)
+	template <class T>
+	void setTrapezoidMaskH(Mat& src, double ratio, double slant_ratio, Point& start_pt, Point& end_pt)
 	{
+		const int offset = (int)((0.5 - ratio) * src.cols);
+		const int boundary = int(src.cols * slant_ratio);
+		float aspect = (float)(src.cols - 2 * boundary) / src.rows;
+		src.setTo(0);
+		for (int j = 0; j < src.rows; j++)
+		{
+			T* s = src.ptr<T>(j);
+			int v = (int)(j * aspect) + boundary + offset;
+			memset(s, 1, (sizeof(T) * min(src.cols, max(src.cols - v, 0))));
+		}
+
+		start_pt.x = src.cols - 1 - offset - boundary;
+		start_pt.y = 0;
+		end_pt.x = boundary - offset;
+		end_pt.y = src.rows - 1;
+	}
+
+	template <class T>
+	void setTrapezoidMaskV(Mat& src, double ratio, double slant_ratio, Point& start_pt, Point& end_pt)
+	{
+		const int offset = int((0.5 - ratio) * src.rows);
+
+		src.setTo(1);
+
+		if (slant_ratio < 0.5)
+		{
+			const int boundary = int(src.rows * slant_ratio);
+			float aspect = (float)(src.cols) / (src.rows - 2 * boundary);
+			int sty = offset + boundary;
+			int edy = src.rows + offset - boundary;
+
+			for (int j = sty; j < edy; j++)
+			{
+				if (j >= 0 && j < src.rows)
+				{
+					T* s = src.ptr<T>(j);
+					int v = min((int)((j - sty) * aspect), src.cols);
+					memset(s, 0, sizeof(T) * v);
+				}
+			}
+			for (int j = edy; j < src.rows; j++)
+			{
+				T* s = src.ptr<T>(j);
+				memset(s, 0, sizeof(T) * src.cols);
+			}
+			start_pt.x = 0;
+			start_pt.y = sty;
+			end_pt.x = src.cols - 1;
+			end_pt.y = edy;
+		}
+		else
+		{
+			const int boundary = int(src.rows * (1.0 - slant_ratio));
+			float aspect = (float)(src.cols) / (src.rows - 2 * boundary);
+			int sty = offset + boundary;
+			int edy = src.rows + offset - boundary;
+
+			for (int j = sty; j <= edy; j++)
+			{
+				if (j >= 1 && j < src.rows)
+				{
+					int v = max(0, min(src.cols, (int)((j - sty) * aspect)));
+					T* s = src.ptr<T>(j) - v;
+					memset(s, 0, sizeof(T) * v);
+				}
+			}
+			for (int j = edy; j < src.rows; j++)
+			{
+				T* s = src.ptr<T>(j);
+				memset(s, 0, sizeof(T) * src.cols);
+			}
+			start_pt.x = 0;
+			start_pt.y = edy;
+			end_pt.x = src.cols - 1;
+			end_pt.y = sty;
+		}
+	}
+
+	void dissolveSlideBlend(InputArray src1, InputArray src2, OutputArray dest, const double ratio, const double slant_ratio, const int direction, cv::Scalar line_color, const int line_thickness)
+	{
+		if (direction == 0)
+		{
+			if (ratio == 0.0)
+			{
+				src2.copyTo(dest);
+				return;
+			}
+			else if (ratio == 1.0)
+			{
+				src1.copyTo(dest);
+				return;
+			}
+		}
+		else if (direction == 1)
+		{
+			if (ratio == 0.0)
+			{
+				src1.copyTo(dest);
+				return;
+			}
+			else if (ratio == 1.0)
+			{
+				src2.copyTo(dest);
+				return;
+			}
+		}
+
 		CV_Assert(src1.size() == src2.size());
 		Mat s1;
 		Mat s2;
@@ -607,34 +715,42 @@ namespace cp
 
 		s2.copyTo(dest);
 
-		if (direction == 0)//v split
+		if (direction == 0)//vertical split
 		{
-			int w = cvRound(s1.cols*ratio);
-			Rect roi = Rect(0, 0, w, s1.rows);
-			Mat(s1(roi)).copyTo(dst(roi));
-
-			if (isBorderLine) line(dst, Point(w, 0), Point(w, s1.rows - 1), Scalar::all(255), 2);
+			Mat mask = Mat::zeros(s1.size(), CV_8U);
+			Point st;
+			Point ed;
+			setTrapezoidMaskH<uchar>(mask, ratio, slant_ratio, st, ed);
+			s2.copyTo(dst);
+			s1.copyTo(dst, mask);
+			if (line_thickness != 0) line(dst, st, ed, line_color, line_thickness);
 		}
-		else if (direction == 1)//h split
+		else if (direction == 1)//horizontal split
 		{
-			int h = cvRound(s1.rows*ratio);
-			Rect roi = Rect(0, 0, s1.cols, h);
-			Mat(s1(roi)).copyTo(dst(roi));
-			if (isBorderLine) line(dst, Point(0, h), Point(s1.cols - 1, h), Scalar::all(255), 2);
+			Mat mask = Mat::zeros(s1.size(), CV_8U);
+			Point st;
+			Point ed;
+			setTrapezoidMaskV<uchar>(mask, ratio, slant_ratio, st, ed);
+			s2.copyTo(dst);
+			s1.copyTo(dst, mask);
+			//cvtColor(mask, dst, COLOR_GRAY2BGR);
+			if (line_thickness != 0) line(dst, st, ed, line_color, line_thickness);
 		}
 	}
 
-	void guiDissolveSlide(InputArray src1, InputArray src2, string wname)
+	void guiDissolveSlideBlend(InputArray src1, InputArray src2, string wname)
 	{
 		namedWindow(wname);
-		bool isBorderLine = true;
+		static bool isBorderLine = true;
 		static int a = 50; createTrackbar("ratio", wname, &a, 100);
-		static int direction = 0; createTrackbar("direction", wname, &direction, 1);
+		static int sa = 30; createTrackbar("slant_ratio", wname, &sa, 100);
+		static int direction = 1; createTrackbar("direction", wname, &direction, 1);
+		static int line_width = 2; createTrackbar("line_width", wname, &line_width, 20);
 		int key = 0;
 		Mat show;
 		while (key != 'q')
 		{
-			dissolveSlide(src1, src2, show, a / 100.0, direction, isBorderLine);
+			dissolveSlideBlend(src1, src2, show, a / 100.0, sa / 100.0, direction, Scalar::all(255), line_width);
 			imshow(wname, show);
 			key = waitKey(1);
 
