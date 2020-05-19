@@ -4,7 +4,7 @@
 #include "binalyWeightedRangeFilter.hpp"
 #include "minmaxfilter.hpp"
 #include "shiftImage.hpp"
-#include "alphaBlend.hpp"
+#include "blend.hpp"
 #include "metrics.hpp"
 #include "draw.hpp"
 

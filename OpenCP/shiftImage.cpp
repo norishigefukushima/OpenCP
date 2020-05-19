@@ -1,5 +1,5 @@
 #include "shiftImage.hpp"
-#include "alphaBlend.hpp"
+#include "blend.hpp"
 #include "matinfo.hpp"
 
 using namespace std;

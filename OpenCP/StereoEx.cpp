@@ -6,7 +6,7 @@
 #include "noise.hpp"
 #include "stat.hpp"
 #include "timer.hpp"
-#include "alphaBlend.hpp"
+#include "blend.hpp"
 #include "inlineSIMDfunctions.hpp"
 using namespace std;
 using namespace cv;

@@ -2,7 +2,7 @@
 #include "bilateralFilter.hpp"
 #include "jointBilateralFilter.hpp"
 #include "color.hpp"
-#include "alphaBlend.hpp"
+#include "blend.hpp"
 #include "filterCore.h"
 
 using namespace std;

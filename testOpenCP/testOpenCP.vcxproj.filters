@@ -42,9 +42,6 @@
     <ClCompile Include="colorCorrectionTest.cpp">
       <Filter>ソース ファイル\test</Filter>
     </ClCompile>
-    <ClCompile Include="alphaBlendTest.cpp">
-      <Filter>ソース ファイル\test</Filter>
-    </ClCompile>
     <ClCompile Include="guiStereoTest.cpp">
       <Filter>ソース ファイル\test</Filter>
     </ClCompile>
@@ -121,6 +118,9 @@
       <Filter>ソース ファイル\test</Filter>
     </ClCompile>
     <ClCompile Include="testHistogram.cpp">
+      <Filter>ソース ファイル\test</Filter>
+    </ClCompile>
+    <ClCompile Include="guiBlendTest.cpp">
       <Filter>ソース ファイル\test</Filter>
     </ClCompile>
   </ItemGroup>

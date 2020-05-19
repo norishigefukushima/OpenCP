@@ -102,9 +102,6 @@
     <ClCompile Include="timer.cpp">
       <Filter>ソース ファイル\utilty functions</Filter>
     </ClCompile>
-    <ClCompile Include="alphaBlend.cpp">
-      <Filter>ソース ファイル\imgproc</Filter>
-    </ClCompile>
     <ClCompile Include="stat.cpp">
       <Filter>ソース ファイル\utilty functions</Filter>
     </ClCompile>
@@ -531,6 +528,9 @@
     <ClCompile Include="count.cpp">
       <Filter>ソース ファイル\utilty functions</Filter>
     </ClCompile>
+    <ClCompile Include="blend.cpp">
+      <Filter>ソース ファイル\imgproc</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libGaussian\gaussian_conv.h">
@@ -628,9 +628,6 @@
     </ClInclude>
     <ClInclude Include="..\include\Wiener2.hpp">
       <Filter>ヘッダー ファイル\headers\filter</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\alphaBlend.hpp">
-      <Filter>ヘッダー ファイル\headers\imgproc</Filter>
     </ClInclude>
     <ClInclude Include="..\include\color.hpp">
       <Filter>ヘッダー ファイル\headers\imgproc</Filter>
@@ -940,6 +937,9 @@
     </ClInclude>
     <ClInclude Include="debugcp.hpp">
       <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\blend.hpp">
+      <Filter>ヘッダー ファイル\headers\imgproc</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

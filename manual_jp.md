@@ -5,6 +5,13 @@ Reference Manual
 福嶋が更新するのを期待して待っても，ほぼ更新されません．
 （バグを発見したときについでに更新するくらい）
 
+# blend.hpp
+* [alphaBlend](blend_jp.md "#alphaBlend")
+* [guiAlphaBlend](blend_jp.md "#guiAlphaBlend")
+* [dissolveSlideBlend](blend_jp.md "#dissolveSlideBlend")
+* [guiDissolveSlideBlend](blend_jp.md "#guiDissolveSlideBlend")
+
+ 
 # Metrics.hpp
 画質評価関数群
  * [getPSNR](metrics_jp.md "#getPSNR")

@@ -1,7 +1,7 @@
 #include "opticalFlow.hpp"
 #include "minmaxfilter.hpp"
 #include "shiftImage.hpp"
-#include "alphaBlend.hpp"
+#include "blend.hpp"
 #include <opencv2/optflow.hpp>
 
 using namespace std;

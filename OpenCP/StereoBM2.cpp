@@ -46,7 +46,7 @@
 #include "StereoBM2.hpp"
 #include "depthfilter.hpp"
 #include "timer.hpp"
-#include "alphaBlend.hpp"
+#include "blend.hpp"
 using namespace cv;
 using namespace std;
 

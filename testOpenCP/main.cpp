@@ -126,11 +126,11 @@ int main(int argc, char** argv)
 
 	//Mat right = imread("left.png");
 	//Mat left = imread("right.png");
-	//guiPatchBlend(right, left);
 	
 	Mat left = imread("img/stereo/Dolls/view1.png");
 	Mat right = imread("img/stereo/Dolls/view5.png");
-	guiDissolveSlideBlend(right, left);
+	testAlphaBlend(left, right);
+	//testAlphaBlendMask(left, right);
 	//Mat dmap = imread("img/stereo/Dolls/disp1.png", 0);
 	//Mat img = imread("img/lenna.png");
 	Mat img = imread("img/Kodak/kodim07.png",0);	

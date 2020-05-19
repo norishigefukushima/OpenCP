@@ -1,5 +1,5 @@
 #include "imagediff.hpp"
-#include "alphaBlend.hpp"
+#include "blend.hpp"
 using namespace cv;
 using namespace std;
 

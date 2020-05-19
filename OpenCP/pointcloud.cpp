@@ -3,7 +3,7 @@
 #include "depthfilter.hpp"
 #include "depth2disparity.hpp"
 #include "timer.hpp"
-#include "alphaBlend.hpp"
+#include "blend.hpp"
 using namespace std;
 using namespace cv;
 

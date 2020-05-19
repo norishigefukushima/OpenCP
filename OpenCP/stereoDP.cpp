@@ -55,7 +55,7 @@ O(pixPerRow*log(pixPerRow)*maxDisparity) in the above paper.
 #include "stereoDP.hpp"
 #include "depthfilter.hpp"
 #include "timer.hpp"
-#include "alphaBlend.hpp"
+#include "blend.hpp"
 #include "shiftImage.hpp"
 
 using namespace std;

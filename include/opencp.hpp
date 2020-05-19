@@ -45,7 +45,7 @@
 /*************************************************************
  imgproc
 *************************************************************/
-#include "alphaBlend.hpp"
+#include "blend.hpp"
 #include "color.hpp"
 #include "detailEnhancement.hpp"
 #include "diffPixel.hpp"

@@ -10,7 +10,7 @@
 #include "timer.hpp"
 #include "consoleImage.hpp"
 #include "shiftImage.hpp"
-#include "alphaBlend.hpp"
+#include "blend.hpp"
 using namespace std;
 using namespace cv;
 

@@ -186,7 +186,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="adaptiveManifold.cpp" />
-    <ClCompile Include="alphaBlend.cpp" />
+    <ClCompile Include="blend.cpp" />
     <ClCompile Include="arithmetic.cpp" />
     <ClCompile Include="bilateralFilter.cpp" />
     <ClCompile Include="binalyWeightedRangeFilter.cpp" />
@@ -336,7 +336,7 @@
     <ClCompile Include="crop.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\include\alphaBlend.hpp" />
+    <ClInclude Include="..\include\blend.hpp" />
     <ClInclude Include="..\include\arithmetic.hpp" />
     <ClInclude Include="..\include\bilateralFilter.hpp" />
     <ClInclude Include="..\include\binalyWeightedRangeFilter.hpp" />

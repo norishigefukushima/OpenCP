@@ -1,6 +1,6 @@
 #include "jointDualBilateralFilter.hpp"
 #include "color.hpp"
-#include "alphaBlend.hpp"
+#include "blend.hpp"
 using namespace std;
 using namespace cv;
 
