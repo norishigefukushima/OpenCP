@@ -47,8 +47,8 @@ void dissolveSlideBlend(cv::InputArray src1, cv::InputArray src2, cv::OutputArra
 dissolveSlideBlend(img1, img2, 0.5, 0.5)
 ```
 
-`ratio`で分割位置を0~1で表します（0.5が中央）．  
-`slant_ratio`で分割の傾き位置を0~1で表します（0.5が傾き無し）．  
+`ratio`で分割位置を0.0から1.0で表します（0.5が中央）．  
+`slant_ratio`で分割の傾き位置を0.0から1.0で表します（0.5が傾き無し）．  
 `direction`が0で縦分割，1で横分割．  
 `line_color`は，線分の色．  
 `line_thickness`は線の太さで，0の場合は線無しになる．  
