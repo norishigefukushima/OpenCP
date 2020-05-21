@@ -6,12 +6,12 @@ Reference Manual
 （バグを発見したときについでに更新するくらい）
 
 # blend.hpp
+2枚の画像の合成関数群
 * [alphaBlend](blend_jp.md "#alphaBlend")
 * [guiAlphaBlend](blend_jp.md "#guiAlphaBlend")
 * [dissolveSlideBlend](blend_jp.md "#dissolveSlideBlend")
 * [guiDissolveSlideBlend](blend_jp.md "#guiDissolveSlideBlend")
 
- 
 # Metrics.hpp
 画質評価関数群
  * [getPSNR](metrics_jp.md "#getPSNR")
@@ -67,7 +67,6 @@ Optimization
 * Stat
 * UpdateCheck
 * matInfo
-* alphaBlend
 * diff
 * Plot
 * noise
