@@ -149,7 +149,7 @@ namespace cp
 				s1 = src1.getMat();
 			}
 			s1.convertTo(s1, depth);
-			s1.convertTo(s2, depth);
+			s2.convertTo(s2, depth);
 		}
 
 		dest.create(src1.size(), CV_MAKETYPE(depth, channel));
