@@ -52,7 +52,7 @@ namespace cp
 			double src = data[i].x;
 			double dest = data[i].y;
 
-			cv::Point p = Point(cvRound(x*(src - xmin)), H - cvRound(y*(dest - ymin)));
+			cv::Point p = Point(cvRound(x * (src - xmin)), H - cvRound(y * (dest - ymin)));
 
 			if (isLine == Plot::LINE_NONE)
 			{
@@ -64,7 +64,7 @@ namespace cp
 				{
 					double nsrc = data[i + 1].x;
 					double ndest = data[i + 1].y;
-					line(graph, p, Point(cvRound(x*(nsrc - xmin)), H - cvRound(y*(ndest - ymin))),
+					line(graph, p, Point(cvRound(x * (nsrc - xmin)), H - cvRound(y * (ndest - ymin))),
 						color, thickness);
 				}
 			}
@@ -74,8 +74,8 @@ namespace cp
 				{
 					double nsrc = data[i + 1].x;
 					double ndest = data[i + 1].x;
-					line(graph, p, Point(cvRound(x*(nsrc - xmin)), p.y), color, thickness);
-					line(graph, Point(cvRound(x*(nsrc - xmin)), p.y), Point(cvRound(x*(nsrc - xmin)), H - cvRound(y*(ndest - ymin))), color, thickness);
+					line(graph, p, Point(cvRound(x * (nsrc - xmin)), p.y), color, thickness);
+					line(graph, Point(cvRound(x * (nsrc - xmin)), p.y), Point(cvRound(x * (nsrc - xmin)), H - cvRound(y * (ndest - ymin))), color, thickness);
 				}
 			}
 			else if (isLine == Plot::LINE_V2H)
@@ -84,8 +84,8 @@ namespace cp
 				{
 					double nsrc = data[i + 1].x;
 					double ndest = data[i + 1].x;
-					line(graph, p, Point(p.x, H - cvRound(y*(ndest - ymin))), color, thickness);
-					line(graph, Point(p.x, H - cvRound(y*(ndest - ymin))), Point(cvRound(x*(nsrc - xmin)), H - cvRound(y*(ndest - ymin))), color, thickness);
+					line(graph, p, Point(p.x, H - cvRound(y * (ndest - ymin))), color, thickness);
+					line(graph, Point(p.x, H - cvRound(y * (ndest - ymin))), Point(cvRound(x * (nsrc - xmin)), H - cvRound(y * (ndest - ymin))), color, thickness);
 				}
 			}
 
@@ -248,12 +248,12 @@ namespace cp
 
 		for (int i = 0; i < pinfo.size(); i++)
 		{
-			pinfo[i].symbolType = s[i%s.size()];
+			pinfo[i].symbolType = s[i % s.size()];
 			pinfo[i].lineType = Plot::LINE_LINEAR;
 			pinfo[i].thickness = 1;
 
 			double v = (double)i / DefaultPlotInfoSize * 255.0;
-			pinfo[i].color = c[i%c.size()];
+			pinfo[i].color = c[i % c.size()];
 
 			pinfo[i].keyname = format("data %02d", i);
 		}
@@ -297,10 +297,10 @@ namespace cp
 
 	void Plot::recomputeXRangeMAXMIN(bool isCenter, double marginrate)
 	{
-		if (marginrate<0.0 || marginrate>1.0)marginrate = 1.0;
+		if (marginrate < 0.0 || marginrate>1.0)marginrate = 1.0;
 		xmax = -DBL_MAX;
 		xmin = DBL_MAX;
-		
+
 		for (int i = 0; i < data_max; i++)
 		{
 			for (int j = 0; j < pinfo[i].data.size(); j++)
@@ -313,7 +313,7 @@ namespace cp
 		xmax_no_margin = xmax;
 		xmin_no_margin = xmin;
 
-		double xmargin = (xmax - xmin)*(1.0 - marginrate)*0.5;
+		double xmargin = (xmax - xmin) * (1.0 - marginrate) * 0.5;
 		xmax += xmargin;
 		xmin -= xmargin;
 
@@ -324,7 +324,7 @@ namespace cp
 
 			xmax = xxx;
 			xmin = -xxx;
-			
+
 			xxx = abs(xmax_no_margin);
 			xxx = (xxx < abs(xmin_no_margin)) ? abs(xmin_no_margin) : xxx;
 
@@ -335,8 +335,8 @@ namespace cp
 
 	void Plot::recomputeYRangeMAXMIN(bool isCenter, double marginrate)
 	{
-		if (marginrate<0.0 || marginrate>1.0)marginrate = 1.0;
-		
+		if (marginrate < 0.0 || marginrate>1.0)marginrate = 1.0;
+
 		ymax = -DBL_MAX;
 		ymin = DBL_MAX;
 
@@ -352,7 +352,7 @@ namespace cp
 		ymax_no_margin = ymax;
 		ymin_no_margin = ymin;
 
-		double ymargin = (ymax - ymin)*(1.0 - marginrate)*0.5;
+		double ymargin = (ymax - ymin) * (1.0 - marginrate) * 0.5;
 		ymax += ymargin;
 		ymin -= ymargin;
 
@@ -374,7 +374,7 @@ namespace cp
 
 	void Plot::recomputeXYRangeMAXMIN(bool isCenter, double marginrate)
 	{
-		if (marginrate<0.0 || marginrate>1.0)marginrate = 1.0;
+		if (marginrate < 0.0 || marginrate>1.0)marginrate = 1.0;
 		xmax = -DBL_MAX;
 		xmin = DBL_MAX;
 		ymax = -DBL_MAX;
@@ -397,11 +397,11 @@ namespace cp
 		ymax_no_margin = ymax;
 		ymin_no_margin = ymin;
 
-		double xmargin = (xmax - xmin)*(1.0 - marginrate)*0.5;
+		double xmargin = (xmax - xmin) * (1.0 - marginrate) * 0.5;
 		xmax += xmargin;
 		xmin -= xmargin;
 
-		double ymargin = (ymax - ymin)*(1.0 - marginrate)*0.5;
+		double ymargin = (ymax - ymin) * (1.0 - marginrate) * 0.5;
 		ymax += ymargin;
 		ymin -= ymargin;
 
@@ -488,6 +488,11 @@ namespace cp
 	void Plot::setPlotKeyName(int plotnum, string name)
 	{
 		pinfo[plotnum].keyname = name;
+	}
+
+	void Plot::setPlotForeground(int plotnum)
+	{
+		foregroundIndex = plotnum;
 	}
 
 	void Plot::setPlot(int plotnum, Scalar color, int symboltype, int linetype, int thickness)
@@ -589,7 +594,7 @@ namespace cp
 	{
 		Mat src = src_.getMat();
 		CV_Assert(src.depth() == CV_8U);
-		
+
 
 		vector<Point> v;
 		const int ch = src.channels();
@@ -600,7 +605,7 @@ namespace cp
 				bool flag = false;
 				for (int c = 0; c < ch; c++)
 				{
-					if (src.at<uchar>(j, ch*i + c) != 0)
+					if (src.at<uchar>(j, ch * i + c) != 0)
 					{
 						flag = true;
 					}
@@ -608,7 +613,7 @@ namespace cp
 				if (flag) v.push_back(Point(i, j));
 			}
 		}
-		
+
 		Rect r = boundingRect(v);
 		src(r).copyTo(dest);
 	}
@@ -630,47 +635,47 @@ namespace cp
 			label.setTo(0);
 			cv::addText(label, ylabel, Point(0, 100), font, fontSize, COLOR_WHITE);
 			boundingRectImage(label, labelyimage);
-			
+
 			//putText(render, xlabel, Point(render.cols / 2, (int)(origin.y*1.85 + plotImage.rows)), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_BLACK);
 			//cv::addText(render, xlabel, Point(render.cols / 2, (int)(origin.y*1.85 + plotImage.rows)), font, fontSize, COLOR_BLACK);
-		
-			Mat(~labelximage).copyTo(render(Rect(render.cols / 2 - labelximage.cols / 2, (int)(origin.y*1.85 + plotImage.rows - 20), labelximage.cols, labelximage.rows)));
+
+			Mat(~labelximage).copyTo(render(Rect(render.cols / 2 - labelximage.cols / 2, (int)(origin.y * 1.85 + plotImage.rows - 20), labelximage.cols, labelximage.rows)));
 
 			labelyimage = labelyimage.t();
 			flip(labelyimage, labelyimage, 0);
 			//putText(render, ylabel, Point(20, (int)(origin.y*0.25 + plotImage.rows / 2)), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_BLACK);
 			//cv::addText(render, ylabel, Point(20, (int)(origin.y*0.25 + plotImage.rows / 2)), font, fontSize, COLOR_BLACK);
-			Mat(~labelyimage).copyTo(render(Rect(20, (int)(origin.y*0.25 + plotImage.rows / 2 - labelyimage.rows/2), labelyimage.cols, labelyimage.rows)));
+			Mat(~labelyimage).copyTo(render(Rect(20, (int)(origin.y * 0.25 + plotImage.rows / 2 - labelyimage.rows / 2), labelyimage.cols, labelyimage.rows)));
 
 			string buff;
 			//x coordinate
 			buff = format("%.2f", xmin);
-			cv::addText(render, buff, Point(origin.x+ 30, (int)(origin.y*1.35 + plotImage.rows)), font, fontSize2, COLOR_BLACK);
+			cv::addText(render, buff, Point(origin.x + 30, (int)(origin.y * 1.35 + plotImage.rows)), font, fontSize2, COLOR_BLACK);
 
-			buff = format("%.2f", (xmax - xmin)*0.25 + xmin);
-			cv::addText(render, buff, Point((int)(origin.x + plotImage.cols*0.25 + 40), (int)(origin.y*1.35 + plotImage.rows)), font, fontSize2, COLOR_BLACK);
+			buff = format("%.2f", (xmax - xmin) * 0.25 + xmin);
+			cv::addText(render, buff, Point((int)(origin.x + plotImage.cols * 0.25 + 40), (int)(origin.y * 1.35 + plotImage.rows)), font, fontSize2, COLOR_BLACK);
 
-			buff = format("%.2f", (xmax - xmin)*0.5 + xmin);
-			cv::addText(render, buff, Point((int)(origin.x + plotImage.cols*0.5 + 45), (int)(origin.y*1.35 + plotImage.rows)), font, fontSize2, COLOR_BLACK);
+			buff = format("%.2f", (xmax - xmin) * 0.5 + xmin);
+			cv::addText(render, buff, Point((int)(origin.x + plotImage.cols * 0.5 + 45), (int)(origin.y * 1.35 + plotImage.rows)), font, fontSize2, COLOR_BLACK);
 
-			buff = format("%.2f", (xmax - xmin)*0.75 + xmin);
-			cv::addText(render, buff, Point((int)(origin.x + plotImage.cols*0.75 + 45), (int)(origin.y*1.35 + plotImage.rows)), font, fontSize2, COLOR_BLACK);
+			buff = format("%.2f", (xmax - xmin) * 0.75 + xmin);
+			cv::addText(render, buff, Point((int)(origin.x + plotImage.cols * 0.75 + 45), (int)(origin.y * 1.35 + plotImage.rows)), font, fontSize2, COLOR_BLACK);
 
 			buff = format("%.2f", xmax);
-			cv::addText(render, buff, Point(origin.x + plotImage.cols + 30, (int)(origin.y*1.35 + plotImage.rows)), font, fontSize2, COLOR_BLACK);
+			cv::addText(render, buff, Point(origin.x + plotImage.cols + 30, (int)(origin.y * 1.35 + plotImage.rows)), font, fontSize2, COLOR_BLACK);
 
 			//y coordinate
 			buff = format("%.2f", ymin);
-			cv::addText(render, buff, Point(origin.x, (int)(origin.y*1.0 + plotImage.rows)), font, fontSize2, COLOR_BLACK);
+			cv::addText(render, buff, Point(origin.x, (int)(origin.y * 1.0 + plotImage.rows)), font, fontSize2, COLOR_BLACK);
 
-			buff = format("%.2f", (ymax - ymin)*0.5 + ymin);
-			cv::addText(render, buff, Point(origin.x, (int)(origin.y*1.0 + plotImage.rows*0.5)), font, fontSize2, COLOR_BLACK);
+			buff = format("%.2f", (ymax - ymin) * 0.5 + ymin);
+			cv::addText(render, buff, Point(origin.x, (int)(origin.y * 1.0 + plotImage.rows * 0.5)), font, fontSize2, COLOR_BLACK);
 
-			buff = format("%.2f", (ymax - ymin)*0.25 + ymin);
-			cv::addText(render, buff, Point(origin.x, (int)(origin.y*1.0 + plotImage.rows*0.75)), font, fontSize2, COLOR_BLACK);
+			buff = format("%.2f", (ymax - ymin) * 0.25 + ymin);
+			cv::addText(render, buff, Point(origin.x, (int)(origin.y * 1.0 + plotImage.rows * 0.75)), font, fontSize2, COLOR_BLACK);
 
-			buff = format("%.2f", (ymax - ymin)*0.75 + ymin);
-			cv::addText(render, buff, Point(origin.x, (int)(origin.y*1.0 + plotImage.rows*0.25)), font, fontSize2, COLOR_BLACK);
+			buff = format("%.2f", (ymax - ymin) * 0.75 + ymin);
+			cv::addText(render, buff, Point(origin.x, (int)(origin.y * 1.0 + plotImage.rows * 0.25)), font, fontSize2, COLOR_BLACK);
 
 			buff = format("%.2f", ymax);
 			cv::addText(render, buff, Point(origin.x, origin.y), font, fontSize2, COLOR_BLACK);
@@ -698,32 +703,32 @@ namespace cp
 		}
 		if (level > 1)
 		{
-			plotPoint(Point2d((xmax - xmin)*1.0 / 4.0 + xmin, (ymax - ymin)*1.0 / 4.0 + ymin), COLOR_GRAY200, 1);
-			plotPoint(Point2d((xmax - xmin)*3.0 / 4.0 + xmin, (ymax - ymin)*1.0 / 4.0 + ymin), COLOR_GRAY200, 1);
-			plotPoint(Point2d((xmax - xmin)*1.0 / 4.0 + xmin, (ymax - ymin)*3.0 / 4.0 + ymin), COLOR_GRAY200, 1);
-			plotPoint(Point2d((xmax - xmin)*3.0 / 4.0 + xmin, (ymax - ymin)*3.0 / 4.0 + ymin), COLOR_GRAY200, 1);
+			plotPoint(Point2d((xmax - xmin) * 1.0 / 4.0 + xmin, (ymax - ymin) * 1.0 / 4.0 + ymin), COLOR_GRAY200, 1);
+			plotPoint(Point2d((xmax - xmin) * 3.0 / 4.0 + xmin, (ymax - ymin) * 1.0 / 4.0 + ymin), COLOR_GRAY200, 1);
+			plotPoint(Point2d((xmax - xmin) * 1.0 / 4.0 + xmin, (ymax - ymin) * 3.0 / 4.0 + ymin), COLOR_GRAY200, 1);
+			plotPoint(Point2d((xmax - xmin) * 3.0 / 4.0 + xmin, (ymax - ymin) * 3.0 / 4.0 + ymin), COLOR_GRAY200, 1);
 		}
 		if (level > 2)
 		{
-			plotPoint(Point2d((xmax - xmin)*1.0 / 8.0 + xmin, (ymax - ymin)*1.0 / 8.0 + ymin), COLOR_GRAY200, 1);
-			plotPoint(Point2d((xmax - xmin)*3.0 / 8.0 + xmin, (ymax - ymin)*1.0 / 8.0 + ymin), COLOR_GRAY200, 1);
-			plotPoint(Point2d((xmax - xmin)*1.0 / 8.0 + xmin, (ymax - ymin)*3.0 / 8.0 + ymin), COLOR_GRAY200, 1);
-			plotPoint(Point2d((xmax - xmin)*3.0 / 8.0 + xmin, (ymax - ymin)*3.0 / 8.0 + ymin), COLOR_GRAY200, 1);
+			plotPoint(Point2d((xmax - xmin) * 1.0 / 8.0 + xmin, (ymax - ymin) * 1.0 / 8.0 + ymin), COLOR_GRAY200, 1);
+			plotPoint(Point2d((xmax - xmin) * 3.0 / 8.0 + xmin, (ymax - ymin) * 1.0 / 8.0 + ymin), COLOR_GRAY200, 1);
+			plotPoint(Point2d((xmax - xmin) * 1.0 / 8.0 + xmin, (ymax - ymin) * 3.0 / 8.0 + ymin), COLOR_GRAY200, 1);
+			plotPoint(Point2d((xmax - xmin) * 3.0 / 8.0 + xmin, (ymax - ymin) * 3.0 / 8.0 + ymin), COLOR_GRAY200, 1);
 
-			plotPoint(Point2d((xmax - xmin)*(1.0 / 8.0 + 0.5) + xmin, (ymax - ymin)*1.0 / 8.0 + ymin), COLOR_GRAY200, 1);
-			plotPoint(Point2d((xmax - xmin)*(3.0 / 8.0 + 0.5) + xmin, (ymax - ymin)*1.0 / 8.0 + ymin), COLOR_GRAY200, 1);
-			plotPoint(Point2d((xmax - xmin)*(1.0 / 8.0 + 0.5) + xmin, (ymax - ymin)*3.0 / 8.0 + ymin), COLOR_GRAY200, 1);
-			plotPoint(Point2d((xmax - xmin)*(3.0 / 8.0 + 0.5) + xmin, (ymax - ymin)*3.0 / 8.0 + ymin), COLOR_GRAY200, 1);
+			plotPoint(Point2d((xmax - xmin) * (1.0 / 8.0 + 0.5) + xmin, (ymax - ymin) * 1.0 / 8.0 + ymin), COLOR_GRAY200, 1);
+			plotPoint(Point2d((xmax - xmin) * (3.0 / 8.0 + 0.5) + xmin, (ymax - ymin) * 1.0 / 8.0 + ymin), COLOR_GRAY200, 1);
+			plotPoint(Point2d((xmax - xmin) * (1.0 / 8.0 + 0.5) + xmin, (ymax - ymin) * 3.0 / 8.0 + ymin), COLOR_GRAY200, 1);
+			plotPoint(Point2d((xmax - xmin) * (3.0 / 8.0 + 0.5) + xmin, (ymax - ymin) * 3.0 / 8.0 + ymin), COLOR_GRAY200, 1);
 
-			plotPoint(Point2d((xmax - xmin)*(1.0 / 8.0 + 0.5) + xmin, (ymax - ymin)*(1.0 / 8.0 + 0.5) + ymin), COLOR_GRAY200, 1);
-			plotPoint(Point2d((xmax - xmin)*(3.0 / 8.0 + 0.5) + xmin, (ymax - ymin)*(1.0 / 8.0 + 0.5) + ymin), COLOR_GRAY200, 1);
-			plotPoint(Point2d((xmax - xmin)*(1.0 / 8.0 + 0.5) + xmin, (ymax - ymin)*(3.0 / 8.0 + 0.5) + ymin), COLOR_GRAY200, 1);
-			plotPoint(Point2d((xmax - xmin)*(3.0 / 8.0 + 0.5) + xmin, (ymax - ymin)*(3.0 / 8.0 + 0.5) + ymin), COLOR_GRAY200, 1);
+			plotPoint(Point2d((xmax - xmin) * (1.0 / 8.0 + 0.5) + xmin, (ymax - ymin) * (1.0 / 8.0 + 0.5) + ymin), COLOR_GRAY200, 1);
+			plotPoint(Point2d((xmax - xmin) * (3.0 / 8.0 + 0.5) + xmin, (ymax - ymin) * (1.0 / 8.0 + 0.5) + ymin), COLOR_GRAY200, 1);
+			plotPoint(Point2d((xmax - xmin) * (1.0 / 8.0 + 0.5) + xmin, (ymax - ymin) * (3.0 / 8.0 + 0.5) + ymin), COLOR_GRAY200, 1);
+			plotPoint(Point2d((xmax - xmin) * (3.0 / 8.0 + 0.5) + xmin, (ymax - ymin) * (3.0 / 8.0 + 0.5) + ymin), COLOR_GRAY200, 1);
 
-			plotPoint(Point2d((xmax - xmin)*(1.0 / 8.0) + xmin, (ymax - ymin)*(1.0 / 8.0 + 0.5) + ymin), COLOR_GRAY200, 1);
-			plotPoint(Point2d((xmax - xmin)*(3.0 / 8.0) + xmin, (ymax - ymin)*(1.0 / 8.0 + 0.5) + ymin), COLOR_GRAY200, 1);
-			plotPoint(Point2d((xmax - xmin)*(1.0 / 8.0) + xmin, (ymax - ymin)*(3.0 / 8.0 + 0.5) + ymin), COLOR_GRAY200, 1);
-			plotPoint(Point2d((xmax - xmin)*(3.0 / 8.0) + xmin, (ymax - ymin)*(3.0 / 8.0 + 0.5) + ymin), COLOR_GRAY200, 1);
+			plotPoint(Point2d((xmax - xmin) * (1.0 / 8.0) + xmin, (ymax - ymin) * (1.0 / 8.0 + 0.5) + ymin), COLOR_GRAY200, 1);
+			plotPoint(Point2d((xmax - xmin) * (3.0 / 8.0) + xmin, (ymax - ymin) * (1.0 / 8.0 + 0.5) + ymin), COLOR_GRAY200, 1);
+			plotPoint(Point2d((xmax - xmin) * (1.0 / 8.0) + xmin, (ymax - ymin) * (3.0 / 8.0 + 0.5) + ymin), COLOR_GRAY200, 1);
+			plotPoint(Point2d((xmax - xmin) * (3.0 / 8.0) + xmin, (ymax - ymin) * (3.0 / 8.0 + 0.5) + ymin), COLOR_GRAY200, 1);
 		}
 	}
 
@@ -733,7 +738,7 @@ namespace cp
 		keyImage.create(Size(256, step * (num + 1) + 3), CV_8UC3);
 		keyImage.setTo(background_color);
 
-		int height = (int)(0.8*keyImage.rows);
+		int height = (int)(0.8 * keyImage.rows);
 		for (int i = 0; i < num; i++)
 		{
 			vector<Point2d> data;
@@ -742,7 +747,22 @@ namespace cp
 
 			plotGraph(keyImage, data, 0, keyImage.cols, 0, keyImage.rows, pinfo[i].color, pinfo[i].symbolType, pinfo[i].lineType, pinfo[i].thickness);
 			//putText(keyImage, pinfo[i].keyname, Point(0, (i + 1) * step + 3), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, pinfo[i].color);
-			cv::addText(keyImage, pinfo[i].keyname, Point(0, (i + 1) * step + 3), font, fontSize, pinfo[i].color);
+			if (foregroundIndex != 0)
+			{
+				if (foregroundIndex == i + 1)
+				{
+					cv::addText(keyImage, "*" + pinfo[i].keyname, Point(0, (i + 1) * step + 3), font, fontSize + 2, pinfo[i].color);
+				}
+				else
+				{
+					cv::addText(keyImage, pinfo[i].keyname, Point(0, (i + 1) * step + 3), font, fontSize, pinfo[i].color);
+				}
+			}
+			else
+			{
+				cv::addText(keyImage, pinfo[i].keyname, Point(0, (i + 1) * step + 3), font, fontSize, pinfo[i].color);
+			}
+
 		}
 	}
 
@@ -753,9 +773,23 @@ namespace cp
 
 		if (isZeroCross)	plotPoint(Point2d(0.0, 0.0), COLOR_ORANGE, 1);
 
-		for (int i = 0; i < data_max; i++)
+		if (foregroundIndex == 0)
 		{
-			plotGraph(plotImage, pinfo[i].data, xmin, xmax, ymin, ymax, pinfo[i].color, pinfo[i].symbolType, pinfo[i].lineType, pinfo[i].thickness);
+			for (int i = 0; i < data_max; i++)
+			{
+				plotGraph(plotImage, pinfo[i].data, xmin, xmax, ymin, ymax, pinfo[i].color, pinfo[i].symbolType, pinfo[i].lineType, pinfo[i].thickness);
+			}
+		}
+		else
+		{
+			for (int i = 0; i < data_max; i++)
+			{
+				if (i + 1 != foregroundIndex)
+				{
+					plotGraph(plotImage, pinfo[i].data, xmin, xmax, ymin, ymax, pinfo[i].color, pinfo[i].symbolType, pinfo[i].lineType, pinfo[i].thickness);
+				}
+			}
+			plotGraph(plotImage, pinfo[foregroundIndex - 1].data, xmin, xmax, ymin, ymax, pinfo[foregroundIndex - 1].color, pinfo[foregroundIndex - 1].symbolType, pinfo[foregroundIndex - 1].lineType, pinfo[foregroundIndex - 1].thickness);
 		}
 		makeBB(true);
 
@@ -840,7 +874,7 @@ namespace cp
 		{//g
 			uchar lr[256];
 			for (int i = 0; i < 64; i++)
-				lr[i] = cvRound(d*i);
+				lr[i] = cvRound(d * i);
 			for (int i = 64; i < 192; i++)
 				lr[i] = 255;
 			for (int i = 192; i < 256; i++)
@@ -853,7 +887,7 @@ namespace cp
 			for (int i = 0; i < 128; i++)
 				lr[i] = 0;
 			for (int i = 128; i < 192; i++)
-				lr[i] = cvRound(d*(i - 128));
+				lr[i] = cvRound(d * (i - 128));
 			for (int i = 192; i < 256; i++)
 				lr[i] = 255;
 
@@ -1294,8 +1328,8 @@ namespace cp
 
 				const float div = 1.f / pz;
 
-				dst->x = (f00*px + xc * pz) * div;
-				dst->y = (f11*py + yc * pz) * div;
+				dst->x = (f00 * px + xc * pz) * div;
+				dst->y = (f11 * py + yc * pz) * div;
 
 				data += 3;
 				dst++;
@@ -1378,8 +1412,8 @@ namespace cp
 
 				const float div = 1.f / pz;
 
-				dst->x = (f00*px + xc * pz) * div;
-				dst->y = (f11*py + yc * pz) * div;
+				dst->x = (f00 * px + xc * pz) * div;
+				dst->y = (f11 * py + yc * pz) * div;
 
 				data += 3;
 				dst++;
@@ -1517,7 +1551,7 @@ namespace cp
 		static int pitch = 90; createTrackbar("pitch", wname, &pitch, 360);
 		static int roll = 0; createTrackbar("roll", wname, &roll, 180);
 		static int yaw = 90; createTrackbar("yaw", wname, &yaw, 360);
-		static Point ptMouse = Point(cvRound((size.width - 1)*0.75), cvRound((size.height - 1)*0.25));
+		static Point ptMouse = Point(cvRound((size.width - 1) * 0.75), cvRound((size.height - 1) * 0.25));
 
 		cv::setMouseCallback(wname, (MouseCallback)onMouseHistogram3D, (void*)&ptMouse);
 
@@ -1551,10 +1585,10 @@ namespace cp
 			setTrackbarPos("yaw", wname, yaw);
 
 			//intrinsic
-			k.at<double>(0, 2) = (size.width - 1)*0.5;
-			k.at<double>(1, 2) = (size.height - 1)*0.5;
-			k.at<double>(0, 0) = show.cols*0.001*f;
-			k.at<double>(1, 1) = show.cols*0.001*f;
+			k.at<double>(0, 2) = (size.width - 1) * 0.5;
+			k.at<double>(1, 2) = (size.height - 1) * 0.5;
+			k.at<double>(0, 0) = show.cols * 0.001 * f;
+			k.at<double>(1, 1) = show.cols * 0.001 * f;
 			t.at<double>(2) = z - 800;
 
 			//rotate & plot RGB plots
@@ -1610,7 +1644,7 @@ namespace cp
 					const int x = cvRound(pt[i].x);
 					const int y = cvRound(pt[i].y);
 					int inc = 2;
-					if (x >= 0 && x < show.cols&&y >= 0 && y < show.rows)
+					if (x >= 0 && x < show.cols && y >= 0 && y < show.rows)
 					{
 						show.at<Vec3b>(Point(x, y)) += Vec3b(inc, inc, inc);
 					}
@@ -1623,7 +1657,7 @@ namespace cp
 				{
 					const int x = cvRound(pt[i].x);
 					const int y = cvRound(pt[i].y);
-					if (x >= 0 && x < show.cols&&y >= 0 && y < show.rows)
+					if (x >= 0 && x < show.cols && y >= 0 && y < show.rows)
 					{
 						Vec3f v = rgb.at<Vec3f>(i);
 						show.at<Vec3b>(Point(x, y)) = v;
@@ -1637,7 +1671,7 @@ namespace cp
 					const int x = cvRound(pt[i].x);
 					const int y = cvRound(pt[i].y);
 					int inc = 2;
-					if (x >= 0 && x < show.cols&&y >= 0 && y < show.rows)
+					if (x >= 0 && x < show.cols && y >= 0 && y < show.rows)
 					{
 						show.at<Vec3b>(Point(x, y)) = Vec3b(128, 128, 128);
 					}
@@ -1652,7 +1686,7 @@ namespace cp
 					const int x = cvRound(additionalpt[i].x);
 					const int y = cvRound(additionalpt[i].y);
 
-					if (x >= 0 && x < show.cols&&y >= 0 && y < show.rows)
+					if (x >= 0 && x < show.cols && y >= 0 && y < show.rows)
 					{
 						circle(show, Point(x, y), 2, COLOR_WHITE);
 					}
@@ -1674,13 +1708,13 @@ namespace cp
 			}
 			if (key == 't')
 			{
-				ptMouse.x = cvRound((size.width - 1)*0.5);
-				ptMouse.y = cvRound((size.height - 1)*0.5);
+				ptMouse.x = cvRound((size.width - 1) * 0.5);
+				ptMouse.y = cvRound((size.height - 1) * 0.5);
 			}
 			if (key == 'r')
 			{
-				ptMouse.x = cvRound((size.width - 1)*0.75);
-				ptMouse.y = cvRound((size.height - 1)*0.25);
+				ptMouse.x = cvRound((size.width - 1) * 0.75);
+				ptMouse.y = cvRound((size.height - 1) * 0.25);
 			}
 			if (key == '?')
 			{

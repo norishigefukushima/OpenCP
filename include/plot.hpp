@@ -19,7 +19,7 @@ namespace cp
 		std::string font;
 		int fontSize;
 		int fontSize2;
-
+		int foregroundIndex = 0;
 		struct PlotInfo
 		{
 			std::vector<cv::Point2d> data;
@@ -116,6 +116,7 @@ namespace cp
 		void setXMinMax(double xmin_, double xmax_);
 		void setYMinMax(double ymin_, double ymax_);
 		void setBackGoundColor(cv::Scalar cl);
+		
 
 		void makeBB(bool isFont);
 
@@ -125,6 +126,7 @@ namespace cp
 		void setPlotSymbol(int plotnum, int symboltype);
 		void setPlotLineType(int plotnum, int linetype);
 		void setPlotKeyName(int plotnum, std::string name);
+		void setPlotForeground(int plotnum);
 
 		void setPlotSymbolALL(int symboltype);
 		void setPlotLineTypeALL(int linetype);

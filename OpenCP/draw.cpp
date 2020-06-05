@@ -6,7 +6,7 @@ using namespace cv;
 namespace cp
 {
 
-	void triangle(InputOutputArray src_, Point pt, int length, Scalar& color, int thickness)
+	void triangle(InputOutputArray src_, Point pt, int length, Scalar color, int thickness)
 	{
 		Mat src = src_.getMat();
 		int npt[] = { 3, 0 };
@@ -29,7 +29,7 @@ namespace cp
 		src.copyTo(src_);
 	}
 
-	void triangleinv(InputOutputArray src_, Point pt, int length, Scalar& color, int thickness)
+	void triangleinv(InputOutputArray src_, Point pt, int length, Scalar color, int thickness)
 	{
 		Mat src = src_.getMat();
 		int npt[] = { 3, 0 };
@@ -52,7 +52,7 @@ namespace cp
 		src.copyTo(src_);
 	}
 
-	void diamond(InputOutputArray src_, Point pt, int length, Scalar& color, int thickness)
+	void diamond(InputOutputArray src_, Point pt, int length, Scalar color, int thickness)
 	{
 		Mat src = src_.getMat();
 		int npt[] = { 4, 0 };
@@ -76,7 +76,7 @@ namespace cp
 		src.copyTo(src_);
 	}
 
-	void pentagon(InputOutputArray src_, Point pt, int length, Scalar& color, int thickness)
+	void pentagon(InputOutputArray src_, Point pt, int length, Scalar color, int thickness)
 	{
 		Mat src = src_.getMat();
 		int npt[] = { 5, 0 };
@@ -101,7 +101,7 @@ namespace cp
 		src.copyTo(src_);
 	}
 
-	void drawPlus(InputOutputArray src, Point crossCenter, int length, Scalar& color, int thickness, int line_type, int shift)
+	void drawPlus(InputOutputArray src, Point crossCenter, int length, Scalar color, int thickness, int line_type, int shift)
 	{
 		Mat dest = src.getMat();
 		if (crossCenter.x == 0 && crossCenter.y == 0)
@@ -117,7 +117,7 @@ namespace cp
 		dest.copyTo(src);
 	}
 
-	void drawTimes(InputOutputArray src, Point crossCenter, int length, Scalar& color, int thickness, int line_type, int shift)
+	void drawTimes(InputOutputArray src, Point crossCenter, int length, Scalar color, int thickness, int line_type, int shift)
 	{
 		Mat dest = src.getMat();
 		if (crossCenter.x == 0 && crossCenter.y == 0)
@@ -132,7 +132,7 @@ namespace cp
 		dest.copyTo(src);
 	}
 
-	void drawGrid(InputOutputArray src, Point crossCenter, Scalar& color, int thickness, int line_type, int shift)
+	void drawGrid(InputOutputArray src, Point crossCenter, Scalar color, int thickness, int line_type, int shift)
 	{
 		Mat dest = src.getMat();
 		if (crossCenter.x == 0 && crossCenter.y == 0)
@@ -147,7 +147,7 @@ namespace cp
 		dest.copyTo(src);
 	}
 
-	void drawAsterisk(InputOutputArray src, Point crossCenter, int length, Scalar& color, int thickness, int line_type, int shift)
+	void drawAsterisk(InputOutputArray src, Point crossCenter, int length, Scalar color, int thickness, int line_type, int shift)
 	{
 		Mat dest = src.getMat();
 		if (crossCenter.x == 0 && crossCenter.y == 0)
