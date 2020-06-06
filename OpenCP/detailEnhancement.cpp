@@ -14,7 +14,7 @@ namespace cp
 
 		Mat smooth;
 		boxFilter(src, smooth, src.depth(), Size(d, d));
-		addWeighted(src, 1.0+boost, smooth, -boost, 0, dest);
+		addWeighted(src, 1.0 + boost, smooth, -boost, 0, dest);
 	}
 
 	void detailEnhancementGauss(InputArray src, OutputArray dest, const int r, const float sigma_space, const float boost)
@@ -31,7 +31,7 @@ namespace cp
 	{
 		const int d = 2 * r + 1;
 		Mat smooth;
-		bilateralFilter(src, smooth, Size(d, d), sigma_color, sigma_space);
+		cv::bilateralFilter(src, smooth, d, sigma_color, sigma_space);
 		addWeighted(src, 1.0 + boost, smooth, -boost, 0, dest);
 	}
 
@@ -46,4 +46,3 @@ namespace cp
 	}
 
 }
-	
