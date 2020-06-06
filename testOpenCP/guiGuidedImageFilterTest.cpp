@@ -43,11 +43,12 @@ void guiGuidedImageFilterTest()
 
 	//#define RANDOM_SHIFT
 
+#define OPENCV
 #define NORMAL_TEST
 #define CLASS_TEST
 #define CLASS_COLORPARALLEL_TEST
 #define FAST_TEST
-//#define TILE_TEST
+#define TILE_TEST
 
 	ConsoleImage ci(Size(900, 500), "param");
 	namedWindow("param");
@@ -74,7 +75,7 @@ void guiGuidedImageFilterTest()
 	int v = 2; createTrackbar("v_div", "param", &v, 6);
 	int bb = 5; createTrackbar("PSNR_BB", "param", &bb, 20);
 
-	Stat stats[6];
+	Stat stats[7];
 
 	int key = 0;
 
@@ -85,7 +86,7 @@ void guiGuidedImageFilterTest()
 	GuidedImageFilter gf;
 	GuidedImageFilter gfcp;
 	GuidedImageFilter gffast;
-	GuidedFilterTiling gft;
+	GuidedImageFilterTiling gft;
 	RNG rng;
 
 
@@ -96,6 +97,7 @@ void guiGuidedImageFilterTest()
 
 	Mat dest = Mat::zeros(img_p.size(), img_p.type());
 	Mat destf = Mat::zeros(img_p.size(), srcf.type());
+	Mat destfocv = Mat::zeros(img_p.size(), srcf.type());
 	Mat dest_class = Mat::zeros(img_p.size(), img_p.type());
 	Mat destf_class = Mat::zeros(img_p.size(), srcf.type());
 	Mat dest_classcp = Mat::zeros(img_p.size(), img_p.type());
@@ -114,6 +116,7 @@ void guiGuidedImageFilterTest()
 	GuidedImageFilter gftemp;
 	while (key != 'q')
 	{
+		int idx = 0;
 		int x = rng.uniform(-10, 10);
 		int y = rng.uniform(-10, 10);
 
@@ -125,10 +128,10 @@ void guiGuidedImageFilterTest()
 		if (guide_GRAY_RGB == 0) cvtColor(img_I, guide, COLOR_BGR2GRAY);
 		else if (guide_GRAY_RGB == 1) img_I.copyTo(guide);
 
-		Mat temp;
+		/*Mat temp;
 		bilateralFilter(src,temp , 7, 30, 30);
-		bilateralFilter(temp, src, 7, 30, 30);
-		
+		bilateralFilter(temp, src, 7, 30, 30);*/
+
 #ifdef RANDOM_SHIFT
 		cp::warpShift(src, src, x, y, BORDER_REPLICATE);
 		cp::warpShift(guide, guide, x, y, BORDER_REPLICATE);
@@ -146,10 +149,29 @@ void guiGuidedImageFilterTest()
 			Timer t("", TIME_MSEC, false);
 			gfref.setBoxType(BOX_NAIVE_AVX);
 			gfref.filterColorParallel(src64f, guide64f, ref64f, r, eps, 1, parallelType);
-			stats[0].push_back(t.getTime());
+			stats[idx].push_back(t.getTime());
 		}
 		ref64f.convertTo(ref8u, CV_8U);
-		if (sw == 0)ref64f.copyTo(show);
+		if (sw == idx)ref64f.copyTo(show);
+		idx++;
+
+#ifdef OPENCV
+		{
+			destf.setTo(0);
+			Timer t("", TIME_MSEC, false);
+			for (int i = 0; i < loop; i++)
+			{
+				t.start();
+				guidedImageFilter(srcf, guidef, destfocv, r, eps, GUIDED_XIMGPROC, boxType, parallelType);
+				t.getpushLapTime();
+			}
+			stats[idx].push_back(t.getLapTimeMedian());
+		}
+		destf.convertTo(dest, CV_8U);
+		if (sw == idx)destf.copyTo(show);
+		idx++;
+#endif
+
 #ifdef NORMAL_TEST
 		{
 			destf.setTo(0);
@@ -160,11 +182,13 @@ void guiGuidedImageFilterTest()
 				guidedImageFilter(srcf, guidef, destf, r, eps, guidedType, boxType, parallelType);
 				t.getpushLapTime();
 			}
-			stats[1].push_back(t.getLapTimeMedian());
+			stats[idx].push_back(t.getLapTimeMedian());
 		}
 		destf.convertTo(dest, CV_8U);
-		if (sw == 1)destf.copyTo(show);
+		if (sw == idx)destf.copyTo(show);
+		idx++;
 #endif
+
 #ifdef CLASS_TEST
 		{
 			destf_class.setTo(0);
@@ -177,10 +201,11 @@ void guiGuidedImageFilterTest()
 				gf.filter(srcf, guidef, destf_class, r, eps, guidedType, parallelType);
 				t.getpushLapTime();
 			}
-			stats[2].push_back(t.getLapTimeMedian());
+			stats[idx].push_back(t.getLapTimeMedian());
 		}
 		destf_class.convertTo(dest_class, CV_8U);
-		if (sw == 2)destf_class.copyTo(show);
+		if (sw == idx)destf_class.copyTo(show);
+		idx++;
 #endif
 
 #ifdef CLASS_COLORPARALLEL_TEST
@@ -195,10 +220,11 @@ void guiGuidedImageFilterTest()
 				gfcp.filterColorParallel(srcf, guidef, destf_classcp, r, eps, guidedType, parallelType);
 				t.getpushLapTime();
 			}
-			stats[3].push_back(t.getLapTimeMedian());
+			stats[idx].push_back(t.getLapTimeMedian());
 		}
 		destf_classcp.convertTo(dest_classcp, CV_8U);
-		if (sw == 3)destf_classcp.copyTo(show);
+		if (sw == idx)destf_classcp.copyTo(show);
+		idx++;
 #endif
 
 #ifdef FAST_TEST
@@ -218,17 +244,18 @@ void guiGuidedImageFilterTest()
 				//gffast.upsample(refsrc, guidef, destf_fast, r, eps, GUIDED_NAIVE, parallelType);
 				t.getpushLapTime();
 			}
-			stats[4].push_back(t.getLapTimeMedian());
+			stats[idx].push_back(t.getLapTimeMedian());
 		}
 		destf_fast.convertTo(dest_fast, CV_8U);
-		if (sw == 4)destf_fast.copyTo(show);
+		if (sw == idx)destf_fast.copyTo(show);
+		idx++;
 #endif
 
 #ifdef TILE_TEST
 		{
 			destf_tile.setTo(0);
 			const int radix = 2;
-			//GuidedFilterTiling gft(srcf, guidef, destf_tile2, r, eps, Size(pow(radix, h), pow(radix, v)));
+
 			Timer t("", TIME_MSEC, false);
 			for (int i = 0; i < loop; i++)
 			{
@@ -236,10 +263,11 @@ void guiGuidedImageFilterTest()
 				gft.filter(srcf, guidef, destf_tile, r, eps, Size(pow(radix, h), pow(radix, v)), guidedType);
 				t.getpushLapTime();
 			}
-			stats[5].push_back(t.getLapTimeMedian());
+			stats[idx].push_back(t.getLapTimeMedian());
 		}
 		destf_tile.convertTo(dest_tile, CV_8U);
-		if (sw == 5)destf_tile.copyTo(show);
+		if (sw == idx)destf_tile.copyTo(show);
+		idx++;
 #endif
 
 		ci("Guided Type     : %s", getGuidedType(guidedType).c_str());
@@ -247,30 +275,34 @@ void guiGuidedImageFilterTest()
 		ci("Parallel Type   : " + getParallelType(parallelType));
 		ci("NUM             : %d", stats[0].num_data);
 		ci("");
-
-		ci("Time (ref64f)   : %f", stats[0].getMedian());
-		ci("Time (prop)     : %f", stats[1].getMedian());
-		ci("Time (propclass): %f", stats[2].getMedian());
-		ci("Time (propcclor): %f", stats[3].getMedian());
-		ci("Time (fast)     : %f", stats[4].getMedian());
-		ci("Time (tile)     : %f", stats[5].getMedian());
+		idx = 0;
+		ci("Time (ref64f)   : %f", stats[idx++].getMedian());
+		ci("Time (opencv)   : %f", stats[idx++].getMedian());
+		ci("Time (prop)     : %f", stats[idx++].getMedian());
+		ci("Time (propclass): %f", stats[idx++].getMedian());
+		ci("Time (propcclor): %f", stats[idx++].getMedian());
+		ci("Time (fast)     : %f", stats[idx++].getMedian());
+		ci("Time (tile)     : %f", stats[idx++].getMedian());
 
 		{
 			Timer t;
+#ifdef OPENCV
+			ci("PSNR (32F)opencv: %f", psnr.getPSNR(destfocv, ref64f, bb));
+#endif
 #ifdef NORMAL_TEST
-			ci("PSNR (32F)      : %f", psnr.getPSNR(destf, ref64f, bb));
+			ci("PSNR (32F)func  : %f", psnr.getPSNR(destf, ref64f, bb));
 #endif
 #ifdef CLASS_TEST
-			ci("PSNR (32F)c     : %f", psnr.getPSNR(destf_class, ref64f, bb));
+			ci("PSNR (32F)class : %f", psnr.getPSNR(destf_class, ref64f, bb));
 #endif
 #ifdef CLASSCP_TEST
 			ci("PSNR (32F)cp    : %f", psnr.getPSNR(destf_classcp, bb));
 #endif
 #ifdef FAST_TEST
-			ci("PSNR (32F)FS    : %f", psnr.getPSNR(destf_fast, ref64f, bb));
+			ci("PSNR (32F)Fast  : %f", psnr.getPSNR(destf_fast, ref64f, bb));
 #endif
 #ifdef TILE_TEST
-			ci("PSNR (32F)t1    : %f", psnr.getPSNR(destf_tile, ref64f, bb));
+			ci("PSNR (32F)tile  : %f", psnr.getPSNR(destf_tile, ref64f, bb));
 #endif
 		}
 		ci.show();

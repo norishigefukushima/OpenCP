@@ -2,15 +2,10 @@
 
 #include "common.hpp"
 #include "parallel_type.hpp"
-
+#include "boxFilter.hpp"
 
 namespace cp
 {
-	CP_EXPORT void guidedFilter(const cv::Mat& src, cv::Mat& dest, const int radius, const float eps);
-	CP_EXPORT void guidedFilter(const cv::Mat& src, const cv::Mat& guidance, cv::Mat& dest, const int radius, const float eps);
-	CP_EXPORT void guidedFilterMultiCore(const cv::Mat& src, cv::Mat& dest, int r, float eps, int numcore = 0);
-	CP_EXPORT void guidedFilterMultiCore(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dest, int r, float eps, int numcore = 0);
-
 	enum GuidedTypes
 	{
 		GUIDED_XIMGPROC,
@@ -207,7 +202,8 @@ namespace cp
 		void upsample(cv::Mat& _src, cv::Mat& _guide_low, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps);
 	};
 
-	void CP_EXPORT guidedImageFilter(cv::InputArray src, cv::InputArray guide, cv::OutputArray dest, const int r, const float eps, const int guidedType, const int boxType, const int parallelType);
+
+	void CP_EXPORT guidedImageFilter(cv::InputArray src, cv::InputArray guide, cv::OutputArray dest, const int r, const float eps, const int guidedType = GuidedTypes::GUIDED_SEP_VHI_SHARE, const int boxType = BoxTypes::BOX_OPENCV, const int parallelType = ParallelTypes::OMP);
 
 	class CP_EXPORT GuidedImageFilter
 	{
@@ -245,13 +241,13 @@ namespace cp
 		void upsample(cv::Mat& src, cv::Mat& guide, cv::OutputArray dest, const int r, const float eps, const int guided_type = GuidedTypes::GUIDED_SEP_VHI_SHARE, const int parallel_type = ParallelTypes::OMP);
 		void upsample(cv::Mat& src, cv::Mat& guide_low, cv::Mat& guide, cv::OutputArray dest, const int r, const float eps, const int guided_type = GuidedTypes::GUIDED_SEP_VHI_SHARE, const int parallel_type = ParallelTypes::OMP);
 
-
+		//for tiling parallelization
 		void filter(cv::Mat& src, std::vector<cv::Mat>& guide, cv::Mat& dest, const int r, const float eps, const int guided_type = GuidedTypes::GUIDED_SEP_VHI_SHARE, const int parallel_type = ParallelTypes::OMP);
 		void filter(std::vector<cv::Mat>& src, cv::Mat& guide, std::vector<cv::Mat>& dest, const int r, const float eps, const int guided_type = GuidedTypes::GUIDED_SEP_VHI_SHARE, const int parallel_type = ParallelTypes::OMP);
 		void filter(std::vector<cv::Mat>& src, std::vector<cv::Mat>& guide, std::vector<cv::Mat>& dest, const int r, const float eps, const int guided_type = GuidedTypes::GUIDED_SEP_VHI_SHARE, const int parallel_type = ParallelTypes::OMP);
 	};
 
-	class CP_EXPORT GuidedFilterTiling
+	class CP_EXPORT GuidedImageFilterTiling
 	{
 	protected:
 		cv::Mat src;
@@ -289,8 +285,8 @@ namespace cp
 		std::vector<std::vector<cv::Mat>> buffer;
 
 	public:
-		GuidedFilterTiling();
-		GuidedFilterTiling(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps, cv::Size _div);
+		GuidedImageFilterTiling();
+		GuidedImageFilterTiling(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps, cv::Size _div);
 
 		void filter_SSAT();
 		void filter_OPSAT();
@@ -327,4 +323,12 @@ namespace cp
 		void init();
 		void filter();
 	};
+
+	/*
+	//old function, do not recomend to use
+	CP_EXPORT void guidedFilter(const cv::Mat& src, cv::Mat& dest, const int radius, const float eps);
+	CP_EXPORT void guidedFilter(const cv::Mat& src, const cv::Mat& guidance, cv::Mat& dest, const int radius, const float eps);
+	CP_EXPORT void guidedFilterMultiCore(const cv::Mat& src, cv::Mat& dest, int r, float eps, int numcore = 0);
+	CP_EXPORT void guidedFilterMultiCore(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dest, int r, float eps, int numcore = 0);
+	*/
 }

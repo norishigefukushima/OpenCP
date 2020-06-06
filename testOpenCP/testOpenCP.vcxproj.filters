@@ -16,55 +16,28 @@
     <Filter Include="ソース ファイル\test">
       <UniqueIdentifier>{f6a35e8f-68c4-4fbf-b0f9-348bc7123f34}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\test\imgproc">
+      <UniqueIdentifier>{3d5d9daa-1ed7-4678-a296-9a3b8db270ea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\test\filter">
+      <UniqueIdentifier>{494dfdbb-a325-4de1-b3de-de4153dcb93f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\test\utility">
+      <UniqueIdentifier>{032f3c69-337a-4468-8f0a-47101a2cb08d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="realtimeO1BilateralFilter\realtimeO1BilateralFilterTest.cpp">
-      <Filter>ソース ファイル\test</Filter>
-    </ClCompile>
-    <ClCompile Include="GaussianFilter\GaussianFilterTest.cpp">
-      <Filter>ソース ファイル\test</Filter>
-    </ClCompile>
-    <ClCompile Include="shockFilterTest\coherenceEnhancingShockFilterTest.cpp">
-      <Filter>ソース ファイル\test</Filter>
-    </ClCompile>
-    <ClCompile Include="qualityMetricsTest\qualityMetricsTest.cpp">
-      <Filter>ソース ファイル\test</Filter>
-    </ClCompile>
     <ClCompile Include="analysisShow.cpp">
       <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="histogram\guiHistogramTest.cpp">
-      <Filter>ソース ファイル\test</Filter>
-    </ClCompile>
-    <ClCompile Include="colorCorrectionTest.cpp">
-      <Filter>ソース ファイル\test</Filter>
     </ClCompile>
     <ClCompile Include="guiStereoTest.cpp">
       <Filter>ソース ファイル\test</Filter>
     </ClCompile>
-    <ClCompile Include="guiCrossBasedLocalFilterTest.cpp">
-      <Filter>ソース ファイル\test</Filter>
-    </ClCompile>
-    <ClCompile Include="guiWeightedHistogramFilterTest.cpp">
-      <Filter>ソース ファイル\test</Filter>
-    </ClCompile>
-    <ClCompile Include="bilateralfilter\bilateralFilterTest.cpp">
-      <Filter>ソース ファイル\test</Filter>
-    </ClCompile>
-    <ClCompile Include="guiEdgePreservingFilter.cpp">
-      <Filter>ソース ファイル\test</Filter>
-    </ClCompile>
-    <ClCompile Include="guiEPFWeightMapTest.cpp">
-      <Filter>ソース ファイル\test</Filter>
-    </ClCompile>
     <ClCompile Include="disparityRefinement\disparityRefinementTest.cpp">
       <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="slic\guiSLICTest.cpp">
-      <Filter>ソース ファイル\test</Filter>
     </ClCompile>
     <ClCompile Include="fitPlaneTest.cpp">
       <Filter>ソース ファイル</Filter>
@@ -72,56 +45,92 @@
     <ClCompile Include="viewSynthesis\viewSynthesisTest.cpp">
       <Filter>ソース ファイル\test</Filter>
     </ClCompile>
-    <ClCompile Include="denoise\denoiseTest.cpp">
-      <Filter>ソース ファイル\test</Filter>
+    <ClCompile Include="bilateralfilter\bilateralFilterTest.cpp">
+      <Filter>ソース ファイル\test\filter</Filter>
     </ClCompile>
-    <ClCompile Include="guiHazeRemoveTest.cpp">
-      <Filter>ソース ファイル\test</Filter>
+    <ClCompile Include="shockFilterTest\coherenceEnhancingShockFilterTest.cpp">
+      <Filter>ソース ファイル\test\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="denoise\denoiseTest.cpp">
+      <Filter>ソース ファイル\test\filter</Filter>
     </ClCompile>
     <ClCompile Include="dualExponentialSmoothingTest.cpp">
-      <Filter>ソース ファイル\test</Filter>
+      <Filter>ソース ファイル\test\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="GaussianFilter\GaussianFilterTest.cpp">
+      <Filter>ソース ファイル\test\filter</Filter>
     </ClCompile>
     <ClCompile Include="guiDomainTransformTest.cpp">
-      <Filter>ソース ファイル\test</Filter>
+      <Filter>ソース ファイル\test\filter</Filter>
     </ClCompile>
-    <ClCompile Include="guiUpsampleTest.cpp">
-      <Filter>ソース ファイル\test</Filter>
+    <ClCompile Include="guiEPFWeightMapTest.cpp">
+      <Filter>ソース ファイル\test\filter</Filter>
     </ClCompile>
-    <ClCompile Include="iterativeBackProjection\iterativeBackProjectionTest.cpp">
-      <Filter>ソース ファイル\test</Filter>
-    </ClCompile>
-    <ClCompile Include="splitmergeTest.cpp">
-      <Filter>ソース ファイル\test</Filter>
-    </ClCompile>
-    <ClCompile Include="guiConsoleTest.cpp">
-      <Filter>ソース ファイル\test</Filter>
-    </ClCompile>
-    <ClCompile Include="testAddNoise.cpp">
-      <Filter>ソース ファイル\test</Filter>
-    </ClCompile>
-    <ClCompile Include="testRGBHistogram.cpp">
-      <Filter>ソース ファイル\test</Filter>
-    </ClCompile>
-    <ClCompile Include="testTimer.cpp">
-      <Filter>ソース ファイル\test</Filter>
+    <ClCompile Include="guiEdgePreservingFilter.cpp">
+      <Filter>ソース ファイル\test\filter</Filter>
     </ClCompile>
     <ClCompile Include="guiGuidedImageFilterTest.cpp">
-      <Filter>ソース ファイル\test</Filter>
+      <Filter>ソース ファイル\test\filter</Filter>
     </ClCompile>
-    <ClCompile Include="testPSNR.cpp">
-      <Filter>ソース ファイル\test</Filter>
-    </ClCompile>
-    <ClCompile Include="testCropZoom.cpp">
-      <Filter>ソース ファイル\test</Filter>
-    </ClCompile>
-    <ClCompile Include="plotTest\testPlot.cpp">
-      <Filter>ソース ファイル\test</Filter>
-    </ClCompile>
-    <ClCompile Include="testHistogram.cpp">
-      <Filter>ソース ファイル\test</Filter>
+    <ClCompile Include="colorCorrectionTest.cpp">
+      <Filter>ソース ファイル\test\utility</Filter>
     </ClCompile>
     <ClCompile Include="guiBlendTest.cpp">
-      <Filter>ソース ファイル\test</Filter>
+      <Filter>ソース ファイル\test\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="guiConsoleTest.cpp">
+      <Filter>ソース ファイル\test\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="guiCrossBasedLocalFilterTest.cpp">
+      <Filter>ソース ファイル\test\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="histogram\guiHistogramTest.cpp">
+      <Filter>ソース ファイル\test\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="slic\guiSLICTest.cpp">
+      <Filter>ソース ファイル\test\imgproc</Filter>
+    </ClCompile>
+    <ClCompile Include="guiHazeRemoveTest.cpp">
+      <Filter>ソース ファイル\test\imgproc</Filter>
+    </ClCompile>
+    <ClCompile Include="guiUpsampleTest.cpp">
+      <Filter>ソース ファイル\test\imgproc</Filter>
+    </ClCompile>
+    <ClCompile Include="guiWeightedHistogramFilterTest.cpp">
+      <Filter>ソース ファイル\test\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="iterativeBackProjection\iterativeBackProjectionTest.cpp">
+      <Filter>ソース ファイル\test\imgproc</Filter>
+    </ClCompile>
+    <ClCompile Include="realtimeO1BilateralFilter\realtimeO1BilateralFilterTest.cpp">
+      <Filter>ソース ファイル\test\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="splitmergeTest.cpp">
+      <Filter>ソース ファイル\test\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="qualityMetricsTest\qualityMetricsTest.cpp">
+      <Filter>ソース ファイル\test\imgproc</Filter>
+    </ClCompile>
+    <ClCompile Include="testAddNoise.cpp">
+      <Filter>ソース ファイル\test\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="testPSNR.cpp">
+      <Filter>ソース ファイル\test\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="plotTest\testPlot.cpp">
+      <Filter>ソース ファイル\test\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="testRGBHistogram.cpp">
+      <Filter>ソース ファイル\test\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="testTimer.cpp">
+      <Filter>ソース ファイル\test\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="testHistogram.cpp">
+      <Filter>ソース ファイル\test\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="testCropZoom.cpp">
+      <Filter>ソース ファイル\test\utility</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

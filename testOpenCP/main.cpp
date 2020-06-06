@@ -121,7 +121,7 @@ int main(int argc, char** argv)
 
 	//testHistogram(); return 0;
 	//testPlot(); return 0;
-	//guiGuidedImageFilterTest();
+	guiGuidedImageFilterTest();
 	//guiHazeRemoveTest();
 
 	//Mat right = imread("left.png");

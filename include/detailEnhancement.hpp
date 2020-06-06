@@ -4,10 +4,13 @@
 
 namespace cp
 {
-	enum
-	{
-		PROCESS_LAB = 0,
-		PROCESS_BGR
-	};
-	CP_EXPORT void detailEnhancementBilateral(cv::Mat& src, cv::Mat& dest, int d, float sigma_color, float sigma_space, float boost, int color = PROCESS_LAB);
+	//src + boost(src-g*src)
+	CP_EXPORT void detailEnhancementBox(cv::InputArray src, cv::OutputArray dest, const int r, const float boost = 1.f);
+	//src + boost(src-g*src)
+	CP_EXPORT void detailEnhancementGauss(cv::InputArray src, cv::OutputArray dest, const int r, const float sigma_space, const float boost = 1.f);
+	//src + boost(src-g*src)
+	CP_EXPORT void detailEnhancementBilateral(cv::InputArray src, cv::OutputArray dest, const int r, const float sigma_color, const float sigma_space, const float boost = 1.f);
+	//src + boost(src-g*src)
+	CP_EXPORT void detailEnhancementGuided(cv::InputArray src, cv::OutputArray dest, const int r, const float eps, const float boost = 1.f);
+
 }

@@ -14,7 +14,7 @@ using namespace cp;
 #define EXCLUDE_SPLIT_TIME
 #define INCLUDE_SPLIT_TIME
 
-GuidedFilterTiling::GuidedFilterTiling()
+GuidedImageFilterTiling::GuidedImageFilterTiling()
 {
 	gf.resize(OMP_THREADS_MAX);
 
@@ -30,7 +30,7 @@ GuidedFilterTiling::GuidedFilterTiling()
 	}
 }
 
-GuidedFilterTiling::GuidedFilterTiling(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps, cv::Size _div)
+GuidedImageFilterTiling::GuidedImageFilterTiling(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps, cv::Size _div)
 	: src(_src), guide(_guide), dest(_dest), r(_r), eps(_eps), div(_div)
 {
 	src_sub_vec.resize(div.area());
@@ -67,7 +67,7 @@ GuidedFilterTiling::GuidedFilterTiling(cv::Mat& _src, cv::Mat& _guide, cv::Mat& 
 	}
 }
 
-void GuidedFilterTiling::filter_SSAT()
+void GuidedImageFilterTiling::filter_SSAT()
 {
 	if (src.channels() == 1 && guide.channels() == 1)
 	{
@@ -290,7 +290,7 @@ void GuidedFilterTiling::filter_SSAT()
 
 }
 
-void GuidedFilterTiling::filter_OPSAT()
+void GuidedImageFilterTiling::filter_OPSAT()
 {
 	if (src.channels() == 1 && guide.channels() == 1)
 	{
@@ -535,7 +535,7 @@ void GuidedFilterTiling::filter_OPSAT()
 	}
 }
 
-void GuidedFilterTiling::filter_SSAT_AVX()
+void GuidedImageFilterTiling::filter_SSAT_AVX()
 {
 	if (src.channels() == 1 && guide.channels() == 1)
 	{
@@ -763,10 +763,19 @@ void GuidedFilterTiling::filter_SSAT_AVX()
 	}
 }
 
-void GuidedFilterTiling::filter(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, const int _r, const float _eps, const cv::Size _div, const int guidedType)
+void GuidedImageFilterTiling::filter(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, const int _r, const float _eps, const cv::Size _div, const int guidedType)
 {
 	src = _src;
 	guide = _guide;
+	if (src.type() != _dest.type())
+	{
+		_dest.create(src.size(), src.type());
+	}
+	else if (src.size() != _dest.size())
+	{
+		_dest.create(src.size(), src.type());
+	}
+
 	dest = _dest;
 	r = _r;
 	eps = _eps;
@@ -774,7 +783,7 @@ void GuidedFilterTiling::filter(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, 
 	filter(guidedType);
 }
 
-void GuidedFilterTiling::filter(int guidedType)
+void GuidedImageFilterTiling::filter(int guidedType)
 {
 	if (src.channels() == 1 && guide.channels() == 1)
 	{
@@ -888,7 +897,7 @@ void GuidedFilterTiling::filter(int guidedType)
 	}
 }
 
-void GuidedFilterTiling::filter_func(int guidedType)
+void GuidedImageFilterTiling::filter_func(int guidedType)
 {
 	if (div.area() == 1)
 	{

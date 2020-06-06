@@ -52,7 +52,7 @@ namespace cp
 		double getMSE(cv::InputArray src, cv::InputArray ref, const int boundingBox = 0, const int precision = PSNR_UP_CAST, const int compare_channel = PSNR_ALL);
 		/*
 		boundingBox: ignoring outside region. default is 0
-		precision: computing precision, default PSNR_32F(1), other PSNR_8U(0),PSNR_64F(2), PSNR_KAHAN_64F(3)
+		precision: computing precision, default PSNR_UP_CAST(0), other PSNR_8U(0),PSNR_32F(1), PSNR_64F(2), PSNR_KAHAN_64F(3)
 		compare_channel: default compute MSE all channele and then logged PSNR_ALL(0), PSNR_Y(1), PSNR_B(2), PSNR_G(3), PSNR_R(4),
 		*/
 		double getPSNR(cv::InputArray src, cv::InputArray ref, const int boundingBox = 0, const int precision = PSNR_UP_CAST, const int compare_channel = PSNR_ALL);
@@ -60,7 +60,7 @@ namespace cp
 		/*
 		same function of getPSNR() for short cut
 		boundingBox: ignoring outside region. default is 0
-		precision: computing precision, default PSNR_32F(1), other PSNR_8U(0),PSNR_64F(2), PSNR_KAHAN_64F(3)
+		precision: computing precision, default PSNR_UP_CAST(0), other PSNR_8U(0),PSNR_32F(1), PSNR_64F(2), PSNR_KAHAN_64F(3)
 		compare_channel: default compute MSE all channele and then logged PSNR_ALL(0), PSNR_Y(1), PSNR_B(2), PSNR_G(3), PSNR_R(4),
 		*/
 		double operator()(cv::InputArray src, cv::InputArray ref, const int boundingBox = 0, const int precision = PSNR_UP_CAST, const int compare_channel = PSNR_ALL);

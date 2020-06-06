@@ -1138,7 +1138,7 @@ namespace cp
 		Mat show;
 		while (key != 'q')
 		{
-			guidedFilter(src, show, r, p / 100.0f);
+			guidedImageFilter(src, src, show, r, p / 100.0f);
 			addWeighted(src, 1.0, show, -1.0, cap, show);
 			min(show, cap * 2, show);
 

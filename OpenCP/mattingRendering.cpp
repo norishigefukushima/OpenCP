@@ -123,7 +123,7 @@ namespace cp
 			Mat temp;
 			for (int i = 0; i < iter_g; i++)
 			{
-				guidedFilter(alpha, ref, temp, r_g, eps_g / 100.0f);
+				guidedImageFilter(alpha, ref, temp, r_g, eps_g / 100.0f);
 				temp.copyTo(alpha);
 				alpha.setTo(128, bmask);
 			}
@@ -205,7 +205,7 @@ namespace cp
 		Mat imgG; cvtColor(img, imgG, COLOR_BGR2GRAY);
 		for (int i = 0; i < iter_g; i++)
 		{
-			guidedFilter(trimap, imgG, tmp, r_g, eps_g / 100.0f);
+			guidedImageFilter(trimap, imgG, tmp, r_g, eps_g / 100.0f);
 			tmp.copyTo(trimap);
 		}
 

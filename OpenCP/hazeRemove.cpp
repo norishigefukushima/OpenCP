@@ -199,7 +199,7 @@ namespace cp
 		getTransmissionMap();
 		Mat srcg;
 		cvtColor(src, srcg, COLOR_BGR2GRAY);
-		guidedFilter(tmap, srcg, tmap, r_joint, (float)e_joint);
+		guidedImageFilter(tmap, srcg, tmap, r_joint, (float)e_joint);
 		removeHaze(src, tmap, A, dest);
 	}
 

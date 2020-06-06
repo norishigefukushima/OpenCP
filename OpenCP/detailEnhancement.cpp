@@ -1,40 +1,49 @@
 #include "detailEnhancement.hpp"
 #include "recursiveBilateralFilter.hpp"
 #include "bilateralFilter.hpp"
+#include "guidedFilter.hpp"
 
 using namespace std;
 using namespace cv;
 
 namespace cp
 {
-	void detailEnhancementBilateral(Mat& src, Mat& dest, int d, float sigma_color, float sigma_space, float boost, int color)
+	void detailEnhancementBox(InputArray src, OutputArray dest, const int r, const float boost)
 	{
-		if (color == PROCESS_LAB)
-		{
-			Mat lab;
-			cvtColor(src, lab, COLOR_BGR2Lab);
-			vector<Mat> v;
-			split(lab, v);
+		const int d = 2 * r + 1;
 
-			Mat epf;
-
-			//bilateralFilter(v[0],epf,Size(d,d),sigma_color,sigma_space);
-			recursiveBilateralFilter(v[0], epf, sigma_color, sigma_space);
-
-			subtract(v[0], epf, epf);
-			addWeighted(v[0], 1.0, epf, boost, 0, v[0]);
-			merge(v, lab);
-			cvtColor(lab, dest, COLOR_Lab2BGR);
-		}
-		else if (color == PROCESS_BGR)
-		{
-			Mat epf;
-
-			bilateralFilter(src, epf, Size(d, d), sigma_color, sigma_space);
-
-			subtract(src, epf, epf);
-			addWeighted(src, 1.0, epf, boost, 0, dest);
-		}
+		Mat smooth;
+		boxFilter(src, smooth, src.depth(), Size(d, d));
+		addWeighted(src, 1.0+boost, smooth, -boost, 0, dest);
 	}
+
+	void detailEnhancementGauss(InputArray src, OutputArray dest, const int r, const float sigma_space, const float boost)
+	{
+		const int d = 2 * r + 1;
+
+		Mat smooth;
+
+		GaussianBlur(src, smooth, Size(d, d), sigma_space);
+		addWeighted(src, 1.0 + boost, smooth, -boost, 0, dest);
+	}
+
+	void detailEnhancementBilateral(InputArray src, OutputArray dest, const int r, const float sigma_color, const float sigma_space, const float boost)
+	{
+		const int d = 2 * r + 1;
+		Mat smooth;
+		bilateralFilter(src, smooth, Size(d, d), sigma_color, sigma_space);
+		addWeighted(src, 1.0 + boost, smooth, -boost, 0, dest);
+	}
+
+	void detailEnhancementGuided(InputArray src_, OutputArray dest, const int r, const float eps, const float boost)
+	{
+		const int d = 2 * r + 1;
+
+		Mat smooth;
+		Mat src = src_.getMat();
+		guidedImageFilter(src, src, dest, r, eps);
+		addWeighted(src, 1.0 + boost, smooth, -boost, 0, dest);
+	}
+
 }
-//for various filter
+	

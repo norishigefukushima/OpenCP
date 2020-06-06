@@ -1641,7 +1641,7 @@ void CostVolumeRefinement::weightedGuidedRefinement(Mat& disp, Mat& weight, Mat&
 #pragma omp parallel for
 			for (int n = 0; n <= numDisparity; n++)
 			{
-				guidedFilter(dsv[n], guide, dsv[n], r, (float)eps);
+				guidedImageFilter(dsv[n], guide, dsv[n], r, (float)eps);
 			}
 		}
 		{
@@ -1673,7 +1673,7 @@ public:
 			//Mat g;
 			//cp::guidedFilter((const Mat)src[i], (const Mat)(*guide), (Mat)dest[i], radius, eps);
 			Mat dst;
-			cp::guidedFilter(src[i], *guide, dst, radius, eps);
+			cp::guidedImageFilter(src[i], *guide, dst, radius, eps);
 			dst.copyTo(dest[i]);			
 		}
 	}

@@ -396,7 +396,7 @@ namespace cp
 			subtract(subf, Scalar(minv, minv, minv), subf);
 			multiply(subf, Scalar(2, 2, 2), subf);
 
-			cp::guidedFilter(subf, destf, subf, ksize.width / 4, eps);
+			cp::guidedImageFilter(subf, destf, subf, ksize.width / 4, eps);
 
 			multiply(subf, Scalar(0.5, 0.5, 0.5), subf);
 			add(subf, Scalar(minv, minv, minv), subf);

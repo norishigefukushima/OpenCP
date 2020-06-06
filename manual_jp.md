@@ -47,6 +47,20 @@ Reference Manual
  * [drawAccumulateHistogramImage](histogram_jp.md "#drawAccumulateHistogramImage")
  * [drawAccumulateHistogramImageGray](histogram_jp.md "#drawAccumulateHistogramImageGray")
 
+# detailEnhancement_jp.hpp
+詳細強調の関数
+* [detailEnhancementBox](detailEnhancement_jp.md "#detailEnhancementBox")
+* [detailEnhancementGauss](detailEnhancement_jp.md "#detailEnhancementGauss")
+* [detailEnhancementBilateral](detailEnhancement_jp.md "#detailEnhancementBilateral")
+* [detailEnhancementGuided](detailEnhancement_jp.md "#detailEnhancementGuided")
+
+
+# guidedFilter.hpp
+ガイデットフィルタの関数
+* [guidedImageFilter](guidedFilter_jp.md "#guidedImageFilter")
+* [class GuidedImageFilter](guidedFilter_jp.md "#class GuidedImageFilter")
+* [class GuidedImageFilterTiling](guidedFilter_jp.md "#GuidedImageFilterTiling")
+
 # memo
 Optimization
 * Naive：ほとんど最適化されていない素のC++で書かれたコード．

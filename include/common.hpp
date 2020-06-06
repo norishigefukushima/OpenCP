@@ -164,4 +164,3 @@ namespace cp
 		DISPARITY_COLOR_PSEUDO
 	};
 }
-

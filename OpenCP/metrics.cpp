@@ -493,14 +493,6 @@ namespace cp
 	{
 		CV_Assert(!reference.empty());
 		CV_Assert(!src.empty());
-		if (src.depth() != reference.depth())
-		{
-			cout << "precision: " << getPSNR_PRECISION(precision) << endl;
-			cp::showMatInfo(src, "src");
-			cp::showMatInfo(reference, "reference");
-			CV_Assert(src.depth() == reference.depth());
-		}
-
 
 		Mat s = src.getMat();
 
