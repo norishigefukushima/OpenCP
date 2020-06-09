@@ -89,7 +89,6 @@ void guiGuidedImageFilterTest()
 	GuidedImageFilterTiling gft;
 	RNG rng;
 
-
 	Mat srcf; img_p.convertTo(srcf, CV_32F);
 	Mat guidef = srcf.clone();
 	Mat src64f; img_p.convertTo(src64f, CV_64F);

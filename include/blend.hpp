@@ -3,8 +3,8 @@
 
 namespace cp
 {
-	CP_EXPORT void alphaBlend(cv::InputArray src1, cv::InputArray src2, const double alpha, cv::OutputArray dest);
-	CP_EXPORT void alphaBlend(cv::InputArray src1, cv::InputArray src2, cv::InputArray alpha, cv::OutputArray dest);
+	CP_EXPORT void alphaBlend(cv::InputArray src1, cv::InputArray src2, const double alpha, cv::OutputArray dest);//dest = alpha*src1 + (1-alpha)*src2
+	CP_EXPORT void alphaBlend(cv::InputArray src1, cv::InputArray src2, cv::InputArray alpha, cv::OutputArray dest);//dest = alpha*src1 + (1-alpha)*src2
 	CP_EXPORT void guiAlphaBlend(cv::InputArray src1, cv::InputArray src2, bool isShowImageStats = false, std::string wname = "alphaBlend");
 	//CP_EXPORT void alphaBlendApproxmate(cv::InputArray src1, cv::InputArray src2, cv::InputArray alpha, cv::OutputArray dest);
 	//CP_EXPORT void alphaBlendApproxmate(cv::InputArray src1, cv::InputArray src2, const uchar alpha, cv::OutputArray dest);

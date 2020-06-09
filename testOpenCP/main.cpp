@@ -121,7 +121,7 @@ int main(int argc, char** argv)
 
 	//testHistogram(); return 0;
 	//testPlot(); return 0;
-	guiGuidedImageFilterTest();
+	//guiGuidedImageFilterTest();
 	//guiHazeRemoveTest();
 
 	//Mat right = imread("left.png");
@@ -129,31 +129,35 @@ int main(int argc, char** argv)
 	
 	Mat left = imread("img/stereo/Dolls/view1.png");
 	Mat right = imread("img/stereo/Dolls/view5.png");
-	testAlphaBlend(left, right);
+	//testAlphaBlend(left, right);
 	//testAlphaBlendMask(left, right);
 	//Mat dmap = imread("img/stereo/Dolls/disp1.png", 0);
-	//Mat img = imread("img/lenna.png");
-	Mat img = imread("img/Kodak/kodim07.png",0);	
+	Mat img = imread("img/lenna.png",0);
+	//Mat img = imread("img/Kodak/kodim07.png",0);	
 	//Mat img = imread("img/cameraman.png",0);
 	//Mat img = imread("img/barbara.png", 0);
 
-	guiWeightedHistogramFilterTest(img,img);
+	//guiWeightedHistogramFilterTest(img,img);
 	Mat leftg, rightg;
 	//guiShift(left, right, 300);
 	cvtColor(left, leftg, COLOR_BGR2GRAY);
 	cvtColor(right, rightg, COLOR_BGR2GRAY);
 
-	StereoBMEx sbm(0, get_simd_ceil(120, 16), get_simd_ceil(100, 16), 5);
+	//StereoBMEx sbm(0, get_simd_ceil(120, 16), get_simd_ceil(100, 16), 5);
+	StereoBase sbm(5, get_simd_ceil(16, 16), get_simd_ceil(100, 16));
+	cp::StereoEval eval;
 	Mat disp;
-	sbm.check(leftg, rightg, disp);
-	guiStereoBMTest(leftg, rightg, get_simd_ceil(326, 16), get_simd_ceil(100, 16)); return 0;
-	guiStereoSGBMTest(left, right, get_simd_ceil(326, 16), get_simd_ceil(100, 16)); return 0;
+	sbm.gui(left, right, disp, eval);
+	
+	//sbm.check(leftg, rightg, disp);
+	//guiStereoBMTest(leftg, rightg, get_simd_ceil(326, 16), get_simd_ceil(100, 16)); return 0;
+	//guiStereoSGBMTest(left, right, get_simd_ceil(326, 16), get_simd_ceil(100, 16)); return 0;
 
-	guiLocalDiffHistogram(img);
+	//guiLocalDiffHistogram(img);
 	//testCropZoom(); return 0;
 	//testAddNoise(img); return 0;
-	testLocalPSNR(img); return 0;
-	testPSNR(img); return 0;
+	//testLocalPSNR(img); return 0;
+	//testPSNR(img); return 0;
 	//resize(img, a, Size(513, 513));
 	//splitmergeTest(a); return 0;
 	//Mat img = imread("img/Kodak/kodim07.png");
@@ -162,7 +166,7 @@ int main(int argc, char** argv)
 	//testHistgram(img);
 	//testRGBHistogram();
 	//testRGBHistogram2();
-	testTimer(img);
+	//testTimer(img);
 
 	//guiConsoleTest();
 	//guiDissolveSlide(left, dmap);
@@ -213,7 +217,7 @@ int main(int argc, char** argv)
 	guiDenoiseTest(img);
 	//Mat ff3 = imread("img/pixelart/ff3.png");
 
-	Mat src = imread("img/lenna.png", 0);
+	Mat src = imread("img/lenna.png");
 
 	//Mat src = imread("img/Kodak/kodim07.png",0);
 	guiIterativeBackProjectionTest(src);

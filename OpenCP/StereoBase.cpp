@@ -273,6 +273,7 @@ namespace cp
 			sbl += step;
 		}
 	}
+
 	template <class T>
 	void correctDisparityBoundaryE(Mat& src, Mat& refimg, const int r, const int edgeth, Mat& dest, const int secondr, const int minedge)
 	{
@@ -407,71 +408,7 @@ namespace cp
 		}
 	}
 
-#define  CV_CAST_8U(t)  (uchar)(!((t) & ~255) ? (t) : (t) > 0 ? 255 : 0)
-	static void prefilterXSobel(Mat& src, Mat& dst, int ftzero)
-	{
-		if (dst.empty())dst.create(src.size(), CV_8U);
-		int x, y;
-		const int OFS = 256 * 4, TABSZ = OFS * 2 + 256;
-
-		Size size = src.size();
-		const uchar val0 = ftzero;
-
-		const int step = 2 * src.cols;
-		uchar* srow1 = src.ptr<uchar>(0);
-		uchar* dptr0 = dst.ptr<uchar>(0);
-		uchar* dptr1 = dptr0 + dst.step;
-
-		for (y = 0; y < size.height - 1; y += 2)
-		{
-			const uchar* srow0 = y > 0 ? srow1 - src.step : size.height > 1 ? srow1 + src.step : srow1;
-			const uchar* srow2 = y < size.height - 1 ? srow1 + src.step : size.height > 1 ? srow1 - src.step : srow1;
-			const uchar* srow3 = y < size.height - 2 ? srow1 + src.step * 2 : srow1;
-
-			dptr0[0] = dptr0[size.width - 1] = dptr1[0] = dptr1[size.width - 1] = val0;
-			x = 1;
-
-			__m128i z = _mm_setzero_si128(), ftz = _mm_set1_epi16((short)ftzero),
-				ftz2 = _mm_set1_epi8(CV_CAST_8U(ftzero * 2));
-			for (; x <= size.width - 9; x += 8)
-			{
-				__m128i c0 = _mm_unpacklo_epi8(_mm_loadl_epi64((__m128i*)(srow0 + x - 1)), z);
-				__m128i c1 = _mm_unpacklo_epi8(_mm_loadl_epi64((__m128i*)(srow1 + x - 1)), z);
-				__m128i d0 = _mm_unpacklo_epi8(_mm_loadl_epi64((__m128i*)(srow0 + x + 1)), z);
-				__m128i d1 = _mm_unpacklo_epi8(_mm_loadl_epi64((__m128i*)(srow1 + x + 1)), z);
-
-				d0 = _mm_sub_epi16(d0, c0);
-				d1 = _mm_sub_epi16(d1, c1);
-
-				__m128i c2 = _mm_unpacklo_epi8(_mm_loadl_epi64((__m128i*)(srow2 + x - 1)), z);
-				__m128i c3 = _mm_unpacklo_epi8(_mm_loadl_epi64((__m128i*)(srow2 + x - 1)), z);
-				__m128i d2 = _mm_unpacklo_epi8(_mm_loadl_epi64((__m128i*)(srow2 + x + 1)), z);
-				__m128i d3 = _mm_unpacklo_epi8(_mm_loadl_epi64((__m128i*)(srow2 + x + 1)), z);
-
-				d2 = _mm_sub_epi16(d2, c2);
-				d3 = _mm_sub_epi16(d3, c3);
-
-				__m128i v0 = _mm_add_epi16(d0, _mm_add_epi16(d2, _mm_add_epi16(d1, d1)));
-				__m128i v1 = _mm_add_epi16(d1, _mm_add_epi16(d3, _mm_add_epi16(d2, d2)));
-				v0 = _mm_packus_epi16(_mm_add_epi16(v0, ftz), _mm_add_epi16(v1, ftz));
-				v0 = _mm_min_epu8(v0, ftz2);
-
-				_mm_storel_epi64((__m128i*)(dptr0 + x), v0);
-				_mm_storel_epi64((__m128i*)(dptr1 + x), _mm_unpackhi_epi64(v0, v0));
-			}
-			srow1 += step;
-			dptr0 += step;
-			dptr1 += step;
-		}
-		for (; y < size.height; y++)
-		{
-			uchar* dptr = dst.ptr<uchar>(y);
-			for (x = 0; x < size.width; x++)
-				dptr[x] = val0;
-		}
-	}
-
-	void StereoBMSimple::shiftImage(Mat& src, Mat& dest, const int shift)
+	void StereoBase::shiftImage(Mat& src, Mat& dest, const int shift)
 	{
 		if (bufferGray.size() != src.size() || bufferGray.type() != src.type())bufferGray.create(src.size(), src.type());
 
@@ -511,40 +448,36 @@ namespace cp
 		}
 	}
 
-	StereoBMSimple::StereoBMSimple(int blockSize, int minDisp, int disparityRange)
+	StereoBase::StereoBase(int blockSize, int minDisp, int disparityRange)
 	{
 		border = 0;
 		speckleWindowSize = 20;
 		speckleRange = 16;
 		uniquenessRatio = 0;
-		disp12diff = 0;
-		subpixMethod = SUBPIXEL_QUAD;
 
-		isBoxSubpix = true;
-		subboxWindowR = 2;
-		subboxRange = 16;
+		subpixelInterpolationMethod = SUBPIXEL_QUAD;
 
-		error_truncate = 31;
-		eps = 0.1;
-		SADWindowSize = blockSize;
-		SADWindowSizeH = blockSize;
+		subpixelRangeFilterWindow = 2;
+		subpixelRangeFilterCap = 16;
+
+		pixelMatchErrorCap = 31;
+		aggregationGuidedfilterEps = 0.1;
+		aggregationRadiusH = blockSize;
+		aggregationRadiusV = blockSize;
 		minDisparity = minDisp;
 		numberOfDisparities = disparityRange;
 
 		preFilterCap = 31;
-		sobelAlpha = 10;
-		prefSize = 0;
-		prefParam = 50;
-		prefParam2 = 20;
-		isBT = false;
-		isMinCostFilter = true;
+		costAlphaImageSobel = 10;
+		sobelBlendMapParam_Size = 0;
+		sobelBlendMapParam1 = 50;
+		sobelBlendMapParam2 = 20;
 
-		isProcessLBorder = true;
 		P1 = 0;
 		P2 = 0;
 	}
 
-	void StereoBMSimple::imshowDisparity(string wname, Mat& disp, int option, OutputArray output)
+	void StereoBase::imshowDisparity(string wname, Mat& disp, int option, OutputArray output)
 	{
 		//cvtDisparityColor(disp,output,minDisparity,numberOfDisparities,option,16);
 		output.create(disp.size(), CV_8UC3);
@@ -553,14 +486,79 @@ namespace cp
 		imshow(wname, output);
 	}
 
-	void StereoBMSimple::imshowDisparity(string wname, Mat& disp, int option, Mat& output, int mindis, int range)
+	void StereoBase::imshowDisparity(string wname, Mat& disp, int option, Mat& output, int mindis, int range)
 	{
 		cvtDisparityColor(disp, output, mindis, range, option, 16);
 		imshow(wname, output);
 	}
 
+#pragma region cost computation of pixel matching
+#define  CV_CAST_8U(t)  (uchar)(!((t) & ~255) ? (t) : (t) > 0 ? 255 : 0)
+	void prefilterXSobel(Mat& src, Mat& dst, const int preFilterCap)
+	{
+		if (dst.empty())dst.create(src.size(), CV_8U);
+		int x, y;
+		const int OFS = 256 * 4, TABSZ = OFS * 2 + 256;
 
-	void StereoBMSimple::preFilter(Mat& src, Mat& dest, int param)
+		Size size = src.size();
+		const uchar val0 = preFilterCap;
+
+		const int step = 2 * src.cols;
+		uchar* srow1 = src.ptr<uchar>();
+		uchar* dptr0 = dst.ptr<uchar>();
+		uchar* dptr1 = dptr0 + dst.step;
+
+		//unrolling y0 and y1
+		for (y = 0; y < size.height - 1; y += 2)
+		{
+			const uchar* srow0 = y > 0 ? srow1 - src.step : size.height > 1 ? srow1 + src.step : srow1;
+			const uchar* srow2 = y < size.height - 1 ? srow1 + src.step : size.height > 1 ? srow1 - src.step : srow1;
+			const uchar* srow3 = y < size.height - 2 ? srow1 + src.step * 2 : srow1;
+
+			dptr0[0] = dptr0[size.width - 1] = dptr1[0] = dptr1[size.width - 1] = val0;
+			x = 1;
+
+			__m128i zero = _mm_setzero_si128(), ftz = _mm_set1_epi16((short)preFilterCap),
+				ftz2 = _mm_set1_epi8(CV_CAST_8U(preFilterCap * 2));
+			for (; x <= size.width - 9; x += 8)
+			{
+				__m128i c0 = _mm_unpacklo_epi8(_mm_loadl_epi64((__m128i*)(srow0 + x - 1)), zero);
+				__m128i c1 = _mm_unpacklo_epi8(_mm_loadl_epi64((__m128i*)(srow1 + x - 1)), zero);
+				__m128i d0 = _mm_unpacklo_epi8(_mm_loadl_epi64((__m128i*)(srow0 + x + 1)), zero);
+				__m128i d1 = _mm_unpacklo_epi8(_mm_loadl_epi64((__m128i*)(srow1 + x + 1)), zero);
+
+				d0 = _mm_sub_epi16(d0, c0);
+				d1 = _mm_sub_epi16(d1, c1);
+
+				__m128i c2 = _mm_unpacklo_epi8(_mm_loadl_epi64((__m128i*)(srow2 + x - 1)), zero);
+				__m128i c3 = _mm_unpacklo_epi8(_mm_loadl_epi64((__m128i*)(srow2 + x - 1)), zero);
+				__m128i d2 = _mm_unpacklo_epi8(_mm_loadl_epi64((__m128i*)(srow3 + x + 1)), zero);
+				__m128i d3 = _mm_unpacklo_epi8(_mm_loadl_epi64((__m128i*)(srow3 + x + 1)), zero);
+
+				d2 = _mm_sub_epi16(d2, c2);
+				d3 = _mm_sub_epi16(d3, c3);
+
+				__m128i v0 = _mm_add_epi16(d0, _mm_add_epi16(d2, _mm_add_epi16(d1, d1)));
+				__m128i v1 = _mm_add_epi16(d1, _mm_add_epi16(d3, _mm_add_epi16(d2, d2)));
+				v0 = _mm_packus_epi16(_mm_add_epi16(v0, ftz), _mm_add_epi16(v1, ftz));
+				v0 = _mm_min_epu8(v0, ftz2);
+
+				_mm_storel_epi64((__m128i*)(dptr0 + x), v0);
+				_mm_storel_epi64((__m128i*)(dptr1 + x), _mm_unpackhi_epi64(v0, v0));
+			}
+			srow1 += step;
+			dptr0 += step;
+			dptr1 += step;
+		}
+		for (; y < size.height; y++)
+		{
+			uchar* dptr = dst.ptr<uchar>(y);
+			for (x = 0; x < size.width; x++)
+				dptr[x] = val0;
+		}
+	}
+
+	void StereoBase::preFilter(Mat& src, Mat& dest, int param)
 	{
 		vector<Mat> img;
 		//split(leftim,img);
@@ -570,12 +568,27 @@ namespace cp
 			prefilterXSobel(img[c], img[c], preFilterCap);
 		merge(img, dest);
 	}
-	static void absdifftruncateSSE(Mat& src1, Mat& src2, uchar thresh, Mat& dest)
+
+	void StereoBase::prefilter(Mat& targetImage, Mat& referenceImage)
 	{
+		target.resize(2);
+		reference.resize(2);
+		cvtColor(targetImage, target[0], COLOR_BGR2GRAY);
+		cvtColor(referenceImage, reference[0], COLOR_BGR2GRAY);
+
+		prefilterXSobel(target[0], target[1], preFilterCap);
+		prefilterXSobel(reference[0], reference[1], preFilterCap);
+		//GaussianBlur(target[0],target[0],Size(2*prefSize+1,2*prefSize+1),1.0);
+		//GaussianBlur(refference[0],refference[0],Size(2*prefSize+1,2*prefSize+1),1.0);
+	}
+
+	void absDiffTruncate_SSE_8u(Mat& src1, Mat& src2, uchar thresh, Mat& dest)
+	{
+		dest.create(src1.size(), CV_8U);
+
 		const int size = src1.size().area();
 		uchar* s1 = src1.ptr<uchar>(0);
 		uchar* s2 = src2.ptr<uchar>(0);
-		if (dest.empty())dest.create(src1.size(), CV_8U);
 		uchar* d = dest.ptr<uchar>(0);
 
 		const __m128i trunc = _mm_set1_epi8(thresh);
@@ -590,10 +603,9 @@ namespace cp
 			s2 += 16;
 			d += 16;
 		}
-
 	}
 
-	void StereoBMSimple::textureAlpha(Mat& src, Mat& dest, const int th1, const int th2, const int r)
+	void StereoBase::textureAlpha(Mat& src, Mat& dest, const int th1, const int th2, const int r)
 	{
 		if (dest.empty())dest.create(src.size(), CV_8U);
 		Mat temp;
@@ -611,98 +623,46 @@ namespace cp
 		multiply(temp33, temp33, temp33, 1);
 		temp33.convertTo(temp2, CV_8U, 255.0 / th2);
 		//temp2*=255.0/(double)th2;
-
 		//blur(temp2,temp2,Size(2*r+1,2*r+1));
-
 		//threshold(temp2,dest,th,255,cv::THRESH_BINARY);
-		maxFilter(temp2, dest, Size(SADWindowSize, 2 * r + 1));
+
+		maxFilter(temp2, dest, Size(aggregationRadiusH, 2 * r + 1));
+
 		//blur(temp2,dest,size(2*r+1,2*r+1));
 		//dest*=1.5;
 		//GaussianBlur(dest,dest,Size(2*r+1,2*r+1),r/1.5);
-		imshow("texture", dest);
+
+		//imshow("texture", dest);
 	}
 
-	void StereoBMSimple::getMatchingCostSADAlpha(vector<Mat>& t, vector<Mat>& r, Mat& alpha, const int d, Mat& dest)
+	void StereoBase::getPixelMatchingCostSAD(vector<Mat>& t, vector<Mat>& r, const int d, Mat& dest)
 	{
-		Size size = t[0].size();
-		int type = t[0].type();
-		if (bufferGray1.size() != size || bufferGray1.type() != type) bufferGray1.create(size, type);
+		bufferGray1.create(t[0].size(), t[0].type());
 
 		shiftImage(r[0], bufferGray1, d);
-		//absdiff(target[0],bufferGray1,dest);
-		//min(dest,error_truncate,dest);
-		absdifftruncateSSE(t[0], bufferGray1, error_truncate, dest);
+		absDiffTruncate_SSE_8u(t[0], bufferGray1, pixelMatchErrorCap, dest);
 
 		shiftImage(r[1], bufferGray1, d);
-		//absdiff(target[1],bufferGray1,bufferGray1);
-		absdifftruncateSSE(t[1], bufferGray1, error_truncate, bufferGray1);
+		absDiffTruncate_SSE_8u(t[1], bufferGray1, pixelMatchErrorCap, bufferGray1);
 
-		//alphaBlend(dest,bufferGray1,a,dest);
-
-		//alphaBlendSSE_8u(dest,bufferGray1,alpha,dest);
-		alphaBlend(dest, bufferGray1, alpha, dest);
-
-		//min(dest,error_truncate,dest);
-		//add(dest,bufferGray1,dest);
-	}
-
-	void StereoBMSimple::getMatchingCostSAD(vector<Mat>& t, vector<Mat>& r, const int d, Mat& dest)
-	{
-		Size size = t[0].size();
-		int type = t[0].type();
-		if (bufferGray1.size() != size || bufferGray1.type() != type) bufferGray1.create(size, type);
-
-		/*if(dest.empty())dest.create(size,type);
-		if(bufferGray1.size()!=size ||bufferGray1.type()!=type) bufferGray1.create(size,type);
-		if(bufferGray2.size()!=size ||bufferGray2.type()!=type) bufferGray2.create(size,type);
-		if(bufferGray3.size()!=size ||bufferGray3.type()!=type) bufferGray3.create(size,type);
-		if(bufferGray4.size()!=size ||bufferGray4.type()!=type) bufferGray4.create(size,type);
-
-
-		shiftImage(refference[0],bufferGray1,d);
-		shiftImage(refference[0],bufferGray2,d+1);
-		shiftImage(refference[0],bufferGray3,d-1);
-		halfPixel(bufferGray1,bufferGray2,bufferGray3);
-
-		cv::max(bufferGray1,bufferGray2,bufferGray4);
-		cv::max(bufferGray4,bufferGray3,bufferGray4);
-		//cv::max(target[0]-bufferGray4,0,dest);
-		dest = target[0]-bufferGray4;
-		//subtract(target[0],bufferGray4,dest);
-		cv::min(bufferGray1,bufferGray2,bufferGray4);
-		cv::min(bufferGray4,bufferGray3,bufferGray4);
-		cv::max(bufferGray4-target[0],dest,dest);*/
-
-		shiftImage(r[0], bufferGray1, d);
-		//absdiff(target[0],bufferGray1,dest);
-		//min(dest,error_truncate,dest);
-		absdifftruncateSSE(t[0], bufferGray1, error_truncate, dest);
-
-		shiftImage(r[1], bufferGray1, d);
-		//absdiff(target[1],bufferGray1,bufferGray1);
-		absdifftruncateSSE(t[1], bufferGray1, error_truncate, bufferGray1);
-
-		double a = sobelAlpha / 100.0;
+		double a = costAlphaImageSobel / 100.0;
 		alphaBlend(dest, bufferGray1, a, dest);
-
-		//min(dest,error_truncate,dest);
-		//add(dest,bufferGray1,dest);
-
-		/*shiftImage(refference[1],bufferGray1,d);
-		absdiff(target[1],bufferGray1,bufferGray1);
-		add(dest,bufferGray1,dest);
-
-		shiftImage(refference[2],bufferGray1,d);
-		absdiff(target[2],bufferGray1,bufferGray1);
-		add(dest,bufferGray1,dest);*/
-
-		//dest = 0.3333*dest;
-		//min(dest,error_truncate,dest);
 	}
-	//int temp3;
-	//#define IMAX3(a,b,c) ((temp3 = (a) >= (b) ? (a) : (b)),(temp3 >= (c) ? temp3 : (c)))
-	//#define IMIN3(a,b,c) ((temp3 = (a) <= (b) ? (a) : (b)),(temp3 <= (c) ? temp3 : (c)))
-	void StereoBMSimple::halfPixel(Mat& src, Mat& srcp, Mat& srcm)
+
+	void StereoBase::getPixelMatchingCostSADAlpha(vector<Mat>& t, vector<Mat>& r, Mat& alpha, const int d, Mat& dest)
+	{
+		bufferGray1.create(t[0].size(), t[0].type());
+
+		shiftImage(r[0], bufferGray1, d);
+		absDiffTruncate_SSE_8u(t[0], bufferGray1, pixelMatchErrorCap, dest);
+
+		shiftImage(r[1], bufferGray1, d);
+		absDiffTruncate_SSE_8u(t[1], bufferGray1, pixelMatchErrorCap, bufferGray1);
+
+		alphaBlend(dest, bufferGray1, alpha, dest);
+	}
+
+	void halfPixel_8u(Mat& src, Mat& srcp, Mat& srcm)
 	{
 		const int size = src.size().area();
 
@@ -745,7 +705,7 @@ namespace cp
 		}
 	}
 
-	void StereoBMSimple::getMatchingCostBTAlpha(vector<Mat>& target, vector<Mat>& refference, Mat& alpha, const int d, Mat& dest)
+	void StereoBase::getPixelMatchingCostBT(vector<Mat>& target, vector<Mat>& refference, const int d, Mat& dest)
 	{
 		Size size = target[0].size();
 		int type = target[0].type();
@@ -759,7 +719,7 @@ namespace cp
 		shiftImage(refference[0], bufferGray1, d);
 		shiftImage(refference[0], bufferGray2, d + 1);
 		shiftImage(refference[0], bufferGray3, d - 1);
-		halfPixel(bufferGray1, bufferGray2, bufferGray3);
+		halfPixel_8u(bufferGray1, bufferGray2, bufferGray3);
 		//guiAlphaBlend(bufferGray1,bufferGray2);
 		//guiAlphaBlend(bufferGray1,bufferGray3);
 		//addWeighted(bufferGray1,0.5,bufferGray3,0.5,0.0,bufferGray3);
@@ -775,7 +735,7 @@ namespace cp
 		shiftImage(refference[1], bufferGray1, d);
 		shiftImage(refference[1], bufferGray2, d + 1);
 		shiftImage(refference[1], bufferGray3, d - 1);
-		halfPixel(bufferGray1, bufferGray2, bufferGray3);
+		halfPixel_8u(bufferGray1, bufferGray2, bufferGray3);
 		//addWeighted(bufferGray1,0.5,bufferGray2,0.5,0.0,bufferGray2);
 		//addWeighted(bufferGray1,0.5,bufferGray3,0.5,0.0,bufferGray3);
 		cv::max(bufferGray1, bufferGray2, bufferGray4);
@@ -788,60 +748,9 @@ namespace cp
 		cv::max(bufferGray4 - target[1], bufferGray5, bufferGray5);
 
 		//add(dest,bufferGray5,dest);
-		//double a = sobelAlpha/100.0;
-		//alphaBlend(dest,bufferGray5,a,dest);
-		min(bufferGray5, error_truncate, bufferGray5);
-
-		//alphaBlendSSE_8u(dest,bufferGray5,alpha,dest);
-		alphaBlend(dest, bufferGray5, alpha, dest);
-	}
-
-	void StereoBMSimple::getMatchingCostBT(vector<Mat>& target, vector<Mat>& refference, const int d, Mat& dest)
-	{
-		Size size = target[0].size();
-		int type = target[0].type();
-		if (dest.empty())dest.create(size, type);
-		if (bufferGray1.size() != size || bufferGray1.type() != type) bufferGray1.create(size, type);
-		if (bufferGray2.size() != size || bufferGray2.type() != type) bufferGray2.create(size, type);
-		if (bufferGray3.size() != size || bufferGray3.type() != type) bufferGray3.create(size, type);
-		if (bufferGray4.size() != size || bufferGray4.type() != type) bufferGray4.create(size, type);
-		if (bufferGray5.size() != size || bufferGray5.type() != type) bufferGray5.create(size, type);
-
-		shiftImage(refference[0], bufferGray1, d);
-		shiftImage(refference[0], bufferGray2, d + 1);
-		shiftImage(refference[0], bufferGray3, d - 1);
-		halfPixel(bufferGray1, bufferGray2, bufferGray3);
-		//guiAlphaBlend(bufferGray1,bufferGray2);
-		//guiAlphaBlend(bufferGray1,bufferGray3);
-		//addWeighted(bufferGray1,0.5,bufferGray3,0.5,0.0,bufferGray3);
-		cv::max(bufferGray1, bufferGray2, bufferGray4);
-		cv::max(bufferGray4, bufferGray3, bufferGray4);
-		//cv::max(target[0]-bufferGray4,0,dest);
-		dest = target[0] - bufferGray4;
-		//subtract(target[0],bufferGray4,dest);
-		cv::min(bufferGray1, bufferGray2, bufferGray4);
-		cv::min(bufferGray4, bufferGray3, bufferGray4);
-		cv::max(bufferGray4 - target[0], dest, dest);
-
-		shiftImage(refference[1], bufferGray1, d);
-		shiftImage(refference[1], bufferGray2, d + 1);
-		shiftImage(refference[1], bufferGray3, d - 1);
-		halfPixel(bufferGray1, bufferGray2, bufferGray3);
-		//addWeighted(bufferGray1,0.5,bufferGray2,0.5,0.0,bufferGray2);
-		//addWeighted(bufferGray1,0.5,bufferGray3,0.5,0.0,bufferGray3);
-		cv::max(bufferGray1, bufferGray2, bufferGray4);
-		cv::max(bufferGray4, bufferGray3, bufferGray4);
-		//cv::max(target[1]-bufferGray4,0,bufferGray5);
-		bufferGray5 = target[1] - bufferGray4;
-		//subtract(target[1],bufferGray4,bufferGray5);
-		cv::min(bufferGray1, bufferGray2, bufferGray4);
-		cv::min(bufferGray4, bufferGray3, bufferGray4);
-		cv::max(bufferGray4 - target[1], bufferGray5, bufferGray5);
-
-		//add(dest,bufferGray5,dest);
-		double a = sobelAlpha / 100.0;
+		double a = costAlphaImageSobel / 100.0;
 		alphaBlend(dest, bufferGray5, a, dest);
-		min(dest, error_truncate, dest);
+		min(dest, pixelMatchErrorCap, dest);
 		/*
 		shiftImage(refference[2],bufferGray1,d);
 		shiftImage(refference[2],bufferGray2,d+1);
@@ -903,7 +812,176 @@ namespace cp
 		//min(dest,error_truncate,dest);
 	}
 
-	void StereoBMSimple::getOptScanline()
+	void StereoBase::getPixelMatchingCostBTAlpha(vector<Mat>& target, vector<Mat>& refference, Mat& alpha, const int d, Mat& dest)
+	{
+		Size size = target[0].size();
+		int type = target[0].type();
+		if (dest.empty())dest.create(size, type);
+		if (bufferGray1.size() != size || bufferGray1.type() != type) bufferGray1.create(size, type);
+		if (bufferGray2.size() != size || bufferGray2.type() != type) bufferGray2.create(size, type);
+		if (bufferGray3.size() != size || bufferGray3.type() != type) bufferGray3.create(size, type);
+		if (bufferGray4.size() != size || bufferGray4.type() != type) bufferGray4.create(size, type);
+		if (bufferGray5.size() != size || bufferGray5.type() != type) bufferGray5.create(size, type);
+
+		shiftImage(refference[0], bufferGray1, d);
+		shiftImage(refference[0], bufferGray2, d + 1);
+		shiftImage(refference[0], bufferGray3, d - 1);
+		halfPixel_8u(bufferGray1, bufferGray2, bufferGray3);
+		//guiAlphaBlend(bufferGray1,bufferGray2);
+		//guiAlphaBlend(bufferGray1,bufferGray3);
+		//addWeighted(bufferGray1,0.5,bufferGray3,0.5,0.0,bufferGray3);
+		cv::max(bufferGray1, bufferGray2, bufferGray4);
+		cv::max(bufferGray4, bufferGray3, bufferGray4);
+		//cv::max(target[0]-bufferGray4,0,dest);
+		dest = target[0] - bufferGray4;
+		//subtract(target[0],bufferGray4,dest);
+		cv::min(bufferGray1, bufferGray2, bufferGray4);
+		cv::min(bufferGray4, bufferGray3, bufferGray4);
+		cv::max(bufferGray4 - target[0], dest, dest);
+
+		shiftImage(refference[1], bufferGray1, d);
+		shiftImage(refference[1], bufferGray2, d + 1);
+		shiftImage(refference[1], bufferGray3, d - 1);
+		halfPixel_8u(bufferGray1, bufferGray2, bufferGray3);
+		//addWeighted(bufferGray1,0.5,bufferGray2,0.5,0.0,bufferGray2);
+		//addWeighted(bufferGray1,0.5,bufferGray3,0.5,0.0,bufferGray3);
+		cv::max(bufferGray1, bufferGray2, bufferGray4);
+		cv::max(bufferGray4, bufferGray3, bufferGray4);
+		//cv::max(target[1]-bufferGray4,0,bufferGray5);
+		bufferGray5 = target[1] - bufferGray4;
+		//subtract(target[1],bufferGray4,bufferGray5);
+		cv::min(bufferGray1, bufferGray2, bufferGray4);
+		cv::min(bufferGray4, bufferGray3, bufferGray4);
+		cv::max(bufferGray4 - target[1], bufferGray5, bufferGray5);
+
+		//add(dest,bufferGray5,dest);
+		//double a = sobelAlpha/100.0;
+		//alphaBlend(dest,bufferGray5,a,dest);
+		min(bufferGray5, pixelMatchErrorCap, bufferGray5);
+
+		//alphaBlendSSE_8u(dest,bufferGray5,alpha,dest);
+		alphaBlend(dest, bufferGray5, alpha, dest);
+	}
+
+	string StereoBase::getPixelMatchingMethodName(int method)
+	{
+		string mes;
+		switch (method)
+		{
+		case Pixel_Matching_SAD:				mes = "Cost_Computation_SAD"; break;
+		case Pixel_Matching_SAD_TextureBlend:	mes = "Cost_Computation_SAD_TextureBlend"; break;
+		case Pixel_Matching_BT:				mes = "Cost_Computation_BT"; break;
+		case Pixel_Matching_BT_TextureBlend:	mes = "Cost_Computation_BTTextureBlend"; break;
+		default:								mes = "This cost computation method is not supported"; break;
+		}
+		return mes;
+	}
+
+	void StereoBase::getPixelMatchingCost(const int d, Mat& dest)
+	{
+		if (PixelMatchingMethod == Pixel_Matching_SAD)
+		{
+			getPixelMatchingCostSAD(target, reference, d, dest);
+		}
+		else if (PixelMatchingMethod == Pixel_Matching_SAD_TextureBlend)
+		{
+			Mat alpha;
+			textureAlpha(target[0], alpha, sobelBlendMapParam2, sobelBlendMapParam1, sobelBlendMapParam_Size);
+			getPixelMatchingCostSADAlpha(target, reference, alpha, d, dest);
+		}
+		else if (PixelMatchingMethod == Pixel_Matching_BT)
+		{
+			getPixelMatchingCostBT(target, reference, d, dest);
+		}
+		else if (PixelMatchingMethod == Pixel_Matching_BT_TextureBlend)
+		{
+			Mat alpha;
+			textureAlpha(target[0], alpha, sobelBlendMapParam2, sobelBlendMapParam1, sobelBlendMapParam_Size);
+			getPixelMatchingCostBTAlpha(target, reference, alpha, d, dest);
+		}
+		else
+		{
+			cout << "This pixel matching method is not supported." << endl;
+		}
+	}
+
+#pragma region cost aggregation
+
+	string StereoBase::getAggregationMethodName(int method)
+	{
+		string mes;
+		switch (method)
+		{
+		case Aggregation_Box:				mes = "Aggregation_Box"; break;
+		case Aggregation_BoxShiftable:		mes = "Aggregation_BoxShiftable"; break;
+		case Aggregation_Gauss:				mes = "Aggregation_Gauss"; break;
+		case Aggregation_GaussShiftable:	mes = "Aggregation_GaussShiftable"; break;
+		case Aggregation_Guided:			mes = "Aggregation_Guided"; break;
+		default:							mes = "This cost computation method is not supported"; break;
+		}
+		return mes;
+	}
+
+	void StereoBase::getCostAggregation(Mat& src, Mat& dest, cv::InputArray guide_)
+	{
+		const float sigma_s_h = aggregationRadiusH / 3.f;
+		const float sigma_s_v = aggregationRadiusV / 3.f;
+
+		Mat guide = guide_.getMat();
+		if (aggregationRadiusH != 1)
+		{
+			//GaussianBlur(dsi,DSI[i],Size(SADWindowSize,SADWindowSize),3);
+			Size s = Size(2 * aggregationRadiusH + 1, 2 * aggregationRadiusV + 1);
+
+			if (AggregationMethod == Aggregation_Box)
+			{
+				boxFilter(src, dest, -1, s);
+			}
+			else if (AggregationMethod == Aggregation_BoxShiftable)
+			{
+				boxFilter(src, dest, -1, s);
+				minFilter(dest, dest, aggregationShiftableKernel);
+			}
+			else if (AggregationMethod == Aggregation_Gauss)
+			{
+				GaussianBlur(src, dest, s, sigma_s_h, sigma_s_v);
+			}
+			else if (AggregationMethod == Aggregation_GaussShiftable)
+			{
+				GaussianBlur(src, dest, s, sigma_s_h, sigma_s_v);
+				minFilter(dest, dest, aggregationShiftableKernel);
+			}
+			else if (AggregationMethod == Aggregation_Guided)
+			{
+				guidedImageFilter(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps);
+			}
+
+			/*
+			//stack box
+			Mat dest1;
+
+			boxFilter(src, dest, -1, Size(SADWindowSize, 3));
+			boxFilter(src, dest1, -1, Size(SADWindowSize, 1));
+			min(dest, dest1, dest);
+			boxFilter(src, dest1, -1, Size(2 * (SADWindowSize - 1) + 1, 1));
+			min(dest, dest1, dest);
+			boxFilter(src, dest1, -1, Size(1, SADWindowSizeH));
+			min(dest, dest1, dest);
+			boxFilter(src, dest1, -1, Size(3, SADWindowSizeH));
+			min(dest, dest1, dest);
+			*/
+
+			//weightedJointBilateralFilterSP(src,joint,weightMap,dest,Size(SADWindowSize,SADWindowSize),eps*100.0,100.0,1.0,0.0);
+			//jointBilateralFilter(src,dest,SADWindowSize,eps,5.0,joint);
+		}
+		else
+		{
+			if (src.data != dest.data) src.copyTo(dest);
+		}
+	}
+
+	//WTA and optimization
+	void StereoBase::getOptScanline()
 	{
 		cout << "opt scan\n";
 		Size size = DSI[0].size();
@@ -988,89 +1066,8 @@ namespace cp
 		//delete[] vd;
 	}
 
-
-	void StereoBMSimple::getMatchingCost(const int d, Mat& dest)
-	{
-		if (isBT)
-		{
-			//getMatchingCostBT(target,refference,d,dest);
-			Mat alpha;
-			textureAlpha(target[0], alpha, prefParam2, prefParam, prefSize);
-			getMatchingCostBTAlpha(target, refference, alpha, d, dest);
-		}
-		else
-		{
-			Mat alpha;
-			textureAlpha(target[0], alpha, prefParam2, prefParam, prefSize);
-			getMatchingCostSADAlpha(target, refference, alpha, d, dest);
-			//getMatchingCostSAD(target,refference,d,dest);
-		}
-	}
-
-
-	void StereoBMSimple::getCostAggregationBM(Mat& src, Mat& dest, int d)
-	{
-		if (SADWindowSize != 1)
-		{
-			boxFilter(src, dest, -1, Size(d, d));
-		}
-		else
-		{
-			if (src.data != dest.data)
-				src.copyTo(dest);
-		}
-	}
-
-	void StereoBMSimple::getCostAggregation(Mat& src, Mat& dest, cv::InputArray joint_)
-	{
-		Mat joint = joint_.getMat();
-		if (SADWindowSize != 1)
-		{
-			//GaussianBlur(dsi,DSI[i],Size(SADWindowSize,SADWindowSize),3);
-			Size s = Size(SADWindowSize, SADWindowSizeH);
-
-
-			//boxFilter(src,dest,-1,s);
-
-			Mat dest1;
-
-			boxFilter(src, dest, -1, Size(SADWindowSize, 3));
-			boxFilter(src, dest1, -1, Size(SADWindowSize, 1));
-			min(dest, dest1, dest);
-			boxFilter(src, dest1, -1, Size(2 * (SADWindowSize - 1) + 1, 1));
-			min(dest, dest1, dest);
-			boxFilter(src, dest1, -1, Size(1, SADWindowSizeH));
-			min(dest, dest1, dest);
-			boxFilter(src, dest1, -1, Size(3, SADWindowSizeH));
-			min(dest, dest1, dest);
-			//int r = ((SADWindowSize>>1)*0.667+0.5);
-			//	boxFilter(src,dest,-1,Size(2*r+1,2*r+1));
-
-			//min(dest,dest2,dest);
-
-
-			//Mat temp;
-			//boxFilter(src,temp,CV_16S,s,Point(-1,-1),false);
-			//temp.convertTo(dest,CV_8U,4.0/s.area());
-			//minFilter(dest,dest,Size(3,3));
-
-			//
-
-			//weightedJointBilateralFilterSP(src,joint,weightMap,dest,Size(SADWindowSize,SADWindowSize),eps*100.0,100.0,1.0,0.0);
-
-			//jointBilateralFilter(src,dest,SADWindowSize,eps,5.0,joint);
-			//guidedFilter_matlabconverted(src,joint,dest,SADWindowSize>>1,eps);
-			//guidedFilter_matlabconverted(dest,joint,dest,SADWindowSize>>1,eps);
-		}
-		else
-		{
-			if (src.data != dest.data)
-				src.copyTo(dest);
-		}
-	}
-
-	Mat costMap;
-	void StereoBMSimple::getWTA(vector<Mat>& dsi, Mat& dest)
+	//Mat costMap;
+	void StereoBase::getWTA(vector<Mat>& dsi, Mat& dest, Mat& minimumCostMap)
 	{
 		const int imsize = dest.size().area();
 		for (int i = 0; i < numberOfDisparities; i++)
@@ -1079,7 +1076,7 @@ namespace cp
 
 			short* disp = dest.ptr<short>(0);
 			uchar* pDSI = dsi[i].data;
-			uchar* cost = minCostMap.data;
+			uchar* cost = minimumCostMap.data;
 			for (int j = imsize; j--; pDSI++, cost++, disp++)
 			{
 				if (*pDSI < *cost)
@@ -1090,150 +1087,12 @@ namespace cp
 			}
 		}
 	}
-	void StereoBMSimple::getWeightUniqness(Mat& disp)
-	{
-		const int imsize = disp.size().area();
-		Mat rmap = Mat::ones(disp.size(), CV_8U) * 255;
-		for (int i = 0; i < numberOfDisparities; i++)
-		{
-			const short d = ((minDisparity + i) << 4);
-			short* dis = disp.ptr<short>(0);
-			uchar* pDSI = DSI[i].data;
-			uchar* cost = costMap.data;
-			uchar* r = rmap.data;
-			for (int j = imsize; j--; pDSI++, cost++, dis++)
-			{
-				short dd = (*dis);
-				int v = 1000 * (*cost);
-				int u = (*pDSI)*(1000 - uniquenessRatio);
-				if (u - v < 0 && abs(d - dd)>16)
-				{
-					//int vv = (abs((double)*cost-*pDSI)/(double)(error_truncate))*255.0;
-					//cout<<abs((double)*cost-(double)*pDSI)<<","<<(abs((double)*cost-(double)*pDSI)/(double)(error_truncate))*255.0<<endl;
-					if (*cost == *pDSI)*r = 0;
-					//*r=min(vv,(int)*r);
-				}
 
-				r++;
-			}
-		}
-		rmap.convertTo(weightMap, CV_32F, 1.0 / 255);
-		Mat rshow;	applyColorMap(rmap, rshow, 2); imshow("rmap", rshow);
-
-	}
-
-	void prefilterTest(Mat& src)
-	{
-		namedWindow("prefilter");
-
-		int cap = 31;
-		createTrackbar("cap", "prefilter", &cap, 62);
-		int r = 2;
-		createTrackbar("r", "prefilter", &r, 10);
-
-		int p = 2;
-		createTrackbar("p", "prefilter", &p, 100);
-
-		int key = 0;
-		Mat show;
-		while (key != 'q')
-		{
-			guidedImageFilter(src, src, show, r, p / 100.0f);
-			addWeighted(src, 1.0, show, -1.0, cap, show);
-			min(show, cap * 2, show);
-
-			imshow("prefilter", show);
-			key = waitKey(1);
-		}
-
-	}
-
-	void enhance(Mat& src, Mat& dest, const int th, const int r)
-	{
-		Mat temp;
-		Sobel(src, temp, CV_16S, 1, 0);
-
-		src.copyTo(dest);
-		for (int j = 0; j < src.rows; j++)
-		{
-			short* s = temp.ptr<short>(j);
-			uchar* d = dest.ptr<uchar>(j);
-
-			for (int i = r; i < src.cols - r; i++)
-			{
-				int n = -r;
-				for (; n <= r; n++)
-				{
-					if (abs(s[i + n]) > th)
-						break;
-				}
-				if (n == r + 1)d[i] = saturate_cast<uchar>(d[i] + std::max(std::min((int)s[i], th), -th));
-			}
-		}
-		imshow("src", dest);
-		/*min(temp,th,temp);
-		max(temp,-th,temp);
-		add(src,temp,temp,Mat(),CV_16S);
-		temp.convertTo(dest,CV_8U);*/
-	}
-
-	void StereoBMSimple::prefilter(Mat& src1, Mat& src2)
-	{
-		target.resize(2);
-		refference.resize(2);
-		cvtColor(src1, target[0], COLOR_BGR2GRAY);
-
-
-		//enhance(target[0],target[0],prefParam,2*prefSize+1);
-
-		cvtColor(src2, refference[0], COLOR_BGR2GRAY);
-
-		//enhance(refference[0],refference[0],prefParam,0);
-
-		prefilterXSobel(target[0], target[1], preFilterCap);
-		prefilterXSobel(refference[0], refference[1], preFilterCap);
-		//GaussianBlur(target[0],target[0],Size(2*prefSize+1,2*prefSize+1),1.0);
-		//GaussianBlur(refference[0],refference[0],Size(2*prefSize+1,2*prefSize+1),1.0);
-
-	}
-
-	void StereoBMSimple::refineFromCost(Mat& src, Mat& dest)
-	{
-		short* disp = src.ptr<short>(0);
-		const int imsize = dest.size().area();
-		for (int j = 0; j < imsize; j++)
-		{
-			short d = (short)(disp[j] / 16.0 + 0.5);
-			int l = d - minDisparity;
-			if (l<1 || l>numberOfDisparities - 2)
-			{
-				;
-			}
-			else
-			{
-				int f = DSI[l].data[j];
-				int p = DSI[l + 1].data[j];
-				int m = DSI[l - 1].data[j];
-				if (f > p || f > m)
-				{
-
-
-					int md = ((p + m - (f << 1)) << 1);
-					if (md != 0)
-					{
-						double dd = (double)d - (double)(p - m) / (double)md;
-						disp[j] = (short)(16.0*dd + 0.5);
-					}
-					//	disp[j]=0;
-				}
-			}
-		}
-
-	}
-
-	void StereoBMSimple::uniquenessFilter(Mat& costMap, Mat& dest)
+	//post filter
+	void StereoBase::uniquenessFilter(Mat& costMap, Mat& dest)
 	{
 		if (uniquenessRatio == 0)return;
+		if (!isUniquenessFilter) return;
 
 		const int imsize = dest.size().area();
 		const double mul = 1.0 + uniquenessRatio / 100.0;
@@ -1248,7 +1107,7 @@ namespace cp
 			{
 				short dd = (*disp);
 
-				int v = (*cost) *mul;
+				int v = (*cost) * mul;
 				if ((*pDSI) <= v && abs(d - dd) > 16)
 				{
 					*disp = 0;//(minDisparity-1)<<4;
@@ -1257,9 +1116,24 @@ namespace cp
 		}
 	}
 
-	void StereoBMSimple::subpixelInterpolation(Mat& dest, int method)
+	string StereoBase::getSubpixelInterpolationMethodName(const int method)
+	{
+		string mes;
+		switch (method)
+		{
+		case SUBPIXEL_NONE:		mes = "Subpixel None"; break;
+		case SUBPIXEL_QUAD:		mes = "Subpixel Quad"; break;
+		case SUBPIXEL_LINEAR:	mes = "Subpixel Linear"; break;
+
+		default:				mes = "This subpixel interpolation method is not supported"; break;
+		}
+		return mes;
+	}
+
+	void StereoBase::subpixelInterpolation(Mat& dest, const int method)
 	{
 		if (method == SUBPIXEL_NONE)return;
+
 		short* disp = dest.ptr<short>(0);
 		const int imsize = dest.size().area();
 		if (method == SUBPIXEL_QUAD)
@@ -1282,7 +1156,7 @@ namespace cp
 					if (md != 0)
 					{
 						double dd = (double)d - (double)(p - m) / (double)md;
-						disp[j] = (short)(16.0*dd + 0.5);
+						disp[j] = (short)(16.0 * dd + 0.5);
 					}
 				}
 			}
@@ -1308,20 +1182,348 @@ namespace cp
 
 					if (m2 > m3)
 					{
-						md = 0.5 - 0.25*((m31*m31) / (m21*m21) + m31 / m21);
+						md = 0.5 - 0.25 * ((m31 * m31) / (m21 * m21) + m31 / m21);
 					}
 					else
 					{
-						md = -(0.5 - 0.25*((m21*m21) / (m31*m31) + m21 / m31));
+						md = -(0.5 - 0.25 * ((m21 * m21) / (m31 * m31) + m21 / m31));
 
 					}
 
-					disp[j] = (short)(16.0*((double)d + md) + 0.5);
+					disp[j] = (short)(16.0 * ((double)d + md) + 0.5);
 
 				}
 			}
 		}
 	}
+
+
+	void StereoBase::fastLRCheck(Mat& dest)
+	{
+		Mat dispR = Mat::zeros(dest.size(), CV_16S);
+		Mat disp8(dest.size(), CV_16S);
+		//dest.convertTo(disp8,CV_16S,1.0/16,0.5);
+		const int imsize = dest.size().area();
+
+		short* dddd = dest.ptr<short>(0);
+		short* d8 = disp8.ptr<short>(0);
+		const double div = 1.0 / 16.0;
+		for (int i = 0; i < dest.size().area(); i++)
+		{
+			d8[i] = (short)(dddd[i] * div + 0.5);
+		}
+
+		short* disp = disp8.ptr<short>(0);
+		short* dispr = dispR.ptr<short>(0);
+
+
+		disp += minDisparity + numberOfDisparities;
+		dispr += minDisparity + numberOfDisparities;
+		for (int j = imsize - (minDisparity + numberOfDisparities); j--; disp++, dispr++)
+		{
+			const short d = *disp;
+			if (d != 0)
+			{
+				if (*(dispr - d) < *(disp))
+				{
+					*(dispr - d) = d;
+				}
+			}
+		}
+		LRCheckDisparity(disp8, dispR, 0, disp12diff + 1, 0, 1, LR_CHECK_DISPARITY_ONLY_L);
+		//LRCheckDisparity(disp8,dispR,0,disp12diff,0,1,xcv::LR_CHECK_DISPARITY_BOTH);
+		//Mat dr; dispR.convertTo(dr,CV_8U,4);imshow("dispR",dr);
+
+		Mat mask;
+		compare(disp8, 0, mask, cv::CMP_EQ);
+		dest.setTo(0, mask);
+	}
+
+	void StereoBase::fastLRCheck(Mat& costMap, Mat& dest)
+	{
+		Mat dispR = Mat::zeros(dest.size(), CV_16S);
+		Mat disp8(dest.size(), CV_16S);
+		//dest.convertTo(disp8,CV_16S,1.0/16,0.5);
+		const int imsize = dest.size().area();
+
+		short* dddd = dest.ptr<short>(0);
+		short* d8 = disp8.ptr<short>(0);
+		const double div = 1.0 / 16.0;
+		for (int i = 0; i < dest.size().area(); i++)
+		{
+			d8[i] = (short)(dddd[i] * div + 0.5);
+		}
+		if (isProcessLBorder)
+		{
+			const int maxval = minDisparity + numberOfDisparities;
+			for (int j = 0; j < disp8.rows; j++)
+			{
+				short* dst = disp8.ptr<short>(j);
+				memset(dst, 0, sizeof(short) * minDisparity + 1);
+				for (int i = minDisparity + 1; i < maxval; i++)
+				{
+					dst[i] = (dst[i] >= i) ? 0 : dst[i];
+				}
+			}
+		}
+
+		Mat costMapR(dest.size(), CV_8U);
+		costMapR.setTo(255);
+
+		short* disp = disp8.ptr<short>(0);
+		short* dispr = dispR.ptr<short>(0);
+
+		uchar* cost = costMap.data;
+		uchar* costr = costMapR.data;
+
+		cost += minDisparity + numberOfDisparities;
+		costr += minDisparity + numberOfDisparities;
+		disp += minDisparity + numberOfDisparities;
+		dispr += minDisparity + numberOfDisparities;
+		for (int j = imsize - (minDisparity + numberOfDisparities); j--; cost++, costr++, disp++, dispr++)
+		{
+			const short d = *disp;
+			if (d != 0)
+			{
+				if (*(cost) < *(costr - d))
+				{
+					*(costr - d) = *cost;
+					*(dispr - d) = d;
+				}
+			}
+		}
+		LRCheckDisparity(disp8, dispR, 0, disp12diff, 0, 1, LR_CHECK_DISPARITY_ONLY_L);
+
+		if (isProcessLBorder)
+		{
+			const int maxval = minDisparity + numberOfDisparities;
+			for (int j = 0; j < disp8.rows; j++)
+			{
+				short* dst = disp8.ptr<short>(j);
+				for (int i = minDisparity + 1; i < maxval; i++)
+				{
+					short d = dst[i];
+					if (d != 0)
+					{
+						if (dst[i + d] == 0)dst[i] = 0;
+					}
+				}
+			}
+		}
+		//LRCheckDisparity(disp8,dispR,0,disp12diff,0,1,xcv::LR_CHECK_DISPARITY_BOTH);
+		//Mat dr; dispR.convertTo(dr,CV_8U,4);imshow("dispR",dr);
+
+		Mat mask;
+		compare(disp8, 0, mask, cv::CMP_EQ);
+		dest.setTo(0, mask);
+	}
+
+	void StereoBase::minCostFilter(Mat& costMap, Mat& dest)
+	{
+		if (isMinCostFilter)
+		{
+			const int imsize = dest.size().area();
+			Mat dest2 = dest.clone();
+			const int step = dest.cols;
+			short* disp2 = dest2.ptr<short>(0);
+			short* disp = dest.ptr<short>(0);
+			uchar* cost = costMap.ptr<uchar>(0);
+			//for(int j=0;j<imsize-step;j++)
+			for (int j = 0; j < imsize; j++)
+			{
+				/*if( disp[0]!=0 && disp[step]!=0 && abs(disp[step]-disp[0])>=16)
+				{
+				if(cost[step]<cost[0])
+				{
+				disp[0]=disp2[step];
+				}
+				else
+				{
+				disp[step]=disp2[0];
+				}
+				}*/
+				if (disp[0] != 0 && disp[-1] != 0 && abs(disp[-1] - disp[0]) >= 16)
+				{
+					if (cost[-1] < cost[0])
+					{
+						disp[0] = disp2[-1];
+					}
+					else
+					{
+						disp[-1] = disp2[0];
+					}
+				}
+
+				disp++;
+				disp2++;
+				cost++;
+			}
+		}
+	}
+
+
+	void StereoBase::getWeightUniqness(Mat& disp)
+	{
+		const int imsize = disp.size().area();
+		Mat rmap = Mat::ones(disp.size(), CV_8U) * 255;
+		for (int i = 0; i < numberOfDisparities; i++)
+		{
+			const short d = ((minDisparity + i) << 4);
+			short* dis = disp.ptr<short>(0);
+			uchar* pDSI = DSI[i].data;
+			uchar* cost = costMap.data;
+			uchar* r = rmap.data;
+			for (int j = imsize; j--; pDSI++, cost++, dis++)
+			{
+				short dd = (*dis);
+				int v = 1000 * (*cost);
+				int u = (*pDSI) * (1000 - uniquenessRatio);
+				if (u - v < 0 && abs(d - dd)>16)
+				{
+					//int vv = (abs((double)*cost-*pDSI)/(double)(error_truncate))*255.0;
+					//cout<<abs((double)*cost-(double)*pDSI)<<","<<(abs((double)*cost-(double)*pDSI)/(double)(error_truncate))*255.0<<endl;
+					if (*cost == *pDSI)*r = 0;
+					//*r=min(vv,(int)*r);
+				}
+
+				r++;
+			}
+		}
+		rmap.convertTo(weightMap, CV_32F, 1.0 / 255);
+		Mat rshow;	applyColorMap(rmap, rshow, 2); imshow("rmap", rshow);
+	}
+
+	void StereoBase::refineFromCost(Mat& src, Mat& dest)
+	{
+		short* disp = src.ptr<short>(0);
+		const int imsize = dest.size().area();
+		for (int j = 0; j < imsize; j++)
+		{
+			short d = (short)(disp[j] / 16.0 + 0.5);
+			int l = d - minDisparity;
+			if (l<1 || l>numberOfDisparities - 2)
+			{
+				;
+			}
+			else
+			{
+				int f = DSI[l].data[j];
+				int p = DSI[l + 1].data[j];
+				int m = DSI[l - 1].data[j];
+				if (f > p || f > m)
+				{
+
+
+					int md = ((p + m - (f << 1)) << 1);
+					if (md != 0)
+					{
+						double dd = (double)d - (double)(p - m) / (double)md;
+						disp[j] = (short)(16.0 * dd + 0.5);
+					}
+					//	disp[j]=0;
+				}
+			}
+		}
+	}
+
+
+	//main function
+	void StereoBase::matching(Mat& leftim, Mat& rightim, Mat& destDisparityMap)
+	{
+		if (destDisparityMap.empty()) destDisparityMap.create(leftim.size(), CV_16S);
+		minCostMap.create(leftim.size(), CV_8U); minCostMap.setTo(255);
+		if ((int)DSI.size() < numberOfDisparities)DSI.resize(numberOfDisparities);
+
+		Mat guideImage;
+		cvtColor(leftim, guideImage, COLOR_BGR2GRAY);
+
+		{
+			Timer t("pre filter");
+			prefilter(leftim, rightim);
+		}
+		if (scheduleCostComputationAndAggregation)
+		{
+			Timer t("Cost computation & aggregation");
+#pragma omp parallel for
+			for (int i = 0; i < numberOfDisparities; i++)
+			{
+				const int d = minDisparity + i;
+				getPixelMatchingCost(d, DSI[i]);
+				getCostAggregation(DSI[i], DSI[i], guideImage);
+			}
+		}
+		else
+		{
+			{
+				Timer t("Cost computation");
+#pragma omp parallel for
+				for (int i = 0; i < numberOfDisparities; i++)
+				{
+					const int d = minDisparity + i;
+					getPixelMatchingCost(d, DSI[i]);
+				}
+			}
+			{
+				Timer t("Cost aggregation");
+#pragma omp parallel for
+				for (int i = 0; i < numberOfDisparities; i++)
+				{
+					Mat dsi = DSI[i];
+					const int d = minDisparity + i;
+					getCostAggregation(dsi, DSI[i], guideImage);
+				}
+			}
+		}
+
+		{
+			Timer t("Cost Optimization");
+			if (P1 != 0 && P2 != 0)
+				getOptScanline();
+		}
+
+		const int imsize = DSI[0].size().area();
+		{
+			Timer t("DisparityComputation");
+			getWTA(DSI, destDisparityMap, minCostMap);
+		}
+
+		{
+			Timer t("Post Filterings");
+
+			//medianBlur(dest,dest,3);
+			{
+				Timer t("Post: uniqueness");
+				uniquenessFilter(minCostMap, destDisparityMap);
+			}
+			//subpix;
+			{
+				Timer t("Post: subpix");
+				subpixelInterpolation(destDisparityMap, subpixelInterpolationMethod);
+				if (isRangeFilterSubpix) binalyWeightedRangeFilter(destDisparityMap, destDisparityMap, subpixelRangeFilterWindow, subpixelRangeFilterCap);
+			}
+			//R depth map;
+
+			{
+				Timer t("Post: LR");
+				if (isLRCheck)fastLRCheck(minCostMap, destDisparityMap);
+			}
+			{
+				Timer t("Post: mincost");
+				minCostFilter(minCostMap, destDisparityMap);
+			}
+			{
+				Timer t("Post: filterSpeckles");
+				if (isSpeckleFilter)
+					filterSpeckles(destDisparityMap, 0, speckleWindowSize, speckleRange, specklebuffer);
+			}
+		}
+	}
+
+	void StereoBase::operator()(Mat& leftim, Mat& rightim, Mat& dest)
+	{
+		matching(leftim, rightim, dest);
+	}
+
 
 	template <class T>
 	void singleDisparityLRCheck_(Mat& dest, double amp, int thresh, int minDisparity, int numberOfDisparities)
@@ -1383,254 +1585,6 @@ namespace cp
 			singleDisparityLRCheck_<unsigned short>(dest, amp, thresh, minDisparity, numberOfDisparities);
 
 	}
-	void StereoBMSimple::fastLRCheck(Mat& dest)
-	{
-		Mat dispR = Mat::zeros(dest.size(), CV_16S);
-		Mat disp8(dest.size(), CV_16S);
-		//dest.convertTo(disp8,CV_16S,1.0/16,0.5);
-		const int imsize = dest.size().area();
-
-		short* dddd = dest.ptr<short>(0);
-		short* d8 = disp8.ptr<short>(0);
-		const double div = 1.0 / 16.0;
-		for (int i = 0; i < dest.size().area(); i++)
-		{
-			d8[i] = (short)(dddd[i] * div + 0.5);
-		}
-
-		short* disp = disp8.ptr<short>(0);
-		short* dispr = dispR.ptr<short>(0);
-
-
-		disp += minDisparity + numberOfDisparities;
-		dispr += minDisparity + numberOfDisparities;
-		for (int j = imsize - (minDisparity + numberOfDisparities); j--; disp++, dispr++)
-		{
-			const short d = *disp;
-			if (d != 0)
-			{
-				if (*(dispr - d) < *(disp))
-				{
-					*(dispr - d) = d;
-				}
-			}
-		}
-		LRCheckDisparity(disp8, dispR, 0, disp12diff + 1, 0, 1, LR_CHECK_DISPARITY_ONLY_L);
-		//LRCheckDisparity(disp8,dispR,0,disp12diff,0,1,xcv::LR_CHECK_DISPARITY_BOTH);
-		//Mat dr; dispR.convertTo(dr,CV_8U,4);imshow("dispR",dr);
-
-		Mat mask;
-		compare(disp8, 0, mask, cv::CMP_EQ);
-		dest.setTo(0, mask);
-	}
-
-	void StereoBMSimple::fastLRCheck(Mat& costMap, Mat& dest)
-	{
-		Mat dispR = Mat::zeros(dest.size(), CV_16S);
-		Mat disp8(dest.size(), CV_16S);
-		//dest.convertTo(disp8,CV_16S,1.0/16,0.5);
-		const int imsize = dest.size().area();
-
-		short* dddd = dest.ptr<short>(0);
-		short* d8 = disp8.ptr<short>(0);
-		const double div = 1.0 / 16.0;
-		for (int i = 0; i < dest.size().area(); i++)
-		{
-			d8[i] = (short)(dddd[i] * div + 0.5);
-		}
-		if (isProcessLBorder)
-		{
-			const int maxval = minDisparity + numberOfDisparities;
-			for (int j = 0; j < disp8.rows; j++)
-			{
-				short* dst = disp8.ptr<short>(j);
-				memset(dst, 0, sizeof(short)*minDisparity + 1);
-				for (int i = minDisparity + 1; i < maxval; i++)
-				{
-					dst[i] = (dst[i] >= i) ? 0 : dst[i];
-				}
-			}
-		}
-
-		Mat costMapR(dest.size(), CV_8U);
-		costMapR.setTo(255);
-
-		short* disp = disp8.ptr<short>(0);
-		short* dispr = dispR.ptr<short>(0);
-
-		uchar* cost = costMap.data;
-		uchar* costr = costMapR.data;
-
-		cost += minDisparity + numberOfDisparities;
-		costr += minDisparity + numberOfDisparities;
-		disp += minDisparity + numberOfDisparities;
-		dispr += minDisparity + numberOfDisparities;
-		for (int j = imsize - (minDisparity + numberOfDisparities); j--; cost++, costr++, disp++, dispr++)
-		{
-			const short d = *disp;
-			if (d != 0)
-			{
-				if (*(cost) < *(costr - d))
-				{
-					*(costr - d) = *cost;
-					*(dispr - d) = d;
-				}
-			}
-		}
-		LRCheckDisparity(disp8, dispR, 0, disp12diff, 0, 1, LR_CHECK_DISPARITY_ONLY_L);
-
-		if (isProcessLBorder)
-		{
-			const int maxval = minDisparity + numberOfDisparities;
-			for (int j = 0; j < disp8.rows; j++)
-			{
-				short* dst = disp8.ptr<short>(j);
-				for (int i = minDisparity + 1; i < maxval; i++)
-				{
-					short d = dst[i];
-					if (d != 0)
-					{
-						if (dst[i + d] == 0)dst[i] = 0;
-					}
-				}
-			}
-		}
-		//LRCheckDisparity(disp8,dispR,0,disp12diff,0,1,xcv::LR_CHECK_DISPARITY_BOTH);
-		//Mat dr; dispR.convertTo(dr,CV_8U,4);imshow("dispR",dr);
-
-		Mat mask;
-		compare(disp8, 0, mask, cv::CMP_EQ);
-		dest.setTo(0, mask);
-	}
-	void StereoBMSimple::minCostFilter(Mat& costMap, Mat& dest)
-	{
-		if (isMinCostFilter)
-		{
-			const int imsize = dest.size().area();
-			Mat dest2 = dest.clone();
-			const int step = dest.cols;
-			short* disp2 = dest2.ptr<short>(0);
-			short* disp = dest.ptr<short>(0);
-			uchar* cost = costMap.ptr<uchar>(0);
-			//for(int j=0;j<imsize-step;j++)
-			for (int j = 0; j < imsize; j++)
-			{
-				/*if( disp[0]!=0 && disp[step]!=0 && abs(disp[step]-disp[0])>=16)
-				{
-				if(cost[step]<cost[0])
-				{
-				disp[0]=disp2[step];
-				}
-				else
-				{
-				disp[step]=disp2[0];
-				}
-				}*/
-				if (disp[0] != 0 && disp[-1] != 0 && abs(disp[-1] - disp[0]) >= 16)
-				{
-					if (cost[-1] < cost[0])
-					{
-						disp[0] = disp2[-1];
-					}
-					else
-					{
-						disp[-1] = disp2[0];
-					}
-				}
-
-				disp++;
-				disp2++;
-				cost++;
-			}
-		}
-	}
-
-	void StereoBMSimple::operator()(Mat& leftim, Mat& rightim, Mat& dest)
-	{
-		if (dest.empty()) dest.create(leftim.size(), CV_16S);
-		minCostMap.create(leftim.size(), CV_8U); minCostMap.setTo(255);
-		if ((int)DSI.size() < numberOfDisparities)DSI.resize(numberOfDisparities);
-
-		Mat joint;
-		cvtColor(leftim, joint, COLOR_BGR2GRAY);
-
-		{
-			Timer t("pre filter");
-			prefilter(leftim, rightim);
-			cout << "pref end" << endl;
-		}
-		{
-			Timer t("Cost computation");
-//#pragma omp parallel for
-			for (int i = 0; i < numberOfDisparities; i++)
-			{
-				const int d = minDisparity + i;
-				getMatchingCost(d, DSI[i]);
-				//getCostAggregation(DSI[i],DSI[i],joint);
-			}
-		}
-		{
-			Timer t("Cost aggregation");
-//#pragma omp parallel for
-			for (int i = 0; i < numberOfDisparities; i++)
-			{
-				Mat dsi = DSI[i];
-				const int d = minDisparity + i;
-				getCostAggregation(dsi, DSI[i], joint);
-			}
-		}
-
-		{
-			Timer t("Cost Optimization");
-			if (P1 != 0 && P2 != 0)
-				getOptScanline();
-		}
-
-
-		const int imsize = DSI[0].size().area();
-		{
-			Timer t("DisparityComputation");
-			getWTA(DSI, dest);
-		}
-
-		{
-			Timer t("Post Filterings");
-
-			//medianBlur(dest,dest,3);
-			{
-				Timer t("Post: uniqueness");
-				uniquenessFilter(minCostMap, dest);
-			}
-			//subpix;
-			{
-				Timer t("Post: subpix");
-				subpixelInterpolation(dest, subpixMethod);
-				binalyWeightedRangeFilter(dest, dest, subboxWindowR, subboxRange);
-			}
-			//R depth map;
-			//OpenCV�̓R�X�g�ƃf�v�X�̃��[�v�Ŏ����D�΂߂�min�R�X�g�ł͂Ȃ��D
-			{
-				Timer t("Post: LR");
-				fastLRCheck(minCostMap, dest);
-			}
-			{
-				Timer t("Post: mincost");
-				minCostFilter(minCostMap, dest);
-			}
-			{
-				Timer t("Post: filterSpeckles");
-				filterSpeckles(dest, 0, speckleWindowSize, speckleRange, specklebuffer);
-			}
-
-
-		}
-	}
-	void minMaxShow(Mat& src)
-	{
-		double minv, maxv;
-		minMaxLoc(src, &minv, &maxv);
-		cout << "(min,max) = (" << minv << "," << maxv << ")" << endl;
-	}
 
 	template <class T>
 	void correctDisparityBoundary(Mat& src, Mat& refimg, const int r, Mat& dest)
@@ -1648,7 +1602,7 @@ namespace cp
 		sobel = abs(sobel);
 
 		int bb = 0;
-		const int MAX_LENGTH = (int)(src.cols*1.0);
+		const int MAX_LENGTH = (int)(src.cols * 1.0);
 
 		T* s = src.ptr<T>(0);
 		const int step = src.cols;
@@ -1785,7 +1739,7 @@ namespace cp
 		sobel = abs(sobel);
 
 		int bb = 0;
-		const int MAX_LENGTH = (int)(src.cols*1.0);
+		const int MAX_LENGTH = (int)(src.cols * 1.0);
 
 		T* s = src.ptr<T>(0);
 		const int step = src.cols;
@@ -1935,23 +1889,11 @@ namespace cp
 
 	}
 
-
-	static void onMouse(int events, int x, int y, int flags, void *param)
-	{
-		Point* pt = (Point*)param;
-		//if(events==CV_EVENT_LBUTTONDOWN)
-		if (flags & EVENT_FLAG_LBUTTON)
-		{
-			pt->x = x;
-			pt->y = y;
-		}
-	}
-
 	template <class T>
 	static void fillOcclusionBox_(Mat& src, const T invalidvalue, const T maxval)
 	{
 		int bb = 0;
-		const int MAX_LENGTH = (int)(src.cols*1.0 - 5);
+		const int MAX_LENGTH = (int)(src.cols * 1.0 - 5);
 
 		T* s = src.ptr<T>(0);
 		const int step = src.cols;
@@ -2022,10 +1964,10 @@ namespace cp
 		copyMakeBorder(guide, gim, 0, 0, hw, hw, cv::BORDER_REPLICATE);
 
 		unsigned int* integral = new unsigned int[(sim.cols) + 1];
-		unsigned int * iH = integral + hw;
+		unsigned int* iH = integral + hw;
 
 		const int c = guide.channels();
-		const int gstep = gim.cols*c;
+		const int gstep = gim.cols * c;
 
 		T* is = sim.ptr<T>(0);
 		T* s = is + hw;
@@ -2520,301 +2462,6 @@ namespace cp
 	//	}
 	//};
 
-	void calcHammingDistance8u(Mat& src1, Mat& src2, Mat& dest)
-	{
-		if (dest.empty())dest.create(src1.size(), CV_8U);
-		const int w = src1.cols;
-		const int h = src1.rows;
-		int i, j;
-		uchar* s1 = src1.ptr<uchar>(0);
-		uchar* s2 = src2.ptr<uchar>(0);
-		uchar* d = dest.ptr<uchar>(0);
-
-		//		__declspec(align()) uchar* buff = new  uchar[16];
-
-		for (j = 0; j < h; j++)
-		{
-			for (i = 0; i < w; i++)
-			{
-				*d = _mm_popcnt_u32((*s1^*s2));
-				s1++; s2++, d++;
-			}
-			/*for(i=hstep;i--;)
-			{
-			__m128i ms1 = _mm_load_si128((__m128i*)s1);
-			__m128i ms2 = _mm_load_si128((__m128i*)s2);
-			__m128i md = _mm_xor_si128 (ms1, ms2);
-
-			__m128i md2 = _mm_cvtepi8_epi32(md);
-			d[0] = _mm_popcnt_u32(_mm_extract_epi32(md2,0));
-			d[1] = _mm_popcnt_u32(_mm_extract_epi32(md2,1));
-			d[2] = _mm_popcnt_u32(_mm_extract_epi32(md2,2));
-			d[3] = _mm_popcnt_u32(_mm_extract_epi32(md2,3));
-
-			md2 = _mm_srli_si128(md, 4);
-			md2 = _mm_cvtepi8_epi32(md2);
-			d[4] = _mm_popcnt_u32(_mm_extract_epi32(md2,0));
-			d[5] = _mm_popcnt_u32(_mm_extract_epi32(md2,1));
-			d[6] = _mm_popcnt_u32(_mm_extract_epi32(md2,2));
-			d[7] = _mm_popcnt_u32(_mm_extract_epi32(md2,3));
-
-			md2 = _mm_srli_si128(md, 8);
-			md2 = _mm_cvtepi8_epi32(md2);
-			d[8] = _mm_popcnt_u32(_mm_extract_epi32(md2,0));
-			d[9] = _mm_popcnt_u32(_mm_extract_epi32(md2,1));
-			d[10] = _mm_popcnt_u32(_mm_extract_epi32(md2,2));
-			d[11] = _mm_popcnt_u32(_mm_extract_epi32(md2,3));
-
-			md2 = _mm_srli_si128(md, 12);
-			md2 = _mm_cvtepi8_epi32(md2);
-			d[12] = _mm_popcnt_u32(_mm_extract_epi32(md2,0));
-			d[13] = _mm_popcnt_u32(_mm_extract_epi32(md2,1));
-			d[14] = _mm_popcnt_u32(_mm_extract_epi32(md2,2));
-			d[15] = _mm_popcnt_u32(_mm_extract_epi32(md2,3));
-			s1+=16;s2+=16,d+=16;
-			}*/
-			/*for(i=0;i<rad;i++)
-			{
-			*d = _mm_popcnt_u32((unsigned int)(*s1^*s2));
-			s1++;s2++,d++;
-			}*/
-		}
-		//		delete[] buff;
-	}
-
-	void censusTrans8u_3x3(Mat& src, Mat& dest)
-	{
-		if (dest.empty())dest.create(src.size(), CV_8U);
-		const int r = 1;
-		const int r2 = 2 * r;
-		Mat im; copyMakeBorder(src, im, r, r, r, r, cv::BORDER_REPLICATE);
-
-		int i, j;
-		uchar* s = im.ptr<uchar>(r); s += r;
-		uchar* d = dest.ptr<uchar>(0);
-		uchar val; uchar* ss;
-		const int step1 = -r - im.cols;
-		const int step2 = -3 + im.cols;
-		const int w = src.cols;
-		const int h = src.rows;
-		for (j = 0; j < h; j++)
-		{
-			for (i = 0; i < w; i++)
-			{
-				val = 0;//init value
-				ss = s + step1;
-
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-
-				ss += step2;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				ss++;//skip r=0
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				ss += step2;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++;
-
-				*(d++) = val;
-				s++;
-			}
-			s += r2;
-		}
-	}
-
-	void censusTrans8u_9x1(Mat& src, Mat& dest)
-	{
-		if (dest.empty())dest.create(src.size(), CV_8U);
-		const int w = src.cols;
-		const int h = src.rows;
-
-		const int r = 4;
-		const int r2 = 2 * r;
-		Mat im; copyMakeBorder(src, im, 0, 0, r, r, cv::BORDER_REPLICATE);
-
-		int i, j, n;
-
-		uchar* s = im.ptr<uchar>(0); s += r;
-		uchar* d = dest.ptr<uchar>(0);
-		uchar val;//init value
-		uchar* ss;
-		for (j = 0; j < h; j++)
-		{
-			for (i = 0; i < w; i++)
-			{
-				val = 0;//init value
-				ss = s - r;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				ss++;//skip r=0
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++;
-
-				*d = val;
-				d++;
-				s++;
-			}
-			s += r2;
-		}
-	}
-	void shiftImage8u(Mat& src, Mat& dest, const int shift)
-	{
-		if (dest.empty())dest.create(src.size(), CV_8U);
-
-		if (shift >= 0)
-		{
-			const int step = src.cols;
-			uchar* s = src.ptr<uchar>(0);
-			uchar* d = dest.ptr<uchar>(0);
-			int j; j = 0;
-			for (; j < src.rows; j++)
-			{
-				const uchar v = s[0];
-				memset(d, v, shift);
-				memcpy(d + shift, s, step - shift);
-				s += step; d += step;
-			}
-		}
-		else
-		{
-			const int step = src.cols;
-			uchar* s = src.ptr<uchar>(0);
-			uchar* d = dest.ptr<uchar>(0);
-			int j; j = 0;
-			for (; j < src.rows; j++)
-			{
-				const uchar v = s[step - 1];
-				memcpy(d, s + shift, step - shift);
-				memset(d + step - shift, v, shift);
-				s += step; d += step;
-			}
-		}
-	}
-	void stereoCensus9x1(Mat& leftim, Mat& rightim, Mat& dest, int minDisparity, int range, int r)
-	{
-		if (dest.empty())dest.create(leftim.size(), CV_8U);
-		Mat lim, rim;
-		if (leftim.channels() == 3)cvtColor(leftim, lim, COLOR_BGR2GRAY);
-		else lim = leftim;
-		if (rightim.channels() == 3)cvtColor(rightim, rim, COLOR_BGR2GRAY);
-		else rim = rightim;
-
-		Mat limCensus, rimCensus;
-
-		censusTrans8u_9x1(lim, limCensus);
-		censusTrans8u_9x1(rim, rimCensus);
-		Mat rwarp;
-		Mat distance;
-
-		vector<Mat> dsv(range);
-		Size size = dest.size();
-		Mat cost = Mat::ones(size, CV_8U) * 255;
-		Mat mask;
-		Mat pcost;
-		for (int i = 0; i < range; i++)
-		{
-			shiftImage8u(rimCensus, rwarp, minDisparity + i);
-			calcHammingDistance8u(limCensus, rwarp, distance);
-			blur(distance, distance, Size(2 * r + 1, 2 * r + 1));
-
-			cost.copyTo(pcost);
-			min(pcost, distance, cost);
-			compare(pcost, cost, mask, cv::CMP_NE);
-			dest.setTo(i + minDisparity, mask);
-		}
-	}
-
-	void stereoCensus3x3(Mat& leftim, Mat& rightim, Mat& dest, int minDisparity, int range, int r)
-	{
-		if (dest.empty())dest.create(leftim.size(), CV_8U);
-		Mat lim, rim;
-		if (leftim.channels() == 3)cvtColor(leftim, lim, COLOR_BGR2GRAY);
-		else lim = leftim;
-		if (rightim.channels() == 3)cvtColor(rightim, rim, COLOR_BGR2GRAY);
-		else rim = rightim;
-
-		Mat limCensus, rimCensus;
-
-
-		censusTrans8u_3x3(lim, limCensus);
-		censusTrans8u_3x3(rim, rimCensus);
-		Mat rwarp;
-		Mat distance;
-
-		vector<Mat> dsv(range);
-
-		Mat cost = Mat::ones(dest.size(), CV_8U) * 255;
-		Mat pcost;
-		Mat mask;
-		for (int i = 0; i < range; i++)
-		{
-			shiftImage8u(rimCensus, rwarp, minDisparity + i);
-			calcHammingDistance8u(limCensus, rwarp, distance);
-			blur(distance, dsv[i], Size(2 * r + 1, 2 * r + 1));
-
-			cost.copyTo(pcost);
-			min(pcost, dsv[i], cost);
-			compare(pcost, cost, mask, cv::CMP_NE);
-			dest.setTo(i + minDisparity, mask);
-		}
-	}
-	void stereoSAD(Mat& leftim, Mat& rightim, Mat& dest, int minDisparity, int range, int r)
-	{
-		if (dest.empty())dest.create(leftim.size(), CV_8U);
-		Mat lim, rim;
-		if (leftim.channels() == 3)cvtColor(leftim, lim, COLOR_BGR2GRAY);
-		else lim = leftim;
-		if (rightim.channels() == 3)cvtColor(rightim, rim, COLOR_BGR2GRAY);
-		else rim = rightim;
-
-
-		Mat rwarp;
-		Mat distance;
-		vector<Mat> dsv(range);
-		Size size = dest.size();
-		Mat cost = Mat::ones(size, VOLUME_TYPE) * 255;
-		Mat mask;
-		Mat pcost;
-		for (int i = 0; i < range; i++)
-		{
-			shiftImage8u(rim, rwarp, minDisparity + i);
-			absdiff(lim, rwarp, distance);
-			blur(distance, dsv[i], Size(2 * r + 1, 2 * r + 1));
-
-			cost.copyTo(pcost);
-			min(pcost, dsv[i], cost);
-			compare(pcost, cost, mask, cv::CMP_NE);
-			dest.setTo(i + minDisparity, mask);
-		}
-	}
-
-	void resizeDown(Mat& src, Mat& dest, int rfact, int method)
-	{
-		int modH = rfact - src.cols%rfact;
-		int modV = rfact - src.rows%rfact;
-		Mat sim; copyMakeBorder(src, sim, 0, modV, 0, modH, cv::BORDER_REPLICATE);
-		resize(sim, dest, Size(sim.cols / rfact, sim.rows / rfact), 0.0, 0.0, method);
-	}
-	void resizeUP(Mat& src, Mat& dest, int rfact, int method)
-	{
-		Mat temp;
-		resize(src, temp, Size(src.cols*rfact, src.rows*rfact), 0.0, 0.0, method);
-		if (dest.empty())
-			temp.copyTo(dest);
-		else
-		{
-			cout << rfact << "," << temp.cols << "," << temp.rows << endl;
-			Mat a = temp(Rect(0, 0, dest.cols, dest.rows));
-			a.copyTo(dest);
-		}
-	}
-
 #if CV_MAJOR_VERSION <=3
 	void testStereo(Mat& leftim, Mat& rightim)
 	{
@@ -3038,8 +2685,20 @@ namespace cp
 			key = waitKey(1);
 
 		}
-	}
+}
 #endif
+
+
+	static void guiStereoMatchingOnMouse(int events, int x, int y, int flags, void* param)
+	{
+		Point* pt = (Point*)param;
+		//if(events==CV_EVENT_LBUTTONDOWN)
+		if (flags & EVENT_FLAG_LBUTTON)
+		{
+			pt->x = x;
+			pt->y = y;
+		}
+	}
 
 	void checkFilter(Mat& src)
 	{
@@ -3047,7 +2706,7 @@ namespace cp
 		string wname = "Kernel";
 		namedWindow(wname);
 		Point mpt = Point(100, 100);
-		setMouseCallback(wname, onMouse, &mpt);
+		setMouseCallback(wname, guiStereoMatchingOnMouse, &mpt);
 
 		int alpha = 100;
 
@@ -3155,43 +2814,62 @@ namespace cp
 		}
 	}
 
-	//TODO: support OpenCV 4
-	void StereoBMSimple::check(Mat& leftim, Mat& rightim, Mat& dest, StereoEval& eval)
+	string getOcclusionMethodName(const int method)
+	{
+		string ret;
+		switch (method)
+		{
+		case 0: ret = "NO Filling"; break;
+		case 1: ret = "Method 1 (simplest)"; break;
+		case 2: ret = "Method 2"; break;
+		case 3: ret = "Method 3"; break;
+		case 4: ret = "Method 4"; break;
+		default:
+			break;
+		}
+		return ret;
+	}
+
+	void StereoBase::gui(Mat& leftim, Mat& rightim, Mat& destDisparity, StereoEval& eval)
 	{
 		//checkFilter(leftim);
-		//testStereo(leftim, rightim);return;
-		//Mat src = imread("010.bmp");
-		//testDenoise(src);return;
 
-		//alphaBtest(leftim,rightim);
-		ConsoleImage ci(Size(640, 480));
+		ConsoleImage ci(Size(640, 580));
 		string wname = "";
-		string wname2 = "BM Disp";
-		
+		string wname2 = "Disparity Map";
+
 		namedWindow(wname2);
 		moveWindow(wname2, 200, 200);
-		int alpha = 0;
+		int display_image_depth_alpha = 0; createTrackbar("disp-image: alpha", wname, &display_image_depth_alpha, 100);
 
-		createTrackbar("alpha1", wname, &alpha, 100);
+		createTrackbar("pix match method", wname, &PixelMatchingMethod, Pixel_Matching_Method_Size - 1);
+		//pre filter
+		createTrackbar("pcap", wname, &preFilterCap, 255);
+
+		createTrackbar("Sobel blend a", wname, &costAlphaImageSobel, 100);
+		pixelMatchErrorCap = preFilterCap;
+		createTrackbar("pixel err cap", wname, &pixelMatchErrorCap, 255);
+
+		//cost computation for texture alpha
+		createTrackbar("Soble alpha p size", wname, &sobelBlendMapParam_Size, 10);
+		createTrackbar("Soble alpha p 1", wname, &sobelBlendMapParam1, 255);
+		createTrackbar("Soble alpha p 2", wname, &sobelBlendMapParam2, 255);
+
+		createTrackbar("agg method", wname, &AggregationMethod, Aggregation_Method_Size - 1);
+		createTrackbar("agg r width", wname, &aggregationRadiusH, 20);
+		createTrackbar("agg r height", wname, &aggregationRadiusV, 20);
+		int aggeps = 100; createTrackbar("agg guided eps", wname, &aggeps, 2000);
 
 		createTrackbar("P1", wname, &P1, 20);
 		createTrackbar("P2", wname, &P2, 20);
-		createTrackbar("psize", wname, &prefSize, 10);
-		createTrackbar("pparam", wname, &prefParam, 255);
-		createTrackbar("pparamth1", wname, &prefParam2, 255);
 
-		createTrackbar("pcap", wname, &preFilterCap, 255);
-		error_truncate = preFilterCap;
-
-		createTrackbar("sa", wname, &sobelAlpha, 100);
-		createTrackbar("trunc", wname, &error_truncate, 255);
-		
-		int SADWinR = SADWindowSize; createTrackbar("r width", wname, &SADWinR, 20);
-		int SADWinRH = SADWindowSizeH; createTrackbar("r height", wname, &SADWinRH, 20);
 
 		uniquenessRatio = 10;
 		createTrackbar("uniq", wname, &uniquenessRatio, 100);
-		createTrackbar("disp12", wname, &disp12diff, 100);
+		createTrackbar("subpixel RF widow size", wname, &subpixelRangeFilterWindow, 10);
+		createTrackbar("subpixel RF cap", wname, &subpixelRangeFilterCap, 64);
+
+		createTrackbar("LR check disp12", wname, &disp12diff, 100);
 		//int E = (int)(10.0*eps);
 		//createTrackbar("eps",wname,&E,1000);
 
@@ -3200,40 +2878,40 @@ namespace cp
 		createTrackbar("speckleSize", wname, &speckleWindowSize, 1000);
 		speckleRange = 16;
 		createTrackbar("speckleDiff", wname, &speckleRange, 100);
-		int occlusionMethod = 1;
+
+		int occlusionMethod = 0;
 		createTrackbar("occlusionMethod", wname, &occlusionMethod, 3);
 
 		int occsearch2 = 4;
-		createTrackbar("occs2", wname, &occsearch2, 15);
+		createTrackbar("occ:s2", wname, &occsearch2, 15);
 
 		int occth = 17;
-		createTrackbar("occth", wname, &occth, 128);
+		createTrackbar("occ:th", wname, &occth, 128);
 		int occsearch = 4;
-		createTrackbar("occs", wname, &occsearch, 15);
+		createTrackbar("occ:s", wname, &occsearch, 15);
 
 		int occsearchh = 2;
-		createTrackbar("occsH", wname, &occsearchh, 15);
+		createTrackbar("occ:sH", wname, &occsearchh, 15);
 		int occiter = 0;
-		createTrackbar("occiter", wname, &occiter, 10);
+		createTrackbar("occ:iter", wname, &occiter, 10);
 
 		int key = 0;
-		//StereoBMEx sbm(0, numberOfDisparities, SADWindowSize);
-		//sbm.minDisparity = minDisparity;
 
 		Mat lim, rim;
 		Mat bmdisp;
-		bool isBoxRefinement = true;
 		Plot p(Size(640, 240));
 		Plot histp(Size(640, 240));
-		Plot signal(Size(640, 240 * 3));
-		namedWindow("signal");
-		int vh = 0;
-		createTrackbar("vh", "signal", &vh, 1);
-		int diffmode = 0;
-		createTrackbar("mode", "signal", &diffmode, 2);
 
-		createTrackbar("PsubboxR", wname, &subboxWindowR, 10);
-		createTrackbar("Psubboxrange", wname, &subboxRange, 64);
+		Plot signal(Size(640, 240 * 3));
+		int vh = 0;
+		int diffmode = 0;
+		if (eval.isInit)
+		{
+			namedWindow("signal");
+			createTrackbar("vh", "signal", &vh, 1);
+			createTrackbar("mode", "signal", &diffmode, 2);
+		}
+
 		int bx = 3;
 		createTrackbar("AsubboxR", wname, &bx, 10);
 		int bran = 31;
@@ -3253,68 +2931,59 @@ namespace cp
 		createTrackbar("px", wname, &mpt.x, leftim.cols - 1);
 		createTrackbar("py", wname, &mpt.y, leftim.rows - 1);
 
+		bool isGrid = false;
 		bool isReCost = false;
-		bool isStreak = true;
-		bool isGrid = true;
+
+		bool isStreak = false;
 		bool isGuided = false;
 		bool isMedian = false;
+
 		bool isShowGT = false;
 		int maskType = 0;
 		int maskPrec = 0;
 		bool dispColor = false;
 
-		setMouseCallback(wname2, onMouse, &mpt);
-
-		namedWindow("flat");
-		int th1 = 5;
-		int th2 = 10;
-		createTrackbar("th1", "flat", &th1, 255);
-		createTrackbar("th2", "flat", &th2, 255);
+		setMouseCallback(wname2, guiStereoMatchingOnMouse, &mpt);
 
 		CostVolumeRefinement cbf(minDisparity, numberOfDisparities);
+
+		const bool isShowSubpixelDisparityDistribution = true;
+		const bool isShowZeroMask = false;
+		bool isShowDiffFillOcclution = false;
+
+		Mat dispOutput;
 		while (key != 'q')
 		{
+			//init
+			aggregationGuidedfilterEps = aggeps;
 			ci.clear();
-			dest.setTo(0);
-			/*sbm.textureThreshold=0;
-			sbm.uniquenessRatio =uniquenessRatio;
-			sbm.setPreFilter(1,0,preFilterCap);
-			sbm.SADWindowSize=2*SADWinR+1;
-			sbm.speckleWindowSize=speckleWindowSize;
-			sbm.speckleRange = speckleWindowSize;
-			sbm.disp12MaxDiff=disp12diff;
-
-			sbm(leftim,rightim,bmdisp,64);
-			cout<<"opencv: "<<100.0*countNonZero(bmdisp)/dest.size().area()<<"%"<<endl;
-			if(isOcc)
-			fillOcclusion(bmdisp,(minDisparity-1)*16);
-			imshowDisparity("OpenCV",bmdisp,1);
-			*/
-
-			//eps = E/10.0;
-			SADWindowSize = 2 * SADWinR + 1;
-			SADWindowSizeH = 2 * SADWinRH + 1;
-
+			destDisparity.setTo(0);
+			ci(getPixelMatchingMethodName(PixelMatchingMethod)+ ": (i)");
+			ci(getAggregationMethodName(AggregationMethod)+": (@)");
+			ci(getSubpixelInterpolationMethodName(subpixelInterpolationMethod) + ":  (p)");
+			ci(getOcclusionMethodName(occlusionMethod) + ": (o)");
+			ci("=======================");
+			//body
 			{
-				Timer t("BM");
-				operator()(leftim, rightim, dest);
-				ci("time: %f", t.getTime());
+				Timer t("BM", 0, false);
+				matching(leftim, rightim, destDisparity);
+				ci("Total time: %f ms", t.getTime());
 			}
-			cout << "   my: " << 100.0*countNonZero(dest) / dest.size().area() << "%" << endl;
 
 			Mat zeromask;
-			compare(dest, 0, zeromask, cv::CMP_EQ);
-			imshow("zero", zeromask);
-			ci("valid %f percent", 100.0*countNonZero(dest) / dest.size().area());
+			compare(destDisparity, 0, zeromask, cv::CMP_EQ);
+			if (isShowZeroMask)imshow("zero A", zeromask);
+			ci("A: valid %f %%", 100.0 * countNonZero(destDisparity) / destDisparity.size().area());
+
 			{
-				Mat base = dest.clone();
-				fillOcclusion(base);
+				Mat base = destDisparity.clone();
 
 				Timer t("Post 2");
 				if (occlusionMethod == 1)
 				{
 					Timer t("occ");
-					fillOcclusion(dest, (minDisparity - 1) * 16);
+					//fillOcclusion(destDisparity, (minDisparity - 1) * 16);
+					fillOcclusion(destDisparity);
 				}
 				else if (occlusionMethod == 2)
 				{
@@ -3337,10 +3006,10 @@ namespace cp
 					compare(destfill,0,mask,cv::CMP_EQ);
 					dest.setTo(0,mask);*/
 
-					fillOcclusion(dest);
+					fillOcclusion(destDisparity);
 					{
 						Timer t("border");
-						correctDisparityBoundaryE<short>(dest, leftim, occsearch, occth, dest, occsearch2, 32);
+						correctDisparityBoundaryE<short>(destDisparity, leftim, occsearch, occth, destDisparity, occsearch2, 32);
 						ci("post Border: %f", t.getTime());
 					}
 
@@ -3388,8 +3057,8 @@ namespace cp
 					dest.setTo(0,mask);*/
 
 					//fillOcclusionBox_<short>(dest,0,3000);
-					fillOcclusion(dest);
-					correctDisparityBoundaryEC<short>(dest, leftim, occsearch, occth, dest);
+					fillOcclusion(destDisparity);
+					correctDisparityBoundaryEC<short>(destDisparity, leftim, occsearch, occth, destDisparity);
 
 					/*for(int i=0;i<occiter;i++)
 					{
@@ -3399,7 +3068,7 @@ namespace cp
 					}*/
 
 					Mat dt;
-					transpose(dest, dt);
+					transpose(destDisparity, dt);
 					Mat lt; transpose(leftim, lt);
 
 					/*Mat sobel;
@@ -3413,9 +3082,9 @@ namespace cp
 					correctDisparityBoundaryECV<short>(dt, lt, occsearchh, occth, dt);
 					Mat dest2;
 					transpose(dt, dest2);
-					Mat mask = Mat::zeros(dest.size(), CV_8U);
-					cv::rectangle(mask, Rect(40, 40, dest.cols - 80, dest.rows - 80), 255, FILLED);
-					dest2.copyTo(dest, mask);
+					Mat mask = Mat::zeros(destDisparity.size(), CV_8U);
+					cv::rectangle(mask, Rect(40, 40, destDisparity.cols - 80, destDisparity.rows - 80), 255, FILLED);
+					dest2.copyTo(destDisparity, mask);
 				}
 				else if (occlusionMethod == 4)
 				{
@@ -3438,21 +3107,21 @@ namespace cp
 					compare(destfill,0,mask,cv::CMP_EQ);
 					dest.setTo(0,mask);*/
 
-					fillOcclusion(dest);
+					fillOcclusion(destDisparity);
 
 
-					correctDisparityBoundaryE<short>(dest, leftim, occsearch, 32, dest, occsearch2, 30);
+					correctDisparityBoundaryE<short>(destDisparity, leftim, occsearch, 32, destDisparity, occsearch2, 30);
 
 					for (int i = 0; i < occiter; i++)
 					{
 						Mat dt;
-						transpose(dest, dt);
+						transpose(destDisparity, dt);
 						Mat lt; transpose(leftim, lt);
-						correctDisparityBoundaryE<short>(dt, lt, 2, 32, dest, occsearch2, 30);
-						transpose(dt, dest);
-						correctDisparityBoundaryE<short>(dest, leftim, occsearch, 32, dest, occsearch2, 30);
-						filterSpeckles(dest, 0, speckleWindowSize, speckleRange);
-						fillOcclusion(dest);
+						correctDisparityBoundaryE<short>(dt, lt, 2, 32, destDisparity, occsearch2, 30);
+						transpose(dt, destDisparity);
+						correctDisparityBoundaryE<short>(destDisparity, leftim, occsearch, 32, destDisparity, occsearch2, 30);
+						filterSpeckles(destDisparity, 0, speckleWindowSize, speckleRange);
+						fillOcclusion(destDisparity);
 					}
 
 
@@ -3467,25 +3136,27 @@ namespace cp
 
 					//medianBlur(dest,dest,3);*/
 				}
+
+				if (isShowDiffFillOcclution)
 				{
-					Mat dest22 = dest.clone();
-					fastLRCheck(dest22);
-					Mat showss;
-					dest22.convertTo(showss, CV_8U, 0.25); imshow("lrre", showss);
+					fillOcclusion(base);
+					absdiff(base, destDisparity, base); Mat mask; compare(base, 0, mask, cv::CMP_NE); imshow("occlusion process diff", mask);
 				}
-				absdiff(base, dest, base); Mat mask; compare(base, 0, mask, cv::CMP_NE); imshow("diff", mask);
 
 				//medianBlur(dest,dest,3);
 				if (isStreak)
 				{
-					removeStreakingNoise(dest, dest, 16);
-					removeStreakingNoiseV(dest, dest, 16);
+					removeStreakingNoise(destDisparity, destDisparity, 16);
+					removeStreakingNoiseV(destDisparity, destDisparity, 16);
 				}
-
+				if (isMedian)
+				{
+					medianBlur(destDisparity, destDisparity, 3);
+				}
 				if (isGuided)
 				{
 					Timer t("guided");
-					crossBasedAdaptiveBoxFilter(dest, leftim, dest, Size(2 * gr + 1, 2 * gr + 1), ge);
+					crossBasedAdaptiveBoxFilter(destDisparity, leftim, destDisparity, Size(2 * gr + 1, 2 * gr + 1), ge);
 					ci("cross: %f", t.getTime());
 					/*Mat base = dest.clone();
 					Mat gfil = dest.clone();
@@ -3501,57 +3172,59 @@ namespace cp
 					cv::rectangle(mask,Rect(0,dest.rows-22,480,45),255,CV_FILLED);
 					base.copyTo(dest,mask);*/
 				}
-				if (isMedian)
-				{
-					medianBlur(dest, dest, 3);
-				}
-				if (isBoxRefinement)
-				{
-					binalyWeightedRangeFilter(dest, dest, bx, bran);
-					//boxSubpixelRefinement(dest,dest,3,16);
-					//filterSpeckles(dest,0,spsize,spdiff);
-					//fillOcclusion(dest);
-				}
+
 				if (isReCost)
 				{
 					//jointBilateralModeFilter(dest,dest,9,50,255,leftim);
 					//refineFromCost(dest,dest);
 				}
-				ci("post: %f", t.getTime());
+				ci("a-post time: %f ms", t.getTime());//additional post processing time
 			}
-			//box refine
+
+			compare(destDisparity, 0, zeromask, cv::CMP_EQ);
+			if (isShowZeroMask)imshow("zero B", zeromask);
+			ci("B: valid %f %%", 100.0 * countNonZero(destDisparity) / destDisparity.size().area());
+
+			if (isShowSubpixelDisparityDistribution)
 			{
-				Mat bbdest;
-				blur(dest, bbdest, Size(2 * boxb + 1, 2 * boxb + 1), Point(-1, -1), BORDER_REPLICATE);
-				Mat mask = Mat::zeros(dest.size(), CV_8U);
-				cv::rectangle(mask, Rect(0, dest.rows - 22, 480, 45), 255, FILLED);
-				bbdest.copyTo(dest, mask);
+				histp.clear();
+				short* d = destDisparity.ptr<short>(0);
+				int hist[16];
+				for (int i = 0; i < 16; i++)hist[i] = 0;
+
+				for (int i = 0; i < destDisparity.size().area(); i++)
+				{
+					if (d[i] > minDisparity * 16 && d[i] < (numberOfDisparities + minDisparity - 1) * 16)
+					{
+						hist[d[i] % 16]++;
+					}
+				}
+
+				for (int i = 0; i < 16; i++)
+				{
+					histp.push_back(i - 8, hist[(i + 8) % 16]);
+				}
+				histp.recomputeXYRangeMAXMIN();
+				histp.setYOriginZERO();
+				//histp.setXOriginZERO();
+
+				histp.plotData();
+				imshow("subpixel disparity distribution", histp.render);
 			}
 
-			Mat disp8, edge;
-			dest.convertTo(disp8, CV_8U, 1.0 / 16);
-			Mat b1, b2;
-			blur(disp8, b1, Size(1, 3));
-			blur(disp8, b2, Size(1, 7));
-			Mat sub = abs(b2 - b1);
-			threshold(sub, edge, th1, 255, cv::THRESH_BINARY);
-			//Canny(disp8,edge,th1,th2);
-			imshow("flat", edge);
+			if (dispColor)cvtDisparityColor(destDisparity, dispOutput, minDisparity, numberOfDisparities - 10, 2, 16);
+			else			cvtDisparityColor(destDisparity, dispOutput, 0, numberOfDisparities, 0);
 
-			setTrackbarPos("px", wname, mpt.x);
-			setTrackbarPos("py", wname, mpt.y);
-			key = waitKey(1);
-
-			if(eval.isInit)
+			if (eval.isInit)
 			{
 				p.clear();
 				p.setXYMinMax(0, numberOfDisparities + minDisparity + 1, 0, 64);
 
 				const int dd = (int)(eval.ground_truth.at<uchar>(mpt.y, mpt.x) / eval.amp + 0.5);
-				const int dd2 = (int)((double)dest.at<short>(mpt.y, mpt.x) / (16.0) + 0.5);
+				const int dd2 = (int)((double)destDisparity.at<short>(mpt.y, mpt.x) / (16.0) + 0.5);
 
 				const double ddd = (eval.ground_truth.at<uchar>(mpt.y, mpt.x) / eval.amp);
-				const double ddd2 = ((double)dest.at<short>(mpt.y, mpt.x) / (16.0));
+				const double ddd2 = ((double)destDisparity.at<short>(mpt.y, mpt.x) / (16.0));
 				for (int i = 0; i < numberOfDisparities; i++)
 				{
 					p.push_back(i + minDisparity, DSI[i].at<uchar>(mpt.y, mpt.x), 0);
@@ -3576,23 +3249,23 @@ namespace cp
 				const int mindisp = 15;
 				if (vh == 0)
 				{
-					signal.setXYMinMax(0, dest.cols - 1, mindisp, 64);
+					signal.setXYMinMax(0, destDisparity.cols - 1, mindisp, 64);
 					signal.setPlot(0, CV_RGB(0, 0, 0), 0, 1, 1);
 					signal.setPlot(1, CV_RGB(255, 0, 0), 0, 1, 1);
-					for (int i = 0; i < dest.cols; i++)
+					for (int i = 0; i < destDisparity.cols; i++)
 					{
 						double ddd = (eval.ground_truth.at<uchar>(mpt.y, i) / eval.amp);
-						double ddd2 = ((double)dest.at<short>(mpt.y, i) / (16.0));
+						double ddd2 = ((double)destDisparity.at<short>(mpt.y, i) / (16.0));
 
 						if (diffmode == 1)
 						{
 							ddd = abs(ddd - (eval.ground_truth.at<uchar>(mpt.y, i - 1) / eval.amp));
-							ddd2 = abs(ddd2 - (((double)dest.at<short>(mpt.y, i - 1) / (16.0))));
+							ddd2 = abs(ddd2 - (((double)destDisparity.at<short>(mpt.y, i - 1) / (16.0))));
 						}
 						if (diffmode == 2)
 						{
 							ddd = abs((ddd - (eval.ground_truth.at<uchar>(mpt.y, i - 1) / eval.amp)) - (ddd - (eval.ground_truth.at<uchar>(mpt.y, i + 1) / eval.amp)));
-							ddd2 = abs((ddd2 - ((double)dest.at<short>(mpt.y, i - 1) / (16.0))) - (ddd2 - ((double)dest.at<short>(mpt.y, i + 1) / (16.0))));
+							ddd2 = abs((ddd2 - ((double)destDisparity.at<short>(mpt.y, i - 1) / (16.0))) - (ddd2 - ((double)destDisparity.at<short>(mpt.y, i + 1) / (16.0))));
 						}
 
 						signal.push_back(i, ddd2, 0);
@@ -3603,23 +3276,23 @@ namespace cp
 				}
 				else
 				{
-					signal.setXYMinMax(0, dest.rows - 1, mindisp, 64);
+					signal.setXYMinMax(0, destDisparity.rows - 1, mindisp, 64);
 					signal.setPlot(0, CV_RGB(0, 0, 0), 0, 1, 1);
 					signal.setPlot(1, CV_RGB(255, 0, 0), 0, 1, 1);
-					for (int i = 0; i < dest.rows; i++)
+					for (int i = 0; i < destDisparity.rows; i++)
 					{
 						double ddd = (eval.ground_truth.at<uchar>(i, mpt.x) / eval.amp);
-						double ddd2 = ((double)dest.at<short>(i, mpt.x) / (16.0));
+						double ddd2 = ((double)destDisparity.at<short>(i, mpt.x) / (16.0));
 
 						if (diffmode == 1)
 						{
 							ddd = abs(ddd - (eval.ground_truth.at<uchar>(i - 1, mpt.x) / eval.amp));
-							ddd2 = abs(ddd2 - (((double)dest.at<short>(i - 1, mpt.x) / (16.0))));
+							ddd2 = abs(ddd2 - (((double)destDisparity.at<short>(i - 1, mpt.x) / (16.0))));
 						}
 						if (diffmode == 2)
 						{
 							ddd = abs(-(ddd - (eval.ground_truth.at<uchar>(i - 1, mpt.x) / eval.amp)) + (-ddd + (eval.ground_truth.at<uchar>(i + 1, mpt.x) / eval.amp)));
-							ddd2 = abs(-(ddd2 - ((double)dest.at<short>(i - 1, mpt.x) / (16.0))) + (-ddd2 + ((double)dest.at<short>(i + 1, mpt.x) / (16.0))));
+							ddd2 = abs(-(ddd2 - ((double)destDisparity.at<short>(i - 1, mpt.x) / (16.0))) + (-ddd2 + ((double)destDisparity.at<short>(i + 1, mpt.x) / (16.0))));
 						}
 
 						signal.push_back(i, ddd2, 0);
@@ -3632,60 +3305,28 @@ namespace cp
 					imshow("signal", show);
 				}
 			}
-			{
-				histp.clear();
-				short* d = dest.ptr<short>(0);
-				int hist[16];
-				for (int i = 0; i < 16; i++)hist[i] = 0;
-
-				for (int i = 0; i < dest.size().area(); i++)
-				{
-					if (d[i] > minDisparity * 16 && d[i] < (numberOfDisparities + minDisparity - 1) * 16)
-					{
-						hist[d[i] % 16]++;
-					}
-				}
-
-				for (int i = 0; i < 16; i++)
-				{
-					histp.push_back(i, hist[(i + 8) % 16]);
-				}
-				histp.recomputeXYRangeMAXMIN();
-				histp.setYOriginZERO();
-
-				histp.plotData();
-				imshow("hist", histp.render);
-			}
-
-
-			Mat dispOutput;
-			if (dispColor)
-				cvtDisparityColor(dest, dispOutput, minDisparity, numberOfDisparities - 10, 2, 16);
-			else
-				cvtDisparityColor(dest, dispOutput, 0, numberOfDisparities, 0);
-
 			if (eval.isInit)
 			{
 				//Mat mask=Mat::zeros(dd.size(),CV_8U);rectangle(mask,Rect(250,20,200,115),255,CV_FILLED); eval.ground_truth.copyTo(dd,mask);
 				//Mat mask=Mat::zeros(dd.size(),CV_8U);rectangle(mask,Rect(50,20,400,315),255,CV_FILLED); eval.ground_truth.copyTo(dd,mask);
 
-				Mat maskbadpixel = Mat::zeros(dest.size(), CV_8U);
+				Mat maskbadpixel = Mat::zeros(destDisparity.size(), CV_8U);
 
-				eval(dest, 0.25, true, 16);
+				eval(destDisparity, 0.25, true, 16);
 				ci(eval.message);
 
-				eval(dest, 0.5, true, 16);
+				eval(destDisparity, 0.5, true, 16);
 				ci(eval.message);
 
-				eval(dest, 1, true, 16);
+				eval(destDisparity, 1, true, 16);
 				ci(eval.message);
 
 
 				if (maskType != 0)
 				{
-					if (maskPrec == 0)eval(dest, 1, true, 16);
-					if (maskPrec == 1)eval(dest, 0.5, true, 16);
-					if (maskPrec == 2)eval(dest, 0.25, true, 16);
+					if (maskPrec == 0)eval(destDisparity, 1, true, 16);
+					if (maskPrec == 1)eval(destDisparity, 0.5, true, 16);
+					if (maskPrec == 2)eval(destDisparity, 0.25, true, 16);
 
 					if (maskType == 1)
 						eval.nonocc_th.copyTo(maskbadpixel);
@@ -3696,7 +3337,7 @@ namespace cp
 				}
 
 				Mat eshow;
-				alphaBlend(leftim, eval.all_th, alpha / 100.0, eshow);
+				alphaBlend(leftim, eval.all_th, display_image_depth_alpha / 100.0, eshow);
 				imshow("eval", eshow);
 				if (isShowGT)
 				{
@@ -3709,22 +3350,42 @@ namespace cp
 				}
 			}
 
-			alphaBlend(leftim, dispOutput, alpha / 100.0, dispOutput);
+			alphaBlend(leftim, dispOutput, display_image_depth_alpha / 100.0, dispOutput);
 			if (isGrid)
 			{
 				line(dispOutput, Point(0, mpt.y), Point(leftim.cols, mpt.y), CV_RGB(0, 255, 0));
 				line(dispOutput, Point(mpt.x, 0), Point(mpt.x, leftim.rows), CV_RGB(0, 255, 0));
 			}
-			imshow(wname2, dispOutput);
-			//state
-			ci(CV_RGB(255, 0, 0), "Subpex: %d", subpixMethod);
-			if (isStreak)ci(CV_RGB(255, 0, 0), "Streak: true");
-			if (isGuided)ci(CV_RGB(255, 0, 0), "Guided: true");
-			if (isMedian)ci(CV_RGB(255, 0, 0), "Median: true");
 
-			if (isBoxRefinement)ci(CV_RGB(255, 0, 0), "BoxRefine: true");
-			if (isMinCostFilter)ci(CV_RGB(255, 0, 0), "MinCost: true");
-			if (isBT)ci(CV_RGB(255, 0, 0), "BT: true");
+			if (isUniquenessFilter) ci(CV_RGB(0, 255, 0), "uniqueness filter (1): true");
+			else ci(CV_RGB(255, 0, 0), "uniqueness filter (1): false");
+
+			if (isLRCheck) ci(CV_RGB(0, 255, 0), "LR check (2): true");
+			else ci(CV_RGB(255, 0, 0), "LR check (2): false");
+
+			if (isProcessLBorder) ci(CV_RGB(0, 255, 0), "LBorder (3) LR check must be true: true");
+			else ci(CV_RGB(255, 0, 0), "LBorder (3): false");
+
+			if (isRangeFilterSubpix) ci(CV_RGB(0, 255, 0), "range filter subpixel (4): true");
+			else ci(CV_RGB(255, 0, 0), "range filter subpixel (4): false");
+
+			if (isMinCostFilter) ci(CV_RGB(0, 255, 0), "min cost filter (5): true");
+			else ci(CV_RGB(255, 0, 0), "min cost filter  (5): false");
+
+			if (isSpeckleFilter) ci(CV_RGB(0, 255, 0), "speckle filter (6): true");
+			else ci(CV_RGB(255, 0, 0), "speckle filter  (6): false");
+
+			ci("==== additional post filter =====");
+			if (isStreak)ci(CV_RGB(0, 255, 0), "Streak (7): true");
+			else ci(CV_RGB(255, 0, 0), "Streak (7): false");
+
+			if (isMedian)ci(CV_RGB(0, 255, 0), "Median (8): true");
+			else ci(CV_RGB(255, 0, 0), "Median (8): false");
+
+			if (isGuided) ci(CV_RGB(0, 255, 0), "Guided (8): true");
+			else 	ci(CV_RGB(255, 0, 0), "Guided (8): false");
+			
+
 
 			if (isShowGT)
 			{
@@ -3732,6 +3393,7 @@ namespace cp
 			}
 			else
 			{
+				ci("=======================");
 				if (maskType != 0)
 				{
 					if (maskPrec == 2 && maskType == 1)
@@ -3761,27 +3423,342 @@ namespace cp
 				}
 			}
 
+			imshow(wname2, dispOutput);
 			imshow("console", ci.image);
-			if (key == 'l')isProcessLBorder = (isProcessLBorder) ? false : true;
-			if (key == 'g')isGrid = (isGrid) ? false : true;
-			if (key == 'f')isGuided = (isGuided) ? false : true;
-			if (key == 'v')isMedian = (isMedian) ? false : true;
-			if (key == 'd') isStreak = (isStreak) ? false : true;
-			if (key == 's')isBoxRefinement = (isBoxRefinement) ? false : true;
-			if (key == 'a')isReCost = (isReCost) ? false : true;
-			if (key == 'm')isMinCostFilter = isMinCostFilter ? false : true;
-			if (key == 'c')guiAlphaBlend(dispOutput, leftim);
-			if (key == 'p') { subpixMethod++; subpixMethod = (subpixMethod > 2) ? 0 : subpixMethod; }
-			if (key == '@') { subpixMethod--; subpixMethod = (subpixMethod < 0) ? 2 : subpixMethod; }
-			if (key == 'b')isBT = isBT ? false : true;
+			setTrackbarPos("px", wname, mpt.x);
+			setTrackbarPos("py", wname, mpt.y);
+			key = waitKey(1);
 
+			if (key == '1') isUniquenessFilter = isUniquenessFilter ? false : true;
+			if (key == '2') isLRCheck = isLRCheck ? false : true;
+			if (key == '3') isProcessLBorder = (isProcessLBorder) ? false : true;
+			if (key == '4')	isRangeFilterSubpix = (isRangeFilterSubpix) ? false : true;
+			if (key == '5') isMinCostFilter = isMinCostFilter ? false : true;
+			if (key == '6') isSpeckleFilter = isSpeckleFilter ? false : true;
+
+			if (key == '7') isStreak = (isStreak) ? false : true;
+			if (key == '8') isMedian = (isMedian) ? false : true;
+			if (key == '9') isGuided = (isGuided) ? false : true;
+			
+			
+
+			if (key == 'a')	isReCost = (isReCost) ? false : true;
+
+			if (key == 'g')isGrid = (isGrid) ? false : true;
+			if (key == 'c') guiAlphaBlend(dispOutput, leftim);
+			if (key == 'i') { PixelMatchingMethod++; PixelMatchingMethod = (PixelMatchingMethod > Pixel_Matching_Method_Size - 1) ? 0 : PixelMatchingMethod; }
+			if (key == '@') { AggregationMethod++; AggregationMethod = (AggregationMethod > Aggregation_Method_Size - 1) ? 0 : AggregationMethod; }
+			
+			if (key == 'o') { occlusionMethod++; if (occlusionMethod > 4)occlusionMethod = 0; }
+			if (key == 'p') { subpixelInterpolationMethod++; subpixelInterpolationMethod = (subpixelInterpolationMethod > 2) ? 0 : subpixelInterpolationMethod; }
+			
+			
 			if (key == 'w')dispColor = (dispColor) ? false : true;
 			if (key == 'e')isShowGT = (isShowGT) ? false : true;
+
+			/*
 			if (key == 'r')maskType++; maskType = maskType > 4 ? 0 : maskType;
 			if (key == 't')maskType--; maskType = maskType < 0 ? 3 : maskType;
 			if (key == 'y')maskPrec++; maskPrec = maskPrec > 3 ? 0 : maskPrec;
 			if (key == 'u')maskPrec--; maskPrec = maskPrec < 0 ? 2 : maskPrec;
+			*/
+		}
+	}
 
+
+	//simple stereo matching implementaion
+	void calcHammingDistance8u(Mat& src1, Mat& src2, Mat& dest)
+	{
+		if (dest.empty())dest.create(src1.size(), CV_8U);
+		const int w = src1.cols;
+		const int h = src1.rows;
+		int i, j;
+		uchar* s1 = src1.ptr<uchar>(0);
+		uchar* s2 = src2.ptr<uchar>(0);
+		uchar* d = dest.ptr<uchar>(0);
+
+		//		__declspec(align()) uchar* buff = new  uchar[16];
+
+		for (j = 0; j < h; j++)
+		{
+			for (i = 0; i < w; i++)
+			{
+				*d = _mm_popcnt_u32((*s1 ^ *s2));
+				s1++; s2++, d++;
+			}
+			/*for(i=hstep;i--;)
+			{
+			__m128i ms1 = _mm_load_si128((__m128i*)s1);
+			__m128i ms2 = _mm_load_si128((__m128i*)s2);
+			__m128i md = _mm_xor_si128 (ms1, ms2);
+
+			__m128i md2 = _mm_cvtepi8_epi32(md);
+			d[0] = _mm_popcnt_u32(_mm_extract_epi32(md2,0));
+			d[1] = _mm_popcnt_u32(_mm_extract_epi32(md2,1));
+			d[2] = _mm_popcnt_u32(_mm_extract_epi32(md2,2));
+			d[3] = _mm_popcnt_u32(_mm_extract_epi32(md2,3));
+
+			md2 = _mm_srli_si128(md, 4);
+			md2 = _mm_cvtepi8_epi32(md2);
+			d[4] = _mm_popcnt_u32(_mm_extract_epi32(md2,0));
+			d[5] = _mm_popcnt_u32(_mm_extract_epi32(md2,1));
+			d[6] = _mm_popcnt_u32(_mm_extract_epi32(md2,2));
+			d[7] = _mm_popcnt_u32(_mm_extract_epi32(md2,3));
+
+			md2 = _mm_srli_si128(md, 8);
+			md2 = _mm_cvtepi8_epi32(md2);
+			d[8] = _mm_popcnt_u32(_mm_extract_epi32(md2,0));
+			d[9] = _mm_popcnt_u32(_mm_extract_epi32(md2,1));
+			d[10] = _mm_popcnt_u32(_mm_extract_epi32(md2,2));
+			d[11] = _mm_popcnt_u32(_mm_extract_epi32(md2,3));
+
+			md2 = _mm_srli_si128(md, 12);
+			md2 = _mm_cvtepi8_epi32(md2);
+			d[12] = _mm_popcnt_u32(_mm_extract_epi32(md2,0));
+			d[13] = _mm_popcnt_u32(_mm_extract_epi32(md2,1));
+			d[14] = _mm_popcnt_u32(_mm_extract_epi32(md2,2));
+			d[15] = _mm_popcnt_u32(_mm_extract_epi32(md2,3));
+			s1+=16;s2+=16,d+=16;
+			}*/
+			/*for(i=0;i<rad;i++)
+			{
+			*d = _mm_popcnt_u32((unsigned int)(*s1^*s2));
+			s1++;s2++,d++;
+			}*/
+		}
+		//		delete[] buff;
+	}
+	void censusTrans8u_3x3(Mat& src, Mat& dest)
+	{
+		if (dest.empty())dest.create(src.size(), CV_8U);
+		const int r = 1;
+		const int r2 = 2 * r;
+		Mat im; copyMakeBorder(src, im, r, r, r, r, cv::BORDER_REPLICATE);
+
+		int i, j;
+		uchar* s = im.ptr<uchar>(r); s += r;
+		uchar* d = dest.ptr<uchar>(0);
+		uchar val; uchar* ss;
+		const int step1 = -r - im.cols;
+		const int step2 = -3 + im.cols;
+		const int w = src.cols;
+		const int h = src.rows;
+		for (j = 0; j < h; j++)
+		{
+			for (i = 0; i < w; i++)
+			{
+				val = 0;//init value
+				ss = s + step1;
+
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+
+				ss += step2;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				ss++;//skip r=0
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				ss += step2;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++;
+
+				*(d++) = val;
+				s++;
+			}
+			s += r2;
+		}
+	}
+	void censusTrans8u_9x1(Mat& src, Mat& dest)
+	{
+		if (dest.empty())dest.create(src.size(), CV_8U);
+		const int w = src.cols;
+		const int h = src.rows;
+
+		const int r = 4;
+		const int r2 = 2 * r;
+		Mat im; copyMakeBorder(src, im, 0, 0, r, r, cv::BORDER_REPLICATE);
+
+		int i, j, n;
+
+		uchar* s = im.ptr<uchar>(0); s += r;
+		uchar* d = dest.ptr<uchar>(0);
+		uchar val;//init value
+		uchar* ss;
+		for (j = 0; j < h; j++)
+		{
+			for (i = 0; i < w; i++)
+			{
+				val = 0;//init value
+				ss = s - r;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				ss++;//skip r=0
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++;
+
+				*d = val;
+				d++;
+				s++;
+			}
+			s += r2;
+		}
+	}
+	void shiftImage8u(Mat& src, Mat& dest, const int shift)
+	{
+		if (dest.empty())dest.create(src.size(), CV_8U);
+
+		if (shift >= 0)
+		{
+			const int step = src.cols;
+			uchar* s = src.ptr<uchar>(0);
+			uchar* d = dest.ptr<uchar>(0);
+			int j; j = 0;
+			for (; j < src.rows; j++)
+			{
+				const uchar v = s[0];
+				memset(d, v, shift);
+				memcpy(d + shift, s, step - shift);
+				s += step; d += step;
+			}
+		}
+		else
+		{
+			const int step = src.cols;
+			uchar* s = src.ptr<uchar>(0);
+			uchar* d = dest.ptr<uchar>(0);
+			int j; j = 0;
+			for (; j < src.rows; j++)
+			{
+				const uchar v = s[step - 1];
+				memcpy(d, s + shift, step - shift);
+				memset(d + step - shift, v, shift);
+				s += step; d += step;
+			}
+		}
+	}
+
+	void stereoCensus9x1(Mat& leftim, Mat& rightim, Mat& dest, int minDisparity, int range, int r)
+	{
+		if (dest.empty())dest.create(leftim.size(), CV_8U);
+		Mat lim, rim;
+		if (leftim.channels() == 3)cvtColor(leftim, lim, COLOR_BGR2GRAY);
+		else lim = leftim;
+		if (rightim.channels() == 3)cvtColor(rightim, rim, COLOR_BGR2GRAY);
+		else rim = rightim;
+
+		Mat limCensus, rimCensus;
+
+		censusTrans8u_9x1(lim, limCensus);
+		censusTrans8u_9x1(rim, rimCensus);
+		Mat rwarp;
+		Mat distance;
+
+		vector<Mat> dsv(range);
+		Size size = dest.size();
+		Mat cost = Mat::ones(size, CV_8U) * 255;
+		Mat mask;
+		Mat pcost;
+		for (int i = 0; i < range; i++)
+		{
+			shiftImage8u(rimCensus, rwarp, minDisparity + i);
+			calcHammingDistance8u(limCensus, rwarp, distance);
+			blur(distance, distance, Size(2 * r + 1, 2 * r + 1));
+
+			cost.copyTo(pcost);
+			min(pcost, distance, cost);
+			compare(pcost, cost, mask, cv::CMP_NE);
+			dest.setTo(i + minDisparity, mask);
+		}
+	}
+
+	void stereoCensus3x3(Mat& leftim, Mat& rightim, Mat& dest, int minDisparity, int range, int r)
+	{
+		if (dest.empty())dest.create(leftim.size(), CV_8U);
+		Mat lim, rim;
+		if (leftim.channels() == 3)cvtColor(leftim, lim, COLOR_BGR2GRAY);
+		else lim = leftim;
+		if (rightim.channels() == 3)cvtColor(rightim, rim, COLOR_BGR2GRAY);
+		else rim = rightim;
+
+		Mat limCensus, rimCensus;
+
+
+		censusTrans8u_3x3(lim, limCensus);
+		censusTrans8u_3x3(rim, rimCensus);
+		Mat rwarp;
+		Mat distance;
+
+		vector<Mat> dsi(range);
+
+		Mat cost = Mat::ones(dest.size(), CV_8U) * 255;
+		Mat pcost;
+		Mat mask;
+		for (int i = 0; i < range; i++)
+		{
+			shiftImage8u(rimCensus, rwarp, minDisparity + i);
+			calcHammingDistance8u(limCensus, rwarp, distance);
+			blur(distance, dsi[i], Size(2 * r + 1, 2 * r + 1));
+
+			cost.copyTo(pcost);
+			min(pcost, dsi[i], cost);
+			compare(pcost, cost, mask, cv::CMP_NE);
+			dest.setTo(i + minDisparity, mask);
+		}
+	}
+
+	void stereoSAD(Mat& leftim, Mat& rightim, Mat& dest, int minDisparity, int range, int r)
+	{
+		if (dest.empty())dest.create(leftim.size(), CV_8U);
+		Mat lim, rim;
+		if (leftim.channels() == 3)cvtColor(leftim, lim, COLOR_BGR2GRAY);
+		else lim = leftim;
+		if (rightim.channels() == 3)cvtColor(rightim, rim, COLOR_BGR2GRAY);
+		else rim = rightim;
+
+		Mat rwarp;
+		Mat distance;
+		vector<Mat> dsi(range);
+		Size size = dest.size();
+		Mat cost = Mat::ones(size, VOLUME_TYPE) * 255;
+		Mat mask;
+		Mat pcost;
+		for (int i = 0; i < range; i++)
+		{
+			shiftImage8u(rim, rwarp, minDisparity + i);
+			absdiff(lim, rwarp, distance);
+			blur(distance, dsi[i], Size(2 * r + 1, 2 * r + 1));
+
+			cost.copyTo(pcost);
+			min(pcost, dsi[i], cost);
+			compare(pcost, cost, mask, cv::CMP_NE);
+			dest.setTo(i + minDisparity, mask);
+		}
+	}
+
+	void resizeDown(Mat& src, Mat& dest, int rfact, int method)
+	{
+		int modH = rfact - src.cols % rfact;
+		int modV = rfact - src.rows % rfact;
+		Mat sim; copyMakeBorder(src, sim, 0, modV, 0, modH, cv::BORDER_REPLICATE);
+		resize(sim, dest, Size(sim.cols / rfact, sim.rows / rfact), 0.0, 0.0, method);
+	}
+
+	void resizeUP(Mat& src, Mat& dest, int rfact, int method)
+	{
+		Mat temp;
+		resize(src, temp, Size(src.cols * rfact, src.rows * rfact), 0.0, 0.0, method);
+		if (dest.empty())
+			temp.copyTo(dest);
+		else
+		{
+			cout << rfact << "," << temp.cols << "," << temp.rows << endl;
+			Mat a = temp(Rect(0, 0, dest.cols, dest.rows));
+			a.copyTo(dest);
 		}
 	}
 }

@@ -9,6 +9,7 @@ namespace cp
 		FILL_DISPARITY = 0,
 		FILL_DEPTH = 1
 	};
+	//method FILL_DISPARITY(0),FILL_DEPTH(1)
 	CP_EXPORT void fillOcclusion(cv::InputOutputArray src, int invalidvalue = 0, int method = FILL_DISPARITY);// for disparity map
 	CP_EXPORT void jointColorDepthFillOcclusion(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dest, const cv::Size ksize, double threshold);
 

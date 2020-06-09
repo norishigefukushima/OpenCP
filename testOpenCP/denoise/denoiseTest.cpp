@@ -39,7 +39,8 @@ void guiDenoiseTest(Mat& src)
 		if (sw == 0)
 		{
 			Timer t("bilateral filter");
-			bilateralFilter(noise, dest, Size(d, d), sigma_color, sigma_space, FILTER_RECTANGLE);
+			//bilateralFilter(noise, dest, Size(d, d), sigma_color, sigma_space, FILTER_RECTANGLE);
+			bilateralFilter(noise, dest, d, sigma_color, sigma_space, FILTER_RECTANGLE);
 		}
 		else if (sw == 1)
 		{

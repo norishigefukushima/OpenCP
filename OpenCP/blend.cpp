@@ -178,7 +178,7 @@ namespace cp
 		uchar* s2 = src2.data;
 		uchar* a = alpha.data;
 		uchar* d = dst.data;
-		float inv = 1.f / 255.f;
+		const float inv = 1.f / 255.f;
 		const __m256 minv = _mm256_set1_ps(inv);
 
 		if (src1.channels() == 1)

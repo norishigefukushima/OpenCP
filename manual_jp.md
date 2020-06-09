@@ -61,6 +61,9 @@ Reference Manual
 * [class GuidedImageFilter](guidedFilter_jp.md "#class GuidedImageFilter")
 * [class GuidedImageFilterTiling](guidedFilter_jp.md "#GuidedImageFilterTiling")
 
+# StereoBase.hpp
+* [class StereoBase（書きかけ）](StereoBase.md)
+
 # memo
 Optimization
 * Naive：ほとんど最適化されていない素のC++で書かれたコード．
