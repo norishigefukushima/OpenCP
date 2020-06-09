@@ -70,3 +70,14 @@ void StereoBMSimple::gui(Mat& leftim, Mat& rightim, Mat& dest, StereoEval& eval)
 ##出力のイメージ．
 デプスマップ，パラメータ調整バー，状態，サブピクセル補間のヒストグラム
 <img src="docimg/outputimage_stereobase.png" width="800px">
+
+# reference
+
+* BT
+	* S. Birchfield and C. Tomasi. A pixel dissimilarity measure
+that is insensitive to image sampling. TPAMI, 20(4):401–
+406, 1998.
+	* [Birchfield–Tomasi dissimilarity] (https://en.wikipedia.org/wiki/Birchfield%E2%80%93Tomasi_dissimilarity)
+
+* Pixel cost function survey
+	* https://www.cs.middlebury.edu/~schar/papers/evalCosts_cvpr07.pdf
