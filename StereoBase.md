@@ -7,7 +7,7 @@ StereoBase.hpp
 void StereoBase::matching(Mat& leftim, Mat& rightim, Mat& destDisparityMap)
 {
 prefilter(leftim, rightim);
-getPixelMatchingCost(d, DSI[i]);	
+getPixelMatchingCost(d, DSI[i]);
 getCostAggregation(DSI[i], DSI[i], guide);
 getWTA(DSI, dest);//最小コストの値を取る
 //postprocessings
@@ -42,6 +42,7 @@ case Aggregation_BoxShiftable://シフタブルブロックマッチング
 case Aggregation_Gauss://ガウシアン窓のマッチング
 case Aggregation_GaussShiftable://ガウシアン窓のシフタブルマッチング
 case Aggregation_Guided://ガイデットフィルタによるマッチング．guide画像はこのメソッドしか使わない
+case Aggregation_CrossBasedBox:クロスベースのボックスフィルタによるアグリゲーション
 
 //3. 最適化・
 getOptScanline();//デバッグした記憶がない
@@ -77,7 +78,7 @@ void StereoBMSimple::gui(Mat& leftim, Mat& rightim, Mat& dest, StereoEval& eval)
 	* S. Birchfield and C. Tomasi. A pixel dissimilarity measure
 that is insensitive to image sampling. TPAMI, 20(4):401–
 406, 1998.
-	* [Birchfield–Tomasi dissimilarity] (https://en.wikipedia.org/wiki/Birchfield%E2%80%93Tomasi_dissimilarity)
-
+	* [Birchfield–Tomasi dissimilarity](https://en.wikipedia.org/wiki/Birchfield%E2%80%93Tomasi_dissimilarity)
 * Pixel cost function survey
 	* https://www.cs.middlebury.edu/~schar/papers/evalCosts_cvpr07.pdf
+* [Cross-Based Local Stereo Matching Using Orthogonal Integral Images](https://ieeexplore.ieee.org/document/4811952?denied=)

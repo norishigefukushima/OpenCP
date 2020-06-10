@@ -119,3 +119,5 @@ void guiWeightedHistogramFilterTest(cv::Mat& src, cv::Mat& guide);
 
 using namespace cv;
 using namespace cp;
+
+void imshowAnalysis(String winname, Mat& src);

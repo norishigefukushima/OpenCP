@@ -2,6 +2,7 @@
 
 #include "common.hpp"
 #include "depthEval.hpp"
+#include "crossBasedLocalFilter.hpp"
 
 namespace cp
 {
@@ -24,6 +25,7 @@ namespace cp
 		void shiftImage(cv::Mat& src, cv::Mat& dest, const int shift);
 
 		bool scheduleCostComputationAndAggregation = true;
+		CrossBasedLocalFilter clf;
 	public:
 		int border;
 		int numberOfDisparities;
@@ -67,6 +69,7 @@ namespace cp
 			Aggregation_Gauss,
 			Aggregation_GaussShiftable,
 			Aggregation_Guided,
+			Aggregation_CrossBasedBox,
 
 			Aggregation_Method_Size
 		};

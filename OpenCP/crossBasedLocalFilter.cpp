@@ -1,4 +1,6 @@
 #include "crossBasedLocalFilter.hpp"
+#include "blend.hpp"
+#include "timer.hpp"
 using namespace std;
 using namespace cv;
 
@@ -13,7 +15,7 @@ namespace cp
 		CrossBasedLocalFilter::cross* cd = crossdata;
 
 		double* integral;
-		const int step = src.cols*src.channels();
+		const int step = src.cols * src.channels();
 		if (src.channels() == 1)
 		{
 			integral = new double[max(src.cols, src.rows) + 1];
@@ -34,7 +36,7 @@ namespace cp
 				IH = integral;
 				for (i = src.cols; i--;)
 				{
-					*d = (T)((IH[1 + cd->hp] - IH[-cd->hm])*cd->divh);
+					*d = (T)((IH[1 + cd->hp] - IH[-cd->hm]) * cd->divh);
 					d++, cd++, IH++;
 				}
 			}
@@ -55,7 +57,7 @@ namespace cp
 				IH = integral;
 				for (j = src.rows; j--;)
 				{
-					*dd = (T)((IH[1 + cd->vp] - IH[-cd->vm])* cd->divv);
+					*dd = (T)((IH[1 + cd->vp] - IH[-cd->vm]) * cd->divv);
 					IH++, dd += step, cd += dest.cols;
 				}
 				ds++;
@@ -86,9 +88,9 @@ namespace cp
 				IH = integral;
 				for (i = src.cols; i--;)
 				{
-					d[0] = (T)((IH[3 + cd->hp * 3] - IH[-cd->hm * 3])*cd->divh);
-					d[1] = (T)((IH[3 + cd->hp * 3 + 1] - IH[-cd->hm * 3 + 1])*cd->divh);
-					d[2] = (T)((IH[3 + cd->hp * 3 + 2] - IH[-cd->hm * 3 + 2])*cd->divh);
+					d[0] = (T)((IH[3 + cd->hp * 3] - IH[-cd->hm * 3]) * cd->divh);
+					d[1] = (T)((IH[3 + cd->hp * 3 + 1] - IH[-cd->hm * 3 + 1]) * cd->divh);
+					d[2] = (T)((IH[3 + cd->hp * 3 + 2] - IH[-cd->hm * 3 + 2]) * cd->divh);
 					d += 3, IH += 3, cd++;
 				}
 			}
@@ -113,9 +115,9 @@ namespace cp
 				IH = integral;
 				for (j = src.rows; j--;)
 				{
-					dd[0] = (T)((IH[3 + cd->vp * 3] - IH[-cd->vm * 3])* cd->divv);
-					dd[1] = (T)((IH[3 + cd->vp * 3 + 1] - IH[-cd->vm * 3 + 1])* cd->divv);
-					dd[2] = (T)((IH[3 + cd->vp * 3 + 2] - IH[-cd->vm * 3 + 2])* cd->divv);
+					dd[0] = (T)((IH[3 + cd->vp * 3] - IH[-cd->vm * 3]) * cd->divv);
+					dd[1] = (T)((IH[3 + cd->vp * 3 + 1] - IH[-cd->vm * 3 + 1]) * cd->divv);
+					dd[2] = (T)((IH[3 + cd->vp * 3 + 2] - IH[-cd->vm * 3 + 2]) * cd->divv);
 					IH += 3;
 					dd += step, cd += dest.cols;
 				}
@@ -135,11 +137,11 @@ namespace cp
 		T* ws = w;
 		T* d = dest.ptr<T>(0);
 		T* ds = d;
-		CrossBasedLocalFilter::cross*  cd = crossdata;
+		CrossBasedLocalFilter::cross* cd = crossdata;
 
 		double* integral;
 		double* integralW;
-		const int step = src.cols*src.channels();
+		const int step = src.cols * src.channels();
 		const int stepW = weight.cols;
 		if (src.channels() == 1)
 		{
@@ -228,9 +230,9 @@ namespace cp
 				for (i = src.cols; i--;)
 				{
 					T div = 1.0f / (T)(IHW[1 + cd->hp] - IHW[-cd->hm]);
-					d[0] = (T)((IH[3 + cd->hp * 3] - IH[-cd->hm * 3])*div);
-					d[1] = (T)((IH[3 + cd->hp * 3 + 1] - IH[-cd->hm * 3 + 1])*div);
-					d[2] = (T)((IH[3 + cd->hp * 3 + 2] - IH[-cd->hm * 3 + 2])*div);
+					d[0] = (T)((IH[3 + cd->hp * 3] - IH[-cd->hm * 3]) * div);
+					d[1] = (T)((IH[3 + cd->hp * 3 + 1] - IH[-cd->hm * 3 + 1]) * div);
+					d[2] = (T)((IH[3 + cd->hp * 3 + 2] - IH[-cd->hm * 3 + 2]) * div);
 					d += 3, IH += 3, IHW++, cd++;
 				}
 			}
@@ -261,9 +263,9 @@ namespace cp
 				for (j = src.rows; j--;)
 				{
 					T div = 1.0f / (T)(IHW[1 + cd->vp] - IHW[-cd->vm]);
-					dd[0] = (T)((IH[3 + cd->vp * 3] - IH[-cd->vm * 3])*div);
-					dd[1] = (T)((IH[3 + cd->vp * 3 + 1] - IH[-cd->vm * 3 + 1])*div);
-					dd[2] = (T)((IH[3 + cd->vp * 3 + 2] - IH[-cd->vm * 3 + 2])*div);
+					dd[0] = (T)((IH[3 + cd->vp * 3] - IH[-cd->vm * 3]) * div);
+					dd[1] = (T)((IH[3 + cd->vp * 3 + 1] - IH[-cd->vm * 3 + 1]) * div);
+					dd[2] = (T)((IH[3 + cd->vp * 3 + 2] - IH[-cd->vm * 3 + 2]) * div);
 					IH += 3, IHW++;
 					dd += step, cd += dest.cols;
 				}
@@ -286,7 +288,7 @@ namespace cp
 		CrossBasedLocalFilter::cross* cd = crossdata;
 
 		float* integral;
-		const int step = src.cols*src.channels();
+		const int step = src.cols * src.channels();
 		if (src.channels() == 1)
 		{
 			integral = new float[max(src.cols, src.rows) + 1];
@@ -306,7 +308,7 @@ namespace cp
 				IH = integral;
 				for (i = src.cols; i--;)
 				{
-					*v1 = (float)((IH[1 + (int)cd->hp] - IH[-(int)cd->hm])*cd->divh);
+					*v1 = (float)((IH[1 + (int)cd->hp] - IH[-(int)cd->hm]) * cd->divh);
 					v1++, cd++, IH++;
 				}
 			}
@@ -329,7 +331,7 @@ namespace cp
 				IH = integral;
 				for (j = src.rows; j--;)
 				{
-					*dd = (T)((IH[1 + cd->vp] - IH[-cd->vm])* cd->divv + 0.5f);
+					*dd = (T)((IH[1 + cd->vp] - IH[-cd->vm]) * cd->divv + 0.5f);
 					IH++, dd += step, cd += dest.cols;
 				}
 				ds++;
@@ -361,9 +363,9 @@ namespace cp
 				IH = integral;
 				for (i = src.cols; i--;)
 				{
-					d[0] = (T)((IH[3 + cd->hp * 3] - IH[-cd->hm * 3])*cd->divh + 0.5f);
-					d[1] = (T)((IH[3 + cd->hp * 3 + 1] - IH[-cd->hm * 3 + 1])*cd->divh + 0.5f);
-					d[2] = (T)((IH[3 + cd->hp * 3 + 2] - IH[-cd->hm * 3 + 2])*cd->divh + 0.5f);
+					d[0] = (T)((IH[3 + cd->hp * 3] - IH[-cd->hm * 3]) * cd->divh + 0.5f);
+					d[1] = (T)((IH[3 + cd->hp * 3 + 1] - IH[-cd->hm * 3 + 1]) * cd->divh + 0.5f);
+					d[2] = (T)((IH[3 + cd->hp * 3 + 2] - IH[-cd->hm * 3 + 2]) * cd->divh + 0.5f);
 					d += 3, IH += 3, cd++;
 				}
 			}
@@ -388,9 +390,9 @@ namespace cp
 				IH = integral;
 				for (j = src.rows; j--;)
 				{
-					dd[0] = (T)((IH[3 + cd->vp * 3] - IH[-cd->vm * 3])* cd->divv + 0.5f);
-					dd[1] = (T)((IH[3 + cd->vp * 3 + 1] - IH[-cd->vm * 3 + 1])* cd->divv + 0.5f);
-					dd[2] = (T)((IH[3 + cd->vp * 3 + 2] - IH[-cd->vm * 3 + 2])* cd->divv + 0.5f);
+					dd[0] = (T)((IH[3 + cd->vp * 3] - IH[-cd->vm * 3]) * cd->divv + 0.5f);
+					dd[1] = (T)((IH[3 + cd->vp * 3 + 1] - IH[-cd->vm * 3 + 1]) * cd->divv + 0.5f);
+					dd[2] = (T)((IH[3 + cd->vp * 3 + 2] - IH[-cd->vm * 3 + 2]) * cd->divv + 0.5f);
 					IH += 3;
 					dd += step, cd += dest.cols;
 				}
@@ -413,7 +415,7 @@ namespace cp
 
 		unsigned int* integral = 0;
 		unsigned int* integralW = 0;
-		const int step = src.cols*src.channels();
+		const int step = src.cols * src.channels();
 		const int stepW = weight.cols;
 		if (src.channels() == 1)
 		{
@@ -502,9 +504,9 @@ namespace cp
 				for (i = src.cols; i--;)
 				{
 					float div = 1.0f / (float)(IHW[1 + cd->hp] - IHW[-cd->hm]);
-					d[0] = (T)((IH[3 + cd->hp * 3] - IH[-cd->hm * 3])*div + 0.5f);
-					d[1] = (T)((IH[3 + cd->hp * 3 + 1] - IH[-cd->hm * 3 + 1])*div + 0.5f);
-					d[2] = (T)((IH[3 + cd->hp * 3 + 2] - IH[-cd->hm * 3 + 2])*div + 0.5f);
+					d[0] = (T)((IH[3 + cd->hp * 3] - IH[-cd->hm * 3]) * div + 0.5f);
+					d[1] = (T)((IH[3 + cd->hp * 3 + 1] - IH[-cd->hm * 3 + 1]) * div + 0.5f);
+					d[2] = (T)((IH[3 + cd->hp * 3 + 2] - IH[-cd->hm * 3 + 2]) * div + 0.5f);
 					d += 3, IH += 3, IHW++, cd++;
 				}
 			}
@@ -535,9 +537,9 @@ namespace cp
 				for (j = src.rows; j--;)
 				{
 					float div = 1.0f / (float)(IHW[1 + cd->vp] - IHW[-cd->vm]);
-					dd[0] = (T)((IH[3 + cd->vp * 3] - IH[-cd->vm * 3])*div + 0.5f);
-					dd[1] = (T)((IH[3 + cd->vp * 3 + 1] - IH[-cd->vm * 3 + 1])*div + 0.5f);
-					dd[2] = (T)((IH[3 + cd->vp * 3 + 2] - IH[-cd->vm * 3 + 2])*div + 0.5f);
+					dd[0] = (T)((IH[3 + cd->vp * 3] - IH[-cd->vm * 3]) * div + 0.5f);
+					dd[1] = (T)((IH[3 + cd->vp * 3 + 1] - IH[-cd->vm * 3 + 1]) * div + 0.5f);
+					dd[2] = (T)((IH[3 + cd->vp * 3 + 2] - IH[-cd->vm * 3 + 2]) * div + 0.5f);
 					IH += 3, IHW++;
 					dd += step, cd += dest.cols;
 				}
@@ -555,12 +557,23 @@ namespace cp
 		makeKernel(guide, r_, thresh_);
 	}
 
+	CrossBasedLocalFilter::CrossBasedLocalFilter()
+	{
+		r = 1;
+		thresh = 20;
+	}
+
+	CrossBasedLocalFilter::~CrossBasedLocalFilter()
+	{
+		delete[] crossdata;
+	}
+
 	void CrossBasedLocalFilter::setMinSearch(int val)
 	{
 		minSearch = val;
 	}
 
-	void CrossBasedLocalFilter::makeKernel(Mat& guide, const int r_, int thresh_, int method)
+	void CrossBasedLocalFilter::makeKernel(Mat& guide, const int r_, const int thresh_, const int method)
 	{
 		r = r_;
 		thresh = thresh_;
@@ -580,10 +593,10 @@ namespace cp
 
 		Mat gim; copyMakeBorder(guide, gim, r, r, r, r, cv::BORDER_CONSTANT, 0);
 		uchar* g = gim.ptr<uchar>(r); g += r * c;
-		const int gstep = gim.cols*c;
+		const int gstep = gim.cols * c;
 		cross* cdata = crossdata;
 		const int cstep = guide.cols;
-		thresh *= c;
+		int arm_threshold = c*thresh;
 
 		int i, j;
 		if (method == CrossBasedLocalFilter::CROSS_BASED_LOCAL_FILTER_ARM_BASIC)
@@ -598,13 +611,13 @@ namespace cp
 						cdata->hm = cdata->hp = cdata->vp = cdata->vm = minSearch;
 						for (int n = 1; n <= hw; n++)
 						{
-							if (abs(v - g[-n]) > thresh)
+							if (abs(v - g[-n]) > arm_threshold)
 								break;
 							cdata->hm = n;
 						}
 						for (int n = 1; n <= hw; n++)
 						{
-							if (abs(v - g[n]) > thresh)
+							if (abs(v - g[n]) > arm_threshold)
 								break;
 							cdata->hp = n;
 						}
@@ -612,13 +625,13 @@ namespace cp
 
 						for (int n = 1; n <= hw; n++)
 						{
-							if (abs(v - g[-n * gstep]) > thresh)
+							if (abs(v - g[-n * gstep]) > arm_threshold)
 								break;
 							cdata->vm = n;
 						}
 						for (int n = 1; n <= hw; n++)
 						{
-							if (abs(v - g[n*gstep]) > thresh)
+							if (abs(v - g[n * gstep]) > arm_threshold)
 								break;
 							cdata->vp = n;
 						}
@@ -639,13 +652,13 @@ namespace cp
 						cdata->hm = cdata->hp = cdata->vp = cdata->vm = minSearch;
 						for (int n = 1; n <= hw; n++)
 						{
-							if (abs(rv - g[-3 * n + 0]) + abs(gv - g[-3 * n + 1]) + abs(bv - g[-3 * n + 2]) > thresh)
+							if (abs(rv - g[-3 * n + 0]) + abs(gv - g[-3 * n + 1]) + abs(bv - g[-3 * n + 2]) > arm_threshold)
 								break;
 							cdata->hm = n;
 						}
 						for (int n = 1; n <= hw; n++)
 						{
-							if (abs(rv - g[3 * n + 0]) + abs(gv - g[3 * n + 1]) + abs(bv - g[3 * n + 2]) > thresh)
+							if (abs(rv - g[3 * n + 0]) + abs(gv - g[3 * n + 1]) + abs(bv - g[3 * n + 2]) > arm_threshold)
 								break;
 							cdata->hp = n;
 						}
@@ -653,13 +666,13 @@ namespace cp
 
 						for (int n = 1; n <= hw; n++)
 						{
-							if (abs(rv - g[-gstep * n + 0]) + abs(gv - g[-gstep * n + 1]) + abs(bv - g[-gstep * n + 2]) > thresh)
+							if (abs(rv - g[-gstep * n + 0]) + abs(gv - g[-gstep * n + 1]) + abs(bv - g[-gstep * n + 2]) > arm_threshold)
 								break;
 							cdata->vm = n;
 						}
 						for (int n = 1; n <= hw; n++)
 						{
-							if (abs(rv - g[gstep*n + 0]) + abs(gv - g[gstep*n + 1]) + abs(bv - g[gstep*n + 2]) > thresh)
+							if (abs(rv - g[gstep * n + 0]) + abs(gv - g[gstep * n + 1]) + abs(bv - g[gstep * n + 2]) > arm_threshold)
 								break;
 							cdata->vp = n;
 						}
@@ -681,13 +694,13 @@ namespace cp
 						cdata->hm = cdata->hp = cdata->vp = cdata->vm = minSearch;
 						for (int n = 1; n <= hw; n++)
 						{
-							if (abs(v - g[-n]) > thresh)
+							if (abs(v - g[-n]) > arm_threshold)
 								break;
 							cdata->hm = n;
 						}
 						for (int n = 1; n <= hw; n++)
 						{
-							if (abs(v - g[n]) > thresh)
+							if (abs(v - g[n]) > arm_threshold)
 								break;
 							cdata->hp = n;
 						}
@@ -696,13 +709,13 @@ namespace cp
 
 						for (int n = 1; n <= hw; n++)
 						{
-							if (abs(v - g[-n * gstep]) > thresh)
+							if (abs(v - g[-n * gstep]) > arm_threshold)
 								break;
 							cdata->vm = n;
 						}
 						for (int n = 1; n <= hw; n++)
 						{
-							if (abs(v - g[n*gstep]) > thresh)
+							if (abs(v - g[n * gstep]) > arm_threshold)
 								break;
 							cdata->vp = n;
 						}
@@ -724,13 +737,13 @@ namespace cp
 						cdata->hm = cdata->hp = cdata->vp = cdata->vm = minSearch;
 						for (int n = 1; n <= hw; n++)
 						{
-							if (abs(rv - g[-3 * n + 0]) + abs(gv - g[-3 * n + 1]) + abs(bv - g[-3 * n + 2]) > thresh)
+							if (abs(rv - g[-3 * n + 0]) + abs(gv - g[-3 * n + 1]) + abs(bv - g[-3 * n + 2]) > arm_threshold)
 								break;
 							cdata->hm = n;
 						}
 						for (int n = 1; n <= hw; n++)
 						{
-							if (abs(rv - g[3 * n + 0]) + abs(gv - g[3 * n + 1]) + abs(bv - g[3 * n + 2]) > thresh)
+							if (abs(rv - g[3 * n + 0]) + abs(gv - g[3 * n + 1]) + abs(bv - g[3 * n + 2]) > arm_threshold)
 								break;
 							cdata->hp = n;
 						}
@@ -739,13 +752,13 @@ namespace cp
 
 						for (int n = 1; n <= hw; n++)
 						{
-							if (abs(rv - g[-gstep * n + 0]) + abs(gv - g[-gstep * n + 1]) + abs(bv - g[-gstep * n + 2]) > thresh)
+							if (abs(rv - g[-gstep * n + 0]) + abs(gv - g[-gstep * n + 1]) + abs(bv - g[-gstep * n + 2]) > arm_threshold)
 								break;
 							cdata->vm = n;
 						}
 						for (int n = 1; n <= hw; n++)
 						{
-							if (abs(rv - g[gstep*n + 0]) + abs(gv - g[gstep*n + 1]) + abs(bv - g[gstep*n + 2]) > thresh)
+							if (abs(rv - g[gstep * n + 0]) + abs(gv - g[gstep * n + 1]) + abs(bv - g[gstep * n + 2]) > arm_threshold)
 								break;
 							cdata->vp = n;
 						}
@@ -763,61 +776,62 @@ namespace cp
 		{
 			for (i = 0; i <= r; i++)
 			{
-				cdata[cstep*j + i].hm = min(cdata[cstep*j + i].hm, (uchar)i);
-				cdata[cstep*j + i].vm = min(cdata[cstep*j + i].vm, (uchar)j);
-				cdata->divh = 1.0f / (float)(cdata[cstep*j + i].hp + cdata[cstep*j + i].hm + 1);
-				cdata->divv = 1.0f / (float)(cdata[cstep*j + i].vp + cdata[cstep*j + i].vm + 1);
+				cdata[cstep * j + i].hm = min(cdata[cstep * j + i].hm, (uchar)i);
+				cdata[cstep * j + i].vm = min(cdata[cstep * j + i].vm, (uchar)j);
+				cdata->divh = 1.0f / (float)(cdata[cstep * j + i].hp + cdata[cstep * j + i].hm + 1);
+				cdata->divv = 1.0f / (float)(cdata[cstep * j + i].vp + cdata[cstep * j + i].vm + 1);
 			}
 			for (; i < guide.cols - r - 1; i++)
 			{
-				cdata[cstep*j + i].vm = min(cdata[cstep*j + i].vm, (uchar)j);
-				cdata->divv = 1.0f / (float)(cdata[cstep*j + i].vp + cdata[cstep*j + i].vm + 1);
+				cdata[cstep * j + i].vm = min(cdata[cstep * j + i].vm, (uchar)j);
+				cdata->divv = 1.0f / (float)(cdata[cstep * j + i].vp + cdata[cstep * j + i].vm + 1);
 			}
 			for (; i < guide.cols; i++)
 			{
-				cdata[cstep*j + i].hp = min(cdata[cstep*j + i].hp, (uchar)(guide.cols - 1 - i));
-				cdata[cstep*j + i].vm = min(cdata[cstep*j + i].vm, (uchar)j);
-				cdata->divh = 1.0f / (float)(cdata[cstep*j + i].hp + cdata[cstep*j + i].hm + 1);
-				cdata->divv = 1.0f / (float)(cdata[cstep*j + i].vp + cdata[cstep*j + i].vm + 1);
+				cdata[cstep * j + i].hp = min(cdata[cstep * j + i].hp, (uchar)(guide.cols - 1 - i));
+				cdata[cstep * j + i].vm = min(cdata[cstep * j + i].vm, (uchar)j);
+				cdata->divh = 1.0f / (float)(cdata[cstep * j + i].hp + cdata[cstep * j + i].hm + 1);
+				cdata->divv = 1.0f / (float)(cdata[cstep * j + i].vp + cdata[cstep * j + i].vm + 1);
 			}
 		}
 		for (; j < guide.rows - r - 1; j++)
 		{
 			for (i = 0; i <= r; i++)
 			{
-				cdata[cstep*j + i].hm = min(cdata[cstep*j + i].hm, (uchar)i);
+				cdata[cstep * j + i].hm = min(cdata[cstep * j + i].hm, (uchar)i);
 
-				cdata->divh = 1.0f / (float)(cdata[cstep*j + i].hp + cdata[cstep*j + i].hm + 1);
+				cdata->divh = 1.0f / (float)(cdata[cstep * j + i].hp + cdata[cstep * j + i].hm + 1);
 			}
 			for (i = guide.cols - r - 1; i < guide.cols; i++)
 			{
-				cdata[cstep*j + i].hp = min(cdata[cstep*j + i].hp, (uchar)(guide.cols - 1 - i));
-				cdata->divh = 1.0f / (float)(cdata[cstep*j + i].hp + cdata[cstep*j + i].hm + 1);
+				cdata[cstep * j + i].hp = min(cdata[cstep * j + i].hp, (uchar)(guide.cols - 1 - i));
+				cdata->divh = 1.0f / (float)(cdata[cstep * j + i].hp + cdata[cstep * j + i].hm + 1);
 			}
 		}
 		for (; j < guide.rows; j++)
 		{
 			for (i = 0; i <= r; i++)
 			{
-				cdata[cstep*j + i].hm = min(cdata[cstep*j + i].hm, (uchar)i);
-				cdata[cstep*j + i].vp = min(cdata[cstep*j + i].vp, (uchar)(guide.rows - 1 - j));
-				cdata->divh = 1.0f / (float)(cdata[cstep*j + i].hp + cdata[cstep*j + i].hm + 1);
-				cdata->divv = 1.0f / (float)(cdata[cstep*j + i].vp + cdata[cstep*j + i].vm + 1);
+				cdata[cstep * j + i].hm = min(cdata[cstep * j + i].hm, (uchar)i);
+				cdata[cstep * j + i].vp = min(cdata[cstep * j + i].vp, (uchar)(guide.rows - 1 - j));
+				cdata->divh = 1.0f / (float)(cdata[cstep * j + i].hp + cdata[cstep * j + i].hm + 1);
+				cdata->divv = 1.0f / (float)(cdata[cstep * j + i].vp + cdata[cstep * j + i].vm + 1);
 			}
 			for (; i < guide.cols - r - 1; i++)
 			{
-				cdata[cstep*j + i].vp = min(cdata[cstep*j + i].vp, (uchar)(guide.rows - 1 - j));
-				cdata->divv = 1.0f / (float)(cdata[cstep*j + i].vp + cdata[cstep*j + i].vm + 1);
+				cdata[cstep * j + i].vp = min(cdata[cstep * j + i].vp, (uchar)(guide.rows - 1 - j));
+				cdata->divv = 1.0f / (float)(cdata[cstep * j + i].vp + cdata[cstep * j + i].vm + 1);
 			}
 			for (; i < guide.cols; i++)
 			{
-				cdata[cstep*j + i].hp = min(cdata[cstep*j + i].hp, (uchar)(guide.cols - 1 - i));
-				cdata[cstep*j + i].vp = min(cdata[cstep*j + i].vp, (uchar)(guide.rows - 1 - j));
-				cdata->divh = 1.0f / (float)(cdata[cstep*j + i].hp + cdata[cstep*j + i].hm + 1);
-				cdata->divv = 1.0f / (float)(cdata[cstep*j + i].vp + cdata[cstep*j + i].vm + 1);
+				cdata[cstep * j + i].hp = min(cdata[cstep * j + i].hp, (uchar)(guide.cols - 1 - i));
+				cdata[cstep * j + i].vp = min(cdata[cstep * j + i].vp, (uchar)(guide.rows - 1 - j));
+				cdata->divh = 1.0f / (float)(cdata[cstep * j + i].hp + cdata[cstep * j + i].hm + 1);
+				cdata->divv = 1.0f / (float)(cdata[cstep * j + i].vp + cdata[cstep * j + i].vm + 1);
 			}
 		}
 	}
+
 	/*
 	void CrossBasedLocalFilter::makeKernel(Mat& guide, const int r, int thresh, int method)
 	{
@@ -2270,11 +2284,13 @@ namespace cp
 	}
 	*/
 
-	void CrossBasedLocalFilter::makeKernel(Mat& guide, const int r, int thresh, double smoothingrate, int method)
+	void CrossBasedLocalFilter::makeKernel(Mat& guide, const int r, const int thresh, const double smoothingrate, const int method)
 	{
 		size = guide.size();
-		if (crossdata == 0)
+		if (crossdata == nullptr)
+		{
 			crossdata = new cross[guide.size().area()];
+		}
 		else
 		{
 			delete[]crossdata;
@@ -2285,10 +2301,10 @@ namespace cp
 		const int c = guide.channels();
 
 		uchar* g = guide.ptr(0);
-		const int gstep = guide.cols*c;
+		const int gstep = guide.cols * c;
 		cross* cdata = crossdata;
 		const int cstep = guide.cols;
-		thresh *= c;
+		int arm_threshold = thresh * c;
 
 		if (method == CROSS_BASED_LOCAL_FILTER_ARM_BASIC)
 		{
@@ -2337,9 +2353,9 @@ namespace cp
 						v = g[0];
 						for (int n = 1; n <= j; n++)
 						{
-							if (abs(v - g[n*gstep]) > thresh)
+							if (abs(v - g[n * gstep]) > thresh)
 								break;
-							v = (v + g[n*gstep]) >> 1;
+							v = (v + g[n * gstep]) >> 1;
 							vp = n;
 						}
 						cdata->vp = vp;
@@ -2384,9 +2400,9 @@ namespace cp
 						v = g[0];
 						for (int n = 1; n <= j; n++)
 						{
-							if (abs(v - g[n*gstep]) > thresh)
+							if (abs(v - g[n * gstep]) > thresh)
 								break;
-							v = (v + g[n*gstep]) >> 1;
+							v = (v + g[n * gstep]) >> 1;
 							vp = n;
 						}
 						cdata->vp = vp;
@@ -2432,9 +2448,9 @@ namespace cp
 						v = g[0];
 						for (int n = 1; n <= j; n++)
 						{
-							if (abs(v - g[n*gstep]) > thresh)
+							if (abs(v - g[n * gstep]) > thresh)
 								break;
-							v = (v + g[n*gstep]) >> 1;
+							v = (v + g[n * gstep]) >> 1;
 							vp = n;
 						}
 						cdata->vp = vp;
@@ -2484,9 +2500,9 @@ namespace cp
 						v = g[0];
 						for (int n = 1; n <= hw; n++)
 						{
-							if (abs(v - g[n*gstep]) > thresh)
+							if (abs(v - g[n * gstep]) > thresh)
 								break;
-							v = (v + g[n*gstep]) >> 1;
+							v = (v + g[n * gstep]) >> 1;
 							vp = n;
 						}
 						cdata->vp = vp;
@@ -2531,9 +2547,9 @@ namespace cp
 						v = g[0];
 						for (int n = 1; n <= hw; n++)
 						{
-							if (abs(v - g[n*gstep]) > thresh)
+							if (abs(v - g[n * gstep]) > thresh)
 								break;
-							v = (v + g[n*gstep]) >> 1;
+							v = (v + g[n * gstep]) >> 1;
 							vp = n;
 						}
 						cdata->vp = vp;
@@ -2578,9 +2594,9 @@ namespace cp
 						v = g[0];
 						for (int n = 1; n <= hw; n++)
 						{
-							if (abs(v - g[n*gstep]) > thresh)
+							if (abs(v - g[n * gstep]) > thresh)
 								break;
-							v = (v + g[n*gstep]) >> 1;
+							v = (v + g[n * gstep]) >> 1;
 							vp = n;
 						}
 						cdata->vp = vp;
@@ -2629,9 +2645,9 @@ namespace cp
 						v = g[0];
 						for (int n = 1; n <= guide.rows - 1 - j; n++)
 						{
-							if (abs(v - g[n*gstep]) > thresh)
+							if (abs(v - g[n * gstep]) > thresh)
 								break;
-							v = (v + g[n*gstep]) >> 1;
+							v = (v + g[n * gstep]) >> 1;
 							vp = n;
 						}
 						cdata->vp = vp;
@@ -2670,9 +2686,9 @@ namespace cp
 						v = g[0];
 						for (int n = 1; n <= guide.rows - 1 - j; n++)
 						{
-							if (abs(v - g[n*gstep]) > thresh)
+							if (abs(v - g[n * gstep]) > thresh)
 								break;
-							v = (v + g[n*gstep]) >> 1;
+							v = (v + g[n * gstep]) >> 1;
 							cdata->vp = n;
 						}
 						cdata->divv = 1.0f / (float)(cdata->vp + cdata->vm + 1);
@@ -2709,9 +2725,9 @@ namespace cp
 						v = g[0];
 						for (int n = 1; n <= guide.rows - 1 - j; n++)
 						{
-							if (abs(v - g[n*gstep]) > thresh)
+							if (abs(v - g[n * gstep]) > thresh)
 								break;
-							v = (v + g[n*gstep]) >> 1;
+							v = (v + g[n * gstep]) >> 1;
 							cdata->vp = n;
 						}
 						cdata->divv = 1.0f / (float)(cdata->vp + cdata->vm + 1);
@@ -2753,7 +2769,7 @@ namespace cp
 						}
 						for (int n = 1; n <= j; n++)
 						{
-							if (abs(rv - g[n*gstep + 0]) + abs(gv - g[n*gstep + 1]) + abs(bv - g[n*gstep + 2]) > thresh)
+							if (abs(rv - g[n * gstep + 0]) + abs(gv - g[n * gstep + 1]) + abs(bv - g[n * gstep + 2]) > thresh)
 								break;
 							cdata->vp = n;
 						}
@@ -2788,7 +2804,7 @@ namespace cp
 						}
 						for (int n = 1; n <= j; n++)
 						{
-							if (abs(rv - g[n*gstep + 0]) + abs(gv - g[n*gstep + 1]) + abs(bv - g[n*gstep + 2]) > thresh)
+							if (abs(rv - g[n * gstep + 0]) + abs(gv - g[n * gstep + 1]) + abs(bv - g[n * gstep + 2]) > thresh)
 								break;
 							cdata->vp = n;
 						}
@@ -2824,7 +2840,7 @@ namespace cp
 						}
 						for (int n = 1; n <= j; n++)
 						{
-							if (abs(rv - g[n*gstep + 0]) + abs(gv - g[n*gstep + 1]) + abs(bv - g[n*gstep + 2]) > thresh)
+							if (abs(rv - g[n * gstep + 0]) + abs(gv - g[n * gstep + 1]) + abs(bv - g[n * gstep + 2]) > thresh)
 								break;
 							cdata->vp = n;
 						}
@@ -2863,7 +2879,7 @@ namespace cp
 						}
 						for (int n = 1; n <= hw; n++)
 						{
-							if (abs(rv - g[n*gstep + 0]) + abs(gv - g[n*gstep + 1]) + abs(bv - g[n*gstep + 2]) > thresh)
+							if (abs(rv - g[n * gstep + 0]) + abs(gv - g[n * gstep + 1]) + abs(bv - g[n * gstep + 2]) > thresh)
 								break;
 							cdata->vp = n;
 						}
@@ -2899,7 +2915,7 @@ namespace cp
 						}
 						for (int n = 1; n <= hw; n++)
 						{
-							if (abs(rv - g[n*gstep + 0]) + abs(gv - g[n*gstep + 1]) + abs(bv - g[n*gstep + 2]) > thresh)
+							if (abs(rv - g[n * gstep + 0]) + abs(gv - g[n * gstep + 1]) + abs(bv - g[n * gstep + 2]) > thresh)
 								break;
 							cdata->vp = n;
 						}
@@ -2935,7 +2951,7 @@ namespace cp
 						}
 						for (int n = 1; n <= hw; n++)
 						{
-							if (abs(rv - g[n*gstep + 0]) + abs(gv - g[n*gstep + 1]) + abs(bv - g[n*gstep + 2]) > thresh)
+							if (abs(rv - g[n * gstep + 0]) + abs(gv - g[n * gstep + 1]) + abs(bv - g[n * gstep + 2]) > thresh)
 								break;
 							cdata->vp = n;
 						}
@@ -2975,7 +2991,7 @@ namespace cp
 						}
 						for (int n = 1; n <= guide.rows - 1 - j; n++)
 						{
-							if (abs(rv - g[n*gstep + 0]) + abs(gv - g[n*gstep + 1]) + abs(bv - g[n*gstep + 2]) > thresh)
+							if (abs(rv - g[n * gstep + 0]) + abs(gv - g[n * gstep + 1]) + abs(bv - g[n * gstep + 2]) > thresh)
 								break;
 							cdata->vp = n;
 						}
@@ -3010,7 +3026,7 @@ namespace cp
 						}
 						for (int n = 1; n <= guide.rows - 1 - j; n++)
 						{
-							if (abs(rv - g[n*gstep + 0]) + abs(gv - g[n*gstep + 1]) + abs(bv - g[n*gstep + 2]) > thresh)
+							if (abs(rv - g[n * gstep + 0]) + abs(gv - g[n * gstep + 1]) + abs(bv - g[n * gstep + 2]) > thresh)
 								break;
 							cdata->vp = n;
 						}
@@ -3046,7 +3062,7 @@ namespace cp
 						}
 						for (int n = 1; n <= guide.rows - 1 - j; n++)
 						{
-							if (abs(rv - g[n*gstep + 0]) + abs(gv - g[n*gstep + 1]) + abs(bv - g[n*gstep + 2]) > thresh)
+							if (abs(rv - g[n * gstep + 0]) + abs(gv - g[n * gstep + 1]) + abs(bv - g[n * gstep + 2]) > thresh)
 								break;
 							cdata->vp = n;
 						}
@@ -3094,7 +3110,7 @@ namespace cp
 						}
 						for (int n = 1; n <= vm; n++)
 						{
-							if (abs(v - g[n*gstep]) > thresh)
+							if (abs(v - g[n * gstep]) > thresh)
 								break;
 							vp = n;
 						}
@@ -3133,7 +3149,7 @@ namespace cp
 
 						for (int n = 1; n <= vm; n++)
 						{
-							if (abs(v - g[n*gstep]) > thresh)
+							if (abs(v - g[n * gstep]) > thresh)
 								break;
 							vp = n;
 						}
@@ -3172,7 +3188,7 @@ namespace cp
 						}
 						for (int n = 1; n <= vm; n++)
 						{
-							if (abs(v - g[n*gstep]) > thresh)
+							if (abs(v - g[n * gstep]) > thresh)
 								break;
 							vp = n;
 						}
@@ -3214,7 +3230,7 @@ namespace cp
 						}
 						for (int n = 1; n <= vm; n++)
 						{
-							if (abs(v - g[n*gstep]) > thresh)
+							if (abs(v - g[n * gstep]) > thresh)
 								break;
 							vp = n;
 						}
@@ -3253,7 +3269,7 @@ namespace cp
 
 						for (int n = 1; n <= vm; n++)
 						{
-							if (abs(v - g[n*gstep]) > thresh)
+							if (abs(v - g[n * gstep]) > thresh)
 								break;
 							vp = n;
 						}
@@ -3291,7 +3307,7 @@ namespace cp
 						}
 						for (int n = 1; n <= vm; n++)
 						{
-							if (abs(v - g[n*gstep]) > thresh)
+							if (abs(v - g[n * gstep]) > thresh)
 								break;
 							vp = n;
 						}
@@ -3335,7 +3351,7 @@ namespace cp
 						}
 						for (int n = 1; n <= vm; n++)
 						{
-							if (abs(v - g[n*gstep]) > thresh)
+							if (abs(v - g[n * gstep]) > thresh)
 								break;
 							vp = n;
 						}
@@ -3369,7 +3385,7 @@ namespace cp
 						}
 						for (int n = 1; n <= cdata->vm; n++)
 						{
-							if (abs(v - g[n*gstep]) > thresh)
+							if (abs(v - g[n * gstep]) > thresh)
 								break;
 							cdata->vp = n;
 						}
@@ -3404,7 +3420,7 @@ namespace cp
 						}
 						for (int n = 1; n <= cdata->vm; n++)
 						{
-							if (abs(v - g[n*gstep]) > thresh)
+							if (abs(v - g[n * gstep]) > thresh)
 								break;
 							cdata->vp = n;
 						}
@@ -3451,7 +3467,7 @@ namespace cp
 						}
 						for (int n = 1; n <= cdata->vm; n++)
 						{
-							if (abs(rv - g[n*gstep + 0]) + abs(gv - g[n*gstep + 1]) + abs(bv - g[n*gstep + 2]) > thresh)
+							if (abs(rv - g[n * gstep + 0]) + abs(gv - g[n * gstep + 1]) + abs(bv - g[n * gstep + 2]) > thresh)
 								break;
 							cdata->vp = n;
 						}
@@ -3489,7 +3505,7 @@ namespace cp
 						}
 						for (int n = 1; n <= cdata->vm; n++)
 						{
-							if (abs(rv - g[n*gstep + 0]) + abs(gv - g[n*gstep + 1]) + abs(bv - g[n*gstep + 2]) > thresh)
+							if (abs(rv - g[n * gstep + 0]) + abs(gv - g[n * gstep + 1]) + abs(bv - g[n * gstep + 2]) > thresh)
 								break;
 							cdata->vp = n;
 						}
@@ -3527,7 +3543,7 @@ namespace cp
 						}
 						for (int n = 1; n <= cdata->vm; n++)
 						{
-							if (abs(rv - g[n*gstep + 0]) + abs(gv - g[n*gstep + 1]) + abs(bv - g[n*gstep + 2]) > thresh)
+							if (abs(rv - g[n * gstep + 0]) + abs(gv - g[n * gstep + 1]) + abs(bv - g[n * gstep + 2]) > thresh)
 								break;
 							cdata->vp = n;
 						}
@@ -3570,7 +3586,7 @@ namespace cp
 						}
 						for (int n = 1; n <= cdata->vm; n++)
 						{
-							if (abs(rv - g[n*gstep + 0]) + abs(gv - g[n*gstep + 1]) + abs(bv - g[n*gstep + 2]) > thresh)
+							if (abs(rv - g[n * gstep + 0]) + abs(gv - g[n * gstep + 1]) + abs(bv - g[n * gstep + 2]) > thresh)
 								break;
 							cdata->vp = n;
 						}
@@ -3608,7 +3624,7 @@ namespace cp
 						}
 						for (int n = 1; n <= cdata->vm; n++)
 						{
-							if (abs(rv - g[n*gstep + 0]) + abs(gv - g[n*gstep + 1]) + abs(bv - g[n*gstep + 2]) > thresh)
+							if (abs(rv - g[n * gstep + 0]) + abs(gv - g[n * gstep + 1]) + abs(bv - g[n * gstep + 2]) > thresh)
 								break;
 							cdata->vp = n;
 						}
@@ -3646,7 +3662,7 @@ namespace cp
 						}
 						for (int n = 1; n <= cdata->vm; n++)
 						{
-							if (abs(rv - g[n*gstep + 0]) + abs(gv - g[n*gstep + 1]) + abs(bv - g[n*gstep + 2]) > thresh)
+							if (abs(rv - g[n * gstep + 0]) + abs(gv - g[n * gstep + 1]) + abs(bv - g[n * gstep + 2]) > thresh)
 								break;
 							cdata->vp = n;
 						}
@@ -3689,7 +3705,7 @@ namespace cp
 						}
 						for (int n = 1; n <= cdata->vm; n++)
 						{
-							if (abs(rv - g[n*gstep + 0]) + abs(gv - g[n*gstep + 1]) + abs(bv - g[n*gstep + 2]) > thresh)
+							if (abs(rv - g[n * gstep + 0]) + abs(gv - g[n * gstep + 1]) + abs(bv - g[n * gstep + 2]) > thresh)
 								break;
 							cdata->vp = n;
 						}
@@ -3727,7 +3743,7 @@ namespace cp
 						}
 						for (int n = 1; n <= cdata->vm; n++)
 						{
-							if (abs(rv - g[n*gstep + 0]) + abs(gv - g[n*gstep + 1]) + abs(bv - g[n*gstep + 2]) > thresh)
+							if (abs(rv - g[n * gstep + 0]) + abs(gv - g[n * gstep + 1]) + abs(bv - g[n * gstep + 2]) > thresh)
 								break;
 							cdata->vp = n;
 						}
@@ -3765,7 +3781,7 @@ namespace cp
 						}
 						for (int n = 1; n <= cdata->vm; n++)
 						{
-							if (abs(rv - g[n*gstep + 0]) + abs(gv - g[n*gstep + 1]) + abs(bv - g[n*gstep + 2]) > thresh)
+							if (abs(rv - g[n * gstep + 0]) + abs(gv - g[n * gstep + 1]) + abs(bv - g[n * gstep + 2]) > thresh)
 								break;
 							cdata->vp = n;
 						}
@@ -3779,7 +3795,7 @@ namespace cp
 
 	void CrossBasedLocalFilter::visualizeKernel(Mat& dest, Point& pt)
 	{
-		cross* cr = &crossdata[pt.x + pt.y*dest.cols];
+		cross* cr = &crossdata[pt.x + pt.y * dest.cols];
 
 		dest.setTo(0);
 		int sty = -cr->vm + pt.y;
@@ -3789,7 +3805,7 @@ namespace cp
 			if (j >= 0 && j < dest.cols)
 			{
 				line(dest, Point(pt.x - crossdata[pt.x + j * dest.cols].hm, j), Point(pt.x + crossdata[pt.x + j * dest.cols].hp, j), CV_RGB(255, 255, 255));
-				if (j == pt.y)line(dest, Point(pt.x - crossdata[pt.x + pt.y*dest.cols].hm, j), Point(pt.x + crossdata[pt.x + pt.y*dest.cols].hp, j), CV_RGB(255, 0, 0));
+				if (j == pt.y)line(dest, Point(pt.x - crossdata[pt.x + pt.y * dest.cols].hm, j), Point(pt.x + crossdata[pt.x + pt.y * dest.cols].hp, j), CV_RGB(255, 0, 0));
 			}
 		}
 		line(dest, Point(pt.x, sty), Point(pt.x, edy), CV_RGB(255, 0, 0));
@@ -3812,7 +3828,7 @@ namespace cp
 			{
 				for (i = size.width; i--;)
 				{
-					cross* cd = cds - cds->vm*step;
+					cross* cd = cds - cds->vm * step;
 					const int v = cds->vp + cds->vm + 1;
 					int val = 1;
 					for (int n = 0; n < v; n++)
@@ -3833,7 +3849,7 @@ namespace cp
 			{
 				for (i = size.width; i--;)
 				{
-					cross* cd = cds - cds->vm*step;
+					cross* cd = cds - cds->vm * step;
 					const int v = cds->vp + cds->vm + 1;
 					for (int n = 0; n < v; n++)
 					{
@@ -3852,7 +3868,7 @@ namespace cp
 			{
 				for (i = size.width; i--;)
 				{
-					cross* cd = cds - cds->vm*step;
+					cross* cd = cds - cds->vm * step;
 					const int v = cds->vp + cds->vm + 1;
 					for (int n = 0; n < v; n++)
 					{
@@ -3871,7 +3887,7 @@ namespace cp
 				dest.setTo(1.f);
 				for (i = size.width; i--;)
 				{
-					cross* cd = cds - cds->vm*step;
+					cross* cd = cds - cds->vm * step;
 					const int v = cds->vp + cds->vm + 1;
 					for (int n = 0; n < v; n++)
 					{
@@ -3890,7 +3906,7 @@ namespace cp
 				dest.setTo(1.0);
 				for (i = size.width; i--;)
 				{
-					cross* cd = cds - cds->vm*step;
+					cross* cd = cds - cds->vm * step;
 					const int v = cds->vp + cds->vm + 1;
 					for (int n = 0; n < v; n++)
 					{
@@ -4008,4 +4024,279 @@ namespace cp
 		}
 	}
 
+
+	template <class S, class T>
+	void crossBasedAdaptiveBoxFilterSP_(Mat& src, Mat& guide, Mat& dest, int r, int thresh)
+	{
+		if (dest.empty())dest.create(src.size(), src.type());
+
+		const int hw = r;
+		Mat sim, gim;
+		copyMakeBorder(src, sim, 0, 0, hw, hw, cv::BORDER_REPLICATE);
+		copyMakeBorder(guide, gim, 0, 0, hw, hw, cv::BORDER_REPLICATE);
+
+		unsigned int* integral = new unsigned int[(sim.cols) + 1];
+		unsigned int* iH = integral + hw;
+
+		const int c = guide.channels();
+		const int gstep = gim.cols * c;
+
+		T* is = sim.ptr<T>(0);
+		T* s = is + hw;
+		S* g = gim.ptr<S>(0); g += hw * c;
+		T* d = dest.ptr<T>(0);
+		if (c == 1)
+		{
+			for (int j = 0; j < src.rows; j++)
+			{
+				integral[0] = 0;
+				for (int i = 0; i < sim.cols; i++)
+					integral[i + 1] = integral[i] + is[i];
+
+				for (int i = 0; i < src.cols; i++)
+				{
+					const S v = g[i];
+					int rl = 0;
+					for (int n = 1; n <= hw; n++)
+					{
+						if (abs(v - g[i - n]) > thresh)
+							break;
+						rl = -n;
+					}
+					int rr = 0;
+					for (int n = 1; n <= hw; n++)
+					{
+						if (abs(v - g[i + n]) > thresh)
+							break;
+						rr = n;
+					}
+					d[i] = (T)((iH[i + 1 + rr] - iH[i + rl]) / (float)(rr - rl + 1) + 0.5f);
+				}
+				s += sim.cols;
+				is += sim.cols;
+				g += gstep;
+				d += dest.cols;
+			}
+		}
+		else if (c == 3)
+		{
+			for (int j = 0; j < src.rows; j++)
+			{
+				integral[0] = 0;
+				for (int i = 0; i < sim.cols; i++)
+					integral[i + 1] = integral[i] + is[i];
+
+				for (int i = 0; i < src.cols; i++)
+				{
+					const T rv = g[3 * i];
+					const T gv = g[3 * i + 1];
+					const T bv = g[3 * i + 2];
+					int rl = 0;
+					for (int n = 1; n <= hw; n++)
+					{
+						if (abs(rv - g[3 * (i - n) + 0]) + abs(gv - g[3 * (i - n) + 1]) + abs(bv - g[3 * (i - n) + 2]) > 3 * thresh)
+							break;
+						rl = -n;
+					}
+					int rr = 0;
+					for (int n = 1; n <= hw; n++)
+					{
+						if (abs(rv - g[3 * (i + n) + 0]) + abs(gv - g[3 * (i + n) + 1]) + abs(bv - g[3 * (i + n) + 2]) > 3 * thresh)
+							break;
+						rr = n;
+					}
+					d[i] = (T)((iH[i + 1 + rr] - iH[i + rl]) / (float)(rr - rl + 1) + 0.5f);
+				}
+				s += sim.cols;
+				is += sim.cols;
+				g += gstep;
+				d += dest.cols;
+			}
+		}
+
+		delete[] integral;
+	}
+
+	template <class T>
+	void crossBasedAdaptiveBoxFilter_(Mat& src, Mat& guide, Mat& dest, Size ksize, int thresh)
+	{
+		crossBasedAdaptiveBoxFilterSP_<uchar, T>(src, guide, dest, ksize.width / 2, thresh);
+		//crossBasedAdaptiveBoxFilterSP_<T>(src,guide,dest,0,thresh);
+		Mat st, gt;
+		transpose(dest, st);
+		transpose(guide, gt);
+		crossBasedAdaptiveBoxFilterSP_<uchar, T>(st, gt, st, ksize.height / 2, thresh);
+		transpose(st, dest);
+	}
+
+	template <class T>
+	void crossBasedAdaptiveBoxFilter_(Mat& src, Mat& dest, Size ksize, int thresh)
+	{
+		crossBasedAdaptiveBoxFilterSP_<T, T>(src, src, dest, ksize.width / 2, thresh);
+		//crossBasedAdaptiveBoxFilterSP_<T>(src,guide,dest,0,thresh);
+		Mat st, gt;
+		transpose(dest, st);
+		crossBasedAdaptiveBoxFilterSP_<T, T>(st, st, st, ksize.height / 2, thresh);
+		transpose(st, dest);
+	}
+
+	void crossBasedAdaptiveBoxFilter(Mat& src, Mat& dest, const Size ksize, const int thresh)
+	{
+		Mat guidance;
+
+		if (src.type() == CV_8U)
+			crossBasedAdaptiveBoxFilter_<uchar>(src, dest, ksize, thresh);
+		else if (src.type() == CV_16S)
+			crossBasedAdaptiveBoxFilter_<short>(src, dest, ksize, thresh);
+		else if (src.type() == CV_16U)
+			crossBasedAdaptiveBoxFilter_<unsigned short>(src, dest, ksize, thresh);
+		else if (src.type() == CV_32F)
+			crossBasedAdaptiveBoxFilter_<float>(src, dest, ksize, thresh);
+		else if (src.type() == CV_64F)
+			crossBasedAdaptiveBoxFilter_<double>(src, dest, ksize, thresh);
+	}
+
+	void crossBasedAdaptiveBoxFilter(Mat& src, Mat& guide, Mat& dest, const Size ksize, const int thresh)
+	{
+		Mat guidance;
+
+		if (src.type() == CV_8U)
+			crossBasedAdaptiveBoxFilter_<uchar>(src, guide, dest, ksize, thresh);
+		else if (src.type() == CV_16S)
+			crossBasedAdaptiveBoxFilter_<short>(src, guide, dest, ksize, thresh);
+		else if (src.type() == CV_16U)
+			crossBasedAdaptiveBoxFilter_<unsigned short>(src, guide, dest, ksize, thresh);
+		else if (src.type() == CV_32F)
+			crossBasedAdaptiveBoxFilter_<float>(src, guide, dest, ksize, thresh);
+		else if (src.type() == CV_64F)
+			crossBasedAdaptiveBoxFilter_<double>(src, guide, dest, ksize, thresh);
+	}
+
+	static void guiCrossBasedLocalFilter(int events, int x, int y, int flags, void* param)
+	{
+		Point* pt = (Point*)param;
+		//if(events==CV_EVENT_LBUTTONDOWN)
+		if (flags & EVENT_FLAG_LBUTTON)
+		{
+			pt->x = x;
+			pt->y = y;
+		}
+	}
+
+	void guiCrossBasedLocalFilter(Mat& src)
+	{
+		CrossBasedLocalFilter cbabf(src, 5, 30);
+		string wname = "Kernel";
+		namedWindow(wname);
+		Point mpt = Point(100, 100);
+		setMouseCallback(wname, guiCrossBasedLocalFilter, &mpt);
+
+		int alpha = 70;
+
+		createTrackbar("alpha", wname, &alpha, 100);
+		int thresh = 50;
+		createTrackbar("thresh", wname, &thresh, 255);
+		int r = 50;
+		createTrackbar("r", wname, &r, src.cols / 2);
+
+		int iter = 1;
+		createTrackbar("iter", wname, &iter, 100);
+
+		int key = 0;
+		Mat kernel;
+		Mat show(src.size(), CV_8UC3);
+		Mat psf = Mat::zeros(src.size(), CV_16S);
+		bool isGrid = false;
+		bool isColor = true;
+		bool isWeight = true;
+		Mat dest;
+		Mat dest2;
+		Mat gray; cvtColor(src, gray, COLOR_BGR2GRAY);
+
+		Mat weight;
+		while (key != 'q')
+		{
+			cbabf.getCrossAreaCountMap(weight);
+			//weight.setTo(1);
+
+			//cbabf.makeKernel(src,r,thresh);
+			if (isWeight)
+			{
+				/*if(isColor)
+				{
+				cbabf.makeKernel(src,r,thresh,0.0,0);
+				cbabf(src,dest);
+				}
+				else
+				{
+				cbabf.makeKernel(gray,r,thresh,0.0,0);
+				cbabf(gray,dest);
+				}*/
+
+				if (isColor)
+				{
+					Timer t("time");
+					cbabf.makeKernel(src, r, thresh, 1);
+					cbabf(src, dest);
+				}
+				else
+				{
+					Timer t("time");
+					cbabf.makeKernel(gray, r, thresh, 1);
+					cbabf(gray, dest);
+				}
+
+			}
+			else
+			{
+				if (isColor)
+				{
+					Timer t("time");
+					cbabf.makeKernel(src, r, thresh, 0);
+					cbabf(src, dest);
+				}
+				else
+				{
+					Timer t("time");
+					cbabf.makeKernel(gray, r, thresh, 0);
+					cbabf(gray, dest);
+				}
+			}
+
+			cbabf.visualizeKernel(show, Point(mpt.x, mpt.y));
+			crossBasedAdaptiveBoxFilter(gray, src, dest2, Size(2 * r + 1, 2 * r + 1), thresh);
+			if (!isColor) guiAlphaBlend(dest, dest2);
+			imshow("2", dest2);
+			/*{
+			CalcTime t("single");
+
+			}*/
+
+			/*psf.setTo(0);
+			psf.at<short>(y,x)=SHRT_MAX;
+			crossBasedAdaptiveBoxFilter(psf,src,psf,Size(2*r+1,2*rh+1),thresh);
+			threshold(psf,psf,1,255,cv::THRESH_BINARY);
+
+			psf.convertTo(kernel,CV_8U);*/
+
+			if (isColor)
+				alphaBlend(show, src, alpha / 100.0, show);
+			else
+			{
+				Mat gs; cvtColor(gray, gs, COLOR_GRAY2BGR);
+				alphaBlend(show, gs, alpha / 100.0, show);
+			}
+			imshow("filtered", dest);
+			if (isGrid)
+			{
+				line(show, Point(mpt.x, 0), Point(mpt.x, src.rows - 1), CV_RGB(255, 0, 0));
+				line(show, Point(0, mpt.y), Point(src.cols - 1, mpt.y), CV_RGB(255, 0, 0));
+			}
+			imshow(wname, show);
+			key = waitKey(1);
+			if (key == 'g')isGrid = (isGrid) ? false : true;
+			if (key == 'c')isColor = (isColor) ? false : true;
+			if (key == 'w')isWeight = (isWeight) ? false : true;
+		}
+	}
 }

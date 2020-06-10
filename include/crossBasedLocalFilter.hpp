@@ -4,6 +4,7 @@
 
 namespace cp
 {
+	//not parallel processing
 	class CP_EXPORT CrossBasedLocalFilter
 	{
 		//private:
@@ -33,14 +34,15 @@ namespace cp
 		};
 		void setMinSearch(int val);
 		cv::Mat areaMap;
-		~CrossBasedLocalFilter() {delete[] crossdata;}
-		CrossBasedLocalFilter() {;}
-		CrossBasedLocalFilter(cv::Mat& guide, const int r_, const int thresh_);
+		
+		CrossBasedLocalFilter();
+		CrossBasedLocalFilter(cv::Mat& guide, const int r, const int thresh_);
+		~CrossBasedLocalFilter();
 
 		void getCrossAreaCountMap(cv::Mat& dest, int type = CV_8U);
 
-		void makeKernel(cv::Mat& guide, const int r, int thresh, int method = CrossBasedLocalFilter::CROSS_BASED_LOCAL_FILTER_ARM_BASIC);
-		void makeKernel(cv::Mat& guide, const int r, int thresh, double smoothingrate, int method = CrossBasedLocalFilter::CROSS_BASED_LOCAL_FILTER_ARM_BASIC);
+		void makeKernel(cv::Mat& guide, const int r, const int thresh, const int method = CrossBasedLocalFilter::CROSS_BASED_LOCAL_FILTER_ARM_BASIC);
+		void makeKernel(cv::Mat& guide, const int r, const int thresh, const double smoothingrate, const int method = CrossBasedLocalFilter::CROSS_BASED_LOCAL_FILTER_ARM_BASIC);
 		void visualizeKernel(cv::Mat& dest, cv::Point& pt);
 
 		void operator()(cv::Mat& src, cv::Mat& guide, cv::Mat& dest, const int r, int thresh, int iteration = 1);
@@ -49,5 +51,9 @@ namespace cp
 		void operator()(cv::Mat& src, cv::Mat& weight, cv::Mat& dest);
 
 	};
+
+	void guiCrossBasedLocalFilter(cv::Mat& src);
+	void crossBasedAdaptiveBoxFilter(cv::Mat& src, cv::Mat& guide, cv::Mat& dest, const cv::Size ksize, const int thresh);
+	void crossBasedAdaptiveBoxFilter(cv::Mat& src, cv::Mat& dest, const cv::Size ksize, const int thresh);
 
 }

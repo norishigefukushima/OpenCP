@@ -1,4 +1,5 @@
 #include <opencp.hpp>
+#include "test.hpp"
 
 using namespace std;
 using namespace cv;
@@ -115,6 +116,7 @@ void guiGuidedImageFilterTest()
 	GuidedImageFilter gftemp;
 	while (key != 'q')
 	{
+		
 		int idx = 0;
 		int x = rng.uniform(-10, 10);
 		int y = rng.uniform(-10, 10);
@@ -314,7 +316,7 @@ void guiGuidedImageFilterTest()
 		//imshow("Sub", sub);
 
 		cp::guiDiff(show, ref64f, false);
-
+		//imshowAnalysis("ana", show8u);
 		//cout << endl;
 		key = waitKey(1);
 		if (key == 'r')

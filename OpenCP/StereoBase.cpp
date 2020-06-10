@@ -917,6 +917,7 @@ namespace cp
 		case Aggregation_Gauss:				mes = "Aggregation_Gauss"; break;
 		case Aggregation_GaussShiftable:	mes = "Aggregation_GaussShiftable"; break;
 		case Aggregation_Guided:			mes = "Aggregation_Guided"; break;
+		case Aggregation_CrossBasedBox:		mes = "Aggregation_CrossBasedBox"; break;
 		default:							mes = "This cost computation method is not supported"; break;
 		}
 		return mes;
@@ -953,7 +954,11 @@ namespace cp
 			}
 			else if (AggregationMethod == Aggregation_Guided)
 			{
-				guidedImageFilter(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps);
+				guidedImageFilter(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps*aggregationGuidedfilterEps);	
+			}
+			else if (AggregationMethod == Aggregation_CrossBasedBox)
+			{
+				clf(src, dest);
 			}
 
 			/*
@@ -1444,6 +1449,8 @@ namespace cp
 		if (scheduleCostComputationAndAggregation)
 		{
 			Timer t("Cost computation & aggregation");
+
+			if(AggregationMethod==Aggregation_CrossBasedBox)clf.makeKernel(guideImage, aggregationRadiusH, aggregationGuidedfilterEps, 0);
 #pragma omp parallel for
 			for (int i = 0; i < numberOfDisparities; i++)
 			{
@@ -1951,151 +1958,6 @@ namespace cp
 		boxFilter(src,temp,src.type(),Size(3,7));
 		temp.copyTo(src,testim);
 		imshow("test",testim);*/
-	}
-
-	template <class S, class T>
-	void crossBasedAdaptiveBoxFilterSP_(Mat& src, Mat& guide, Mat& dest, int r, int thresh)
-	{
-		if (dest.empty())dest.create(src.size(), src.type());
-
-		const int hw = r;
-		Mat sim, gim;
-		copyMakeBorder(src, sim, 0, 0, hw, hw, cv::BORDER_REPLICATE);
-		copyMakeBorder(guide, gim, 0, 0, hw, hw, cv::BORDER_REPLICATE);
-
-		unsigned int* integral = new unsigned int[(sim.cols) + 1];
-		unsigned int* iH = integral + hw;
-
-		const int c = guide.channels();
-		const int gstep = gim.cols * c;
-
-		T* is = sim.ptr<T>(0);
-		T* s = is + hw;
-		S* g = gim.ptr<S>(0); g += hw * c;
-		T* d = dest.ptr<T>(0);
-		if (c == 1)
-		{
-			for (int j = 0; j < src.rows; j++)
-			{
-				integral[0] = 0;
-				for (int i = 0; i < sim.cols; i++)
-					integral[i + 1] = integral[i] + is[i];
-
-				for (int i = 0; i < src.cols; i++)
-				{
-					const S v = g[i];
-					int rl = 0;
-					for (int n = 1; n <= hw; n++)
-					{
-						if (abs(v - g[i - n]) > thresh)
-							break;
-						rl = -n;
-					}
-					int rr = 0;
-					for (int n = 1; n <= hw; n++)
-					{
-						if (abs(v - g[i + n]) > thresh)
-							break;
-						rr = n;
-					}
-					d[i] = (T)((iH[i + 1 + rr] - iH[i + rl]) / (float)(rr - rl + 1) + 0.5f);
-				}
-				s += sim.cols;
-				is += sim.cols;
-				g += gstep;
-				d += dest.cols;
-			}
-		}
-		else if (c == 3)
-		{
-			for (int j = 0; j < src.rows; j++)
-			{
-				integral[0] = 0;
-				for (int i = 0; i < sim.cols; i++)
-					integral[i + 1] = integral[i] + is[i];
-
-				for (int i = 0; i < src.cols; i++)
-				{
-					const T rv = g[3 * i];
-					const T gv = g[3 * i + 1];
-					const T bv = g[3 * i + 2];
-					int rl = 0;
-					for (int n = 1; n <= hw; n++)
-					{
-						if (abs(rv - g[3 * (i - n) + 0]) + abs(gv - g[3 * (i - n) + 1]) + abs(bv - g[3 * (i - n) + 2]) > 3 * thresh)
-							break;
-						rl = -n;
-					}
-					int rr = 0;
-					for (int n = 1; n <= hw; n++)
-					{
-						if (abs(rv - g[3 * (i + n) + 0]) + abs(gv - g[3 * (i + n) + 1]) + abs(bv - g[3 * (i + n) + 2]) > 3 * thresh)
-							break;
-						rr = n;
-					}
-					d[i] = (T)((iH[i + 1 + rr] - iH[i + rl]) / (float)(rr - rl + 1) + 0.5f);
-				}
-				s += sim.cols;
-				is += sim.cols;
-				g += gstep;
-				d += dest.cols;
-			}
-		}
-
-		delete[] integral;
-	}
-
-	template <class T>
-	void crossBasedAdaptiveBoxFilter_(Mat& src, Mat& guide, Mat& dest, Size ksize, int thresh)
-	{
-		crossBasedAdaptiveBoxFilterSP_<uchar, T>(src, guide, dest, ksize.width / 2, thresh);
-		//crossBasedAdaptiveBoxFilterSP_<T>(src,guide,dest,0,thresh);
-		Mat st, gt;
-		transpose(dest, st);
-		transpose(guide, gt);
-		crossBasedAdaptiveBoxFilterSP_<uchar, T>(st, gt, st, ksize.height / 2, thresh);
-		transpose(st, dest);
-	}
-
-	template <class T>
-	void crossBasedAdaptiveBoxFilter_(Mat& src, Mat& dest, Size ksize, int thresh)
-	{
-		crossBasedAdaptiveBoxFilterSP_<T, T>(src, src, dest, ksize.width / 2, thresh);
-		//crossBasedAdaptiveBoxFilterSP_<T>(src,guide,dest,0,thresh);
-		Mat st, gt;
-		transpose(dest, st);
-		crossBasedAdaptiveBoxFilterSP_<T, T>(st, st, st, ksize.height / 2, thresh);
-		transpose(st, dest);
-	}
-	void crossBasedAdaptiveBoxFilter(Mat& src, Mat& dest, Size ksize, int thresh)
-	{
-		Mat guidance;
-
-		if (src.type() == CV_8U)
-			crossBasedAdaptiveBoxFilter_<uchar>(src, dest, ksize, thresh);
-		else if (src.type() == CV_16S)
-			crossBasedAdaptiveBoxFilter_<short>(src, dest, ksize, thresh);
-		else if (src.type() == CV_16U)
-			crossBasedAdaptiveBoxFilter_<unsigned short>(src, dest, ksize, thresh);
-		else if (src.type() == CV_32F)
-			crossBasedAdaptiveBoxFilter_<float>(src, dest, ksize, thresh);
-		else if (src.type() == CV_64F)
-			crossBasedAdaptiveBoxFilter_<double>(src, dest, ksize, thresh);
-	}
-	void crossBasedAdaptiveBoxFilter(Mat& src, Mat& guide, Mat& dest, Size ksize, int thresh)
-	{
-		Mat guidance;
-
-		if (src.type() == CV_8U)
-			crossBasedAdaptiveBoxFilter_<uchar>(src, guide, dest, ksize, thresh);
-		else if (src.type() == CV_16S)
-			crossBasedAdaptiveBoxFilter_<short>(src, guide, dest, ksize, thresh);
-		else if (src.type() == CV_16U)
-			crossBasedAdaptiveBoxFilter_<unsigned short>(src, guide, dest, ksize, thresh);
-		else if (src.type() == CV_32F)
-			crossBasedAdaptiveBoxFilter_<float>(src, guide, dest, ksize, thresh);
-		else if (src.type() == CV_64F)
-			crossBasedAdaptiveBoxFilter_<double>(src, guide, dest, ksize, thresh);
 	}
 
 
@@ -2685,7 +2547,7 @@ namespace cp
 			key = waitKey(1);
 
 		}
-}
+	}
 #endif
 
 
@@ -2697,120 +2559,6 @@ namespace cp
 		{
 			pt->x = x;
 			pt->y = y;
-		}
-	}
-
-	void checkFilter(Mat& src)
-	{
-		CrossBasedLocalFilter cbabf(src, 5, 30);
-		string wname = "Kernel";
-		namedWindow(wname);
-		Point mpt = Point(100, 100);
-		setMouseCallback(wname, guiStereoMatchingOnMouse, &mpt);
-
-		int alpha = 100;
-
-		createTrackbar("alpha", wname, &alpha, 100);
-		int thresh = 50;
-		createTrackbar("thresh", wname, &thresh, 255);
-		int r = 50;
-		createTrackbar("r", wname, &r, src.cols / 2);
-
-		int iter = 1;
-		createTrackbar("iter", wname, &iter, 100);
-
-		int key = 0;
-		Mat kernel;
-		Mat show(src.size(), CV_8UC3);
-		Mat psf = Mat::zeros(src.size(), CV_16S);
-		bool isGrid = false;
-		bool isColor = true;
-		bool isWeight = true;
-		Mat dest;
-		Mat dest2;
-		Mat gray; cvtColor(src, gray, COLOR_BGR2GRAY);
-
-		Mat weight;
-		while (key != 'q')
-		{
-			cbabf.getCrossAreaCountMap(weight);
-			//weight.setTo(1);
-
-			//cbabf.makeKernel(src,r,thresh);
-			if (isWeight)
-			{
-				/*if(isColor)
-				{
-				cbabf.makeKernel(src,r,thresh,0.0,0);
-				cbabf(src,dest);
-				}
-				else
-				{
-				cbabf.makeKernel(gray,r,thresh,0.0,0);
-				cbabf(gray,dest);
-				}*/
-
-				if (isColor)
-				{
-					Timer t("time");
-					cbabf.makeKernel(src, r, thresh, 1);
-					cbabf(src, dest);
-				}
-				else
-				{
-					Timer t("time");
-					cbabf.makeKernel(gray, r, thresh, 1);
-					cbabf(gray, dest);
-				}
-
-			}
-			else
-			{
-				if (isColor)
-				{
-					Timer t("time");
-					cbabf.makeKernel(src, r, thresh, 0);
-					cbabf(src, dest);
-				}
-				else
-				{
-					Timer t("time");
-					cbabf.makeKernel(gray, r, thresh, 0);
-					cbabf(gray, dest);
-				}
-			}
-
-			cbabf.visualizeKernel(show, Point(mpt.x, mpt.y));
-			/*{
-			CalcTime t("single");
-			crossBasedAdaptiveBoxFilter(gray,src,dest2,Size(2*r+1,2*r+1),thresh);
-			}*/
-
-			/*psf.setTo(0);
-			psf.at<short>(y,x)=SHRT_MAX;
-			crossBasedAdaptiveBoxFilter(psf,src,psf,Size(2*r+1,2*rh+1),thresh);
-			threshold(psf,psf,1,255,cv::THRESH_BINARY);
-
-			psf.convertTo(kernel,CV_8U);*/
-
-			if (isColor)
-				alphaBlend(show, src, alpha / 100.0, show);
-			else
-			{
-				Mat gs; cvtColor(gray, gs, COLOR_GRAY2BGR);
-				alphaBlend(show, gs, alpha / 100.0, show);
-			}
-			imshow("filtered", dest);
-			if (isGrid)
-			{
-				line(show, Point(mpt.x, 0), Point(mpt.x, src.rows - 1), CV_RGB(255, 0, 0));
-				line(show, Point(0, mpt.y), Point(src.cols - 1, mpt.y), CV_RGB(255, 0, 0));
-			}
-			imshow(wname, show);
-			key = waitKey(1);
-			if (key == 'g')isGrid = (isGrid) ? false : true;
-			if (key == 'c')isColor = (isColor) ? false : true;
-			if (key == 'w')isWeight = (isWeight) ? false : true;
 		}
 	}
 
@@ -2832,8 +2580,6 @@ namespace cp
 
 	void StereoBase::gui(Mat& leftim, Mat& rightim, Mat& destDisparity, StereoEval& eval)
 	{
-		//checkFilter(leftim);
-
 		ConsoleImage ci(Size(640, 580));
 		string wname = "";
 		string wname2 = "Disparity Map";
@@ -2858,7 +2604,7 @@ namespace cp
 		createTrackbar("agg method", wname, &AggregationMethod, Aggregation_Method_Size - 1);
 		createTrackbar("agg r width", wname, &aggregationRadiusH, 20);
 		createTrackbar("agg r height", wname, &aggregationRadiusV, 20);
-		int aggeps = 100; createTrackbar("agg guided eps", wname, &aggeps, 2000);
+		int aggeps = 100; createTrackbar("agg guide sigma/eps", wname, &aggeps, 255);
 
 		createTrackbar("P1", wname, &P1, 20);
 		createTrackbar("P2", wname, &P2, 20);
@@ -2958,8 +2704,8 @@ namespace cp
 			aggregationGuidedfilterEps = aggeps;
 			ci.clear();
 			destDisparity.setTo(0);
-			ci(getPixelMatchingMethodName(PixelMatchingMethod)+ ": (i)");
-			ci(getAggregationMethodName(AggregationMethod)+": (@)");
+			ci(getPixelMatchingMethodName(PixelMatchingMethod) + ": (i)");
+			ci(getAggregationMethodName(AggregationMethod) + ": (@)");
 			ci(getSubpixelInterpolationMethodName(subpixelInterpolationMethod) + ":  (p)");
 			ci(getOcclusionMethodName(occlusionMethod) + ": (o)");
 			ci("=======================");
@@ -3384,7 +3130,7 @@ namespace cp
 
 			if (isGuided) ci(CV_RGB(0, 255, 0), "Guided (8): true");
 			else 	ci(CV_RGB(255, 0, 0), "Guided (8): false");
-			
+
 
 
 			if (isShowGT)
@@ -3439,8 +3185,8 @@ namespace cp
 			if (key == '7') isStreak = (isStreak) ? false : true;
 			if (key == '8') isMedian = (isMedian) ? false : true;
 			if (key == '9') isGuided = (isGuided) ? false : true;
-			
-			
+
+
 
 			if (key == 'a')	isReCost = (isReCost) ? false : true;
 
@@ -3448,13 +3194,14 @@ namespace cp
 			if (key == 'c') guiAlphaBlend(dispOutput, leftim);
 			if (key == 'i') { PixelMatchingMethod++; PixelMatchingMethod = (PixelMatchingMethod > Pixel_Matching_Method_Size - 1) ? 0 : PixelMatchingMethod; }
 			if (key == '@') { AggregationMethod++; AggregationMethod = (AggregationMethod > Aggregation_Method_Size - 1) ? 0 : AggregationMethod; }
-			
+
 			if (key == 'o') { occlusionMethod++; if (occlusionMethod > 4)occlusionMethod = 0; }
 			if (key == 'p') { subpixelInterpolationMethod++; subpixelInterpolationMethod = (subpixelInterpolationMethod > 2) ? 0 : subpixelInterpolationMethod; }
-			
-			
+
+
 			if (key == 'w')dispColor = (dispColor) ? false : true;
 			if (key == 'e')isShowGT = (isShowGT) ? false : true;
+			if (key == 'b') guiCrossBasedLocalFilter(leftim);
 
 			/*
 			if (key == 'r')maskType++; maskType = maskType > 4 ? 0 : maskType;
