@@ -117,9 +117,6 @@
     <ClCompile Include="detailEnhancement.cpp">
       <Filter>ソース ファイル\imgproc</Filter>
     </ClCompile>
-    <ClCompile Include="sse_util.cpp">
-      <Filter>ソース ファイル\utilty functions</Filter>
-    </ClCompile>
     <ClCompile Include="stencil.cpp">
       <Filter>ソース ファイル\utilty functions</Filter>
     </ClCompile>
@@ -735,9 +732,6 @@
       <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
     </ClInclude>
     <ClInclude Include="..\include\plot.hpp">
-      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\sse_util.hpp">
       <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
     </ClInclude>
     <ClInclude Include="..\include\stat.hpp">

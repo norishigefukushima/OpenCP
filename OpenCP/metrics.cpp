@@ -1022,4 +1022,29 @@ namespace cp
 		return ret;
 	}
 
+	bool isSameMat(InputArray src_, InputArray answer_, bool isShowMessage, string ok_mes, string ng_mes)
+	{
+		Mat src = src_.getMat();
+		Mat answer = answer_.getMat();
+
+		if (src.size() != answer.size())
+		{
+			if (isShowMessage)cout << "not same size. src: " << src.size() << ", answer: " << answer.size() << endl;
+			return false;
+		}
+
+		if (src.depth() != answer.depth())
+		{
+			if (isShowMessage)cout << "not same depth. src: " << getDepthName(src.depth()) << ", answer: " << getDepthName(answer.depth()) << endl;
+			return false;
+		}
+
+		Mat smat;
+		subtract(src, answer, smat, noArray(), CV_64F);
+
+		bool ret;
+		string m = (!countNonZero(smat)) ? ok_mes : ng_mes;
+		if (isShowMessage) cout << m << endl;
+	}
+
 }

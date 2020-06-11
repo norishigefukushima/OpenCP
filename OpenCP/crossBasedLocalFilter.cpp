@@ -552,6 +552,7 @@ namespace cp
 		delete[] integralW;
 	}
 
+
 	CrossBasedLocalFilter::CrossBasedLocalFilter(Mat& guide, const int r_, const int thresh_)
 	{
 		makeKernel(guide, r_, thresh_);

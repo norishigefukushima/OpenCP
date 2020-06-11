@@ -208,3 +208,154 @@ inline __m256 _mm256_div_zerodivzero_ps(const __m256 src1, const __m256 src2)
 {
 	return _mm256_blendv_ps(_mm256_div_ps(src1, src2), _mm256_set1_ps(FLT_MIN), _mm256_cmp_ps(src2, _mm256_setzero_ps(), 0));
 }
+
+inline __m128i _mm_cmpgt_epu8(__m128i x, __m128i y)
+{
+	return _mm_andnot_si128(_mm_cmpeq_epi8(x, y), _mm_cmpeq_epi8(_mm_max_epu8(x, y), x));
+}
+
+inline __m256i _mm256_cmpgt_epu8(__m256i x, __m256i y)
+{
+	return _mm256_andnot_si256(_mm256_cmpeq_epi8(x, y), _mm256_cmpeq_epi8(_mm256_max_epu8(x, y), x));
+}
+
+inline void print(__m128d src)
+{
+	printf_s("%5.3f %5.3f\n",
+		src.m128d_f64[0], src.m128d_f64[1]);
+}
+
+inline void print(__m256d src)
+{
+	printf_s("%5.3f %5.3f %5.3f %5.3f\n",
+		src.m256d_f64[0], src.m256d_f64[1], src.m256d_f64[2], src.m256d_f64[3]);
+}
+
+inline void print(__m128 src)
+{
+	printf_s("%5.3f %5.3f %5.3f %5.3f\n",
+		src.m128_f32[0], src.m128_f32[1],
+		src.m128_f32[2], src.m128_f32[3]);
+}
+
+inline void print(__m256 src)
+{
+	printf_s("%5.3f %5.3f %5.3f %5.3f %5.3f %5.3f %5.3f %5.3f\n",
+		src.m256_f32[0], src.m256_f32[1], src.m256_f32[2], src.m256_f32[3], src.m256_f32[4], src.m256_f32[5], src.m256_f32[6], src.m256_f32[7]);
+}
+
+inline void print_char(__m128i src)
+{
+	for (int i = 0; i < 16; i++)
+	{
+		printf_s("%3d ", src.m128i_i8[i]);
+	}
+	printf_s("\n");
+}
+
+inline void print_char(__m256i src)
+{
+	for (int i = 0; i < 32; i++)
+	{
+		printf_s("%3d ", src.m256i_i8[i]);
+	}
+	printf_s("\n");
+}
+
+inline void print_uchar(__m128i src)
+{
+	for (int i = 0; i < 16; i++)
+	{
+		printf_s("%3d ", src.m128i_u8[i]);
+	}
+	printf_s("\n");
+}
+
+inline void print_uchar(__m256i src)
+{
+	for (int i = 0; i < 32; i++)
+	{
+		printf_s("%3d ", src.m256i_u8[i]);
+	}
+	printf_s("\n");
+}
+
+inline void print_short(__m128i src)
+{
+	for (int i = 0; i < 8; i++)
+	{
+		printf_s("%3d ", src.m128i_i16[i]);
+	}
+	printf_s("\n");
+}
+
+inline void print_short(__m256i src)
+{
+	for (int i = 0; i < 16; i++)
+	{
+		printf_s("%3d ", src.m256i_i16[i]);
+	}
+	printf_s("\n");
+}
+
+inline void print_ushort(__m128i src)
+{
+	for (int i = 0; i < 8; i++)
+	{
+		printf_s("%3d ", src.m128i_u16[i]);
+	}
+	printf_s("\n");
+}
+
+inline void print_ushort(__m256i src)
+{
+	for (int i = 0; i < 16; i++)
+	{
+		printf_s("%3d ", src.m256i_u16[i]);
+	}
+	printf_s("\n");
+}
+
+inline void print_int(__m128i src)
+{
+	for (int i = 0; i < 4; i++)
+	{
+		printf_s("%3d ", src.m128i_i32[i]);
+	}
+	printf_s("\n");
+}
+
+inline void print_int(__m256i src)
+{
+	for (int i = 0; i < 8; i++)
+	{
+		printf_s("%3d ", src.m256i_i32[i]);
+	}
+	printf_s("\n");
+}
+
+inline void print_uint(__m128i src)
+{
+	for (int i = 0; i < 4; i++)
+	{
+		printf_s("%3d ", src.m128i_u32[i]);
+	}
+	printf_s("\n");
+}
+
+inline void print_uint(__m256i src)
+{
+	for (int i = 0; i < 8; i++)
+	{
+		printf_s("%3d ", src.m256i_u32[i]);
+	}
+	printf_s("\n");
+}
+
+//broadcast
+/*
+__m128 xxxx = _mm_shuffle_ps(first, first, 0x00); // _MM_SHUFFLE(0, 0, 0, 0)
+__m128 yyyy = _mm_shuffle_ps(first, first, 0x55); // _MM_SHUFFLE(1, 1, 1, 1)
+__m128 zzzz = _mm_shuffle_ps(first, first, 0xAA); // _MM_SHUFFLE(2, 2, 2, 2)
+__m128 wwww = _mm_shuffle_ps(first, first, 0xFF); // _MM_SHUFFLE(3, 3, 3, 3)
+*/

@@ -3,7 +3,6 @@
 
 #include "recursiveBilateralFilter.hpp"
 #include "color.hpp"
-#include "sse_util.hpp"
 
 using namespace std;
 using namespace cv;
@@ -753,7 +752,7 @@ namespace cp
 		float*ycy, *ypy, *xcy;
 		float*tcy, *tpy;
 
-		memcpy_float_sse(destf.ptr<float>(0), temp.ptr<float>(0), w * 4);//copy from top buffer
+		memcpy(destf.ptr<float>(0), temp.ptr<float>(0), w * 4);
 		for (int y = 1; y < h; y++)
 		{
 			tpy = texture.ptr<float>(y - 1);
@@ -795,7 +794,7 @@ namespace cp
 		ycy = tempw.ptr<float>(0);
 		ypy = tempw.ptr<float>(1);
 
-		memcpy_float_sse(ypy, temp.ptr<float>(h1), w * 4);
+		memcpy(ypy, temp.ptr<float>(h1), w * 4);
 		//memcpy(ypy,temp.ptr<float>(h1),sizeof(float)*w*3);
 
 		//output final line
@@ -847,7 +846,7 @@ namespace cp
 				ycy_[4 * x + 2] = ycc;
 				out_[4 * x + 2] = 0.5f*(out_[4 * x + 2] + ycc) / (out_[4 * x + 3]);
 			}
-			memcpy_float_sse(ypy, ycy, w * 4);
+			memcpy(ypy, ycy, w * 4);
 		}
 
 		destf.convertTo(bgra, src.type(), 1.0, 0.5);
@@ -952,7 +951,7 @@ namespace cp
 		inv_alpha_ = 1.f - alpha;
 
 
-		memcpy_float_sse(destf.ptr<float>(0), temp.ptr<float>(0), w * 4);//copy from top buffer
+		memcpy(destf.ptr<float>(0), temp.ptr<float>(0), w * 4);//copy from top buffer
 		for (int y = 1; y < h; y++)
 		{
 			float* tpy = texture.ptr<float>(y - 1);
@@ -982,7 +981,7 @@ namespace cp
 		float* ypy = tempw.ptr<float>(1);
 
 		//output final line
-		memcpy_float_sse(ypy, temp.ptr<float>(h1), w * 4);
+		memcpy(ypy, temp.ptr<float>(h1), w * 4);
 		{
 			float* out_h1 = destf.ptr<float>(h1);
 			for (int x = 0; x < w; x++)
@@ -1020,7 +1019,7 @@ namespace cp
 				__m128  mdiv = _mm_shuffle_ps(mv, mv, 0xFF);
 				_mm_storeu_ps(out_ + 4 * x, _mm_div_ps(mv, mdiv));
 			}
-			memcpy_float_sse(ypy, ycy, w * 4);
+			memcpy(ypy, ycy, w * 4);
 		}
 
 		destf.convertTo(bgra, src.type(), 1.0, 0.5);
@@ -1140,8 +1139,8 @@ namespace cp
 		float *ycf, *ypf, *xcf;
 
 
-		memcpy_float_sse(destf.ptr<float>(0), temp.ptr<float>(0), w * 3);//copy from top buffer
-		memcpy_float_sse(dest_factor.ptr<float>(0), temp_factor.ptr<float>(0), w);//copy from top buffer
+		memcpy(destf.ptr<float>(0), temp.ptr<float>(0), w * 3);//copy from top buffer
+		memcpy(dest_factor.ptr<float>(0), temp_factor.ptr<float>(0), w);//copy from top buffer
 		//memcpy(destf.ptr<float>(0),temp.ptr<float>(0),sizeof(float)*w*3);//copy from top buffer
 		//memcpy(dest_factor.ptr<float>(0),temp_factor.ptr<float>(0),sizeof(float)*w);//copy from top buffer
 		for (int y = 1; y < h; y++)
@@ -1181,7 +1180,7 @@ namespace cp
 		ycf = temp_factor_buffw.ptr<float>(0);
 		ypf = temp_factor_buffw.ptr<float>(1);
 
-		memcpy_float_sse(ypf, temp_factor.ptr<float>(h1), w);// copy from bottom line.
+		memcpy(ypf, temp_factor.ptr<float>(h1), w);// copy from bottom line.
 		//memcpy(ypf,temp_factor.ptr<float>(h1),sizeof(float)*w);// copy from bottom line.
 
 		float* factor_h1 = dest_factor.ptr<float>(h1);
@@ -1193,7 +1192,7 @@ namespace cp
 		ycy = tempw.ptr<float>(0);
 		ypy = tempw.ptr<float>(1);
 
-		memcpy_float_sse(ypy, temp.ptr<float>(h1), w * 3);
+		memcpy(ypy, temp.ptr<float>(h1), w * 3);
 		//memcpy(ypy,temp.ptr<float>(h1),sizeof(float)*w*3);
 
 		//output final line
@@ -1251,8 +1250,8 @@ namespace cp
 				ycy_[3 * x + 2] = ycc;
 				out_[3 * x + 2] = 0.5f*(out_[3 * x + 2] + ycc) / (factor_[x]);
 			}
-			memcpy_float_sse(ypy, ycy, w * 3);
-			memcpy_float_sse(ypf, ycf, w);//factor
+			memcpy(ypy, ycy, w * 3);
+			memcpy(ypf, ycf, w);//factor
 			//memcpy(ypy,ycy,sizeof(float)*w*3);
 			//memcpy(ypf,ycf,sizeof(float)*w);//factor
 		}
@@ -1701,10 +1700,10 @@ namespace cp
 
 		float *ycf, *ypf, *xcf;
 
-		memcpy_float_sse(destf.ptr<float>(bptr), temp.ptr<float>(bptr), w);//copy from top buffer
-		memcpy_float_sse(destf.ptr<float>(gptr), temp.ptr<float>(gptr), w);//copy from top buffer
-		memcpy_float_sse(destf.ptr<float>(rptr), temp.ptr<float>(rptr), w);//copy from top buffer
-		memcpy_float_sse(dest_factor.ptr<float>(0), temp_factor.ptr<float>(0), w);//copy from top buffer
+		memcpy(destf.ptr<float>(bptr), temp.ptr<float>(bptr), w);//copy from top buffer
+		memcpy(destf.ptr<float>(gptr), temp.ptr<float>(gptr), w);//copy from top buffer
+		memcpy(destf.ptr<float>(rptr), temp.ptr<float>(rptr), w);//copy from top buffer
+		memcpy(dest_factor.ptr<float>(0), temp_factor.ptr<float>(0), w);//copy from top buffer
 
 		for (int y = 1; y < h; y++)
 		{
@@ -1781,7 +1780,7 @@ namespace cp
 		ycf = temp_factor_buffw.ptr<float>(0);
 		ypf = temp_factor_buffw.ptr<float>(1);
 
-		memcpy_float_sse(ypf, temp_factor.ptr<float>(h1), w);// copy from bottom line.
+		memcpy(ypf, temp_factor.ptr<float>(h1), w);// copy from bottom line.
 
 		float* factor_h1 = dest_factor.ptr<float>(h1);
 		{
@@ -1805,9 +1804,9 @@ namespace cp
 		ypy_g = tempw.ptr<float>(4);
 		ypy_r = tempw.ptr<float>(5);
 
-		memcpy_float_sse(ypy_b, temp.ptr<float>(h1 + bptr), w);
-		memcpy_float_sse(ypy_g, temp.ptr<float>(h1 + gptr), w);
-		memcpy_float_sse(ypy_r, temp.ptr<float>(h1 + rptr), w);
+		memcpy(ypy_b, temp.ptr<float>(h1 + bptr), w);
+		memcpy(ypy_g, temp.ptr<float>(h1 + gptr), w);
+		memcpy(ypy_r, temp.ptr<float>(h1 + rptr), w);
 
 		//output final line
 		{
@@ -1932,10 +1931,10 @@ namespace cp
 				ycy_r_[x] = ycc;
 				out_r_[x] = 0.5f*(out_r_[x] + ycc) / (factor_[x]);
 			}
-			memcpy_float_sse(ypy_b, ycy_b, w);
-			memcpy_float_sse(ypy_g, ycy_g, w);
-			memcpy_float_sse(ypy_r, ycy_r, w);
-			memcpy_float_sse(ypf, ycf, w);//factor
+			memcpy(ypy_b, ycy_b, w);
+			memcpy(ypy_g, ycy_g, w);
+			memcpy(ypy_r, ycy_r, w);
+			memcpy(ypf, ycf, w);//factor
 		}
 
 		Mat temp8u;
@@ -2096,7 +2095,7 @@ namespace cp
 		alpha = exp(-sqrt(2.f) / (sigma_spatial));//filter kernel size virtical
 		inv_alpha_ = 1.f - alpha;
 
-		memcpy_float_sse(destf.ptr<float>(0), temp.ptr<float>(0), w * 4);//copy from top buffer
+		memcpy(destf.ptr<float>(0), temp.ptr<float>(0), w * 4);//copy from top buffer
 		for (int y = 1; y < h; y++)
 		{
 			float* tpy = texture.ptr<float>(y - 1);
@@ -2126,7 +2125,7 @@ namespace cp
 		float* ypy = tempw.ptr<float>(1);
 
 		//output final line
-		memcpy_float_sse(ypy, temp.ptr<float>(h1), w * 4);
+		memcpy(ypy, temp.ptr<float>(h1), w * 4);
 		{
 			float* out_h1 = destf.ptr<float>(h1);
 			for (int x = 0; x < w; x++)
@@ -2164,7 +2163,7 @@ namespace cp
 				__m128  mdiv = _mm_shuffle_ps(mv, mv, 0xFF);
 				_mm_storeu_ps(out_ + 4 * x, _mm_div_ps(mv, mdiv));
 			}
-			memcpy_float_sse(ypy, ycy, w * 4);
+			memcpy(ypy, ycy, w * 4);
 		}
 
 		destf.convertTo(bgra, src.type(), 1.0, 0.5);

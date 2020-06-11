@@ -128,7 +128,9 @@ int main(int argc, char** argv)
 	//Mat left = imread("right.png");
 	
 	Mat left = imread("img/stereo/Dolls/view1.png");
+	//resize(left, left, Size(), 1, 0.25);
 	Mat right = imread("img/stereo/Dolls/view5.png");
+	//resize(right, right, Size(), 1, 0.25);
 	//testAlphaBlend(left, right);
 	//testAlphaBlendMask(left, right);
 	//Mat dmap = imread("img/stereo/Dolls/disp1.png", 0);

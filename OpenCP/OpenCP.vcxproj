@@ -314,7 +314,6 @@
     <ClCompile Include="shockFilter.cpp" />
     <ClCompile Include="slic.cpp" />
     <ClCompile Include="speckle.cpp" />
-    <ClCompile Include="sse_util.cpp" />
     <ClCompile Include="stat.cpp" />
     <ClCompile Include="stencil.cpp" />
     <ClCompile Include="StereoBase.cpp" />
@@ -409,7 +408,6 @@
     <ClInclude Include="..\include\shockFilter.hpp" />
     <ClInclude Include="..\include\slic.hpp" />
     <ClInclude Include="..\include\speckle.hpp" />
-    <ClInclude Include="..\include\sse_util.hpp" />
     <ClInclude Include="..\include\stat.hpp" />
     <ClInclude Include="..\include\stencil.hpp" />
     <ClInclude Include="..\include\StereoBase.hpp" />

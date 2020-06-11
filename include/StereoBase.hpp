@@ -70,6 +70,7 @@ namespace cp
 			Aggregation_GaussShiftable,
 			Aggregation_Guided,
 			Aggregation_CrossBasedBox,
+			Aggregation_Bilateral,
 
 			Aggregation_Method_Size
 		};

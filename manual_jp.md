@@ -24,6 +24,7 @@ Reference Manual
  * [getInacceptableRatio](metrics_jp.md "getInacceptableRatio")
  * [getEntropy](metrics_jp.md "#getEntropy")
  * [getTotalVariation](metrics_jp.md "#getTotalVariation")
+ * [isSameMat](metrics_jp.md "#isSameMat")
  * SSIM：関数修正中
  
 # crop.hpp

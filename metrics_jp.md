@@ -206,3 +206,13 @@ double getTotalVariation(cv::InputArray src);
 入力画像のトータルバリエーションが出力されます．  
 ## Optimization
 * 高速ははされていません．
+
+# isSameMat
+```cpp
+bool isSameMat(cv::InputArray src, cv::InputArray answer, bool isShowMessage = true, std::string ok_mes = "OK", std::string ng_mes = "NG");
+```
+
+## Usage
+2つの入力が同じかどうかだけを見て，同じなら`true`違うなら`false`を返します．
+`isShowMessage`が`true`の場合，コンソールに状態をprintします．
+PSNRなどの指標よりもただ差分を取ってcountNonZeroしているだけなのでPSNRやMSEを図るよりは高速です．

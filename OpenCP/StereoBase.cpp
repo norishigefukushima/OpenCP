@@ -4,6 +4,7 @@
 #include "costVolumeFilter.hpp"
 #include "crossBasedLocalMultipointFilter.hpp"
 #include "guidedFilter.hpp"
+#include "jointBilateralFilter.hpp"
 #include "binalyWeightedRangeFilter.hpp"
 #include "minmaxfilter.hpp"
 #include "plot.hpp"
@@ -11,6 +12,8 @@
 #include "consoleImage.hpp"
 #include "shiftImage.hpp"
 #include "blend.hpp"
+
+#include "inlinesimdfunctions.hpp"
 using namespace std;
 using namespace cv;
 
@@ -918,6 +921,8 @@ namespace cp
 		case Aggregation_GaussShiftable:	mes = "Aggregation_GaussShiftable"; break;
 		case Aggregation_Guided:			mes = "Aggregation_Guided"; break;
 		case Aggregation_CrossBasedBox:		mes = "Aggregation_CrossBasedBox"; break;
+		case Aggregation_Bilateral:			mes = "Aggregation_Bilateral"; break;
+
 		default:							mes = "This cost computation method is not supported"; break;
 		}
 		return mes;
@@ -954,11 +959,16 @@ namespace cp
 			}
 			else if (AggregationMethod == Aggregation_Guided)
 			{
-				guidedImageFilter(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps*aggregationGuidedfilterEps);	
+				guidedImageFilter(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps * aggregationGuidedfilterEps);
 			}
 			else if (AggregationMethod == Aggregation_CrossBasedBox)
 			{
 				clf(src, dest);
+			}
+			else if (AggregationMethod == Aggregation_Bilateral)
+			{
+				jointBilateralFilter(src, guide, dest, max(2 * aggregationRadiusH + 1, 2 * aggregationRadiusV + 1), aggregationGuidedfilterEps, sigma_s_h);
+
 			}
 
 			/*
@@ -1071,10 +1081,11 @@ namespace cp
 		//delete[] vd;
 	}
 
-	//Mat costMap;
 	void StereoBase::getWTA(vector<Mat>& dsi, Mat& dest, Mat& minimumCostMap)
 	{
 		const int imsize = dest.size().area();
+		const int simdsize = get_simd_ceil(imsize, 32);
+
 		for (int i = 0; i < numberOfDisparities; i++)
 		{
 			const short d = ((minDisparity + i) << 4);
@@ -1082,13 +1093,30 @@ namespace cp
 			short* disp = dest.ptr<short>(0);
 			uchar* pDSI = dsi[i].data;
 			uchar* cost = minimumCostMap.data;
-			for (int j = imsize; j--; pDSI++, cost++, disp++)
+
+			/*for (int j = imsize; j--; pDSI++, cost++, disp++)
 			{
 				if (*pDSI < *cost)
 				{
 					*cost = *pDSI;
 					*disp = d;
 				}
+			}*/
+			const __m256i md = _mm256_set1_epi16(d);
+			for (int j = simdsize; j -= 32; pDSI += 32, cost += 32, disp += 32)
+			{
+				__m256i mdsi = _mm256_load_si256((__m256i*) pDSI);
+				__m256i mcost = _mm256_load_si256((__m256i*) cost);
+
+				__m256i  mask = _mm256_cmpgt_epu8(mcost, mdsi);
+				mcost = _mm256_blendv_epi8(mcost, mdsi, mask);
+				_mm256_store_si256((__m256i*)cost, mcost);
+
+				__m256i  mdisp = _mm256_load_si256((__m256i*) disp);
+				_mm256_store_si256((__m256i*)disp, _mm256_blendv_epi8(mdisp, md, _mm256_cvtepi8_epi16(_mm256_castsi256_si128(mask))));
+
+				mdisp = _mm256_load_si256((__m256i*) (disp + 16));
+				_mm256_store_si256((__m256i*)(disp + 16), _mm256_blendv_epi8(mdisp, md, _mm256_cvtepi8_epi16(_mm256_extractf128_si256(mask, 1))));
 			}
 		}
 	}
@@ -1100,7 +1128,10 @@ namespace cp
 		if (!isUniquenessFilter) return;
 
 		const int imsize = dest.size().area();
-		const double mul = 1.0 + uniquenessRatio / 100.0;
+		const int simdsize = get_simd_ceil(imsize, 16);
+
+		const float mul = 1.f + uniquenessRatio / 100.f;
+		const __m256i mmul = _mm256_set1_epi16((short)((mul - 1.f) * 256));
 		for (int i = 0; i < numberOfDisparities; i++)
 		{
 			const short d = ((minDisparity + i) << 4);
@@ -1108,15 +1139,37 @@ namespace cp
 			uchar* pDSI = DSI[i].data;
 			uchar* cost = costMap.data;
 
+			/*//naive
 			for (int j = imsize; j--; pDSI++, cost++, disp++)
 			{
+				int v = ((*cost) * mul);
 				short dd = (*disp);
-
-				int v = (*cost) * mul;
-				if ((*pDSI) <= v && abs(d - dd) > 16)
+				if ((*pDSI) < v && abs(d - dd) > 16)
 				{
 					*disp = 0;//(minDisparity-1)<<4;
 				}
+			}
+			*/
+			//simd
+			const __m256i md = _mm256_set1_epi16(d);
+			const __m256i m16 = _mm256_set1_epi16(16);
+			for (int j = simdsize; j -= 16; pDSI += 16, cost += 16, disp += 16)
+			{
+				__m256i mdsi = _mm256_cvtepu8_epi16(_mm_load_si128((__m128i*)pDSI));
+				__m256i mc = _mm256_cvtepu8_epi16(_mm_load_si128((__m128i*)cost));
+				__m256i mv = _mm256_add_epi16(mc, _mm256_srai_epi16(_mm256_mullo_epi16(mc, mmul), 8));
+				/*
+				__m256i mv = _mm256_setr_epi16(
+					cost[0] * mul, cost[1] * mul, cost[2] * mul, cost[3] * mul,
+					cost[4] * mul, cost[5] * mul, cost[6] * mul, cost[7] * mul,
+					cost[8] * mul, cost[9] * mul, cost[10] * mul, cost[11] * mul,
+					cost[12] * mul, cost[13] * mul, cost[14] * mul, cost[15] * mul);
+				*/
+				__m256i mask1 = _mm256_cmpgt_epi16(mv, mdsi);
+				__m256i mdd = _mm256_load_si256((__m256i*)disp);
+				__m256i mask2 = _mm256_cmpgt_epi16(_mm256_abs_epi16(_mm256_sub_epi16(md, mdd)), m16);
+				mask1 = _mm256_and_si256(mask1, mask2);
+				_mm256_store_si256((__m256i*)disp, _mm256_blendv_epi8(_mm256_load_si256((__m256i*)disp), _mm256_setzero_si256(), mask1));
 			}
 		}
 	}
@@ -1201,7 +1254,6 @@ namespace cp
 			}
 		}
 	}
-
 
 	void StereoBase::fastLRCheck(Mat& dest)
 	{
@@ -1450,7 +1502,7 @@ namespace cp
 		{
 			Timer t("Cost computation & aggregation");
 
-			if(AggregationMethod==Aggregation_CrossBasedBox)clf.makeKernel(guideImage, aggregationRadiusH, aggregationGuidedfilterEps, 0);
+			if (AggregationMethod == Aggregation_CrossBasedBox)clf.makeKernel(guideImage, aggregationRadiusH, aggregationGuidedfilterEps, 0);
 #pragma omp parallel for
 			for (int i = 0; i < numberOfDisparities; i++)
 			{
@@ -1470,6 +1522,7 @@ namespace cp
 					getPixelMatchingCost(d, DSI[i]);
 				}
 			}
+			if (AggregationMethod == Aggregation_CrossBasedBox)clf.makeKernel(guideImage, aggregationRadiusH, aggregationGuidedfilterEps, 0);
 			{
 				Timer t("Cost aggregation");
 #pragma omp parallel for
@@ -1495,7 +1548,7 @@ namespace cp
 		}
 
 		{
-			Timer t("Post Filterings");
+			Timer t("===Post Filterings===");
 
 			//medianBlur(dest,dest,3);
 			{
@@ -1524,6 +1577,7 @@ namespace cp
 					filterSpeckles(destDisparityMap, 0, speckleWindowSize, speckleRange, specklebuffer);
 			}
 		}
+		cout << "=====================" << endl;
 	}
 
 	void StereoBase::operator()(Mat& leftim, Mat& rightim, Mat& dest)
@@ -3275,6 +3329,7 @@ namespace cp
 		}
 		//		delete[] buff;
 	}
+
 	void censusTrans8u_3x3(Mat& src, Mat& dest)
 	{
 		if (dest.empty())dest.create(src.size(), CV_8U);
@@ -3355,6 +3410,7 @@ namespace cp
 			s += r2;
 		}
 	}
+
 	void shiftImage8u(Mat& src, Mat& dest, const int shift)
 	{
 		if (dest.empty())dest.create(src.size(), CV_8U);
