@@ -5,7 +5,7 @@ Documentation for implementation of [Guided Image Filtering](http://kaiminghe.co
 
 # guidedImageFilter
 ```cpp
-guidedImageFilter(cv::InputArray src, cv::InputArray guide, cv::OutputArray dest, 
+void guidedImageFilter(cv::InputArray src, cv::InputArray guide, cv::OutputArray dest, 
 	const int r, const float eps, 
 	const int guidedType = GuidedTypes::GUIDED_SEP_VHI_SHARE, const int boxType = BoxTypes::BOX_OPENCV, const int parallelType = ParallelTypes::OMP);
 ```
@@ -17,54 +17,54 @@ guidedImageFilter(cv::InputArray src, cv::InputArray guide, cv::OutputArray dest
 ある程度大きいなら`GUIDED_MERGE_SHARE_AVX`．
 
 ```cpp
-	enum GuidedTypes
-	{
-		GUIDED_XIMGPROC,
-		//--- Conventional Algorithm---
-		GUIDED_NAIVE,
-		GUIDED_NAIVE_SHARE,
-		GUIDED_NAIVE_ONEPASS,
-		GUIDED_SEP_VHI,
-		GUIDED_SEP_VHI_SHARE,
-		//--- Merge Algorithm --- 
-	   // SSAT	
-	   GUIDED_MERGE_AVX,
-	   GUIDED_MERGE_TRANSPOSE_AVX,
-	   GUIDED_MERGE_TRANSPOSE_INVERSE_AVX,
-	   // SSAT	(cov reuse)	
-	   GUIDED_MERGE_SHARE_AVX,
-	   GUIDED_MERGE_SHARE_EX_AVX,
-	   GUIDED_MERGE_SHARE_TRANSPOSE_AVX,
-	   GUIDED_MERGE_SHARE_TRANSPOSE_INVERSE_AVX,
+enum GuidedTypes
+{
+	GUIDED_XIMGPROC,
+	//--- Conventional Algorithm---
+	GUIDED_NAIVE,
+	GUIDED_NAIVE_SHARE,
+	GUIDED_NAIVE_ONEPASS,
+	GUIDED_SEP_VHI,
+	GUIDED_SEP_VHI_SHARE,
+	//--- Merge Algorithm --- 
+   // SSAT	
+   GUIDED_MERGE_AVX,
+   GUIDED_MERGE_TRANSPOSE_AVX,
+   GUIDED_MERGE_TRANSPOSE_INVERSE_AVX,
+   // SSAT	(cov reuse)	
+   GUIDED_MERGE_SHARE_AVX,
+   GUIDED_MERGE_SHARE_EX_AVX,
+   GUIDED_MERGE_SHARE_TRANSPOSE_AVX,
+   GUIDED_MERGE_SHARE_TRANSPOSE_INVERSE_AVX,
 
-	   GUIDED_MERGE,
-	   GUIDED_MERGE_SSE,
-	   GUIDED_MERGE_TRANSPOSE,
-	   GUIDED_MERGE_TRANSPOSE_SSE,
-	   GUIDED_MERGE_TRANSPOSE_INVERSE,
-	   GUIDED_MERGE_TRANSPOSE_INVERSE_SSE,
-	   GUIDED_MERGE_SHARE,
-	   GUIDED_MERGE_SHARE_SSE,
-	   GUIDED_MERGE_SHARE_EX,
-	   GUIDED_MERGE_SHARE_EX_SSE,
-	   GUIDED_MERGE_SHARE_TRANSPOSE,
-	   GUIDED_MERGE_SHARE_TRANSPOSE_SSE,
-	   GUIDED_MERGE_SHARE_TRANSPOSE_INVERSE,
-	   GUIDED_MERGE_SHARE_TRANSPOSE_INVERSE_SSE,
-	   // SSAT (BGR non-split)
-	   GUIDED_NONSPLIT,
-	   GUIDED_NONSPLIT_SSE,
-	   GUIDED_NONSPLIT_AVX,
-	   // OP-SAT
-	   GUIDED_MERGE_ONEPASS,
-	   GUIDED_MERGE_ONEPASS_2div,
-	   GUIDED_MERGE_ONEPASS_SIMD,
+   GUIDED_MERGE,
+   GUIDED_MERGE_SSE,
+   GUIDED_MERGE_TRANSPOSE,
+   GUIDED_MERGE_TRANSPOSE_SSE,
+   GUIDED_MERGE_TRANSPOSE_INVERSE,
+   GUIDED_MERGE_TRANSPOSE_INVERSE_SSE,
+   GUIDED_MERGE_SHARE,
+   GUIDED_MERGE_SHARE_SSE,
+   GUIDED_MERGE_SHARE_EX,
+   GUIDED_MERGE_SHARE_EX_SSE,
+   GUIDED_MERGE_SHARE_TRANSPOSE,
+   GUIDED_MERGE_SHARE_TRANSPOSE_SSE,
+   GUIDED_MERGE_SHARE_TRANSPOSE_INVERSE,
+   GUIDED_MERGE_SHARE_TRANSPOSE_INVERSE_SSE,
+   // SSAT (BGR non-split)
+   GUIDED_NONSPLIT,
+   GUIDED_NONSPLIT_SSE,
+   GUIDED_NONSPLIT_AVX,
+   // OP-SAT
+   GUIDED_MERGE_ONEPASS,
+   GUIDED_MERGE_ONEPASS_2div,
+   GUIDED_MERGE_ONEPASS_SIMD,
 
-	   // --- Fast Guided Filter --- 
-	   GUIDED_MERGE_ONEPASS_FAST,
+   // --- Fast Guided Filter --- 
+   GUIDED_MERGE_ONEPASS_FAST,
 
-	   NumGuidedTypes	// num of guidedTypes. must be last element
-	};
+   NumGuidedTypes	// num of guidedTypes. must be last element
+};
 ```
 
 `boxType`の計算方法：`GUIDED_NAIVE`と`GUIDED_NAIVE_SHARE`以外は何を指定しても意味がない．

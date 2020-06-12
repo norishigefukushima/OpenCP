@@ -37,11 +37,31 @@ inline __m128i _mm256_cvtpsx2_epu8(const __m256 v0, const __m256 v1)
 	return _mm256_castsi256_si128(_mm256_permutevar8x32_epi32(_mm256_packus_epi16(_mm256_packs_epi32(_mm256_cvtps_epi32(v0), _mm256_cvtps_epi32(v1)), _mm256_setzero_si256()), _mm256_setr_epi32(0, 4, 1, 5, 2, 6, 3, 7)));
 }
 
+inline __m128i _mm256_cvtepi32_epu8(const __m256i v0)
+{
+	return _mm256_castsi256_si128(_mm256_permutevar8x32_epi32(_mm256_packus_epi16(_mm256_packs_epi32(v0, _mm256_setzero_si256()), _mm256_setzero_si256()), _mm256_setr_epi32(0, 4, 1, 5, 2, 6, 3, 7)));
+}
+
 inline __m128i _mm256_cvtepi32x2_epu8(const __m256i v0, const __m256i v1)
 {
 	return _mm256_castsi256_si128(_mm256_permutevar8x32_epi32(_mm256_packus_epi16(_mm256_packs_epi32(v0, v1), _mm256_setzero_si256()), _mm256_setr_epi32(0, 4, 1, 5, 2, 6, 3, 7)));
 }
 
+//defined in opencp uchar->int
+inline __m256i _mm256_load_epu8cvtepi32(const __m128i* P)
+{
+	return _mm256_cvtepu8_epi32(_mm_loadu_si128((__m128i*)P));
+}
+
+//defined in opencp uchar->intx2
+inline void _mm256_load_epu8cvtepi32x2(const __m128i* P, __m256i& d0, __m256i& d1)
+{
+	__m128i s = _mm_loadu_si128((__m128i*)P);
+	d0 = _mm256_cvtepu8_epi32(s);
+	d1 = _mm256_cvtepu8_epi32(_mm_shuffle_epi32(s, _MM_SHUFFLE(1, 0, 3, 2)));
+}
+
+//defined in opencp uchar->float
 inline __m256 _mm256_load_epu8cvtps(const __m128i* P)
 {
 	return _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(_mm_loadu_si128((__m128i*)P)));
@@ -217,6 +237,22 @@ inline __m128i _mm_cmpgt_epu8(__m128i x, __m128i y)
 inline __m256i _mm256_cmpgt_epu8(__m256i x, __m256i y)
 {
 	return _mm256_andnot_si256(_mm256_cmpeq_epi8(x, y), _mm256_cmpeq_epi8(_mm256_max_epu8(x, y), x));
+}
+
+//_mm256_cvtepi32_epi16 already defined inzmmintrin.h (AVX512)
+inline __m128i _mm256_cvtint_short(__m256i src)
+{
+	return _mm256_castsi256_si128(_mm256_permute4x64_epi64(_mm256_packs_epi32(src, _mm256_setzero_si256()), _MM_SHUFFLE(3, 1, 2, 0)));
+}
+
+inline __m128i _mm256_cvtint_ushort(__m256i src)
+{
+	return _mm256_castsi256_si128(_mm256_permute4x64_epi64(_mm256_packus_epi32(src, _mm256_setzero_si256()), _MM_SHUFFLE(3, 1, 2, 0)));
+}
+
+inline __m256i _mm256_cvtintx2_short(__m256i src1, __m256i src2)
+{
+	return _mm256_permute4x64_epi64(_mm256_packs_epi32(src1, src2), _MM_SHUFFLE(3, 1, 2, 0));
 }
 
 inline void print(__m128d src)

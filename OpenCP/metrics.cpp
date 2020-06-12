@@ -66,7 +66,7 @@ namespace cp
 		CV_Assert(src.depth() == CV_64F);
 		CV_Assert(reference.depth() == CV_64F);
 
-		int pixels = src.size().area()*src.channels();
+		int pixels = src.size().area() * src.channels();
 
 		double MSE = 0.0;
 
@@ -111,7 +111,7 @@ namespace cp
 		//for (int i = 0; i < pixels; ++i)
 		for (int i = simdsize; i < pixels; ++i)
 		{
-			MSE += (ptr1[i] - ptr2[i])*(ptr1[i] - ptr2[i]);
+			MSE += (ptr1[i] - ptr2[i]) * (ptr1[i] - ptr2[i]);
 		}
 		MSE /= (double)pixels;
 
@@ -127,7 +127,7 @@ namespace cp
 		CV_Assert(src.depth() == CV_32F);
 		CV_Assert(reference.depth() == CV_32F);
 
-		int pixels = src.size().area()*src.channels();
+		int pixels = src.size().area() * src.channels();
 
 		double MSE = 0.0;
 
@@ -153,7 +153,7 @@ namespace cp
 		//for (int i = 0; i < pixels; ++i)
 		for (int i = simdsize; i < pixels; ++i)
 		{
-			MSE += (ptr1[i] - ptr2[i])*(ptr1[i] - ptr2[i]);
+			MSE += (ptr1[i] - ptr2[i]) * (ptr1[i] - ptr2[i]);
 		}
 		MSE /= (double)pixels;
 
@@ -169,7 +169,7 @@ namespace cp
 		CV_Assert(src.depth() == CV_8U);
 		CV_Assert(reference.depth() == CV_8U);
 
-		int pixels = src.size().area()*src.channels();
+		int pixels = src.size().area() * src.channels();
 
 		double MSE = 0.0;
 
@@ -195,7 +195,7 @@ namespace cp
 		//for (int i = 0; i < pixels; ++i)
 		for (int i = simdsize; i < pixels; ++i)
 		{
-			MSE += (ptr1[i] - ptr2[i])*(ptr1[i] - ptr2[i]);
+			MSE += (ptr1[i] - ptr2[i]) * (ptr1[i] - ptr2[i]);
 		}
 		MSE /= (double)pixels;
 
@@ -736,8 +736,8 @@ namespace cp
 		{
 			if (uc.isUpdate(local_psnr_chananel))
 			{
-				if(isWait)
-				displayOverlay(wname, getPSNR_CHANNEL(local_psnr_chananel) + format(": %f dB", getPSNR(src1, src2, 0, 0, local_psnr_chananel)), 3000);
+				if (isWait)
+					displayOverlay(wname, getPSNR_CHANNEL(local_psnr_chananel) + format(": %f dB", getPSNR(src1, src2, 0, 0, local_psnr_chananel)), 3000);
 			}
 
 			localPSNRMap(src1, src2, dest, local_psnr_r, local_psnr_chananel, local_psnr_inf);
@@ -748,7 +748,7 @@ namespace cp
 			}
 			else
 			{
-				dest.convertTo(show, CV_8U, local_psnr_vamp*0.1);
+				dest.convertTo(show, CV_8U, local_psnr_vamp * 0.1);
 			}
 
 			imshow(wname, show);
@@ -820,12 +820,12 @@ namespace cp
 		absdiff(g1, g2, temp);
 		Mat mask;
 		compare(temp, threshold, mask, CMP_GE);
-		return 100.0*countNonZero(mask) / src.size().area();
+		return 100.0 * countNonZero(mask) / src.size().area();
 	}
 
 	Scalar getMSSIM(const Mat& i1, const Mat& i2, double sigma = 1.5)
 	{
-		int r = cvRound(sigma*3.0);
+		int r = cvRound(sigma * 3.0);
 		Size kernel = Size(2 * r + 1, 2 * r + 1);
 
 		const double C1 = 6.5025, C2 = 58.5225;
@@ -994,7 +994,7 @@ namespace cp
 
 			for (int j = 0; j < hdims[0]; ++j)
 			{
-				const double v = (double)hist.at<float>(j)*invsum;
+				const double v = (double)hist.at<float>(j) * invsum;
 				if (v != 0) ret -= v * log2(v);
 			}
 		}
@@ -1043,8 +1043,21 @@ namespace cp
 		subtract(src, answer, smat, noArray(), CV_64F);
 
 		bool ret;
-		string m = (!countNonZero(smat)) ? ok_mes : ng_mes;
+		string m;
+		if (!countNonZero(smat))
+		{
+			ret = true;
+			m = ok_mes;
+		}
+		else
+		{
+			ret = false;
+			m = ng_mes;
+		}
+
 		if (isShowMessage) cout << m << endl;
+
+		return ret;
 	}
 
 }

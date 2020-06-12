@@ -117,10 +117,10 @@ void guidedFilter_Merge_Share_Transpose_AVX::filter_Guide1(cv::Mat& input, cv::M
 
 void guidedFilter_Merge_Share_Transpose_AVX::filter_Guide3(cv::Mat& input, cv::Mat& output)
 {
-	RowSumFilter_Ip2ab_Guide3_Share_Transpose_AVX		rsf_ip2ab(input, vI, temp, r, parallelType);						rsf_ip2ab.filter();
-	ColumnSumFilter_Ip2ab_Guide3_Share_Transpose_AVX	csf_ip2ab(temp, vCov, det, vMean_I, va, b, r, parallelType);	csf_ip2ab.filter();
-	RowSumFilter_ab2q_Guide3_Transpose_AVX				rsf_ab2q(va, b, temp, r, parallelType);								rsf_ab2q.filter();
-	ColumnSumFilter_ab2q_Guide3_Transpose_AVX			csf_ab2q(temp, vI_t, output, r, parallelType);						csf_ab2q.filter();
+	RowSumFilter_Ip2ab_Guide3_Share_Transpose_AVX		rsf_ip2ab(input, vI, temp, r, parallelType);				 rsf_ip2ab.filter();
+	ColumnSumFilter_Ip2ab_Guide3_Share_Transpose_AVX	csf_ip2ab(temp, vCov, det, vMean_I, va, b, r, parallelType); csf_ip2ab.filter();
+	RowSumFilter_ab2q_Guide3_Transpose_AVX				rsf_ab2q(va, b, temp, r, parallelType);						 rsf_ab2q.filter();
+	ColumnSumFilter_ab2q_Guide3_Transpose_AVX			csf_ab2q(temp, vI_t, output, r, parallelType);				 csf_ab2q.filter();
 }
 
 

@@ -103,6 +103,7 @@
 #include "getContrast.hpp"
 #include "histogram.hpp"
 #include "imagediff.hpp"
+#include "imshowExtension.hpp"
 #include "maskoperation.hpp"
 #include "matinfo.hpp"
 #include "noise.hpp"

@@ -528,6 +528,9 @@
     <ClCompile Include="blend.cpp">
       <Filter>ソース ファイル\imgproc</Filter>
     </ClCompile>
+    <ClCompile Include="imshowExtension.cpp">
+      <Filter>ソース ファイル\utilty functions</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libGaussian\gaussian_conv.h">
@@ -934,6 +937,9 @@
     </ClInclude>
     <ClInclude Include="..\include\blend.hpp">
       <Filter>ヘッダー ファイル\headers\imgproc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\imshowExtension.hpp">
+      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

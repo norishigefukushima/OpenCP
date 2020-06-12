@@ -64,12 +64,16 @@ filterSpeckles(dest, 0, speckleWindowSize, speckleRange, specklebuffer);//スペ
 
 # StereoBMSimple::gui
 下記メソッドでGUIによるパラメータ調整が可能．
+Ctrl+Pでパラメータ調整バーーが呼び出せる．
+
 ```cpp
 void StereoBMSimple::gui(Mat& leftim, Mat& rightim, Mat& dest, StereoEval& eval)
 ```
 
 ##出力のイメージ．
-デプスマップ，パラメータ調整バー，状態，サブピクセル補間のヒストグラム
+デプスマップ，パラメータ調整バー，状態のコンソール，サブピクセル補間のヒストグラム．
+コンソールに書いてある(1)や(i)などは対応するキーボードショートカット．
+
 <img src="docimg/outputimage_stereobase.png" width="800px">
 
 # reference

@@ -175,18 +175,4 @@ namespace cp
 		copyMakeBorder(a, dest, step, step, step, step, border);
 	}
 
-	void imshowNormalize(string wname, InputArray src)
-	{
-		Mat show;
-		normalize(src.getMat(), show, 255, 0, NORM_MINMAX, CV_8U);
-		imshow(wname, show);
-	}
-
-	void imshowScale(string name, InputArray src, const double alpha, const double beta)
-	{
-		Mat show;
-		src.getMat().convertTo(show, CV_8U, alpha, beta);
-		imshow(name, show);
-	}
-
 }

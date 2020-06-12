@@ -1131,7 +1131,7 @@ namespace cp
 		const int simdsize = get_simd_ceil(imsize, 16);
 
 		const float mul = 1.f + uniquenessRatio / 100.f;
-		const __m256i mmul = _mm256_set1_epi16((short)((mul - 1.f) * 256));
+		const __m256i mmul = _mm256_set1_epi16((short)((mul - 1.f) * pow(2, 15)));
 		for (int i = 0; i < numberOfDisparities; i++)
 		{
 			const short d = ((minDisparity + i) << 4);
@@ -1139,8 +1139,8 @@ namespace cp
 			uchar* pDSI = DSI[i].data;
 			uchar* cost = costMap.data;
 
-			/*//naive
-			for (int j = imsize; j--; pDSI++, cost++, disp++)
+			//naive
+			/*for (int j = imsize; j--; pDSI++, cost++, disp++)
 			{
 				int v = ((*cost) * mul);
 				short dd = (*disp);
@@ -1148,8 +1148,8 @@ namespace cp
 				{
 					*disp = 0;//(minDisparity-1)<<4;
 				}
-			}
-			*/
+			}*/
+			
 			//simd
 			const __m256i md = _mm256_set1_epi16(d);
 			const __m256i m16 = _mm256_set1_epi16(16);
@@ -1157,14 +1157,8 @@ namespace cp
 			{
 				__m256i mdsi = _mm256_cvtepu8_epi16(_mm_load_si128((__m128i*)pDSI));
 				__m256i mc = _mm256_cvtepu8_epi16(_mm_load_si128((__m128i*)cost));
-				__m256i mv = _mm256_add_epi16(mc, _mm256_srai_epi16(_mm256_mullo_epi16(mc, mmul), 8));
-				/*
-				__m256i mv = _mm256_setr_epi16(
-					cost[0] * mul, cost[1] * mul, cost[2] * mul, cost[3] * mul,
-					cost[4] * mul, cost[5] * mul, cost[6] * mul, cost[7] * mul,
-					cost[8] * mul, cost[9] * mul, cost[10] * mul, cost[11] * mul,
-					cost[12] * mul, cost[13] * mul, cost[14] * mul, cost[15] * mul);
-				*/
+				__m256i mv = _mm256_add_epi16(mc, _mm256_mulhrs_epi16(mc, mmul));
+
 				__m256i mask1 = _mm256_cmpgt_epi16(mv, mdsi);
 				__m256i mdd = _mm256_load_si256((__m256i*)disp);
 				__m256i mask2 = _mm256_cmpgt_epi16(_mm256_abs_epi16(_mm256_sub_epi16(md, mdd)), m16);
@@ -1213,8 +1207,9 @@ namespace cp
 					int md = ((p + m - (f << 1)) << 1);
 					if (md != 0)
 					{
-						double dd = (double)d - (double)(p - m) / (double)md;
-						disp[j] = (short)(16.0 * dd + 0.5);
+						const float dd = (float)d - (float)(p - m) / (float)md;
+						disp[j] = (short)(16.f * dd + 0.5f);
+						//disp[j] = saturate_cast<short>(16.0 * dd);
 					}
 				}
 			}
@@ -1249,7 +1244,6 @@ namespace cp
 					}
 
 					disp[j] = (short)(16.0 * ((double)d + md) + 0.5);
-
 				}
 			}
 		}

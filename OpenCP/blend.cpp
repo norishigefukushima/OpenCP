@@ -1,3 +1,4 @@
+#include "imshowExtension.hpp"
 #include "blend.hpp"
 #include "matinfo.hpp"
 #include "metrics.hpp"
@@ -608,6 +609,40 @@ namespace cp
 		}
 	}
 
+	void imageCast(InputArray src, Mat& dest, string mes="")
+	{
+		if (src.depth() == CV_8U)
+		{
+			if (src.channels() == 1)cvtColor(src, dest, COLOR_GRAY2BGR);
+			else dest = src.getMat();
+		}
+		else
+		{
+			if (src.channels() == 1)cvtColor(src, dest, COLOR_GRAY2BGR);
+			else dest = src.getMat();
+
+			double minv, maxv;
+			minMaxLoc(src, &minv, &maxv);
+			bool isMulFF = (maxv <= 1.0 && minv >= 0.0) ? true : false;
+			bool isNormalized = (maxv > 255 || minv < 0.0) ? true : false;
+			if (isMulFF)
+			{
+				cout << mes+": scale 0.0-1.0 -> 0-255" << endl;
+				dest.convertTo(dest, CV_8U, 255);
+			}
+			else if (isNormalized)
+			{
+				cout << mes + ": normalize min-max -> 0-255" << endl;
+				cout << "src1: scale 0.0-1.0 -> 0-255" << endl;
+
+				normalize(src, dest, 255, 0, NORM_MINMAX, CV_8U);
+			}
+			else
+			{
+				dest.convertTo(dest, CV_8U);
+			}
+		}
+	}
 	void guiAlphaBlend(InputArray src1, InputArray src2, bool isShowImageStats, std::string wname)
 	{
 		if (isShowImageStats)
@@ -616,63 +651,31 @@ namespace cp
 			cout << endl;
 			showMatInfo(src2, "src2");
 		}
-		double minv, maxv;
-		minMaxLoc(src1, &minv, &maxv);
-		bool isNormirized = (maxv <= 1.0 && minv >= 0.0) ? true : false;
+		
 		Mat s1, s2;
-
-		if (src1.depth() == CV_8U || src1.depth() == CV_32F)
-		{
-			if (src1.channels() == 1)cvtColor(src1, s1, COLOR_GRAY2BGR);
-			else s1 = src1.getMat();
-			if (src2.channels() == 1)cvtColor(src2, s2, COLOR_GRAY2BGR);
-			else s2 = src2.getMat();
-		}
-		else
-		{
-			Mat ss1, ss2;
-			src1.getMat().convertTo(ss1, CV_32F);
-			src2.getMat().convertTo(ss2, CV_32F);
-
-			if (src1.channels() == 1)cvtColor(ss1, s1, COLOR_GRAY2BGR);
-			else s1 = ss1.clone();
-			if (src2.channels() == 1)cvtColor(ss2, s2, COLOR_GRAY2BGR);
-			else s2 = ss2.clone();
-		}
+		imageCast(src1, s1);
+		imageCast(src2, s2);
 
 		namedWindow(wname);
 		int a = 0;
 		cv::createTrackbar("a", wname, &a, 100);
 		int key = 0;
 		Mat show;
+
+		cv::VideoWriter video;
+		bool isVideo = false;
+		bool printAlpha = false;
+
 		while (key != 'q')
 		{
 			alphaBlend(s1, s2, 1.0 - a / 100.0, show);
 
-			if (show.depth() == CV_8U)
-			{
-				cv::imshow("alphaBlend", show);
-			}
-			else
-			{
-				if (isNormirized)
-				{
-					cv::imshow("alphaBlend", show);
-				}
-				else
-				{
-					minMaxLoc(show, &minv, &maxv);
+			if (printAlpha) addText(show, format("a = %3d", a), Point(20, 30), "Consolas", 16);
+			cv::imshow("alphaBlend", show);
 
-					Mat s;
-					if (maxv <= 255)
-						show.convertTo(s, CV_8U);
-					else
-						show.convertTo(s, CV_8U, 255 / maxv);
+			if (isVideo)video << show;
 
-					imshow(wname, s);
-				}
-			}
-			key = waitKey(1);
+			key = waitKey(33);
 			if (key == 'f')
 			{
 				a = (a > 0) ? 0 : 100;
@@ -682,6 +685,33 @@ namespace cp
 			{
 				cout << "PSNR: " << PSNR(src1, src2) << "dB" << endl;
 				cout << "MSE: " << getMSE(src1, src2) << endl;
+			}
+			if (key == 'v')
+			{
+				if (isVideo == false)
+				{
+					cout << "start capturing" << endl;
+					imshowCountDown(wname, show);
+
+					//int codec = VideoWriter::fourcc('M', 'J', 'P', 'G');
+					int codec = VideoWriter::fourcc('X', '2', '6', '4');
+					if (!video.isOpened()) video.open(wname + ".mp4", codec, 29.97, show.size(), show.channels() == 3);
+					isVideo = true;
+					printAlpha = true;
+				}
+				else
+				{
+					cout << "stop capturing." << endl;
+					isVideo = false;
+					printAlpha = false;
+					video.release();
+				}
+			}
+			if (key == '?')
+			{
+				cout << "f: flip blend parameter alpha." << endl;
+				cout << "p: compute PSNR and MSE." << endl;
+				cout << "v: start/stop video capture (toggle)." << endl;
 			}
 		}
 		destroyWindow(wname);
@@ -899,7 +929,7 @@ namespace cp
 
 		Mat dst = dest.getMat();
 		alphaBlendSSE_8u(src1.getMat(), src2.getMat(), alpha.getMat(), dst);
-}
+	}
 #endif
 
 	template <class T>

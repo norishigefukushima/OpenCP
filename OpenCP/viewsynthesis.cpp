@@ -7,6 +7,7 @@
 #include "blend.hpp"
 #include "metrics.hpp"
 #include "draw.hpp"
+#include "imshowExtension.hpp"
 
 using namespace std;
 using namespace cv;
