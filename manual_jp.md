@@ -8,6 +8,7 @@ Reference Manual
 # blend.hpp
 2枚の画像の合成関数群
 * [alphaBlend](blend_jp.md "#alphaBlend")
+* [alphaBlendFixedPoint](blend_jp.md "#alphaBlendFixedPoint")
 * [guiAlphaBlend](blend_jp.md "#guiAlphaBlend")
 * [dissolveSlideBlend](blend_jp.md "#dissolveSlideBlend")
 * [guiDissolveSlideBlend](blend_jp.md "#guiDissolveSlideBlend")
@@ -63,6 +64,7 @@ Reference Manual
 * [class GuidedImageFilterTiling](guidedFilter_jp.md "#GuidedImageFilterTiling")
 
 # StereoBase.hpp
+ステレオマッチングの関数
 * [class StereoBase（書きかけ）](StereoBase.md)
 
 # memo

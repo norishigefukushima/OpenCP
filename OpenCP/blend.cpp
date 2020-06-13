@@ -828,8 +828,8 @@ namespace cp
 		}
 
 		Mat s1, s2;
-		imageCast(src1, s1);
-		imageCast(src2, s2);
+		imageCast(src1, s1, "src1");
+		imageCast(src2, s2, "src2");
 
 		namedWindow(wname);
 		int a = 0;

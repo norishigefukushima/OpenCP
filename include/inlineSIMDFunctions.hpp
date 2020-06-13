@@ -6,6 +6,9 @@
 #define AVX_ALIGN 32
 #define AVX512_ALIGN 64
 
+//0 src1 low, 1 src1 high, //2 src2 low, 3 src2 high, 
+#define _MM_SELECT4(x,y) (((y)<<4) + (x))
+
 //template for array
 //const int CV_DECL_ALIGNED(AVX_ALIGN) a[10]
 
@@ -178,43 +181,18 @@ void inline _mm256_stream_ps_color(void* dst, const __m256 b, const __m256 g, co
 }
 
 //gray2bgr: broadcast 3 channels
-/*void inline _mm256_cvtepi16_gray2bgr(const __m256i src, __m256i& b, __m256i& g, __m256i& r)
-{
-	const int smask1 = _MM_SHUFFLE(1, 2, 3, 0);
-	const int smask2 = _MM_SHUFFLE(2, 3, 0, 1);
-	const int smask3 = _MM_SHUFFLE(3, 0, 1, 2);
-	const int bmask1 = 0x44;
-	const int bmask2 = 0x22;
-	const int pmask1 = 0x20;
-	const int pmask2 = 0x30;
-	const int pmask3 = 0x31;
-	const __m256 aa = _mm256_shuffle_e(src, src, smask1);
-	const __m256 bb = _mm256_shuffle_ps(src, src, smask2);
-	const __m256 cc = _mm256_shuffle_ps(src, src, smask3);
-	__m256 bval = _mm256_blend_ps(_mm256_blend_ps(aa, cc, bmask1), bb, bmask2);
-	__m256 gval = _mm256_blend_ps(_mm256_blend_ps(cc, bb, bmask1), aa, bmask2);
-	__m256 rval = _mm256_blend_ps(_mm256_blend_ps(bb, aa, bmask1), cc, bmask2);
-	b = _mm256_permute2f128_ps(bval, rval, pmask1);
-	g = _mm256_permute2f128_ps(gval, bval, pmask2);
-	r = _mm256_permute2f128_ps(rval, gval, pmask3);
-}*/
-
-//gray2bgr: broadcast 3 channels
-inline void _mm_cvtepi8_gray2bgr(const __m128i src, __m128i& b, __m128i& g, __m128i& r)
+inline void _mm_cvtepi8_gray2bgr(const __m128i src, __m128i& d0, __m128i& d1, __m128i& d2)
 {
 	static const __m128i g2rgbmask0 = _mm_setr_epi8(0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5);
 	static const __m128i g2rgbmask1 = _mm_setr_epi8(5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 9, 9, 9, 10, 10);
 	static const __m128i g2rgbmask2 = _mm_setr_epi8(10, 11, 11, 11, 12, 12, 12, 13, 13, 13, 14, 14, 14, 15, 15, 15);
-	b = _mm_shuffle_epi8(src, g2rgbmask0);
-	g = _mm_shuffle_epi8(src, g2rgbmask1);
-	r = _mm_shuffle_epi8(src, g2rgbmask2);
+	d0 = _mm_shuffle_epi8(src, g2rgbmask0);
+	d1 = _mm_shuffle_epi8(src, g2rgbmask1);
+	d2 = _mm_shuffle_epi8(src, g2rgbmask2);
 }
 
-//0 src1 low, 1 src1 high, //2 src2 low, 3 src2 high, 
-#define _MM_SELECT4(x,y) (((y)<<4) + (x))
-
 //gray2bgr: broadcast 3 channels
-inline void _mm256_cvtepi8_gray2bgr(const __m256i src, __m256i& b, __m256i& g, __m256i& r)
+inline void _mm256_cvtepi8_gray2bgr(const __m256i src, __m256i& d0, __m256i& d1, __m256i& d2)
 {
 	static const __m256i g2rgbmask0 = _mm256_setr_epi8(0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 16, 16, 16, 17, 17, 17, 18, 18, 18, 19, 19, 19, 20, 20, 20, 21);
 	static const __m256i g2rgbmask1 = _mm256_setr_epi8(5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 9, 9, 9, 10, 10, 21, 21, 22, 22, 22, 23, 23, 23, 24, 24, 24, 25, 25, 25, 26, 26);
@@ -223,14 +201,13 @@ inline void _mm256_cvtepi8_gray2bgr(const __m256i src, __m256i& b, __m256i& g, _
 	__m256i md1 = _mm256_shuffle_epi8(src, g2rgbmask1);
 	__m256i md2 = _mm256_shuffle_epi8(src, g2rgbmask2);
 
-	b = _mm256_permute2x128_si256(md0, md1, _MM_SELECT4(0, 2));
-	g = _mm256_permute2x128_si256(md2, md0, _MM_SELECT4(0, 3));
-	r = _mm256_permute2x128_si256(md1, md2, _MM_SELECT4(1, 3));
+	d0 = _mm256_permute2x128_si256(md0, md1, _MM_SELECT4(0, 2));
+	d1 = _mm256_permute2x128_si256(md2, md0, _MM_SELECT4(0, 3));
+	d2 = _mm256_permute2x128_si256(md1, md2, _MM_SELECT4(1, 3));
 }
 
-
 //gray2bgr: broadcast 3 channels
-inline void _mm256_cvtepi16_gray2bgr(const __m256i src, __m256i& b, __m256i& g, __m256i& r)
+inline void _mm256_cvtepi16_gray2bgr(const __m256i src, __m256i& d0, __m256i& d1, __m256i& d2)
 {
 	static const __m256i g2rgbmask0 = _mm256_setr_epi8(0, 1, 0, 1, 0, 1, 2, 3, 2, 3, 2, 3, 4, 5, 4, 5,/**/  16, 17, 16, 17, 16, 17, 18, 19, 18, 19, 18, 19, 20, 21, 20, 21);
 	static const __m256i g2rgbmask1 = _mm256_setr_epi8(4, 5, 6, 7, 6, 7, 6, 7, 8, 9, 8, 9, 8, 9, 10, 11,/**/ 20, 21, 22, 23, 22, 23, 22, 23, 24, 25, 24, 25, 24, 25, 26, 27);
@@ -239,13 +216,101 @@ inline void _mm256_cvtepi16_gray2bgr(const __m256i src, __m256i& b, __m256i& g, 
 	__m256i md1 = _mm256_shuffle_epi8(src, g2rgbmask1);
 	__m256i md2 = _mm256_shuffle_epi8(src, g2rgbmask2);
 
-	b = _mm256_permute2x128_si256(md0, md1, _MM_SELECT4(0, 2));
-	g = _mm256_permute2x128_si256(md2, md0, _MM_SELECT4(0, 3));
-	r = _mm256_permute2x128_si256(md1, md2, _MM_SELECT4(1, 3));
+	d0 = _mm256_permute2x128_si256(md0, md1, _MM_SELECT4(0, 2));
+	d1 = _mm256_permute2x128_si256(md2, md0, _MM_SELECT4(0, 3));
+	d2 = _mm256_permute2x128_si256(md1, md2, _MM_SELECT4(1, 3));
 }
 
 //gray2bgr: broadcast 3 channels
-inline void _mm256_cvtps_gray2bgr(const __m256 src, __m256& b, __m256& g, __m256& r)
+inline void _mm256_cvtepi32_gray2bgr(const __m256i src, __m256i& d0, __m256i& d1, __m256i& d2)
+{
+	static const int smask1 = _MM_SHUFFLE(1, 0, 0, 0);
+	static const int smask2 = _MM_SHUFFLE(2, 2, 1, 1);
+	static const int smask3 = _MM_SHUFFLE(3, 3, 3, 2);
+	const __m256i md0 = _mm256_shuffle_epi32(src, smask1);
+	const __m256i md1 = _mm256_shuffle_epi32(src, smask2);
+	const __m256i md2 = _mm256_shuffle_epi32(src, smask3);
+	d0 = _mm256_permute2x128_si256(md0, md1, _MM_SELECT4(0, 2));
+	d1 = _mm256_permute2x128_si256(md2, md0, _MM_SELECT4(0, 3));
+	d2 = _mm256_permute2x128_si256(md1, md2, _MM_SELECT4(1, 3));
+}
+
+//gray2bgr: broadcast 3 channels
+inline void _mm256_cvtps_gray2bgr(const __m256 srcf, __m256& d0, __m256& d1, __m256& d2)
+{
+	__m256i src = _mm256_castps_si256(srcf);
+	static const int smask1 = _MM_SHUFFLE(1, 0, 0, 0);
+	static const int smask2 = _MM_SHUFFLE(2, 2, 1, 1);
+	static const int smask3 = _MM_SHUFFLE(3, 3, 3, 2);
+	const __m256i md0 = _mm256_shuffle_epi32(src, smask1);
+	const __m256i md1 = _mm256_shuffle_epi32(src, smask2);
+	const __m256i md2 = _mm256_shuffle_epi32(src, smask3);
+	d0 = _mm256_castsi256_ps(_mm256_permute2x128_si256(md0, md1, _MM_SELECT4(0, 2)));
+	d1 = _mm256_castsi256_ps(_mm256_permute2x128_si256(md2, md0, _MM_SELECT4(0, 3)));
+	d2 = _mm256_castsi256_ps(_mm256_permute2x128_si256(md1, md2, _MM_SELECT4(1, 3)));
+}
+
+//gray2bgr: broadcast 3 channels
+inline void _mm256_cvtps_gray2bgr_v2(const __m256 src, __m256& d0, __m256& d1, __m256& d2)
+{
+	static const int smask1 = _MM_SHUFFLE(1, 0, 0, 0);
+	static const int smask2 = _MM_SHUFFLE(2, 2, 1, 1);
+	static const int smask3 = _MM_SHUFFLE(3, 3, 3, 2);
+	const __m256 md0 = _mm256_shuffle_ps(src, src, smask1);
+	const __m256 md1 = _mm256_shuffle_ps(src, src, smask2);
+	const __m256 md2 = _mm256_shuffle_ps(src, src, smask3);
+	d0 = _mm256_permute2f128_ps(md0, md1, _MM_SELECT4(0, 2));
+	d1 = _mm256_permute2f128_ps(md2, md0, _MM_SELECT4(0, 3));
+	d2 = _mm256_permute2f128_ps(md1, md2, _MM_SELECT4(1, 3));
+}
+
+//gray2bgr: broadcast 3 channels
+inline void _mm256_cvtps_gray2bgr_v3(const __m256 src, __m256& d0, __m256& d1, __m256& d2)
+{
+	static const __m256i pmask0 = _mm256_setr_epi32(0, 0, 0, 1, 1, 1, 2, 2);
+	static const __m256i pmask1 = _mm256_setr_epi32(2, 3, 3, 3, 4, 4, 4, 5);
+	static const __m256i pmask2 = _mm256_setr_epi32(5, 5, 6, 6, 6, 7, 7, 7);
+	d0 = _mm256_permutevar8x32_ps(src, pmask0);
+	d1 = _mm256_permutevar8x32_ps(src, pmask1);
+	d2 = _mm256_permutevar8x32_ps(src, pmask2);
+}
+
+//gray2bgr: broadcast 3 channels
+inline void _mm256_cvtpd_gray2bgr(const __m256d src, __m256d& d0, __m256d& d1, __m256d& d2)
+{
+	static const int smask1 = _MM_SHUFFLE(1, 0, 0, 0);
+	//static const int smask2 = _MM_SHUFFLE(2, 2, 1, 1);
+	static const int smask3 = _MM_SHUFFLE(3, 3, 3, 2);
+
+	d0 = _mm256_permute4x64_pd(src, smask1);
+	//d1 = _mm256_permute4x64_pd(src, smask2);
+	d1 = _mm256_shuffle_pd(src, src, _MM_SHUFFLE2(1, 1));
+	d2 = _mm256_permute4x64_pd(src, smask3);
+}
+
+//gray2bgr: broadcast 3 channels
+inline void _mm256_cvtpd_gray2bgr_v2(const __m256d src, __m256d& d0, __m256d& d1, __m256d& d2)
+{
+	const __m256d md0 = _mm256_shuffle_pd(src, src, 0b0000);
+	const __m256d md1 = _mm256_shuffle_pd(src, src, 0b1111);
+	const __m256d md2 = _mm256_permute2f128_pd(src, src, _MM_SELECT4(1, 0));
+	d0 = _mm256_blend_pd(md0, md2, 0b1100);
+	d1 = _mm256_blend_pd(md1, md0, 0b1100);
+	d2 = _mm256_blend_pd(md2, md1, 0b1100);
+}
+
+//gray2bgr: broadcast 3 channels
+inline void _mm256_cvtpd_gray2bgr_v3(const __m256d src, __m256d& d0, __m256d& d1, __m256d& d2)
+{
+	const __m256d md0 = _mm256_shuffle_pd(src, src, 0b0000);
+	const __m256d md1 = _mm256_shuffle_pd(src, src, 0b1111);
+	d0 = _mm256_permute2f128_pd(md0, src, _MM_SELECT4(0, 2));
+	d1 = _mm256_blend_pd(md1, md0, 0b1100);
+	d2 = _mm256_permute2f128_pd(src, md1, _MM_SELECT4(1, 3));
+}
+
+//plain2bgr: plain b,g,r image to interleave rgb. SoA->AoS
+inline void _mm256_cvtps_planar2bgr(const __m256 b, const __m256 g, const __m256 r, __m256& d0, __m256& d1, __m256& d2)
 {
 	static const int smask1 = _MM_SHUFFLE(1, 2, 3, 0);
 	static const int smask2 = _MM_SHUFFLE(2, 3, 0, 1);
@@ -255,17 +320,16 @@ inline void _mm256_cvtps_gray2bgr(const __m256 src, __m256& b, __m256& g, __m256
 	static const int pmask1 = 0x20;
 	static const int pmask2 = 0x30;
 	static const int pmask3 = 0x31;
-	const __m256 aa = _mm256_shuffle_ps(src, src, smask1);
-	const __m256 bb = _mm256_shuffle_ps(src, src, smask2);
-	const __m256 cc = _mm256_shuffle_ps(src, src, smask3);
+	const __m256 aa = _mm256_shuffle_ps(b, b, smask1);
+	const __m256 bb = _mm256_shuffle_ps(g, g, smask2);
+	const __m256 cc = _mm256_shuffle_ps(r, r, smask3);
 	__m256 bval = _mm256_blend_ps(_mm256_blend_ps(aa, cc, bmask1), bb, bmask2);
 	__m256 gval = _mm256_blend_ps(_mm256_blend_ps(cc, bb, bmask1), aa, bmask2);
 	__m256 rval = _mm256_blend_ps(_mm256_blend_ps(bb, aa, bmask1), cc, bmask2);
-	b = _mm256_permute2f128_ps(bval, rval, pmask1);
-	g = _mm256_permute2f128_ps(gval, bval, pmask2);
-	r = _mm256_permute2f128_ps(rval, gval, pmask3);
+	d0 = _mm256_permute2f128_ps(bval, rval, pmask1);
+	d1 = _mm256_permute2f128_ps(gval, bval, pmask2);
+	d2 = _mm256_permute2f128_ps(rval, gval, pmask3);
 }
-
 
 
 void inline _mm256_store_ps_color(void* dst, const __m256 b, const __m256 g, const __m256 r)

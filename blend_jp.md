@@ -11,8 +11,6 @@ void testAlphaBlendMask(Mat& src1, Mat& src2);//マスク有
 ```cpp
 void alphaBlend(cv::InputArray src1, cv::InputArray src2, const double alpha, cv::OutputArray dest);
 void alphaBlend(cv::InputArray src1, cv::InputArray src2, cv::InputArray alpha, cv::OutputArray dest);
-void alphaBlendFixedPoint(cv::InputArray src1, cv::InputArray src2, const int alpha/*0-255*/, cv::OutputArray dest);
-void alphaBlendFixedPoint(cv::InputArray src1, cv::InputArray src2, cv::InputArray alpha, cv::OutputArray dest);
 ```
 ## Usage
 src1とsrc2をアルファブレンドします．  
@@ -21,13 +19,21 @@ src1とsrc2をアルファブレンドします．
 OpenCVの同様の関数はaddWeightedですが，余計な処理を消しているためaddWeightedよりも高速です．  
 また，addWeightedはマスクでブレンドすることはできません．  
 
-なお，アルファマスクが8Uの時，0-255の値を0-1だと思ってブレンドします．
-また，FixedPointがついた関数は操作は同様ですが，固定小数点で演算するため高速です．
-ただし固定値のアルファの値は，double alpha(0.0-1.0)ではなくてint alpha(0-255)であることに注意すること．
-また，アルファマスクも8Uのマスクしか取れない．
-浮動小数点を入力する場合は，もともと整数にキャストして整数演算するよりもそのまま浮動小数点演算したほうが高速なため，固定小数点演算の型には余計なサポートはない．
+なお，アルファマスクが8Uの時は，0-255の値を0-1だと思ってブレンドします．
 ## Optimization
 * AVX
+
+# alphaBlendFixedPoint
+```cpp
+void alphaBlendFixedPoint(cv::InputArray src1, cv::InputArray src2, const int alpha/*0-255*/, cv::OutputArray dest);
+void alphaBlendFixedPoint(cv::InputArray src1, cv::InputArray src2, cv::InputArray alpha, cv::OutputArray dest);
+```
+## Usage
+固定小数点で計算することで高速化されたalphaBlend関数です．
+固定値のアルファの値は，double alpha(0.0-1.0)ではなくてint alpha(0-255)であることに注意すること．
+アルファマスクは8Uのマスクしか取れない．
+また，入力画像も8Uしかとることができない．
+これは，浮動小数点を入力する場合は，もともと整数にキャストして整数演算するよりもそのまま浮動小数点演算したほうが高速なためである．
 
 # guiAlphaBlend
 ```cpp

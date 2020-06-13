@@ -1024,8 +1024,8 @@ namespace cp
 
 	bool isSameMat(InputArray src_, InputArray answer_, bool isShowMessage, string ok_mes, string ng_mes)
 	{
-		Mat src = src_.getMat();
-		Mat answer = answer_.getMat();
+		Mat src = src_.getMat().reshape(1);
+		Mat answer = answer_.getMat().reshape(1);
 
 		if (src.size() != answer.size())
 		{
