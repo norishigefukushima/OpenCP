@@ -207,6 +207,7 @@ void testAlphaBlend(Mat& src1, Mat& src2)
 
 	Mat destocv(s1.size(),s1.type());
 	Mat destocp(s1.size(),s1.type());
+	Mat destocpfix(s1.size(), s1.type());
 	Mat show;
 
 	int iter = 50; createTrackbar("iter", "alphaB", &iter, 200);
@@ -220,7 +221,7 @@ void testAlphaBlend(Mat& src1, Mat& src2)
 			for (int i = 0; i < iter; i++)
 				cv::addWeighted(s1, a / 255.0, s2, 1.0 - a / 255.0, 0.0, destocv);
 
-			ci("OCV %f ms", t.getTime());
+			ci("OPENCV %f ms", t.getTime());
 		}
 
 		{
@@ -228,13 +229,23 @@ void testAlphaBlend(Mat& src1, Mat& src2)
 			for (int i = 0; i < iter; i++)
 			{
 				alphaBlend(s1, s2, a / 255.0, destocp);
-				//alphaBlend_AVX_32F(s1, s2, a / 255.0, destocp);
 			}
 
-			ci("OCP %f ms", t.getTime());
+			ci("OPENCP %f ms", t.getTime());
+		}
+
+		{
+			Timer t("alpha ocp fix", 0, false);
+			for (int i = 0; i < iter; i++)
+			{
+				alphaBlendFixedPoint(s1, s2, a, destocpfix);
+			}
+
+			ci("OCPFIX %f ms", t.getTime());
 		}
 
 		ci("OCP->OCV:  %f dB", PSNR(destocp, destocv));
+		ci("FIX->OCV:  %f dB", PSNR(destocpfix, destocv));
 
 		imshow("console", ci.image);
 		destocp.convertTo(show, CV_8U);
@@ -262,14 +273,14 @@ void testAlphaBlendMask(Mat& src1, Mat& src2)
 		if (src2.channels() == 3)cvtColor(src2, s2, COLOR_BGR2GRAY);
 		else s2 = src2;
 	}
-	//if (false)//32F check
+	if (false)//32F check
 	{
 		s1.convertTo(s1, CV_32F);
 		s2.convertTo(s2, CV_32F);	
 	}
 
 	Mat destnaive;
-	Mat destocp;
+	Mat destocp, destocpfx;
 	Mat show;
 	int iter = 50; createTrackbar("iter", "alphaB", &iter, 200);
 	while (key != 'q')
@@ -292,12 +303,25 @@ void testAlphaBlendMask(Mat& src1, Mat& src2)
 			for (int i = 0; i < iter; i++)
 				alphaBlend(s1, s2, mask, destocp);
 
-			ci("OCP %f ms", t.getTime());
+			ci("OCP   %f ms", t.getTime());
+		}
+
+		{
+			Mat mask8u,s1u,s2u;
+			mask.convertTo(mask8u, CV_8U, 255);
+			s1.convertTo(s1u, CV_8U);
+			s2.convertTo(s2u, CV_8U);
+			Timer t("alpha ocpfx", 0, false);
+			for (int i = 0; i < iter; i++)
+				alphaBlendFixedPoint(s1u, s2u, mask8u, destocpfx);
+
+			ci("OCPfx %f ms", t.getTime());
 		}
 
 		if (key == 't')guiAlphaBlend(destnaive, destocp);
 
-		ci("OCP->OCV:  %f dB", PSNR(destocp, destnaive));
+		ci("OCP->OCV  :  %f dB", PSNR(destocp, destnaive));
+		ci("OCPfx->OCV:  %f dB", PSNR(destocpfx, destnaive));
 
 		imshow("console", ci.image);
 		destnaive.convertTo(show, CV_8U);

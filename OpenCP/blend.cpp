@@ -173,6 +173,70 @@ namespace cp
 		}
 	}
 
+	void alphaBlendFixedPoint_AVX(Mat& src1, Mat& src2, int alpha, Mat& dst)
+	{
+		int size = src1.size().area() * src1.channels();
+		int simdsize = get_simd_floor(size, 32);
+		uchar* s1 = src1.data;
+		uchar* s2 = src2.data;
+		uchar* d = dst.data;
+
+		const __m256i ma = _mm256_set1_epi16(alpha << 7);
+		//a*(s1-s2)+s2
+		for (int i = 0; i < simdsize; i += 32)
+		{
+			__m256i ms1 = _mm256_load_epu8cvtepi16((__m128i*)s1);
+			__m256i ms2 = _mm256_load_epu8cvtepi16((__m128i*)s2);
+			_mm_store_si128((__m128i*)d, _mm256_cvtepi16_epu8(_mm256_add_epi16(ms2, _mm256_mulhrs_epi16(ma, _mm256_sub_epi16(ms1, ms2)))));
+
+			ms1 = _mm256_load_epu8cvtepi16((__m128i*)(s1 + 16));
+			ms2 = _mm256_load_epu8cvtepi16((__m128i*)(s2 + 16));
+			_mm_store_si128((__m128i*)(d + 16), _mm256_cvtepi16_epu8(_mm256_add_epi16(ms2, _mm256_mulhrs_epi16(ma, _mm256_sub_epi16(ms1, ms2)))));
+
+			s1 += 32;
+			s2 += 32;
+			d += 32;
+		}
+
+		s1 = src1.data;
+		s2 = src2.data;
+		d = dst.data;
+		double a = alpha / 255.0;
+		for (int i = simdsize; i < size; i++)
+		{
+			d[i] = saturate_cast<uchar>(a * (s1[i] - s2[i]) + s2[i]);
+		}
+	}
+
+	void alphaBlendFixedPoint(InputArray src1, InputArray src2, const int alpha, OutputArray dest)
+	{
+		CV_Assert(src1.size() == src2.size());
+		CV_Assert(src1.depth() == CV_8U);
+		CV_Assert(src2.depth() == CV_8U);
+		Mat s1, s2;
+
+		const int channel = max(src1.channels(), src2.channels());
+		if (src1.channels() == src2.channels())
+		{
+			s1 = src1.getMat();
+			s2 = src2.getMat();
+		}
+		else if (src2.channels() == 3)
+		{
+			cvtColor(src1, s1, COLOR_GRAY2BGR);
+			s2 = src2.getMat();
+		}
+		else
+		{
+			cvtColor(src2, s2, COLOR_GRAY2BGR);
+			s1 = src1.getMat();
+		}
+
+		dest.create(src1.size(), CV_MAKETYPE(CV_8U, channel));
+
+		alphaBlendFixedPoint_AVX(s1, s2, alpha, dest.getMat());
+	}
+
 	void alphaBlendMask8U_AVX_8U(Mat& src1, Mat& src2, Mat& alpha, Mat& dst)
 	{
 		uchar* s1 = src1.data;
@@ -299,7 +363,7 @@ namespace cp
 
 				ms1 = _mm256_load_epu8cvtps((__m128i*)(s1 + 8));
 				ms2 = _mm256_load_epu8cvtps((__m128i*)(s2 + 8));
-				ma = _mm256_load_epu8cvtps((__m128i*)(a + 8));
+				ma = _mm256_load_ps(a + 8);
 				__m256 mt2 = _mm256_fmadd_ps(ma, _mm256_sub_ps(ms1, ms2), ms2);
 
 				_mm_store_si128((__m128i*)d, _mm256_cvtpsx2_epu8(mt1, mt2));
@@ -586,22 +650,18 @@ namespace cp
 		if (src1.depth() == CV_8U && alpha.depth() == CV_8U)
 		{
 			alphaBlendMask8U_AVX_8U(s1, s2, a, dest.getMat());
-			return;
 		}
 		else if (src1.depth() == CV_8U && alpha.depth() == CV_32F)
 		{
 			alphaBlendMask32F_AVX_8U(s1, s2, a, dest.getMat());
-			return;
 		}
 		else if (src1.depth() == CV_32F && alpha.depth() == CV_8U)
 		{
 			alphaBlendMask8U_AVX_32F(s1, s2, a, dest.getMat());
-			return;
 		}
 		else if (src1.depth() == CV_32F && alpha.depth() == CV_32F)
 		{
 			alphaBlendMask32F_AVX_32F(s1, s2, a, dest.getMat());
-			return;
 		}
 		else
 		{
@@ -609,7 +669,121 @@ namespace cp
 		}
 	}
 
-	void imageCast(InputArray src, Mat& dest, string mes="")
+
+	void alphaBlendFixedPointMask8U_AVX(Mat& src1, Mat& src2, Mat& alpha, Mat& dst)
+	{
+		uchar* s1 = src1.data;
+		uchar* s2 = src2.data;
+		uchar* a = alpha.data;
+		uchar* d = dst.data;
+
+		const float inv = 1.f / 255.f;
+
+		if (src1.channels() == 1)
+		{
+			int size = src1.size().area() * src1.channels();
+			int simdsize = get_simd_floor(size, 16);
+
+			for (int i = 0; i < simdsize; i += 16)
+			{
+				__m256i ms1 = _mm256_load_epu8cvtepi16((__m128i*)s1);
+				__m256i ms2 = _mm256_load_epu8cvtepi16((__m128i*)s2);
+				__m256i ma = _mm256_slli_epi16(_mm256_load_epu8cvtepi16((__m128i*)a), 7);
+				_mm_store_si128((__m128i*)d, _mm256_cvtepi16_epu8(_mm256_add_epi16(ms2, _mm256_mulhrs_epi16(ma, _mm256_sub_epi16(ms1, ms2)))));
+
+				s1 += 16;
+				s2 += 16;
+				a += 16;
+				d += 16;
+			}
+
+			s1 = src1.data;
+			s2 = src2.data;
+			d = dst.data;
+			a = alpha.data;
+
+			for (int i = simdsize; i < size; i++)
+			{
+				const float aa = inv * a[i];
+				d[i] = saturate_cast<uchar>(aa * (s1[i] - s2[i]) + s2[i]);
+			}
+		}
+		else if (src1.channels() == 3)
+		{
+			int size = src1.size().area() * src1.channels();
+			int simdsize = get_simd_floor(size, 48);
+
+			__m256i ma0, ma1, ma2;
+			for (int i = 0; i < simdsize; i += 48)
+			{
+				__m256i ma = _mm256_slli_epi16(_mm256_load_epu8cvtepi16((__m128i*)a), 7);
+				_mm256_cvtepi16_gray2bgr(ma, ma0, ma1, ma2);
+
+				__m256i ms1 = _mm256_load_epu8cvtepi16((__m128i*)(s1 + 0));
+				__m256i ms2 = _mm256_load_epu8cvtepi16((__m128i*)(s2 + 0));
+				_mm_store_si128((__m128i*)(d + 0), _mm256_cvtepi16_epu8(_mm256_add_epi16(ms2, _mm256_mulhrs_epi16(ma0, _mm256_sub_epi16(ms1, ms2)))));
+				ms1 = _mm256_load_epu8cvtepi16((__m128i*)(s1 + 16));
+				ms2 = _mm256_load_epu8cvtepi16((__m128i*)(s2 + 16));
+				_mm_store_si128((__m128i*)(d + 16), _mm256_cvtepi16_epu8(_mm256_add_epi16(ms2, _mm256_mulhrs_epi16(ma1, _mm256_sub_epi16(ms1, ms2)))));
+
+				ms1 = _mm256_load_epu8cvtepi16((__m128i*)(s1 + 32));
+				ms2 = _mm256_load_epu8cvtepi16((__m128i*)(s2 + 32));
+				_mm_store_si128((__m128i*)(d + 32), _mm256_cvtepi16_epu8(_mm256_add_epi16(ms2, _mm256_mulhrs_epi16(ma2, _mm256_sub_epi16(ms1, ms2)))));
+
+				s1 += 48;
+				s2 += 48;
+				a += 16;
+				d += 48;
+			}
+
+			s1 = src1.data;
+			s2 = src2.data;
+			d = dst.data;
+			a = alpha.data;
+
+			for (int i = simdsize; i < size; i++)
+			{
+				const float aa = inv * a[i / 3];
+				d[i] = saturate_cast<uchar>(aa * s1[i] + (1.f - aa) * s2[i]);
+			}
+		}
+	}
+
+	void alphaBlendFixedPoint(InputArray src1, InputArray src2, InputArray alpha, OutputArray dest)
+	{
+		CV_Assert(src1.depth() == CV_8U);
+		CV_Assert(src2.depth() == CV_8U);
+		CV_Assert(alpha.depth() == CV_8U);
+		int T;
+		Mat s1, s2;
+		if (src1.channels() <= src2.channels())T = src2.type();
+		else T = src1.type();
+
+		dest.create(src1.size(), T);
+
+		if (dest.type() != T)dest.create(src1.size(), T);
+
+		if (src1.channels() == src2.channels())
+		{
+			s1 = src1.getMat();
+			s2 = src2.getMat();
+		}
+		else if (src2.channels() == 3)
+		{
+			cvtColor(src1, s1, COLOR_GRAY2BGR);
+			s2 = src2.getMat();
+		}
+		else
+		{
+			cvtColor(src2, s2, COLOR_GRAY2BGR);
+			s1 = src1.getMat();
+		}
+
+		Mat a = alpha.getMat();
+		alphaBlendFixedPointMask8U_AVX(s1, s2, a, dest.getMat());
+	}
+
+	void imageCast(InputArray src, Mat& dest, string mes = "")
 	{
 		if (src.depth() == CV_8U)
 		{
@@ -618,8 +792,9 @@ namespace cp
 		}
 		else
 		{
-			if (src.channels() == 1)cvtColor(src, dest, COLOR_GRAY2BGR);
-			else dest = src.getMat();
+			Mat s = src.getMat();
+			s.convertTo(dest, CV_32F);
+			if (src.channels() == 1)cvtColor(dest, dest, COLOR_GRAY2BGR);
 
 			double minv, maxv;
 			minMaxLoc(src, &minv, &maxv);
@@ -627,13 +802,12 @@ namespace cp
 			bool isNormalized = (maxv > 255 || minv < 0.0) ? true : false;
 			if (isMulFF)
 			{
-				cout << mes+": scale 0.0-1.0 -> 0-255" << endl;
+				cout << mes + ": scale 0.0-1.0 -> 0-255" << endl;
 				dest.convertTo(dest, CV_8U, 255);
 			}
 			else if (isNormalized)
 			{
 				cout << mes + ": normalize min-max -> 0-255" << endl;
-				cout << "src1: scale 0.0-1.0 -> 0-255" << endl;
 
 				normalize(src, dest, 255, 0, NORM_MINMAX, CV_8U);
 			}
@@ -643,6 +817,7 @@ namespace cp
 			}
 		}
 	}
+
 	void guiAlphaBlend(InputArray src1, InputArray src2, bool isShowImageStats, std::string wname)
 	{
 		if (isShowImageStats)
@@ -651,7 +826,7 @@ namespace cp
 			cout << endl;
 			showMatInfo(src2, "src2");
 		}
-		
+
 		Mat s1, s2;
 		imageCast(src1, s1);
 		imageCast(src2, s2);
@@ -717,220 +892,6 @@ namespace cp
 		destroyWindow(wname);
 	}
 
-#if 0
-	void alphaBlendSSE_8u(const Mat& src1, const Mat& src2, const uchar alpha, Mat& dest)
-	{
-		if (dest.empty())dest.create(src1.size(), CV_8U);
-
-		const int imsize = (src1.size().area() / 16);
-		uchar* s1 = (uchar*)src1.data;
-		uchar* s2 = (uchar*)src2.data;
-		uchar* d = dest.data;
-
-		const __m128i zero = _mm_setzero_si128();
-		const __m128i amax = _mm_set1_epi8(char(255));
-		const __m128i ma = _mm_set1_epi16(alpha);
-		const __m128i mia = _mm_sub_epi16(amax, ma);
-		int i = 0;
-		if (s1 == d)
-		{
-			for (; i < imsize; ++i)
-			{
-				__m128i ms1h = _mm_load_si128((__m128i*)(s1));
-				__m128i ms2h = _mm_load_si128((__m128i*)(s2));
-
-				__m128i ms1l = _mm_unpacklo_epi8(ms1h, zero);
-				ms1h = _mm_unpackhi_epi8(ms1h, zero);
-
-				__m128i ms2l = _mm_unpacklo_epi8(ms2h, zero);
-				ms2h = _mm_unpackhi_epi8(ms2h, zero);
-
-				ms1l = _mm_mullo_epi16(ms1l, ma);
-				ms2l = _mm_mullo_epi16(ms2l, mia);
-				ms1l = _mm_add_epi16(ms1l, ms2l);
-				//ms1l = _mm_srli_epi16(ms1l,8);
-				ms1l = _mm_srai_epi16(ms1l, 8);
-
-				ms1h = _mm_mullo_epi16(ms1h, ma);
-				ms2h = _mm_mullo_epi16(ms2h, mia);
-				ms1h = _mm_add_epi16(ms1h, ms2h);
-				//ms1h = _mm_srli_epi16(ms1h,8);
-				ms1h = _mm_srai_epi16(ms1h, 8);
-
-				_mm_stream_si128((__m128i*)s1, _mm_packs_epi16(ms1l, ms1h));
-
-				s1 += 16;
-				s2 += 16;
-			}
-		}
-		else
-		{
-			for (; i < imsize; ++i)
-			{
-				__m128i ms1h = _mm_load_si128((__m128i*)(s1));
-				__m128i ms2h = _mm_load_si128((__m128i*)(s2));
-
-				__m128i ms1l = _mm_unpacklo_epi8(ms1h, zero);
-				ms1h = _mm_unpackhi_epi8(ms1h, zero);
-
-				__m128i ms2l = _mm_unpacklo_epi8(ms2h, zero);
-				ms2h = _mm_unpackhi_epi8(ms2h, zero);
-
-				ms1l = _mm_mullo_epi16(ms1l, ma);
-				ms2l = _mm_mullo_epi16(ms2l, mia);
-				ms1l = _mm_add_epi16(ms1l, ms2l);
-				//ms1l = _mm_srli_epi16(ms1l,8);
-				ms1l = _mm_srai_epi16(ms1l, 8);
-
-				ms1h = _mm_mullo_epi16(ms1h, ma);
-				ms2h = _mm_mullo_epi16(ms2h, mia);
-				ms1h = _mm_add_epi16(ms1h, ms2h);
-				//ms1h = _mm_srli_epi16(ms1h,8);
-				ms1h = _mm_srai_epi16(ms1h, 8);
-
-				_mm_store_si128((__m128i*)d, _mm_packs_epi16(ms1l, ms1h));
-
-				s1 += 16;
-				s2 += 16;
-				d += 16;
-			}
-		}
-
-		{
-			uchar* s1 = (uchar*)src1.data;
-			uchar* s2 = (uchar*)src2.data;
-			uchar* d = dest.data;
-			for (int n = i * 16; n < src1.size().area(); n++)
-			{
-				d[n] = (alpha * s1[n] + (255 - alpha) * s2[n]) >> 8;
-			}
-		}
-	}
-
-	void alphaBlendSSE_8u(const Mat& src1, const Mat& src2, const Mat& alpha, Mat& dest)
-	{
-		if (dest.empty())dest.create(src1.size(), CV_8U);
-
-		const int imsize = (src1.size().area() / 16);
-		uchar* s1 = (uchar*)src1.data;
-		uchar* s2 = (uchar*)src2.data;
-		uchar* a = (uchar*)alpha.data;
-		uchar* d = dest.data;
-
-		const __m128i zero = _mm_setzero_si128();
-		const __m128i amax = _mm_set1_epi8(char(255));
-		int i = 0;
-		if (s1 == d)
-		{
-			for (; i < imsize; ++i)
-			{
-				__m128i ms1h = _mm_load_si128((__m128i*)(s1));
-				__m128i ms2h = _mm_load_si128((__m128i*)(s2));
-				__m128i mah = _mm_load_si128((__m128i*)(a));
-				__m128i imah = _mm_sub_epi8(amax, mah);
-
-				__m128i ms1l = _mm_unpacklo_epi8(ms1h, zero);
-				ms1h = _mm_unpackhi_epi8(ms1h, zero);
-
-				__m128i ms2l = _mm_unpacklo_epi8(ms2h, zero);
-				ms2h = _mm_unpackhi_epi8(ms2h, zero);
-
-				__m128i mal = _mm_unpacklo_epi8(mah, zero);
-				mah = _mm_unpackhi_epi8(mah, zero);
-
-				__m128i imal = _mm_unpacklo_epi8(imah, zero);
-				imah = _mm_unpackhi_epi8(imah, zero);
-
-				ms1l = _mm_mullo_epi16(ms1l, mal);
-				ms2l = _mm_mullo_epi16(ms2l, imal);
-				ms1l = _mm_add_epi16(ms1l, ms2l);
-				//ms1l = _mm_srli_epi16(ms1l,8);
-				ms1l = _mm_srai_epi16(ms1l, 8);
-
-				ms1h = _mm_mullo_epi16(ms1h, mah);
-				ms2h = _mm_mullo_epi16(ms2h, imah);
-				ms1h = _mm_add_epi16(ms1h, ms2h);
-				//ms1h = _mm_srli_epi16(ms1h,8);
-				ms1h = _mm_srai_epi16(ms1h, 8);
-
-				_mm_stream_si128((__m128i*)s1, _mm_packs_epi16(ms1l, ms1h));
-
-				s1 += 16;
-				s2 += 16;
-				a += 16;
-			}
-		}
-		else
-		{
-			for (; i < imsize; ++i)
-			{
-				__m128i ms1h = _mm_load_si128((__m128i*)(s1));
-				__m128i ms2h = _mm_load_si128((__m128i*)(s2));
-				__m128i mah = _mm_load_si128((__m128i*)(a));
-				__m128i imah = _mm_sub_epi8(amax, mah);
-
-				__m128i ms1l = _mm_unpacklo_epi8(ms1h, zero);
-				ms1h = _mm_unpackhi_epi8(ms1h, zero);
-
-				__m128i ms2l = _mm_unpacklo_epi8(ms2h, zero);
-				ms2h = _mm_unpackhi_epi8(ms2h, zero);
-
-				__m128i mal = _mm_unpacklo_epi8(mah, zero);
-				mah = _mm_unpackhi_epi8(mah, zero);
-
-				__m128i imal = _mm_unpacklo_epi8(imah, zero);
-				imah = _mm_unpackhi_epi8(imah, zero);
-
-				ms1l = _mm_mullo_epi16(ms1l, mal);
-				ms2l = _mm_mullo_epi16(ms2l, imal);
-				ms1l = _mm_add_epi16(ms1l, ms2l);
-				//ms1l = _mm_srli_epi16(ms1l,8);
-				ms1l = _mm_srai_epi16(ms1l, 8);
-
-				ms1h = _mm_mullo_epi16(ms1h, mah);
-				ms2h = _mm_mullo_epi16(ms2h, imah);
-				ms1h = _mm_add_epi16(ms1h, ms2h);
-				//ms1h = _mm_srli_epi16(ms1h,8);
-				ms1h = _mm_srai_epi16(ms1h, 8);
-
-				_mm_store_si128((__m128i*)d, _mm_packs_epi16(ms1l, ms1h));
-
-				s1 += 16;
-				s2 += 16;
-				a += 16;
-				d += 16;
-			}
-		}
-
-		{
-			uchar* s1 = (uchar*)src1.data;
-			uchar* s2 = (uchar*)src2.data;
-			uchar* a = (uchar*)alpha.data;
-			uchar* d = dest.data;
-			for (int n = i * 16; n < src1.size().area(); n++)
-			{
-				d[n] = (a[n] * s1[n] + (255 - a[n]) * s2[n]) >> 8;
-			}
-		}
-	}
-
-	void alphaBlendApproximate(InputArray src1, InputArray src2, const uchar alpha, OutputArray dest)
-	{
-		if (dest.empty() || dest.size() != src1.size() || dest.type() != src1.type()) dest.create(src1.size(), src1.type());
-
-		Mat dst = dest.getMat();
-		alphaBlendSSE_8u(src1.getMat(), src2.getMat(), alpha, dst);
-	}
-
-	void alphaBlendApproximate(InputArray src1, InputArray src2, InputArray alpha, OutputArray dest)
-	{
-		CV_Assert(alpha.depth() == CV_8U);
-		if (dest.empty() || dest.size() != src1.size() || dest.type() != src1.type()) dest.create(src1.size(), src1.type());
-
-		Mat dst = dest.getMat();
-		alphaBlendSSE_8u(src1.getMat(), src2.getMat(), alpha.getMat(), dst);
-	}
-#endif
 
 	template <class T>
 	void setTrapezoidMaskH(Mat& src, double ratio, double slant_ratio, Point& start_pt, Point& end_pt)

@@ -32,6 +32,8 @@ inline double _mm256_reduceadd_pd(__m256d src)
 	return (src.m256d_f64[0] + src.m256d_f64[2]);
 }
 
+//cast
+
 inline __m128i _mm256_cvtpsx2_epu8(const __m256 v0, const __m256 v1)
 {
 	return _mm256_castsi256_si128(_mm256_permutevar8x32_epi32(_mm256_packus_epi16(_mm256_packs_epi32(_mm256_cvtps_epi32(v0), _mm256_cvtps_epi32(v1)), _mm256_setzero_si256()), _mm256_setr_epi32(0, 4, 1, 5, 2, 6, 3, 7)));
@@ -45,6 +47,20 @@ inline __m128i _mm256_cvtepi32_epu8(const __m256i v0)
 inline __m128i _mm256_cvtepi32x2_epu8(const __m256i v0, const __m256i v1)
 {
 	return _mm256_castsi256_si128(_mm256_permutevar8x32_epi32(_mm256_packus_epi16(_mm256_packs_epi32(v0, v1), _mm256_setzero_si256()), _mm256_setr_epi32(0, 4, 1, 5, 2, 6, 3, 7)));
+}
+
+//load and cast 
+
+//defined in opencp uchar->short
+inline __m256i _mm256_load_epu8cvtepi16(const __m128i* P)
+{
+	return _mm256_cvtepu8_epi16(_mm_loadu_si128((__m128i*)P));
+}
+
+//defined in opencp short->int
+inline __m256i _mm256_load_epi16cvtepi32(const __m128i* P)
+{
+	return _mm256_cvtepi16_epi32(_mm_loadu_si128((__m128i*)P));
 }
 
 //defined in opencp uchar->int
@@ -161,8 +177,75 @@ void inline _mm256_stream_ps_color(void* dst, const __m256 b, const __m256 g, co
 	_mm256_stream_ps((float*)dst + 16, _mm256_permute2f128_ps(rval, gval, pmask3));
 }
 
-//gray2bgr
-void inline _mm256_cvtps_gray2bgr(const __m256 src, __m256& b, __m256& g, __m256& r)
+//gray2bgr: broadcast 3 channels
+/*void inline _mm256_cvtepi16_gray2bgr(const __m256i src, __m256i& b, __m256i& g, __m256i& r)
+{
+	const int smask1 = _MM_SHUFFLE(1, 2, 3, 0);
+	const int smask2 = _MM_SHUFFLE(2, 3, 0, 1);
+	const int smask3 = _MM_SHUFFLE(3, 0, 1, 2);
+	const int bmask1 = 0x44;
+	const int bmask2 = 0x22;
+	const int pmask1 = 0x20;
+	const int pmask2 = 0x30;
+	const int pmask3 = 0x31;
+	const __m256 aa = _mm256_shuffle_e(src, src, smask1);
+	const __m256 bb = _mm256_shuffle_ps(src, src, smask2);
+	const __m256 cc = _mm256_shuffle_ps(src, src, smask3);
+	__m256 bval = _mm256_blend_ps(_mm256_blend_ps(aa, cc, bmask1), bb, bmask2);
+	__m256 gval = _mm256_blend_ps(_mm256_blend_ps(cc, bb, bmask1), aa, bmask2);
+	__m256 rval = _mm256_blend_ps(_mm256_blend_ps(bb, aa, bmask1), cc, bmask2);
+	b = _mm256_permute2f128_ps(bval, rval, pmask1);
+	g = _mm256_permute2f128_ps(gval, bval, pmask2);
+	r = _mm256_permute2f128_ps(rval, gval, pmask3);
+}*/
+
+//gray2bgr: broadcast 3 channels
+inline void _mm_cvtepi8_gray2bgr(const __m128i src, __m128i& b, __m128i& g, __m128i& r)
+{
+	static const __m128i g2rgbmask0 = _mm_setr_epi8(0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5);
+	static const __m128i g2rgbmask1 = _mm_setr_epi8(5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 9, 9, 9, 10, 10);
+	static const __m128i g2rgbmask2 = _mm_setr_epi8(10, 11, 11, 11, 12, 12, 12, 13, 13, 13, 14, 14, 14, 15, 15, 15);
+	b = _mm_shuffle_epi8(src, g2rgbmask0);
+	g = _mm_shuffle_epi8(src, g2rgbmask1);
+	r = _mm_shuffle_epi8(src, g2rgbmask2);
+}
+
+//0 src1 low, 1 src1 high, //2 src2 low, 3 src2 high, 
+#define _MM_SELECT4(x,y) (((y)<<4) + (x))
+
+//gray2bgr: broadcast 3 channels
+inline void _mm256_cvtepi8_gray2bgr(const __m256i src, __m256i& b, __m256i& g, __m256i& r)
+{
+	static const __m256i g2rgbmask0 = _mm256_setr_epi8(0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 16, 16, 16, 17, 17, 17, 18, 18, 18, 19, 19, 19, 20, 20, 20, 21);
+	static const __m256i g2rgbmask1 = _mm256_setr_epi8(5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 9, 9, 9, 10, 10, 21, 21, 22, 22, 22, 23, 23, 23, 24, 24, 24, 25, 25, 25, 26, 26);
+	static const __m256i g2rgbmask2 = _mm256_setr_epi8(10, 11, 11, 11, 12, 12, 12, 13, 13, 13, 14, 14, 14, 15, 15, 15, 26, 27, 27, 27, 28, 28, 28, 29, 29, 29, 30, 30, 30, 31, 31, 31);
+	__m256i md0 = _mm256_shuffle_epi8(src, g2rgbmask0);
+	__m256i md1 = _mm256_shuffle_epi8(src, g2rgbmask1);
+	__m256i md2 = _mm256_shuffle_epi8(src, g2rgbmask2);
+
+	b = _mm256_permute2x128_si256(md0, md1, _MM_SELECT4(0, 2));
+	g = _mm256_permute2x128_si256(md2, md0, _MM_SELECT4(0, 3));
+	r = _mm256_permute2x128_si256(md1, md2, _MM_SELECT4(1, 3));
+}
+
+
+//gray2bgr: broadcast 3 channels
+inline void _mm256_cvtepi16_gray2bgr(const __m256i src, __m256i& b, __m256i& g, __m256i& r)
+{
+	static const __m256i g2rgbmask0 = _mm256_setr_epi8(0, 1, 0, 1, 0, 1, 2, 3, 2, 3, 2, 3, 4, 5, 4, 5,/**/  16, 17, 16, 17, 16, 17, 18, 19, 18, 19, 18, 19, 20, 21, 20, 21);
+	static const __m256i g2rgbmask1 = _mm256_setr_epi8(4, 5, 6, 7, 6, 7, 6, 7, 8, 9, 8, 9, 8, 9, 10, 11,/**/ 20, 21, 22, 23, 22, 23, 22, 23, 24, 25, 24, 25, 24, 25, 26, 27);
+	static const __m256i g2rgbmask2 = _mm256_setr_epi8(10, 11, 10, 11, 12, 13, 12, 13, 12, 13, 14, 15, 14, 15, 14, 15,/**/ 26, 27, 26, 27, 28, 29, 28, 29, 28, 29, 30, 31, 30, 31, 30, 31);
+	__m256i md0 = _mm256_shuffle_epi8(src, g2rgbmask0);
+	__m256i md1 = _mm256_shuffle_epi8(src, g2rgbmask1);
+	__m256i md2 = _mm256_shuffle_epi8(src, g2rgbmask2);
+
+	b = _mm256_permute2x128_si256(md0, md1, _MM_SELECT4(0, 2));
+	g = _mm256_permute2x128_si256(md2, md0, _MM_SELECT4(0, 3));
+	r = _mm256_permute2x128_si256(md1, md2, _MM_SELECT4(1, 3));
+}
+
+//gray2bgr: broadcast 3 channels
+inline void _mm256_cvtps_gray2bgr(const __m256 src, __m256& b, __m256& g, __m256& r)
 {
 	static const int smask1 = _MM_SHUFFLE(1, 2, 3, 0);
 	static const int smask2 = _MM_SHUFFLE(2, 3, 0, 1);
@@ -182,6 +265,8 @@ void inline _mm256_cvtps_gray2bgr(const __m256 src, __m256& b, __m256& g, __m256
 	g = _mm256_permute2f128_ps(gval, bval, pmask2);
 	r = _mm256_permute2f128_ps(rval, gval, pmask3);
 }
+
+
 
 void inline _mm256_store_ps_color(void* dst, const __m256 b, const __m256 g, const __m256 r)
 {
@@ -239,10 +324,16 @@ inline __m256i _mm256_cmpgt_epu8(__m256i x, __m256i y)
 	return _mm256_andnot_si256(_mm256_cmpeq_epi8(x, y), _mm256_cmpeq_epi8(_mm256_max_epu8(x, y), x));
 }
 
-//_mm256_cvtepi32_epi16 already defined inzmmintrin.h (AVX512)
+//_mm256_cvtepi32_epi16 is already defined in zmmintrin.h (AVX512)
 inline __m128i _mm256_cvtint_short(__m256i src)
 {
 	return _mm256_castsi256_si128(_mm256_permute4x64_epi64(_mm256_packs_epi32(src, _mm256_setzero_si256()), _MM_SHUFFLE(3, 1, 2, 0)));
+}
+
+//_mm256_cvtepi16_epi8 is already defined in zmmintrin.h (AVX512), but this is ep`u`
+inline __m128i _mm256_cvtepi16_epu8(__m256i src)
+{
+	return _mm256_castsi256_si128(_mm256_permute4x64_epi64(_mm256_packus_epi16(src, _mm256_setzero_si256()), _MM_SHUFFLE(3, 1, 2, 0)));
 }
 
 inline __m128i _mm256_cvtint_ushort(__m256i src)
