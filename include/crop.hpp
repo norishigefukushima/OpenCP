@@ -3,6 +3,7 @@
 
 namespace cp
 {
+	CP_EXPORT void cropCenter(cv::InputArray src, cv::OutputArray crop, const int window_size);
 	CP_EXPORT void cropZoom(cv::InputArray src, cv::OutputArray crop_zoom, const cv::Rect roi, const int zoom_factor = 1);
 	CP_EXPORT void cropZoom(cv::InputArray src, cv::OutputArray crop_zoom, const cv::Point center, const int window_size, const int zoom_factor = 1);
 	CP_EXPORT void cropZoomWithBoundingBox(cv::InputArray src, cv::OutputArray crop_zoom, const cv::Rect roi, const int zoom_factor = 1, const cv::Scalar color = COLOR_RED, const int thickness = 1);

@@ -5,6 +5,12 @@ using namespace cv;
 
 namespace cp
 {
+	void cropCenter(InputArray src, OutputArray crop, const int window_size)
+	{
+		Mat s = src.getMat();
+		cropZoom(src, crop, Point(s.cols / 2, s.rows / 2), window_size);
+	}
+
 	void cropZoom(InputArray src, OutputArray crop_zoom, const Rect roi, const int zoom_factor)
 	{
 		const int w = roi.width;

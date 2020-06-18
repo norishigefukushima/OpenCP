@@ -4,8 +4,6 @@ crop.hpp
 # cropZoom
 ```cpp
 void cropZoom(cv::InputArray src, cv::OutputArray crop_zoom, const cv::Rect roi, const int zoom_factor = 1);
-```
-```cpp
 void cropZoom(cv::InputArray src, cv::OutputArray crop_zoom, const cv::Point center, const int window_size, const int zoom_factor = 1);
 ```
 ## Usage
@@ -56,6 +54,20 @@ void cropZoomWithSrcMarkAndBoundingBox(cv::InputArray src, cv::OutputArray crop_
 ## example
 See [guiCropZoom](#guiCropZoom)
 
+# cropCenter
+```cpp
+void cropCenter(cv::InputArray src, cv::OutputArray crop, const int window_size);
+```
+# Usage
+cropZoomの切り抜き中央点を画像の真ん中にし，zoomの倍率を1にした別名関数．
+内部で下記のように呼び出しているだけ．
+```cpp
+void cropCenter(InputArray src, OutputArray crop, const int window_size)
+	{
+		Mat s = src.getMat();
+		cropZoom(src, crop, Point(s.cols / 2, s.rows / 2), window_size);
+	}
+```
 
 # guiCropZoom
 ```cpp

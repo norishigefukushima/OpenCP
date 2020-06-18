@@ -33,6 +33,7 @@ Reference Manual
  * [cropZoom](crop_jp.md "#cropZoom")
  * [cropZoomWithBoundingBox](crop_jp.md "#cropZoomWithBoundingBox")
  * [cropZoomWithSrcMarkAndBoundingBox](crop_jp.md "#cropZoomWithSrcMarkAndBoundingBox")
+ * [cropZoom](crop_jp.md "#cropCenter")
  * [guiCropZoom](crop_jp.md "#guiCropZoom")
 
 # count.hpp
