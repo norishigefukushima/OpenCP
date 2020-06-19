@@ -25,6 +25,21 @@ inline int get_simd_floor(const int val, const int simdwidth)
 	return (val / simdwidth) * simdwidth;
 }
 
+#define _MM256_TRANSPOSE4_PD(in_row0, in_row1, in_row2, in_row3		\
+						, out_row0, out_row1, out_row2, out_row3) {	\
+	__m256d tmp0, tmp1, tmp2, tmp3;									\
+																	\
+	tmp0 = _mm256_unpackhi_pd((in_row0), (in_row1));				\
+	tmp1 = _mm256_unpackhi_pd((in_row2), (in_row3));				\
+	tmp2 = _mm256_unpacklo_pd((in_row0), (in_row1));				\
+	tmp3 = _mm256_unpacklo_pd((in_row2), (in_row3));				\
+																	\
+	(out_row3) = _mm256_permute2f128_pd(tmp0, tmp1,0x31);			\
+	(out_row2) = _mm256_permute2f128_pd(tmp2, tmp3,0x31);			\
+	(out_row1) = _mm256_permute2f128_pd(tmp0, tmp1,0x20);			\
+	(out_row0) = _mm256_permute2f128_pd(tmp2, tmp3,0x20);			\
+}
+
 #define ___MM256_TRANSPOSE8_PS(in0, in1, in2, in3, in4, in5, in6, in7, out0, out1, out2, out3, out4, out5, out6, out7, __in0, __in1, __in2, __in3, __in4, __in5, __in6, __in7, __out0, __out1, __out2, __out3, __out4, __out5, __out6, __out7, __tmp0, __tmp1, __tmp2, __tmp3, __tmp4, __tmp5, __tmp6, __tmp7, __tmpp0, __tmpp1, __tmpp2, __tmpp3, __tmpp4, __tmpp5, __tmpp6, __tmpp7) \
   do { \
     __m256 __in0 = (in0), __in1 = (in1), __in2 = (in2), __in3 = (in3), __in4 = (in4), __in5 = (in5), __in6 = (in6), __in7 = (in7); \
