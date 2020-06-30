@@ -79,29 +79,7 @@ inline int get_simd_floor(const int val, const int simdwidth)
           __tmp0##__LINE__, __tmp1##__LINE__, __tmp2##__LINE__, __tmp3##__LINE__, __tmp4##__LINE__, __tmp5##__LINE__, __tmp6##__LINE__, __tmp7##__LINE__, \
           __tmpp0##__LINE__, __tmpp1##__LINE__, __tmpp2##__LINE__, __tmpp3##__LINE__, __tmpp4##__LINE__, __tmpp5##__LINE__, __tmpp6##__LINE__, __tmpp7##__LINE__)
 
-/**
-* Transposition in AVX of 4 PRECISION vectors
-*/
-#define ___MM256_TRANSPOSE4_PD(in0, in1, in2, in3, out0, out1, out2, out3, __in0, __in1, __in2, __in3, __out0, __out1, __out2, __out3, __tmp0, __tmp1, __tmp2, __tmp3) \
-  do { \
-    __m256d __in0 = (in0), __in1 = (in1), __in2 = (in2), __in3 = (in3); \
-    __m256d __tmp0, __tmp1, __tmp2, __tmp3; \
-    __m256d __out0, __out1, __out2, __out3; \
-    __tmp0 = _mm256_shuffle_pd(__in0, __in1, 0x0); \
-    __tmp1 = _mm256_shuffle_pd(__in0, __in1, 0xf); \
-    __tmp2 = _mm256_shuffle_pd(__in2, __in3, 0x0); \
-    __tmp3 = _mm256_shuffle_pd(__in2, __in3, 0xf); \
-    __out0 = _mm256_permute2f128_pd(__tmp0, __tmp2, 0x20); \
-    __out1 = _mm256_permute2f128_pd(__tmp1, __tmp3, 0x20); \
-    __out2 = _mm256_permute2f128_pd(__tmp0, __tmp2, 0x31); \
-    __out3 = _mm256_permute2f128_pd(__tmp1, __tmp3, 0x31); \
-    (out0) = __out0, (out1) = __out1, (out2) = __out2, (out3) = __out3; \
-          } while (0)
-#define _MM256_TRANSPOSE4_PD(in0, in1, in2, in3) \
-      ___MM256_TRANSPOSE4_PD(in0, in1, in2, in3, in0, in1, in2, in3, \
-          __in0##__LINE__, __in1##__LINE__, __in2##__LINE__, __in3##__LINE__, \
-          __out0##__LINE__, __out1##__LINE__, __out2##__LINE__, __out3##__LINE__, \
-          __tmp0##__LINE__, __tmp1##__LINE__, __tmp2##__LINE__, __tmp3##__LINE__)
+
 
 #pragma region color_convert
 
@@ -151,12 +129,27 @@ inline void _mm256_storeu_ps2epu8_color(void* dst, __m256 b, __m256 g, __m256 r)
 	__m256i mr = _mm256_cvtps_epi32(r);
 	mb = _mm256_packus_epi16(mb, mg);
 	mb = _mm256_packus_epi16(mb, mr);
-	static const __m256i mask = _mm256_setr_epi8(0, 4, 8, 1, 5, 10, 2, 6, 12, 3, 7, 14, 0, 0, 0, 0, 5, 10, 2, 6, 12, 3, 7, 14, 0, 0, 0, 0, 0, 4, 8, 1);
+	const __m256i mask = _mm256_setr_epi8(0, 4, 8, 1, 5, 10, 2, 6, 12, 3, 7, 14, 0, 0, 0, 0, 5, 10, 2, 6, 12, 3, 7, 14, 0, 0, 0, 0, 0, 4, 8, 1);
 	mb = _mm256_shuffle_epi8(mb, mask);
 	__m256i mp = _mm256_permute2f128_si256(mb, mb, 0x11);
 	mb = _mm256_blend_epi32(mb, mp, 8);
 
 	_mm256_storeu_si256((__m256i*)dst, mb);
+}
+
+inline void _mm256_stream_ps2epu8_color(void* dst, __m256 b, __m256 g, __m256 r)
+{
+	__m256i mb = _mm256_cvtps_epi32(b);
+	__m256i mg = _mm256_cvtps_epi32(g);
+	__m256i mr = _mm256_cvtps_epi32(r);
+	mb = _mm256_packus_epi16(mb, mg);
+	mb = _mm256_packus_epi16(mb, mr);
+	const __m256i mask = _mm256_setr_epi8(0, 4, 8, 1, 5, 10, 2, 6, 12, 3, 7, 14, 0, 0, 0, 0, 5, 10, 2, 6, 12, 3, 7, 14, 0, 0, 0, 0, 0, 4, 8, 1);
+	mb = _mm256_shuffle_epi8(mb, mask);
+	__m256i mp = _mm256_permute2f128_si256(mb, mb, 0x11);
+	mb = _mm256_blend_epi32(mb, mp, 8);
+
+	_mm256_stream_si256((__m256i*)dst, mb);
 }
 
 inline void _mm256_storescalar_ps2epu8_color(void* dst, __m256 b, __m256 g, __m256 r)
@@ -516,10 +509,11 @@ inline void _mm256_load_epu8cvtepi32x2(const __m128i* P, __m256i& d0, __m256i& d
 	d1 = _mm256_cvtepu8_epi32(_mm_shuffle_epi32(s, _MM_SHUFFLE(1, 0, 3, 2)));
 }
 
-//opencp: uchar->floatx2
+//opencp: uchar->float
 inline __m256 _mm256_load_epu8cvtps(const __m128i* P)
 {
-	return _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(_mm_loadu_si128((__m128i*)P)));
+	return _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(_mm_loadl_epi64((__m128i*)P)));
+	//return _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(_mm_loadu_si128((__m128i*)P)));
 }
 
 //opencp: uchar->floatx2
@@ -681,6 +675,18 @@ inline __m256 _mm256_div_zerodivzero_ps(const __m256 src1, const __m256 src2)
 {
 	return _mm256_blendv_ps(_mm256_div_ps(src1, src2), _mm256_set1_ps(FLT_MIN), _mm256_cmp_ps(src2, _mm256_setzero_ps(), 0));
 }
+
+inline __m256 _mm256_ssd_ps(__m256 src0, __m256 src1, __m256 src2, __m256 ref0, __m256 ref1, __m256 ref2)
+{
+	__m256 diff = _mm256_sub_ps(src0, ref0);
+	__m256 difft = _mm256_mul_ps(diff, diff);
+	diff = _mm256_sub_ps(src1, ref1);
+	difft = _mm256_fmadd_ps(diff, diff, difft);
+	diff = _mm256_sub_ps(src2, ref2);
+	difft = _mm256_fmadd_ps(diff, diff, difft);
+	return difft;
+}
+
 #pragma endregion
 
 #pragma region compare
@@ -838,3 +844,32 @@ __m128 yyyy = _mm_shuffle_ps(first, first, 0x55); // _MM_SHUFFLE(1, 1, 1, 1)
 __m128 zzzz = _mm_shuffle_ps(first, first, 0xAA); // _MM_SHUFFLE(2, 2, 2, 2)
 __m128 wwww = _mm_shuffle_ps(first, first, 0xFF); // _MM_SHUFFLE(3, 3, 3, 3)
 */
+
+
+inline __m256 _mm256_load_auto(const uchar* src)
+{
+	return _mm256_load_epu8cvtps((const __m128i*)src);
+}
+inline __m256 _mm256_load_auto(const float* src)
+{
+	return _mm256_load_ps(src);
+}
+
+inline __m256 _mm256_loadu_auto(const uchar* src)
+{
+	return _mm256_load_epu8cvtps((const __m128i*)src);
+}
+inline __m256 _mm256_loadu_auto(const float* src)
+{
+	return _mm256_loadu_ps(src);
+}
+
+inline void _mm256_stream_auto_color(float* dest, __m256 sum_b, __m256 sum_g, __m256 sum_r)
+{
+	_mm256_stream_ps_color(dest, sum_b, sum_g, sum_r);
+}
+
+inline void _mm256_stream_auto_color(uchar* dest, __m256 sum_b, __m256 sum_g, __m256 sum_r)
+{
+	_mm256_stream_ps2epu8_color(dest, sum_b, sum_g, sum_r);
+}
