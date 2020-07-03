@@ -964,6 +964,73 @@ inline void _mm256_storescalar_ps(float* dst, __m256 src, const int numpixel)
 		dst[i] = buffscalarstore[i];
 }
 
+inline void _mm256_i32scaterscalar_epu8(uchar* dest, __m256i vindex, __m256 src)
+{
+	__m128i v = _mm256_cvtps_epu8(src);
+	dest[vindex.m256i_i32[0]] = v.m128i_u8[0];
+	dest[vindex.m256i_i32[1]] = v.m128i_u8[1];
+	dest[vindex.m256i_i32[2]] = v.m128i_u8[2];
+	dest[vindex.m256i_i32[3]] = v.m128i_u8[3];
+	dest[vindex.m256i_i32[4]] = v.m128i_u8[4];
+	dest[vindex.m256i_i32[5]] = v.m128i_u8[5];
+	dest[vindex.m256i_i32[6]] = v.m128i_u8[6];
+	dest[vindex.m256i_i32[7]] = v.m128i_u8[7];
+}
+
+inline void _mm256_i32scaterscalar_ps(float* dest, __m256i vindex, __m256 src)
+{
+	dest[vindex.m256i_i32[0]] = src.m256_f32[0];
+	dest[vindex.m256i_i32[1]] = src.m256_f32[1];
+	dest[vindex.m256i_i32[2]] = src.m256_f32[2];
+	dest[vindex.m256i_i32[3]] = src.m256_f32[3];
+	dest[vindex.m256i_i32[4]] = src.m256_f32[4];
+	dest[vindex.m256i_i32[5]] = src.m256_f32[5];
+	dest[vindex.m256i_i32[6]] = src.m256_f32[6];
+	dest[vindex.m256i_i32[7]] = src.m256_f32[7];
+}
+
+inline void _mm256_i32scaterscalar_epu8_color(uchar* dest, __m256i vindex, __m256 b, __m256 g, __m256 r)
+{
+	__m128i bb = _mm256_cvtps_epu8(b);
+	__m128i gb = _mm256_cvtps_epu8(g);
+	__m128i rb = _mm256_cvtps_epu8(r);
+	int idx = vindex.m256i_i32[0];
+	dest[idx + 0] = bb.m128i_u8[0];	dest[idx + 1] = gb.m128i_u8[0];	dest[idx + 2] = rb.m128i_u8[0];
+	idx = vindex.m256i_i32[1];
+	dest[idx + 0] = bb.m128i_u8[1];	dest[idx + 1] = gb.m128i_u8[1];	dest[idx + 2] = rb.m128i_u8[1];
+	idx = vindex.m256i_i32[2];
+	dest[idx + 0] = bb.m128i_u8[2];	dest[idx + 1] = gb.m128i_u8[2];	dest[idx + 2] = rb.m128i_u8[2];
+	idx = vindex.m256i_i32[3];
+	dest[idx + 0] = bb.m128i_u8[3];	dest[idx + 1] = gb.m128i_u8[3];	dest[idx + 2] = rb.m128i_u8[3];
+	idx = vindex.m256i_i32[4];
+	dest[idx + 0] = bb.m128i_u8[4];	dest[idx + 1] = gb.m128i_u8[4];	dest[idx + 2] = rb.m128i_u8[4];
+	idx = vindex.m256i_i32[5];
+	dest[idx + 0] = bb.m128i_u8[5];	dest[idx + 1] = gb.m128i_u8[5];	dest[idx + 2] = rb.m128i_u8[5];
+	idx = vindex.m256i_i32[6];
+	dest[idx + 0] = bb.m128i_u8[6];	dest[idx + 1] = gb.m128i_u8[6];	dest[idx + 2] = rb.m128i_u8[6];
+	idx = vindex.m256i_i32[7];
+	dest[idx + 0] = bb.m128i_u8[7];	dest[idx + 1] = gb.m128i_u8[7];	dest[idx + 2] = rb.m128i_u8[7];
+}
+
+inline void _mm256_i32scaterscalar_ps_color(float* dest, __m256i vindex, __m256 b, __m256 g, __m256 r)
+{
+	int idx = vindex.m256i_i32[0];
+	dest[idx + 0] = b.m256_f32[0];	dest[idx + 1] = g.m256_f32[0];	dest[idx + 2] = r.m256_f32[0];
+	idx = vindex.m256i_i32[1];
+	dest[idx + 0] = b.m256_f32[1];	dest[idx + 1] = g.m256_f32[1];	dest[idx + 2] = r.m256_f32[1];
+	idx = vindex.m256i_i32[2];
+	dest[idx + 0] = b.m256_f32[2];	dest[idx + 1] = g.m256_f32[2];	dest[idx + 2] = r.m256_f32[2];
+	idx = vindex.m256i_i32[3];
+	dest[idx + 0] = b.m256_f32[3];	dest[idx + 1] = g.m256_f32[3];	dest[idx + 2] = r.m256_f32[3];
+	idx = vindex.m256i_i32[4];
+	dest[idx + 0] = b.m256_f32[4];	dest[idx + 1] = g.m256_f32[4];	dest[idx + 2] = r.m256_f32[4];
+	idx = vindex.m256i_i32[5];
+	dest[idx + 0] = b.m256_f32[5];	dest[idx + 1] = g.m256_f32[5];	dest[idx + 2] = r.m256_f32[5];
+	idx = vindex.m256i_i32[6];
+	dest[idx + 0] = b.m256_f32[6];	dest[idx + 1] = g.m256_f32[6];	dest[idx + 2] = r.m256_f32[6];
+	idx = vindex.m256i_i32[7];
+	dest[idx + 0] = b.m256_f32[7];	dest[idx + 1] = g.m256_f32[7];	dest[idx + 2] = r.m256_f32[7];
+}
 #pragma endregion
 
 inline void _mm256_stream_auto(uchar* dest, __m256 ms)
@@ -1016,4 +1083,24 @@ inline __m256 _mm256_i32gatherset_auto(uchar* src, __m256i idx)
 inline __m256 _mm256_i32gatherset_auto(float* src, __m256i idx)
 {
 	return _mm256_setr_ps(src[idx.m256i_i32[0]], src[idx.m256i_i32[1]], src[idx.m256i_i32[2]], src[idx.m256i_i32[3]], src[idx.m256i_i32[4]], src[idx.m256i_i32[5]], src[idx.m256i_i32[6]], src[idx.m256i_i32[7]]);
+}
+
+inline void _mm256_i32scaterscalar_auto(uchar* dest, __m256i vindex, __m256 src)
+{
+	_mm256_i32scaterscalar_epu8(dest, vindex, src);
+}
+
+inline void _mm256_i32scaterscalar_auto(float* dest, __m256i vindex, __m256 src)
+{
+	_mm256_i32scaterscalar_ps(dest, vindex, src);
+}
+
+inline void _mm256_i32scaterscalar_auto_color(uchar* dest, __m256i vindex, __m256 b, __m256 g, __m256 r)
+{
+	_mm256_i32scaterscalar_epu8_color(dest, vindex, b, g, r);
+}
+
+inline void _mm256_i32scaterscalar_auto_color(float* dest, __m256i vindex, __m256 b, __m256 g, __m256 r)
+{
+	_mm256_i32scaterscalar_ps_color(dest, vindex, b, g, r);
 }
