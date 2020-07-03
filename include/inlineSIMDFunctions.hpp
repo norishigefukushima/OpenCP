@@ -1104,3 +1104,13 @@ inline void _mm256_i32scaterscalar_auto_color(float* dest, __m256i vindex, __m25
 {
 	_mm256_i32scaterscalar_ps_color(dest, vindex, b, g, r);
 }
+
+inline void _mm256_store_auto(float* dest, __m256 src)
+{
+	_mm256_store_ps(dest, src);
+}
+
+inline void _mm256_store_auto(uchar* dest, __m256 src)
+{
+	_mm256_store_cvtps_epu8((__m128i*)dest, src);
+}
