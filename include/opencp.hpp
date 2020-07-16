@@ -96,6 +96,7 @@
 #include "arithmetic.hpp"
 #include "bitconvert.hpp"
 #include "consoleImage.hpp"
+#include "copyMakeBorder.hpp"
 #include "count.hpp"
 #include "crop.hpp"
 #include "csv.hpp"

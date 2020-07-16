@@ -1,11 +1,12 @@
 #include "color.hpp"
 #include "arithmetic.hpp"
-
+#include "inlineSIMDfunctions.hpp"
 using namespace std;
 using namespace cv;
 
 namespace cp
 {
+#pragma region merge
 	template<class T>
 	void mergeBase_(vector<Mat>& src, Mat& dest)
 	{
@@ -165,8 +166,9 @@ namespace cp
 			break;
 		}
 	}
+#pragma endregion
 
-
+#pragma region split
 	template<class T>
 	void splitBase_(Mat& src, vector<Mat>& dst)
 	{
@@ -351,6 +353,122 @@ namespace cp
 		}
 	}
 
+	enum STORE_METHOD
+	{
+		STOREU,
+		STORE,
+		STREAM,
+	};
+
+	template<int store_method>
+	void v_store(float* dst, __m256 src)
+	{
+		if constexpr (store_method == STOREU) _mm256_storeu_ps(dst, src);
+		else if constexpr (store_method == STORE) _mm256_store_ps(dst, src);
+		else if constexpr (store_method == STREAM) _mm256_stream_ps(dst, src);
+	}
+
+	template<int store_method>
+	void split_32F(Mat& src, vector<Mat>& dst, const int unroll = 4)
+	{
+		CV_Assert(src.channels() == 3);
+		CV_Assert(1 <= unroll && unroll <= 4);
+
+		dst.resize(3);
+		dst[0].create(src.size(), CV_32F);
+		dst[1].create(src.size(), CV_32F);
+		dst[2].create(src.size(), CV_32F);
+
+		float* s = src.ptr<float>();
+		float* b = dst[0].ptr<float>();
+		float* g = dst[1].ptr<float>();
+		float* r = dst[2].ptr<float>();
+		const int step = 8 * unroll;
+		const int simdsize = get_simd_floor(src.size().area(), step);
+
+		if (unroll == 1)
+		{
+			for (int i = 0; i < simdsize; i += step)
+			{
+				__m256 mb, mg, mr;
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i, mb, mg, mr);
+				v_store<store_method>(b + i, mb);
+				v_store<store_method>(g + i, mg);
+				v_store<store_method>(r + i, mr);
+			}
+		}
+		else if (unroll == 2)
+		{
+			for (int i = 0; i < simdsize; i += step)
+			{
+				__m256 mb, mg, mr;
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i, mb, mg, mr);
+				v_store<store_method>(b + i, mb);
+				v_store<store_method>(g + i, mg);
+				v_store<store_method>(r + i, mr);
+
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 24, mb, mg, mr);
+				v_store<store_method>(b + i + 8, mb);
+				v_store<store_method>(g + i + 8, mg);
+				v_store<store_method>(r + i + 8, mr);
+			}
+		}
+		else if (unroll == 3)
+		{
+			for (int i = 0; i < simdsize; i += step)
+			{
+				__m256 mb, mg, mr;
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i, mb, mg, mr);
+				v_store<store_method>(b + i, mb);
+				v_store<store_method>(g + i, mg);
+				v_store<store_method>(r + i, mr);
+
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 24, mb, mg, mr);
+				v_store<store_method>(b + i + 8, mb);
+				v_store<store_method>(g + i + 8, mg);
+				v_store<store_method>(r + i + 8, mr);
+
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 48, mb, mg, mr);
+				v_store<store_method>(b + i + 16, mb);
+				v_store<store_method>(g + i + 16, mg);
+				v_store<store_method>(r + i + 16, mr);
+			}
+		}
+		else if (unroll == 4)
+		{
+			for (int i = 0; i < simdsize; i += step)
+			{
+				__m256 mb, mg, mr;
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i, mb, mg, mr);
+				v_store<store_method>(b + i, mb);
+				v_store<store_method>(g + i, mg);
+				v_store<store_method>(r + i, mr);
+
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 24, mb, mg, mr);
+				v_store<store_method>(b + i + 8, mb);
+				v_store<store_method>(g + i + 8, mg);
+				v_store<store_method>(r + i + 8, mr);
+
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 48, mb, mg, mr);
+				v_store<store_method>(b + i + 16, mb);
+				v_store<store_method>(g + i + 16, mg);
+				v_store<store_method>(r + i + 16, mr);
+
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 72, mb, mg, mr);
+				v_store<store_method>(b + i + 24, mb);
+				v_store<store_method>(g + i + 24, mg);
+				v_store<store_method>(r + i + 24, mr);
+			}
+		}
+
+		for (int i = simdsize; i < src.size().area(); i++)
+		{
+			b[i] = s[3 * i + 0];
+			g[i] = s[3 * i + 1];
+			r[i] = s[3 * i + 2];
+		}
+	}
+
 	void splitConvert(cv::InputArray src, cv::OutputArrayOfArrays dest, const int depth, const double scale, const double offset, const bool isCache)
 	{
 		Mat s = src.getMat();
@@ -373,6 +491,7 @@ namespace cp
 			dest.getMatVector(dst);
 		}
 
+		const int unroll = 1;
 		switch (s.depth())
 		{
 		case CV_8U:
@@ -380,13 +499,18 @@ namespace cp
 			else splitStream_8U(s, dst);
 			break;
 		case CV_32F:
-			splitBase_<float>(s, dst);
+			if (isCache&&dst[0].cols%8==0)split_32F<STORE>(s, dst, unroll);
+			else if (isCache && dst[0].cols % 8 != 0)split_32F<STOREU>(s, dst, unroll);
+			else split_32F<STREAM>(s, dst, unroll);
 			break;
 		default:
+			//splitBase_<float>(s, dst);
 			cout << "not support type" << endl;
 			break;
 		}
 	}
+
+#pragma endregion
 
 	void cvtBGR2RawVector(cv::InputArray src, vector<float>& dest)
 	{

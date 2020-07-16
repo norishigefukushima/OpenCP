@@ -164,6 +164,7 @@
       </WholeProgramOptimization>
       <SDLCheck>false</SDLCheck>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -214,6 +215,7 @@
     <ClCompile Include="Calibrator.cpp" />
     <ClCompile Include="color.cpp" />
     <ClCompile Include="consoleImage.cpp" />
+    <ClCompile Include="copyMakeBorder.cpp" />
     <ClCompile Include="costVolumeFilter.cpp" />
     <ClCompile Include="count.cpp" />
     <ClCompile Include="crossBasedLocalFilter.cpp" />
@@ -347,6 +349,7 @@
     <ClInclude Include="..\include\color.hpp" />
     <ClInclude Include="..\include\common.hpp" />
     <ClInclude Include="..\include\consoleImage.hpp" />
+    <ClInclude Include="..\include\copyMakeBorder.hpp" />
     <ClInclude Include="..\include\costVolumeFilter.hpp" />
     <ClInclude Include="..\include\count.hpp" />
     <ClInclude Include="..\include\crossBasedLocalFilter.hpp" />
@@ -448,6 +451,7 @@
     <ClInclude Include="box\boxFilter_SSAT_SoA.h" />
     <ClInclude Include="box\boxFilter_SSAT_VH.h" />
     <ClInclude Include="box\boxFilter_SSAT_VtV.h" />
+    <ClInclude Include="copyMakeBorder.hpp" />
     <ClInclude Include="debugcp.hpp" />
     <ClInclude Include="filterCore.h" />
     <ClInclude Include="filterengine.hpp" />

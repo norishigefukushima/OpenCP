@@ -90,9 +90,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="color.cpp">
-      <Filter>ソース ファイル\imgproc</Filter>
-    </ClCompile>
     <ClCompile Include="draw.cpp">
       <Filter>ソース ファイル\utilty functions</Filter>
     </ClCompile>
@@ -531,6 +528,12 @@
     <ClCompile Include="imshowExtension.cpp">
       <Filter>ソース ファイル\utilty functions</Filter>
     </ClCompile>
+    <ClCompile Include="copyMakeBorder.cpp">
+      <Filter>ソース ファイル\utilty functions</Filter>
+    </ClCompile>
+    <ClCompile Include="color.cpp">
+      <Filter>ソース ファイル\utilty functions</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libGaussian\gaussian_conv.h">
@@ -939,6 +942,12 @@
       <Filter>ヘッダー ファイル\headers\imgproc</Filter>
     </ClInclude>
     <ClInclude Include="..\include\imshowExtension.hpp">
+      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+    </ClInclude>
+    <ClInclude Include="copyMakeBorder.hpp">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\copyMakeBorder.hpp">
       <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
     </ClInclude>
   </ItemGroup>

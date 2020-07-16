@@ -102,6 +102,24 @@ inline void get_simd_widthend(const int cv_depth, const int channels, const int 
 
 #pragma region color_convert
 
+inline void _mm256_load_cvtps_bgr2planar_ps(const float* ptr, __m256& a, __m256& b, __m256& c)
+{
+	__m256 bgr0 = _mm256_loadu_ps(ptr);
+	__m256 bgr1 = _mm256_loadu_ps(ptr + 8);
+	__m256 bgr2 = _mm256_loadu_ps(ptr + 16);
+
+	__m256 s02_low = _mm256_permute2f128_ps(bgr0, bgr2, 0 + 2 * 16);
+	__m256 s02_high = _mm256_permute2f128_ps(bgr0, bgr2, 1 + 3 * 16);
+
+	__m256 b0 = _mm256_blend_ps(_mm256_blend_ps(s02_low, s02_high, 0x24), bgr1, 0x92);
+	__m256 g0 = _mm256_blend_ps(_mm256_blend_ps(s02_high, s02_low, 0x92), bgr1, 0x24);
+	__m256 r0 = _mm256_blend_ps(_mm256_blend_ps(bgr1, s02_low, 0x24), s02_high, 0x92);
+
+	a = _mm256_shuffle_ps(b0, b0, 0x6c);
+	b = _mm256_shuffle_ps(g0, g0, 0xb1);
+	c = _mm256_shuffle_ps(r0, r0, 0xc6);
+}
+
 inline void _mm256_store_epi8_color(uchar* dst, __m256i b, __m256i g, __m256i r)
 {
 	static const __m256i mask1 = _mm256_set_epi8(
@@ -441,23 +459,15 @@ inline void _mm256_cvtpd_gray2bgr_v3(const __m256d src, __m256d& d0, __m256d& d1
 //plain2bgr: plain b,g,r image to interleave rgb. SoA->AoS
 inline void _mm256_cvtps_planar2bgr(const __m256 b, const __m256 g, const __m256 r, __m256& d0, __m256& d1, __m256& d2)
 {
-	static const int smask1 = _MM_SHUFFLE(1, 2, 3, 0);
-	static const int smask2 = _MM_SHUFFLE(2, 3, 0, 1);
-	static const int smask3 = _MM_SHUFFLE(3, 0, 1, 2);
-	static const int bmask1 = 0x44;
-	static const int bmask2 = 0x22;
-	static const int pmask1 = 0x20;
-	static const int pmask2 = 0x30;
-	static const int pmask3 = 0x31;
-	const __m256 aa = _mm256_shuffle_ps(b, b, smask1);
-	const __m256 bb = _mm256_shuffle_ps(g, g, smask2);
-	const __m256 cc = _mm256_shuffle_ps(r, r, smask3);
-	__m256 bval = _mm256_blend_ps(_mm256_blend_ps(aa, cc, bmask1), bb, bmask2);
-	__m256 gval = _mm256_blend_ps(_mm256_blend_ps(cc, bb, bmask1), aa, bmask2);
-	__m256 rval = _mm256_blend_ps(_mm256_blend_ps(bb, aa, bmask1), cc, bmask2);
-	d0 = _mm256_permute2f128_ps(bval, rval, pmask1);
-	d1 = _mm256_permute2f128_ps(gval, bval, pmask2);
-	d2 = _mm256_permute2f128_ps(rval, gval, pmask3);
+	const __m256 aa = _mm256_shuffle_ps(b, b, _MM_SHUFFLE(1, 2, 3, 0));
+	const __m256 bb = _mm256_shuffle_ps(g, g, _MM_SHUFFLE(2, 3, 0, 1));
+	const __m256 cc = _mm256_shuffle_ps(r, r, _MM_SHUFFLE(3, 0, 1, 2));
+	__m256 bval = _mm256_blend_ps(_mm256_blend_ps(aa, cc, 0x44), bb, 0x22);
+	__m256 gval = _mm256_blend_ps(_mm256_blend_ps(cc, bb, 0x44), aa, 0x22);
+	__m256 rval = _mm256_blend_ps(_mm256_blend_ps(bb, aa, 0x44), cc, 0x22);
+	d0 = _mm256_permute2f128_ps(bval, rval, 0x20);
+	d1 = _mm256_permute2f128_ps(gval, bval, 0x30);
+	d2 = _mm256_permute2f128_ps(rval, gval, 0x31);
 }
 
 #pragma endregion
