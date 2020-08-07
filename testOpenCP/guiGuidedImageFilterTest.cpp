@@ -29,6 +29,8 @@ void guiGuidedImageFilterTest()
 
 	//resize(img_p, img_p, img_p.size() * 2);
 	//resize(img_I, img_I, img_I.size() * 2);
+	resize(img_p, img_p, Size(3840,2160));
+	resize(img_I, img_I, Size(3840, 2160));
 
 	int r = 4;
 	int e = 100;
