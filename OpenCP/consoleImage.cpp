@@ -112,7 +112,7 @@ namespace cp
 		int skip = fontSize + lineSpaceSize;
 		cv::addText(image, strings[count], Point(skip, skip + count * skip), "Consolas", fontSize, color);
 		//cv::putText(image, strings[count], Point(skip, skip + count * skip), CV_FONT_HERSHEY_COMPLEX_SMALL, 1.0, color, 1);
-
+		
 		count++;
 	}
 }

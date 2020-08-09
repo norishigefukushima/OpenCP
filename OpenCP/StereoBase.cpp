@@ -2781,6 +2781,7 @@ namespace cp
 				}
 				else if (occlusionMethod == 2)
 				{
+					//LRCheckDisparity(destfill, destR, 0, 16, 0, 16);
 					/*Mat mask;
 					Mat destfill = dest.clone();
 					Mat destR,destL;
@@ -2794,7 +2795,7 @@ namespace cp
 					shiftDisparity(destfill,destL,-1/16.0);
 					imshowDisparity("warpl",destR,1);
 					imshowDisparity("warpr",destL,1);
-					LRCheckDisparity(destfill,destR,0,16,0,16);
+					LRCheckDisparity(destfill,destR,0,16,0,16);LRCheckDisparity(destfill,destR,0,16,0,16);
 					LRCheckDisparity(destL,dest,0,16,0,16);
 
 					compare(destfill,0,mask,cv::CMP_EQ);

@@ -236,6 +236,8 @@ void guiMouseTemplate(Mat& src, bool isWait, string wname)
 		src.copyTo(show);
 		cp::drawGrid(show, pt, COLOR_RED);
 
+		cv::addText(show, "message", Point(0,0), "Consolas", 12, Scalar::all(255));
+		//cv::putText(show, "message", Point(0,0), CV_FONT_HERSHEY_COMPLEX_SMALL, 1.0, Scalar::all(255), 1);
 		imshow(wname, show);
 		key = waitKey(1);
 
