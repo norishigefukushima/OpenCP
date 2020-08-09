@@ -44,15 +44,16 @@ namespace cp
 
 		bool isSetXRange = false;
 		bool isSetYRange = false;
-		double xmin;
-		double xmax;
-		double ymin;
-		double ymax;
-		double xmax_no_margin;
-		double xmin_no_margin;
-		double ymax_no_margin;
-		double ymin_no_margin;
+		double xmin_plotwindow;//x max of plot window
+		double xmax_plotwindow;//x min of plot window
+		double ymin_plotwindow;//y max of plot window
+		double ymax_plotwindow;//y min of plot window
+		double xmax_data;//x max of data
+		double xmin_data;//x min of data
+		double ymax_data;//y max of data
+		double ymin_data;//y min of data
 
+		int keyPosition = RIGHT_TOP;
 		void init(cv::Size imsize);
 		void point2val(cv::Point pt, double* valx, double* valy);
 
@@ -60,40 +61,56 @@ namespace cp
 		bool isXYMAXMIN;
 		bool isXYCenter;
 
-		bool isPosition;
+		bool isLogScaleX = false;
+		bool isLogScaleY = false;
+
+		bool isDrawMousePosition;
 		cv::Scalar getPseudoColor(uchar val);
 		cv::Mat plotImage;
 		cv::Mat keyImage;
 
 	public:
 		//symbolType
-		enum
+		enum SYMBOL
 		{
-			SYMBOL_NOPOINT = 0,
-			SYMBOL_PLUS,
-			SYMBOL_TIMES,
-			SYMBOL_ASTERRISK,
-			SYMBOL_CIRCLE,
-			SYMBOL_RECTANGLE,
-			SYMBOL_CIRCLE_FILL,
-			SYMBOL_RECTANGLE_FILL,
-			SYMBOL_TRIANGLE,
-			SYMBOL_TRIANGLE_FILL,
-			SYMBOL_TRIANGLE_INV,
-			SYMBOL_TRIANGLE_INV_FILL,
-			SYMBOL_DIAMOND,
-			SYMBOL_DIAMOND_FILL,
-			SYMBOL_PENTAGON,
-			SYMBOL_PENTAGON_FILL,
+			NOPOINT = 0,
+			PLUS,
+			TIMES,
+			ASTERISK,
+			CIRCLE,
+			RECTANGLE,
+			CIRCLE_FILL,
+			RECTANGLE_FILL,
+			TRIANGLE,
+			TRIANGLE_FILL,
+			TRIANGLE_INV,
+			TRIANGLE_INV_FILL,
+			DIAMOND,
+			DIAMOND_FILL,
+			PENTAGON,
+			PENTAGON_FILL,
 		};
 
-		//lineType
-		enum
+		enum LINE
 		{
-			LINE_NONE,
-			LINE_LINEAR,
-			LINE_H2V,
-			LINE_V2H
+			NOLINE,
+			LINEAR,
+			H2V,
+			V2H,
+
+			LINE_METHOD_SIZE
+		};
+
+		enum KEY
+		{
+			NOKEY,
+			RIGHT_TOP,
+			LEFT_TOP,
+			LEFT_BOTTOM,
+			RIGHT_BOTTOM,
+			FLOATING,
+
+			KEY_METHOD_SIZE
 		};
 
 		cv::Mat render;
@@ -107,41 +124,74 @@ namespace cp
 		void setXOriginZERO();
 		void setYOriginZERO();
 
-		void recomputeXRangeMAXMIN(bool isCenter = false, double marginrate = 0.9);
-		void recomputeYRangeMAXMIN(bool isCenter = false, double marginrate = 0.9);
-		void recomputeXYRangeMAXMIN(bool isCenter = false, double marginrate = 0.9);
+		void computeDataMaxMin();
+		void computeWindowXRangeMAXMIN(bool isCenter = false, double margin_rate = 0.9, int rounding_value = 0);
+		void computeWindowYRangeMAXMIN(bool isCenter = false, double margin_rate = 0.9, int rounding_value = 0);
+		void recomputeXYRangeMAXMIN(bool isCenter = false, double margin_rate = 0.9, int rounding_balue = 0);
 		void setPlotProfile(bool isXYCenter_, bool isXYMAXMIN_, bool isZeroCross_);
-		void setPlotImageSize(cv::Size s);
+		void setImageSize(cv::Size s);
 		void setXYMinMax(double xmin_, double xmax_, double ymin_, double ymax_);
 		void setXMinMax(double xmin_, double xmax_);
 		void setYMinMax(double ymin_, double ymax_);
+		void setLogScaleX(const bool flag);
+		void setLogScaleY(const bool flag);
 		void setBackGoundColor(cv::Scalar cl);
-		
 
-		void makeBB(bool isFont);
+		void renderingOutsideInformation(bool isFont);
 
-		void setPlot(int plotnum, cv::Scalar color = COLOR_RED, int symboltype = SYMBOL_PLUS, int linetype = LINE_LINEAR, int thickness = 1);
-		void setPlotThickness(int plotnum, int thickness_);
+		void setPlot(int plotnum, cv::Scalar color = COLOR_RED, int symbol_type = PLUS, int line_type = LINEAR, int thickness = 1);
+		void setPlotThickness(int plotnum, int thickness);
 		void setPlotColor(int plotnum, cv::Scalar color);
-		void setPlotSymbol(int plotnum, int symboltype);
-		void setPlotLineType(int plotnum, int linetype);
-		void setPlotKeyName(int plotnum, std::string name);
+
+		//NOPOINT = 0,
+		//PLUS,
+		//TIMES,
+		//ASTERISK,
+		//CIRCLE,
+		//RECTANGLE,
+		//CIRCLE_FILL,
+		//RECTANGLE_FILL,
+		//TRIANGLE,
+		//TRIANGLE_FILL,
+		//TRIANGLE_INV,
+		//TRIANGLE_INV_FILL,
+		//DIAMOND,
+		//DIAMOND_FILL,
+		//PENTAGON,
+		//PENTAGON_FILL,
+		void setPlotSymbol(int plotnum, int symbol_type);
+		void setPlotSymbolALL(int symbol_type);
+
+		//LINE_NONE,
+		//LINE_LINEAR,
+		//LINE_H2V,
+		//LINE_V2H
+		void setPlotLineType(int plotnum, int line_type);
+		void setPlotLineTypeALL(int line_type);
+
 		void setPlotForeground(int plotnum);
 
-		void setPlotSymbolALL(int symboltype);
-		void setPlotLineTypeALL(int linetype);
-
+		void setPlotKeyName(int plotnum, std::string name);
+		//NOKEY,
+		//RIGHT_TOP,
+		//LEFT_TOP,
+		//LEFT_BOTTOM,
+		//RIGHT_BOTTOM,
+		//FLOATING,
+		void setKey(int key_method);
 		void setXLabel(std::string xlabel);
 		void setYLabel(std::string ylabel);
 
-		void plotPoint(cv::Point2d = cv::Point2d(0.0, 0.0), cv::Scalar color = COLOR_BLACK, int thickness_ = 1, int linetype = LINE_LINEAR);
+
+
+		void plotPoint(cv::Point2d = cv::Point2d(0.0, 0.0), cv::Scalar color = COLOR_BLACK, int thickness_ = 1, int linetype = LINEAR);
 		void plotGrid(int level);
-		void plotData(int gridlevel = 0, int isKey = 0);
+		void plotData(int gridlevel = 0);
 
 		void plotMat(cv::InputArray src, std::string name = "Plot", bool isWait = true, std::string gnuplotpath = "pgnuplot.exe");
 		void plot(std::string name = "Plot", bool isWait = true, std::string gnuplotpath = "pgnuplot.exe", std::string message = "");
 
-		void makeKey(int num);
+		void generateKeyImage(int num);
 
 		void save(std::string name);
 
@@ -194,8 +244,8 @@ namespace cp
 		//void plot(CSV& result, vector<ExperimentalParameters>& parameters);
 	};
 
-	CP_EXPORT void plotGraph(cv::OutputArray graph, std::vector<cv::Point2d>& data, double xmin, double xmax, double ymin, double ymax,
-		cv::Scalar color = COLOR_RED, int lt = Plot::SYMBOL_PLUS, int isLine = Plot::LINE_LINEAR, int thickness = 1, int ps = 4);
+	CP_EXPORT void plotGraph(cv::OutputArray graphImage, std::vector<cv::Point2d>& data, double xmin, double xmax, double ymin, double ymax,
+		cv::Scalar color = COLOR_RED, int lt = Plot::PLUS, int isLine = Plot::LINEAR, int thickness = 1, int ps = 4, bool isLogX = false, bool isLogY = false);
 
 	class CP_EXPORT RGBHistogram
 	{

@@ -7,12 +7,12 @@ namespace cp
 		double d = abs(x);
 		if (0 <= d && d < 1)
 		{
-			return (a + 2.0)*d*d*d - (a + 3.0)*d*d + 1.0;
+			return (a + 2.0) * d * d * d - (a + 3.0) * d * d + 1.0;
 		}
 		else if (1 <= d && d < 2)
 		{
-			double v = d * d*d - 5.0*d*d + 8.0*d - 4.0;
-				v *= a;
+			double v = d * d * d - 5.0 * d * d + 8.0 * d - 4.0;
+			v *= a;
 			return v;
 		}
 		else
@@ -26,11 +26,11 @@ namespace cp
 
 		if (0 <= d && d < 1)
 		{
-			ret = (a + 2.f)*d*d*d - (a + 3.f)*d*d + 1.f;
+			ret = (a + 2.f) * d * d * d - (a + 3.f) * d * d + 1.f;
 		}
 		else if (1 <= d && d < 2)
 		{
-			ret = d * d*d - 5.f * d*d + 8.f*d - 4.f;
+			ret = d * d * d - 5.f * d * d + 8.f * d - 4.f;
 			ret *= a;
 		}
 
@@ -50,6 +50,24 @@ namespace cp
 		else return 0.f;
 	}
 
+	inline int sign(int x)
+	{
+		if (x >= 0)return 1;
+		else return 0;
+	}
+
+	inline int ceilToMultiple(const int x, const int multiple)
+	{
+		int v = abs(x);
+		return (v % multiple == 0) ? sign(x) * v : sign(x) * (v / multiple + 1) * multiple;
+	}
+
+	inline int floorToMultiple(const int x, const int multiple)
+	{
+		int v = abs(x);
+		return sign(x) * (v / multiple) * multiple;
+	}
+
 	inline cv::Mat convert(cv::Mat& src, const int depth)
 	{
 		cv::Mat ret;
@@ -67,7 +85,7 @@ namespace cp
 	{
 		cv::Mat subf;
 		cv::subtract(src, ref, subf, cv::noArray(), CV_64F);
-		subf = cv::abs(subf)* scale;
+		subf = cv::abs(subf) * scale;
 		subf.convertTo(dest, depth);
 	}
 
@@ -87,7 +105,7 @@ namespace cp
 		}
 		else
 		{
-			return 10.0 * log10(255.0*255.0 / mse);
+			return 10.0 * log10(255.0 * 255.0 / mse);
 		}
 	}
 
@@ -109,3 +127,9 @@ namespace cp
 		return ret;
 	}
 }
+
+
+#define debug_print(x) std::cout << #x << ": " << x << std::endl
+#define debug_print2(x, y) std::cout << #x << ": " << x <<", "<<#y << ": " << y << std::endl
+#define debug_print3(x, y, z) std::cout << #x << ": " << x<<", "<<#y << ": " << y", "<<#z << ": " << z << std::endl;
+#define debug_print4(w, x, y, z) std::cout << #w << ": " << w<<", "<< #x << ": " << x<<", "<<#y << ": " << y", "<<#z << ": " << z << std::endl;
