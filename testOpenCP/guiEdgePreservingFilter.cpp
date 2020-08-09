@@ -2,7 +2,7 @@
 using namespace std;
 using namespace cv;
 using namespace cp;
-/*
+
 void guiEdgePresevingFilterOpenCV(Mat& src)
 {
 	string wname = "edge preserving filter";
@@ -28,53 +28,53 @@ void guiEdgePresevingFilterOpenCV(Mat& src)
 
 		if (sw == 0)
 		{
-			CalcTime t("Bilateral filter");
+			Timer t("Bilateral filter");
 			bilateralFilter(src, dest, d, sigma_color, sigma_space);
 		}
 		else if (sw == 1)
 		{
-			CalcTime t("pyrMeanShift");
+			Timer t("pyrMeanShift");
 			pyrMeanShiftFiltering(src, dest, sigma_space / 4, sigma_color, 2);
 		}
 		else if (sw == 2)
 		{
-			CalcTime t("Non-local means");
+			Timer t("Non-local means");
 			if (src.channels() == 1) fastNlMeansDenoising(src, dest, sigma_color, 2 * tr + 1, 2 * r + 1);
 			if (src.channels() == 3) fastNlMeansDenoisingColored(src, dest, sigma_color, sigma_color, 2 * tr + 1, 2 * r + 1);
 		}
 		else if (sw == 3)
 		{
-			CalcTime t("epf: domain transform in namespace cv");
+			Timer t("epf: domain transform in namespace cv");
 			edgePreservingFilter(src, dest, RECURS_FILTER, sigma_space, sigma_color / 255.0);
 		}
 		else if (sw == 4)
 		{
-			CalcTime t("domain transform in namespace xphoto");
+			Timer t("domain transform in namespace xphoto");
 			ximgproc::dtFilter(src, src, dest, sigma_space, sigma_color, 0);//NC, RF, IC
 		}
 		else if (sw == 5)
 		{
-			CalcTime t("adaptive manifold");
+			Timer t("adaptive manifold");
 			ximgproc::amFilter(src, src, dest, sigma_space, sigma_color / 255.0);
 		}
 		else if (sw == 6)
 		{
-			CalcTime t("guided filter");
+			Timer t("guided filter");
 			ximgproc::guidedFilter(src, src, dest, r, sigma_color*sigma_color);
 		}
 		else if (sw == 7)
 		{
-			CalcTime t("joint bilateral filter");
+			Timer t("joint bilateral filter");
 			ximgproc::jointBilateralFilter(src, src, dest, 2 * r + 1, sigma_color, sigma_space);
 		}
 		else if (sw == 8)
 		{
-			CalcTime t("fsat GSF");
+			Timer t("fsat GSF");
 			ximgproc::fastGlobalSmootherFilter(src, src, dest, sigma_space, sigma_color);
 		}
 		else
 		{
-			CalcTime t("dct denoise");
+			Timer t("dct denoise");
 			xphoto::dctDenoising(src, dest, sigma_color, 8);
 			
 			//opencv code maybe invalid
@@ -100,4 +100,3 @@ void guiEdgePresevingFilterOpenCV(Mat& src)
 		key = waitKey(1);
 	}
 }
-*/

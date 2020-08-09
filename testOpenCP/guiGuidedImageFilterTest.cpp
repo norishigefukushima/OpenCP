@@ -5,30 +5,32 @@ using namespace std;
 using namespace cv;
 using namespace cp;
 
-void guiGuidedImageFilterTest()
+void guiGuidedImageFilterTest(Mat& img_p, Mat& img_I)
 {
-	string imgPath_p, imgPath_I;
-
-	// Smoothing
+	//const bool isOverwrite = true;
+	const bool isOverwrite = img_p.empty() || img_I.empty();
+	if(isOverwrite)
 	{
+		string imgPath_p, imgPath_I;
+
 		imgPath_p = "img/lenna.png";
 		//imgPath_p = "fig/flower_foveon8.png";
 		//imgPath_p = "fig/kodak/kodim17.png";
-
 		imgPath_I = imgPath_p;
-	}
 
-	// Flash/no-flash denoising
+		// Flash/no-flash denoising
 	/*{
 		imgPath_p = "fig/pot2_noflash.png";
 		imgPath_I = "fig/pot2_flash.png";
 	}*/
 
-	Mat img_p = imread(imgPath_p, 1);
-	Mat img_I = imread(imgPath_I, 1);
+		img_p = imread(imgPath_p, 1);
+		img_I = imread(imgPath_I, 1);
 
-	//resize(img_p, img_p, img_p.size() * 2);
-	//resize(img_I, img_I, img_I.size() * 2);
+		resize(img_p, img_p, img_p.size() / 2);
+		resize(img_I, img_I, img_I.size() / 2);
+		guiAlphaBlend(img_p, img_I, true);
+	}
 
 	int r = 4;
 	int e = 100;
@@ -39,17 +41,17 @@ void guiGuidedImageFilterTest()
 	int boxType = BoxTypes::BOX_OPENCV;
 	int parallelType = ParallelTypes::OMP;
 	//int parallelType = ParallelTypes::NAIVE;
-	int src_GRAY_RGB = 0;
-	int guide_GRAY_RGB = 0;
+	int src_GRAY_RGB = 1;
+	int guide_GRAY_RGB = 1;
 
 	//#define RANDOM_SHIFT
 
-#define OPENCV
-#define NORMAL_TEST
-#define CLASS_TEST
-#define CLASS_COLORPARALLEL_TEST
-#define FAST_TEST
-#define TILE_TEST
+//#define OPENCV
+//#define NORMAL_TEST
+//#define CLASS_TEST
+//#define CLASS_COLORPARALLEL_TEST
+//#define FAST_TEST
+//#define TILE_TEST
 
 	ConsoleImage ci(Size(900, 500), "param");
 	namedWindow("param");
@@ -57,7 +59,7 @@ void guiGuidedImageFilterTest()
 	moveWindow("param", 100, 100);
 	int loop = 5; createTrackbar("loop", "param", &loop, 100);
 
-	int sw = 4; createTrackbar("sw", "param", &sw, 5);
+	int sw = 0; createTrackbar("sw", "param", &sw, 5);
 	createTrackbar("r", "param", &r, 100);
 	createTrackbar("eps", "param", &e, 100000);
 	createTrackbar("GuidedType", "param", &guidedType, GuidedTypes::NumGuidedTypes - 1);

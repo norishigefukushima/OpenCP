@@ -6,6 +6,34 @@ using namespace cp;
 
 void guiWeightedHistogramFilterTest(Mat& src_, Mat& guide_)
 {
+	//const bool isOverwrite = true;
+	const bool isOverwrite = src_.empty() || guide_.empty();
+	if (isOverwrite)
+	{
+		string imgPath_src, imgPath_guide;
+
+		//imgPath_src = "img/lenna.png";
+		//imgPath_guide = imgPath_src;
+
+		imgPath_guide = "img/test/30500b.bmp";
+		imgPath_src = "img/test/output2s.bmp";
+
+		// Flash/no-flash denoising
+	/*{
+		imgPath_p = "fig/pot2_noflash.png";
+		imgPath_I = "fig/pot2_flash.png";
+	}*/
+
+		src_ = imread(imgPath_src, 0);
+		guide_ = imread(imgPath_guide, 0);
+
+		copyMakeBorder(guide_, guide_, 0, 44, 0, 32, BORDER_REFLECT);
+
+		resize(src_, src_, src_.size() / 2);
+		resize(guide_, guide_, guide_.size() / 2);
+		guiAlphaBlend(src_, guide_, true);
+	}
+
 	Mat src, guide;
 	if (src_.channels() == 3)
 	{

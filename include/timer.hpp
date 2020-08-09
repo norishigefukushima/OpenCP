@@ -44,7 +44,7 @@ namespace cp
 	}
 	t.getLapTimeMean();
 	t.getLapTimeMedian();
-	e.clearStat();//clear stat and then re compute computing time
+	t.clearStat();//clear stat and then re-compute computing time
 	for(int i=0;i<loop;i++)
 	{
 		t.start()

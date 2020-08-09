@@ -26,7 +26,7 @@ void guiDisparityPlaneFitSLICTest(cv::Mat& leftim, cv::Mat& rightim, cv::Mat& GT
 void fitPlaneTest();
 
 void guiHazeRemoveTest();
-void guiGuidedImageFilterTest();
+void guiGuidedImageFilterTest(cv::Mat& img_p = cv::Mat(), cv::Mat& img_I = cv::Mat());
 void guiEdgePresevingFilterOpenCV(cv::Mat& src);
 void guiWeightMapTest();
 void guiCrossBasedLocalFilter(cv::Mat& src);
@@ -50,9 +50,6 @@ void getPSNRRealtimeO1BilateralFilterKodak();
 void guiJointRealtimeO1BilateralFilterTest(cv::Mat& src_, cv::Mat& guide_);
 
 void guiJointBirateralFilterTest(cv::Mat& src, cv::Mat& guide);
-
-void guiGuidedFilterTest(cv::Mat& src);
-void timeGuidedFilterTest(cv::Mat& src);
 
 void guiDomainTransformFilterTest(cv::Mat& src);
 void guiJointDomainTransformFilterTest(cv::Mat& src, cv::Mat& guide);
@@ -114,7 +111,7 @@ void guiAnalysisImage(cv::InputArray src);
 
 void guiColorCorrectionTest(cv::Mat& src, cv::Mat& ref);
 
-void guiWeightedHistogramFilterTest(cv::Mat& src, cv::Mat& guide);
+void guiWeightedHistogramFilterTest(cv::Mat& src = cv::Mat(), cv::Mat& guide = cv::Mat());
 
 
 using namespace cv;

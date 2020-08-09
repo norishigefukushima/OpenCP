@@ -26,9 +26,6 @@ namespace cp
 
 	void copyMakeBorderReplicate32FC1(Mat& src, Mat& border, const int top, const int bottom, const int left, const int right)
 	{
-		CV_Assert(!src.empty());
-		border.create(Size(src.cols + left + right, src.rows + top + bottom), CV_32F);
-
 		const int LEFT = get_simd_ceil(left, 8);
 		const int RIGHT = get_simd_ceil(right, 8);
 		const int END = border.cols - RIGHT;
@@ -73,6 +70,68 @@ namespace cp
 		}
 	}
 
+	void copyMakeBorderReplicate32FC3(Mat& src, Mat& border, const int top, const int bottom, const int left, const int right)
+	{
+		const int LEFT = get_simd_ceil(left, 8);
+		const int RIGHT = get_simd_ceil(right, 8);
+		const int END = border.cols - RIGHT;
+
+		const int e = (src.cols - 1) * 3;
+
+		//src top line
+		{
+			float* s = src.ptr<float>();
+			float* d = border.ptr<float>(top);
+
+			for (int i = 0; i < LEFT; i += 8)
+				_mm256_storeu_ps_color(d + 3 * i, _mm256_set1_ps(s[0]), _mm256_set1_ps(s[1]), _mm256_set1_ps(s[2]));
+
+			for (int i = END; i < END + RIGHT; i += 8)
+				_mm256_storeu_ps_color(d + 3 * i, _mm256_set1_ps(s[e]), _mm256_set1_ps(s[e + 1]), _mm256_set1_ps(s[e + 2]));
+
+			memcpy(d + 3 * left, s, sizeof(float) * src.cols * 3);
+		}
+		//border upper
+		for (int j = 0; j < top; j++)
+		{
+			float* s = border.ptr<float>(top);
+			float* d = border.ptr<float>(j);
+			memcpy(d, s, sizeof(float) * border.cols * 3);
+		}
+
+		for (int j = top + 1; j < border.rows - bottom; j++)
+		{
+			float* s = src.ptr<float>(j - top);
+			float* d = border.ptr<float>(j);
+
+			for (int i = 0; i < LEFT; i += 8)
+				_mm256_storeu_ps_color(d + 3 * i, _mm256_set1_ps(s[0]), _mm256_set1_ps(s[1]), _mm256_set1_ps(s[2]));
+
+			for (int i = END; i < END + RIGHT; i += 8)
+				_mm256_storeu_ps_color(d + 3 * i, _mm256_set1_ps(s[e]), _mm256_set1_ps(s[e + 1]), _mm256_set1_ps(s[e + 2]));
+
+			memcpy(d + 3 * left, s, sizeof(float) * src.cols * 3);
+		}
+
+		//border lower
+		for (int j = border.rows - bottom; j < border.rows; j++)
+		{
+			float* s = border.ptr<float>(border.rows - bottom - 1);
+			float* d = border.ptr<float>(j);
+			memcpy(d, s, sizeof(float) * border.cols * 3);
+		}
+	}
+
+	void copyMakeBorderReplicate(InputArray src_, cv::OutputArray border_, const int top, const int bottom, const int left, const int right)
+	{
+		Mat src = src_.getMat();
+		CV_Assert(!src.empty());
+		border_.create(Size(src.cols + left + right, src.rows + top + bottom), src.type());
+
+		Mat border = border_.getMat();
+		if (src.type() == CV_32FC1)copyMakeBorderReplicate32FC1(src, border, top, bottom, left, right);
+		if (src.type() == CV_32FC3)copyMakeBorderReplicate32FC3(src, border, top, bottom, left, right);
+	}
 
 
 	void splitCopyMakeBorderReplicate32F(Mat& src, vector<Mat>& border, const int top, const int bottom, const int left, const int right)

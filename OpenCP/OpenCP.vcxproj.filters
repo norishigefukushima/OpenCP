@@ -944,9 +944,6 @@
     <ClInclude Include="..\include\imshowExtension.hpp">
       <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
     </ClInclude>
-    <ClInclude Include="copyMakeBorder.hpp">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\copyMakeBorder.hpp">
       <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
     </ClInclude>

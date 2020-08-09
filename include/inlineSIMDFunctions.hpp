@@ -228,6 +228,25 @@ inline void _mm256_store_ps_color(void* dst, const __m256 b, const __m256 g, con
 	_mm256_store_ps((float*)dst + 16, bgr2);
 }
 
+inline void _mm256_storeu_ps_color(void* dst, const __m256 b, const __m256 g, const __m256 r)
+{
+	__m256 b0 = _mm256_shuffle_ps(b, b, 0x6c);
+	__m256 g0 = _mm256_shuffle_ps(g, g, 0xb1);
+	__m256 r0 = _mm256_shuffle_ps(r, r, 0xc6);
+
+	__m256 p0 = _mm256_blend_ps(_mm256_blend_ps(b0, g0, 0x92), r0, 0x24);
+	__m256 p1 = _mm256_blend_ps(_mm256_blend_ps(g0, r0, 0x92), b0, 0x24);
+	__m256 p2 = _mm256_blend_ps(_mm256_blend_ps(r0, b0, 0x92), g0, 0x24);
+
+	__m256 bgr0 = _mm256_permute2f128_ps(p0, p1, 0 + 2 * 16);
+	//__m256i bgr1 = p2;
+	__m256 bgr2 = _mm256_permute2f128_ps(p0, p1, 1 + 3 * 16);
+
+	_mm256_storeu_ps((float*)dst, bgr0);
+	_mm256_storeu_ps((float*)dst + 8, p2);
+	_mm256_storeu_ps((float*)dst + 16, bgr2);
+}
+
 inline void _mm256_storescalar_ps_color(void* dst, const __m256 b, const __m256 g, const __m256 r, const int numpixel = 8)
 {
 	__m256 b0 = _mm256_shuffle_ps(b, b, 0x6c);
@@ -719,7 +738,7 @@ inline void _mm256_load_cvtepu8bgr2planar_psx4(const uchar* ptr,
 
 inline __m256 _mm256_abs_ps(__m256 src)
 {
-	return _mm256_and_ps(src, _mm256_castsi256_ps(_mm256_set1_epi32(0x7fffffffffffffff)));
+	return _mm256_and_ps(src, _mm256_castsi256_ps(_mm256_set1_epi32(0x7fffffff)));
 }
 
 inline float _mm256_reduceadd_ps(__m256 src)

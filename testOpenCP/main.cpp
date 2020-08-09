@@ -115,6 +115,56 @@ void testsimd()
 	//cp::print_m128(a);
 }*/
 
+void copyMakeBorderTest(Mat& src)
+{
+	const int r = 3;
+	const int borderType = BORDER_REPLICATE;
+
+	CV_Assert(src.channels() == 3);
+	Mat gray;
+	cvtColor(src, gray, COLOR_BGR2GRAY);
+	
+	Mat src32fc1 = convert(gray, CV_32F);
+	Mat src32fc3 = convert(src, CV_32F);
+
+	const int iteration = 10000;
+	{
+		Mat dstcv;
+		Mat dstcp;
+		cout << "gray" << endl;
+		{
+			Timer t("cv");
+			for (int i = 0; i < iteration; i++)
+				cv::copyMakeBorder(src32fc1, dstcv, r, r, r, r, borderType);
+		}
+		{
+			Timer t("cp");
+			for (int i = 0; i < iteration; i++)
+				cp::copyMakeBorderReplicate(src32fc1, dstcp, r, r, r, r);
+		}
+		cout << getPSNR(dstcv, dstcp) << "dB" << endl;
+	}
+	
+	{
+		Mat dstcv;
+		Mat dstcp;
+		cout << "color" << endl;
+		{
+			Timer t("cv");
+			for (int i = 0; i < iteration; i++)
+				cv::copyMakeBorder(src32fc3, dstcv, r, r, r, r, borderType);
+		}
+		{
+			Timer t("cp");
+			for (int i = 0; i < iteration; i++)
+				cp::copyMakeBorderReplicate(src32fc3, dstcp, r, r, r, r);
+		}
+		cout << getPSNR(dstcv, dstcp) << "dB" << endl;
+		guiAlphaBlend(dstcv, dstcp);
+	}
+	
+}
+
 int main(int argc, char** argv)
 {
 	//testsimd(); return 0;
@@ -132,14 +182,16 @@ int main(int argc, char** argv)
 	Mat right = imread("img/stereo/Dolls/view5.png");
 	//resize(right, right, Size(), 1, 0.25);
 	//testAlphaBlend(left, right);
-	testAlphaBlendMask(left, right);
+	//testAlphaBlendMask(left, right);
 	//Mat dmap = imread("img/stereo/Dolls/disp1.png", 0);
-	Mat img = imread("img/lenna.png",0);
+	Mat img = imread("img/lenna.png");
 	//Mat img = imread("img/Kodak/kodim07.png",0);	
 	//Mat img = imread("img/cameraman.png",0);
 	//Mat img = imread("img/barbara.png", 0);
 
+	guiWeightedHistogramFilterTest();
 	//guiWeightedHistogramFilterTest(img,img);
+	copyMakeBorderTest(img); return 0;
 	Mat leftg, rightg;
 	//guiShift(left, right, 300);
 	cvtColor(left, leftg, COLOR_BGR2GRAY);
@@ -150,7 +202,6 @@ int main(int argc, char** argv)
 	cp::StereoEval eval;
 	Mat disp;
 	sbm.gui(left, right, disp, eval);
-	
 	//sbm.check(leftg, rightg, disp);
 	//guiStereoBMTest(leftg, rightg, get_simd_ceil(326, 16), get_simd_ceil(100, 16)); return 0;
 	//guiStereoSGBMTest(left, right, get_simd_ceil(326, 16), get_simd_ceil(100, 16)); return 0;
@@ -239,12 +290,9 @@ int main(int argc, char** argv)
 	//Mat src = imread("img/lenna.png", 0);
 
 
-
-
-
 	//Mat src = imread("img/stereo/Dolls/view1.png");
 	//guiDenoiseTest(src);
-	guiBilateralFilterTest(src);
+	//guiBilateralFilterTest(src);
 	Mat ref = imread("img/stereo/Dolls/view6.png");
 	//guiColorCorrectionTest(src, ref); return 0;
 	//Mat src = imread("img/flower.png");
@@ -275,8 +323,8 @@ int main(int argc, char** argv)
 	Mat gray;
 	cvtColor(src, gray, COLOR_BGR2GRAY);
 	//guiDisparityPlaneFitSLICTest(src, ref, disp); return 0;
-	getPSNRRealtimeO1BilateralFilterKodak();
-	guiRealtimeO1BilateralFilterTest(src); return 0;
+	//getPSNRRealtimeO1BilateralFilterKodak();
+	//guiRealtimeO1BilateralFilterTest(src); return 0;
 
 	Mat flashImg = imread("img/flash/cave-flash.png");
 	Mat noflashImg = imread("img/flash/cave-noflash.png");
@@ -286,15 +334,16 @@ int main(int argc, char** argv)
 	resize(flashImgGray, fmega, Size(1024, 1024));
 	resize(noflashImg, nmega, Size(1024, 1024));
 
-	guiSLICTest(src);
 	//guiEdgePresevingFilterOpenCV(src);
+	//guiSLICTest(src);
+	
 
 	//guiJointRealtimeO1BilateralFilterTest(noflashImgGray, flashImgGray); return 0;
 	//guiJointRealtimeO1BilateralFilterTest(noflashImg, flashImgGray); return 0;
 	//guiJointRealtimeO1BilateralFilterTest(noflashImgGray, flashImg); return 0;
 	//guiJointRealtimeO1BilateralFilterTest(noflashImg, flashImg); return 0;
 
-	guiWeightedHistogramFilterTest(noflashImgGray, flashImg); return 0;
+	//guiWeightedHistogramFilterTest(noflashImgGray, flashImg); return 0;
 	//guiRealtimeO1BilateralFilterTest(noflashImgGray); return 0;
 	//guiRealtimeO1BilateralFilterTest(src); return 0;
 	//guiDMFTest(nmega, nmega, fmega); return 0;
@@ -328,7 +377,6 @@ int main(int argc, char** argv)
 
 	//application 
 	//guiDetailEnhancement(src);
-	//guiGuidedFilterTest(mega);
 	//	guiDomainTransformFilterTest(mega);
 	return 0;
 }
