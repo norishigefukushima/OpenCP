@@ -82,6 +82,39 @@ namespace cp
 		return count;
 	}
 
+	inline void setCircleMask(cv::Mat& kernel, cv::Size kernelSize, bool isOuterMask = true)
+	{
+		const int r = kernelSize.width / 2;
+		const int rthresh = r;
+		if (isOuterMask)
+		{
+			kernel = cv::Mat::zeros(kernelSize, CV_8U);
+
+			for (int j = 0; j < kernelSize.height; j++)
+			{
+				for (int i = 0; i < kernelSize.width; i++)
+				{
+					int d = cvRound(sqrt((j - r) * (j - r) + (i - r) * (i - r)));
+					if (d > rthresh)kernel.at<uchar>(j, i) = 255;
+				}
+			}
+		}
+		else
+		{
+			kernel.create(kernelSize, CV_8U);
+			kernel.setTo(255);
+
+			for (int j = 0; j < kernelSize.height; j++)
+			{
+				for (int i = 0; i < kernelSize.width; i++)
+				{
+					int d = cvRound(sqrt((j - r) * (j - r) + (i - r) * (i - r)));
+					if (d > rthresh)kernel.at<uchar>(j, i) = 0;
+				}
+			}
+		}
+	}
+
 	inline cv::Mat convert(cv::Mat& src, const int depth, const double alpha = 1.0, const double beta = 0.0)
 	{
 		cv::Mat ret;
