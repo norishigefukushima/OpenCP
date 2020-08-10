@@ -68,10 +68,24 @@ namespace cp
 		return sign(x) * (v / multiple) * multiple;
 	}
 
-	inline cv::Mat convert(cv::Mat& src, const int depth)
+	inline int countCircleArea(const int r)
+	{
+		int count = 0;
+		for (int j = -r; j <= r; j++)
+		{
+			for (int i = -r; i <= r; i++)
+			{
+				int d = cvRound(sqrt((float)i * i + (float)j * j));
+				if (d <= r)count++;
+			}
+		}
+		return count;
+	}
+
+	inline cv::Mat convert(cv::Mat& src, const int depth, const double alpha = 1.0, const double beta = 0.0)
 	{
 		cv::Mat ret;
-		src.convertTo(ret, depth);
+		src.convertTo(ret, depth, alpha, beta);
 		return ret;
 	}
 
@@ -129,7 +143,8 @@ namespace cp
 }
 
 
-#define debug_print(x) std::cout << #x << ": " << x << std::endl
-#define debug_print2(x, y) std::cout << #x << ": " << x <<", "<<#y << ": " << y << std::endl
-#define debug_print3(x, y, z) std::cout << #x << ": " << x<<", "<<#y << ": " << y", "<<#z << ": " << z << std::endl;
-#define debug_print4(w, x, y, z) std::cout << #w << ": " << w<<", "<< #x << ": " << x<<", "<<#y << ": " << y", "<<#z << ": " << z << std::endl;
+#define print_debug(a)              std::cout << #a << ": " << a << std::endl
+#define print_debug2(a, b)          std::cout << #a << ": " << a <<", "<< #b << ": " << b << std::endl
+#define print_debug3(a, b, c)       std::cout << #a << ": " << a <<", "<< #b << ": " << b <<", "<< #c << ": " << c << std::endl;
+#define print_debug4(a, b, c, d)    std::cout << #a << ": " << a <<", "<< #b << ": " << b <<", "<< #c << ": " << c <<", "<< #d << ": " << d << std::endl;
+#define print_debug5(a, b, c, d, e) std::cout << #a << ": " << a <<", "<< #b << ": " << b <<", "<< #c << ": " << c <<", "<< #d << ": " << d <<", "<< #e << ": " << e << std::endl;
