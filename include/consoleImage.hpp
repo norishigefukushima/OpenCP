@@ -11,9 +11,11 @@ namespace cp
 		std::string windowName;
 		std::vector<std::string> strings;
 		bool isLineNumber;
+		std::string fontName;
 		int fontSize;
 		int lineSpaceSize;
 	public:
+		void setFont(std::string fontName);
 		void setFontSize(int size);
 		void setLineSpaceSize(int size);
 

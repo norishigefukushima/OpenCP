@@ -6,6 +6,10 @@ using namespace cv;
 
 namespace cp
 {
+	void ConsoleImage::setFont(std::string fontName)
+	{
+		this->fontName = fontName;
+	}
 
 	void ConsoleImage::setFontSize(int size)
 	{
@@ -22,6 +26,7 @@ namespace cp
 		isLineNumber = false;
 		windowName = wname;
 		image = Mat::zeros(size, CV_8UC3);
+		fontName = "Consolas";
 		fontSize = 20;
 		lineSpaceSize = 5;
 		clear();
@@ -110,7 +115,7 @@ namespace cp
 		else strings.push_back(src);
 
 		int skip = fontSize + lineSpaceSize;
-		cv::addText(image, strings[count], Point(skip, skip + count * skip), "Consolas", fontSize, color);
+		cv::addText(image, strings[count], Point(skip, skip + count * skip), fontName, fontSize, color);
 		//cv::putText(image, strings[count], Point(skip, skip + count * skip), CV_FONT_HERSHEY_COMPLEX_SMALL, 1.0, color, 1);
 		
 		count++;

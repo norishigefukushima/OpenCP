@@ -82,6 +82,28 @@ namespace cp
 		return count;
 	}
 
+	inline int setzeroCircleOutside(cv::Mat& kernel)
+	{
+		cv::Size kernelSize = kernel.size();
+		int ret = 0;
+		const int r = kernelSize.width / 2;		
+		for (int j = 0; j < kernelSize.height; j++)
+		{
+			for (int i = 0; i < kernelSize.width; i++)
+			{
+				if (r < cvRound(sqrt((j - r) * (j - r) + (i - r) * (i - r))))
+				{
+					if (kernel.at<uchar>(j, i) != 0)
+					{
+						kernel.at<uchar>(j, i) = 0;
+						ret++;
+					}
+				}
+			}
+		}
+		return ret;
+	}
+
 	inline void setCircleMask(cv::Mat& kernel, cv::Size kernelSize, bool isOuterMask = true)
 	{
 		const int r = kernelSize.width / 2;
