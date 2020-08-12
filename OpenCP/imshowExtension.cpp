@@ -6,10 +6,10 @@ using namespace cv;
 namespace cp
 {
 
-	void imshowNormalize(string wname, InputArray src)
+	void imshowNormalize(string wname, InputArray src, const int norm_type)
 	{
 		Mat show;
-		normalize(src.getMat(), show, 255, 0, NORM_MINMAX, CV_8U);
+		normalize(src.getMat(), show, 255, 0, norm_type, CV_8U);
 		imshow(wname, show);
 	}
 
@@ -20,6 +20,21 @@ namespace cp
 		imshow(name, show);
 	}
 
+	void imshowResize(std::string name, cv::InputArray src, const cv::Size dsize, const double fx, const double fy, const int interpolation, const bool isCast8U)
+	{
+		Mat show;
+		if (src.depth() != CV_8U && isCast8U)
+		{
+			Mat temp;
+			src.getMat().convertTo(temp, CV_8U);
+			resize(temp, show, dsize, fx, fy, interpolation);
+		}
+		else
+		{
+			resize(src, show, dsize, fx, fy, interpolation);
+		}
+		imshow(name, show);
+	}
 	void imshowCountDown(string wname, InputArray src, const int waitTime, Scalar color, const int pointSize, std::string fontName)
 	{
 		Mat s;

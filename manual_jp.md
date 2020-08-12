@@ -13,21 +13,6 @@ Reference Manual
 * [dissolveSlideBlend](blend_jp.md "#dissolveSlideBlend")
 * [guiDissolveSlideBlend](blend_jp.md "#guiDissolveSlideBlend")
 
-# Metrics.hpp
-画質評価関数群
- * [getPSNR](metrics_jp.md "#getPSNR")
- * [getPSNR_PRECISION](metrics_jp.md "getPSNR_PRECISION")
- * [getPSNR_CHANNEL](metrics_jp.md "#getPSNR_CHANNEL")
- * [class PSNRMetrics](metrics_jp.md "class PSNRMetrics")
- * [localPSNRMap](metrics_jp.md "localPSNRMap")
- * [guiLocalPSNRMap](metrics_jp.md "guiLocalPSNRMap")
- * [getMSE](metrics_jp.md "#getMSE")
- * [getInacceptableRatio](metrics_jp.md "getInacceptableRatio")
- * [getEntropy](metrics_jp.md "#getEntropy")
- * [getTotalVariation](metrics_jp.md "#getTotalVariation")
- * [isSameMat](metrics_jp.md "#isSameMat")
- * SSIM：関数修正中
- 
 # crop.hpp
 画像の切り抜き（クロップ）用関数群
  * [cropZoom](crop_jp.md "#cropZoom")
@@ -50,13 +35,34 @@ Reference Manual
  * [drawAccumulateHistogramImage](histogram_jp.md "#drawAccumulateHistogramImage")
  * [drawAccumulateHistogramImageGray](histogram_jp.md "#drawAccumulateHistogramImageGray")
 
+# Metrics.hpp
+画質評価関数群
+ * [getPSNR](metrics_jp.md "#getPSNR")
+ * [getPSNR_PRECISION](metrics_jp.md "getPSNR_PRECISION")
+ * [getPSNR_CHANNEL](metrics_jp.md "#getPSNR_CHANNEL")
+ * [class PSNRMetrics](metrics_jp.md "class PSNRMetrics")
+ * [localPSNRMap](metrics_jp.md "localPSNRMap")
+ * [guiLocalPSNRMap](metrics_jp.md "guiLocalPSNRMap")
+ * [getMSE](metrics_jp.md "#getMSE")
+ * [getInacceptableRatio](metrics_jp.md "getInacceptableRatio")
+ * [getEntropy](metrics_jp.md "#getEntropy")
+ * [getTotalVariation](metrics_jp.md "#getTotalVariation")
+ * [isSameMat](metrics_jp.md "#isSameMat")
+ * SSIM：関数修正中
+
+# imshowExtension.hpp
+imshowの拡張
+* [imshowNormalize](imshowExtension_jp.md "imshowNormalize")
+* [imshowScale](imshowExtension_jp.md "imshowScale")
+* [imshowResize](imshowExtension_jp.md "imshowResize")
+* [imshowCountDown](imshowExtension_jp.md "imshowCountDown")
+
 # detailEnhancement_jp.hpp
 詳細強調の関数
 * [detailEnhancementBox](detailEnhancement_jp.md "#detailEnhancementBox")
 * [detailEnhancementGauss](detailEnhancement_jp.md "#detailEnhancementGauss")
 * [detailEnhancementBilateral](detailEnhancement_jp.md "#detailEnhancementBilateral")
 * [detailEnhancementGuided](detailEnhancement_jp.md "#detailEnhancementGuided")
-
 
 # guidedFilter.hpp
 ガイデットフィルタの関数
