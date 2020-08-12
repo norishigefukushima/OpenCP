@@ -49,7 +49,7 @@ namespace cp
 				a = _mm_shuffle_epi8(a, vm);
 				_mm_store_si128((__m128i*)(d + i), a);
 			}
-			memcpy(d + left, s - sleft, sizeof(uchar)*(copysizex));
+			memcpy(d + left, s - sleft, sizeof(uchar) * (copysizex));
 			for (int i = 0; i < right; i += 16)
 			{
 				a = _mm_load_si128((__m128i*)(s + LOAD_OFFSET2 - i));
@@ -67,7 +67,7 @@ namespace cp
 				a = _mm_shuffle_epi8(a, vm);
 				_mm_store_si128((__m128i*)(d + i), a);
 			}
-			memcpy(d + left, s - sleft, sizeof(uchar)*(copysizex));
+			memcpy(d + left, s - sleft, sizeof(uchar) * (copysizex));
 			for (int i = 0; i < RIGHT; i += 16)
 			{
 				a = _mm_load_si128((__m128i*)(s + LOAD_OFFSET2 - i));
@@ -86,7 +86,7 @@ namespace cp
 		{
 			uchar* s = dest.ptr<uchar>(max(0, 2 * top - j - 1));
 			uchar* d = dest.ptr<uchar>(j);
-			memcpy(d, s, sizeof(uchar)*(tileSizeXExternal));
+			memcpy(d, s, sizeof(uchar) * (tileSizeXExternal));
 		}
 
 		const int sidx = tileSizeYInternal * (div_size.height - idx.y) + topb - 1;
@@ -95,7 +95,7 @@ namespace cp
 		{
 			uchar* s = dest.ptr<uchar>(max(0, sidx - j));
 			uchar* d = dest.ptr<uchar>(didx + j);
-			memcpy(d, s, sizeof(uchar)*tileSizeXExternal);
+			memcpy(d, s, sizeof(uchar) * tileSizeXExternal);
 		}
 	}
 
@@ -143,7 +143,7 @@ namespace cp
 				a = _mm_shuffle_epi8(a, vm);
 				_mm_store_si128((__m128i*)(d + i), a);
 			}
-			memcpy(d + left, s - sleft, sizeof(uchar)*(copysizex));
+			memcpy(d + left, s - sleft, sizeof(uchar) * (copysizex));
 			for (int i = 0; i < right; i += 16)
 			{
 				a = _mm_load_si128((__m128i*)(s + LOAD_OFFSET2 - i - 1));
@@ -161,7 +161,7 @@ namespace cp
 				a = _mm_shuffle_epi8(a, vm);
 				_mm_store_si128((__m128i*)(d + i), a);
 			}
-			memcpy(d + left, s - sleft, sizeof(uchar)*(copysizex));
+			memcpy(d + left, s - sleft, sizeof(uchar) * (copysizex));
 			for (int i = 0; i < RIGHT; i += 16)
 			{
 				a = _mm_load_si128((__m128i*)(s + LOAD_OFFSET2 - i - 1));
@@ -180,7 +180,7 @@ namespace cp
 		{
 			uchar* s = dest.ptr<uchar>(2 * top - j);
 			uchar* d = dest.ptr<uchar>(j);
-			memcpy(d, s, sizeof(uchar)*(tileSizeXExternal));
+			memcpy(d, s, sizeof(uchar) * (tileSizeXExternal));
 		}
 
 		const int sidx = tileSizeYInternal * (div_size.height - idx.y) + topb - 2;
@@ -189,7 +189,7 @@ namespace cp
 		{
 			uchar* s = dest.ptr<uchar>(max(0, sidx - j));
 			uchar* d = dest.ptr<uchar>(didx + j);
-			memcpy(d, s, sizeof(uchar)*tileSizeXExternal);
+			memcpy(d, s, sizeof(uchar) * tileSizeXExternal);
 		}
 	}
 
@@ -231,7 +231,7 @@ namespace cp
 				a = _mm_set1_epi8(s[-firstXInternalGrid]);
 				_mm_store_si128((__m128i*)(d + i), a);
 			}
-			memcpy(d + left, s - sleft, sizeof(uchar)*(memcpySizeX));
+			memcpy(d + left, s - sleft, sizeof(uchar) * (memcpySizeX));
 			for (int i = 0; i < right; i += 16)
 			{
 				a = _mm_set1_epi8(s[-firstXInternalGrid + src.cols - 1]);
@@ -247,7 +247,7 @@ namespace cp
 				a = _mm_set1_epi8(s[-firstXInternalGrid]);
 				_mm_store_si128((__m128i*)(d + i), a);
 			}
-			memcpy(d + left, s - sleft, sizeof(uchar)*(memcpySizeX));
+			memcpy(d + left, s - sleft, sizeof(uchar) * (memcpySizeX));
 			for (int i = 0; i < RIGHT; i += 16)
 			{
 				a = _mm_set1_epi8(s[-firstXInternalGrid + src.cols - 1]);
@@ -266,7 +266,7 @@ namespace cp
 		{
 			uchar* s = dest.ptr<uchar>(top);
 			uchar* d = dest.ptr<uchar>(j);
-			memcpy(d, s, sizeof(uchar)*(tileSizeXExternal));
+			memcpy(d, s, sizeof(uchar) * (tileSizeXExternal));
 		}
 
 		const int sidx = tileSizeYInternal * (div_size.height - idx.y) + topb - 1;
@@ -275,7 +275,7 @@ namespace cp
 		{
 			uchar* s = dest.ptr<uchar>(max(0, sidx));
 			uchar* d = dest.ptr<uchar>(didx + j);
-			memcpy(d, s, sizeof(uchar)*tileSizeXExternal);
+			memcpy(d, s, sizeof(uchar) * tileSizeXExternal);
 		}
 	}
 
@@ -305,7 +305,7 @@ namespace cp
 		const int LEFT = get_simd_ceil(left, 8);
 		const int RIGHT = get_simd_floor(right, 8);
 
-		const float* s = src.ptr<float>(tiley*idx.y - stop, top_tilex);
+		const float* s = src.ptr<float>(tiley * idx.y - stop, top_tilex);
 		float* d = dest.ptr<float>(top);
 
 		const int LOAD_OFFSET1 = left - 8 - top_tilex;
@@ -323,7 +323,7 @@ namespace cp
 				a = _mm256_permute2f128_ps(a, a, 1);
 				_mm256_store_ps(d + i, a);
 			}
-			memcpy(d + left, s - sleft, sizeof(float)*(copysizex));
+			memcpy(d + left, s - sleft, sizeof(float) * (copysizex));
 			for (int i = 0; i < right; i += 8)
 			{
 				a = _mm256_load_ps(s + LOAD_OFFSET2 - i);
@@ -343,7 +343,7 @@ namespace cp
 				a = _mm256_permute2f128_ps(a, a, 1);
 				_mm256_store_ps(d + i, a);
 			}
-			memcpy(d + left, s - sleft, sizeof(float)*(copysizex));
+			memcpy(d + left, s - sleft, sizeof(float) * (copysizex));
 			for (int i = 0; i < RIGHT; i += 8)
 			{
 				a = _mm256_load_ps(s + LOAD_OFFSET2 - i);
@@ -363,7 +363,7 @@ namespace cp
 		{
 			float* s = dest.ptr<float>(max(0, 2 * top - j - 1));
 			float* d = dest.ptr<float>(j);
-			memcpy(d, s, sizeof(float)*(dest_tilex));
+			memcpy(d, s, sizeof(float) * (dest_tilex));
 		}
 
 		const int sidx = tiley * (div_size.height - idx.y) + topb - 1;
@@ -373,7 +373,7 @@ namespace cp
 			float* s = dest.ptr<float>(max(0, sidx - j));
 			float* d = dest.ptr<float>(didx + j);
 
-			memcpy(d, s, sizeof(float)*dest_tilex);
+			memcpy(d, s, sizeof(float) * dest_tilex);
 		}
 	}
 
@@ -402,7 +402,7 @@ namespace cp
 		const int LEFT = get_simd_ceil(left, 8);
 		const int RIGHT = get_simd_floor(right, 8);
 
-		const float* s = src.ptr<float>(tiley*idx.y - stop) + top_tilex;
+		const float* s = src.ptr<float>(tiley * idx.y - stop) + top_tilex;
 		float* d = dest.ptr<float>(top);
 
 		const int LOAD_OFFSET1 = left - 8 - top_tilex;
@@ -420,7 +420,7 @@ namespace cp
 				a = _mm256_permute2f128_ps(a, a, 1);
 				_mm256_store_ps(d + i, a);
 			}
-			memcpy(d + left, s - sleft, sizeof(float)*(copysizex));
+			memcpy(d + left, s - sleft, sizeof(float) * (copysizex));
 			for (int i = 0; i < right; i += 8)
 			{
 				a = _mm256_loadu_ps(s + LOAD_OFFSET2 - i - 1);
@@ -439,7 +439,7 @@ namespace cp
 				a = _mm256_permute2f128_ps(a, a, 1);
 				_mm256_store_ps(d + i, a);
 			}
-			memcpy(d + left, s - sleft, sizeof(float)*(copysizex));
+			memcpy(d + left, s - sleft, sizeof(float) * (copysizex));
 			for (int i = 0; i < RIGHT; i += 8)
 			{
 				a = _mm256_loadu_ps(s + LOAD_OFFSET2 - i - 1);
@@ -459,7 +459,7 @@ namespace cp
 		{
 			float* s = dest.ptr<float>(2 * top - j);
 			float* d = dest.ptr<float>(j);
-			memcpy(d, s, sizeof(float)*(dest_tilex));
+			memcpy(d, s, sizeof(float) * (dest_tilex));
 		}
 
 		const int sidx = tiley * (div_size.height - idx.y) + topb - 2;
@@ -468,7 +468,7 @@ namespace cp
 		{
 			float* s = dest.ptr<float>(max(0, sidx - j));
 			float* d = dest.ptr<float>(didx + j);
-			memcpy(d, s, sizeof(float)*dest_tilex);
+			memcpy(d, s, sizeof(float) * dest_tilex);
 		}
 	}
 
@@ -497,7 +497,7 @@ namespace cp
 		const int LEFT = get_simd_ceil(left, 8);
 		const int RIGHT = get_simd_floor(right, 8);
 
-		const float* s = src.ptr<float>(tiley*idx.y - stop, top_tilex);
+		const float* s = src.ptr<float>(tiley * idx.y - stop, top_tilex);
 		float* d = dest.ptr<float>(top);
 
 		const int STORE_OFFSET = tilex + sright;
@@ -510,7 +510,7 @@ namespace cp
 				a = _mm256_set1_ps(s[-top_tilex]);
 				_mm256_store_ps(d + i, a);
 			}
-			memcpy(d + left, s - sleft, sizeof(float)*(copysizex));
+			memcpy(d + left, s - sleft, sizeof(float) * (copysizex));
 			for (int i = 0; i < right; i += 8)
 			{
 				a = _mm256_set1_ps(s[-top_tilex + src.cols - 1]);
@@ -526,7 +526,7 @@ namespace cp
 				a = _mm256_set1_ps(s[0]);
 				_mm256_store_ps(d + i, a);
 			}
-			memcpy(d + left, s - sleft, sizeof(float)*(copysizex));
+			memcpy(d + left, s - sleft, sizeof(float) * (copysizex));
 			for (int i = 0; i < RIGHT; i += 8)
 			{
 				a = _mm256_set1_ps(s[tilex - 1]);
@@ -545,7 +545,7 @@ namespace cp
 		{
 			float* s = dest.ptr<float>(top);
 			float* d = dest.ptr<float>(j);
-			memcpy(d, s, sizeof(float)*(dest_tilex));
+			memcpy(d, s, sizeof(float) * (dest_tilex));
 		}
 
 		const int sidx = tiley * (div_size.height - idx.y) + topb - 1;
@@ -554,7 +554,7 @@ namespace cp
 		{
 			float* s = dest.ptr<float>(max(0, sidx));
 			float* d = dest.ptr<float>(didx + j);
-			memcpy(d, s, sizeof(float)*dest_tilex);
+			memcpy(d, s, sizeof(float) * dest_tilex);
 		}
 	}
 
@@ -584,7 +584,7 @@ namespace cp
 		const int LEFT = get_simd_ceil(left, 4);
 		const int RIGHT = get_simd_floor(right, 4);
 
-		const double* s = src.ptr<double>(tiley*idx.y - stop) + top_tilex;
+		const double* s = src.ptr<double>(tiley * idx.y - stop) + top_tilex;
 		double* d = dest.ptr<double>(top);
 
 		const int LOAD_OFFSET1 = left - 4 - top_tilex;
@@ -602,7 +602,7 @@ namespace cp
 				a = _mm256_permute2f128_pd(a, a, 1);
 				_mm256_storeu_pd(d + i, a);
 			}
-			memcpy(d + left, s - sleft, sizeof(double)*(copysizex));
+			memcpy(d + left, s - sleft, sizeof(double) * (copysizex));
 			for (int i = 0; i < right; i += 4)
 			{
 				a = _mm256_load_pd(s + LOAD_OFFSET2 - i);
@@ -622,7 +622,7 @@ namespace cp
 				a = _mm256_permute2f128_pd(a, a, 1);
 				_mm256_storeu_pd(d + i, a);
 			}
-			memcpy(d + left, s - sleft, sizeof(double)*(copysizex));
+			memcpy(d + left, s - sleft, sizeof(double) * (copysizex));
 			for (int i = 0; i < RIGHT; i += 4)
 			{
 				a = _mm256_load_pd(s + LOAD_OFFSET2 - i);
@@ -643,7 +643,7 @@ namespace cp
 			double* s = dest.ptr<double>(max(0, 2 * top - j - 1));
 			double* d = dest.ptr<double>(j);
 
-			memcpy(d, s, sizeof(double)*(dest_tilex));
+			memcpy(d, s, sizeof(double) * (dest_tilex));
 		}
 
 		const int sidx = tiley * (div_size.height - idx.y) + topb - 1;
@@ -653,7 +653,7 @@ namespace cp
 			double* s = dest.ptr<double>(max(0, sidx - j));
 			double* d = dest.ptr<double>(didx + j);
 
-			memcpy(d, s, sizeof(double)*dest_tilex);
+			memcpy(d, s, sizeof(double) * dest_tilex);
 		}
 	}
 
@@ -682,7 +682,7 @@ namespace cp
 		const int LEFT = get_simd_ceil(left, 4);
 		const int RIGHT = get_simd_floor(right, 4);
 
-		const double* s = src.ptr<double>(tiley*idx.y - stop) + top_tilex;
+		const double* s = src.ptr<double>(tiley * idx.y - stop) + top_tilex;
 		double* d = dest.ptr<double>(top);
 
 		const int LOAD_OFFSET1 = left - 4 - top_tilex;
@@ -700,7 +700,7 @@ namespace cp
 				a = _mm256_permute2f128_pd(a, a, 1);
 				_mm256_store_pd(d + i, a);
 			}
-			memcpy(d + left, s - sleft, sizeof(double)*(copysizex));
+			memcpy(d + left, s - sleft, sizeof(double) * (copysizex));
 			for (int i = 0; i < right; i += 4)
 			{
 				a = _mm256_loadu_pd(s + LOAD_OFFSET2 - i - 1);
@@ -720,7 +720,7 @@ namespace cp
 				a = _mm256_permute2f128_pd(a, a, 1);
 				_mm256_store_pd(d + i, a);
 			}
-			memcpy(d + left, s - sleft, sizeof(double)*(copysizex));
+			memcpy(d + left, s - sleft, sizeof(double) * (copysizex));
 			for (int i = 0; i < RIGHT; i += 8)
 			{
 				a = _mm256_loadu_pd(s + LOAD_OFFSET2 - i - 1);
@@ -741,7 +741,7 @@ namespace cp
 			double* s = dest.ptr<double>(2 * top - j);
 			double* d = dest.ptr<double>(j);
 
-			memcpy(d, s, sizeof(double)*(dest_tilex));
+			memcpy(d, s, sizeof(double) * (dest_tilex));
 		}
 
 		const int sidx = tiley * (div_size.height - idx.y) + topb - 2;
@@ -751,7 +751,7 @@ namespace cp
 			double* s = dest.ptr<double>(max(0, sidx - j));
 			double* d = dest.ptr<double>(didx + j);
 
-			memcpy(d, s, sizeof(double)*dest_tilex);
+			memcpy(d, s, sizeof(double) * dest_tilex);
 		}
 	}
 
@@ -780,7 +780,7 @@ namespace cp
 		const int LEFT = get_simd_ceil(left, 4);
 		const int RIGHT = get_simd_floor(right, 4);
 
-		const double* s = src.ptr<double>(tiley*idx.y - stop, top_tilex);
+		const double* s = src.ptr<double>(tiley * idx.y - stop, top_tilex);
 		double* d = dest.ptr<double>(top);
 
 		const int STORE_OFFSET = tilex + sright;
@@ -793,7 +793,7 @@ namespace cp
 				a = _mm256_set1_pd(s[-top_tilex]);
 				_mm256_store_pd(d + i, a);
 			}
-			memcpy(d + left, s - sleft, sizeof(double)*(copysizex));
+			memcpy(d + left, s - sleft, sizeof(double) * (copysizex));
 			for (int i = 0; i < right; i += 4)
 			{
 				a = _mm256_set1_pd(s[-top_tilex + src.cols - 1]);
@@ -809,7 +809,7 @@ namespace cp
 				a = _mm256_set1_pd(s[0]);
 				_mm256_store_pd(d + i, a);
 			}
-			memcpy(d + left, s - sleft, sizeof(double)*(copysizex));
+			memcpy(d + left, s - sleft, sizeof(double) * (copysizex));
 			for (int i = 0; i < RIGHT; i += 4)
 			{
 				a = _mm256_set1_pd(s[tilex - 1]);
@@ -828,7 +828,7 @@ namespace cp
 		{
 			double* s = dest.ptr<double>(top);
 			double* d = dest.ptr<double>(j);
-			memcpy(d, s, sizeof(double)*(dest_tilex));
+			memcpy(d, s, sizeof(double) * (dest_tilex));
 		}
 
 		const int sidx = tiley * (div_size.height - idx.y) + topb - 1;
@@ -837,7 +837,7 @@ namespace cp
 		{
 			double* s = dest.ptr<double>(max(0, sidx));
 			double* d = dest.ptr<double>(didx + j);
-			memcpy(d, s, sizeof(double)*dest_tilex);
+			memcpy(d, s, sizeof(double) * dest_tilex);
 		}
 	}
 
@@ -915,6 +915,7 @@ namespace cp
 		//cout << format("%d %d %d %d\n", L, R, T, B);
 	}
 
+
 	void setSubImage32F_(const Mat& src, Mat& dest, const Size div_size, const Point idx, const int top, const int left)
 	{
 		CV_Assert(!dest.empty());
@@ -928,8 +929,8 @@ namespace cp
 
 		for (int j = 0; j < tiley; j++)
 		{
-			float* d = dest.ptr<float>(tiley*idx.y + j, tilex*idx.x);
-			const float * s = src.ptr<float>(top + j, left);
+			float* d = dest.ptr<float>(tiley * idx.y + j, tilex * idx.x);
+			const float* s = src.ptr<float>(top + j, left);
 			for (int i = 0; i < simd_tile_width; i += 8)
 			{
 				_mm256_storeu_ps(d + i, _mm256_loadu_ps(s + i));
@@ -954,8 +955,8 @@ namespace cp
 
 		for (int j = 0; j < tiley; j++)
 		{
-			double* d = dest.ptr<double>(tiley*idx.y + j, tilex*idx.x);
-			const double * s = src.ptr<double>(top + j, left);
+			double* d = dest.ptr<double>(tiley * idx.y + j, tilex * idx.x);
+			const double* s = src.ptr<double>(top + j, left);
 			for (int i = 0; i < simd_tile_width; i += 4)
 			{
 				_mm256_storeu_pd(d + i, _mm256_loadu_pd(s + i));
@@ -970,9 +971,13 @@ namespace cp
 	void setSubImage(const Mat& src, Mat& dest, const Size div_size, const Point idx, const int top, const int left)
 	{
 		if (src.depth() == CV_32F)
+		{
 			setSubImage32F_(src, dest, div_size, idx, top, left);
+		}
 		else
+		{
 			setSubImage64F_(src, dest, div_size, idx, top, left);
+		}
 	}
 
 	void setSubImage(const Mat& src, Mat& dest, const Size div_size, const Point idx, const int r)
@@ -990,7 +995,8 @@ namespace cp
 
 	void splitSubImage(const Mat& src, vector<Mat>& dest, const Size div_size, const int r, const int borderType)
 	{
-		CV_Assert(src.depth() == CV_32F || src.depth() == CV_64F);
+		CV_Assert(src.channels() == 1);
+		CV_Assert(src.depth() == CV_8U || src.depth() == CV_32F || src.depth() == CV_64F);
 		if (dest.size() == 0)dest.resize(div_size.area());
 
 		int sub_index = 0;
@@ -1007,6 +1013,8 @@ namespace cp
 
 	void splitSubImageAlign(const Mat& src, vector<Mat>& dest, const Size div_size, const int r, const int borderType, const int align_x, const int align_y, const int left_multiple, const int top_multiple)
 	{
+		CV_Assert(src.channels() == 1);
+		CV_Assert(src.depth() == CV_8U || src.depth() == CV_32F || src.depth() == CV_64F);
 		if (dest.size() == 0)dest.resize(div_size.area());
 
 		int sub_index = 0;
@@ -1023,6 +1031,9 @@ namespace cp
 
 	void mergeSubImage(const vector<Mat>& src, Mat& dest, const Size div_size, const int r)
 	{
+		CV_Assert(src[0].channels() == 1);
+		CV_Assert(src[0].depth() == CV_32F || src[0].depth() == CV_64F);
+
 		int numBlockImages = div_size.area();
 		//#pragma omp parallel for
 		for (int n = 0; n < numBlockImages; n++)
@@ -1036,11 +1047,14 @@ namespace cp
 
 	void mergeSubImageAlign(const vector<Mat>& src, Mat& dest, const Size div_size, const int r, const int left_multiple, const int top_multiple)
 	{
+		CV_Assert(src[0].channels() == 1);
+		CV_Assert(src[0].depth() == CV_32F || src[0].depth() == CV_64F);
+
 		for (int j = 0; j < div_size.height; j++)
 		{
 			for (int i = 0; i < div_size.width; i++)
 			{
-				int sub_index = div_size.width*j + i;
+				int sub_index = div_size.width * j + i;
 				Point idx = Point(i, j);
 				setSubImage(src[sub_index], dest, div_size, idx, r);
 			}
