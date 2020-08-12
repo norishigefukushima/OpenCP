@@ -59,12 +59,10 @@
 //qualitymetrics
 #include "imqc.hpp"
 
-
 /*************************************************************
  opticalflow
 *************************************************************/
 #include "opticalFlow.hpp"
-
 
 /*************************************************************
  stereo
@@ -89,12 +87,12 @@
 #include "mattingRendering.hpp"
 #include "viewsynthesis.hpp"
 
-
 /*************************************************************
  utilty functions
 *************************************************************/
 #include "arithmetic.hpp"
 #include "bitconvert.hpp"
+#include "concat.hpp"
 #include "consoleImage.hpp"
 #include "copyMakeBorder.hpp"
 #include "count.hpp"
@@ -116,8 +114,6 @@
 #include "updateCheck.hpp"
 #include "video.hpp"
 #include "yuvio.hpp"
-
-
 
 /*************************************************************
  other

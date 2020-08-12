@@ -214,6 +214,7 @@
     <ClCompile Include="box\boxFilter_SSAT_VtV.cpp" />
     <ClCompile Include="Calibrator.cpp" />
     <ClCompile Include="color.cpp" />
+    <ClCompile Include="concat.cpp" />
     <ClCompile Include="consoleImage.cpp" />
     <ClCompile Include="copyMakeBorder.cpp" />
     <ClCompile Include="costVolumeFilter.cpp" />
@@ -348,6 +349,7 @@
     <ClInclude Include="..\include\Calibrator.hpp" />
     <ClInclude Include="..\include\color.hpp" />
     <ClInclude Include="..\include\common.hpp" />
+    <ClInclude Include="..\include\concat.hpp" />
     <ClInclude Include="..\include\consoleImage.hpp" />
     <ClInclude Include="..\include\copyMakeBorder.hpp" />
     <ClInclude Include="..\include\costVolumeFilter.hpp" />

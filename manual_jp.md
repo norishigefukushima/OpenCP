@@ -13,6 +13,12 @@ Reference Manual
 * [dissolveSlideBlend](blend_jp.md "#dissolveSlideBlend")
 * [guiDissolveSlideBlend](blend_jp.md "#guiDissolveSlideBlend")
 
+# concat.hpp
+画像の連結・分解の関数群
+* [concat/concatMerge](concat_jp.md "#concat/concatMerge")
+* [concatSplit](concat_jp.md "#concatSplit")
+* [concatExtract](concat_jp.md "#")
+
 # crop.hpp
 画像の切り抜き（クロップ）用関数群
  * [cropZoom](crop_jp.md "#cropZoom")

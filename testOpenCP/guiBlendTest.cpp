@@ -4,7 +4,6 @@ using namespace std;
 using namespace cv;
 using namespace cp;
 
-
 void alphablend_naive8u(Mat& src1, Mat& src2, Mat& alpha, Mat& dest)
 {
 	if (dest.empty())dest.create(src1.size(), CV_8U);

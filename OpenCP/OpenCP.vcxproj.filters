@@ -534,6 +534,9 @@
     <ClCompile Include="color.cpp">
       <Filter>ソース ファイル\utilty functions</Filter>
     </ClCompile>
+    <ClCompile Include="concat.cpp">
+      <Filter>ソース ファイル\utilty functions</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libGaussian\gaussian_conv.h">
@@ -945,6 +948,9 @@
       <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
     </ClInclude>
     <ClInclude Include="..\include\copyMakeBorder.hpp">
+      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\concat.hpp">
       <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
     </ClInclude>
   </ItemGroup>

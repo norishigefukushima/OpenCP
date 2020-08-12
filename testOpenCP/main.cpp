@@ -167,6 +167,7 @@ void copyMakeBorderTest(Mat& src)
 
 int main(int argc, char** argv)
 {
+	testConcat(); return 0;
 	//testsimd(); return 0;
 
 	//testHistogram(); return 0;
