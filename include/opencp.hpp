@@ -107,6 +107,7 @@
 #include "matinfo.hpp"
 #include "noise.hpp"
 #include "plot.hpp"
+#include "randomizedQueue.hpp"
 #include "stat.hpp"
 #include "stencil.hpp"
 #include "timer.hpp"

@@ -297,6 +297,7 @@
     <ClCompile Include="libimq\wssim.cpp" />
     <ClCompile Include="localLaplacianFilter.cpp" />
     <ClCompile Include="maskoperation.cpp" />
+    <ClCompile Include="randomizedQueue.cpp" />
     <ClCompile Include="showmatInfo.cpp" />
     <ClCompile Include="matrixsimdutil.cpp" />
     <ClCompile Include="mattingRendering.cpp" />
@@ -408,6 +409,7 @@
     <ClInclude Include="..\include\pointcloud.hpp" />
     <ClInclude Include="..\include\postFilterSet.hpp" />
     <ClInclude Include="..\include\ppmx.hpp" />
+    <ClInclude Include="..\include\randomizedQueue.hpp" />
     <ClInclude Include="..\include\realtimeO1BilateralFilter.hpp" />
     <ClInclude Include="..\include\rectifyMultiCollinear.hpp" />
     <ClInclude Include="..\include\recursiveBilateralFilter.hpp" />

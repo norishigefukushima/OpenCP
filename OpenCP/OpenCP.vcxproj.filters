@@ -537,6 +537,9 @@
     <ClCompile Include="concat.cpp">
       <Filter>ソース ファイル\utilty functions</Filter>
     </ClCompile>
+    <ClCompile Include="randomizedQueue.cpp">
+      <Filter>ソース ファイル\utilty functions</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libGaussian\gaussian_conv.h">
@@ -951,6 +954,9 @@
       <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
     </ClInclude>
     <ClInclude Include="..\include\concat.hpp">
+      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\randomizedQueue.hpp">
       <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
     </ClInclude>
   </ItemGroup>
