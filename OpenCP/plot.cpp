@@ -336,9 +336,9 @@ namespace cp
 		double xmargin = (xmax_plotwindow - xmin_plotwindow) * (1.0 - margin_rate) * 0.5;
 		xmax_plotwindow += xmargin;
 
-		if (rounding_value != 0) xmax_plotwindow = cp::ceilToMultiple(xmax_plotwindow, rounding_value);
+		if (rounding_value != 0) xmax_plotwindow = (double)cp::ceilToMultiple((int)xmax_plotwindow, rounding_value);
 		xmin_plotwindow -= xmargin;
-		if (rounding_value != 0) xmin_plotwindow = cp::floorToMultiple(xmin_plotwindow, rounding_value);
+		if (rounding_value != 0) xmin_plotwindow = (double)cp::floorToMultiple((int)xmin_plotwindow, rounding_value);
 
 		if (isCenter)
 		{
@@ -359,9 +359,9 @@ namespace cp
 
 		double ymargin = (ymax_plotwindow - ymin_plotwindow) * (1.0 - margin_rate) * 0.5;
 		ymax_plotwindow += ymargin;
-		if (rounding_value != 0) ymax_plotwindow = cp::ceilToMultiple(ymax_plotwindow, rounding_value);
+		if (rounding_value != 0) ymax_plotwindow = (double)cp::ceilToMultiple((int)ymax_plotwindow, rounding_value);
 		ymin_plotwindow -= ymargin;
-		if (rounding_value != 0) ymin_plotwindow = cp::floorToMultiple(ymin_plotwindow, rounding_value);
+		if (rounding_value != 0) ymin_plotwindow = (double)cp::floorToMultiple((int)ymin_plotwindow, rounding_value);
 
 		if (isCenter)
 		{
@@ -908,7 +908,7 @@ namespace cp
 		cout << "p ";
 		for (int i = 0; i < data_max; i++)
 		{
-			cout << "'" << name << "'" << " u " << 2 * i + 1 << ":" << 2 * i + 2 << " w lp" << ",";
+			cout << "'" << name << "'" << " u " << 2 * i + 1 << ":" << 2 * i + 2 << " w lp" << " t " << pinfo[i].keyname << ",";
 		}
 		cout << endl;
 		fclose(fp);
