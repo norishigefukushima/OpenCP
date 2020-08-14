@@ -137,6 +137,17 @@ namespace cp
 		}
 	}
 
+	inline bool isInCircle(cv::Point pt, cv::Size kernelSize)
+	{
+		const int r = kernelSize.width / 2;
+		const int dist = cvRound(sqrt((pt.x - r) * (pt.x - r) + (pt.y - r) * (pt.y - r)));
+		if (dist > r)
+		{
+			return false;
+		}
+		return true;
+	}
+
 	inline cv::Mat convert(cv::Mat& src, const int depth, const double alpha = 1.0, const double beta = 0.0)
 	{
 		cv::Mat ret;
