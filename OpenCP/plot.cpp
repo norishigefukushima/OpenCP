@@ -908,7 +908,7 @@ namespace cp
 		cout << "p ";
 		for (int i = 0; i < data_max; i++)
 		{
-			cout << "'" << name << "'" << " u " << 2 * i + 1 << ":" << 2 * i + 2 << " w lp" << " t " << pinfo[i].keyname << ",";
+			cout << "'" << name << "'" << " u " << 2 * i + 1 << ":" << 2 * i + 2 << " w lp" << " t \"" << pinfo[i].keyname << "\",";
 		}
 		cout << endl;
 		fclose(fp);

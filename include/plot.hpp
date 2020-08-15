@@ -162,10 +162,10 @@ namespace cp
 		void setPlotSymbol(int plotnum, int symbol_type);
 		void setPlotSymbolALL(int symbol_type);
 
-		//LINE_NONE,
-		//LINE_LINEAR,
-		//LINE_H2V,
-		//LINE_V2H
+		//Plot::LINE::NONE,
+		//Plot::LINE::LINEAR,
+		//Plot::LINE::H2V,
+		//Plot::LINE::V2H
 		void setPlotLineType(int plotnum, int line_type);
 		void setPlotLineTypeALL(int line_type);
 
