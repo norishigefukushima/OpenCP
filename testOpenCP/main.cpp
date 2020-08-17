@@ -167,26 +167,30 @@ void copyMakeBorderTest(Mat& src)
 
 int main(int argc, char** argv)
 {
-	testConcat(); return 0;
+	
+	//testConcat(); return 0;
 	//testsimd(); return 0;
 
 	//testHistogram(); return 0;
-	testPlot(); return 0;
-	guiGuidedImageFilterTest();
+	//testPlot(); return 0;
+	//guiGuidedImageFilterTest();
 	//guiHazeRemoveTest();
 
 	//Mat right = imread("left.png");
 	//Mat left = imread("right.png");
 	
 	Mat left = imread("img/stereo/Dolls/view1.png");
+	
 	//resize(left, left, Size(), 1, 0.25);
 	Mat right = imread("img/stereo/Dolls/view5.png");
 	//resize(right, right, Size(), 1, 0.25);
 	//testAlphaBlend(left, right);
 	//testAlphaBlendMask(left, right);
 	//Mat dmap = imread("img/stereo/Dolls/disp1.png", 0);
-	Mat img = imread("img/lenna.png");
-	//Mat img = imread("img/Kodak/kodim07.png",0);	
+	//Mat img = imread("img/lenna.png");
+	Mat img = imread("img/Kodak/kodim07.png");	
+	guiContrast(guiCropZoom(img));
+	
 	//Mat img = imread("img/cameraman.png",0);
 	//Mat img = imread("img/barbara.png", 0);
 
@@ -222,7 +226,6 @@ int main(int argc, char** argv)
 	//testRGBHistogram2();
 	//testTimer(img);
 
-	//guiConsoleTest();
 	//guiDissolveSlide(left, dmap);
 
 	//guiUpsampleTest(img);return 0;

@@ -47,6 +47,7 @@
 *************************************************************/
 #include "blend.hpp"
 #include "color.hpp"
+#include "contrast.hpp"
 #include "detailEnhancement.hpp"
 #include "diffPixel.hpp"
 #include "hazeRemove.hpp"
@@ -99,7 +100,6 @@
 #include "crop.hpp"
 #include "csv.hpp"
 #include "draw.hpp"
-#include "getContrast.hpp"
 #include "histogram.hpp"
 #include "imagediff.hpp"
 #include "imshowExtension.hpp"
@@ -217,7 +217,7 @@ void guiMouseTemplate(Mat& src, bool isWait=true, string wname="gui");
 void guiMouseTemplate(Mat& src, bool isWait, string wname)
 {
 	namedWindow(wname);
-
+	displayOverlay(wname, "overlaytest", 1000);//overlay 1sec
 	static MouseTemplateParameter param(src.cols / 2, src.rows / 2, src.cols, src.rows, wname);
 
 	setMouseCallback(wname, (MouseCallback)guiMouseTemplateOnMouse, (void*)&param);

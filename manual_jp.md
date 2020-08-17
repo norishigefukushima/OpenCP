@@ -1,8 +1,8 @@
 Reference Manual
 ================
-
+（現在，現状研究室内部専用：以下，研究室内向けメッセージ）
 マニュアルは，みんなで更新していってください．  
-福嶋が更新するのを期待して待っても，ほぼ更新されません．
+更新するのを期待して待っても，ほぼ更新されません．
 （バグを発見したときについでに更新するくらい）
 
 # blend.hpp
@@ -18,6 +18,13 @@ Reference Manual
 * [concat/concatMerge](concat_jp.md "#concat/concatMerge")
 * [concatSplit](concat_jp.md "#concatSplit")
 * [concatExtract](concat_jp.md "#")
+
+# contrast
+コントラスト強調の関数群
+* [convert](contrast_jp.md "#convert")
+* [cenvertCentering](contrast_jp.md "#cenvertCentering")
+* [contrastSToneExp](contrast_jp.md "#contrastSToneExp")
+* [guiContrast](contrast_jp.md "#guiContrast")
 
 # crop.hpp
 画像の切り抜き（クロップ）用関数群

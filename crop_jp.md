@@ -71,14 +71,21 @@ void cropCenter(InputArray src, OutputArray crop, const int window_size)
 
 # guiCropZoom
 ```cpp
-void guiCropZoom(cv::InputArray src, const cv::Scalar color = COLOR_RED, const int thickness = 1, const std::string wname = "crop");
+cv::Mat guiCropZoom(cv::InputArray src, const cv::Scalar color = COLOR_RED, const int thickness = 1, const std::string wname = "crop");
 ```
 ```cpp
-void guiCropZoom(cv::InputArray src, cv::Rect& dest_roi, int& dest_zoom_factor, const cv::Scalar color = COLOR_RED, const int thickness = 1, const std::string wname = "crop");
+cv::Mat guiCropZoom(cv::InputArray src, cv::Rect& dest_roi, int& dest_zoom_factor, const cv::Scalar color = COLOR_RED, const int thickness = 1, const std::string wname = "crop");
 ```
 ## Usage
 上記の関数を，GUIから操作します．
 また，`dest_roi`, `dest_zoom_factor`の引数を渡すことで，guiCropZoomで設定した拡大領域と拡大量を保持し，のちに上記のクロップズーム処理を複数の画像にバッチ処理することで，論文用の画像を生成できます．
+
+また，戻り値は，クロップした画像です，再帰呼び出しにより様々な用途に使えます．  
+例えば，下記のように使えます．  
+```cpp
+Mat a, b;
+guiAlphaBlend(guiCropZoom(a),guiCropZoom(b));
+```
 
 **キーボードショートカット**
 * i,j,k,l：vimライクな移動

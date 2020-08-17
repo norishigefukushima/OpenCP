@@ -84,7 +84,7 @@ namespace cp
 		}
 	}
 
-	void guiCropZoom(InputArray src, Rect& dest_roi, int& dest_zoom_factor, const Scalar color, const int thickness, const string wname)
+	cv::Mat guiCropZoom(InputArray src, Rect& dest_roi, int& dest_zoom_factor, const Scalar color, const int thickness, const string wname)
 	{
 		const int zoom_factor_max = 32;
 
@@ -109,6 +109,7 @@ namespace cp
 		static int zoom_factor = 8; createTrackbar("zoom_factor", wname, &zoom_factor, zoom_factor_max);
 
 		Mat show;
+		Mat crop_resize;
 		Mat input = src.getMat();
 
 		int key = 0;
@@ -118,9 +119,6 @@ namespace cp
 			input.copyTo(show);
 			zoom_factor = max(zoom_factor, 1);
 
-			
-			Mat crop_resize;
-			
 			if (zoom_show_option == 0)
 			{
 				cropZoomWithSrcMarkAndBoundingBox(input, crop_resize, show, Point(param.pt.x, param.pt.y), zoom_window, zoom_factor, color, thickness);
@@ -139,7 +137,6 @@ namespace cp
 				else if (zoom_position == 3) crop_resize.copyTo(show(Rect(show.cols - 1 - crop_resize.size().width, show.rows - 1 - crop_resize.size().height, crop_resize.size().width, crop_resize.size().height)));
 				else if (zoom_position == 4) crop_resize.copyTo(show(Rect(0, show.rows - 1 - crop_resize.size().height, crop_resize.size().width, crop_resize.size().height)));
 			}
-
 
 			imshow(wname, show);
 			key = waitKey(1);
@@ -197,12 +194,13 @@ namespace cp
 		}
 
 		destroyWindow(wname);
+		return crop_resize;
 	}
 
-	void guiCropZoom(InputArray src, const Scalar color, const int thickness, const string wname)
+	cv::Mat guiCropZoom(InputArray src, const Scalar color, const int thickness, const string wname)
 	{
 		Rect roi;
 		int zf;
-		guiCropZoom(src, roi, zf, color, thickness, wname);
+		return guiCropZoom(src, roi, zf, color, thickness, wname);
 	}
 }

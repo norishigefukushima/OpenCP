@@ -37,7 +37,7 @@ void alphaBlendFixedPoint(cv::InputArray src1, cv::InputArray src2, cv::InputArr
 
 # guiAlphaBlend
 ```cpp
-void guiAlphaBlend(cv::InputArray src1, cv::InputArray src2, bool isShowImageStats = false, std::string wname = "alphaBlend");
+cv::Mat guiAlphaBlend(cv::InputArray src1, cv::InputArray src2, bool isShowImageStats = false, std::string wname = "alphaBlend");
 ```
 ## Usage
 定数値のアルファブレンド関数をGUI内でコールする関数です．  
@@ -46,6 +46,7 @@ void guiAlphaBlend(cv::InputArray src1, cv::InputArray src2, bool isShowImageSta
 isShowImageStatsをtrueにすることで，入力画像の配列サイズや型，統計情報がどのようになっているかを関数実行前に実行します．  
 
 alphaBlendのカラーの不一致への対応に加えて，入力画像の一方が8U一方が32Fの場合に３２Fにアップキャストしたのちに8Uとして表示します．  
+また，戻り値で出力画像を返します．
 
 **キーボードショートカット**
 
@@ -77,11 +78,13 @@ dissolveSlideBlend(img1, img2, 0.5, 0.5)
 
 ## guiDissolveSlideBlend
 ```cpp
-void guiDissolveSlideBlend(cv::InputArray src1, cv::InputArray src2, std::string wname = "dissolveSlideBlend");
+cv::Mat guiDissolveSlideBlend(cv::InputArray src1, cv::InputArray src2, std::string wname = "dissolveSlideBlend");
 ```
 分割表示の関数をGUI内でコールする関数です．  
 論文等の図で，分割表示する図を作成するために使います．  
 また，分割のパラメータはstatic変数として保持されているため，前回設定したパラメータは保持されます．  
+戻り値で出力画像を返します．
+
 細かな仕様は`?`キーでヘルプがでるのでそれを見てください．  
 
 

@@ -3,7 +3,7 @@ using namespace std;
 using namespace cv;
 using namespace cp;
 
-void guiConsoleTest()
+void consoleTest()
 {
 	ConsoleImage ci(Size(640, 480));
 

@@ -216,9 +216,6 @@
     <ClCompile Include="stereoDP.cpp">
       <Filter>ソース ファイル\stereo</Filter>
     </ClCompile>
-    <ClCompile Include="guiContrast.cpp">
-      <Filter>ソース ファイル\utilty functions</Filter>
-    </ClCompile>
     <ClCompile Include="csv.cpp">
       <Filter>ソース ファイル\utilty functions</Filter>
     </ClCompile>
@@ -531,13 +528,16 @@
     <ClCompile Include="copyMakeBorder.cpp">
       <Filter>ソース ファイル\utilty functions</Filter>
     </ClCompile>
-    <ClCompile Include="color.cpp">
+    <ClCompile Include="randomizedQueue.cpp">
       <Filter>ソース ファイル\utilty functions</Filter>
+    </ClCompile>
+    <ClCompile Include="color.cpp">
+      <Filter>ソース ファイル\imgproc</Filter>
+    </ClCompile>
+    <ClCompile Include="contrast.cpp">
+      <Filter>ソース ファイル\imgproc</Filter>
     </ClCompile>
     <ClCompile Include="concat.cpp">
-      <Filter>ソース ファイル\utilty functions</Filter>
-    </ClCompile>
-    <ClCompile Include="randomizedQueue.cpp">
       <Filter>ソース ファイル\utilty functions</Filter>
     </ClCompile>
   </ItemGroup>
@@ -726,9 +726,6 @@
       <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
     </ClInclude>
     <ClInclude Include="..\include\draw.hpp">
-      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\getContrast.hpp">
       <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
     </ClInclude>
     <ClInclude Include="..\include\histogram.hpp">
@@ -958,6 +955,9 @@
     </ClInclude>
     <ClInclude Include="..\include\randomizedQueue.hpp">
       <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\contrast.hpp">
+      <Filter>ヘッダー ファイル\headers\imgproc</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

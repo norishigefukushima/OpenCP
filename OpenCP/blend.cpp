@@ -818,7 +818,7 @@ namespace cp
 		}
 	}
 
-	void guiAlphaBlend(InputArray src1, InputArray src2, bool isShowImageStats, std::string wname)
+	cv::Mat guiAlphaBlend(InputArray src1, InputArray src2, bool isShowImageStats, std::string wname)
 	{
 		if (isShowImageStats)
 		{
@@ -890,8 +890,8 @@ namespace cp
 			}
 		}
 		destroyWindow(wname);
+		return show;
 	}
-
 
 	template <class T>
 	void setTrapezoidMaskH(Mat& src, double ratio, double slant_ratio, Point& start_pt, Point& end_pt)
@@ -1048,7 +1048,7 @@ namespace cp
 		}
 	}
 
-	void guiDissolveSlideBlend(InputArray src1, InputArray src2, string wname)
+	cv::Mat guiDissolveSlideBlend(InputArray src1, InputArray src2, string wname)
 	{
 		namedWindow(wname);
 		static bool isBorderLine = true;
@@ -1098,6 +1098,8 @@ namespace cp
 				cout << "q: quit" << endl;
 			}
 		}
+
 		destroyWindow(wname);
+		return show;
 	}
 }

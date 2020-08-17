@@ -261,7 +261,7 @@
     <ClCompile Include="gif\guidedFilter_SepVHI.cpp" />
     <ClCompile Include="gif\guidedFilter_SepVHI_Share.cpp" />
     <ClCompile Include="gif\guidedFilter_tiling.cpp" />
-    <ClCompile Include="guiContrast.cpp" />
+    <ClCompile Include="contrast.cpp" />
     <ClCompile Include="hadamard.cpp" />
     <ClCompile Include="hazeRemove.cpp" />
     <ClCompile Include="histogram.cpp" />
@@ -377,7 +377,7 @@
     <ClInclude Include="..\include\GaussianBlurIPOL.hpp" />
     <ClInclude Include="..\include\GaussianFilter.hpp" />
     <ClInclude Include="..\include\GaussianFilterSpectralRecursive.hpp" />
-    <ClInclude Include="..\include\getContrast.hpp" />
+    <ClInclude Include="..\include\contrast.hpp" />
     <ClInclude Include="..\include\guidedFilter.hpp" />
     <ClInclude Include="..\include\hazeRemove.hpp" />
     <ClInclude Include="..\include\histogram.hpp" />

@@ -148,13 +148,6 @@ namespace cp
 		return true;
 	}
 
-	inline cv::Mat convert(cv::Mat& src, const int depth, const double alpha = 1.0, const double beta = 0.0)
-	{
-		cv::Mat ret;
-		src.convertTo(ret, depth, alpha, beta);
-		return ret;
-	}
-
 	inline double PSNRBB(cv::Mat& src, cv::Mat& dest, int bb)
 	{
 		cv::Rect roi = cv::Rect(bb, bb, src.cols - 2 * bb, src.rows - 2 * bb);
