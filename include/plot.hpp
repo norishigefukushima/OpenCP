@@ -16,9 +16,9 @@ namespace cp
 	class CP_EXPORT Plot
 	{
 	protected:
-		std::string font;
-		int fontSize;
-		int fontSize2;
+		std::string font = "Times New Roman";//"Consolas"
+		int fontSize = 20;
+		int fontSize2 = 18;
 		int foregroundIndex = 0;
 		struct PlotInfo
 		{
@@ -26,21 +26,24 @@ namespace cp
 			cv::Scalar color;
 			int symbolType;
 			int lineType;
-			int thickness;
+			int lineWidth;
 
-			std::string keyname;
+			std::string title;
 		};
 		std::vector<PlotInfo> pinfo;
 
-		std::string xlabel;
-		std::string ylabel;
+		std::string xlabel = "x";
+		std::string ylabel = "y";
 
-		int data_max;
+		int data_max = 1;
 
-		cv::Scalar background_color;
+		cv::Scalar background_color = COLOR_WHITE;
+		int gridLevel = 0;
+		bool isDrawMousePosition = true;
 
 		cv::Size plotsize;
 		cv::Point origin;
+
 
 		bool isSetXRange = false;
 		bool isSetYRange = false;
@@ -54,8 +57,6 @@ namespace cp
 		double ymin_data;//y min of data
 
 		int keyPosition = RIGHT_TOP;
-		void init(cv::Size imsize);
-		void point2val(cv::Point pt, double* valx, double* valy);
 
 		bool isZeroCross;
 		bool isXYMAXMIN;
@@ -64,12 +65,20 @@ namespace cp
 		bool isLogScaleX = false;
 		bool isLogScaleY = false;
 
-		bool isDrawMousePosition;
-		cv::Scalar getPseudoColor(uchar val);
 		cv::Mat plotImage;
 		cv::Mat keyImage;
 
+		void init(cv::Size imsize);
+		void point2val(cv::Point pt, double* valx, double* valy);
+		cv::Scalar getPseudoColor(uchar val);
+		void plotGrid(int level);
+		void renderingOutsideInformation(bool isFont);
+		void computeDataMaxMin();
+		void computeWindowXRangeMAXMIN(bool isCenter = false, double margin_rate = 0.9, int rounding_value = 0);
+		void computeWindowYRangeMAXMIN(bool isCenter = false, double margin_rate = 0.9, int rounding_value = 0);
+		
 	public:
+		void recomputeXYRangeMAXMIN(bool isCenter = false, double margin_rate = 0.9, int rounding_balue = 0);
 		//symbolType
 		enum SYMBOL
 		{
@@ -124,23 +133,31 @@ namespace cp
 		void setXOriginZERO();
 		void setYOriginZERO();
 
-		void computeDataMaxMin();
-		void computeWindowXRangeMAXMIN(bool isCenter = false, double margin_rate = 0.9, int rounding_value = 0);
-		void computeWindowYRangeMAXMIN(bool isCenter = false, double margin_rate = 0.9, int rounding_value = 0);
-		void recomputeXYRangeMAXMIN(bool isCenter = false, double margin_rate = 0.9, int rounding_balue = 0);
+
 		void setPlotProfile(bool isXYCenter_, bool isXYMAXMIN_, bool isZeroCross_);
 		void setImageSize(cv::Size s);
-		void setXYMinMax(double xmin_, double xmax_, double ymin_, double ymax_);
-		void setXMinMax(double xmin_, double xmax_);
-		void setYMinMax(double ymin_, double ymax_);
+		void setXYRange(double xmin_, double xmax_, double ymin_, double ymax_);
+		void setXRange(double xmin_, double xmax_);
+		void setYRange(double ymin_, double ymax_);
 		void setLogScaleX(const bool flag);
 		void setLogScaleY(const bool flag);
+
+		
+		//NOKEY,
+		//RIGHT_TOP,
+		//LEFT_TOP,
+		//LEFT_BOTTOM,
+		//RIGHT_BOTTOM,
+		//FLOATING,
+		void setKey(int key_method);
+		void setXLabel(std::string xlabel);
+		void setYLabel(std::string ylabel);
+		void setGrid(int level = 0);//0: no grid, 1: div 4, 2: div 16
 		void setBackGoundColor(cv::Scalar cl);
 
-		void renderingOutsideInformation(bool isFont);
-
-		void setPlot(int plotnum, cv::Scalar color = COLOR_RED, int symbol_type = PLUS, int line_type = LINEAR, int thickness = 1);
-		void setPlotThickness(int plotnum, int thickness);
+		void setPlot(int plotnum, cv::Scalar color = COLOR_RED, int symbol_type = PLUS, int line_type = LINEAR, int line_width = 1);
+		void setPlotLineWidth(int plotnum, int line_width);
+		void setPlotLineWidthALL(int line_width);
 		void setPlotColor(int plotnum, cv::Scalar color);
 
 		//NOPOINT = 0,
@@ -169,23 +186,14 @@ namespace cp
 		void setPlotLineType(int plotnum, int line_type);
 		void setPlotLineTypeALL(int line_type);
 
+		void setPlotTitle(int plotnum, std::string name);
 		void setPlotForeground(int plotnum);
 
-		void setPlotKeyName(int plotnum, std::string name);
-		//NOKEY,
-		//RIGHT_TOP,
-		//LEFT_TOP,
-		//LEFT_BOTTOM,
-		//RIGHT_BOTTOM,
-		//FLOATING,
-		void setKey(int key_method);
-		void setXLabel(std::string xlabel);
-		void setYLabel(std::string ylabel);
-
-
+		void setIsDrawMousePosition(const bool flag);
+		
 
 		void plotPoint(cv::Point2d = cv::Point2d(0.0, 0.0), cv::Scalar color = COLOR_BLACK, int thickness_ = 1, int linetype = LINEAR);
-		void plotGrid(int level);
+
 		void plotData(int gridlevel = 0);
 
 		void plotMat(cv::InputArray src, std::string name = "Plot", bool isWait = true, std::string gnuplotpath = "pgnuplot.exe");

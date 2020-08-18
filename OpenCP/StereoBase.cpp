@@ -3013,7 +3013,7 @@ namespace cp
 			if (eval.isInit)
 			{
 				p.clear();
-				p.setXYMinMax(0, numberOfDisparities + minDisparity + 1, 0, 64);
+				p.setXYRange(0, numberOfDisparities + minDisparity + 1, 0, 64);
 
 				const int dd = (int)(eval.ground_truth.at<uchar>(mpt.y, mpt.x) / eval.amp + 0.5);
 				const int dd2 = (int)((double)destDisparity.at<short>(mpt.y, mpt.x) / (16.0) + 0.5);
@@ -3044,7 +3044,7 @@ namespace cp
 				const int mindisp = 15;
 				if (vh == 0)
 				{
-					signal.setXYMinMax(0, destDisparity.cols - 1, mindisp, 64);
+					signal.setXYRange(0, destDisparity.cols - 1, mindisp, 64);
 					signal.setPlot(0, CV_RGB(0, 0, 0), 0, 1, 1);
 					signal.setPlot(1, CV_RGB(255, 0, 0), 0, 1, 1);
 					for (int i = 0; i < destDisparity.cols; i++)
@@ -3071,7 +3071,7 @@ namespace cp
 				}
 				else
 				{
-					signal.setXYMinMax(0, destDisparity.rows - 1, mindisp, 64);
+					signal.setXYRange(0, destDisparity.rows - 1, mindisp, 64);
 					signal.setPlot(0, CV_RGB(0, 0, 0), 0, 1, 1);
 					signal.setPlot(1, CV_RGB(255, 0, 0), 0, 1, 1);
 					for (int i = 0; i < destDisparity.rows; i++)

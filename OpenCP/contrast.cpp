@@ -1,5 +1,5 @@
 #include "contrast.hpp"
-#include "updateCheck.hpp"
+#include "debugcp.hpp"
 using namespace std;
 using namespace cv;
 
@@ -48,18 +48,70 @@ namespace cp
 		}
 	}
 
+	template<typename T>
+	void contrastGamma_(T* src, T* dest, const int size, const double gamma)
+	{
+		const double gm = 1.0 / gamma;
+		for (int i = 0; i < size; i++)
+		{
+			dest[i] = saturate_cast<T>(pow(src[i] / 255.0, gm) * 255.0);
+		}
+	}
+
+	template<>
+	void contrastGamma_<uchar>(uchar* src, uchar* dest, const int size, const double gamma)
+	{
+		uchar LUT[256];
+		for (int i = 0; i < 256; i++)
+		{
+			LUT[i] = saturate_cast<uchar>(pow((double)i / 255.0, 1.0 / gamma) * 255.0);
+		}
+		cv::Mat lut_mat = cv::Mat(256, 1, CV_8UC1, LUT);
+		cv::Mat s = cv::Mat(1, size, CV_8UC1, src);
+		cv::Mat d = cv::Mat(1, size, CV_8UC1, dest);
+		cv::LUT(s, lut_mat, d);
+	}
+
+	// Gamma Correction
+	void contrastGamma(cv::InputArray src, cv::OutputArray dest, const double gamma)
+	{
+		dest.create(src.size(), src.type());
+		const int size = src.getMat().size().area() * src.getMat().channels();
+
+		switch (src.depth())
+		{
+		case CV_8U: contrastGamma_<uchar>(src.getMat().ptr<uchar>(), dest.getMat().ptr<uchar>(), size, gamma); break;
+		case CV_8S: contrastGamma_<char>(src.getMat().ptr<char>(), dest.getMat().ptr<char>(), size, gamma); break;
+		case CV_16U:contrastGamma_<ushort>(src.getMat().ptr<ushort>(), dest.getMat().ptr<ushort>(), size, gamma); break;
+		case CV_16S:contrastGamma_< short>(src.getMat().ptr< short>(), dest.getMat().ptr< short>(), size, gamma); break;
+		case CV_32S:contrastGamma_<   int>(src.getMat().ptr<   int>(), dest.getMat().ptr<   int>(), size, gamma); break;
+		case CV_32F:contrastGamma_< float>(src.getMat().ptr< float>(), dest.getMat().ptr< float>(), size, gamma); break;
+		case CV_64F:contrastGamma_<double>(src.getMat().ptr<double>(), dest.getMat().ptr<double>(), size, gamma); break;
+		}
+	}
+
 	cv::Mat guiContrast(InputArray src_, string wname)
 	{
+		cp::Plot p(Size(300, 300));
+		p.setKey(cp::Plot::NOKEY);
+		p.setPlotSymbol(0, cp::Plot::NOPOINT);
+		//p.setPlotThickness
+		p.setIsDrawMousePosition(false);
+		p.setXYRange(0, 255, 0, 255);
+		p.setGrid(2);
+
 		Mat src = src_.getMat();
 		namedWindow(wname);
 		static int a_gui_contrast = 10;
 		static int b_gui_contrast = 0;
 		static int sw_gui_contrast = 0;
 		static int sigma_gui_contrast = 30;
-		cv::createTrackbar("sw", wname, &sw_gui_contrast, 2);
+		static int gamma_gui_contrast = 100;
+		cv::createTrackbar("sw", wname, &sw_gui_contrast, 3);
 		cv::createTrackbar("a*0.1", wname, &a_gui_contrast, 100);
 		cv::createTrackbar("b", wname, &b_gui_contrast, 255);
 		cv::createTrackbar("sigma", wname, &sigma_gui_contrast, 255);
+		cv::createTrackbar("gamma*0.01", wname, &gamma_gui_contrast, 1000);
 
 		int key = 0;
 		cp::UpdateCheck uc(sw_gui_contrast);
@@ -70,22 +122,48 @@ namespace cp
 			{
 				string mes = "";
 				if (sw_gui_contrast == 0)mes = "ax + b (convertTo)";
-				if (sw_gui_contrast == 1)mes = "a(x-b) + b";
-				if (sw_gui_contrast == 2)mes = "x - a*gauss(x-b)(x-b)";
+				else if (sw_gui_contrast == 1)mes = "a(x-b) + b";
+				else if (sw_gui_contrast == 2)mes = "x - a*gauss(x-b)(x-b)";
+				else if (sw_gui_contrast == 3)mes = "gamma: pow(x / 255, 1/gamma) * 255.0";
+				else mes = "not supported";
 				displayOverlay(wname, mes, 3000);
 			}
 
 			if (sw_gui_contrast == 0)
 			{
+				for (int i = 0; i < 256; i++)
+				{
+					//ax+b
+					p.push_back(i, 0.1 * a_gui_contrast * i + b_gui_contrast);
+				}
 				src.convertTo(show, CV_8U, 0.1 * a_gui_contrast, b_gui_contrast);
 			}
 			else if (sw_gui_contrast == 1)
 			{
+				for (int i = 0; i < 256; i++)
+				{
+					//a(x-b)+b=a*x -a * b + b
+					p.push_back(i, 0.1 * a_gui_contrast * i + b_gui_contrast - 0.1 * a_gui_contrast * b_gui_contrast);
+				}
 				show = cenvertCentering(src, CV_8U, 0.1 * a_gui_contrast, b_gui_contrast);
 			}
 			else if (sw_gui_contrast == 2)
 			{
+				const double coeff = -0.5 / (sigma_gui_contrast * sigma_gui_contrast);
+				for (int i = 0; i < 256; i++)
+				{
+					double v = (i - b_gui_contrast);
+					p.push_back(i, 0.1 * a_gui_contrast * exp(v * v * coeff) * v + i);
+				}
 				contrastSToneExp(src, show, sigma_gui_contrast, 0.1 * a_gui_contrast, b_gui_contrast);
+			}
+			else if (sw_gui_contrast == 3)
+			{
+				for (int i = 0; i < 256; i++)
+				{
+					p.push_back(i, pow((double)i / 255.0, 1.0 / (gamma_gui_contrast * 0.01)) * 255.0);
+				}
+				contrastGamma(src, show, 0.01 * gamma_gui_contrast);
 			}
 			imshow(wname, show);
 			key = waitKey(1);
@@ -121,6 +199,9 @@ namespace cp
 				cout << "q: quit" << endl;
 				cout << "b: flip b->127:0 ";
 			}
+
+			p.plot("tone curve", false);
+			p.clear();
 		}
 		destroyWindow(wname);
 		return show;

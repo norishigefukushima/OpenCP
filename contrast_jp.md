@@ -33,13 +33,22 @@ exp関数によるSトーンカーブでコントラスト変換をします．
 `x- a*gauss(x-b, sigma)(x-b)`で変換します．
 `gauss(x-b, sigma)=((x-b)*(x-b)/(-2*sigma*sigma))`です．
 
+# contrastGamma
+```cpp
+void contrastGamma(cv::InputArray src, cv::OutputArray dest, const double gamma)
+```
+## Usage
+ガンマ変換をします．
+
 # guiContrast
 ```cpp
 cv::Mat guiContrast(InputArray src_, string wname)
 ```
 ## Usage
-guiで各種コントラスト変換を行います．
+guiで各種コントラスト変換を行います．  
+また，トーンカーブも表示します．  
 戻り値は，表示画像です．
+
 static変数で内部のパラメータは保持されています．
 
 * `ijkl`でパラメータ`a``b`を変えられます．

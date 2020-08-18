@@ -24,6 +24,7 @@ Reference Manual
 * [convert](contrast_jp.md "#convert")
 * [cenvertCentering](contrast_jp.md "#cenvertCentering")
 * [contrastSToneExp](contrast_jp.md "#contrastSToneExp")
+* [contrastGamma](contrast_jp.md "#contrastGamma")
 * [guiContrast](contrast_jp.md "#guiContrast")
 
 # crop.hpp

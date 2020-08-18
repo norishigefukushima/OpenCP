@@ -83,7 +83,7 @@ void drawSignalX(InputArray src_, DRAW_SIGNAL_CHANNEL color, Mat& dest, Size out
 	p.setPlotSymbolALL(Plot::NOPOINT);
 	p.setPlotLineTypeALL(linetype);
 	
-	p.setXYMinMax(shiftx - max(rangex, 1), shiftx + max(rangex, 1), shiftvalue - rangevalue, shiftvalue + rangevalue);
+	p.setXYRange(shiftx - max(rangex, 1), shiftx + max(rangex, 1), shiftvalue - rangevalue, shiftvalue + rangevalue);
 	vector<vector<Point>> v((int)src.size());
 
 	for (int i = 0; i < (int)src.size(); i++)
@@ -111,7 +111,7 @@ void drawSignalY(vector<Mat>& src, DRAW_SIGNAL_CHANNEL color, Mat& dest, Size si
 	p.setPlotProfile(false, false, false);
 	p.setPlotSymbolALL(Plot::NOPOINT);
 	p.setPlotLineTypeALL(linetype);
-	p.setXYMinMax(shiftx - max(rangex, 1), shiftx + max(rangex, 1), shiftvalue - rangevalue, shiftvalue + rangevalue);
+	p.setXYRange(shiftx - max(rangex, 1), shiftx + max(rangex, 1), shiftvalue - rangevalue, shiftvalue + rangevalue);
 	vector<vector<Point>> v((int)src.size());
 	for (int i = 0; i < (int)src.size(); i++)
 	{

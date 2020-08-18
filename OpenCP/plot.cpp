@@ -183,16 +183,6 @@ namespace cp
 
 	void Plot::init(cv::Size imsize)
 	{
-		//font = "Consolas";
-		font = "Times New Roman";
-		fontSize = 20;
-		fontSize2 = 18;
-
-		data_max = 1;
-		xlabel = "x";
-		ylabel = "y";
-		setBackGoundColor(COLOR_WHITE);
-
 		origin = Point(64, 64);//default
 		setImageSize(imsize);
 
@@ -200,7 +190,6 @@ namespace cp
 		keyImage.setTo(background_color);
 
 		//setXYMinMax(0, plotsize.width, 0, plotsize.height);
-		isDrawMousePosition = true;
 
 		const int DefaultPlotInfoSize = 64;
 		pinfo.resize(DefaultPlotInfoSize);
@@ -248,12 +237,12 @@ namespace cp
 		{
 			pinfo[i].symbolType = s[i % s.size()];
 			pinfo[i].lineType = Plot::LINEAR;
-			pinfo[i].thickness = 1;
+			pinfo[i].lineWidth = 1;
 
 			double v = (double)i / DefaultPlotInfoSize * 255.0;
 			pinfo[i].color = c[i % c.size()];
 
-			pinfo[i].keyname = format("data %02d", i);
+			pinfo[i].title = format("data %02d", i);
 		}
 
 		setPlotProfile(false, true, false);
@@ -268,40 +257,6 @@ namespace cp
 
 		*valx = (pt.x - (origin.x) * 2) / x + xmin_plotwindow;
 		*valy = (H - (pt.y - origin.y)) / y + ymin_plotwindow;
-	}
-
-	void Plot::setPlotProfile(bool isXYCenter_, bool isXYMAXMIN_, bool isZeroCross_)
-	{
-		isZeroCross = isZeroCross_;
-		isXYMAXMIN = isXYMAXMIN_;
-		isXYCenter = isXYCenter_;
-	}
-
-	void Plot::setImageSize(Size s)
-	{
-		plotsize = s;
-		plotImage.create(s, CV_8UC3);
-		render.create(Size(plotsize.width + 4 * origin.x, plotsize.height + 2 * origin.y), CV_8UC3);
-	}
-
-
-	void Plot::setXYOriginZERO()
-	{
-		recomputeXYRangeMAXMIN(false);
-		xmin_plotwindow = 0;
-		ymin_plotwindow = 0;
-	}
-
-	void Plot::setYOriginZERO()
-	{
-		recomputeXYRangeMAXMIN(false);
-		ymin_plotwindow = 0;
-	}
-
-	void Plot::setXOriginZERO()
-	{
-		recomputeXYRangeMAXMIN(false);
-		xmin_plotwindow = 0;
 	}
 
 	void Plot::computeDataMaxMin()
@@ -379,7 +334,40 @@ namespace cp
 		computeWindowYRangeMAXMIN(isCenter, margin_rate, rounding_value);
 	}
 
-	void Plot::setXYMinMax(double xmin_, double xmax_, double ymin_, double ymax_)
+	void Plot::setXYOriginZERO()
+	{
+		recomputeXYRangeMAXMIN(false);
+		xmin_plotwindow = 0;
+		ymin_plotwindow = 0;
+	}
+
+	void Plot::setYOriginZERO()
+	{
+		recomputeXYRangeMAXMIN(false);
+		ymin_plotwindow = 0;
+	}
+
+	void Plot::setXOriginZERO()
+	{
+		recomputeXYRangeMAXMIN(false);
+		xmin_plotwindow = 0;
+	}
+
+	void Plot::setPlotProfile(bool isXYCenter_, bool isXYMAXMIN_, bool isZeroCross_)
+	{
+		isZeroCross = isZeroCross_;
+		isXYMAXMIN = isXYMAXMIN_;
+		isXYCenter = isXYCenter_;
+	}
+
+	void Plot::setImageSize(Size s)
+	{
+		plotsize = s;
+		plotImage.create(s, CV_8UC3);
+		render.create(Size(plotsize.width + 4 * origin.x, plotsize.height + 2 * origin.y), CV_8UC3);
+	}
+
+	void Plot::setXYRange(double xmin_, double xmax_, double ymin_, double ymax_)
 	{
 		isSetXRange = true;
 		isSetYRange = true;
@@ -394,7 +382,7 @@ namespace cp
 		ymin_data = ymin_plotwindow;
 	}
 
-	void Plot::setXMinMax(double xmin_, double xmax_)
+	void Plot::setXRange(double xmin_, double xmax_)
 	{
 		isSetXRange = true;
 		recomputeXYRangeMAXMIN(isXYCenter);
@@ -402,7 +390,7 @@ namespace cp
 		xmax_plotwindow = xmax_;
 	}
 
-	void Plot::setYMinMax(double ymin_, double ymax_)
+	void Plot::setYRange(double ymin_, double ymax_)
 	{
 		isSetYRange = true;
 		recomputeXYRangeMAXMIN(isXYCenter);
@@ -420,65 +408,7 @@ namespace cp
 		isLogScaleY = flag;
 	}
 
-	void Plot::setBackGoundColor(Scalar cl)
-	{
-		background_color = cl;
-	}
-
-	void Plot::setPlotThickness(int plotnum, int thickness_)
-	{
-		pinfo[plotnum].thickness = thickness_;
-	}
-
-	void Plot::setPlotColor(int plotnum, Scalar color_)
-	{
-		pinfo[plotnum].color = color_;
-	}
-
-	void Plot::setPlotLineType(int plotnum, int lineType)
-	{
-		pinfo[plotnum].lineType = lineType;
-	}
-
-	void Plot::setPlotSymbol(int plotnum, int symboltype)
-	{
-		pinfo[plotnum].symbolType = symboltype;
-	}
-
-	void Plot::setPlotKeyName(int plotnum, string name)
-	{
-		pinfo[plotnum].keyname = name;
-	}
-
-	void Plot::setPlotForeground(int plotnum)
-	{
-		foregroundIndex = plotnum;
-	}
-
-	void Plot::setPlot(int plotnum, Scalar color, int symboltype, int linetype, int thickness)
-	{
-		setPlotColor(plotnum, color);
-		setPlotSymbol(plotnum, symboltype);
-		setPlotLineType(plotnum, linetype);
-		setPlotThickness(plotnum, thickness);
-	}
-
-	void Plot::setPlotSymbolALL(int symboltype)
-	{
-		for (int i = 0; i < pinfo.size(); i++)
-		{
-			pinfo[i].symbolType = symboltype;
-		}
-	}
-
-	void Plot::setPlotLineTypeALL(int linetype)
-	{
-		for (int i = 0; i < pinfo.size(); i++)
-		{
-			pinfo[i].lineType = linetype;
-		}
-	}
-
+	
 	void Plot::setKey(int key)
 	{
 		keyPosition = key;
@@ -492,6 +422,79 @@ namespace cp
 	void Plot::setYLabel(string ylabel)
 	{
 		this->ylabel = ylabel;
+	}
+
+	void Plot::setGrid(int grid_level)
+	{
+		this->gridLevel = grid_level;
+	}
+
+	void Plot::setBackGoundColor(Scalar cl)
+	{
+		background_color = cl;
+	}
+
+
+	void Plot::setPlot(int plotnum, Scalar color, int symboltype, int linetype, int line_width)
+	{
+		setPlotColor(plotnum, color);
+		setPlotSymbol(plotnum, symboltype);
+		setPlotLineType(plotnum, linetype);
+		setPlotLineWidth(plotnum, line_width);
+	}
+
+	void Plot::setPlotColor(int plotnum, Scalar color_)
+	{
+		pinfo[plotnum].color = color_;
+	}
+
+	void Plot::setPlotSymbol(int plotnum, int symboltype)
+	{
+		pinfo[plotnum].symbolType = symboltype;
+	}
+
+	void Plot::setPlotSymbolALL(int symboltype)
+	{
+		for (int i = 0; i < pinfo.size(); i++)
+		{
+			pinfo[i].symbolType = symboltype;
+		}
+	}
+
+	void Plot::setPlotLineType(int plotnum, int lineType)
+	{
+		pinfo[plotnum].lineType = lineType;
+	}
+
+	void Plot::setPlotLineTypeALL(int linetype)
+	{
+		for (int i = 0; i < pinfo.size(); i++)
+		{
+			pinfo[i].lineType = linetype;
+		}
+	}
+
+	void Plot::setPlotLineWidth(int plotnum, int lineWidth)
+	{
+		pinfo[plotnum].lineWidth = lineWidth;
+	}
+
+	void Plot::setPlotLineWidthALL(int lineWidth)
+	{
+		for (int i = 0; i < pinfo.size(); i++)
+		{
+			pinfo[i].lineWidth = lineWidth;
+		}
+	}
+
+	void Plot::setPlotTitle(int plotnum, string name)
+	{
+		pinfo[plotnum].title = name;
+	}
+
+	void Plot::setPlotForeground(int plotnum)
+	{
+		foregroundIndex = plotnum;
 	}
 
 
@@ -786,22 +789,22 @@ namespace cp
 			data.push_back(Point2d(192.0, keyImage.rows - (i + 1) * step));
 			data.push_back(Point2d(keyImage.cols - step, keyImage.rows - (i + 1) * step));
 
-			plotGraph(keyImage, data, 0, keyImage.cols, 0, keyImage.rows, pinfo[i].color, pinfo[i].symbolType, pinfo[i].lineType, pinfo[i].thickness);
+			plotGraph(keyImage, data, 0, keyImage.cols, 0, keyImage.rows, pinfo[i].color, pinfo[i].symbolType, pinfo[i].lineType, pinfo[i].lineWidth);
 			//putText(keyImage, pinfo[i].keyname, Point(0, (i + 1) * step + 3), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, pinfo[i].color);
 			if (foregroundIndex != 0)
 			{
 				if (foregroundIndex == i + 1)
 				{
-					cv::addText(keyImage, "*" + pinfo[i].keyname, Point(0, (i + 1) * step + 3), font, fontSize + 2, pinfo[i].color);
+					cv::addText(keyImage, "*" + pinfo[i].title, Point(0, (i + 1) * step + 3), font, fontSize + 2, pinfo[i].color);
 				}
 				else
 				{
-					cv::addText(keyImage, pinfo[i].keyname, Point(0, (i + 1) * step + 3), font, fontSize, pinfo[i].color);
+					cv::addText(keyImage, pinfo[i].title, Point(0, (i + 1) * step + 3), font, fontSize, pinfo[i].color);
 				}
 			}
 			else
 			{
-				cv::addText(keyImage, pinfo[i].keyname, Point(0, (i + 1) * step + 3), font, fontSize, pinfo[i].color);
+				cv::addText(keyImage, pinfo[i].title, Point(0, (i + 1) * step + 3), font, fontSize, pinfo[i].color);
 			}
 		}
 	}
@@ -818,7 +821,7 @@ namespace cp
 		{
 			for (int i = 0; i < data_max; i++)
 			{
-				plotGraph(plotImage, pinfo[i].data, xmin_plotwindow, xmax_plotwindow, ymin_plotwindow, ymax_plotwindow, pinfo[i].color, pinfo[i].symbolType, pinfo[i].lineType, pinfo[i].thickness, symbolSize, isLogScaleX, isLogScaleY);
+				plotGraph(plotImage, pinfo[i].data, xmin_plotwindow, xmax_plotwindow, ymin_plotwindow, ymax_plotwindow, pinfo[i].color, pinfo[i].symbolType, pinfo[i].lineType, pinfo[i].lineWidth, symbolSize, isLogScaleX, isLogScaleY);
 			}
 		}
 		else
@@ -827,10 +830,10 @@ namespace cp
 			{
 				if (i + 1 != foregroundIndex)
 				{
-					plotGraph(plotImage, pinfo[i].data, xmin_plotwindow, xmax_plotwindow, ymin_plotwindow, ymax_plotwindow, pinfo[i].color, pinfo[i].symbolType, pinfo[i].lineType, pinfo[i].thickness, symbolSize, isLogScaleX, isLogScaleY);
+					plotGraph(plotImage, pinfo[i].data, xmin_plotwindow, xmax_plotwindow, ymin_plotwindow, ymax_plotwindow, pinfo[i].color, pinfo[i].symbolType, pinfo[i].lineType, pinfo[i].lineWidth, symbolSize, isLogScaleX, isLogScaleY);
 				}
 			}
-			plotGraph(plotImage, pinfo[foregroundIndex - 1].data, xmin_plotwindow, xmax_plotwindow, ymin_plotwindow, ymax_plotwindow, pinfo[foregroundIndex - 1].color, pinfo[foregroundIndex - 1].symbolType, pinfo[foregroundIndex - 1].lineType, pinfo[foregroundIndex - 1].thickness, symbolSize, isLogScaleX, isLogScaleY);
+			plotGraph(plotImage, pinfo[foregroundIndex - 1].data, xmin_plotwindow, xmax_plotwindow, ymin_plotwindow, ymax_plotwindow, pinfo[foregroundIndex - 1].color, pinfo[foregroundIndex - 1].symbolType, pinfo[foregroundIndex - 1].lineType, pinfo[foregroundIndex - 1].lineWidth, symbolSize, isLogScaleX, isLogScaleY);
 		}
 		renderingOutsideInformation(true);
 
@@ -908,7 +911,7 @@ namespace cp
 		cout << "p ";
 		for (int i = 0; i < data_max; i++)
 		{
-			cout << "'" << name << "'" << " u " << 2 * i + 1 << ":" << 2 * i + 2 << " w lp" << " t \"" << pinfo[i].keyname << "\",";
+			cout << "'" << name << "'" << " u " << 2 * i + 1 << ":" << 2 * i + 2 << " w lp" << " t \"" << pinfo[i].title << "\",";
 		}
 		cout << endl;
 		fclose(fp);
@@ -955,6 +958,11 @@ namespace cp
 		return ret;
 	}
 
+	void Plot::setIsDrawMousePosition(const bool flag)
+	{
+		this->isDrawMousePosition = flag;
+	}
+
 	static void guiPreviewMousePlot(int event, int x, int y, int flags, void* param)
 	{
 		Point* ret = (Point*)param;
@@ -972,7 +980,6 @@ namespace cp
 		namedWindow(wname);
 		setMouseCallback(wname, (MouseCallback)guiPreviewMousePlot, (void*)&pt);
 
-		int gridlevel = 0;
 		generateKeyImage(data_max);
 
 		computeDataMaxMin();
@@ -1010,7 +1017,7 @@ namespace cp
 		int keyboard = 0;
 		while (keyboard != 'q')
 		{
-			plotData(gridlevel);
+			plotData(gridLevel);
 
 			if (isDrawMousePosition)
 			{
@@ -1085,8 +1092,8 @@ namespace cp
 			}
 			if (keyboard == 'g')
 			{
-				gridlevel++;
-				if (gridlevel > 3)gridlevel = 0;
+				gridLevel++;
+				if (gridLevel > 3)gridLevel = 0;
 			}
 			if (keyboard == 'p')
 			{

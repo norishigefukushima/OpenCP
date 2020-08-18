@@ -189,7 +189,8 @@ int main(int argc, char** argv)
 	//Mat dmap = imread("img/stereo/Dolls/disp1.png", 0);
 	//Mat img = imread("img/lenna.png");
 	Mat img = imread("img/Kodak/kodim07.png");	
-	guiContrast(guiCropZoom(img));
+	guiContrast(img);
+	//guiContrast(guiCropZoom(img));
 	
 	//Mat img = imread("img/cameraman.png",0);
 	//Mat img = imread("img/barbara.png", 0);
