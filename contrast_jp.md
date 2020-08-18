@@ -34,11 +34,19 @@ exp関数によるSトーンカーブでコントラスト変換をします．
 `gauss(x-b, sigma)=((x-b)*(x-b)/(-2*sigma*sigma))`です．
 
 # contrastGamma
+
 ```cpp
 void contrastGamma(cv::InputArray src, cv::OutputArray dest, const double gamma)
 ```
 ## Usage
 ガンマ変換をします．
+
+# quantization
+```cpp
+void quantization(cv::InputArray src, cv::OutputArray dest, const int num_levels)
+```
+## Usage
+量子化によるポスタリゼーションを行います．
 
 # guiContrast
 ```cpp

@@ -90,6 +90,35 @@ namespace cp
 		}
 	}
 
+	template<typename T>
+	void quantization_(T* src, T* dest, const int size, const int num_levels)
+	{
+		const double nl = 256.0 / (double)max(1, num_levels);
+		const double nlstep = 255.0 / (double)max(1, num_levels - 1);
+
+		for (int i = 0; i < size; i++)
+		{
+			dest[i] = saturate_cast<T>(saturate_cast<int>(src[i] / nl) * nlstep);
+		}
+	}
+
+	void quantization(cv::InputArray src, cv::OutputArray dest, const int num_levels)
+	{
+		dest.create(src.size(), src.type());
+		const int size = src.getMat().size().area() * src.getMat().channels();
+
+		switch (src.depth())
+		{
+		case CV_8U: quantization_<uchar>(src.getMat().ptr<uchar>(), dest.getMat().ptr<uchar>(), size, num_levels); break;
+		case CV_8S: quantization_<char>(src.getMat().ptr<char>(), dest.getMat().ptr<char>(), size, num_levels); break;
+		case CV_16U:quantization_<ushort>(src.getMat().ptr<ushort>(), dest.getMat().ptr<ushort>(), size, num_levels); break;
+		case CV_16S:quantization_< short>(src.getMat().ptr< short>(), dest.getMat().ptr< short>(), size, num_levels); break;
+		case CV_32S:quantization_<   int>(src.getMat().ptr<   int>(), dest.getMat().ptr<   int>(), size, num_levels); break;
+		case CV_32F:quantization_< float>(src.getMat().ptr< float>(), dest.getMat().ptr< float>(), size, num_levels); break;
+		case CV_64F:quantization_<double>(src.getMat().ptr<double>(), dest.getMat().ptr<double>(), size, num_levels); break;
+		}
+	}
+
 	cv::Mat guiContrast(InputArray src_, string wname)
 	{
 		cp::Plot p(Size(300, 300));
@@ -107,11 +136,13 @@ namespace cp
 		static int sw_gui_contrast = 0;
 		static int sigma_gui_contrast = 30;
 		static int gamma_gui_contrast = 100;
-		cv::createTrackbar("sw", wname, &sw_gui_contrast, 3);
+		static int quantization_gui_contrast = 8;
+		cv::createTrackbar("sw", wname, &sw_gui_contrast, 4);
 		cv::createTrackbar("a*0.1", wname, &a_gui_contrast, 100);
 		cv::createTrackbar("b", wname, &b_gui_contrast, 255);
 		cv::createTrackbar("sigma", wname, &sigma_gui_contrast, 255);
 		cv::createTrackbar("gamma*0.01", wname, &gamma_gui_contrast, 1000);
+		cv::createTrackbar("quantization", wname, &quantization_gui_contrast, 255);
 
 		int key = 0;
 		cp::UpdateCheck uc(sw_gui_contrast);
@@ -125,6 +156,7 @@ namespace cp
 				else if (sw_gui_contrast == 1)mes = "a(x-b) + b";
 				else if (sw_gui_contrast == 2)mes = "x - a*gauss(x-b)(x-b)";
 				else if (sw_gui_contrast == 3)mes = "gamma: pow(x / 255, 1/gamma) * 255.0";
+				else if (sw_gui_contrast == 4)mes = "quantization: int(x/(255.0/level))*level";
 				else mes = "not supported";
 				displayOverlay(wname, mes, 3000);
 			}
@@ -165,6 +197,18 @@ namespace cp
 				}
 				contrastGamma(src, show, 0.01 * gamma_gui_contrast);
 			}
+			else if (sw_gui_contrast == 4)
+			{
+				const double nl = 256.0 / (double)max(1, quantization_gui_contrast);
+				const double nlstep = 255.0 / (double)max(1, quantization_gui_contrast - 1);
+
+				for (int i = 0; i < 256; i++)
+				{
+					p.push_back(i, saturate_cast<uchar>(int(i / nl) * nlstep));
+				}
+				quantization(src, show, quantization_gui_contrast);
+			}
+
 			imshow(wname, show);
 			key = waitKey(1);
 

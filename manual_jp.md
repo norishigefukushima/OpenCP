@@ -20,11 +20,12 @@ Reference Manual
 * [concatExtract](concat_jp.md "#")
 
 # contrast
-コントラスト強調の関数群
+トーンカーブによるコントラスト強調の関数群
 * [convert](contrast_jp.md "#convert")
 * [cenvertCentering](contrast_jp.md "#cenvertCentering")
 * [contrastSToneExp](contrast_jp.md "#contrastSToneExp")
 * [contrastGamma](contrast_jp.md "#contrastGamma")
+* [quantization](contrast_jp.md "#quantization")
 * [guiContrast](contrast_jp.md "#guiContrast")
 
 # crop.hpp
