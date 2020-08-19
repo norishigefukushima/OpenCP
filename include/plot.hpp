@@ -136,9 +136,9 @@ namespace cp
 
 		void setPlotProfile(bool isXYCenter_, bool isXYMAXMIN_, bool isZeroCross_);
 		void setImageSize(cv::Size s);
-		void setXYRange(double xmin_, double xmax_, double ymin_, double ymax_);
-		void setXRange(double xmin_, double xmax_);
-		void setYRange(double ymin_, double ymax_);
+		void setXYRange(double xmin, double xmax, double ymin, double ymax);
+		void setXRange(double xmin, double xmax);
+		void setYRange(double ymin, double ymax);
 		void setLogScaleX(const bool flag);
 		void setLogScaleY(const bool flag);
 

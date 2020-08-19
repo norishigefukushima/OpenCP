@@ -382,20 +382,18 @@ namespace cp
 		ymin_data = ymin_plotwindow;
 	}
 
-	void Plot::setXRange(double xmin_, double xmax_)
+	void Plot::setXRange(double xmin, double xmax)
 	{
 		isSetXRange = true;
-		recomputeXYRangeMAXMIN(isXYCenter);
-		xmin_plotwindow = xmin_;
-		xmax_plotwindow = xmax_;
+		xmin_plotwindow = xmin;
+		xmax_plotwindow = xmax;
 	}
 
-	void Plot::setYRange(double ymin_, double ymax_)
+	void Plot::setYRange(double ymin, double ymax)
 	{
 		isSetYRange = true;
-		recomputeXYRangeMAXMIN(isXYCenter);
-		ymin_plotwindow = ymin_;
-		ymax_plotwindow = ymax_;
+		ymin_plotwindow = ymin;
+		ymax_plotwindow = ymax;
 	}
 
 	void Plot::setLogScaleX(const bool flag)
@@ -674,7 +672,7 @@ namespace cp
 					buff = format("%.2f", xmin_plotwindow);
 					cv::addText(render, buff, Point(origin.x + 30, (int)(origin.y * 1.35 + plotImage.rows)), font, fontSize2, COLOR_BLACK);
 					buff = format("%.2f", (xmax_plotwindow - xmin_plotwindow) * 0.25 + xmin_plotwindow);
-					cv::addText(render, buff, Point((int)(origin.x + plotImage.cols * 0.25 + 40), (int)(origin.y * 1.35 + plotImage.rows)), font, fontSize2, COLOR_BLACK);
+					cv::addText(render, buff, Point((int)(origin.x + plotImage.cols * 0.25 + 45), (int)(origin.y * 1.35 + plotImage.rows)), font, fontSize2, COLOR_BLACK);
 					buff = format("%.2f", (xmax_plotwindow - xmin_plotwindow) * 0.5 + xmin_plotwindow);
 					cv::addText(render, buff, Point((int)(origin.x + plotImage.cols * 0.5 + 45), (int)(origin.y * 1.35 + plotImage.rows)), font, fontSize2, COLOR_BLACK);
 					buff = format("%.2f", (xmax_plotwindow - xmin_plotwindow) * 0.75 + xmin_plotwindow);
@@ -687,7 +685,7 @@ namespace cp
 					buff = format("%d", saturate_cast<int>(xmin_plotwindow));
 					cv::addText(render, buff, Point(origin.x + 30, (int)(origin.y * 1.35 + plotImage.rows)), font, fontSize2, COLOR_BLACK);
 					buff = format("%d", saturate_cast<int>((xmax_plotwindow - xmin_plotwindow) * 0.25 + xmin_plotwindow));
-					cv::addText(render, buff, Point((int)(origin.x + plotImage.cols * 0.25 + 40), (int)(origin.y * 1.35 + plotImage.rows)), font, fontSize2, COLOR_BLACK);
+					cv::addText(render, buff, Point((int)(origin.x + plotImage.cols * 0.25 + 45), (int)(origin.y * 1.35 + plotImage.rows)), font, fontSize2, COLOR_BLACK);
 					buff = format("%d", saturate_cast<int>((xmax_plotwindow - xmin_plotwindow) * 0.5 + xmin_plotwindow));
 					cv::addText(render, buff, Point((int)(origin.x + plotImage.cols * 0.5 + 45), (int)(origin.y * 1.35 + plotImage.rows)), font, fontSize2, COLOR_BLACK);
 					buff = format("%d", saturate_cast<int>((xmax_plotwindow - xmin_plotwindow) * 0.75 + xmin_plotwindow));

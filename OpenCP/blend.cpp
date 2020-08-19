@@ -861,6 +861,12 @@ namespace cp
 				cout << "PSNR: " << PSNR(src1, src2) << "dB" << endl;
 				cout << "MSE: " << getMSE(src1, src2) << endl;
 			}
+			if (key == 'i')
+			{
+				showMatInfo(src1, "src1");
+				cout << endl;
+				showMatInfo(src2, "src2");
+			}
 			if (key == 'v')
 			{
 				if (isVideo == false)
@@ -885,6 +891,7 @@ namespace cp
 			if (key == '?')
 			{
 				cout << "f: flip blend parameter alpha." << endl;
+				cout << "i: call showMatInfo." << endl;
 				cout << "p: compute PSNR and MSE." << endl;
 				cout << "v: start/stop video capture (toggle)." << endl;
 			}
