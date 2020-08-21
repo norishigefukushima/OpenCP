@@ -191,6 +191,7 @@ namespace cp
 			}
 		}
 
+#pragma omp parallel for schedule(dynamic)
 		for (int j = top + 1; j < border[0].rows - bottom; j++)
 		{
 			float* s = src.ptr<float>(j - top);

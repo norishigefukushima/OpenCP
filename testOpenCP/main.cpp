@@ -167,7 +167,7 @@ void copyMakeBorderTest(Mat& src)
 
 int main(int argc, char** argv)
 {
-	
+	cout << cv::getBuildInformation() << endl;
 	//testConcat(); return 0;
 	//testsimd(); return 0;
 
