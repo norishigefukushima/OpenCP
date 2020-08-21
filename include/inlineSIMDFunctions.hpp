@@ -99,10 +99,125 @@ inline void get_simd_widthend(const int cv_depth, const int channels, const int 
           __tmpp0##__LINE__, __tmpp1##__LINE__, __tmpp2##__LINE__, __tmpp3##__LINE__, __tmpp4##__LINE__, __tmpp5##__LINE__, __tmpp6##__LINE__, __tmpp7##__LINE__)
 
 
+#pragma region convert
+
+//cast
+//opencp cast __m256i of hi register ->__m128i
+inline __m128i _mm256_castsi256hi_si128(__m256i src)
+{
+	return _mm256_extractf128_si256(src, 1);
+}
+
+//opencp (same as _mm256_extractf128_si256(src, 1))
+//#define _mm256_castsi256hi_si128(src) *((__m128i*)&(src) + 1)
+
+//opencp uchar->float
+inline __m256 _mm256_cvtepu8_ps(__m128i src)
+{
+	return _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(src));
+}
+
+//opencp uchar->floatx2
+inline void _mm256_cvtepu8_psx2(__m128i src, __m256& dest0, __m256& dest1)
+{
+	dest0 = _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(src));
+	dest1 = _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(_mm_shuffle_epi32(src, _MM_SHUFFLE(1, 0, 3, 2))));
+}
+
+//opencp int ->uchar
+inline __m128i _mm256_cvtepi32_epu8(const __m256i v0)
+{
+	return _mm256_castsi256_si128(_mm256_permutevar8x32_epi32(_mm256_packus_epi16(_mm256_packs_epi32(v0, _mm256_setzero_si256()), _mm256_setzero_si256()), _mm256_setr_epi32(0, 4, 1, 5, 2, 6, 3, 7)));
+}
+
+//opencp float->uchar
+inline __m128i _mm256_cvtps_epu8(__m256 ms)
+{
+	return _mm256_cvtepi32_epu8(_mm256_cvtps_epi32(ms));
+}
+
+//opencp floatx2->uchar
+inline __m128i _mm256_cvtpsx2_epu8(const __m256 v0, const __m256 v1)
+{
+	return _mm256_castsi256_si128(_mm256_permutevar8x32_epi32(_mm256_packus_epi16(_mm256_packs_epi32(_mm256_cvtps_epi32(v0), _mm256_cvtps_epi32(v1)), _mm256_setzero_si256()), _mm256_setr_epi32(0, 4, 1, 5, 2, 6, 3, 7)));
+}
+
+//opencp intx2 ->uchar
+inline __m128i _mm256_cvtepi32x2_epu8(const __m256i v0, const __m256i v1)
+{
+	return _mm256_castsi256_si128(_mm256_permutevar8x32_epi32(_mm256_packus_epi16(_mm256_packs_epi32(v0, v1), _mm256_setzero_si256()), _mm256_setr_epi32(0, 4, 1, 5, 2, 6, 3, 7)));
+}
+
+//_mm256_cvtepi32_epi16 is already defined in zmmintrin.h (AVX512)
+inline __m128i _mm256_cvtepi32_epi16_v2(__m256i src)
+{
+	return _mm256_castsi256_si128(_mm256_permute4x64_epi64(_mm256_packs_epi32(src, _mm256_setzero_si256()), _MM_SHUFFLE(3, 1, 2, 0)));
+}
+
+//_mm256_cvtepi16_epi8 is already defined in zmmintrin.h (AVX512), but this is ep`u`
+inline __m128i _mm256_cvtepi16_epu8(__m256i src)
+{
+	return _mm256_castsi256_si128(_mm256_permute4x64_epi64(_mm256_packus_epi16(src, _mm256_setzero_si256()), _MM_SHUFFLE(3, 1, 2, 0)));
+}
+
+inline __m128i _mm256_cvtepi32_epu16(__m256i src)
+{
+	return _mm256_castsi256_si128(_mm256_permute4x64_epi64(_mm256_packus_epi32(src, _mm256_setzero_si256()), _MM_SHUFFLE(3, 1, 2, 0)));
+}
+
+inline __m256i _mm256_cvepi32x2_epi16(__m256i src1, __m256i src2)
+{
+	return _mm256_permute4x64_epi64(_mm256_packs_epi32(src1, src2), _MM_SHUFFLE(3, 1, 2, 0));
+}
+
+#pragma endregion
+
+#pragma region load and cast 
+//opencp: uchar->short
+inline __m256i _mm256_load_epu8cvtepi16(const __m128i* P)
+{
+	return _mm256_cvtepu8_epi16(_mm_loadu_si128((__m128i*)P));
+}
+
+//opencp: short->int
+inline __m256i _mm256_load_epi16cvtepi32(const __m128i* P)
+{
+	return _mm256_cvtepi16_epi32(_mm_loadu_si128((__m128i*)P));
+}
+
+//opencp: uchar->int
+inline __m256i _mm256_load_epu8cvtepi32(const __m128i* P)
+{
+	return _mm256_cvtepu8_epi32(_mm_loadu_si128((__m128i*)P));
+}
+
+//opencp: uchar->intx2
+inline void _mm256_load_epu8cvtepi32x2(const __m128i* P, __m256i& d0, __m256i& d1)
+{
+	__m128i s = _mm_load_si128((__m128i*)P);
+	d0 = _mm256_cvtepu8_epi32(s);
+	d1 = _mm256_cvtepu8_epi32(_mm_shuffle_epi32(s, _MM_SHUFFLE(1, 0, 3, 2)));
+}
+
+//opencp: uchar->float
+inline __m256 _mm256_load_epu8cvtps(const __m128i* P)
+{
+	return _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(_mm_loadl_epi64((__m128i*)P)));
+	//return _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(_mm_loadu_si128((__m128i*)P)));
+}
+
+//opencp: uchar->floatx2
+inline void _mm256_load_epu8cvtpsx2(const __m128i* P, __m256& d0, __m256& d1)
+{
+	__m128i t = _mm_loadu_si128((__m128i*)P);
+	d0 = _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(t));
+	d1 = _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(_mm_shuffle_epi32(t, _MM_SHUFFLE(1, 0, 3, 2))));
+}
+#pragma endregion
 
 #pragma region color_convert
 
-inline void _mm256_load_cvtps_bgr2planar_ps(const float* ptr, __m256& a, __m256& b, __m256& c)
+inline void _mm256_load_cvtps_bgr2planar_ps(const float* ptr, __m256& b, __m256& g, __m256& r)
 {
 	__m256 bgr0 = _mm256_loadu_ps(ptr);
 	__m256 bgr1 = _mm256_loadu_ps(ptr + 8);
@@ -115,10 +230,168 @@ inline void _mm256_load_cvtps_bgr2planar_ps(const float* ptr, __m256& a, __m256&
 	__m256 g0 = _mm256_blend_ps(_mm256_blend_ps(s02_high, s02_low, 0x92), bgr1, 0x24);
 	__m256 r0 = _mm256_blend_ps(_mm256_blend_ps(bgr1, s02_low, 0x24), s02_high, 0x92);
 
-	a = _mm256_shuffle_ps(b0, b0, 0x6c);
-	b = _mm256_shuffle_ps(g0, g0, 0xb1);
-	c = _mm256_shuffle_ps(r0, r0, 0xc6);
+	b = _mm256_shuffle_ps(b0, b0, 0x6c);
+	g = _mm256_shuffle_ps(g0, g0, 0xb1);
+	r = _mm256_shuffle_ps(r0, r0, 0xc6);
 }
+
+//opencp: BGR2Planar (uchar). Same function of OpenCV for SSE4.1.
+inline void _mm_load_cvtepu8bgr2planar_si128(const uchar* ptr, __m128i& b, __m128i& g, __m128i& r)
+{
+	const __m128i m0 = _mm_setr_epi8(0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0);
+	const __m128i m1 = _mm_setr_epi8(0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0);
+	__m128i s0 = _mm_loadu_si128((const __m128i*)ptr);
+	__m128i s1 = _mm_loadu_si128((const __m128i*)(ptr + 16));
+	__m128i s2 = _mm_loadu_si128((const __m128i*)(ptr + 32));
+	__m128i a0 = _mm_blendv_epi8(_mm_blendv_epi8(s0, s1, m0), s2, m1);
+	__m128i b0 = _mm_blendv_epi8(_mm_blendv_epi8(s1, s2, m0), s0, m1);
+	__m128i c0 = _mm_blendv_epi8(_mm_blendv_epi8(s2, s0, m0), s1, m1);
+	const __m128i sh_b = _mm_setr_epi8(0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13);
+	const __m128i sh_g = _mm_setr_epi8(1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14);
+	const __m128i sh_r = _mm_setr_epi8(2, 5, 8, 11, 14, 1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15);
+	a0 = _mm_shuffle_epi8(a0, sh_b);
+	b0 = _mm_shuffle_epi8(b0, sh_g);
+	c0 = _mm_shuffle_epi8(c0, sh_r);
+	b = a0;
+	g = b0;
+	r = c0;
+}
+
+//for SSE4.1
+inline void _mm_load_cvtepu8bgr2planar_epi64(const uchar* ptr, __m128i& b, __m128i& g, __m128i& r)
+{
+	//b = _mm_setr_epi8(ptr[0], ptr[3], ptr[6], ptr[9], ptr[12], ptr[15], ptr[18], ptr[21], 0, 0, 0, 0, 0, 0, 0, 0);
+	//g = _mm_setr_epi8(ptr[1], ptr[4], ptr[7], ptr[10], ptr[13], ptr[16], ptr[19], ptr[22], 0, 0, 0, 0, 0, 0, 0, 0);
+	//r = _mm_setr_epi8(ptr[2], ptr[5], ptr[8], ptr[11], ptr[14], ptr[17], ptr[20], ptr[23], 0, 0, 0, 0, 0, 0, 0, 0);
+
+	const __m128i mask1 = _mm_setr_epi8(0, 3, 6, 9, 12, 15, 1, 4, 7, 10, 13, 2, 5, 8, 11, 14);
+	const __m128i mask2 = _mm_setr_epi8(0, 3, 6, 0, 0, 0, 2, 5, 0, 0, 0, 1, 4, 7, 0, 0);
+
+	const __m128i smask1 = _mm_setr_epi8(6, 7, 8, 9, 10, 0, 1, 2, 3, 4, 5, 11, 12, 13, 14, 15);
+	const __m128i smask2 = _mm_setr_epi8(11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+	const __m128i smask3 = _mm_setr_epi8(0, 0, 0, 0, 0, 11, 12, 13, 0, 0, 0, 0, 0, 0, 0, 0);
+
+	const __m128i bmask1 = _mm_setr_epi8(-1, -1, -1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+	const __m128i bmask2 = _mm_setr_epi8(-1, -1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+
+	__m128i s0 = _mm_shuffle_epi8(_mm_load_si128((__m128i*)(ptr)), mask1);      //bbbbbbgggggrrrrr
+	__m128i s1 = _mm_shuffle_epi8(_mm_loadl_epi64((__m128i*)(ptr + 16)), mask2);//ggg000bb000rrr00
+
+	b = _mm_blendv_epi8(s1, s0, bmask1);//bbbbbbbb
+
+	s0 = _mm_shuffle_epi8(s0, smask1);  //gggggbbbbbbrrrrr
+	s1 = _mm_shuffle_epi8(s1, smask1);  //bb000ggg000rrr00
+	g = _mm_blendv_epi8(s1, s0, bmask2);//gggggggg
+
+	s0 = _mm_shuffle_epi8(s0, smask2);  //rrrrr00000000000
+	s1 = _mm_shuffle_epi8(s1, smask3);  //00000rrr00000000
+	r = _mm_blendv_epi8(s1, s0, bmask2);//rrrrrrrr
+}
+//BGR2Planar (uchar). Same function of OpenCV for AVX.
+inline void _mm256_load_cvtepu8bgr2planar_si256(const uchar* ptr, __m256i& b, __m256i& g, __m256i& r)
+{
+	__m256i bgr0 = _mm256_load_si256((const __m256i*)ptr);
+	__m256i bgr1 = _mm256_load_si256((const __m256i*)(ptr + 32));
+	__m256i bgr2 = _mm256_load_si256((const __m256i*)(ptr + 64));
+
+	__m256i s02_low = _mm256_permute2x128_si256(bgr0, bgr2, 0 + 2 * 16);
+	__m256i s02_high = _mm256_permute2x128_si256(bgr0, bgr2, 1 + 3 * 16);
+
+	const __m256i blendmask_bgrdeinterleave0 = _mm256_setr_epi8(0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0);
+	const __m256i blendmask_bgrdeinterleave1 = _mm256_setr_epi8(0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1);
+
+	__m256i b0 = _mm256_blendv_epi8(_mm256_blendv_epi8(s02_low, s02_high, blendmask_bgrdeinterleave0), bgr1, blendmask_bgrdeinterleave1);
+	__m256i g0 = _mm256_blendv_epi8(_mm256_blendv_epi8(s02_high, s02_low, blendmask_bgrdeinterleave1), bgr1, blendmask_bgrdeinterleave0);
+	__m256i r0 = _mm256_blendv_epi8(_mm256_blendv_epi8(bgr1, s02_low, blendmask_bgrdeinterleave0), s02_high, blendmask_bgrdeinterleave1);
+
+	const __m256i shufflemask_bgrdeinterleaveb = _mm256_setr_epi8(0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13);
+	const __m256i shufflemask_bgrdeinterleaveg = _mm256_setr_epi8(1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14);
+	const __m256i shufflemask_bgrdeinterleaver = _mm256_setr_epi8(2, 5, 8, 11, 14, 1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15);
+	b = _mm256_shuffle_epi8(b0, shufflemask_bgrdeinterleaveb);
+	g = _mm256_shuffle_epi8(g0, shufflemask_bgrdeinterleaveg);
+	r = _mm256_shuffle_epi8(r0, shufflemask_bgrdeinterleaver);
+}
+
+//opencp: BGR2Planar (uchar->float). psx2 is more effective
+inline void _mm256_load_cvtepu8bgr2planar_ps(const uchar* ptr, __m256& b, __m256& g, __m256& r)
+{
+	const __m128i m0 = _mm_setr_epi8(0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0);
+	const __m128i m1 = _mm_setr_epi8(-1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0);
+	const __m128i m2 = _mm_setr_epi8(0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0);
+	__m128i s0 = _mm_load_si128((const __m128i*)ptr);
+	__m128i s1 = _mm_load_si128((const __m128i*)(ptr + 16));
+
+	__m128i a0 = _mm_blendv_epi8(s0, s1, m0);
+	__m128i b0 = _mm_blendv_epi8(s0, s1, m1);
+	__m128i c0 = _mm_blendv_epi8(s0, s1, m2);
+	const __m128i sh_b = _mm_setr_epi8(0, 3, 6, 9, 12, 15, 2, 5, 0, 0, 0, 0, 0, 0, 0, 0);
+	const __m128i sh_g = _mm_setr_epi8(1, 4, 7, 10, 13, 0, 3, 6, 0, 0, 0, 0, 0, 0, 0, 0);
+	const __m128i sh_r = _mm_setr_epi8(2, 5, 8, 11, 14, 1, 4, 7, 0, 0, 0, 0, 0, 0, 0, 0);
+	a0 = _mm_shuffle_epi8(a0, sh_b);
+	b0 = _mm_shuffle_epi8(b0, sh_g);
+	c0 = _mm_shuffle_epi8(c0, sh_r);
+	b = _mm256_cvtepu8_ps(a0);
+	g = _mm256_cvtepu8_ps(b0);
+	r = _mm256_cvtepu8_ps(c0);
+}
+
+//opencp: BGR2Planar (uchar->float) SSE shuffle and then cvtepu8_ps. psx4 has almost the same performance.
+inline void _mm256_load_cvtepu8bgr2planar_psx2(const uchar* ptr, __m256& b0, __m256& b1, __m256& g0, __m256& g1, __m256& r0, __m256& r1)
+{
+	const __m128i m0 = _mm_setr_epi8(0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0);
+	const __m128i m1 = _mm_setr_epi8(0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0);
+	__m128i s0 = _mm_loadu_si128((const __m128i*)ptr);
+	__m128i s1 = _mm_loadu_si128((const __m128i*)(ptr + 16));
+	__m128i s2 = _mm_loadu_si128((const __m128i*)(ptr + 32));
+	__m128i t0 = _mm_blendv_epi8(_mm_blendv_epi8(s0, s1, m0), s2, m1);
+	__m128i t1 = _mm_blendv_epi8(_mm_blendv_epi8(s1, s2, m0), s0, m1);
+	__m128i t2 = _mm_blendv_epi8(_mm_blendv_epi8(s2, s0, m0), s1, m1);
+	const __m128i sh_b = _mm_setr_epi8(0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13);
+	const __m128i sh_g = _mm_setr_epi8(1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14);
+	const __m128i sh_r = _mm_setr_epi8(2, 5, 8, 11, 14, 1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15);
+	t0 = _mm_shuffle_epi8(t0, sh_b);
+	t1 = _mm_shuffle_epi8(t1, sh_g);
+	t2 = _mm_shuffle_epi8(t2, sh_r);
+
+	_mm256_cvtepu8_psx2(t0, b0, b1);
+	_mm256_cvtepu8_psx2(t1, g0, g1);
+	_mm256_cvtepu8_psx2(t2, r0, r1);
+}
+
+//opencp: BGR2Planar (uchar->float) AVX shuffle and then cvtepu8_ps. psx2 has almost the same performance.
+inline void _mm256_load_cvtepu8bgr2planar_psx4(const uchar* ptr,
+	__m256& b0, __m256& b1, __m256& b2, __m256& b3,
+	__m256& g0, __m256& g1, __m256& g2, __m256& g3,
+	__m256& r0, __m256& r1, __m256& r2, __m256& r3)
+{
+	__m256i bgr0 = _mm256_load_si256((const __m256i*)ptr);
+	__m256i bgr1 = _mm256_load_si256((const __m256i*)(ptr + 32));
+	__m256i bgr2 = _mm256_load_si256((const __m256i*)(ptr + 64));
+
+	__m256i s02_low = _mm256_permute2x128_si256(bgr0, bgr2, 0 + 2 * 16);
+	__m256i s02_high = _mm256_permute2x128_si256(bgr0, bgr2, 1 + 3 * 16);
+
+	const __m256i blendmask_bgrdeinterleave0 = _mm256_setr_epi8(0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0);
+	const __m256i blendmask_bgrdeinterleave1 = _mm256_setr_epi8(0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1);
+
+	__m256i t0 = _mm256_blendv_epi8(_mm256_blendv_epi8(s02_low, s02_high, blendmask_bgrdeinterleave0), bgr1, blendmask_bgrdeinterleave1);
+	__m256i t1 = _mm256_blendv_epi8(_mm256_blendv_epi8(s02_high, s02_low, blendmask_bgrdeinterleave1), bgr1, blendmask_bgrdeinterleave0);
+	__m256i t2 = _mm256_blendv_epi8(_mm256_blendv_epi8(bgr1, s02_low, blendmask_bgrdeinterleave0), s02_high, blendmask_bgrdeinterleave1);
+
+	const __m256i shufflemask_bgrdeinterleaveb = _mm256_setr_epi8(0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13);
+	const __m256i shufflemask_bgrdeinterleaveg = _mm256_setr_epi8(1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14);
+	const __m256i shufflemask_bgrdeinterleaver = _mm256_setr_epi8(2, 5, 8, 11, 14, 1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15);
+	t0 = _mm256_shuffle_epi8(t0, shufflemask_bgrdeinterleaveb);
+	t1 = _mm256_shuffle_epi8(t1, shufflemask_bgrdeinterleaveg);
+	t2 = _mm256_shuffle_epi8(t2, shufflemask_bgrdeinterleaver);
+	_mm256_cvtepu8_psx2(_mm256_castsi256_si128(t0), b0, b1);
+	_mm256_cvtepu8_psx2(_mm256_castsi256hi_si128(t0), b2, b3);
+	_mm256_cvtepu8_psx2(_mm256_castsi256_si128(t1), g0, g1);
+	_mm256_cvtepu8_psx2(_mm256_castsi256hi_si128(t1), g2, g3);
+	_mm256_cvtepu8_psx2(_mm256_castsi256_si128(t2), r0, r1);
+	_mm256_cvtepu8_psx2(_mm256_castsi256hi_si128(t2), r2, r3);
+}
+
 
 inline void _mm256_store_epi8_color(uchar* dst, __m256i b, __m256i g, __m256i r)
 {
@@ -346,6 +619,7 @@ inline void _mm256_stream_pd_color(void* dst, const __m256d b, const __m256d g, 
 	_mm256_stream_pd(static_cast<double*>(dst) + 8, _mm256_blend_pd(_mm256_blend_pd(b1, g0, 0b0100), r1, 0b1001));
 }
 
+#pragma region gray2bgr
 //gray2bgr: broadcast 3 channels
 inline void _mm_cvtepi8_gray2bgr(const __m128i src, __m128i& d0, __m128i& d1, __m128i& d2)
 {
@@ -474,6 +748,7 @@ inline void _mm256_cvtpd_gray2bgr_v3(const __m256d src, __m256d& d0, __m256d& d1
 	d1 = _mm256_blend_pd(md1, md0, 0b1100);
 	d2 = _mm256_permute2f128_pd(src, md1, _MM_SELECT4(1, 3));
 }
+#pragma endregion
 
 //plain2bgr: plain b,g,r image to interleave rgb. SoA->AoS
 inline void _mm256_cvtps_planar2bgr(const __m256 b, const __m256 g, const __m256 r, __m256& d0, __m256& d1, __m256& d2)
@@ -489,249 +764,6 @@ inline void _mm256_cvtps_planar2bgr(const __m256 b, const __m256 g, const __m256
 	d2 = _mm256_permute2f128_ps(rval, gval, 0x31);
 }
 
-#pragma endregion
-
-#pragma region convert
-
-//cast
-//opencp cast __m256i of hi register ->__m128i
-inline __m128i _mm256_castsi256hi_si128(__m256i src)
-{
-	return _mm256_extractf128_si256(src, 1);
-}
-
-//opencp (same as _mm256_extractf128_si256(src, 1))
-//#define _mm256_castsi256hi_si128(src) *((__m128i*)&(src) + 1)
-
-//opencp uchar->float
-inline __m256 _mm256_cvtepu8_ps(__m128i src)
-{
-	return _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(src));
-}
-
-//opencp uchar->floatx2
-inline void _mm256_cvtepu8_psx2(__m128i src, __m256& dest0, __m256& dest1)
-{
-	dest0 = _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(src));
-	dest1 = _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(_mm_shuffle_epi32(src, _MM_SHUFFLE(1, 0, 3, 2))));
-}
-
-//opencp int ->uchar
-inline __m128i _mm256_cvtepi32_epu8(const __m256i v0)
-{
-	return _mm256_castsi256_si128(_mm256_permutevar8x32_epi32(_mm256_packus_epi16(_mm256_packs_epi32(v0, _mm256_setzero_si256()), _mm256_setzero_si256()), _mm256_setr_epi32(0, 4, 1, 5, 2, 6, 3, 7)));
-}
-
-//opencp float->uchar
-inline __m128i _mm256_cvtps_epu8(__m256 ms)
-{
-	return _mm256_cvtepi32_epu8(_mm256_cvtps_epi32(ms));
-}
-
-//opencp floatx2->uchar
-inline __m128i _mm256_cvtpsx2_epu8(const __m256 v0, const __m256 v1)
-{
-	return _mm256_castsi256_si128(_mm256_permutevar8x32_epi32(_mm256_packus_epi16(_mm256_packs_epi32(_mm256_cvtps_epi32(v0), _mm256_cvtps_epi32(v1)), _mm256_setzero_si256()), _mm256_setr_epi32(0, 4, 1, 5, 2, 6, 3, 7)));
-}
-
-//opencp intx2 ->uchar
-inline __m128i _mm256_cvtepi32x2_epu8(const __m256i v0, const __m256i v1)
-{
-	return _mm256_castsi256_si128(_mm256_permutevar8x32_epi32(_mm256_packus_epi16(_mm256_packs_epi32(v0, v1), _mm256_setzero_si256()), _mm256_setr_epi32(0, 4, 1, 5, 2, 6, 3, 7)));
-}
-
-//_mm256_cvtepi32_epi16 is already defined in zmmintrin.h (AVX512)
-inline __m128i _mm256_cvtepi32_epi16_v2(__m256i src)
-{
-	return _mm256_castsi256_si128(_mm256_permute4x64_epi64(_mm256_packs_epi32(src, _mm256_setzero_si256()), _MM_SHUFFLE(3, 1, 2, 0)));
-}
-
-//_mm256_cvtepi16_epi8 is already defined in zmmintrin.h (AVX512), but this is ep`u`
-inline __m128i _mm256_cvtepi16_epu8(__m256i src)
-{
-	return _mm256_castsi256_si128(_mm256_permute4x64_epi64(_mm256_packus_epi16(src, _mm256_setzero_si256()), _MM_SHUFFLE(3, 1, 2, 0)));
-}
-
-inline __m128i _mm256_cvtepi32_epu16(__m256i src)
-{
-	return _mm256_castsi256_si128(_mm256_permute4x64_epi64(_mm256_packus_epi32(src, _mm256_setzero_si256()), _MM_SHUFFLE(3, 1, 2, 0)));
-}
-
-inline __m256i _mm256_cvepi32x2_epi16(__m256i src1, __m256i src2)
-{
-	return _mm256_permute4x64_epi64(_mm256_packs_epi32(src1, src2), _MM_SHUFFLE(3, 1, 2, 0));
-}
-
-#pragma endregion
-
-#pragma region load and cast 
-//opencp: uchar->short
-inline __m256i _mm256_load_epu8cvtepi16(const __m128i* P)
-{
-	return _mm256_cvtepu8_epi16(_mm_loadu_si128((__m128i*)P));
-}
-
-//opencp: short->int
-inline __m256i _mm256_load_epi16cvtepi32(const __m128i* P)
-{
-	return _mm256_cvtepi16_epi32(_mm_loadu_si128((__m128i*)P));
-}
-
-//opencp: uchar->int
-inline __m256i _mm256_load_epu8cvtepi32(const __m128i* P)
-{
-	return _mm256_cvtepu8_epi32(_mm_loadu_si128((__m128i*)P));
-}
-
-//opencp: uchar->intx2
-inline void _mm256_load_epu8cvtepi32x2(const __m128i* P, __m256i& d0, __m256i& d1)
-{
-	__m128i s = _mm_load_si128((__m128i*)P);
-	d0 = _mm256_cvtepu8_epi32(s);
-	d1 = _mm256_cvtepu8_epi32(_mm_shuffle_epi32(s, _MM_SHUFFLE(1, 0, 3, 2)));
-}
-
-//opencp: uchar->float
-inline __m256 _mm256_load_epu8cvtps(const __m128i* P)
-{
-	return _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(_mm_loadl_epi64((__m128i*)P)));
-	//return _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(_mm_loadu_si128((__m128i*)P)));
-}
-
-//opencp: uchar->floatx2
-inline void _mm256_load_epu8cvtpsx2(const __m128i* P, __m256& d0, __m256& d1)
-{
-	__m128i t = _mm_loadu_si128((__m128i*)P);
-	d0 = _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(t));
-	d1 = _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(_mm_shuffle_epi32(t, _MM_SHUFFLE(1, 0, 3, 2))));
-}
-
-//opencp: BGR2Planar (uchar). Same function of OpenCV for SSE4.1.
-inline void _mm_load_cvtepu8bgr2planar_si128(const uchar* ptr, __m128i& b, __m128i& g, __m128i& r)
-{
-	const __m128i m0 = _mm_setr_epi8(0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0);
-	const __m128i m1 = _mm_setr_epi8(0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0);
-	__m128i s0 = _mm_loadu_si128((const __m128i*)ptr);
-	__m128i s1 = _mm_loadu_si128((const __m128i*)(ptr + 16));
-	__m128i s2 = _mm_loadu_si128((const __m128i*)(ptr + 32));
-	__m128i a0 = _mm_blendv_epi8(_mm_blendv_epi8(s0, s1, m0), s2, m1);
-	__m128i b0 = _mm_blendv_epi8(_mm_blendv_epi8(s1, s2, m0), s0, m1);
-	__m128i c0 = _mm_blendv_epi8(_mm_blendv_epi8(s2, s0, m0), s1, m1);
-	const __m128i sh_b = _mm_setr_epi8(0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13);
-	const __m128i sh_g = _mm_setr_epi8(1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14);
-	const __m128i sh_r = _mm_setr_epi8(2, 5, 8, 11, 14, 1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15);
-	a0 = _mm_shuffle_epi8(a0, sh_b);
-	b0 = _mm_shuffle_epi8(b0, sh_g);
-	c0 = _mm_shuffle_epi8(c0, sh_r);
-	b = a0;
-	g = b0;
-	r = c0;
-}
-
-//BGR2Planar (uchar). Same function of OpenCV for AVX.
-inline void _mm256_load_cvtepu8bgr2planar_si256(const uchar* ptr, __m256i& b, __m256i& g, __m256i& r)
-{
-	__m256i bgr0 = _mm256_load_si256((const __m256i*)ptr);
-	__m256i bgr1 = _mm256_load_si256((const __m256i*)(ptr + 32));
-	__m256i bgr2 = _mm256_load_si256((const __m256i*)(ptr + 64));
-
-	__m256i s02_low = _mm256_permute2x128_si256(bgr0, bgr2, 0 + 2 * 16);
-	__m256i s02_high = _mm256_permute2x128_si256(bgr0, bgr2, 1 + 3 * 16);
-
-	const __m256i blendmask_bgrdeinterleave0 = _mm256_setr_epi8(0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0);
-	const __m256i blendmask_bgrdeinterleave1 = _mm256_setr_epi8(0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1);
-
-	__m256i b0 = _mm256_blendv_epi8(_mm256_blendv_epi8(s02_low, s02_high, blendmask_bgrdeinterleave0), bgr1, blendmask_bgrdeinterleave1);
-	__m256i g0 = _mm256_blendv_epi8(_mm256_blendv_epi8(s02_high, s02_low, blendmask_bgrdeinterleave1), bgr1, blendmask_bgrdeinterleave0);
-	__m256i r0 = _mm256_blendv_epi8(_mm256_blendv_epi8(bgr1, s02_low, blendmask_bgrdeinterleave0), s02_high, blendmask_bgrdeinterleave1);
-
-	const __m256i shufflemask_bgrdeinterleaveb = _mm256_setr_epi8(0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13);
-	const __m256i shufflemask_bgrdeinterleaveg = _mm256_setr_epi8(1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14);
-	const __m256i shufflemask_bgrdeinterleaver = _mm256_setr_epi8(2, 5, 8, 11, 14, 1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15);
-	b = _mm256_shuffle_epi8(b0, shufflemask_bgrdeinterleaveb);
-	g = _mm256_shuffle_epi8(g0, shufflemask_bgrdeinterleaveg);
-	r = _mm256_shuffle_epi8(r0, shufflemask_bgrdeinterleaver);
-}
-
-//opencp: BGR2Planar (uchar->float). psx2 is more effective
-inline void _mm256_load_cvtepu8bgr2planar_ps(const uchar* ptr, __m256& b, __m256& g, __m256& r)
-{
-	const __m128i m0 = _mm_setr_epi8(0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0);
-	const __m128i m1 = _mm_setr_epi8(-1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0);
-	const __m128i m2 = _mm_setr_epi8(0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0);
-	__m128i s0 = _mm_load_si128((const __m128i*)ptr);
-	__m128i s1 = _mm_load_si128((const __m128i*)(ptr + 16));
-
-	__m128i a0 = _mm_blendv_epi8(s0, s1, m0);
-	__m128i b0 = _mm_blendv_epi8(s0, s1, m1);
-	__m128i c0 = _mm_blendv_epi8(s0, s1, m2);
-	const __m128i sh_b = _mm_setr_epi8(0, 3, 6, 9, 12, 15, 2, 5, 0, 0, 0, 0, 0, 0, 0, 0);
-	const __m128i sh_g = _mm_setr_epi8(1, 4, 7, 10, 13, 0, 3, 6, 0, 0, 0, 0, 0, 0, 0, 0);
-	const __m128i sh_r = _mm_setr_epi8(2, 5, 8, 11, 14, 1, 4, 7, 0, 0, 0, 0, 0, 0, 0, 0);
-	a0 = _mm_shuffle_epi8(a0, sh_b);
-	b0 = _mm_shuffle_epi8(b0, sh_g);
-	c0 = _mm_shuffle_epi8(c0, sh_r);
-	b = _mm256_cvtepu8_ps(a0);
-	g = _mm256_cvtepu8_ps(b0);
-	r = _mm256_cvtepu8_ps(c0);
-}
-
-//opencp: BGR2Planar (uchar->float) SSE shuffle and then cvtepu8_ps. psx4 has almost the same performance.
-inline void _mm256_load_cvtepu8bgr2planar_psx2(const uchar* ptr, __m256& b0, __m256& b1, __m256& g0, __m256& g1, __m256& r0, __m256& r1)
-{
-	const __m128i m0 = _mm_setr_epi8(0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0);
-	const __m128i m1 = _mm_setr_epi8(0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0);
-	__m128i s0 = _mm_loadu_si128((const __m128i*)ptr);
-	__m128i s1 = _mm_loadu_si128((const __m128i*)(ptr + 16));
-	__m128i s2 = _mm_loadu_si128((const __m128i*)(ptr + 32));
-	__m128i t0 = _mm_blendv_epi8(_mm_blendv_epi8(s0, s1, m0), s2, m1);
-	__m128i t1 = _mm_blendv_epi8(_mm_blendv_epi8(s1, s2, m0), s0, m1);
-	__m128i t2 = _mm_blendv_epi8(_mm_blendv_epi8(s2, s0, m0), s1, m1);
-	const __m128i sh_b = _mm_setr_epi8(0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13);
-	const __m128i sh_g = _mm_setr_epi8(1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14);
-	const __m128i sh_r = _mm_setr_epi8(2, 5, 8, 11, 14, 1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15);
-	t0 = _mm_shuffle_epi8(t0, sh_b);
-	t1 = _mm_shuffle_epi8(t1, sh_g);
-	t2 = _mm_shuffle_epi8(t2, sh_r);
-
-	_mm256_cvtepu8_psx2(t0, b0, b1);
-	_mm256_cvtepu8_psx2(t1, g0, g1);
-	_mm256_cvtepu8_psx2(t2, r0, r1);
-}
-
-//opencp: BGR2Planar (uchar->float) AVX shuffle and then cvtepu8_ps. psx2 has almost the same performance.
-inline void _mm256_load_cvtepu8bgr2planar_psx4(const uchar* ptr,
-	__m256& b0, __m256& b1, __m256& b2, __m256& b3,
-	__m256& g0, __m256& g1, __m256& g2, __m256& g3,
-	__m256& r0, __m256& r1, __m256& r2, __m256& r3)
-{
-	__m256i bgr0 = _mm256_load_si256((const __m256i*)ptr);
-	__m256i bgr1 = _mm256_load_si256((const __m256i*)(ptr + 32));
-	__m256i bgr2 = _mm256_load_si256((const __m256i*)(ptr + 64));
-
-	__m256i s02_low = _mm256_permute2x128_si256(bgr0, bgr2, 0 + 2 * 16);
-	__m256i s02_high = _mm256_permute2x128_si256(bgr0, bgr2, 1 + 3 * 16);
-
-	const __m256i blendmask_bgrdeinterleave0 = _mm256_setr_epi8(0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0);
-	const __m256i blendmask_bgrdeinterleave1 = _mm256_setr_epi8(0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1);
-
-	__m256i t0 = _mm256_blendv_epi8(_mm256_blendv_epi8(s02_low, s02_high, blendmask_bgrdeinterleave0), bgr1, blendmask_bgrdeinterleave1);
-	__m256i t1 = _mm256_blendv_epi8(_mm256_blendv_epi8(s02_high, s02_low, blendmask_bgrdeinterleave1), bgr1, blendmask_bgrdeinterleave0);
-	__m256i t2 = _mm256_blendv_epi8(_mm256_blendv_epi8(bgr1, s02_low, blendmask_bgrdeinterleave0), s02_high, blendmask_bgrdeinterleave1);
-
-	const __m256i shufflemask_bgrdeinterleaveb = _mm256_setr_epi8(0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13);
-	const __m256i shufflemask_bgrdeinterleaveg = _mm256_setr_epi8(1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14);
-	const __m256i shufflemask_bgrdeinterleaver = _mm256_setr_epi8(2, 5, 8, 11, 14, 1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15);
-	t0 = _mm256_shuffle_epi8(t0, shufflemask_bgrdeinterleaveb);
-	t1 = _mm256_shuffle_epi8(t1, shufflemask_bgrdeinterleaveg);
-	t2 = _mm256_shuffle_epi8(t2, shufflemask_bgrdeinterleaver);
-	_mm256_cvtepu8_psx2(_mm256_castsi256_si128(t0), b0, b1);
-	_mm256_cvtepu8_psx2(_mm256_castsi256hi_si128(t0), b2, b3);
-	_mm256_cvtepu8_psx2(_mm256_castsi256_si128(t1), g0, g1);
-	_mm256_cvtepu8_psx2(_mm256_castsi256hi_si128(t1), g2, g3);
-	_mm256_cvtepu8_psx2(_mm256_castsi256_si128(t2), r0, r1);
-	_mm256_cvtepu8_psx2(_mm256_castsi256hi_si128(t2), r2, r3);
-}
 #pragma endregion
 
 #pragma region arithmetic
@@ -971,7 +1003,7 @@ inline void _mm256_stream_auto_color(uchar* dest, __m256 b, __m256 g, __m256 r)
 
 #pragma region store
 
-inline void _mm256_store_cvtps_epu8(__m128i*  dest, __m256 ms)
+inline void _mm256_store_cvtps_epu8(__m128i* dest, __m256 ms)
 {
 	_mm_storel_epi64(dest, _mm256_cvtps_epu8(ms));
 }
@@ -1092,6 +1124,12 @@ inline void _mm256_storescalar_auto_color(uchar* dest, __m256 b, __m256 g, __m25
 	_mm256_storescalar_ps2epu8_color(dest, b, g, r, numpixel);
 }
 
+//return 8 uchar elements
+inline __m128i _mm256_i32gather_epu8(const uchar* src, __m256i idx)
+{
+	return _mm256_cvtepi32_epu8(_mm256_srli_epi32(_mm256_i32gather_epi32((int*)(src - 3), idx, 1), 24));
+	//return _mm_setr_epi8(src[idx.m256i_i32[0]], src[idx.m256i_i32[1]], src[idx.m256i_i32[2]], src[idx.m256i_i32[3]], src[idx.m256i_i32[4]], src[idx.m256i_i32[5]], src[idx.m256i_i32[6]], src[idx.m256i_i32[7]], 0, 0, 0, 0, 0, 0, 0, 0);
+}
 
 inline __m256 _mm256_i32gather_auto(float* src, __m256i idx)
 {
