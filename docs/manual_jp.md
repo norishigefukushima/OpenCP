@@ -1,5 +1,6 @@
 Reference Manual
 ================
+Documents in Japanese for Lab's members
 （現在，現状研究室内部専用：以下，研究室内向けメッセージ）
 マニュアルは，みんなで更新していってください．  
 更新するのを期待して待っても，ほぼ更新されません．
@@ -19,7 +20,7 @@ Reference Manual
 * [concatSplit](concat_jp.md "#concatSplit")
 * [concatExtract](concat_jp.md "#")
 
-# contrast
+# contrast.hpp
 トーンカーブによるコントラスト強調の関数群
 * [convert](contrast_jp.md "#convert")
 * [cenvertCentering](contrast_jp.md "#cenvertCentering")
@@ -72,7 +73,7 @@ imshowの拡張
 * [imshowResize](imshowExtension_jp.md "imshowResize")
 * [imshowCountDown](imshowExtension_jp.md "imshowCountDown")
 
-# detailEnhancement_jp.hpp
+# detailEnhancement.hpp
 詳細強調の関数
 * [detailEnhancementBox](detailEnhancement_jp.md "#detailEnhancementBox")
 * [detailEnhancementGauss](detailEnhancement_jp.md "#detailEnhancementGauss")
