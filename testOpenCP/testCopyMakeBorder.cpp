@@ -11,7 +11,7 @@ void copyMakeBorderTest(Mat& src)
 	//cv::setUseOptimized(false);
 
 	const int r = 30;
-	const int iteration = 10000;
+	const int iteration = 100000;
 	print_debug2(r, iteration);
 	const int borderType = BORDER_REPLICATE;
 
@@ -22,8 +22,8 @@ void copyMakeBorderTest(Mat& src)
 	Mat src32fc1 = convert(gray, CV_32F);
 	Mat src32fc3 = convert(src, CV_32F);
 
-	bool isGrayTest = true;
-	bool isColorTest = false;
+	bool isGrayTest = false;
+	bool isColorTest = true;
 
 	if(isGrayTest)
 	{
@@ -60,21 +60,31 @@ void copyMakeBorderTest(Mat& src)
 
 	if (isColorTest)
 	{
-		Mat dstcv;
-		Mat dstcp;
+		Mat dstcv32f;
+		Mat dstcp32f;
 		cout << "color" << endl;
 		{
-			Timer t("cv");
+			Timer t("cv 32f");
 			for (int i = 0; i < iteration; i++)
-				cv::copyMakeBorder(src32fc3, dstcv, r, r, r, r, borderType);
+				cv::copyMakeBorder(src32fc3, dstcv32f, r, r, r, r, borderType);
 		}
 		{
-			Timer t("cp");
+			Timer t("cp 32f");
 			for (int i = 0; i < iteration; i++)
-				cp::copyMakeBorderReplicate(src32fc3, dstcp, r, r, r, r);
+				cp::copyMakeBorderReplicate(src32fc3, dstcp32f, r, r, r, r);
 		}
-		cout << getPSNR(dstcv, dstcp) << "dB" << endl;
-		guiAlphaBlend(dstcv, dstcp);
+		{
+			Timer t("cv 32f");
+			for (int i = 0; i < iteration; i++)
+				cv::copyMakeBorder(src32fc3, dstcv32f, r, r, r, r, borderType);
+		}
+		{
+			Timer t("cp 32f");
+			for (int i = 0; i < iteration; i++)
+				cp::copyMakeBorderReplicate(src32fc3, dstcp32f, r, r, r, r);
+		}
+		cout << getPSNR(dstcv32f, dstcp32f) << "dB" << endl;
+		guiAlphaBlend(dstcv32f, dstcp32f);
 	}
 
 }

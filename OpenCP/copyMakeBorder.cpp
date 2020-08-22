@@ -119,19 +119,19 @@ namespace cp
 
 			for (int i = end; i < border.cols; i++)
 				d[i] = (s[src.cols - 1]);
-
 		}
 #endif
 	}
 
 	void copyMakeBorderReplicate32FC3(Mat& src, Mat& border, const int top, const int bottom, const int left, const int right)
 	{
-		const int LEFT = get_simd_ceil(left, 8);
+		const int LEFT = get_simd_floor(left, 8);
 		const int RIGHT = get_simd_ceil(right, 8);
 		const int END = border.cols - RIGHT;
-
+		const int end = border.cols - right;
+		const int end_simd = border.cols - (right - get_simd_floor(right, 8));
 		const int e = (src.cols - 1) * 3;
-
+#if 0
 		//src top line
 		{
 			float* s = src.ptr<float>();
@@ -173,12 +173,44 @@ namespace cp
 			float* s = border.ptr<float>(border.rows - bottom - 1);
 			float* d = border.ptr<float>(j);
 			memcpy(d, s, sizeof(float) * border.cols * 3);
-		}
 	}
+#else
+
+#pragma omp parallel for
+		for (int j = 0; j < border.rows; j++)
+		{
+			float* s = src.ptr<float>(min(max(j - top, 0), src.rows - 1));
+			float* d = border.ptr<float>(j);
+
+			for (int i = 0; i < LEFT; i += 8)
+				_mm256_storeu_ps_color(d + 3 * i, _mm256_set1_ps(s[0]), _mm256_set1_ps(s[1]), _mm256_set1_ps(s[2]));
+			for (int i = LEFT; i < left; i++)
+			{
+				d[3 * i + 0] = s[0];
+				d[3 * i + 1] = s[1];
+				d[3 * i + 2] = s[2];
+			}
+
+			memcpy(d + 3 * left, s, sizeof(float) * src.cols * 3);
+
+			for (int i = end; i < end_simd; i += 8)
+				_mm256_storeu_ps_color(d + 3 * i, _mm256_set1_ps(s[e]), _mm256_set1_ps(s[e + 1]), _mm256_set1_ps(s[e + 2]));
+			for (int i = end_simd; i < border.cols; i++)
+			{
+				d[3 * i + 0] = s[e + 0];
+				d[3 * i + 1] = s[e + 1];
+				d[3 * i + 2] = s[e + 2];
+			}			
+		}
+#endif
+}
 
 	void copyMakeBorderReplicate(InputArray src_, cv::OutputArray border_, const int top, const int bottom, const int left, const int right)
 	{
 		CV_Assert(!src_.empty());
+		CV_Assert(src_.depth() == CV_8U || src_.depth() == CV_32F);
+		CV_Assert(src_.channels() == 1 || src_.channels() == 3);
+
 		Mat src = src_.getMat();
 		Size bsize = Size(src.cols + left + right, src.rows + top + bottom);
 		if (border_.empty() || border_.size() != bsize || border_.type() != src_.type())
