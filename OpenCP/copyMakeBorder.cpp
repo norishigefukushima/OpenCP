@@ -173,7 +173,7 @@ namespace cp
 			float* s = border.ptr<float>(border.rows - bottom - 1);
 			float* d = border.ptr<float>(j);
 			memcpy(d, s, sizeof(float) * border.cols * 3);
-	}
+		}
 #else
 
 #pragma omp parallel for
@@ -200,10 +200,45 @@ namespace cp
 				d[3 * i + 0] = s[e + 0];
 				d[3 * i + 1] = s[e + 1];
 				d[3 * i + 2] = s[e + 2];
-			}			
+			}
 		}
 #endif
-}
+	}
+
+	void copyMakeBorderReplicate8UC3(Mat& src, Mat& border, const int top, const int bottom, const int left, const int right)
+	{
+		const int LEFT = get_simd_floor(left, 32);
+		const int end = border.cols - right;
+		const int end_simd = border.cols - (right - get_simd_floor(right, 8));
+		const int e = (src.cols - 1) * 3;
+
+#pragma omp parallel for
+		for (int j = 0; j < border.rows; j++)
+		{
+			uchar* s = src.ptr<uchar>(min(max(j - top, 0), src.rows - 1));
+			uchar* d = border.ptr<uchar>(j);
+
+			for (int i = 0; i < LEFT; i += 32)
+				_mm256_store_epi8_color(d + 3 * i, _mm256_set1_epi8(s[0]), _mm256_set1_epi8(s[1]), _mm256_set1_epi8(s[2]));
+			for (int i = LEFT; i < left; i++)
+			{
+				d[3 * i + 0] = s[0];
+				d[3 * i + 1] = s[1];
+				d[3 * i + 2] = s[2];
+			}
+
+			memcpy(d + 3 * left, s, sizeof(uchar) * src.cols * 3);
+
+			for (int i = end; i < end_simd; i += 32)
+				_mm256_store_epi8_color(d + 3 * i, _mm256_set1_epi8(s[e]), _mm256_set1_epi8(s[e + 1]), _mm256_set1_epi8(s[e + 2]));
+			for (int i = end_simd; i < border.cols; i++)
+			{
+				d[3 * i + 0] = s[e + 0];
+				d[3 * i + 1] = s[e + 1];
+				d[3 * i + 2] = s[e + 2];
+			}
+		}
+	}
 
 	void copyMakeBorderReplicate(InputArray src_, cv::OutputArray border_, const int top, const int bottom, const int left, const int right)
 	{
@@ -217,9 +252,11 @@ namespace cp
 			border_.create(bsize, src.type());
 
 		Mat border = border_.getMat();
+
 		if (src.type() == CV_8UC1)copyMakeBorderReplicate8UC1(src, border, top, bottom, left, right);
-		if (src.type() == CV_32FC1)copyMakeBorderReplicate32FC1(src, border, top, bottom, left, right);
-		if (src.type() == CV_32FC3)copyMakeBorderReplicate32FC3(src, border, top, bottom, left, right);
+		else if (src.type() == CV_8UC3)copyMakeBorderReplicate8UC3(src, border, top, bottom, left, right);
+		else if (src.type() == CV_32FC1)copyMakeBorderReplicate32FC1(src, border, top, bottom, left, right);
+		else if (src.type() == CV_32FC3)copyMakeBorderReplicate32FC3(src, border, top, bottom, left, right);
 	}
 
 

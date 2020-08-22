@@ -417,6 +417,7 @@ inline void _mm256_load_cvtepu8bgr2planar_psx4(const uchar* ptr,
 }
 
 
+
 inline void _mm256_store_epi8_color(uchar* dst, __m256i b, __m256i g, __m256i r)
 {
 	static const __m256i mask1 = _mm256_set_epi8(
