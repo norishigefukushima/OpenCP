@@ -6,7 +6,49 @@ Documents in Japanese for Lab's members
 更新するのを期待して待っても，ほぼ更新されません．
 （バグを発見したときについでに更新するくらい）
 
-# blend.hpp
+# core
+
+## concat.hpp
+画像の連結・分解の関数群
+* [concat/concatMerge](concat_jp.md "#concat/concatMerge")
+* [concatSplit](concat_jp.md "#concatSplit")
+* [concatExtract](concat_jp.md "#")
+
+## copyMakeBorder.hpp
+cv::copyMakeBorderを高速化した関数群
+* [copyMakeBorderReplicate](copyMakeBorder_jp.md "copyMakeBorderReplicate")
+* [splitCopyMakeBorder](copyMakeBorder_jp.md "splitCopyMakeBorder")
+## count.hpp
+画像の画素の属性をカウントする関数群
+ * [countNaN](count_jp.md "#countNaN")
+ * [countInf](count_jp.md "#countInf")
+ * [countDenormalizedNumber](count_jp.md "#countDenormalizedNumber")
+ * [countDenormalizedNumberRatio](count_jp.md "#countDenormalizedNumberRatio")
+
+## crop.hpp
+画像の切り抜き（クロップ）用関数群
+ * [cropZoom](crop_jp.md "#cropZoom")
+ * [cropZoomWithBoundingBox](crop_jp.md "#cropZoomWithBoundingBox")
+ * [cropZoomWithSrcMarkAndBoundingBox](crop_jp.md "#cropZoomWithSrcMarkAndBoundingBox")
+ * [cropZoom](crop_jp.md "#cropCenter")
+ * [guiCropZoom](crop_jp.md "#guiCropZoom")
+
+## histogram.hpp
+ヒストグラムの描画関数群
+ * [drawHistogramImage](histogram_jp.md "#drawHistogramImage")
+ * [drawHistogramImageGray](histogram_jp.md "#drawHistogramImageGray")
+ * [drawAccumulateHistogramImage](histogram_jp.md "#drawAccumulateHistogramImage")
+ * [drawAccumulateHistogramImageGray](histogram_jp.md "#drawAccumulateHistogramImageGray")
+
+## imshowExtension.hpp
+imshowの拡張
+* [imshowNormalize](imshowExtension_jp.md "imshowNormalize")
+* [imshowScale](imshowExtension_jp.md "imshowScale")
+* [imshowResize](imshowExtension_jp.md "imshowResize")
+* [imshowCountDown](imshowExtension_jp.md "imshowCountDown")
+
+# imgprog
+## blend.hpp
 2枚の画像の合成関数群
 * [alphaBlend](blend_jp.md "#alphaBlend")
 * [alphaBlendFixedPoint](blend_jp.md "#alphaBlendFixedPoint")
@@ -14,13 +56,7 @@ Documents in Japanese for Lab's members
 * [dissolveSlideBlend](blend_jp.md "#dissolveSlideBlend")
 * [guiDissolveSlideBlend](blend_jp.md "#guiDissolveSlideBlend")
 
-# concat.hpp
-画像の連結・分解の関数群
-* [concat/concatMerge](concat_jp.md "#concat/concatMerge")
-* [concatSplit](concat_jp.md "#concatSplit")
-* [concatExtract](concat_jp.md "#")
-
-# contrast.hpp
+## contrast.hpp
 トーンカーブによるコントラスト強調の関数群
 * [convert](contrast_jp.md "#convert")
 * [cenvertCentering](contrast_jp.md "#cenvertCentering")
@@ -29,29 +65,7 @@ Documents in Japanese for Lab's members
 * [quantization](contrast_jp.md "#quantization")
 * [guiContrast](contrast_jp.md "#guiContrast")
 
-# crop.hpp
-画像の切り抜き（クロップ）用関数群
- * [cropZoom](crop_jp.md "#cropZoom")
- * [cropZoomWithBoundingBox](crop_jp.md "#cropZoomWithBoundingBox")
- * [cropZoomWithSrcMarkAndBoundingBox](crop_jp.md "#cropZoomWithSrcMarkAndBoundingBox")
- * [cropZoom](crop_jp.md "#cropCenter")
- * [guiCropZoom](crop_jp.md "#guiCropZoom")
-
-# count.hpp
-画像の画素の属性をカウントする関数群
- * [countNaN](count_jp.md "#countNaN")
- * [countInf](count_jp.md "#countInf")
- * [countDenormalizedNumber](count_jp.md "#countDenormalizedNumber")
- * [countDenormalizedNumberRatio](count_jp.md "#countDenormalizedNumberRatio")
-
-# histogram.hpp
-ヒストグラムの描画関数群
- * [drawHistogramImage](histogram_jp.md "#drawHistogramImage")
- * [drawHistogramImageGray](histogram_jp.md "#drawHistogramImageGray")
- * [drawAccumulateHistogramImage](histogram_jp.md "#drawAccumulateHistogramImage")
- * [drawAccumulateHistogramImageGray](histogram_jp.md "#drawAccumulateHistogramImageGray")
-
-# Metrics.hpp
+## Metrics.hpp
 画質評価関数群
  * [getPSNR](metrics_jp.md "#getPSNR")
  * [getPSNR_PRECISION](metrics_jp.md "getPSNR_PRECISION")
@@ -66,27 +80,22 @@ Documents in Japanese for Lab's members
  * [isSameMat](metrics_jp.md "#isSameMat")
  * SSIM：関数修正中
 
-# imshowExtension.hpp
-imshowの拡張
-* [imshowNormalize](imshowExtension_jp.md "imshowNormalize")
-* [imshowScale](imshowExtension_jp.md "imshowScale")
-* [imshowResize](imshowExtension_jp.md "imshowResize")
-* [imshowCountDown](imshowExtension_jp.md "imshowCountDown")
-
-# detailEnhancement.hpp
+## detailEnhancement.hpp
 詳細強調の関数
 * [detailEnhancementBox](detailEnhancement_jp.md "#detailEnhancementBox")
 * [detailEnhancementGauss](detailEnhancement_jp.md "#detailEnhancementGauss")
 * [detailEnhancementBilateral](detailEnhancement_jp.md "#detailEnhancementBilateral")
 * [detailEnhancementGuided](detailEnhancement_jp.md "#detailEnhancementGuided")
 
-# guidedFilter.hpp
+# filter
+## guidedFilter.hpp
 ガイデットフィルタの関数
 * [guidedImageFilter](guidedFilter_jp.md "#guidedImageFilter")
 * [class GuidedImageFilter](guidedFilter_jp.md "#class GuidedImageFilter")
 * [class GuidedImageFilterTiling](guidedFilter_jp.md "#GuidedImageFilterTiling")
 
-# StereoBase.hpp
+# stereo
+## StereoBase.hpp
 ステレオマッチングの関数
 * [class StereoBase（書きかけ）](StereoBase.md)
 
