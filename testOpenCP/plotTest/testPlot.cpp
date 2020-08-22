@@ -12,9 +12,9 @@ void testPlot()
 		test.setXRange(0, 320);
 		const int amp = 100;
 
-		for (int i = 0; i < int(CV_PI*amp); i++)
+		for (int i = 0; i < int(CV_PI * amp); i++)
 		{
-			test.push_back(i, sin(CV_PI * i * 1.0/amp));
+			test.push_back(i, sin(CV_PI * i * 1.0 / amp));
 		}
 
 		test.plot();
@@ -80,4 +80,25 @@ void testPlot()
 
 		test.plot("loop", false);
 	}
+}
+
+void testPlot2D()
+{
+	Plot2D p(Size(513, 513), 0, 512, 1, 0, 512, 1);
+	p.setLabel("sigma space", "sigma range");
+	RNG rng;
+	int r = 256;
+	double sigma = 512 /(2.0* 3.0);
+	for (int i = 0; i <= 512; i++)
+	{
+		for (int j = 0; j <=512; j++)
+		{
+			//p.add(j, i, rand());
+			//double v = rng.uniform(0.0, 1.0);
+			double v = exp(((i - r) * (i - r) + (j - r) * (j - r)) / (-2.0 * sigma * sigma));
+			p.add(j, i, v);
+		}
+	}
+
+	p.plot("a");
 }

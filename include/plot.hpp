@@ -224,32 +224,49 @@ namespace cp
 	};
 	class CP_EXPORT Plot2D
 	{
+		cv::Scalar background_color = cv::Scalar(255, 255, 255, 0);
+		std::string font = "Times New Roman";//"Consolas"
+		int fontSize = 20;
+		int fontSize2 = 18;
+
 		std::vector<std::vector<double>> data;
-		cv::Mat graphBase;
+		cv::Mat labelxImage;
+		cv::Mat labelyImage;
+		cv::Mat gridData;
 		int w;
 		int h;
 		void createPlot();
-		void setMinMaxX(double minv, double maxv, int count);
-		void setMinMaxY(double minv, double maxv, int count);
+		void setMinMaxX(double minv, double maxv, double interval);
+		void setMinMaxY(double minv, double maxv, double interval);
+		void addLabelToGraph();
 	public:
+		std::string labelx="";
+		std::string labely="";
 		cv::Mat show;
 		cv::Mat graph;
-		cv::Size size;
-		double minx;
-		double maxx;
-		int countx;
+		cv::Size plotImageSize;
+		double x_min;
+		double x_max;
+		double x_interval;
+		int x_size;
 
-		double miny;
-		double maxy;
-		int county;
+		double y_min;
+		double y_max;
+		double y_interval;
+		int y_size;
 
 		Plot2D(cv::Size graph_size, double xmin, double xmax, double xstep, double ymin, double ymax, double ystep);
 
+		void setFont(std::string font);
+		void setFontSize(const int size);
+		void setFontSize2(const int size);
 		void setMinMax(double xmin, double xmax, double xstep, double ymin, double ymax, double ystep);
 		void add(int x, int y, double val);
 		void writeGraph(bool isColor, int arg_min_max, double minvalue = 0, double maxvalue = 0, bool isMinMaxSet = false);
 		void setLabel(std::string namex, std::string namey);
-		//void plot(CSV& result, vector<ExperimentalParameters>& parameters);
+		
+		//void plot(CSV& result);
+		void plot(std::string wname = "plot2D");
 	};
 
 	CP_EXPORT void plotGraph(cv::OutputArray graphImage, std::vector<cv::Point2d>& data, double xmin, double xmax, double ymin, double ymax,

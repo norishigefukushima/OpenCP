@@ -2,10 +2,10 @@
 #include "draw.hpp"
 #include "stereo_core.hpp"//for RGB histogram
 #include "pointcloud.hpp"//for RGB histogram
-
 #include "inlineMathFunctions.hpp"
 
-#include <iostream>
+#include "debugcp.hpp"
+
 using namespace std;
 using namespace cv;
 
@@ -406,7 +406,7 @@ namespace cp
 		isLogScaleY = flag;
 	}
 
-	
+
 	void Plot::setKey(int key)
 	{
 		keyPosition = key;
@@ -1158,53 +1158,55 @@ namespace cp
 #pragma region Plot2D
 	void Plot2D::createPlot()
 	{
-		graphBase = Mat::zeros(Size(countx, county), CV_64F);
+		gridData = Mat::zeros(Size(x_size, y_size), CV_64F);
 	}
 
-	void Plot2D::setMinMaxX(double minv, double maxv, int count)
+	void Plot2D::setMinMaxX(double minv, double maxv, double interval)
 	{
-		minx = minv;
-		maxx = maxv;
-		countx = count;
+		x_min = minv;
+		x_max = maxv;
+		x_interval = interval;
+		x_size = (int)ceil(maxv - minv / interval) + 1;
 	}
 
-	void Plot2D::setMinMaxY(double minv, double maxv, int count)
+	void Plot2D::setMinMaxY(double minv, double maxv, double interval)
 	{
-		miny = minv;
-		maxy = maxv;
-		county = count;
+		y_min = minv;
+		y_max = maxv;
+		y_interval = interval;
+		y_size = (int)ceil(maxv - minv / interval) + 1;
 	}
 
-	void Plot2D::setMinMax(double xmin, double xmax, double xstep, double ymin, double ymax, double ystep)
+	void Plot2D::setMinMax(double xmin, double xmax, double xinterval, double ymin, double ymax, double yinterval)
 	{
-		setMinMaxX(xmin, xmax, (int)xstep);
-		setMinMaxY(ymin, ymax, (int)ystep);
+		setMinMaxX(xmin, xmax, xinterval);
+		setMinMaxY(ymin, ymax, yinterval);
 		createPlot();
 	}
 
-	Plot2D::Plot2D(Size graph_size, double xmin, double xmax, double xstep, double ymin, double ymax, double ystep)
+	Plot2D::Plot2D(Size graph_size, double xmin, double xmax, double xinterval, double ymin, double ymax, double yinterval)
 	{
-		size = graph_size;
-		setMinMax(xmin, xmax, xstep, ymin, ymax, ystep);
+		plotImageSize = graph_size;
+		setMinMax(xmin, xmax, xinterval, ymin, ymax, yinterval);
 	}
 
 	void Plot2D::add(int x, int y, double val)
 	{
 		//cout<<(x-minx) / stepx<< ","<<X<<","<<(y-miny) / stepy<<","<<Y<<","<<w<<","<<h<<","<<val<<endl;
-		graphBase.at<double>(y, x) = val;
+		gridData.at<double>(y, x) = val;
 		//getchar();
 	}
 
 	void Plot2D::writeGraph(bool isColor, int arg_min_max, double minvalue, double maxvalue, bool isMinMaxSet)
 	{
 		Mat temp;
-		resize(graphBase, temp, size, 0, 0, cv::INTER_LINEAR);
+		resize(gridData, temp, plotImageSize, 0, 0, cv::INTER_LINEAR);
 
 		double minv, maxv;
 		Point minp;
 		Point maxp;
 
-		minMaxLoc(graphBase, &minv, &maxv, &minp, &maxp);
+		minMaxLoc(gridData, &minv, &maxv, &minp, &maxp);
 		/*cout<<minv<<","<<maxv<<endl;
 		cout<<maxp<<endl;
 		cout<<minp<<endl;*/
@@ -1245,102 +1247,150 @@ namespace cp
 		flip(graph, graph, 0);
 	}
 
+	void Plot2D::setFont(string font)
+	{
+		this->font = font;
+	}
+
+	void Plot2D::setFontSize(const int size)
+	{
+		fontSize = size;
+	}
+
+	void Plot2D::setFontSize2(const int size)
+	{
+		fontSize2 = size;
+	}
+
 	void Plot2D::setLabel(string namex, string namey)
 	{
-		copyMakeBorder(graph, show, 0, 50, 50, 0, BORDER_CONSTANT, Scalar(255, 255, 255));
+		labelx = namex;
+		labely = namey;
+	}
 
-		putText(show, namex, Point(show.cols / 2 - 50, graph.rows + 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0));
-		putText(show, format("%.2f", minx), Point(50, graph.rows + 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0));
+	Rect getNonZeroMaxRectangle(InputArray src)
+	{
+		Mat s = src.getMat();
+		int t = 0, b = 0, l = 0, r = 0;
 
+		for (int i = 0; i < s.rows; i++)
+		{
+			if (countNonZero(s.row(i)) != 0)
+			{
+				t = i;
+				break;
+			}
+		}
+		for (int i = s.rows - 1; i >= 0; i--)
+		{
+			if (countNonZero(s.row(i)) != 0)
+			{
+				b = i;
+				break;
+			}
+		}
+		for (int i = 0; i < s.cols; i++)
+		{
+			if (countNonZero(s.col(i)) != 0)
+			{
+				l = i;
+				break;
+			}
+		}
+		for (int i = s.cols - 1; i >= 0; i--)
+		{
+			if (countNonZero(s.col(i)) != 0)
+			{
+				r = i;
+				break;
+			}
+		}
+		if (r == l)return Rect(0, 0, 0, 0);
+		return Rect(l, t, r - l + 1, b - t + 1);
+	}
+
+	cv::Mat getTextImageQt(string message, string font, const int fontSize, Scalar text_color, Scalar background_color)
+	{
+		int count = message.size();
+		Mat image = Mat::zeros(2 * (fontSize + 1), (fontSize + 1) * count, CV_8UC3);
+		cv::addText(image, message, Point(fontSize, fontSize), font, fontSize, Scalar(255, 255, 255, 0));
+		Mat bw; cvtColor(image, bw, COLOR_BGR2GRAY);
+		Rect r = getNonZeroMaxRectangle(bw);
+		
+		Mat ret = Mat::zeros(2 * (fontSize + 1), (fontSize + 1) * count, CV_8UC3);
+		ret.setTo(background_color);
+		cv::addText(ret, message, Point(fontSize, fontSize), font, fontSize, text_color);
+		return ret(r);
+	}
+
+	Size getTextSizeQt(string message, string font, const int fontSize)
+	{
+		Mat image = getTextImageQt(message, font, fontSize, Scalar(255, 255, 255, 0), Scalar::all(0));
+		return Size(image.cols, image.rows);
+	}
+
+	void Plot2D::addLabelToGraph()
+	{
+		labelxImage = getTextImageQt(labelx, font, fontSize, Scalar(0,0,0,0),background_color);
+		cout<<graph.size() << endl;
+		cout << labelxImage.size()<<endl;
+		const int offset = fontSize * 3;
+		copyMakeBorder(graph, show, 0, offset, offset, 0, BORDER_CONSTANT, Scalar(255, 255, 255));
+
+		Rect r = Rect(graph.cols / 2 + offset - labelxImage.cols / 2, graph.rows + fontSize, labelxImage.cols, labelxImage.rows);
+		labelxImage.copyTo(show(r));
+		
 		double minv, maxv;
 		Point minp;
 		Point maxp;
-		minMaxLoc(graphBase, &minv, &maxv, &minp, &maxp);
-		putText(show, format("%.2f", maxv), Point(400, graph.rows + 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0));
+		minMaxLoc(gridData, &minv, &maxv, &minp, &maxp);
+		//putText(show, format("%.2f", maxv), Point(400, graph.rows + 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0));
+		//cv::addText(show, labely, Point(graph.cols/2+offset, graph.rows + 30), font, fontSize, COLOR_WHITE);
 
-		Mat text = ~Mat::zeros(Size(50 + graph.cols, 50), CV_8UC3);
+		//Mat text = ~Mat::zeros(Size(50 + graph.cols, 50), CV_8UC3);
 
-		putText(text, namey, Point(80, 20), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0));
+		//putText(text, labelx, Point(80, 20), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0));
 
-		Mat a = text.t();
-		flip(a, a, 0);
+		//Mat a = text.t();
+		//flip(a, a, 0);
 
-		a.copyTo(show(Rect(0, 0, a.cols, a.rows)));
+		//a.copyTo(show(Rect(0, 0, a.cols, a.rows)));
 	}
 
-	/*
-	void Plot2D::plot(CSV& result, vector<ExperimentalParameters>& parameters)
+	void Plot2D::plot(string wname)
 	{
-	string wname = "plot2D";
-	namedWindow(wname);
-	for (int i = 0; i < result.data.size(); i++)
-	{
-	if (result.data[i][2] == 6)
-	{
-	int x = parameters[0].getDiscreteValueIndex(result.data[i][0]);
-	int y = parameters[1].getDiscreteValueIndex(result.data[i][1]);
-	this->add(x, y, result.data[i][3]);
-	}
-	}
+		namedWindow(wname);
+		showMatInfo(gridData);
+		createTrackbar("font size", wname, &fontSize, 128);
+		createTrackbar("font size2", wname, &fontSize2, 128);
+		createTrackbar("width", wname, &plotImageSize.width, 1920);
+		createTrackbar("height", wname, &plotImageSize.height, 1080);
+		//int minvalue = 30; createTrackbar("min", wname, &minvalue, 100);
+		//int maxvalue = 50; createTrackbar("max", wname, &maxvalue, 100);
 
+		//int xc = 0; createTrackbar("x", wname, &xc, result.width);
+		//int yc = 1; createTrackbar("y", wname, &yc, result.width);
+		//int zc = 3; createTrackbar("z", wname, &zc, result.width);
 
-	int key = 0;
+		bool isColorFlag = true;
+		bool isMinMaxSet = false;
+		int key = 0;
+		while (key != 'q')
+		{
+			//writeGraph(isColor, PLOT_ARG_MAX, minvalue, maxvalue, isMinMaxSet);
+			writeGraph(isColorFlag, PLOT_ARG_MAX);
+			addLabelToGraph();
 
-	int minvalue = 30; createTrackbar("min", wname, &minvalue, 100);
-	int maxvalue = 50; createTrackbar("max", wname, &maxvalue, 100);
-
-	int xc = 0; createTrackbar("x", wname, &xc, result.width);
-	int yc = 1; createTrackbar("y", wname, &yc, result.width);
-	int zc = 3; createTrackbar("z", wname, &zc, result.width);
-
-	vector<int> p(parameters.size());
-
-	for (int i = 0; i < parameters.size(); i++)
-	{
-	p[i] = parameters[i].getDiscreteValue(parameters[i].value);
-	createTrackbar(parameters[i].name, wname, &p[i], parameters[i].maxvalTrackbar);
-	}
-
-
-	bool isColor = true;
-	bool isMinMaxSet = false;
-
-	result.initFilter();
-	while (key != 'q')
-	{
-	setMinMax(parameters[xc].discreteValue[xc], parameters[xc].discreteValue[parameters[xc].maxvalTrackbar], parameters[xc].maxvalTrackbar + 1, parameters[yc].discreteValue[yc], parameters[yc].discreteValue[parameters[yc].maxvalTrackbar], parameters[yc].maxvalTrackbar + 1);
-
-	result.filterClear();
-	for (int i = 0; i < parameters.size(); i++)
-	{
-	if (i != xc && i != yc)
-	{
-	result.makeFilter(i, parameters[i].discreteValue[p[i]]);
-	//cout<<parameters[i].name<<","<<parameters[i].discreteValue[p[i]]<<endl;
-	}
+			imshow(wname, show);
+			//imshow(wname, graphBase);
+			key = waitKey(1);
+			if (key == 'c')
+			{
+				isColorFlag = (isColorFlag) ? false : true;
+			}
+		}
 	}
 
-	for (int i = 0; i < result.data.size(); i++)
-	{
-	if (result.filter[i])
-	{
-	int x = parameters[xc].getDiscreteValueIndex(result.data[i][xc]);
-	int y = parameters[yc].getDiscreteValueIndex(result.data[i][yc]);
-	add(x, y, result.data[i][zc]);
-	}
-	}
-
-	writeGraph(isColor, PLOT_ARG_MAX, minvalue, maxvalue, isMinMaxSet);
-	setLabel(parameters[xc].name, parameters[yc].name);
-	imshow(wname, show);
-	key = waitKey(1);
-	if (key == 'c')
-	{
-	isColor = (isColor) ? false : true;
-	}
-	}
-	}
-	*/
 #pragma endregion
 
 #pragma region RGBHistogram

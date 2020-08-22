@@ -117,12 +117,13 @@ int main(int argc, char** argv)
 #pragma endregion
 
 #pragma region core
-	copyMakeBorderTest(img); return 0;
+	//copyMakeBorderTest(img); return 0;
 	//testConcat(); return 0;
 	//testsimd(); return 0;
 
 	//testHistogram(); return 0;
-	testPlot(); return 0;
+	//testPlot(); return 0;
+	testPlot2D(); return 0;
 	//guiGuidedImageFilterTest();
 	//guiHazeRemoveTest();
 
@@ -139,8 +140,8 @@ int main(int argc, char** argv)
 	//testAlphaBlend(left, right);
 	//testAlphaBlendMask(left, right);
 	//guiDissolveSlide(left, dmap);
-	guiLocalDiffHistogram(img);
-	guiContrast(img);
+	//guiLocalDiffHistogram(img);
+	//guiContrast(img);
 	//guiContrast(guiCropZoom(img));
 	
 #pragma endregion

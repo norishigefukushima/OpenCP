@@ -19,6 +19,7 @@ void testCropZoom();
 void testHistogram();
 void testHistogram2(cv::Mat& src);
 void testPlot();
+void testPlot2D();
 void testPSNR(cv::Mat& ref);
 void testRGBHistogram();
 void testRGBHistogram2();

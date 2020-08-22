@@ -139,7 +139,9 @@ namespace cp
 		static int quantization_gui_contrast = 8;
 		cv::createTrackbar("sw", wname, &sw_gui_contrast, 4);
 		cv::createTrackbar("a*0.1", wname, &a_gui_contrast, 100);
+		cv::setTrackbarMin("a*0.1", wname, -100);
 		cv::createTrackbar("b", wname, &b_gui_contrast, 255);
+		cv::setTrackbarMin("b", wname, -255);
 		cv::createTrackbar("sigma", wname, &sigma_gui_contrast, 255);
 		cv::createTrackbar("gamma*0.01", wname, &gamma_gui_contrast, 1000);
 		cv::createTrackbar("quantization", wname, &quantization_gui_contrast, 255);
