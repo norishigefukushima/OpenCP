@@ -30,7 +30,8 @@ namespace cp
 		const int LEFT = get_simd_ceil(left, 8);
 		const int RIGHT = get_simd_ceil(right, 8);
 		const int END = border.cols - RIGHT;
-
+		const int end = border.cols - right;
+#if 0
 		//src top line
 		{
 			float* s = src.ptr<float>();
@@ -69,6 +70,36 @@ namespace cp
 			float* d = border.ptr<float>(j);
 			memcpy(d, s, sizeof(float) * border.cols);
 		}
+#elif 0
+		for (int j = 0; j < border.rows; j++)
+		{
+			float* s = src.ptr<float>(min(max(j - top, 0), src.rows - 1));
+			float* d = border.ptr<float>(j);
+
+			for (int i = 0; i < LEFT; i += 8)
+				_mm256_storeu_ps(d + i, _mm256_set1_ps(s[0]));
+			for (int i = END; i < END + RIGHT; i += 8)
+				_mm256_storeu_ps(d + i, _mm256_set1_ps(s[src.cols - 1]));
+			memcpy(d + left, s, sizeof(float) * src.cols);
+		}
+#else 
+#pragma omp parallel for
+		for (int j = 0; j < border.rows; j++)
+		{
+			float* s = src.ptr<float>(min(max(j - top, 0), src.rows - 1));
+			float* d = border.ptr<float>(j);
+
+			__m256 ms = _mm256_set1_ps(s[0]);
+			for (int i = 0; i < LEFT; i += 8)
+				_mm256_storeu_ps(d + i, ms);
+
+			memcpy(d + left, s, sizeof(float) * src.cols);
+
+			for (int i = end; i < border.cols; i++)
+				d[i] = (s[src.cols - 1]);
+
+		}
+#endif
 	}
 
 	void copyMakeBorderReplicate32FC3(Mat& src, Mat& border, const int top, const int bottom, const int left, const int right)
@@ -127,7 +158,9 @@ namespace cp
 	{
 		CV_Assert(!src_.empty());
 		Mat src = src_.getMat();
-		border_.create(Size(src.cols + left + right, src.rows + top + bottom), src.type());
+		Size bsize = Size(src.cols + left + right, src.rows + top + bottom);
+		if (border_.empty() || border_.size() != bsize || border_.type() != src_.type())
+			border_.create(bsize, src.type());
 
 		Mat border = border_.getMat();
 		if (src.type() == CV_32FC1)copyMakeBorderReplicate32FC1(src, border, top, bottom, left, right);

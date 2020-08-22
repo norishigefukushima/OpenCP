@@ -108,11 +108,15 @@ void guiLocalDiffHistogram(Mat& src, bool isWait, string wname)
 
 int main(int argc, char** argv)
 {
-	cout << cv::getBuildInformation() << endl;
+#pragma region setup
+	//cout << cv::getBuildInformation() << endl;
 
-	
+
 	//Mat img = imread("img/lenna.png");
 	Mat img = imread("img/Kodak/kodim07.png");
+#pragma endregion
+
+#pragma region core
 	copyMakeBorderTest(img); return 0;
 	//testConcat(); return 0;
 	//testsimd(); return 0;
@@ -139,6 +143,7 @@ int main(int argc, char** argv)
 	guiContrast(img);
 	//guiContrast(guiCropZoom(img));
 	
+#pragma endregion
 	//Mat img = imread("img/cameraman.png",0);
 	//Mat img = imread("img/barbara.png", 0);
 
