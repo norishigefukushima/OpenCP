@@ -10,7 +10,7 @@ void copyMakeBorderTest(Mat& src)
 	//cv::ipp::setUseIPP(true);
 	//cv::setUseOptimized(false);
 
-	const int r = 3;
+	const int r = 30;
 	const int iteration = 10000;
 	print_debug2(r, iteration);
 	const int borderType = BORDER_REPLICATE;
@@ -27,32 +27,35 @@ void copyMakeBorderTest(Mat& src)
 
 	if(isGrayTest)
 	{
-		Mat dstcv;
-		Mat dstcp;
+		Mat dstcv8u;
+		Mat dstcp8u;
+		Mat dstcv32f;
+		Mat dstcp32f;
 		cout << "gray" << endl;
 		{
+			Timer t("cv 8u");
+			for (int i = 0; i < iteration; i++)
+				cv::copyMakeBorder(gray, dstcv8u, r, r, r, r, borderType);
+		}
+		{
+			Timer t("cp 8u");
+			for (int i = 0; i < iteration; i++)
+				cp::copyMakeBorderReplicate(gray, dstcp8u, r, r, r, r);
+		}
+		cout << getPSNR(dstcv8u, dstcp8u) << "dB" << endl;
+		//guiAlphaBlend(dstcv8u, dstcp8u);
+		{
 			Timer t("cv 32f");
 			for (int i = 0; i < iteration; i++)
-				cv::copyMakeBorder(src32fc1, dstcv, r, r, r, r, borderType);
+				cv::copyMakeBorder(src32fc1, dstcv32f, r, r, r, r, borderType);
 		}
 		{
 			Timer t("cp 32f");
 			for (int i = 0; i < iteration; i++)
-				cp::copyMakeBorderReplicate(src32fc1, dstcp, r, r, r, r);
+				cp::copyMakeBorderReplicate(src32fc1, dstcp32f, r, r, r, r);
 		}
-		{
-			Timer t("cv 32f");
-			for (int i = 0; i < iteration; i++)
-				cv::copyMakeBorder(src32fc1, dstcv, r, r, r, r, borderType);
-		}
-		{
-			Timer t("cp 32f");
-			for (int i = 0; i < iteration; i++)
-				cp::copyMakeBorderReplicate(src32fc1, dstcp, r, r, r, r);
-		}
-		cout << getPSNR(dstcv, dstcp) << "dB" << endl;
-
-		guiAlphaBlend(dstcv, dstcp);
+		cout << getPSNR(dstcv32f, dstcp32f) << "dB" << endl;
+		//guiAlphaBlend(dstcv32f, dstcp32f);
 	}
 
 	if (isColorTest)

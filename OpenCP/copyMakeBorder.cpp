@@ -25,6 +25,28 @@ namespace cp
 		}
 	}
 
+	void copyMakeBorderReplicate8UC1(Mat& src, Mat& border, const int top, const int bottom, const int left, const int right)
+	{
+		const int LEFT = get_simd_ceil(left, 32);
+		const int end = border.cols - right;
+
+#pragma omp parallel for
+		for (int j = 0; j < border.rows; j++)
+		{
+			uchar* s = src.ptr<uchar>(min(max(j - top, 0), src.rows - 1));
+			uchar* d = border.ptr<uchar>(j);
+
+			__m256i ms = _mm256_set1_epi8(s[0]);
+			for (int i = 0; i < LEFT; i += 32)
+				_mm256_storeu_si256((__m256i*)(d + i), ms);
+
+			memcpy(d + left, s, sizeof(uchar) * src.cols);
+
+			for (int i = end; i < border.cols; i++)
+				d[i] = (s[src.cols - 1]);
+		}
+	}
+
 	void copyMakeBorderReplicate32FC1(Mat& src, Mat& border, const int top, const int bottom, const int left, const int right)
 	{
 		const int LEFT = get_simd_ceil(left, 8);
@@ -163,6 +185,7 @@ namespace cp
 			border_.create(bsize, src.type());
 
 		Mat border = border_.getMat();
+		if (src.type() == CV_8UC1)copyMakeBorderReplicate8UC1(src, border, top, bottom, left, right);
 		if (src.type() == CV_32FC1)copyMakeBorderReplicate32FC1(src, border, top, bottom, left, right);
 		if (src.type() == CV_32FC3)copyMakeBorderReplicate32FC3(src, border, top, bottom, left, right);
 	}
