@@ -106,68 +106,14 @@ void guiLocalDiffHistogram(Mat& src, bool isWait, string wname)
 	if (!isWait)destroyWindow(wname);
 }
 
-/*
-#include <immintrin.h>
-void testsimd()
-{
-	__m256 a = _mm256_exp_ps(_mm256_set1_ps(1.f));
-	cout << a.m256_f32[0] << endl;
-	//cp::print_m128(a);
-}*/
-
-void copyMakeBorderTest(Mat& src)
-{
-	const int r = 3;
-	const int borderType = BORDER_REPLICATE;
-
-	CV_Assert(src.channels() == 3);
-	Mat gray;
-	cvtColor(src, gray, COLOR_BGR2GRAY);
-	
-	Mat src32fc1 = convert(gray, CV_32F);
-	Mat src32fc3 = convert(src, CV_32F);
-
-	const int iteration = 10000;
-	{
-		Mat dstcv;
-		Mat dstcp;
-		cout << "gray" << endl;
-		{
-			Timer t("cv");
-			for (int i = 0; i < iteration; i++)
-				cv::copyMakeBorder(src32fc1, dstcv, r, r, r, r, borderType);
-		}
-		{
-			Timer t("cp");
-			for (int i = 0; i < iteration; i++)
-				cp::copyMakeBorderReplicate(src32fc1, dstcp, r, r, r, r);
-		}
-		cout << getPSNR(dstcv, dstcp) << "dB" << endl;
-	}
-	
-	{
-		Mat dstcv;
-		Mat dstcp;
-		cout << "color" << endl;
-		{
-			Timer t("cv");
-			for (int i = 0; i < iteration; i++)
-				cv::copyMakeBorder(src32fc3, dstcv, r, r, r, r, borderType);
-		}
-		{
-			Timer t("cp");
-			for (int i = 0; i < iteration; i++)
-				cp::copyMakeBorderReplicate(src32fc3, dstcp, r, r, r, r);
-		}
-		cout << getPSNR(dstcv, dstcp) << "dB" << endl;
-		guiAlphaBlend(dstcv, dstcp);
-	}
-	
-}
-
 int main(int argc, char** argv)
 {
 	cout << cv::getBuildInformation() << endl;
+
+	
+	//Mat img = imread("img/lenna.png");
+	Mat img = imread("img/Kodak/kodim07.png");
+	copyMakeBorderTest(img); return 0;
 	//testConcat(); return 0;
 	//testsimd(); return 0;
 
@@ -176,19 +122,20 @@ int main(int argc, char** argv)
 	//guiGuidedImageFilterTest();
 	//guiHazeRemoveTest();
 
-	//Mat right = imread("left.png");
-	//Mat left = imread("right.png");
-	
-	Mat left = imread("img/stereo/Dolls/view1.png");
-	
-	//resize(left, left, Size(), 1, 0.25);
-	Mat right = imread("img/stereo/Dolls/view5.png");
-	//resize(right, right, Size(), 1, 0.25);
+	//testCropZoom(); return 0;
+	//testAddNoise(img); return 0;
+	//testLocalPSNR(img); return 0;
+	//testPSNR(img); return 0;
+	//resize(img, a, Size(513, 513));
+	//splitmergeTest(a); return 0;
+	//testHistgram(img);
+	//testRGBHistogram();
+	//testRGBHistogram2();
+	//testTimer(img);
 	//testAlphaBlend(left, right);
 	//testAlphaBlendMask(left, right);
-	//Mat dmap = imread("img/stereo/Dolls/disp1.png", 0);
-	//Mat img = imread("img/lenna.png");
-	Mat img = imread("img/Kodak/kodim07.png");	
+	//guiDissolveSlide(left, dmap);
+	guiLocalDiffHistogram(img);
 	guiContrast(img);
 	//guiContrast(guiCropZoom(img));
 	
@@ -197,12 +144,20 @@ int main(int argc, char** argv)
 
 	guiWeightedHistogramFilterTest();
 	//guiWeightedHistogramFilterTest(img,img);
-	copyMakeBorderTest(img); return 0;
+	
+	//test stereo
+#pragma region stereo
+	//Mat right = imread("left.png");
+	//Mat left = imread("right.png");
+	Mat left = imread("img/stereo/Dolls/view1.png");
+	//resize(left, left, Size(), 1, 0.25);
+	Mat right = imread("img/stereo/Dolls/view5.png");
+	//resize(right, right, Size(), 1, 0.25);
+	//Mat dmap = imread("img/stereo/Dolls/disp1.png", 0);
 	Mat leftg, rightg;
-	//guiShift(left, right, 300);
 	cvtColor(left, leftg, COLOR_BGR2GRAY);
 	cvtColor(right, rightg, COLOR_BGR2GRAY);
-
+	//guiShift(left, right, 300);
 	//StereoBMEx sbm(0, get_simd_ceil(120, 16), get_simd_ceil(100, 16), 5);
 	StereoBase sbm(5, get_simd_ceil(16, 16), get_simd_ceil(100, 16));
 	cp::StereoEval eval;
@@ -211,23 +166,8 @@ int main(int argc, char** argv)
 	//sbm.check(leftg, rightg, disp);
 	//guiStereoBMTest(leftg, rightg, get_simd_ceil(326, 16), get_simd_ceil(100, 16)); return 0;
 	//guiStereoSGBMTest(left, right, get_simd_ceil(326, 16), get_simd_ceil(100, 16)); return 0;
-
-	//guiLocalDiffHistogram(img);
-	//testCropZoom(); return 0;
-	//testAddNoise(img); return 0;
-	//testLocalPSNR(img); return 0;
-	//testPSNR(img); return 0;
-	//resize(img, a, Size(513, 513));
-	//splitmergeTest(a); return 0;
-	//Mat img = imread("img/Kodak/kodim07.png");
-	//Mat img = imread("img/b.png");
-
-	//testHistgram(img);
-	//testRGBHistogram();
-	//testRGBHistogram2();
-	//testTimer(img);
-
-	//guiDissolveSlide(left, dmap);
+#pragma endregion
+	
 
 	//guiUpsampleTest(img);return 0;
 	//guiDomainTransformFilterTest(img);
@@ -238,28 +178,7 @@ int main(int argc, char** argv)
 	//VizKernel vk;
 	//vk.run(img, 2);
 
-	/*Mat aa = imread("temp/disp16.bmp", IMREAD_GRAYSCALE);
-	Mat aaa = Mat(Size(1248, 978), CV_16S);
-	unsigned short* s = aa.ptr<unsigned short>(0);
-	for (int i = 0; i < aaa.size().area(); i++)
-	{
-		aaa.at<short>(i) = s[i];
-	}
-	double minv, maxv;
-	minMaxLoc(aaa, &minv, &maxv);
-	aaa -= minv;
-	aaa *= 255.0 / (maxv - minv);
-	Mat ashow; aaa.convertTo(ashow, CV_8U);
-	imshow("disp", ashow); waitKey();*/
-
-	/*
-	StereoBMSimple sbm(5, 0, 16 * 8); Mat disp2;
-	StereoEval eval;
-	sbm.check(left, right, disp2, eval);
-	*/
 	
-
-
 	//guiShift(left,right); return 0;
 	//
 	//iirGuidedFilterTest2(img); return 0;
@@ -294,7 +213,6 @@ int main(int argc, char** argv)
 
 	//Mat src = imread("img/lenna.png", 0);
 
-
 	//Mat src = imread("img/stereo/Dolls/view1.png");
 	//guiDenoiseTest(src);
 	//guiBilateralFilterTest(src);
@@ -308,15 +226,10 @@ int main(int argc, char** argv)
 	//	Mat src;
 	Mat dest;
 
-
 	//guiCrossBasedLocalFilter(src); return 0;
-	//guiHistgramTest(src);
-	//Mat src = imread("img/kodim22.png");
-	//Mat src = imread("img/teddy_view1.png");
+	
 
 	//eraseBoundary(src,10);
-	Mat mega;
-	resize(src, mega, Size(1024, 1024));
 	//	resize(src,mega,Size(1024,1024));
 	//resize(src,mega,Size(640,480));
 
@@ -377,8 +290,6 @@ int main(int argc, char** argv)
 	//guiJointBinalyWeightedRangeFilterTest(noflash,flash);
 
 	//guiNonLocalMeansTest(src);
-
-
 
 	//application 
 	//guiDetailEnhancement(src);

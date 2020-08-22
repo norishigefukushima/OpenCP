@@ -31,9 +31,6 @@
     <Filter Include="ソース ファイル\filter\simdfuncs">
       <UniqueIdentifier>{1bfbeefe-97ec-47c9-921a-c1ff3ca181a9}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ソース ファイル\utilty functions">
-      <UniqueIdentifier>{a8d6d5ad-3a54-49d1-b714-38aaf9b46b00}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ソース ファイル\imgproc\qualitymetrics">
       <UniqueIdentifier>{57d39140-b032-4ffc-9481-77ae454cc77a}</UniqueIdentifier>
     </Filter>
@@ -51,9 +48,6 @@
     </Filter>
     <Filter Include="ヘッダー ファイル\headers\imgproc">
       <UniqueIdentifier>{b79448de-d14a-4509-b8ce-d9e731d73ddb}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ヘッダー ファイル\headers\utilty functions">
-      <UniqueIdentifier>{255396e4-a361-4ec4-b8b0-837c9c5669e0}</UniqueIdentifier>
     </Filter>
     <Filter Include="ヘッダー ファイル\headers\stereo">
       <UniqueIdentifier>{73adcbff-a239-4c69-90ba-21d559c717fb}</UniqueIdentifier>
@@ -88,22 +82,28 @@
     <Filter Include="ソース ファイル\filter\boxFilter">
       <UniqueIdentifier>{e731fd72-a424-452c-ba70-1047e0ce8118}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\core">
+      <UniqueIdentifier>{a8d6d5ad-3a54-49d1-b714-38aaf9b46b00}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\headers\core">
+      <UniqueIdentifier>{255396e4-a361-4ec4-b8b0-837c9c5669e0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="draw.cpp">
-      <Filter>ソース ファイル\utilty functions</Filter>
+      <Filter>ソース ファイル\core</Filter>
     </ClCompile>
     <ClCompile Include="slic.cpp">
       <Filter>ソース ファイル\imgproc</Filter>
     </ClCompile>
     <ClCompile Include="timer.cpp">
-      <Filter>ソース ファイル\utilty functions</Filter>
+      <Filter>ソース ファイル\core</Filter>
     </ClCompile>
     <ClCompile Include="stat.cpp">
-      <Filter>ソース ファイル\utilty functions</Filter>
+      <Filter>ソース ファイル\core</Filter>
     </ClCompile>
     <ClCompile Include="noise.cpp">
-      <Filter>ソース ファイル\utilty functions</Filter>
+      <Filter>ソース ファイル\core</Filter>
     </ClCompile>
     <ClCompile Include="nonLocalMeans.cpp">
       <Filter>ソース ファイル\filter</Filter>
@@ -115,19 +115,19 @@
       <Filter>ソース ファイル\imgproc</Filter>
     </ClCompile>
     <ClCompile Include="stencil.cpp">
-      <Filter>ソース ファイル\utilty functions</Filter>
+      <Filter>ソース ファイル\core</Filter>
     </ClCompile>
     <ClCompile Include="consoleImage.cpp">
-      <Filter>ソース ファイル\utilty functions</Filter>
+      <Filter>ソース ファイル\core</Filter>
     </ClCompile>
     <ClCompile Include="bitconvert.cpp">
-      <Filter>ソース ファイル\utilty functions</Filter>
+      <Filter>ソース ファイル\core</Filter>
     </ClCompile>
     <ClCompile Include="domainTransformFilter.cpp">
       <Filter>ソース ファイル\filter</Filter>
     </ClCompile>
     <ClCompile Include="arithmetic.cpp">
-      <Filter>ソース ファイル\utilty functions</Filter>
+      <Filter>ソース ファイル\core</Filter>
     </ClCompile>
     <ClCompile Include="viewsynthesis.cpp">
       <Filter>ソース ファイル\stereo\view synthesis</Filter>
@@ -217,7 +217,7 @@
       <Filter>ソース ファイル\stereo</Filter>
     </ClCompile>
     <ClCompile Include="csv.cpp">
-      <Filter>ソース ファイル\utilty functions</Filter>
+      <Filter>ソース ファイル\core</Filter>
     </ClCompile>
     <ClCompile Include="opticalFlow.cpp">
       <Filter>ソース ファイル\opticalflow</Filter>
@@ -241,13 +241,13 @@
       <Filter>ソース ファイル\filter</Filter>
     </ClCompile>
     <ClCompile Include="plot.cpp">
-      <Filter>ソース ファイル\utilty functions</Filter>
+      <Filter>ソース ファイル\core</Filter>
     </ClCompile>
     <ClCompile Include="histogram.cpp">
-      <Filter>ソース ファイル\utilty functions</Filter>
+      <Filter>ソース ファイル\core</Filter>
     </ClCompile>
     <ClCompile Include="maskoperation.cpp">
-      <Filter>ソース ファイル\utilty functions</Filter>
+      <Filter>ソース ファイル\core</Filter>
     </ClCompile>
     <ClCompile Include="diffPixel.cpp">
       <Filter>ソース ファイル\imgproc</Filter>
@@ -256,7 +256,7 @@
       <Filter>ソース ファイル\stereo</Filter>
     </ClCompile>
     <ClCompile Include="video.cpp">
-      <Filter>ソース ファイル\utilty functions</Filter>
+      <Filter>ソース ファイル\core</Filter>
     </ClCompile>
     <ClCompile Include="speckle.cpp">
       <Filter>ソース ファイル\imgproc</Filter>
@@ -325,7 +325,7 @@
       <Filter>ソース ファイル\stereo</Filter>
     </ClCompile>
     <ClCompile Include="yuvio.cpp">
-      <Filter>ソース ファイル\utilty functions</Filter>
+      <Filter>ソース ファイル\core</Filter>
     </ClCompile>
     <ClCompile Include="boundaryReconstructionFilter.cpp">
       <Filter>ソース ファイル\filter</Filter>
@@ -388,16 +388,16 @@
       <Filter>ソース ファイル\filter\dct-fft</Filter>
     </ClCompile>
     <ClCompile Include="updateCheck.cpp">
-      <Filter>ソース ファイル\utilty functions</Filter>
+      <Filter>ソース ファイル\core</Filter>
     </ClCompile>
     <ClCompile Include="diff.cpp">
-      <Filter>ソース ファイル\utilty functions</Filter>
+      <Filter>ソース ファイル\core</Filter>
     </ClCompile>
     <ClCompile Include="tiling.cpp">
-      <Filter>ソース ファイル\utilty functions</Filter>
+      <Filter>ソース ファイル\core</Filter>
     </ClCompile>
     <ClCompile Include="showmatInfo.cpp">
-      <Filter>ソース ファイル\utilty functions</Filter>
+      <Filter>ソース ファイル\core</Filter>
     </ClCompile>
     <ClCompile Include="gif\guidedFilter_Merge_Transpose_Inverse.cpp">
       <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
@@ -514,22 +514,22 @@
       <Filter>ソース ファイル\filter\boxFilter</Filter>
     </ClCompile>
     <ClCompile Include="crop.cpp">
-      <Filter>ソース ファイル\utilty functions</Filter>
+      <Filter>ソース ファイル\core</Filter>
     </ClCompile>
     <ClCompile Include="count.cpp">
-      <Filter>ソース ファイル\utilty functions</Filter>
+      <Filter>ソース ファイル\core</Filter>
     </ClCompile>
     <ClCompile Include="blend.cpp">
       <Filter>ソース ファイル\imgproc</Filter>
     </ClCompile>
     <ClCompile Include="imshowExtension.cpp">
-      <Filter>ソース ファイル\utilty functions</Filter>
+      <Filter>ソース ファイル\core</Filter>
     </ClCompile>
     <ClCompile Include="copyMakeBorder.cpp">
-      <Filter>ソース ファイル\utilty functions</Filter>
+      <Filter>ソース ファイル\core</Filter>
     </ClCompile>
     <ClCompile Include="randomizedQueue.cpp">
-      <Filter>ソース ファイル\utilty functions</Filter>
+      <Filter>ソース ファイル\core</Filter>
     </ClCompile>
     <ClCompile Include="color.cpp">
       <Filter>ソース ファイル\imgproc</Filter>
@@ -538,7 +538,7 @@
       <Filter>ソース ファイル\imgproc</Filter>
     </ClCompile>
     <ClCompile Include="concat.cpp">
-      <Filter>ソース ファイル\utilty functions</Filter>
+      <Filter>ソース ファイル\core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -714,49 +714,49 @@
       <Filter>ヘッダー ファイル\headers\stereo</Filter>
     </ClInclude>
     <ClInclude Include="..\include\arithmetic.hpp">
-      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+      <Filter>ヘッダー ファイル\headers\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\bitconvert.hpp">
-      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+      <Filter>ヘッダー ファイル\headers\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\consoleImage.hpp">
-      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+      <Filter>ヘッダー ファイル\headers\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\csv.hpp">
-      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+      <Filter>ヘッダー ファイル\headers\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\draw.hpp">
-      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+      <Filter>ヘッダー ファイル\headers\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\histogram.hpp">
-      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+      <Filter>ヘッダー ファイル\headers\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\imagediff.hpp">
-      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+      <Filter>ヘッダー ファイル\headers\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\matinfo.hpp">
-      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+      <Filter>ヘッダー ファイル\headers\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\noise.hpp">
-      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+      <Filter>ヘッダー ファイル\headers\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\plot.hpp">
-      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+      <Filter>ヘッダー ファイル\headers\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\stat.hpp">
-      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+      <Filter>ヘッダー ファイル\headers\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\stencil.hpp">
-      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+      <Filter>ヘッダー ファイル\headers\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\yuvio.hpp">
-      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+      <Filter>ヘッダー ファイル\headers\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\video.hpp">
-      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+      <Filter>ヘッダー ファイル\headers\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\timer.hpp">
-      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+      <Filter>ヘッダー ファイル\headers\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\GaussianBlurIPOL.hpp">
       <Filter>ヘッダー ファイル\headers\filter\GaussianFilter</Filter>
@@ -795,7 +795,7 @@
       <Filter>ヘッダー ファイル\headers\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\updateCheck.hpp">
-      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+      <Filter>ヘッダー ファイル\headers\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\inlineMathFunctions.hpp">
       <Filter>ヘッダー ファイル</Filter>
@@ -804,7 +804,7 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="..\include\tiling.hpp">
-      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+      <Filter>ヘッダー ファイル\headers\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\boxFilter.hpp">
       <Filter>ヘッダー ファイル\headers\filter</Filter>
@@ -930,13 +930,13 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="..\include\maskoperation.hpp">
-      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+      <Filter>ヘッダー ファイル\headers\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\crop.hpp">
-      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+      <Filter>ヘッダー ファイル\headers\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\count.hpp">
-      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+      <Filter>ヘッダー ファイル\headers\core</Filter>
     </ClInclude>
     <ClInclude Include="debugcp.hpp">
       <Filter>ヘッダー ファイル</Filter>
@@ -945,16 +945,16 @@
       <Filter>ヘッダー ファイル\headers\imgproc</Filter>
     </ClInclude>
     <ClInclude Include="..\include\imshowExtension.hpp">
-      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+      <Filter>ヘッダー ファイル\headers\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\copyMakeBorder.hpp">
-      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+      <Filter>ヘッダー ファイル\headers\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\concat.hpp">
-      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+      <Filter>ヘッダー ファイル\headers\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\randomizedQueue.hpp">
-      <Filter>ヘッダー ファイル\headers\utilty functions</Filter>
+      <Filter>ヘッダー ファイル\headers\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\contrast.hpp">
       <Filter>ヘッダー ファイル\headers\imgproc</Filter>

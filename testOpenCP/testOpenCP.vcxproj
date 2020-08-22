@@ -170,7 +170,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="bilateralfilter\bilateralFilterTest.cpp" />
-    <ClCompile Include="colorCorrectionTest.cpp" />
+    <ClCompile Include="testColorCorrection.cpp" />
     <ClCompile Include="denoise\denoiseTest.cpp" />
     <ClCompile Include="disparityRefinement\disparityRefinementTest.cpp" />
     <ClCompile Include="dualExponentialSmoothingTest.cpp" />
@@ -186,7 +186,6 @@
     <ClCompile Include="guiStereoTest.cpp" />
     <ClCompile Include="guiUpsampleTest.cpp" />
     <ClCompile Include="guiWeightedHistogramFilterTest.cpp" />
-    <ClCompile Include="histogram\guiHistogramTest.cpp" />
     <ClCompile Include="iterativeBackProjection\iterativeBackProjectionTest.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="plotTest\testPlot.cpp" />
@@ -194,13 +193,14 @@
     <ClCompile Include="realtimeO1BilateralFilter\realtimeO1BilateralFilterTest.cpp" />
     <ClCompile Include="shockFilterTest\coherenceEnhancingShockFilterTest.cpp" />
     <ClCompile Include="slic\guiSLICTest.cpp" />
-    <ClCompile Include="splitmergeTest.cpp" />
     <ClCompile Include="testAddNoise.cpp" />
     <ClCompile Include="testConcat.cpp" />
+    <ClCompile Include="testCopyMakeBorder.cpp" />
     <ClCompile Include="testCropZoom.cpp" />
     <ClCompile Include="testHistogram.cpp" />
     <ClCompile Include="testPSNR.cpp" />
     <ClCompile Include="testRGBHistogram.cpp" />
+    <ClCompile Include="testSplitMerge.cpp" />
     <ClCompile Include="testTimer.cpp" />
     <ClCompile Include="viewSynthesis\viewSynthesisTest.cpp" />
   </ItemGroup>

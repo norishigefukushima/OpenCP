@@ -4,7 +4,7 @@ using namespace std;
 using namespace cv;
 using namespace cp;
 
-void splitmergeTest(Mat& src)
+void testSplitMerge(Mat& src)
 {
 	int iter = 10;
 	Mat dest(src.size(), src.type());

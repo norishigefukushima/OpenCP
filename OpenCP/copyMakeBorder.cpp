@@ -5,6 +5,7 @@ using namespace cv;
 
 namespace cp
 {
+
 	void copyMakeBorderLineReflect(float* s, float* d, const int srcwidth, int left, int right, int type)
 	{
 		for (int i = 0; i < left; i += 8)
@@ -124,8 +125,8 @@ namespace cp
 
 	void copyMakeBorderReplicate(InputArray src_, cv::OutputArray border_, const int top, const int bottom, const int left, const int right)
 	{
+		CV_Assert(!src_.empty());
 		Mat src = src_.getMat();
-		CV_Assert(!src.empty());
 		border_.create(Size(src.cols + left + right, src.rows + top + bottom), src.type());
 
 		Mat border = border_.getMat();
@@ -277,4 +278,5 @@ namespace cp
 			cout << "not implemented in splitCopyMakeBorder" << endl;
 		}
 	}
+
 }

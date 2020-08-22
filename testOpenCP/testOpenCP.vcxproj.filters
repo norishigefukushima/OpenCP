@@ -22,8 +22,11 @@
     <Filter Include="ソース ファイル\test\filter">
       <UniqueIdentifier>{494dfdbb-a325-4de1-b3de-de4153dcb93f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ソース ファイル\test\utility">
+    <Filter Include="ソース ファイル\test\core">
       <UniqueIdentifier>{032f3c69-337a-4468-8f0a-47101a2cb08d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\test\stereo">
+      <UniqueIdentifier>{67fd3055-34b7-4e2c-b357-7a0fafe5c440}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -32,18 +35,6 @@
     </ClCompile>
     <ClCompile Include="analysisShow.cpp">
       <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="guiStereoTest.cpp">
-      <Filter>ソース ファイル\test</Filter>
-    </ClCompile>
-    <ClCompile Include="disparityRefinement\disparityRefinementTest.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="fitPlaneTest.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="viewSynthesis\viewSynthesisTest.cpp">
-      <Filter>ソース ファイル\test</Filter>
     </ClCompile>
     <ClCompile Include="bilateralfilter\bilateralFilterTest.cpp">
       <Filter>ソース ファイル\test\filter</Filter>
@@ -72,20 +63,14 @@
     <ClCompile Include="guiGuidedImageFilterTest.cpp">
       <Filter>ソース ファイル\test\filter</Filter>
     </ClCompile>
-    <ClCompile Include="colorCorrectionTest.cpp">
-      <Filter>ソース ファイル\test\utility</Filter>
-    </ClCompile>
     <ClCompile Include="guiBlendTest.cpp">
-      <Filter>ソース ファイル\test\utility</Filter>
+      <Filter>ソース ファイル\test\core</Filter>
     </ClCompile>
     <ClCompile Include="guiConsoleTest.cpp">
-      <Filter>ソース ファイル\test\utility</Filter>
+      <Filter>ソース ファイル\test\core</Filter>
     </ClCompile>
     <ClCompile Include="guiCrossBasedLocalFilterTest.cpp">
       <Filter>ソース ファイル\test\filter</Filter>
-    </ClCompile>
-    <ClCompile Include="histogram\guiHistogramTest.cpp">
-      <Filter>ソース ファイル\test\utility</Filter>
     </ClCompile>
     <ClCompile Include="slic\guiSLICTest.cpp">
       <Filter>ソース ファイル\test\imgproc</Filter>
@@ -105,35 +90,53 @@
     <ClCompile Include="realtimeO1BilateralFilter\realtimeO1BilateralFilterTest.cpp">
       <Filter>ソース ファイル\test\filter</Filter>
     </ClCompile>
-    <ClCompile Include="splitmergeTest.cpp">
-      <Filter>ソース ファイル\test\utility</Filter>
-    </ClCompile>
     <ClCompile Include="qualityMetricsTest\qualityMetricsTest.cpp">
       <Filter>ソース ファイル\test\imgproc</Filter>
     </ClCompile>
     <ClCompile Include="testAddNoise.cpp">
-      <Filter>ソース ファイル\test\utility</Filter>
+      <Filter>ソース ファイル\test\core</Filter>
     </ClCompile>
     <ClCompile Include="testPSNR.cpp">
-      <Filter>ソース ファイル\test\utility</Filter>
+      <Filter>ソース ファイル\test\core</Filter>
     </ClCompile>
     <ClCompile Include="plotTest\testPlot.cpp">
-      <Filter>ソース ファイル\test\utility</Filter>
+      <Filter>ソース ファイル\test\core</Filter>
     </ClCompile>
     <ClCompile Include="testRGBHistogram.cpp">
-      <Filter>ソース ファイル\test\utility</Filter>
+      <Filter>ソース ファイル\test\core</Filter>
     </ClCompile>
     <ClCompile Include="testTimer.cpp">
-      <Filter>ソース ファイル\test\utility</Filter>
+      <Filter>ソース ファイル\test\core</Filter>
     </ClCompile>
     <ClCompile Include="testHistogram.cpp">
-      <Filter>ソース ファイル\test\utility</Filter>
+      <Filter>ソース ファイル\test\core</Filter>
     </ClCompile>
     <ClCompile Include="testCropZoom.cpp">
-      <Filter>ソース ファイル\test\utility</Filter>
+      <Filter>ソース ファイル\test\core</Filter>
     </ClCompile>
     <ClCompile Include="testConcat.cpp">
-      <Filter>ソース ファイル\test\utility</Filter>
+      <Filter>ソース ファイル\test\core</Filter>
+    </ClCompile>
+    <ClCompile Include="testCopyMakeBorder.cpp">
+      <Filter>ソース ファイル\test\core</Filter>
+    </ClCompile>
+    <ClCompile Include="testColorCorrection.cpp">
+      <Filter>ソース ファイル\test\imgproc</Filter>
+    </ClCompile>
+    <ClCompile Include="testSplitMerge.cpp">
+      <Filter>ソース ファイル\test\core</Filter>
+    </ClCompile>
+    <ClCompile Include="guiStereoTest.cpp">
+      <Filter>ソース ファイル\test\stereo</Filter>
+    </ClCompile>
+    <ClCompile Include="viewSynthesis\viewSynthesisTest.cpp">
+      <Filter>ソース ファイル\test\stereo</Filter>
+    </ClCompile>
+    <ClCompile Include="disparityRefinement\disparityRefinementTest.cpp">
+      <Filter>ソース ファイル\test\stereo</Filter>
+    </ClCompile>
+    <ClCompile Include="fitPlaneTest.cpp">
+      <Filter>ソース ファイル\test\imgproc</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
