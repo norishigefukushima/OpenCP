@@ -76,7 +76,7 @@ namespace cp
 		void computeDataMaxMin();
 		void computeWindowXRangeMAXMIN(bool isCenter = false, double margin_rate = 0.9, int rounding_value = 0);
 		void computeWindowYRangeMAXMIN(bool isCenter = false, double margin_rate = 0.9, int rounding_value = 0);
-		
+
 	public:
 		void recomputeXYRangeMAXMIN(bool isCenter = false, double margin_rate = 0.9, int rounding_balue = 0);
 		//symbolType
@@ -142,7 +142,7 @@ namespace cp
 		void setLogScaleX(const bool flag);
 		void setLogScaleY(const bool flag);
 
-		
+
 		//NOKEY,
 		//RIGHT_TOP,
 		//LEFT_TOP,
@@ -190,7 +190,7 @@ namespace cp
 		void setPlotForeground(int plotnum);
 
 		void setIsDrawMousePosition(const bool flag);
-		
+
 
 		void plotPoint(cv::Point2d = cv::Point2d(0.0, 0.0), cv::Scalar color = COLOR_BLACK, int thickness_ = 1, int linetype = LINEAR);
 
@@ -217,34 +217,22 @@ namespace cp
 		void swapPlot(int plotIndex1, int plotIndex2);
 	};
 
-	enum
-	{
-		PLOT_ARG_MAX = 1,
-		PLOT_ARG_MIN = -1
-	};
 	class CP_EXPORT Plot2D
 	{
+		cv::Size plotImageSize;
 		cv::Scalar background_color = cv::Scalar(255, 255, 255, 0);
-		std::string font = "Times New Roman";//"Consolas"
+		std::vector<cv::Scalar> colorIndex;
+
+		std::string font = "Times New Roman";
+		//std::string font = "Computer Modern";
+		//std::string font = "Consolas";
 		int fontSize = 20;
 		int fontSize2 = 18;
 
-		std::vector<std::vector<double>> data;
-		cv::Mat labelxImage;
-		cv::Mat labelyImage;
-		cv::Mat gridData;
-		int w;
-		int h;
 		void createPlot();
-		void setMinMaxX(double minv, double maxv, double interval);
-		void setMinMaxY(double minv, double maxv, double interval);
-		void addLabelToGraph();
-	public:
-		std::string labelx="";
-		std::string labely="";
-		cv::Mat show;
-		cv::Mat graph;
-		cv::Size plotImageSize;
+		void setYMinMax(double minv, double maxv, double interval);
+		void setXMinMax(double minv, double maxv, double interval);
+
 		double x_min;
 		double x_max;
 		double x_interval;
@@ -255,18 +243,67 @@ namespace cp
 		double y_interval;
 		int y_size;
 
+		double z_min = 0.0;
+		double z_max = 0.0;
+
+		bool isSetZMinMax = false;
+		bool isLabelXGreekLetter = false;
+		bool isLabelYGreekLetter = false;
+		bool isLabelZGreekLetter = false;
+
+		cv::Point z_min_point;
+		cv::Point z_max_point;
+		cv::Mat gridData;
+		cv::Mat gridDataRes;
+		int colormap = 2;
+		cv::Mat graph;
+		void plotGraph(bool isColor);
+
+		std::vector<std::string> contourLabels;
+		std::vector<double> contourThresh;
+		void drawContoursZ(double threth, cv::Scalar color, int lineWidth);
+
+		cv::Mat barImage;
+		int barWidth = 25;
+		int barSpace = 5;
+
+		int keyState = 1;
+		cv::Mat keyImage;
+		void generateKeyImage(int lineWidthBB = 1, int lineWidthKey = 2);
+
+		std::string labelx = "x";
+		std::string labelx_subscript = "";
+		std::string labely = "y";
+		std::string labely_subscript = "";
+		std::string labelz = "z";
+		std::string labelz_subscript = "";
+		cv::Mat labelxImage;
+		cv::Mat labelyImage;
+		cv::Mat labelzImage;
+		void addLabelToGraph();
+		bool isPlotMax = false;
+		bool isPlotMin = false;
+		int maxColorIndex = 0;
+		int minColorIndex = 0;
+	public:
+
 		Plot2D(cv::Size graph_size, double xmin, double xmax, double xstep, double ymin, double ymax, double ystep);
+		void add(double x, double y, double val);
+		cv::Mat show;
+		void plot(std::string wname = "plot2D");
 
 		void setFont(std::string font);
 		void setFontSize(const int size);
 		void setFontSize2(const int size);
+		void setLabel(std::string namex, std::string namey, std::string namez);
+		void setZMinMax(double minv, double maxv);
+		void setPlotContours(std::string label, double thresh, int index);
+		void setPlotMaxMin(bool plot_max, bool plot_min);
+		void setLabelXGreekLetter(std::string greeksymbol, std::string subscript);
+		void setLabelYGreekLetter(std::string greeksymbol, std::string subscript);
+		void setLabelZGreekLetter(std::string greeksymbol, std::string subscript);
 		void setMinMax(double xmin, double xmax, double xstep, double ymin, double ymax, double ystep);
-		void add(int x, int y, double val);
-		void writeGraph(bool isColor, int arg_min_max, double minvalue = 0, double maxvalue = 0, bool isMinMaxSet = false);
-		void setLabel(std::string namex, std::string namey);
 		
-		//void plot(CSV& result);
-		void plot(std::string wname = "plot2D");
 	};
 
 	CP_EXPORT void plotGraph(cv::OutputArray graphImage, std::vector<cv::Point2d>& data, double xmin, double xmax, double ymin, double ymax,
@@ -283,7 +320,6 @@ namespace cp
 		void projectPointsParallel(const cv::Mat& xyz, const cv::Mat& R, const cv::Mat& t, const cv::Mat& K, std::vector<cv::Point2f>& dest, const bool isRotationThenTranspose);
 		void projectPoints(const cv::Mat& xyz, const cv::Mat& R, const cv::Mat& t, const cv::Mat& K, std::vector<cv::Point2f>& dest, const bool isRotationThenTranspose);
 		void projectPoint(cv::Point3d& xyz, const cv::Mat& R, const cv::Mat& t, const cv::Mat& K, cv::Point2d& dest);
-
 
 		void convertRGBto3D(cv::Mat& src, cv::Mat& rgb);
 		cv::Mat additionalPoints;
