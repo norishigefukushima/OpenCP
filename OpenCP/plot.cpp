@@ -2,7 +2,8 @@
 #include "draw.hpp"
 #include "stereo_core.hpp"//for RGB histogram
 #include "pointcloud.hpp"//for RGB histogram
-#include "inlineMathFunctions.hpp"
+#include "highguiex.hpp""
+#include "contrast.hpp"
 
 #include "debugcp.hpp"
 
@@ -1161,26 +1162,26 @@ namespace cp
 		gridData = Mat::zeros(Size(x_size, y_size), CV_64F);
 	}
 
-	void Plot2D::setMinMaxX(double minv, double maxv, double interval)
+	void Plot2D::setYMinMax(double minv, double maxv, double interval)
 	{
 		x_min = minv;
 		x_max = maxv;
 		x_interval = interval;
-		x_size = (int)ceil(maxv - minv / interval) + 1;
+		x_size = (int)ceil((maxv - minv) / interval) + 1;
 	}
 
-	void Plot2D::setMinMaxY(double minv, double maxv, double interval)
+	void Plot2D::setXMinMax(double minv, double maxv, double interval)
 	{
 		y_min = minv;
 		y_max = maxv;
 		y_interval = interval;
-		y_size = (int)ceil(maxv - minv / interval) + 1;
+		y_size = (int)ceil((maxv - minv) / interval) + 1;
 	}
 
 	void Plot2D::setMinMax(double xmin, double xmax, double xinterval, double ymin, double ymax, double yinterval)
 	{
-		setMinMaxX(xmin, xmax, xinterval);
-		setMinMaxY(ymin, ymax, yinterval);
+		setYMinMax(xmin, xmax, xinterval);
+		setXMinMax(ymin, ymax, yinterval);
 		createPlot();
 	}
 
@@ -1188,63 +1189,17 @@ namespace cp
 	{
 		plotImageSize = graph_size;
 		setMinMax(xmin, xmax, xinterval, ymin, ymax, yinterval);
-	}
 
-	void Plot2D::add(int x, int y, double val)
-	{
-		//cout<<(x-minx) / stepx<< ","<<X<<","<<(y-miny) / stepy<<","<<Y<<","<<w<<","<<h<<","<<val<<endl;
-		gridData.at<double>(y, x) = val;
-		//getchar();
-	}
 
-	void Plot2D::writeGraph(bool isColor, int arg_min_max, double minvalue, double maxvalue, bool isMinMaxSet)
-	{
-		Mat temp;
-		resize(gridData, temp, plotImageSize, 0, 0, cv::INTER_LINEAR);
-
-		double minv, maxv;
-		Point minp;
-		Point maxp;
-
-		minMaxLoc(gridData, &minv, &maxv, &minp, &maxp);
-		/*cout<<minv<<","<<maxv<<endl;
-		cout<<maxp<<endl;
-		cout<<minp<<endl;*/
-
-		minMaxLoc(temp, &minv, &maxv, &minp, &maxp);
-
-		/*cout<<minv<<","<<maxv<<endl;
-		cout<<maxp<<endl;
-		cout<<minp<<endl;*/
-
-		if (isMinMaxSet)
-		{
-			minv = minvalue;
-			maxv = maxvalue;
-		}
-
-		temp -= minv;
-		Mat graphG;
-		temp.convertTo(graphG, CV_8U, 255.0 / (maxv - minv));
-
-		if (isColor)
-		{
-			applyColorMap(graphG, graph, 2);
-			if (arg_min_max > 0)
-				circle(graph, maxp, 5, Scalar(255, 255, 255));
-			else
-				drawPlus(graph, minp, 8, Scalar(0, 0, 0));
-		}
-		else
-		{
-			cvtColor(graphG, graph, COLOR_GRAY2BGR);
-			if (arg_min_max > 0)
-				circle(graph, maxp, 5, Scalar(0, 0, 0));
-			else
-				drawPlus(graph, minp, 8, Scalar(255, 255, 255));
-		}
-
-		flip(graph, graph, 0);
+		//default gnuplot5.0
+		colorIndex.push_back(CV_RGB(148, 0, 211));
+		colorIndex.push_back(CV_RGB(0, 158, 115));
+		colorIndex.push_back(CV_RGB(86, 180, 233));
+		colorIndex.push_back(CV_RGB(230, 159, 0));
+		colorIndex.push_back(CV_RGB(240, 228, 66));
+		colorIndex.push_back(CV_RGB(0, 114, 178));
+		colorIndex.push_back(CV_RGB(229, 30, 16));
+		colorIndex.push_back(COLOR_BLACK);
 	}
 
 	void Plot2D::setFont(string font)
@@ -1262,109 +1217,628 @@ namespace cp
 		fontSize2 = size;
 	}
 
-	void Plot2D::setLabel(string namex, string namey)
+	void Plot2D::setZMinMax(double minv, double maxv)
+	{
+		z_min = minv;
+		z_max = maxv;
+		isSetZMinMax = true;
+	}
+
+	void Plot2D::setLabel(string namex, string namey, string namez)
 	{
 		labelx = namex;
 		labely = namey;
+		labelz = namez;
 	}
 
-	Rect getNonZeroMaxRectangle(InputArray src)
+	void Plot2D::setLabelXGreekLetter(std::string greeksymbol, std::string subscript)
 	{
-		Mat s = src.getMat();
-		int t = 0, b = 0, l = 0, r = 0;
-
-		for (int i = 0; i < s.rows; i++)
-		{
-			if (countNonZero(s.row(i)) != 0)
-			{
-				t = i;
-				break;
-			}
-		}
-		for (int i = s.rows - 1; i >= 0; i--)
-		{
-			if (countNonZero(s.row(i)) != 0)
-			{
-				b = i;
-				break;
-			}
-		}
-		for (int i = 0; i < s.cols; i++)
-		{
-			if (countNonZero(s.col(i)) != 0)
-			{
-				l = i;
-				break;
-			}
-		}
-		for (int i = s.cols - 1; i >= 0; i--)
-		{
-			if (countNonZero(s.col(i)) != 0)
-			{
-				r = i;
-				break;
-			}
-		}
-		if (r == l)return Rect(0, 0, 0, 0);
-		return Rect(l, t, r - l + 1, b - t + 1);
+		labelx = greeksymbol;
+		labelx_subscript = subscript;
+		isLabelXGreekLetter = true;
 	}
 
-	cv::Mat getTextImageQt(string message, string font, const int fontSize, Scalar text_color, Scalar background_color)
+	void Plot2D::setLabelYGreekLetter(std::string greeksymbol, std::string subscript)
 	{
-		int count = message.size();
-		Mat image = Mat::zeros(2 * (fontSize + 1), (fontSize + 1) * count, CV_8UC3);
-		cv::addText(image, message, Point(fontSize, fontSize), font, fontSize, Scalar(255, 255, 255, 0));
-		Mat bw; cvtColor(image, bw, COLOR_BGR2GRAY);
-		Rect r = getNonZeroMaxRectangle(bw);
-		
-		Mat ret = Mat::zeros(2 * (fontSize + 1), (fontSize + 1) * count, CV_8UC3);
-		ret.setTo(background_color);
-		cv::addText(ret, message, Point(fontSize, fontSize), font, fontSize, text_color);
-		return ret(r);
+		labely = greeksymbol;
+		labely_subscript = subscript;
+		isLabelYGreekLetter = true;
 	}
 
-	Size getTextSizeQt(string message, string font, const int fontSize)
+	void Plot2D::setLabelZGreekLetter(std::string greeksymbol, std::string subscript)
 	{
-		Mat image = getTextImageQt(message, font, fontSize, Scalar(255, 255, 255, 0), Scalar::all(0));
-		return Size(image.cols, image.rows);
+		labelz = greeksymbol;
+		labelz_subscript = subscript;
+		isLabelZGreekLetter = true;
 	}
+
+	void Plot2D::setPlotContours(std::string label, double thresh, int index)
+	{
+		if (contourLabels.size() < index + 1)
+		{
+			contourLabels.resize(index + 1);
+			contourThresh.resize(index + 1);
+		}
+		contourLabels[index] = label;
+		contourThresh[index] = thresh;
+	}
+
+	void Plot2D::setPlotMaxMin(bool plot_max, bool plot_min)
+	{
+		isPlotMax = plot_max;
+		isPlotMin = plot_min;
+	}
+
+
+
+	void Plot2D::plotGraph(bool isColor)
+	{
+		Mat dataflip;
+		flip(gridData, dataflip, 0);
+		resize(dataflip, gridDataRes, plotImageSize, 0, 0, cv::INTER_LINEAR);
+		Mat barImageGray(Size(barWidth, plotImageSize.height), CV_8U);
+		for (int j = 0; j < plotImageSize.height; j++)
+		{
+			uchar* d = barImageGray.ptr<uchar>(j);
+			for (int i = 0; i < barImageGray.cols; i++)
+			{
+				d[i] = saturate_cast<uchar>(255.0 * (plotImageSize.height - 1 - j) / (plotImageSize.height - 1));
+			}
+		}
+
+		double z_min_temp, z_max_temp;
+		minMaxLoc(gridDataRes, &z_min_temp, &z_max_temp, &z_min_point, &z_max_point);
+		if (!isSetZMinMax)
+		{
+			z_min = z_min_temp;
+			z_max = z_max_temp;
+		}
+
+		Mat graphG;
+		normalize(gridDataRes, graphG, 255, 0, NORM_MINMAX, CV_8U);
+
+		if (isColor)
+		{
+			applyColorMap(barImageGray, barImage, colormap);
+			applyColorMap(graphG, graph, colormap);
+		}
+		else
+		{
+			cvtColor(barImageGray, barImage, COLOR_GRAY2BGR);
+			cvtColor(graphG, graph, COLOR_GRAY2BGR);
+		}
+	}
+
+	inline int getNumTicks(int length, int fontSize, double fontSpace)
+	{
+		return length / (fontSize * fontSpace) + 1;
+	}
+
+	//1ˆÈ‰º‚Í•‚“®¬”“_
+	//ticks‚ª2ŒÂ‚È‚çmin max
+	//ticks‚ª3ŒÂ‚È‚çmin max
+	class GraphTicksGenerator
+	{
+		double minv;
+		double maxv;
+		int length;
+		int fontSize;
+		double fontSpace;
+		int num_ticks_max;
+
+		bool isFloatTicks()
+		{
+			bool ret = false;
+			if (maxv - minv > 10)return false;
+
+			if (maxv - minv <= 1)return true;
+
+			if (num_ticks_max == 2)return false;
+
+			if (num_ticks_max == 3)
+			{
+				if (maxv == 2) return false;
+				else return true;
+			}
+			if (num_ticks_max == 4)
+			{
+				if (maxv == 3) return false;
+				else return true;
+			}
+
+			//num_ticks_max>5
+			{
+				double eps = DBL_EPSILON;
+				int subi = (int)(maxv - minv + eps);
+				if (abs(subi) >= 4)return false;
+				else return true;
+			}
+
+			return ret;
+		}
+
+		void generateTicks()
+		{
+			double sub = maxv - minv;
+			int subi = (int)ceil(sub);
+
+			if (subi >= 0)
+			{
+				int step = 1;
+				if (subi / 1 < num_ticks_max)
+				{
+					step = 1;
+				}
+				else if (subi / 2 < num_ticks_max)
+				{
+					step = 2;
+				}
+				else if (subi / 5 < num_ticks_max)
+				{
+					step = 5;
+				}
+				else if (subi / 10 < num_ticks_max)
+				{
+					step = 10;
+				}
+				else if (subi / 20 < num_ticks_max)
+				{
+					step = 20;
+				}
+				else if (subi / 25 < num_ticks_max)
+				{
+					step = 25;
+				}
+				else if (subi / 50 < num_ticks_max)
+				{
+					step = 50;
+				}
+				else if (subi / 100 < num_ticks_max)
+				{
+					step = 100;
+				}
+				else if (subi / 200 < num_ticks_max)
+				{
+					step = 200;
+				}
+				else if (subi / 250 < num_ticks_max)
+				{
+					step = 250;
+				}
+
+				num_ticks = subi / step + 1;
+
+				if (ceilToMultiple(minv, step) == minv)
+				{
+					impos.resize(num_ticks);
+					tick_val.resize(num_ticks);
+					double imstep = (length - 1) / (maxv - minv);
+
+					for (int i = 0; i < num_ticks; i++)
+					{
+						float v = step * i;
+						//if (v <= maxv + eps)
+						{
+							impos[i] = (imstep * v);
+							tick_val[i] = v + minv;
+						}
+					}
+				}
+				else
+				{
+					num_ticks--;
+					impos.resize(num_ticks);
+					tick_val.resize(num_ticks);
+					double imstep = (length - 1) / (maxv - minv);
+					int ming = ceilToMultiple(minv, step);
+					for (int i = 0; i < num_ticks; i++)
+					{
+						float v = step * i + ming;
+						//if (v <= maxv + eps)
+						{
+							impos[i] = (imstep * v);
+							tick_val[i] = v;
+						}
+					}
+				}
+			}
+		}
+
+		int float_state = 0;
+		void generateTicksFloat()
+		{
+			float_state = 1;
+
+			if (0 <= maxv && maxv <= 1)
+			{
+				double step = 0.0;
+				int maxi = (int)ceil(maxv * 10);
+				if (maxi / 1 < num_ticks_max)
+				{
+					step = 0.1;
+				}
+				else if (maxi / 2 < num_ticks_max)
+				{
+					step = 0.2;
+				}
+				else if (maxi / 2.5 < num_ticks_max)
+				{
+					step = 0.25;
+					float_state = 2;
+				}
+				else if (maxi / 5 < num_ticks_max)
+				{
+					step = 0.5;
+				}
+				else if (maxi / 10 < num_ticks_max)
+				{
+					step = 1.0;
+				}
+
+				num_ticks = (int)ceil(maxv / step) + 1;
+				//print_debug3(ceil(maxv / step) + 1,anum, step);
+				impos.resize(num_ticks);
+				tick_val32f.resize(num_ticks);
+
+				for (int i = 0; i < num_ticks; i++)
+				{
+					float v = step * i + minv;
+					if (v <= 1.0)
+					{
+						impos[i] = length / maxv * v;
+						tick_val32f[i] = v;
+					}
+				}
+			}
+			else
+			{
+				double step = 0.0;
+				int maxi = (int)ceil(maxv * 10);
+
+				if (maxi / 1 < num_ticks_max)
+				{
+					step = 0.1;
+				}
+				else if (maxi / 2 < num_ticks_max)
+				{
+					step = 0.2;
+				}
+				else if (maxi / 2.5 < num_ticks_max)
+				{
+					step = 0.25;
+					float_state = 2;
+				}
+				else if (maxi / 5 < num_ticks_max)
+				{
+					step = 0.5;
+				}
+				else if (maxi / 10 < num_ticks_max)
+				{
+					step = 1.0;
+				}
+
+				num_ticks = (int)ceil(maxv / step) + 1;
+
+				impos.resize(num_ticks);
+				tick_val32f.resize(num_ticks);
+
+				for (int i = 0; i < num_ticks; i++)
+				{
+					float v = step * i;
+					//if (v <= maxv)
+					{
+						impos[i] = (length - 1) / (maxv - minv) * v;
+						tick_val32f[i] = v + minv;
+					}
+				}
+			}
+		}
+	public:
+		int num_ticks = 0;
+		vector<int> impos;
+		vector<float> tick_val32f;
+		vector<int> tick_val;
+		bool isFloat = false;
+		bool isMinZero = false;
+		GraphTicksGenerator(double minv, double maxv, int length, int fontSize, double fontSpace) :
+			minv(minv), maxv(maxv), length(length), fontSize(fontSize), fontSpace(fontSpace), num_ticks_max(min(11, getNumTicks(length, fontSize, fontSpace)))
+		{
+			if (minv < 0.001) isMinZero = true;
+
+			isFloat = isFloatTicks();
+			if (isFloat)generateTicksFloat();
+			else generateTicks();
+		}
+
+		void printTicks()
+		{
+			if (isFloat) cout << "float" << endl;
+			else cout << "int" << endl;
+
+			for (int i = 0; i < num_ticks; i++)
+			{
+				if (isFloat) cout << i << ": " << (float)tick_val32f[i] << ": " << impos[i] << endl;
+				else cout << i << ": " << tick_val[i] << ": " << impos[i] << endl;
+			}
+		}
+		Mat generateImage(int index, std::string font, cv::Scalar color, cv::Scalar background_color)
+		{
+			if (isFloat)
+			{
+				if (float_state == 1)
+					return getTextImageQt(format("%5.1f", tick_val32f[index]), font, fontSize, color, background_color);
+				else if (float_state == 2)
+					return getTextImageQt(format("%5.2f", tick_val32f[index]), font, fontSize, color, background_color);
+			}
+			else
+			{
+				return getTextImageQt(format("%d", tick_val[index]), font, fontSize, color, background_color);
+			}
+		}
+
+		int getTicksCharactors()
+		{
+			if (isFloat)
+			{
+				return float_state + 1;
+			}
+			else
+			{
+				if (maxv < 10)return 1;
+				if (maxv < 100)return 2;
+				if (maxv < 1000)return 3;
+				if (maxv < 10000)return 4;
+				if (maxv < 100000)return 5;
+				if (maxv < 1000000)return 6;
+				if (maxv < 10000000)return 7;
+			}
+		}
+
+	};
 
 	void Plot2D::addLabelToGraph()
 	{
-		labelxImage = getTextImageQt(labelx, font, fontSize, Scalar(0,0,0,0),background_color);
-		cout<<graph.size() << endl;
-		cout << labelxImage.size()<<endl;
-		const int offset = fontSize * 3;
-		copyMakeBorder(graph, show, 0, offset, offset, 0, BORDER_CONSTANT, Scalar(255, 255, 255));
+		for (int i = 0; i < contourLabels.size(); i++)
+		{
+			drawContoursZ(contourThresh[i], colorIndex[i], 2);
+		}
 
-		Rect r = Rect(graph.cols / 2 + offset - labelxImage.cols / 2, graph.rows + fontSize, labelxImage.cols, labelxImage.rows);
-		labelxImage.copyTo(show(r));
-		
-		double minv, maxv;
-		Point minp;
-		Point maxp;
-		minMaxLoc(gridData, &minv, &maxv, &minp, &maxp);
-		//putText(show, format("%.2f", maxv), Point(400, graph.rows + 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0));
-		//cv::addText(show, labely, Point(graph.cols/2+offset, graph.rows + 30), font, fontSize, COLOR_WHITE);
+		if (isPlotMax)
+			circle(graph, z_max_point, 5, colorIndex[maxColorIndex], 2);
+		if (isPlotMin)
+			drawPlus(graph, z_min_point, 8, colorIndex[minColorIndex]);
 
-		//Mat text = ~Mat::zeros(Size(50 + graph.cols, 50), CV_8UC3);
+		int distance_from_boundary_for_key = 10;
+		generateKeyImage(1);
+		if (keyState == 0)
+		{
+			destroyWindow("key");
+		}
+		else if (keyState == 1)
+		{
+			keyImage.copyTo(graph(Rect(graph.cols - keyImage.cols - distance_from_boundary_for_key, distance_from_boundary_for_key, keyImage.cols, keyImage.rows)));
+			destroyWindow("key");
+		}
+		else if (keyState == 2)
+		{
+			keyImage.copyTo(graph(Rect(distance_from_boundary_for_key, distance_from_boundary_for_key, keyImage.cols, keyImage.rows)));
+			destroyWindow("key");
+		}
+		else if (keyState == 3)
+		{
+			keyImage.copyTo(graph(Rect(distance_from_boundary_for_key, graph.rows - keyImage.rows - distance_from_boundary_for_key, keyImage.cols, keyImage.rows)));
+			destroyWindow("key");
+		}
+		else if (keyState == 4)
+		{
+			keyImage.copyTo(graph(Rect(graph.cols - keyImage.cols - distance_from_boundary_for_key, graph.rows - keyImage.rows - distance_from_boundary_for_key, keyImage.cols, keyImage.rows)));
+			destroyWindow("key");
+		}
+		else if (keyState == 5)
+		{
+			imshow("key", keyImage);
+		}
 
-		//putText(text, labelx, Point(80, 20), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0));
+		GraphTicksGenerator tickx(x_min, x_max, graph.cols, fontSize2, 3);
+		GraphTicksGenerator ticky(y_min, y_max, graph.rows, fontSize2, 1.5);
+		GraphTicksGenerator tickz(z_min, z_max, graph.rows, fontSize2, 1.5);
 
-		//Mat a = text.t();
-		//flip(a, a, 0);
+		int lineWidth = 2;
+		int tickLength = 7;
 
-		//a.copyTo(show(Rect(0, 0, a.cols, a.rows)));
+		if (isLabelXGreekLetter)
+		{
+			Mat a = getTextImageQt(labelx, "Symbol", fontSize, Scalar::all(0), background_color, true);
+			if (labelx_subscript.size() != 0)
+			{
+				Mat b = getTextImageQt(labelx_subscript, font, fontSize / 1.8, Scalar::all(0), background_color, true);
+				copyMakeBorder(b, b, a.rows - b.rows, 0, 0, 0, BORDER_CONSTANT, background_color);
+				hconcat(a, b, labelxImage);
+			}
+			else
+			{
+				a.copyTo(labelxImage);
+			}
+		}
+		else
+		{
+			labelxImage = getTextImageQt(labelx, font, fontSize, Scalar::all(0), background_color);
+		}
+		labelzImage = getTextImageQt(labelz, font, fontSize, Scalar::all(0), background_color);
+
+		if (isLabelYGreekLetter)
+		{
+			Mat a = getTextImageQt(labely, "Symbol", fontSize, Scalar::all(0), background_color, true);
+			if (labely_subscript.size() != 0)
+			{
+				Mat b = getTextImageQt(labely_subscript, font, fontSize / 1.8, Scalar::all(0), background_color, true);
+				copyMakeBorder(b, b, a.rows - b.rows, 0, 0, 0, BORDER_CONSTANT, background_color);
+				hconcat(a, b, labelyImage);
+			}
+			else
+			{
+				a.copyTo(labelyImage);
+			}
+		}
+		else
+		{
+			labelyImage = getTextImageQt(labely, font, fontSize, Scalar::all(0), background_color);
+		}
+		rotate(labelyImage, labelyImage, ROTATE_90_COUNTERCLOCKWISE);
+
+		const int offset_left = fontSize + fontSize2 * ticky.getTicksCharactors();
+		const int offset_right = fontSize2 * tickz.getTicksCharactors();
+		const int xlabel_vspace = 5;
+		const int offset_bottom = fontSize + fontSize2 + xlabel_vspace + 10;
+		const int offset_top = fontSize + fontSize2;
+		Mat graph2;
+
+		rectangle(barImage, Rect(0, 0, barImage.cols, barImage.rows), Scalar::all(0), lineWidth);
+		copyMakeBorder(barImage, barImage, 0, 0, barSpace, 0, BORDER_CONSTANT, background_color);
+		rectangle(graph, Rect(0, 0, graph.cols, graph.rows), Scalar::all(0), lineWidth);
+
+		hconcat(graph, barImage, graph2);
+
+		copyMakeBorder(graph2, show, offset_top, offset_bottom, offset_left, offset_right, BORDER_CONSTANT, Scalar(255, 255, 255));
+
+		int graph_centerx = graph.cols / 2 + offset_left;
+		Rect rx = Rect(graph_centerx - labelxImage.cols / 2, offset_top + graph.rows + fontSize2 + xlabel_vspace, labelxImage.cols, labelxImage.rows);
+		labelxImage.copyTo(show(rx));
+
+		int graph_centery = graph.rows / 2 + offset_top;
+		Rect ry = Rect(1, graph_centery - labelyImage.rows / 2, labelyImage.cols, labelyImage.rows);
+		labelyImage.copyTo(show(ry));
+
+		Rect rz = Rect(show.cols - labelzImage.cols - 2, 1, labelzImage.cols, labelzImage.rows);
+		labelzImage.copyTo(show(rz));
+
+		for (int i = 0; i < tickx.num_ticks; i++)
+		{
+			line(show, Point(tickx.impos[i] + offset_left, offset_top + graph.rows - 1), Point(tickx.impos[i] + offset_left, offset_top + graph.rows - 1 - tickLength), Scalar::all(0));
+			Mat label = tickx.generateImage(i, font, Scalar::all(0), background_color);
+			Rect r;
+			if (i == 0 && tickx.isMinZero)
+			{
+				r = Rect(tickx.impos[i] + offset_left, offset_top + graph.rows + 2, label.cols, label.rows);
+			}
+			else
+			{
+				r = Rect(tickx.impos[i] + offset_left - label.cols / 2, offset_top + graph.rows + 2, label.cols, label.rows);
+			}
+
+			label.copyTo(show(r));
+		}
+
+		for (int i = 0; i < ticky.num_ticks; i++)
+		{
+			line(show, Point(offset_left, offset_top + graph.rows - 1 - ticky.impos[i]), Point(offset_left + tickLength, offset_top + graph.rows - 1 - ticky.impos[i]), Scalar::all(0));
+
+			Mat label = ticky.generateImage(i, font, Scalar::all(0), background_color);
+			Rect r;
+			if (i == 0 && ticky.isMinZero)
+			{
+				r = Rect(offset_left - label.cols - 2, offset_top + graph.rows - ticky.impos[i] - label.rows, label.cols, label.rows);
+			}
+			else
+			{
+				r = Rect(offset_left - label.cols - 2, offset_top + graph.rows - ticky.impos[i] - label.rows / 2, label.cols, label.rows);
+			}
+
+			label.copyTo(show(r));
+		}
+
+		int bar_stx = offset_left + graph.cols + barSpace;
+		int bar_edx = offset_left + graph.cols - 1 + barSpace + barWidth;
+		int bar_sty = offset_top;
+
+		for (int i = 0; i < tickz.num_ticks; i++)
+		{
+			Mat label = tickz.generateImage(i, font, Scalar::all(0), background_color);
+			Rect r;
+			if (i == 0 && tickz.isMinZero)
+			{
+				r = Rect(bar_edx + 2, offset_top + graph.rows - tickz.impos[i] - label.rows, label.cols, label.rows);
+			}
+			else
+			{
+				line(show, Point(bar_stx, bar_sty + graph.rows - 1 - tickz.impos[i]), Point(bar_stx + tickLength, bar_sty + graph.rows - 1 - tickz.impos[i]), Scalar::all(0));
+				line(show, Point(bar_edx, bar_sty + graph.rows - 1 - tickz.impos[i]), Point(bar_edx - tickLength, bar_sty + graph.rows - 1 - tickz.impos[i]), Scalar::all(0));
+				r = Rect(bar_edx + 2, offset_top + graph.rows - tickz.impos[i] - label.rows / 2, label.cols, label.rows);
+			}
+			if (r.x > 0 && r.y > 0)
+				label.copyTo(show(r));
+		}
+
+	}
+
+	void Plot2D::drawContoursZ(double thresh, cv::Scalar color, int lineWidth)
+	{
+		Mat mask;
+		threshold(gridDataRes, mask, thresh, 255, THRESH_BINARY);
+		mask.convertTo(mask, CV_8U);
+
+		vector<vector<Point>> contours;
+		findContours(mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
+		drawContours(graph, contours, 0, color, lineWidth);
+	}
+
+	void Plot2D::generateKeyImage(int lineWidthBB, int lineWidthKey)
+	{
+		int additional = 0;
+		if (isPlotMax)additional++;
+		if (isPlotMin)additional++;
+
+		int step = fontSize2 + 3;
+		int v = step * (contourThresh.size() + additional) + 5;
+
+		int charactor_max = 0;
+		for (int i = 0; i < contourLabels.size(); i++)
+		{
+			charactor_max = max(charactor_max, (int)contourLabels[i].size());
+		}
+		charactor_max--;
+		int lst = 10;
+		int led = 30;
+		int space = 10;
+		keyImage.create(Size(fontSize2 * charactor_max + led + space, v), CV_8UC3);
+		keyImage.setTo(background_color);
+		if (lineWidthBB > 0)
+			rectangle(keyImage, Rect(0, 0, keyImage.cols, keyImage.rows), Scalar::all(0), lineWidthBB);
+
+		for (int i = 0; i < contourLabels.size(); i++)
+		{
+			line(keyImage, Point(lst, (i + 1) * step - fontSize2 / 2), Point(led, (i + 1) * step - fontSize2 / 2), colorIndex[i], lineWidthKey);
+			cv::addText(keyImage, contourLabels[i], Point(led + space, (i + 1) * step), font, fontSize2);
+		}
+
+		int i = contourLabels.size();
+		if (isPlotMax)
+		{
+			circle(keyImage, Point((lst + led) / 2, (i + 1) * step - fontSize2 / 2), 5, colorIndex[i], 2);
+			cv::addText(keyImage, "MAX", Point(led + space, (i + 1) * step), font, fontSize2);
+			maxColorIndex = i;
+			i++;
+		}
+		if (isPlotMin)
+		{
+			drawPlus(keyImage, Point((lst + led) / 2, (i + 1) * step - fontSize2 / 2), 8, Scalar(0,0,0), 2);
+			cv::addText(keyImage, "MIN", Point(led + space, (i + 1) * step), font, fontSize2);
+			minColorIndex = i;
+		}	
 	}
 
 	void Plot2D::plot(string wname)
 	{
 		namedWindow(wname);
-		showMatInfo(gridData);
-		createTrackbar("font size", wname, &fontSize, 128);
-		createTrackbar("font size2", wname, &fontSize2, 128);
-		createTrackbar("width", wname, &plotImageSize.width, 1920);
-		createTrackbar("height", wname, &plotImageSize.height, 1080);
+		string wname2 = "";
+		createTrackbar("font size", wname2, &fontSize, 128);
+		createTrackbar("font size2", wname2, &fontSize2, 128);
+		createTrackbar("width", wname2, &plotImageSize.width, 1920);
+		setTrackbarMin("width", wname2, 256);
+		createTrackbar("height", wname2, &plotImageSize.height, 1080);
+		setTrackbarMin("height", wname2, 256);
+		colormap = 18; createTrackbar("colormap", wname2, &colormap, 20);
 		//int minvalue = 30; createTrackbar("min", wname, &minvalue, 100);
 		//int maxvalue = 50; createTrackbar("max", wname, &maxvalue, 100);
 
@@ -1378,9 +1852,8 @@ namespace cp
 		while (key != 'q')
 		{
 			//writeGraph(isColor, PLOT_ARG_MAX, minvalue, maxvalue, isMinMaxSet);
-			writeGraph(isColorFlag, PLOT_ARG_MAX);
+			plotGraph(isColorFlag);
 			addLabelToGraph();
-
 			imshow(wname, show);
 			//imshow(wname, graphBase);
 			key = waitKey(1);
@@ -1388,7 +1861,27 @@ namespace cp
 			{
 				isColorFlag = (isColorFlag) ? false : true;
 			}
+			if (key == 'k')
+			{
+				keyState++;
+				if (keyState > 5)keyState = 0;
+			}
+			if (key == 'x')
+			{
+				isPlotMax = (isPlotMax) ? false : true;
+			}
+			if (key == 'n')
+			{
+				isPlotMin = (isPlotMin) ? false : true;
+			}
 		}
+	}
+
+	void Plot2D::add(double x, double y, double val)
+	{
+		int X = int((x - x_min) / x_interval);
+		int Y = int((y - y_min) / y_interval);
+		gridData.at<double>(Y, X) = val;
 	}
 
 #pragma endregion

@@ -264,6 +264,7 @@
     <ClCompile Include="contrast.cpp" />
     <ClCompile Include="hadamard.cpp" />
     <ClCompile Include="hazeRemove.cpp" />
+    <ClCompile Include="highguiEx.cpp" />
     <ClCompile Include="histogram.cpp" />
     <ClCompile Include="diff.cpp" />
     <ClCompile Include="imqc.cpp" />
@@ -380,6 +381,7 @@
     <ClInclude Include="..\include\contrast.hpp" />
     <ClInclude Include="..\include\guidedFilter.hpp" />
     <ClInclude Include="..\include\hazeRemove.hpp" />
+    <ClInclude Include="..\include\highguiex.hpp" />
     <ClInclude Include="..\include\histogram.hpp" />
     <ClInclude Include="..\include\imagediff.hpp" />
     <ClInclude Include="..\include\imqc.hpp" />

@@ -540,6 +540,9 @@
     <ClCompile Include="concat.cpp">
       <Filter>ソース ファイル\core</Filter>
     </ClCompile>
+    <ClCompile Include="highguiEx.cpp">
+      <Filter>ソース ファイル\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libGaussian\gaussian_conv.h">
@@ -958,6 +961,9 @@
     </ClInclude>
     <ClInclude Include="..\include\contrast.hpp">
       <Filter>ヘッダー ファイル\headers\imgproc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\highguiex.hpp">
+      <Filter>ヘッダー ファイル\headers\core</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

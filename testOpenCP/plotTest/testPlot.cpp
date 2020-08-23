@@ -84,19 +84,37 @@ void testPlot()
 
 void testPlot2D()
 {
-	Plot2D p(Size(513, 513), 0, 512, 1, 0, 512, 1);
-	p.setLabel("sigma space", "sigma range");
-	RNG rng;
-	int r = 256;
-	double sigma = 512 /(2.0* 3.0);
-	for (int i = 0; i <= 512; i++)
+	int xmin = 3;
+	int xmax = 13;
+	int xstep = 2;
+	int ymin = 1;
+	int ymax = 64;
+	int ystep = 5;
+
+	Plot2D p(Size(256, 256), xmin, xmax, xstep, ymin, ymax, ystep);
+	p.setLabel("sigma space", "sigma range", "PSNR [dB]");
+	RNG rng(getTickCount());
+
+	double rx = rng.uniform(xmin, xmax);
+	double ry = rng.uniform(ymin, ymax);
+	double sigma = (ymax - ymin) / (2.0 * 3.0);
+
+	double zmin = 30;
+	double zmax = 55;
+	p.setZMinMax(zmin, zmax);
+	p.setLabelXGreekLetter("s", "s");
+	p.setLabelYGreekLetter("s", "r");
+	p.setPlotContours("40 dB", 40, 0);
+	p.setPlotContours("45 dB", 45, 1);
+	p.setPlotContours("50 dB", 50, 2);
+	for (int y = ymin; y <= ymax; y += ystep)
 	{
-		for (int j = 0; j <=512; j++)
+		for (int x = xmin; x <= xmax; x += xstep)
 		{
 			//p.add(j, i, rand());
-			//double v = rng.uniform(0.0, 1.0);
-			double v = exp(((i - r) * (i - r) + (j - r) * (j - r)) / (-2.0 * sigma * sigma));
-			p.add(j, i, v);
+			//double v = rng.uniform(0.0, 5.0);
+			double v = exp(((y - ry) * (y - ry) + (x - rx) * (x - rx)) / (-2.0 * sigma * sigma)) * (zmax - zmin) + zmin;
+			p.add(x, y, v);
 		}
 	}
 

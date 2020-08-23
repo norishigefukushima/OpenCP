@@ -3,6 +3,53 @@
 #include "common.hpp"
 
 /*************************************************************
+ core
+*************************************************************/
+#include "arithmetic.hpp"
+#include "bitconvert.hpp"
+#include "concat.hpp"
+#include "consoleImage.hpp"
+#include "copyMakeBorder.hpp"
+#include "count.hpp"
+#include "crop.hpp"
+#include "csv.hpp"
+#include "draw.hpp"
+#include "highguiex.hpp"
+#include "histogram.hpp"
+#include "imagediff.hpp"
+#include "imshowExtension.hpp"
+#include "maskoperation.hpp"
+#include "matinfo.hpp"
+#include "noise.hpp"
+#include "plot.hpp"
+#include "randomizedQueue.hpp"
+#include "stat.hpp"
+#include "stencil.hpp"
+#include "timer.hpp"
+#include "tiling.hpp"
+#include "updateCheck.hpp"
+#include "video.hpp"
+#include "yuvio.hpp"
+
+/*************************************************************
+ imgproc
+*************************************************************/
+#include "blend.hpp"
+#include "color.hpp"
+#include "contrast.hpp"
+#include "detailEnhancement.hpp"
+#include "diffPixel.hpp"
+#include "hazeRemove.hpp"
+#include "iterativeBackProjection.hpp"
+#include "metrics.hpp"
+#include "ppmx.hpp"
+#include "shiftImage.hpp"
+#include "slic.hpp"
+#include "speckle.hpp"
+//qualitymetrics
+#include "imqc.hpp"
+
+/*************************************************************
  filter
 *************************************************************/
 #include "boxFilter.hpp"
@@ -41,25 +88,6 @@
 //upsapmle
 #include "jointBilateralUpsample.hpp"
 
-
-/*************************************************************
- imgproc
-*************************************************************/
-#include "blend.hpp"
-#include "color.hpp"
-#include "contrast.hpp"
-#include "detailEnhancement.hpp"
-#include "diffPixel.hpp"
-#include "hazeRemove.hpp"
-#include "iterativeBackProjection.hpp"
-#include "metrics.hpp"
-#include "ppmx.hpp"
-#include "shiftImage.hpp"
-#include "slic.hpp"
-#include "speckle.hpp"
-//qualitymetrics
-#include "imqc.hpp"
-
 /*************************************************************
  opticalflow
 *************************************************************/
@@ -88,33 +116,6 @@
 #include "mattingRendering.hpp"
 #include "viewsynthesis.hpp"
 
-/*************************************************************
- utilty functions
-*************************************************************/
-#include "arithmetic.hpp"
-#include "bitconvert.hpp"
-#include "concat.hpp"
-#include "consoleImage.hpp"
-#include "copyMakeBorder.hpp"
-#include "count.hpp"
-#include "crop.hpp"
-#include "csv.hpp"
-#include "draw.hpp"
-#include "histogram.hpp"
-#include "imagediff.hpp"
-#include "imshowExtension.hpp"
-#include "maskoperation.hpp"
-#include "matinfo.hpp"
-#include "noise.hpp"
-#include "plot.hpp"
-#include "randomizedQueue.hpp"
-#include "stat.hpp"
-#include "stencil.hpp"
-#include "timer.hpp"
-#include "tiling.hpp"
-#include "updateCheck.hpp"
-#include "video.hpp"
-#include "yuvio.hpp"
 
 /*************************************************************
  other
