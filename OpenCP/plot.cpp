@@ -1412,32 +1412,36 @@ namespace cp
 				{
 					impos.resize(num_ticks);
 					tick_val.resize(num_ticks);
-					double imstep = (length - 1) / (maxv - minv);
+					double dl = (length - 1) / (maxv - minv);
 
 					for (int i = 0; i < num_ticks; i++)
 					{
 						float v = step * i;
-						//if (v <= maxv + eps)
-						{
-							impos[i] = (imstep * v);
-							tick_val[i] = v + minv;
-						}
+						impos[i] = dl * v;
+						tick_val[i] = v + minv;
 					}
 				}
 				else
 				{
-					num_ticks--;
+					//num_ticks--;
 					impos.resize(num_ticks);
 					tick_val.resize(num_ticks);
-					double imstep = (length - 1) / (maxv - minv);
 					int ming = ceilToMultiple(minv, step);
+					double dl = (length - 1) / (maxv - minv);
+					double fastl = (ming - minv) * dl;
 					for (int i = 0; i < num_ticks; i++)
 					{
-						float v = step * i + ming;
-						//if (v <= maxv + eps)
+						float v = step * i;
+						if (length - 1 > dl * v + fastl)
 						{
-							impos[i] = (imstep * v);
-							tick_val[i] = v;
+							impos[i] = dl * v + fastl;
+							tick_val[i] = v + ming;
+						}
+						else
+						{
+							num_ticks--;
+							impos.erase(impos.begin() + num_ticks);
+							tick_val.erase(tick_val.begin() + num_ticks);
 						}
 					}
 				}
@@ -1445,6 +1449,27 @@ namespace cp
 		}
 
 		int float_state = 0;
+		bool isMultiple(double val, double target)
+		{
+			int v = int(val / target);
+			return(val == double(v * target));
+		}
+		double ceilToMultiple(double val, double target)
+		{
+			return ceil(val / target) * target;
+			double ret = 0.0;
+			if (isMultiple(val, target))
+			{
+				ret = val;
+			}
+			else
+			{
+				int v = int(ceil(val / target));
+				ret = (v * target);
+			}
+			return ret;
+		}
+
 		void generateTicksFloat()
 		{
 			float_state = 1;
@@ -1517,18 +1542,44 @@ namespace cp
 					step = 1.0;
 				}
 
-				num_ticks = (int)ceil(maxv / step) + 1;
+				num_ticks = (int)ceil(maxv / step);
 
-				impos.resize(num_ticks);
-				tick_val32f.resize(num_ticks);
-
-				for (int i = 0; i < num_ticks; i++)
+				if (isMultiple(minv, step))
 				{
-					float v = step * i;
-					//if (v <= maxv)
+					impos.resize(num_ticks);
+					tick_val32f.resize(num_ticks);
+					double dl = (length - 1) / (maxv - minv);
+
+					for (int i = 0; i < num_ticks; i++)
 					{
-						impos[i] = (length - 1) / (maxv - minv) * v;
-						tick_val32f[i] = v + minv;
+						float v = step * i;
+						{
+							impos[i] = dl * v;
+							tick_val32f[i] = v + minv;
+						}
+					}
+				}
+				else
+				{
+					impos.resize(num_ticks);
+					tick_val32f.resize(num_ticks);
+					double ming = ceilToMultiple(minv, step);
+					double dl = (length - 1) / (maxv - minv);
+					double fastl = (ming - minv) * dl;
+					for (int i = 0; i < num_ticks; i++)
+					{
+						float v = step * i;
+						if (length - 1 > dl * v + fastl)
+						{
+							impos[i] = dl * v + fastl;
+							tick_val32f[i] = v + ming;
+						}
+						else
+						{
+							num_ticks--;
+							impos.erase(impos.begin() + num_ticks);
+							tick_val32f.erase(tick_val32f.begin() + num_ticks);
+						}
 					}
 				}
 			}
@@ -1596,6 +1647,40 @@ namespace cp
 
 	};
 
+	void embed(Mat& src, Mat& target, Point pt, const bool isCenteringX, const bool isCenteringY)
+	{
+		CV_Assert(!src.empty());
+		CV_Assert(!target.empty());
+		const int offset_x = (isCenteringX) ? src.cols / 2 : 0;
+		const int offset_y = (isCenteringY) ? src.rows / 2 : 0;
+		bool isOutOfRange = false;
+		Rect roi(pt.x - offset_x, pt.y - offset_y, src.cols, src.rows);
+		if (0 <= roi.x && roi.x < target.cols && 0 <= roi.y && roi.y < target.rows)
+		{
+			int subx = 0;
+			int suby = 0;
+			if (roi.x + src.cols > target.cols - 1)
+			{
+				subx = (roi.x + src.cols) - (target.cols - 1);
+				isOutOfRange = true;
+			}
+			if (roi.y + src.rows > target.rows - 1)
+			{
+				suby = (roi.y + src.rows) - (target.rows - 1);
+				isOutOfRange = true;
+			}
+
+			if (isOutOfRange)
+			{
+				src(Rect(0, 0, src.cols - subx, src.rows - suby)).copyTo(target(Rect(roi.x, roi.y, src.cols - subx, src.rows - suby)));
+			}
+			else
+			{
+				src.copyTo(target(roi));
+			}
+		}
+	}
+
 	void Plot2D::addLabelToGraph()
 	{
 		for (int i = 0; i < contourLabels.size(); i++)
@@ -1639,9 +1724,15 @@ namespace cp
 			imshow("key", keyImage);
 		}
 
-		GraphTicksGenerator tickx(x_min, x_max, graph.cols, fontSize2, 3);
+		GraphTicksGenerator tickx(x_min, x_max, graph.cols, fontSize2, 4);
 		GraphTicksGenerator ticky(y_min, y_max, graph.rows, fontSize2, 1.5);
 		GraphTicksGenerator tickz(z_min, z_max, graph.rows, fontSize2, 1.5);
+
+		const int offset_left = fontSize + fontSize2 * ticky.getTicksCharactors();
+		const int offset_right = fontSize2 * tickz.getTicksCharactors();
+		const int xlabel_vspace = 5;
+		const int offset_bottom = fontSize + fontSize2 + xlabel_vspace + 10;
+		const int offset_top = fontSize + fontSize2;
 
 		int lineWidth = 2;
 		int tickLength = 7;
@@ -1686,11 +1777,6 @@ namespace cp
 		}
 		rotate(labelyImage, labelyImage, ROTATE_90_COUNTERCLOCKWISE);
 
-		const int offset_left = fontSize + fontSize2 * ticky.getTicksCharactors();
-		const int offset_right = fontSize2 * tickz.getTicksCharactors();
-		const int xlabel_vspace = 5;
-		const int offset_bottom = fontSize + fontSize2 + xlabel_vspace + 10;
-		const int offset_top = fontSize + fontSize2;
 		Mat graph2;
 
 		rectangle(barImage, Rect(0, 0, barImage.cols, barImage.rows), Scalar::all(0), lineWidth);
@@ -1712,39 +1798,34 @@ namespace cp
 		Rect rz = Rect(show.cols - labelzImage.cols - 2, 1, labelzImage.cols, labelzImage.rows);
 		labelzImage.copyTo(show(rz));
 
+		//x
 		for (int i = 0; i < tickx.num_ticks; i++)
 		{
 			line(show, Point(tickx.impos[i] + offset_left, offset_top + graph.rows - 1), Point(tickx.impos[i] + offset_left, offset_top + graph.rows - 1 - tickLength), Scalar::all(0));
 			Mat label = tickx.generateImage(i, font, Scalar::all(0), background_color);
-			Rect r;
 			if (i == 0 && tickx.isMinZero)
 			{
-				r = Rect(tickx.impos[i] + offset_left, offset_top + graph.rows + 2, label.cols, label.rows);
+				embed(label, show, Point(offset_left + tickx.impos[i], offset_top + graph.rows + 2), false, false);
 			}
 			else
 			{
-				r = Rect(tickx.impos[i] + offset_left - label.cols / 2, offset_top + graph.rows + 2, label.cols, label.rows);
+				embed(label, show, Point(offset_left + tickx.impos[i], offset_top + graph.rows + 2), true, false);
 			}
-
-			label.copyTo(show(r));
 		}
 
+		//y
 		for (int i = 0; i < ticky.num_ticks; i++)
 		{
 			line(show, Point(offset_left, offset_top + graph.rows - 1 - ticky.impos[i]), Point(offset_left + tickLength, offset_top + graph.rows - 1 - ticky.impos[i]), Scalar::all(0));
-
 			Mat label = ticky.generateImage(i, font, Scalar::all(0), background_color);
-			Rect r;
 			if (i == 0 && ticky.isMinZero)
 			{
-				r = Rect(offset_left - label.cols - 2, offset_top + graph.rows - ticky.impos[i] - label.rows, label.cols, label.rows);
+				embed(label, show, Point(offset_left - 2 - label.cols, offset_top + graph.rows - ticky.impos[i] - label.rows), false, false);
 			}
 			else
 			{
-				r = Rect(offset_left - label.cols - 2, offset_top + graph.rows - ticky.impos[i] - label.rows / 2, label.cols, label.rows);
+				embed(label, show, Point(offset_left - 2 - label.cols, offset_top + graph.rows - ticky.impos[i]), false, true);
 			}
-
-			label.copyTo(show(r));
 		}
 
 		int bar_stx = offset_left + graph.cols + barSpace;
@@ -1758,17 +1839,15 @@ namespace cp
 			if (i == 0 && tickz.isMinZero)
 			{
 				r = Rect(bar_edx + 2, offset_top + graph.rows - tickz.impos[i] - label.rows, label.cols, label.rows);
+				embed(label, show, Point(bar_edx + 2, offset_top + graph.rows - tickz.impos[i] - label.rows), false, false);
 			}
 			else
 			{
 				line(show, Point(bar_stx, bar_sty + graph.rows - 1 - tickz.impos[i]), Point(bar_stx + tickLength, bar_sty + graph.rows - 1 - tickz.impos[i]), Scalar::all(0));
 				line(show, Point(bar_edx, bar_sty + graph.rows - 1 - tickz.impos[i]), Point(bar_edx - tickLength, bar_sty + graph.rows - 1 - tickz.impos[i]), Scalar::all(0));
-				r = Rect(bar_edx + 2, offset_top + graph.rows - tickz.impos[i] - label.rows / 2, label.cols, label.rows);
+				embed(label, show, Point(bar_edx + 2, offset_top + graph.rows - tickz.impos[i]), false, true);
 			}
-			if (r.x > 0 && r.y > 0)
-				label.copyTo(show(r));
 		}
-
 	}
 
 	void Plot2D::drawContoursZ(double thresh, cv::Scalar color, int lineWidth)
@@ -1822,10 +1901,10 @@ namespace cp
 		}
 		if (isPlotMin)
 		{
-			drawPlus(keyImage, Point((lst + led) / 2, (i + 1) * step - fontSize2 / 2), 8, Scalar(0,0,0), 2);
+			drawPlus(keyImage, Point((lst + led) / 2, (i + 1) * step - fontSize2 / 2), 8, Scalar(0, 0, 0), 2);
 			cv::addText(keyImage, "MIN", Point(led + space, (i + 1) * step), font, fontSize2);
 			minColorIndex = i;
-		}	
+		}
 	}
 
 	void Plot2D::plot(string wname)

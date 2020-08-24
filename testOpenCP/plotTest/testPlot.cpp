@@ -84,14 +84,14 @@ void testPlot()
 
 void testPlot2D()
 {
-	int xmin = 3;
-	int xmax = 13;
-	int xstep = 2;
-	int ymin = 1;
-	int ymax = 64;
-	int ystep = 5;
+	double xmin = 6;
+	double xmax = 32;
+	double xstep = 1;
+	double ymin = 19;
+	double ymax = 128;
+	double ystep = 1;
 
-	Plot2D p(Size(256, 256), xmin, xmax, xstep, ymin, ymax, ystep);
+	Plot2D p(Size(512, 512), xmin, xmax, xstep, ymin, ymax, ystep);
 	p.setLabel("sigma space", "sigma range", "PSNR [dB]");
 	RNG rng(getTickCount());
 
@@ -107,9 +107,9 @@ void testPlot2D()
 	p.setPlotContours("40 dB", 40, 0);
 	p.setPlotContours("45 dB", 45, 1);
 	p.setPlotContours("50 dB", 50, 2);
-	for (int y = ymin; y <= ymax; y += ystep)
+	for (double y = ymin; y <= ymax; y += ystep)
 	{
-		for (int x = xmin; x <= xmax; x += xstep)
+		for (double x = xmin; x <= xmax; x += xstep)
 		{
 			//p.add(j, i, rand());
 			//double v = rng.uniform(0.0, 5.0);
