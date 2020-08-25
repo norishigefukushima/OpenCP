@@ -499,9 +499,13 @@ namespace cp
 		const Size borderSize = Size(s.cols + left + right, s.rows + top + bottom);
 
 		vector<Mat> dst;
-		if (dest.empty())
+		if (dest.empty() || dest.depth() != src.depth())
 		{
-			dest.create(src.channels(), 1, src.type());
+			if (!dest.empty() && dest.depth() != src.depth())
+			{
+				dest.release();
+			}
+			dest.create(src.channels(), 1, src.depth());
 
 			dest.getMatVector(dst);
 			for (int i = 0; i < dst.size(); i++)
