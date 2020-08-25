@@ -2,6 +2,18 @@
 
 namespace cp
 {
+	inline void indexToXY(const int index, const int imstep, int& x, int& y)
+	{
+		x = index % imstep;
+		y = index / imstep;
+	}
+
+	inline void relativeIndexToXY(const int index, const int imstep, const int r, int& x, int& y)
+	{
+		x = (index + r * imstep + r) % imstep;
+		y = (index + r * imstep + r) / imstep;
+	}
+
 	inline double cubic(double x, double a)
 	{
 		double d = abs(x);
