@@ -1,8 +1,8 @@
 #include "plot.hpp"
 #include "draw.hpp"
-#include "stereo_core.hpp"//for RGB histogram
-#include "pointcloud.hpp"//for RGB histogram
-#include "highguiex.hpp""
+#include "stereo_core.hpp" //for RGB histogram
+#include "pointcloud.hpp" //for RGB histogram
+#include "highguiex.hpp"
 #include "contrast.hpp"
 
 #include "debugcp.hpp"
@@ -1311,7 +1311,7 @@ namespace cp
 
 	inline int getNumTicks(int length, int fontSize, double fontSpace)
 	{
-		return length / (fontSize * fontSpace) + 1;
+		return int(length / (fontSize * fontSpace)) + 1;
 	}
 
 	//1à»â∫ÇÕïÇìÆè¨êîì_
@@ -1416,9 +1416,9 @@ namespace cp
 
 					for (int i = 0; i < num_ticks; i++)
 					{
-						float v = step * i;
-						impos[i] = dl * v;
-						tick_val[i] = v + minv;
+						float v = float(step * i);
+						impos[i] = int(dl * v);
+						tick_val[i] =int( v + minv);
 					}
 				}
 				else
@@ -1431,10 +1431,10 @@ namespace cp
 					double fastl = (ming - minv) * dl;
 					for (int i = 0; i < num_ticks; i++)
 					{
-						float v = step * i;
+						int v = step * i;
 						if (length - 1 > dl * v + fastl)
 						{
-							impos[i] = dl * v + fastl;
+							impos[i] = int(dl * v + fastl);
 							tick_val[i] = v + ming;
 						}
 						else
@@ -1507,10 +1507,10 @@ namespace cp
 
 				for (int i = 0; i < num_ticks; i++)
 				{
-					float v = step * i + minv;
+					float v = float(step * i + minv);
 					if (v <= 1.0)
 					{
-						impos[i] = length / maxv * v;
+						impos[i] = int(length / maxv * v);
 						tick_val32f[i] = v;
 					}
 				}
@@ -1552,10 +1552,10 @@ namespace cp
 
 					for (int i = 0; i < num_ticks; i++)
 					{
-						float v = step * i;
+						float v = float(step * i);
 						{
-							impos[i] = dl * v;
-							tick_val32f[i] = v + minv;
+							impos[i] = int(dl * v);
+							tick_val32f[i] =float( v + minv);
 						}
 					}
 				}
@@ -1568,11 +1568,11 @@ namespace cp
 					double fastl = (ming - minv) * dl;
 					for (int i = 0; i < num_ticks; i++)
 					{
-						float v = step * i;
+						float v = float(step * i);
 						if (length - 1 > dl * v + fastl)
 						{
-							impos[i] = dl * v + fastl;
-							tick_val32f[i] = v + ming;
+							impos[i] = int(dl * v + fastl);
+							tick_val32f[i] = float(v + ming);
 						}
 						else
 						{
@@ -1618,7 +1618,7 @@ namespace cp
 			{
 				if (float_state == 1)
 					return getTextImageQt(format("%5.1f", tick_val32f[index]), font, fontSize, color, background_color);
-				else if (float_state == 2)
+				else //if (float_state == 2)
 					return getTextImageQt(format("%5.2f", tick_val32f[index]), font, fontSize, color, background_color);
 			}
 			else
@@ -1643,6 +1643,8 @@ namespace cp
 				if (maxv < 1000000)return 6;
 				if (maxv < 10000000)return 7;
 			}
+
+			return 0;
 		}
 
 	};
@@ -1742,7 +1744,7 @@ namespace cp
 			Mat a = getTextImageQt(labelx, "Symbol", fontSize, Scalar::all(0), background_color, true);
 			if (labelx_subscript.size() != 0)
 			{
-				Mat b = getTextImageQt(labelx_subscript, font, fontSize / 1.8, Scalar::all(0), background_color, true);
+				Mat b = getTextImageQt(labelx_subscript, font, int(fontSize / 1.8), Scalar::all(0), background_color, true);
 				copyMakeBorder(b, b, a.rows - b.rows, 0, 0, 0, BORDER_CONSTANT, background_color);
 				hconcat(a, b, labelxImage);
 			}
@@ -1762,7 +1764,7 @@ namespace cp
 			Mat a = getTextImageQt(labely, "Symbol", fontSize, Scalar::all(0), background_color, true);
 			if (labely_subscript.size() != 0)
 			{
-				Mat b = getTextImageQt(labely_subscript, font, fontSize / 1.8, Scalar::all(0), background_color, true);
+				Mat b = getTextImageQt(labely_subscript, font, int(fontSize / 1.8), Scalar::all(0), background_color, true);
 				copyMakeBorder(b, b, a.rows - b.rows, 0, 0, 0, BORDER_CONSTANT, background_color);
 				hconcat(a, b, labelyImage);
 			}
@@ -1869,7 +1871,7 @@ namespace cp
 		if (isPlotMin)additional++;
 
 		int step = fontSize2 + 3;
-		int v = step * (contourThresh.size() + additional) + 5;
+		int v = step * (int)(contourThresh.size() + additional) + 5;
 
 		int charactor_max = 0;
 		for (int i = 0; i < contourLabels.size(); i++)
@@ -1891,7 +1893,7 @@ namespace cp
 			cv::addText(keyImage, contourLabels[i], Point(led + space, (i + 1) * step), font, fontSize2);
 		}
 
-		int i = contourLabels.size();
+		int i = (int)contourLabels.size();
 		if (isPlotMax)
 		{
 			circle(keyImage, Point((lst + led) / 2, (i + 1) * step - fontSize2 / 2), 5, colorIndex[i], 2);
