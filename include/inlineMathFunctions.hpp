@@ -98,7 +98,7 @@ namespace cp
 	{
 		cv::Size kernelSize = kernel.size();
 		int ret = 0;
-		const int r = kernelSize.width / 2;		
+		const int r = kernelSize.width / 2;
 		for (int j = 0; j < kernelSize.height; j++)
 		{
 			for (int i = 0; i < kernelSize.width; i++)
@@ -219,3 +219,19 @@ namespace cp
 #define print_debug3(a, b, c)       std::cout << #a << ": " << a <<", "<< #b << ": " << b <<", "<< #c << ": " << c << std::endl;
 #define print_debug4(a, b, c, d)    std::cout << #a << ": " << a <<", "<< #b << ": " << b <<", "<< #c << ": " << c <<", "<< #d << ": " << d << std::endl;
 #define print_debug5(a, b, c, d, e) std::cout << #a << ": " << a <<", "<< #b << ": " << b <<", "<< #c << ": " << c <<", "<< #d << ": " << d <<", "<< #e << ": " << e << std::endl;
+
+inline std::string getInterpolationName(const int method)
+{
+	std::string ret = "no supported";
+	switch (method)
+	{
+	case cv::INTER_NEAREST:		ret = "NEAREST"; break;
+	case cv::INTER_LINEAR:		ret = "LINEAR"; break;
+	case cv::INTER_CUBIC:		ret = "CUBIC"; break;
+	case cv::INTER_AREA:		ret = "AREA"; break;
+	case cv::INTER_LANCZOS4:	ret = "LANCZOS4"; break;
+	default:
+		break;
+	}
+	return ret;
+}
