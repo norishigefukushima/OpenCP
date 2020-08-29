@@ -361,7 +361,7 @@ namespace cp
 	};
 
 	template<int store_method>
-	void v_store(float* dst, __m256 src)
+	void v_store32f(float* dst, __m256 src)
 	{
 		if constexpr (store_method == STOREU) _mm256_storeu_ps(dst, src);
 		else if constexpr (store_method == STORE) _mm256_store_ps(dst, src);
@@ -369,17 +369,31 @@ namespace cp
 	}
 
 	template<int store_method>
-	void split_32F(Mat& src, vector<Mat>& dst, const int unroll = 4)
+	void splitConvert_(Mat& src, vector<Mat>& dst, const int unroll = 4)
 	{
 		CV_Assert(src.channels() == 3);
 		CV_Assert(1 <= unroll && unroll <= 4);
 
-		dst.resize(3);
-		dst[0].create(src.size(), CV_32F);
-		dst[1].create(src.size(), CV_32F);
-		dst[2].create(src.size(), CV_32F);
+		srcType* s = src.ptr<srcType>();
+		dstType* b = dst[0].ptr<dstType>();
+		dstType* g = dst[1].ptr<dstType>();
+		dstType* r = dst[2].ptr<dstType>();
 
-		float* s = src.ptr<float>();
+		for (int i = 0; i < src.size().area(); i++)
+		{
+			b[i] = saturate_cast<dstType>(s[3 * i + 0]);
+			g[i] = saturate_cast<dstType>(s[3 * i + 1]);
+			r[i] = saturate_cast<dstType>(s[3 * i + 2]);
+		}
+	}
+
+	template<int store_method>
+	void splitConvert32F32F_(Mat& src, vector<Mat>& dst, const int unroll = 4)
+	{
+		CV_Assert(src.channels() == 3);
+		CV_Assert(1 <= unroll && unroll <= 4);
+
+		float* s = src.ptr   <float>();
 		float* b = dst[0].ptr<float>();
 		float* g = dst[1].ptr<float>();
 		float* r = dst[2].ptr<float>();
@@ -392,9 +406,9 @@ namespace cp
 			{
 				__m256 mb, mg, mr;
 				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i, mb, mg, mr);
-				v_store<store_method>(b + i, mb);
-				v_store<store_method>(g + i, mg);
-				v_store<store_method>(r + i, mr);
+				v_store32f<store_method>(b + i, mb);
+				v_store32f<store_method>(g + i, mg);
+				v_store32f<store_method>(r + i, mr);
 			}
 		}
 		else if (unroll == 2)
@@ -403,16 +417,111 @@ namespace cp
 			{
 				__m256 mb, mg, mr;
 				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i, mb, mg, mr);
-				v_store<store_method>(b + i, mb);
-				v_store<store_method>(g + i, mg);
-				v_store<store_method>(r + i, mr);
+				v_store32f<store_method>(b + i, mb);
+				v_store32f<store_method>(g + i, mg);
+				v_store32f<store_method>(r + i, mr);
 
 				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 24, mb, mg, mr);
-				v_store<store_method>(b + i + 8, mb);
-				v_store<store_method>(g + i + 8, mg);
-				v_store<store_method>(r + i + 8, mr);
+				v_store32f<store_method>(b + i + 8, mb);
+				v_store32f<store_method>(g + i + 8, mg);
+				v_store32f<store_method>(r + i + 8, mr);
 			}
 		}
+		else if (unroll == 3)
+		{
+			for (int i = 0; i < simdsize; i += step)
+			{
+				__m256 mb, mg, mr;
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i, mb, mg, mr);
+				v_store32f<store_method>(b + i, mb);
+				v_store32f<store_method>(g + i, mg);
+				v_store32f<store_method>(r + i, mr);
+
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 24, mb, mg, mr);
+				v_store32f<store_method>(b + i + 8, mb);
+				v_store32f<store_method>(g + i + 8, mg);
+				v_store32f<store_method>(r + i + 8, mr);
+
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 48, mb, mg, mr);
+				v_store32f<store_method>(b + i + 16, mb);
+				v_store32f<store_method>(g + i + 16, mg);
+				v_store32f<store_method>(r + i + 16, mr);
+			}
+		}
+		else if (unroll == 4)
+		{
+			for (int i = 0; i < simdsize; i += step)
+			{
+				__m256 mb, mg, mr;
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i, mb, mg, mr);
+				v_store32f<store_method>(b + i, mb);
+				v_store32f<store_method>(g + i, mg);
+				v_store32f<store_method>(r + i, mr);
+
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 24, mb, mg, mr);
+				v_store32f<store_method>(b + i + 8, mb);
+				v_store32f<store_method>(g + i + 8, mg);
+				v_store32f<store_method>(r + i + 8, mr);
+
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 48, mb, mg, mr);
+				v_store32f<store_method>(b + i + 16, mb);
+				v_store32f<store_method>(g + i + 16, mg);
+				v_store32f<store_method>(r + i + 16, mr);
+
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 72, mb, mg, mr);
+				v_store32f<store_method>(b + i + 24, mb);
+				v_store32f<store_method>(g + i + 24, mg);
+				v_store32f<store_method>(r + i + 24, mr);
+			}
+		}
+
+		for (int i = simdsize; i < src.size().area(); i++)
+		{
+			b[i] = s[3 * i + 0];
+			g[i] = s[3 * i + 1];
+			r[i] = s[3 * i + 2];
+		}
+	}
+
+	template<int store_method>
+	void splitConvert8U32F_(Mat& src, vector<Mat>& dst, const int unroll = 4)
+	{
+		CV_Assert(src.channels() == 3);
+		CV_Assert(1 <= unroll && unroll <= 4);
+
+		uchar* s = src.ptr<uchar>();
+		float* b = dst[0].ptr<float>();
+		float* g = dst[1].ptr<float>();
+		float* r = dst[2].ptr<float>();
+		const int step = 8 * unroll;
+		const int simdsize = get_simd_floor(src.size().area(), step);
+
+		if (unroll == 1)
+		{
+			for (int i = 0; i < simdsize; i += step)
+			{
+				__m256 mb, mg, mr;
+				_mm256_load_cvtepu8bgr2planar_ps(s + 3 * i, mb, mg, mr);
+				v_store32f<store_method>(b + i, mb);
+				v_store32f<store_method>(g + i, mg);
+				v_store32f<store_method>(r + i, mr);
+			}
+		}
+		else if (unroll == 2)
+		{
+			for (int i = 0; i < simdsize; i += step)
+			{
+				__m256 mb0, mg0, mr0, mb1, mg1, mr1;
+				_mm256_load_cvtepu8bgr2planar_psx2(s + 3 * i, mb0, mb1, mg0, mg1, mr0, mr1);
+				v_store32f<store_method>(b + i, mb0);
+				v_store32f<store_method>(b + i + 8, mb1);
+				v_store32f<store_method>(g + i, mg0);
+				v_store32f<store_method>(g + i + 8, mg1);
+				v_store32f<store_method>(r + i, mr0);
+				v_store32f<store_method>(r + i + 8, mr1);
+			}
+		}
+		/*
 		else if (unroll == 3)
 		{
 			for (int i = 0; i < simdsize; i += step)
@@ -463,10 +572,11 @@ namespace cp
 
 		for (int i = simdsize; i < src.size().area(); i++)
 		{
-			b[i] = s[3 * i + 0];
-			g[i] = s[3 * i + 1];
-			r[i] = s[3 * i + 2];
+			b[i] = float(s[3 * i + 0]);
+			g[i] = float(s[3 * i + 1]);
+			r[i] = float(s[3 * i + 2]);
 		}
+		*/
 	}
 
 	void splitConvert(cv::InputArray src, cv::OutputArrayOfArrays dest, const int depth, const double scale, const double offset, const bool isCache)
@@ -477,10 +587,12 @@ namespace cp
 		if (dest.empty())
 		{
 			dest.create(3, 1, src.type());
+
 			dest.getMatVector(dst);
-			dst[0].create(src.size(), src.depth());
-			dst[1].create(src.size(), src.depth());
-			dst[2].create(src.size(), src.depth());
+
+			dst[0].create(src.size(), depth);
+			dst[1].create(src.size(), depth);
+			dst[2].create(src.size(), depth);
 
 			dest.getMatRef(0) = dst[0];
 			dest.getMatRef(1) = dst[1];
@@ -489,9 +601,34 @@ namespace cp
 		else
 		{
 			dest.getMatVector(dst);
+
+			for (int i = 0; i < dst.size(); i++)
+			{
+				if (dst[i].empty() ||
+					dst[i].depth() != src.depth())
+				{
+					dst[i].create(src.size(), depth);
+					dest.getMatRef(i) = dst[i];
+				}
+			}
 		}
 
-		const int unroll = 1;
+		
+		if (src.depth() == CV_32F && depth == CV_32F)
+		{
+			const int unroll = 1;
+			if (isCache && dst[0].cols % 8 == 0)splitConvert32F32F_<STORE>(s, dst, unroll);
+			else if (isCache && dst[0].cols % 8 != 0)splitConvert32F32F_<STOREU>(s, dst, unroll);
+			else splitConvert32F32F_<STREAM>(s, dst, unroll);
+		}
+		else if (src.depth() == CV_8U && depth == CV_32F)
+		{
+			const int unroll = 2;
+			if (isCache && dst[0].cols % 8 == 0)splitConvert8U32F_<STORE>(s, dst, unroll);
+			else if (isCache && dst[0].cols % 8 != 0)splitConvert8U32F_<STOREU>(s, dst, unroll);
+			else splitConvert8U32F_<STREAM>(s, dst, unroll);
+		}
+		/*
 		switch (s.depth())
 		{
 		case CV_8U:
@@ -499,30 +636,28 @@ namespace cp
 			else splitStream_8U(s, dst);
 			break;
 		case CV_32F:
-			if (isCache&&dst[0].cols%8==0)split_32F<STORE>(s, dst, unroll);
-			else if (isCache && dst[0].cols % 8 != 0)split_32F<STOREU>(s, dst, unroll);
-			else split_32F<STREAM>(s, dst, unroll);
+
 			break;
 		default:
 			//splitBase_<float>(s, dst);
 			cout << "not support type" << endl;
 			break;
-		}
+		}*/
 	}
 
 #pragma endregion
 
 	void cvtBGR2RawVector(cv::InputArray src, vector<float>& dest)
 	{
-		if (dest.size() < src.size().area()*src.channels())dest.resize(src.size().area()*src.channels());
+		if (dest.size() < src.size().area() * src.channels())dest.resize(src.size().area() * src.channels());
 		vector<Mat> v(3);
 		split(src, v);
 
 		int sz = src.size().area();
 		float* d = &dest[0];
-		memcpy(d, v[2].data, sizeof(float)*sz);
-		memcpy(d + sz, v[1].data, sizeof(float)*sz);
-		memcpy(d + 2 * sz, v[0].data, sizeof(float)*sz);
+		memcpy(d, v[2].data, sizeof(float) * sz);
+		memcpy(d + sz, v[1].data, sizeof(float) * sz);
+		memcpy(d + 2 * sz, v[0].data, sizeof(float) * sz);
 	}
 
 	void cvtRAWVector2BGR(vector<float>& src, OutputArray dest, Size size)
@@ -536,9 +671,9 @@ namespace cp
 
 		int sz = size.area();
 		float* s = &src[0];
-		memcpy(c.data, s, sizeof(float)*sz);
-		memcpy(b.data, s + size.area(), sizeof(float)*sz);
-		memcpy(a.data, s + 2 * size.area(), sizeof(float)*sz);
+		memcpy(c.data, s, sizeof(float) * sz);
+		memcpy(b.data, s + size.area(), sizeof(float) * sz);
+		memcpy(a.data, s + 2 * size.area(), sizeof(float) * sz);
 
 		v[0] = a;
 		v[1] = b;
@@ -580,16 +715,16 @@ namespace cp
 		//const __m128i ssmask3 = _mm_setr_epi8(11,12,13,14,15,0,1,2,3,4,5,6,7,8,9,10);
 
 		const __m128i bmask1 = _mm_setr_epi8
-			(255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+		(255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
 		const __m128i bmask2 = _mm_setr_epi8
-			(255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0);
+		(255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0);
 
 		const __m128i bmask3 = _mm_setr_epi8
-			(255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+		(255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
 		const __m128i bmask4 = _mm_setr_epi8
-			(255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0);
+		(255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0);
 
 		__m128i a, b, c;
 
@@ -807,15 +942,15 @@ namespace cp
 		split(src, v);
 		dest.create(Size(src.cols, src.rows * 3), depth);
 
-		memcpy(dest.data, v[0].data, src.size().area()*sizeof(T));
-		memcpy(dest.data + src.size().area()*sizeof(T), v[1].data, src.size().area()*sizeof(T));
-		memcpy(dest.data + 2 * src.size().area()*sizeof(T), v[2].data, src.size().area()*sizeof(T));
+		memcpy(dest.data, v[0].data, src.size().area() * sizeof(T));
+		memcpy(dest.data + src.size().area() * sizeof(T), v[1].data, src.size().area() * sizeof(T));
+		memcpy(dest.data + 2 * src.size().area() * sizeof(T), v[2].data, src.size().area() * sizeof(T));
 	}
 
 	void cvtColorBGR2PLANE(cv::InputArray src_, cv::OutputArray dest_)
 	{
 		CV_Assert(src_.channels() == 3);
-		
+
 		Mat src = src_.getMat();
 		dest_.create(Size(src.cols, src.rows * 3), src.depth());
 		Mat dest = dest_.getMat();
@@ -882,7 +1017,7 @@ namespace cp
 
 		uchar* D = (uchar*)dest.ptr<uchar>(0);
 
-		int ssecount = width*height * 3 / 48;
+		int ssecount = width * height * 3 / 48;
 
 		const __m128i mask1 = _mm_setr_epi8(0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10, 5);
 		const __m128i mask2 = _mm_setr_epi8(5, 0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10);
@@ -925,8 +1060,8 @@ namespace cp
 
 		uchar* D = (uchar*)dest.ptr<uchar>(0);
 
-		int ssecount = width*height * 3 / 48;
-		int rem = width*height * 3 - ssecount * 48;
+		int ssecount = width * height * 3 / 48;
+		int rem = width * height * 3 - ssecount * 48;
 
 		const __m128i mask1 = _mm_setr_epi8(0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10, 5);
 		const __m128i mask2 = _mm_setr_epi8(5, 0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10);
@@ -967,7 +1102,7 @@ namespace cp
 	{
 		CV_Assert(src_.channels() == 1);
 		Mat src = src_.getMat();
-		if(dest_.empty())dest_.create(Size(src.cols, src.rows), CV_MAKETYPE(src.depth(),3));
+		if (dest_.empty())dest_.create(Size(src.cols, src.rows), CV_MAKETYPE(src.depth(), 3));
 		Mat dest = dest_.getMat();
 
 		if (src.depth() == CV_8U)
@@ -1097,17 +1232,17 @@ namespace cp
 				//d[channel*i+7]=s[i+src.cols-1];
 				//d[channel*i+8]=s[i+src.cols+1];
 
-				d[channel*i + 0] = s[i];
-				d[channel*i + 1] = abs(s[i] - s[i - 1]);
-				d[channel*i + 2] = abs(s[i] - s[i + 1]);
+				d[channel * i + 0] = s[i];
+				d[channel * i + 1] = abs(s[i] - s[i - 1]);
+				d[channel * i + 2] = abs(s[i] - s[i + 1]);
 
-				d[channel*i + 3] = abs(s[i] - s[i - src.cols]);
-				d[channel*i + 4] = abs(s[i] - s[i - src.cols - 1]);
-				d[channel*i + 5] = abs(s[i] - s[i - src.cols + 1]);
+				d[channel * i + 3] = abs(s[i] - s[i - src.cols]);
+				d[channel * i + 4] = abs(s[i] - s[i - src.cols - 1]);
+				d[channel * i + 5] = abs(s[i] - s[i - src.cols + 1]);
 
-				d[channel*i + 6] = abs(s[i] - s[i + src.cols]);
-				d[channel*i + 7] = abs(s[i] - s[i + src.cols - 1]);
-				d[channel*i + 8] = abs(s[i] - s[i + src.cols + 1]);
+				d[channel * i + 6] = abs(s[i] - s[i + src.cols]);
+				d[channel * i + 7] = abs(s[i] - s[i + src.cols - 1]);
+				d[channel * i + 8] = abs(s[i] - s[i + src.cols + 1]);
 			}
 		}
 	}
@@ -1120,16 +1255,16 @@ namespace cp
 		const float c02 = 0.40824830532073974609375f;
 		const float c12 = -0.8164966106414794921875f;
 
-		const int size1 = width*height;
+		const int size1 = width * height;
 		const int size2 = 2 * size1;
 
 		//#pragma omp parallel for
 		for (int j = 0; j < height; j++)
 		{
-			float* s0 = src + width*j;
+			float* s0 = src + width * j;
 			float* s1 = s0 + size1;
 			float* s2 = s0 + size2;
-			float* d0 = dest + width*j;
+			float* d0 = dest + width * j;
 			float* d1 = d0 + size1;
 			float* d2 = d0 + size2;
 
@@ -1156,9 +1291,9 @@ namespace cp
 			//#endif
 			for (; i < width; i++)
 			{
-				float v0 = c00* *s0 + c01* *s1 + c02* *s2;
-				float v1 = c00* *s0 + c12* *s2;
-				float v2 = c00* *s0 - c01* *s1 + c02* *s2;
+				float v0 = c00 * *s0 + c01 * *s1 + c02 * *s2;
+				float v1 = c00 * *s0 + c12 * *s2;
+				float v2 = c00 * *s0 - c01 * *s1 + c02 * *s2;
 
 				*d0++ = v0;
 				*d1++ = v1;
@@ -1176,17 +1311,17 @@ namespace cp
 		const float c20 = 0.40824830532073974609375f;
 		const float c21 = -0.8164966106414794921875f;
 
-		const int size1 = width*height;
+		const int size1 = width * height;
 		const int size2 = 2 * size1;
 
 
 		//#pragma omp parallel for
 		for (int j = 0; j < height; j++)
 		{
-			float* s0 = src + width*j;
+			float* s0 = src + width * j;
 			float* s1 = s0 + size1;
 			float* s2 = s0 + size2;
-			float* d0 = dest + width*j;
+			float* d0 = dest + width * j;
 			float* d1 = d0 + size1;
 			float* d2 = d0 + size2;
 			const __m128 mc0 = _mm_set1_ps(c0);
@@ -1212,9 +1347,9 @@ namespace cp
 			//#endif
 			for (; i < width; i++)
 			{
-				float v0 = c0*(*s0 + *s1 + *s2);
-				float v1 = c1*(*s0 - *s2);
-				float v2 = (*s0 + *s2)*c20 + *s1 *c21;
+				float v0 = c0 * (*s0 + *s1 + *s2);
+				float v1 = c1 * (*s0 - *s2);
+				float v2 = (*s0 + *s2) * c20 + *s1 * c21;
 
 				*d0++ = v0;
 				*d1++ = v1;
@@ -1408,8 +1543,8 @@ namespace cp
 	void xcvFindWhiteBlanceMatrix(IplImage* src, CvMat* C, IplImage* mask)
 	{
 		uchar* data = (uchar*)src->imageData;
-		int size = src->width*src->height;
-		unsigned char*  mdata = new unsigned char[size];
+		int size = src->width * src->height;
+		unsigned char* mdata = new unsigned char[size];
 		memset(mdata, 1, size);
 
 		uchar* m = mdata;
@@ -1439,8 +1574,8 @@ namespace cp
 				double gs = data[3 * j + 1];
 				double bs = data[3 * j + 0];
 
-				rxr += rs*rs;
-				bxb += bs*bs;
+				rxr += rs * rs;
+				bxb += bs * bs;
 
 				r += rs;
 				b += bs;
@@ -1448,8 +1583,8 @@ namespace cp
 				dtr += gs;
 				dtb += gs;
 
-				rsd += rs*gs;
-				bsd += bs*gs;
+				rsd += rs * gs;
+				bsd += bs * gs;
 			}
 		}
 

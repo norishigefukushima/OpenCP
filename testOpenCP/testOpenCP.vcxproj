@@ -201,6 +201,7 @@
     <ClCompile Include="testPSNR.cpp" />
     <ClCompile Include="testRGBHistogram.cpp" />
     <ClCompile Include="testSplitMerge.cpp" />
+    <ClCompile Include="testTiling.cpp" />
     <ClCompile Include="testTimer.cpp" />
     <ClCompile Include="viewSynthesis\viewSynthesisTest.cpp" />
   </ItemGroup>

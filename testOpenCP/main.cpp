@@ -117,13 +117,14 @@ int main(int argc, char** argv)
 #pragma endregion
 
 #pragma region core
+	//testTiling(img); return 0;
 	//copyMakeBorderTest(img); return 0;
 	//testConcat(); return 0;
 	//testsimd(); return 0;
 
 	//testHistogram(); return 0;
 	//testPlot(); return 0;
-	testPlot2D(); return 0;
+	//testPlot2D(); return 0;
 	//guiGuidedImageFilterTest();
 	//guiHazeRemoveTest();
 
@@ -132,7 +133,7 @@ int main(int argc, char** argv)
 	//testLocalPSNR(img); return 0;
 	//testPSNR(img); return 0;
 	//resize(img, a, Size(513, 513));
-	//splitmergeTest(a); return 0;
+	testSplitMerge(img); return 0;
 	//testHistgram(img);
 	//testRGBHistogram();
 	//testRGBHistogram2();

@@ -996,25 +996,6 @@ __m128 zzzz = _mm_shuffle_ps(first, first, 0xAA); // _MM_SHUFFLE(2, 2, 2, 2)
 __m128 wwww = _mm_shuffle_ps(first, first, 0xFF); // _MM_SHUFFLE(3, 3, 3, 3)
 */
 
-
-inline __m256 _mm256_load_auto(const uchar* src)
-{
-	return _mm256_load_epu8cvtps((const __m128i*)src);
-}
-inline __m256 _mm256_load_auto(const float* src)
-{
-	return _mm256_load_ps(src);
-}
-
-inline __m256 _mm256_loadu_auto(const uchar* src)
-{
-	return _mm256_load_epu8cvtps((const __m128i*)src);
-}
-inline __m256 _mm256_loadu_auto(const float* src)
-{
-	return _mm256_loadu_ps(src);
-}
-
 inline void _mm256_stream_auto_color(float* dest, __m256 b, __m256 g, __m256 r)
 {
 	_mm256_stream_ps_color(dest, b, g, r);
@@ -1197,12 +1178,55 @@ inline void _mm256_i32scaterscalar_auto_color(float* dest, __m256i vindex, __m25
 	_mm256_i32scaterscalar_ps_color(dest, vindex, b, g, r);
 }
 
-inline void _mm256_store_auto(float* dest, __m256 src)
+
+inline __m256 _mm256_load_auto(const uchar* src)
 {
-	_mm256_store_ps(dest, src);
+	return _mm256_load_epu8cvtps((const __m128i*)src);
+}
+
+inline __m256 _mm256_loadu_auto(const uchar* src)
+{
+	return _mm256_load_epu8cvtps((const __m128i*)src);
+}
+
+inline __m256 _mm256_load_auto(const float* src)
+{
+	return _mm256_load_ps(src);
+}
+
+inline __m256 _mm256_loadu_auto(const float* src)
+{
+	return _mm256_loadu_ps(src);
+}
+
+inline __m256d _mm256_load_auto(const double* src)
+{
+	return _mm256_load_pd(src);
+}
+
+inline __m256d _mm256_loadu_auto(const double* src)
+{
+	return _mm256_loadu_pd(src);
 }
 
 inline void _mm256_store_auto(uchar* dest, __m256 src)
 {
 	_mm256_store_cvtps_epu8((__m128i*)dest, src);
 }
+
+inline void _mm256_storeu_auto(uchar* dest, __m256 src)
+{
+	_mm256_store_cvtps_epu8((__m128i*)dest, src);
+}
+
+inline void _mm256_storeu_auto(double* dest, __m256d src)
+{
+	_mm256_storeu_pd(dest, src);
+}
+
+inline void _mm256_storeu_auto(float* dest, __m256 src)
+{
+	_mm256_storeu_ps(dest, src);
+}
+
+

@@ -1,5 +1,6 @@
 #include "tiling.hpp"
 #include "../include/inlineSIMDFunctions.hpp"
+#include "debugcp.hpp"
 using namespace std;
 using namespace cv;
 
@@ -841,7 +842,6 @@ namespace cp
 		}
 	}
 
-
 	void createSubImage(const Mat& src, Mat& dest, const Size div_size, const Point idx, const int topb, const int bottomb, const int leftb, const int rightb, const int borderType)
 	{
 		CV_Assert(borderType == BORDER_REFLECT101 || borderType == BORDER_REFLECT || borderType == BORDER_REPLICATE);
@@ -915,68 +915,70 @@ namespace cp
 		//cout << format("%d %d %d %d\n", L, R, T, B);
 	}
 
-
-	void setSubImage32F_(const Mat& src, Mat& dest, const Size div_size, const Point idx, const int top, const int left)
+	template<typename T>
+	void setSubImage_(const Mat& src, Mat& dest, const Size div_size, const Point idx, const int top, const int left)
 	{
-		CV_Assert(!dest.empty());
-		CV_Assert(dest.cols % div_size.width == 0 && dest.rows % div_size.height == 0);
-
 		const int tilex = dest.cols / div_size.width;
 		const int tiley = dest.rows / div_size.height;
+		
+		int align = 0;
+		if (typeid(T) == typeid(uchar))align = 8;
+		if (typeid(T) == typeid(float))align = 8;
+		if (typeid(T) == typeid(double))align = 4;
+		const int simd_tile_width = get_simd_floor(tilex, align) * src.channels();
+		const int rem = tilex * src.channels() - simd_tile_width;
 
-		const int simd_tile_width = get_simd_floor(tilex, 8);
-		const int rem = tilex - simd_tile_width;
-
-		for (int j = 0; j < tiley; j++)
+		if (src.channels() == 1)
 		{
-			float* d = dest.ptr<float>(tiley * idx.y + j, tilex * idx.x);
-			const float* s = src.ptr<float>(top + j, left);
-			for (int i = 0; i < simd_tile_width; i += 8)
+			for (int j = 0; j < tiley; j++)
 			{
-				_mm256_storeu_ps(d + i, _mm256_loadu_ps(s + i));
-			}
-			for (int i = 0; i < rem; i++)
-			{
-				d[simd_tile_width + i] = s[simd_tile_width + i];
+				T* d = dest.ptr<T>(tiley * idx.y + j, tilex * idx.x);
+				const T* s = src.ptr<T>(top + j, left);
+				for (int i = 0; i < simd_tile_width; i += align)
+				{
+					_mm256_storeu_auto(d + i, _mm256_loadu_auto(s + i));
+				}
+				for (int i = 0; i < rem; i++)
+				{
+					d[simd_tile_width + i] = s[simd_tile_width + i];
+				}
 			}
 		}
-	}
-
-	void setSubImage64F_(const Mat& src, Mat& dest, const Size div_size, const Point idx, const int top, const int left)
-	{
-		CV_Assert(!dest.empty());
-		CV_Assert(dest.cols % div_size.width == 0 && dest.rows % div_size.height == 0);
-
-		const int tilex = dest.cols / div_size.width;
-		const int tiley = dest.rows / div_size.height;
-
-		const int simd_tile_width = get_simd_floor(tilex, 4);
-		const int rem = tilex - simd_tile_width;
-
-		for (int j = 0; j < tiley; j++)
+		else if (src.channels() == 3)
 		{
-			double* d = dest.ptr<double>(tiley * idx.y + j, tilex * idx.x);
-			const double* s = src.ptr<double>(top + j, left);
-			for (int i = 0; i < simd_tile_width; i += 4)
+			for (int j = 0; j < tiley; j++)
 			{
-				_mm256_storeu_pd(d + i, _mm256_loadu_pd(s + i));
-			}
-			for (int i = 0; i < rem; i++)
-			{
-				d[simd_tile_width + i] = s[simd_tile_width + i];
+				T* d = dest.ptr<T>(tiley * idx.y + j, tilex * idx.x);
+				const T* s = src.ptr<T>(top + j, left);
+				for (int i = 0; i < simd_tile_width; i += align)
+				{
+					_mm256_storeu_auto(d + i, _mm256_loadu_auto(s + i));
+				}
+				for (int i = 0; i < rem; i++)
+				{
+					d[simd_tile_width + i] = s[simd_tile_width + i];
+				}
 			}
 		}
 	}
 
 	void setSubImage(const Mat& src, Mat& dest, const Size div_size, const Point idx, const int top, const int left)
 	{
-		if (src.depth() == CV_32F)
+		CV_Assert(!dest.empty());
+		CV_Assert(dest.cols % div_size.width == 0 && dest.rows % div_size.height == 0);
+		CV_Assert(src.channels() == dest.channels());
+
+		if (src.depth() == CV_8U)
 		{
-			setSubImage32F_(src, dest, div_size, idx, top, left);
+			setSubImage_<uchar>(src, dest, div_size, idx, top, left);
 		}
-		else
+		else if (src.depth() == CV_32F)
 		{
-			setSubImage64F_(src, dest, div_size, idx, top, left);
+			setSubImage_<float>(src, dest, div_size, idx, top, left);
+		}
+		else if (src.depth() == CV_64F)
+		{
+			setSubImage_<double>(src, dest, div_size, idx, top, left);
 		}
 	}
 
@@ -991,7 +993,6 @@ namespace cp
 		const int T = get_simd_ceil(r, top_multiple);
 		setSubImage(src, dest, div_size, idx, L, T);
 	}
-
 
 	void splitSubImage(const Mat& src, vector<Mat>& dest, const Size div_size, const int r, const int borderType)
 	{

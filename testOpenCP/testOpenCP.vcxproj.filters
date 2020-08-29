@@ -138,6 +138,9 @@
     <ClCompile Include="fitPlaneTest.cpp">
       <Filter>ソース ファイル\test\imgproc</Filter>
     </ClCompile>
+    <ClCompile Include="testTiling.cpp">
+      <Filter>ソース ファイル\test\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="test.hpp">
