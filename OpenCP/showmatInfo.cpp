@@ -5,17 +5,15 @@ using namespace std;
 
 namespace cp
 {
-	void showMatInfo(InputArray src_, string name, const bool isStatInfo)
+	static void showMatInfo_(cv::Mat src, string name, const bool isStatInfo)
 	{
-		Mat src = src_.getMat();
-
 		cout << "name   : " << name << endl;
 		if (src.empty())
 		{
 			cout << "empty" << endl;
 			return;
 		}
-	
+
 		cout << "size   : " << src.size() << endl;
 		cout << "channel: " << src.channels() << endl;
 		cout << "depth  : ";
@@ -56,5 +54,23 @@ namespace cp
 			}
 		}
 		cout << endl;
+	}
+	void showMatInfo(InputArray src_, string name, const bool isStatInfo)
+	{
+		if (src_.isMatVector())
+		{
+			vector<Mat> v;
+			src_.getMatVector(v);
+			for (int i = 0; i < v.size(); i++)
+			{
+				showMatInfo(v[i], name + to_string(i), isStatInfo);;
+			}
+
+		}
+		else
+		{
+			Mat s = src_.getMat();
+			showMatInfo(s, name, isStatInfo);
+		}
 	}
 }

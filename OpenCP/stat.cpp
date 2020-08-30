@@ -97,8 +97,12 @@ namespace cp
 	void Stat::drawDistribution(string wname, int div, double minv, double maxv)
 	{
 		if (data.size() == 1)return;
-		double med = getMedian();
-		double mean = getMean();
+		double stmax = getMax();
+		double stmin = getMin();
+		if (stmax == stmin) return;
+
+		double stmed = getMedian();
+		double stmean = getMean();
 
 		vector<int> hist(div);
 		for (int i = 0; i < div; i++)hist[i] = 0;
@@ -111,8 +115,8 @@ namespace cp
 			hist[v]++;
 		}
 
-		int medv = (int)((med - minv) / interval);
-		int meanv = (int)((mean - minv) / interval);
+		int medv = (int)((stmed - minv) / interval);
+		int meanv = (int)((stmean - minv) / interval);
 
 		int hmax = 0;
 		for (int i = 0; i < div; i++)
@@ -149,12 +153,12 @@ namespace cp
 		resize(draw_, draw, Size(), amp, 1, INTER_NEAREST);
 		Mat text_img = Mat::zeros(Size(draw.cols, 30), CV_8UC3);
 
-		string text = format("ave%f", mean);
+		string text = format("ave%f", stmean);
 		putText(text_img, text, Point(10, 20), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_WHITE);
 		vconcat(draw, text_img, draw);
 
 		text_img.setTo(0);
-		text = format("med%f", med);
+		text = format("med%f", stmed);
 		putText(text_img, text, Point(10, 20), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_WHITE);
 		vconcat(draw, text_img, draw);
 
