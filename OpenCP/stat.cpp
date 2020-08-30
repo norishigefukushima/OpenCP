@@ -78,7 +78,7 @@ namespace cp
 		num_data = 0;
 	}
 
-	void Stat::show()
+	void Stat::print()
 	{
 		cout << "mean " << getMean() << endl;
 		cout << "min  " << getMin() << endl;
@@ -96,6 +96,7 @@ namespace cp
 
 	void Stat::drawDistribution(string wname, int div, double minv, double maxv)
 	{
+		if (data.size() == 1)return;
 		double med = getMedian();
 		double mean = getMean();
 
@@ -119,7 +120,7 @@ namespace cp
 			if (hmax < hist[i])hmax = hist[i];
 		}
 
-		Mat draw = Mat::zeros(Size(div, 256), CV_8UC3);
+		Mat draw_ = Mat::zeros(Size(div, 256), CV_8UC3);
 
 		/*double hmaxl = log(hmax+1);
 		for (int i = 0; i < div; i++)
@@ -134,15 +135,18 @@ namespace cp
 
 		for (int i = 0; i < div; i++)
 		{
-			if (i % (div / 10) == 0)cv::line(draw, Point(i, 0), Point(i, draw.rows - 1), cv::Scalar::all(50));
-			int h = int((1.0 - (double)hist[i] / (double)hmax)*draw.rows - 1);
-			cv::line(draw, Point(i, h), Point(i, draw.rows - 1), cv::Scalar(230, 230, 230));
+			if (i % (div / 10) == 0)cv::line(draw_, Point(i, 0), Point(i, draw_.rows - 1), cv::Scalar::all(50));
+			int h = int((1.0 - (double)hist[i] / (double)hmax)*draw_.rows - 1);
+			cv::line(draw_, Point(i, h), Point(i, draw_.rows - 1), cv::Scalar(230, 230, 230));
 
-			if (i == meanv) cv::line(draw, Point(i, h), Point(i, draw.rows - 1), cv::Scalar(255, 0, 0));
-			if (i == medv)cv::line(draw, Point(i, h), Point(i, draw.rows - 1), cv::Scalar(0, 0, 255));
-			if (i == medv && i == meanv)cv::line(draw, Point(i, h), Point(i, draw.rows - 1), cv::Scalar(128, 0, 128));
+			if (i == meanv) cv::line(draw_, Point(i, h), Point(i, draw_.rows - 1), cv::Scalar(255, 0, 0));
+			if (i == medv)cv::line(draw_, Point(i, h), Point(i, draw_.rows - 1), cv::Scalar(0, 0, 255));
+			if (i == medv && i == meanv)cv::line(draw_, Point(i, h), Point(i, draw_.rows - 1), cv::Scalar(128, 0, 128));
 		}
-
+		Mat draw;
+		int amp = (int)ceil(256.0 / div);
+		
+		resize(draw_, draw, Size(), amp, 1, INTER_NEAREST);
 		Mat text_img = Mat::zeros(Size(draw.cols, 30), CV_8UC3);
 
 		string text = format("ave%f", mean);
