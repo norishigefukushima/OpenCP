@@ -560,6 +560,99 @@ namespace cp
 	}
 
 
+	void splitCreateSubImage32FC3_Replicate(const Mat& src, vector<Mat>& dest, const Size div_size, const Point idx, const int topb, const int bottomb, const int leftb, const int rightb)
+	{
+		const int tilex = src.cols / div_size.width;
+		const int tiley = src.rows / div_size.height;
+		const int dest_tilex = tilex + leftb + rightb;
+		const int dest_tiley = tiley + topb + bottomb;
+		if (dest.size() != 3)dest.resize(3);
+		for (int c = 0; c < 3; c++)
+		{
+			if (dest[c].size() != Size(dest_tilex, dest_tiley)) dest[c].create(Size(dest_tilex, dest_tiley), CV_32F);
+		}
+		
+		const int top_tilex = tilex * idx.x;
+		const int left = max(0, leftb - top_tilex);
+		const int sleft = leftb - left;
+		const int right = max(0, dest_tilex + top_tilex - src.cols - leftb);
+		const int sright = leftb + rightb - right;
+		const int copysizex = dest_tilex - left - right;
+
+		const int top_tiley = tiley * idx.y;
+		const int top = max(0, topb - top_tiley);
+		const int stop = topb - top;
+		const int bottom = max(0, dest_tiley - (src.rows - top_tiley + topb));
+
+		const int copysizey = dest_tiley - top - bottom;
+
+		const int LEFT = get_simd_ceil(left, 8);
+		const int RIGHT = get_simd_floor(right, 8);
+
+		const float* s = src.ptr<float>(tiley * idx.y - stop, top_tilex);
+		float* d = dest.ptr<float>(top);
+
+		const int STORE_OFFSET = tilex + sright;
+
+		__m256 b;
+		__m256 g;
+		__m256 r;
+		for (int j = 0; j < copysizey - 1; j++)
+		{
+			for (int i = 0; i < LEFT; i += 8)
+			{
+				a = _mm256_set1_ps(s[-top_tilex*3+0]);
+				_mm256_store_ps(d + i, a);
+			}
+			memcpy(d + left, s - sleft, sizeof(float) * (copysizex));
+			for (int i = 0; i < right; i += 8)
+			{
+				a = _mm256_set1_ps(s[-top_tilex + src.cols - 1]);
+				_mm256_storeu_ps(d + STORE_OFFSET + i, a);
+			}
+			s += src.cols;
+			d += dest.cols;
+		}
+		//overshoot handling for the last loop
+		{
+			for (int i = 0; i < LEFT; i += 8)
+			{
+				a = _mm256_set1_ps(s[0]);
+				_mm256_store_ps(d + i, a);
+			}
+			memcpy(d + left, s - sleft, sizeof(float) * (copysizex));
+			for (int i = 0; i < RIGHT; i += 8)
+			{
+				a = _mm256_set1_ps(s[tilex - 1]);
+				_mm256_storeu_ps(d + STORE_OFFSET + i, a);
+			}
+			for (int i = RIGHT; i < right; i++)
+			{
+				d[STORE_OFFSET + i] = s[tilex - 1];
+			}
+
+			s += src.cols;
+			d += dest.cols;
+		}
+
+		for (int j = 0; j < top; j++)
+		{
+			float* s = dest.ptr<float>(top);
+			float* d = dest.ptr<float>(j);
+			memcpy(d, s, sizeof(float) * (dest_tilex));
+		}
+
+		const int sidx = tiley * (div_size.height - idx.y) + topb - 1;
+		const int didx = tiley * (div_size.height - idx.y) + topb;
+		for (int j = 0; j < bottom; j++)
+		{
+			float* s = dest.ptr<float>(max(0, sidx));
+			float* d = dest.ptr<float>(didx + j);
+			memcpy(d, s, sizeof(float) * dest_tilex);
+		}
+	}
+
+
 	void createSubImage64F_Reflect(const Mat& src, Mat& dest, const Size div_size, const Point idx, const int topb, const int bottomb, const int leftb, const int rightb)
 	{
 		const int tilex = src.cols / div_size.width;
