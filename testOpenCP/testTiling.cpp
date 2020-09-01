@@ -15,6 +15,7 @@ void testTiling(Mat& src)
 	Mat destf = Mat::zeros(src.size(), srcf.type());
 
 	const Size div = Size(4, 4);
+	
 	const int r = 2;
 
 	for (int c = 0; c < 3; c++)
@@ -25,5 +26,13 @@ void testTiling(Mat& src)
 	setSubImage(sub, destf, div, Point(1, 2), 2);
 
 	imshowScale("tile", destf);
+	waitKey();
+
+	createSplitSubImageAlign(srcf, sv, div, Point(1, 2), r);	
+	merge(sv, sub);
+	imshowScale("sub", sub);
+	setSubImageAlign(sub, destf, div, Point(1, 2), 2);
+
+	imshowScale("tile2", destf);
 	waitKey();
 }

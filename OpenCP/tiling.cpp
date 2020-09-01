@@ -560,7 +560,7 @@ namespace cp
 	}
 
 
-	void splitCreateSubImage32FC3_Replicate(const Mat& src, vector<Mat>& dest, const Size div_size, const Point idx, const int topb, const int bottomb, const int leftb, const int rightb)
+	void createSplitSubImage32FC3_Replicate(const Mat& src, vector<Mat>& dest, const Size div_size, const Point idx, const int topb, const int bottomb, const int leftb, const int rightb)
 	{
 		const int tilex = src.cols / div_size.width;
 		const int tiley = src.rows / div_size.height;
@@ -571,7 +571,7 @@ namespace cp
 		{
 			if (dest[c].size() != Size(dest_tilex, dest_tiley)) dest[c].create(Size(dest_tilex, dest_tiley), CV_32F);
 		}
-		
+
 		const int top_tilex = tilex * idx.x;
 		const int left = max(0, leftb - top_tilex);
 		const int sleft = leftb - left;
@@ -590,68 +590,125 @@ namespace cp
 		const int RIGHT = get_simd_floor(right, 8);
 
 		const float* s = src.ptr<float>(tiley * idx.y - stop, top_tilex);
-		float* d = dest.ptr<float>(top);
+		float* db = dest[0].ptr<float>(top);
+		float* dg = dest[1].ptr<float>(top);
+		float* dr = dest[2].ptr<float>(top);
 
 		const int STORE_OFFSET = tilex + sright;
 
-		__m256 b;
-		__m256 g;
-		__m256 r;
+		__m256 mb;
+		__m256 mg;
+		__m256 mr;
 		for (int j = 0; j < copysizey - 1; j++)
 		{
 			for (int i = 0; i < LEFT; i += 8)
 			{
-				a = _mm256_set1_ps(s[-top_tilex*3+0]);
-				_mm256_store_ps(d + i, a);
+				_mm256_store_ps(db + i, _mm256_set1_ps(s[-top_tilex * 3 + 0]));
+				_mm256_store_ps(dg + i, _mm256_set1_ps(s[-top_tilex * 3 + 1]));
+				_mm256_store_ps(dr + i, _mm256_set1_ps(s[-top_tilex * 3 + 2]));
 			}
-			memcpy(d + left, s - sleft, sizeof(float) * (copysizex));
+
+			for (int i = 0; i < copysizex; i += 8)
+			{
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * (i - sleft), mb, mg, mr);
+				_mm256_store_ps(db + left, mb);
+				_mm256_store_ps(dg + left, mg);
+				_mm256_store_ps(dr + left, mr);
+				//memcpy(d + left, s - sleft, sizeof(float) * (copysizex));
+			}
+
 			for (int i = 0; i < right; i += 8)
 			{
-				a = _mm256_set1_ps(s[-top_tilex + src.cols - 1]);
-				_mm256_storeu_ps(d + STORE_OFFSET + i, a);
+				_mm256_storeu_ps(db + STORE_OFFSET + i, _mm256_set1_ps(s[3 * (-top_tilex + src.cols - 1) + 0]));
+				_mm256_storeu_ps(dg + STORE_OFFSET + i, _mm256_set1_ps(s[3 * (-top_tilex + src.cols - 1) + 1]));
+				_mm256_storeu_ps(dr + STORE_OFFSET + i, _mm256_set1_ps(s[3 * (-top_tilex + src.cols - 1) + 2]));
 			}
-			s += src.cols;
-			d += dest.cols;
+			s += 3 * src.cols;
+			db += dest[0].cols;
+			dg += dest[0].cols;
+			dr += dest[0].cols;
 		}
 		//overshoot handling for the last loop
 		{
 			for (int i = 0; i < LEFT; i += 8)
 			{
-				a = _mm256_set1_ps(s[0]);
-				_mm256_store_ps(d + i, a);
+				_mm256_store_ps(db + i, _mm256_set1_ps(s[0]));
+				_mm256_store_ps(dg + i, _mm256_set1_ps(s[1]));
+				_mm256_store_ps(dr + i, _mm256_set1_ps(s[2]));
 			}
-			memcpy(d + left, s - sleft, sizeof(float) * (copysizex));
+
+			for (int i = 0; i < copysizex; i += 8)
+			{
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * (i - sleft), mb, mg, mr);
+				_mm256_store_ps(db + left, mb);
+				_mm256_store_ps(dg + left, mg);
+				_mm256_store_ps(dr + left, mr);
+			}
+
 			for (int i = 0; i < RIGHT; i += 8)
 			{
-				a = _mm256_set1_ps(s[tilex - 1]);
-				_mm256_storeu_ps(d + STORE_OFFSET + i, a);
+				_mm256_storeu_ps(db + STORE_OFFSET + i, _mm256_set1_ps(s[3 * (tilex - 1) + 0]));
+				_mm256_storeu_ps(dg + STORE_OFFSET + i, _mm256_set1_ps(s[3 * (tilex - 1) + 1]));
+				_mm256_storeu_ps(dr + STORE_OFFSET + i, _mm256_set1_ps(s[3 * (tilex - 1) + 2]));
 			}
 			for (int i = RIGHT; i < right; i++)
 			{
-				d[STORE_OFFSET + i] = s[tilex - 1];
+				db[STORE_OFFSET + i] = s[3 * (tilex - 1) + 0];
+				dg[STORE_OFFSET + i] = s[3 * (tilex - 1) + 1];
+				dr[STORE_OFFSET + i] = s[3 * (tilex - 1) + 2];
 			}
 
-			s += src.cols;
-			d += dest.cols;
+			s += 3 * src.cols;
+			db += dest[0].cols;
+			dg += dest[0].cols;
+			dr += dest[0].cols;
 		}
 
-		for (int j = 0; j < top; j++)
+		for (int c = 0; c < 3; c++)
 		{
-			float* s = dest.ptr<float>(top);
-			float* d = dest.ptr<float>(j);
-			memcpy(d, s, sizeof(float) * (dest_tilex));
-		}
+			for (int j = 0; j < top; j++)
+			{
+				float* s = dest[c].ptr<float>(top);
+				float* d = dest[c].ptr<float>(j);
+				memcpy(d, s, sizeof(float) * (dest_tilex));
+			}
 
-		const int sidx = tiley * (div_size.height - idx.y) + topb - 1;
-		const int didx = tiley * (div_size.height - idx.y) + topb;
-		for (int j = 0; j < bottom; j++)
-		{
-			float* s = dest.ptr<float>(max(0, sidx));
-			float* d = dest.ptr<float>(didx + j);
-			memcpy(d, s, sizeof(float) * dest_tilex);
+			const int sidx = tiley * (div_size.height - idx.y) + topb - 1;
+			const int didx = tiley * (div_size.height - idx.y) + topb;
+			for (int j = 0; j < bottom; j++)
+			{
+				float* s = dest[c].ptr<float>(max(0, sidx));
+				float* d = dest[c].ptr<float>(didx + j);
+				memcpy(d, s, sizeof(float) * dest_tilex);
+			}
 		}
 	}
 
+
+	void createSplitSubImage(const Mat& src, vector<Mat>& dest, const Size div_size, const Point idx, const int topb, const int bottomb, const int leftb, const int rightb, const int borderType)
+	{
+		CV_Assert(borderType == BORDER_REFLECT101 || borderType == BORDER_REFLECT || borderType == BORDER_REPLICATE);
+
+		if (src.depth() == CV_8U)
+		{
+			//if (borderType == BORDER_REFLECT101 || borderType == BORDER_DEFAULT) createSubImage8U_Reflect101(src, dest, div_size, idx, topb, bottomb, leftb, rightb);
+			//else if (borderType == BORDER_REFLECT) createSubImage8U_Reflect(src, dest, div_size, idx, topb, bottomb, leftb, rightb);
+			//else if (borderType == BORDER_REPLICATE) createSubImage8U_Replicate(src, dest, div_size, idx, topb, bottomb, leftb, rightb);
+		}
+		else if (src.depth() == CV_32F)
+		{
+			createSplitSubImage32FC3_Replicate(src, dest, div_size, idx, topb, bottomb, leftb, rightb);
+			//if (borderType == BORDER_REFLECT101 || borderType == BORDER_DEFAULT) createSubImage32F_Reflect101(src, dest, div_size, idx, topb, bottomb, leftb, rightb);
+			//else if (borderType == BORDER_REFLECT) createSubImage32F_Reflect(src, dest, div_size, idx, topb, bottomb, leftb, rightb);
+			//else if (borderType == BORDER_REPLICATE) createSubImage32F_Replicate(src, dest, div_size, idx, topb, bottomb, leftb, rightb);
+		}
+		else if (src.depth() == CV_64F)
+		{
+			//if (borderType == BORDER_REFLECT101 || borderType == BORDER_DEFAULT) createSubImage64F_Reflect101(src, dest, div_size, idx, topb, bottomb, leftb, rightb);
+			//else if (borderType == BORDER_REFLECT) createSubImage64F_Reflect(src, dest, div_size, idx, topb, bottomb, leftb, rightb);
+			//else if (borderType == BORDER_REPLICATE) createSubImage64F_Replicate(src, dest, div_size, idx, topb, bottomb, leftb, rightb);
+		}
+	}
 
 	void createSubImage64F_Reflect(const Mat& src, Mat& dest, const Size div_size, const Point idx, const int topb, const int bottomb, const int leftb, const int rightb)
 	{
@@ -1008,12 +1065,33 @@ namespace cp
 		//cout << format("%d %d %d %d\n", L, R, T, B);
 	}
 
+	void createSplitSubImageAlign(const cv::Mat& src, std::vector<cv::Mat>& dest, const cv::Size div_size, const cv::Point idx, const int r, const int borderType, const int align_x, const int align_y, const int left_multiple, const int top_multiple)
+	{
+		const int tilex = src.cols / div_size.width;
+		const int tiley = src.rows / div_size.height;
+
+		const int L = get_simd_ceil(r, left_multiple);
+		const int T = get_simd_ceil(r, top_multiple);
+
+		const int align_width = get_simd_ceil(tilex + L + r, align_x);
+		const int padx = align_width - (tilex + L + r);
+		const int align_height = get_simd_ceil(tiley + T + r, align_y);
+		const int pady = align_height - (tiley + T + r);
+		const int R = r + padx;
+		const int B = r + pady;
+		//printf("xpad%d,ypad%d\n",padx,pady);
+		createSplitSubImage(src, dest, div_size, idx, T, B, L, R, borderType);
+		//cout << format("%d %d %d %d\n", L, R, T, B);
+	}
+
+
+
 	template<typename T>
 	void setSubImage_(const Mat& src, Mat& dest, const Size div_size, const Point idx, const int top, const int left)
 	{
 		const int tilex = dest.cols / div_size.width;
 		const int tiley = dest.rows / div_size.height;
-		
+
 		int align = 0;
 		if (typeid(T) == typeid(uchar))align = 8;
 		if (typeid(T) == typeid(float))align = 8;

@@ -117,7 +117,7 @@ int main(int argc, char** argv)
 #pragma endregion
 
 #pragma region core
-	//testTiling(img); return 0;
+	testTiling(img); return 0;
 	//copyMakeBorderTest(img); return 0;
 	//testConcat(); return 0;
 	//testsimd(); return 0;
