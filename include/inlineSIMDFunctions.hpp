@@ -1179,6 +1179,22 @@ inline void _mm256_i32scaterscalar_auto_color(float* dest, __m256i vindex, __m25
 }
 
 
+inline __m256 _mm256_load_reverse_ps(const float* src)
+{
+	__m256 ret = _mm256_load_ps(src);
+	ret = _mm256_shuffle_ps(ret, ret, _MM_SHUFFLE(0, 1, 2, 3));
+	ret = _mm256_permute2f128_ps(ret, ret, 1);
+	return ret;
+}
+
+inline __m256 _mm256_loadu_reverse_ps(const float* src)
+{
+	__m256 ret = _mm256_loadu_ps(src);
+	ret = _mm256_shuffle_ps(ret, ret, _MM_SHUFFLE(0, 1, 2, 3));
+	ret = _mm256_permute2f128_ps(ret, ret, 1);
+	return ret;
+}
+
 inline __m256 _mm256_load_auto(const uchar* src)
 {
 	return _mm256_load_epu8cvtps((const __m128i*)src);
