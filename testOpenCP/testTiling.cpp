@@ -33,68 +33,187 @@ void createSubImageCVAlign(const cv::Mat& src, cv::Mat& dest, const cv::Size div
 	createSubImageCV(src, dest, div_size, idx, T, B, L, R, borderType);
 }
 
-void testTiling(Mat& src)
+void testTilingTime(Mat& src, const int r = 32, const Size div = Size(4, 4), const Point index = Point(0, 0), const int borderType = BORDER_DEFAULT)
 {
-	Mat srcf = convert(src, CV_32F);
-	//Mat srcf = convert(src, CV_64F);
+	const int iteration = 10000;
+	vector<Mat> vsrc;
+	split(src, vsrc);
+	vector<Mat> vtile(3);
+	vector<Mat> vtiles(3);
+	Mat tile_refcv, tile, tile_s;
+	{
+		Timer t("cv x100    ", TIME_MSEC);
+		for (int i = 0; i < iteration / 100; i++)
+		{
+			createSubImageCVAlign(src, tile_refcv, div, index, r, borderType, 8, 8);
+			//split(tile_refcv, vtile);
+		}
+	}
+	{
+		Timer t("outer split", TIME_MSEC);
+		for (int i = 0; i < iteration; i++)
+		{
+			for (int c = 0; c < 3; c++)
+				createSubImageAlign(vsrc[c], vtile[c], div, index, r, borderType, 8, 8);
+		}
+	}
+	{
+		Timer t("inner split", TIME_MSEC);
+		for (int i = 0; i < iteration; i++)
+		{
+			cropSplitTileAlign(src, vtiles, div, index, r, borderType, 8, 8);
+		}
+	}
+}
 
-	vector<Mat> v;
+void testTilingAccuracy(Mat& src, bool isPrint = false, const int r = 32, const Size div = Size(4, 4), const int borderType = BORDER_DEFAULT)
+{
+	vector<Mat> vsrc;
 	vector<Mat> sv(3);
 	vector<Mat> sv2(3);
-	split(srcf, v);
-	Mat destf = Mat::zeros(src.size(), srcf.type());
-	Mat destf_ref = Mat::zeros(src.size(), srcf.type());
-	Mat sub_ref, sub, sub_s;
-	const Size div = Size(4, 4);
+	split(src, vsrc);
 
-	const int r = 31;
-	//int borderType = BORDER_REFLECT101;
-	int borderType = BORDER_REFLECT;
-	//int borderType = BORDER_REPLICATE;
-
+	Mat dest = src.clone();
+	Mat dest_tile = Mat::zeros(src.size(), src.type());
+	Mat dest_tile_s = Mat::zeros(src.size(), src.type());
+	
+	Mat tile_refcv, tile, tile_s;
+	double psnr = 0.0;
+	bool isOK = true;
 	for (int j = 0; j < div.height; j++)
 	{
 		for (int i = 0; i < div.width; i++)
 		{
 			const Point index = Point(i, j);
-			cout << index << endl;;
+			if (isPrint)cout << index << endl;
 
 			//non optilized;
-			createSubImageCVAlign(srcf, sub_ref, div, index, r, borderType, 8, 8);
+			createSubImageCVAlign(src, tile_refcv, div, index, r, borderType, 8, 8);
 
 			//split then ...
 			for (int c = 0; c < 3; c++)
 			{
-				sv[c] = Mat::zeros(sv[c].size(), sv[c].type());
+				sv[c] = Mat::zeros(sv[c].size(), src.depth());
 			}
 			for (int c = 0; c < 3; c++)
-				createSubImageAlign(v[c], sv[c], div, index, r, borderType, 8, 8);
-			merge(sv, sub);
-			cout << "sub  :" << getPSNR(sub_ref, sub, 0, 0) << endl;
-			setSubImageAlign(sub, destf_ref, div, index, r);
+				createSubImageAlign(vsrc[c], sv[c], div, index, r, borderType, 8, 8);
+			merge(sv, tile);
+			psnr = getPSNR(tile_refcv, tile, 0, 0);
+			if (psnr != 0)isOK = false;
+			if (isPrint)cout << "sub  :" << psnr << endl;
+			setSubImageAlign(tile, dest_tile, div, index, r);
+
+#if 0
+			if (i == 3 && j == 0)
+			{
+				//guiAlphaBlend(tile_s, tile_refcv);
+				guiDiff(tile, tile_refcv);
+				imshowScale("tile2", destf_tile_s);
+				imshowScale("sub", tile_s);
+			}
+#endif
 
 			//merge split
 			for (int c = 0; c < 3; c++)
 			{
-				sv[c] = Mat::zeros(sv[c].size(), sv[c].type());
+				sv2[c] = Mat::zeros(sv[c].size(), src.depth());
 			}
-			cropSplitTileAlign(srcf, sv2, div, index, r, borderType, 8, 8);
-			merge(sv2, sub_s);
-			cout << "sub s:" << getPSNR(sub_ref, sub_s, 0, 0) << endl;
-			setSubImageAlign(sub_s, destf, div, index, r, 8, 8);
+			cropSplitTileAlign(src, sv2, div, index, r, borderType, 8, 8);
+			merge(sv2, tile_s);
+			psnr = getPSNR(tile_refcv, tile_s, 0, 0);
+			if (psnr != 0)isOK = false;
+			if (isPrint)cout << "sub s:" << psnr << endl;
+			setSubImageAlign(tile_s, dest_tile_s, div, index, r);
 
-#if 1
-			if (i == 0 && j == 0)
+#if 0
+			if (i == 3 && j == 0)
 			{
-				//guiAlphaBlend(sub_s, sub_ref);
-				guiDiff(sub_s, sub_ref);
-				imshowScale("tile2", destf);
-				imshowScale("sub", sub_s);
+				//guiAlphaBlend(tile_s, tile_refcv);
+				guiDiff(tile_s, tile_refcv);
+				imshowScale("tile2", destf_tile_s);
+				imshowScale("sub", tile_s);
 			}
 #endif
 		}
 	}
 
+	if (isOK)cout << "crop OK: ";
+	else cout << "crop NG: ";
+	double psnr1 = getPSNR(dest_tile, dest, 0, 0);
+	double psnr2 = getPSNR(dest_tile_s, dest, 0, 0);
+	if (psnr1 != 0)isOK = false;
+	if (psnr2 != 0)isOK = false;
+	if (isOK)cout << "set OK: " << endl;
+	else
+	{
+		cout << "set NG: " << endl;
+		guiAlphaBlend(dest_tile_s, dest);
+	}
+	if (isPrint)
+	{
+		cout << "merge sub   :" << psnr1 << endl;
+		cout << "merge sub s :" << psnr2 << endl;
+	}
+}
 
-	//guiAlphaBlend(destf_ref, destf);
+void testTiling(Mat& src)
+{
+	int r = 31;
+	Size div = Size(4, 4);
+	Mat src32f = convert(src, CV_32F);
+	Mat src64f = convert(src, CV_64F);
+
+	const bool is8U = true;
+	const bool is32F = true;
+	const bool is64F = true;
+	const bool isTimer = false;
+	const bool isAccur = true;
+	if (is8U)
+	{
+		cout << "CV_8U: " << r << ", tile" << div << ", BORDER_REPLICATE" << endl;
+		if (isAccur)testTilingAccuracy(src, false, r, div, cv::BORDER_REPLICATE);
+		if (isTimer)testTilingTime(src, r, div, Point(0, 0), cv::BORDER_REPLICATE);
+
+		cout << "CV_8U: " << r << ", tile" << div << ", BORDER_REFLECT101" << endl;
+		if (isAccur)testTilingAccuracy(src, false, r, div, cv::BORDER_REFLECT101);
+		if (isTimer)testTilingTime(src, r, div, Point(0, 0), cv::BORDER_REFLECT101);
+
+		cout << "CV_8U: " << r << ", tile" << div << ", BORDER_REFLECT" << endl;
+		if (isAccur)testTilingAccuracy(src, false, r, div, cv::BORDER_REFLECT);
+		if (isTimer)testTilingTime(src, r, div, Point(0, 0), cv::BORDER_REFLECT);
+
+		cout << endl;
+	}
+	if (is32F)
+	{
+		cout << "CV_32F: " << r << ", tile" << div << ", BORDER_REPLICATE" << endl;
+		if (isAccur)testTilingAccuracy(src32f, false, r, div, cv::BORDER_REPLICATE);
+		if (isTimer)testTilingTime(src32f, r, div, Point(0, 0), cv::BORDER_REPLICATE);
+
+		cout << "CV_32F: " << r << ", tile" << div << ", BORDER_REFLECT101" << endl;
+		if (isAccur)testTilingAccuracy(src32f, false, r, div, cv::BORDER_REFLECT101);
+		if (isTimer)testTilingTime(src32f, r, div, Point(0, 0), cv::BORDER_REFLECT101);
+
+		cout << "CV_32F: " << r << ", tile" << div << ", BORDER_REFLECT" << endl;
+		if (isAccur)testTilingAccuracy(src32f, false, r, div, cv::BORDER_REFLECT);
+		if (isTimer)testTilingTime(src32f, r, div, Point(0, 0), cv::BORDER_REFLECT);
+
+		cout << endl;
+	}
+	if (is64F)
+	{
+		cout << "CV_64F: " << r << ", tile" << div << ", BORDER_REPLICATE" << endl;
+		if (isAccur)testTilingAccuracy(src64f, false, r, div, cv::BORDER_REPLICATE);
+		if (isTimer)testTilingTime(src64f, r, div, Point(0, 0), cv::BORDER_REPLICATE);
+
+		cout << "CV_64F: " << r << ", tile" << div << ", BORDER_REFLECT101" << endl;
+		if (isAccur)testTilingAccuracy(src64f, false, r, div, cv::BORDER_REFLECT101);
+		if (isTimer)testTilingTime(src64f, r, div, Point(0, 0), cv::BORDER_REFLECT101);
+
+		cout << "CV_64F: " << r << ", tile" << div << ", BORDER_REFLECT" << endl;
+		if (isAccur)testTilingAccuracy(src64f, false, r, div, cv::BORDER_REFLECT);
+		if (isTimer)testTilingTime(src64f, r, div, Point(0, 0), cv::BORDER_REFLECT);
+
+		cout << endl;
+	}
 }

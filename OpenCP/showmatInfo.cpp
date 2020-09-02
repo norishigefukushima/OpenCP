@@ -5,7 +5,7 @@ using namespace std;
 
 namespace cp
 {
-	static void showMatInfo_(cv::Mat src, string name, const bool isStatInfo)
+	static void showMatInfo_internal(cv::Mat src, string name, const bool isStatInfo)
 	{
 		cout << "name   : " << name << endl;
 		if (src.empty())
@@ -55,6 +55,7 @@ namespace cp
 		}
 		cout << endl;
 	}
+
 	void showMatInfo(InputArray src_, string name, const bool isStatInfo)
 	{
 		if (src_.isMatVector())
@@ -63,14 +64,14 @@ namespace cp
 			src_.getMatVector(v);
 			for (int i = 0; i < v.size(); i++)
 			{
-				showMatInfo(v[i], name + to_string(i), isStatInfo);;
+				showMatInfo_internal(v[i], name + to_string(i), isStatInfo);;
 			}
 
 		}
 		else
 		{
 			Mat s = src_.getMat();
-			showMatInfo(s, name, isStatInfo);
+			showMatInfo_internal(s, name, isStatInfo);
 		}
 	}
 }

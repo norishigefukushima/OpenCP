@@ -114,6 +114,7 @@ int main(int argc, char** argv)
 
 	//Mat img = imread("img/lenna.png");
 	Mat img = imread("img/Kodak/kodim07.png");
+
 #pragma endregion
 
 #pragma region core

@@ -241,6 +241,21 @@ inline void _mm256_load_epu8cvtpsx2(const __m128i* P, __m256& d0, __m256& d1)
 
 #pragma region color_convert
 
+inline void _mm256_load_cvtpd_bgr2planar_pd(const double* ptr, __m256d& b, __m256d& g, __m256d& r)
+{
+	__m256d bgr0 = _mm256_loadu_pd(ptr);
+	__m256d bgr1 = _mm256_loadu_pd(ptr + 4);
+	__m256d bgr2 = _mm256_loadu_pd(ptr + 8);
+
+	__m256d s02_low = _mm256_permute2f128_pd(bgr0, bgr2, _MM_SELECT4(0, 2));
+	__m256d s02_high = _mm256_permute2f128_pd(bgr0, bgr2, _MM_SELECT4(1, 3));
+
+	r = _mm256_blend_pd(_mm256_blend_pd(s02_low, s02_high, 0b1001), bgr1,0b0010);
+	__m256d g0 = _mm256_blend_pd(_mm256_blend_pd(bgr0, bgr2, 0b1100), bgr1, 0b1001);
+	g = _mm256_shuffle_pd(g0, g0, 0b0101);
+	b = _mm256_blend_pd(_mm256_blend_pd(s02_high, s02_low, 0b1001), bgr1, 0b0100);
+}
+
 inline void _mm256_load_cvtps_bgr2planar_ps(const float* ptr, __m256& b, __m256& g, __m256& r)
 {
 	__m256 bgr0 = _mm256_loadu_ps(ptr);
