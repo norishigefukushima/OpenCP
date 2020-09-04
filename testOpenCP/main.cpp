@@ -124,12 +124,15 @@ int main(int argc, char** argv)
 
 	//Mat img = imread("img/lenna.png");
 	Mat img = imread("img/Kodak/kodim07.png");
+	//Mat img = imread("img/cameraman.png",0);
+	//Mat img = imread("img/barbara.png", 0);
 	//filter2DTest(img); return 0;
 #pragma endregion
 
 #pragma region core
-	testTiling(img); return 0;
+	//testTiling(img); return 0;
 	//copyMakeBorderTest(img); return 0;
+	//testSplitMerge(img); return 0;
 	//testConcat(); return 0;
 	//testsimd(); return 0;
 
@@ -144,7 +147,6 @@ int main(int argc, char** argv)
 	//testLocalPSNR(img); return 0;
 	//testPSNR(img); return 0;
 	//resize(img, a, Size(513, 513));
-	testSplitMerge(img); return 0;
 	//testHistgram(img);
 	//testRGBHistogram();
 	//testRGBHistogram2();
@@ -155,35 +157,24 @@ int main(int argc, char** argv)
 	//guiLocalDiffHistogram(img);
 	//guiContrast(img);
 	//guiContrast(guiCropZoom(img));
-	
-#pragma endregion
-	//Mat img = imread("img/cameraman.png",0);
-	//Mat img = imread("img/barbara.png", 0);
-
-	guiWeightedHistogramFilterTest();
+	//guiWeightedHistogramFilterTest();
 	//guiWeightedHistogramFilterTest(img,img);
-	
-	//test stereo
+#pragma endregion
+
 #pragma region stereo
-	//Mat right = imread("left.png");
-	//Mat left = imread("right.png");
 	Mat left = imread("img/stereo/Dolls/view1.png");
-	//resize(left, left, Size(), 1, 0.25);
 	Mat right = imread("img/stereo/Dolls/view5.png");
+	//resize(left, left, Size(), 1, 0.25);
 	//resize(right, right, Size(), 1, 0.25);
-	//Mat dmap = imread("img/stereo/Dolls/disp1.png", 0);
+	//guiShift(left, right, 300);
+
+	testStereoBase(); return 0;
 	Mat leftg, rightg;
 	cvtColor(left, leftg, COLOR_BGR2GRAY);
 	cvtColor(right, rightg, COLOR_BGR2GRAY);
-	//guiShift(left, right, 300);
-	//StereoBMEx sbm(0, get_simd_ceil(120, 16), get_simd_ceil(100, 16), 5);
-	StereoBase sbm(5, get_simd_ceil(16, 16), get_simd_ceil(100, 16));
-	cp::StereoEval eval;
-	Mat disp;
-	sbm.gui(left, right, disp, eval);
-	//sbm.check(leftg, rightg, disp);
-	//guiStereoBMTest(leftg, rightg, get_simd_ceil(326, 16), get_simd_ceil(100, 16)); return 0;
-	//guiStereoSGBMTest(left, right, get_simd_ceil(326, 16), get_simd_ceil(100, 16)); return 0;
+	testCVStereoBM(leftg, rightg, get_simd_ceil(326, 16), get_simd_ceil(100, 16)); return 0;
+
+	testCVStereoSGBM(left, right, get_simd_ceil(326, 16), get_simd_ceil(100, 16)); return 0;
 #pragma endregion
 	
 

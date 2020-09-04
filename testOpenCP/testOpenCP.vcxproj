@@ -183,7 +183,7 @@
     <ClCompile Include="guiEPFWeightMapTest.cpp" />
     <ClCompile Include="guiGuidedImageFilterTest.cpp" />
     <ClCompile Include="guiHazeRemoveTest.cpp" />
-    <ClCompile Include="guiStereoTest.cpp" />
+    <ClCompile Include="testStereo.cpp" />
     <ClCompile Include="guiUpsampleTest.cpp" />
     <ClCompile Include="guiWeightedHistogramFilterTest.cpp" />
     <ClCompile Include="iterativeBackProjection\iterativeBackProjectionTest.cpp" />

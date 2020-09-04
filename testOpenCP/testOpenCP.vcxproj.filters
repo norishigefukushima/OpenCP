@@ -126,9 +126,6 @@
     <ClCompile Include="testSplitMerge.cpp">
       <Filter>ソース ファイル\test\core</Filter>
     </ClCompile>
-    <ClCompile Include="guiStereoTest.cpp">
-      <Filter>ソース ファイル\test\stereo</Filter>
-    </ClCompile>
     <ClCompile Include="viewSynthesis\viewSynthesisTest.cpp">
       <Filter>ソース ファイル\test\stereo</Filter>
     </ClCompile>
@@ -140,6 +137,9 @@
     </ClCompile>
     <ClCompile Include="testTiling.cpp">
       <Filter>ソース ファイル\test\core</Filter>
+    </ClCompile>
+    <ClCompile Include="testStereo.cpp">
+      <Filter>ソース ファイル\test\stereo</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

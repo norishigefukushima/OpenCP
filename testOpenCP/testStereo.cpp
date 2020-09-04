@@ -13,13 +13,13 @@ void guiDisparityPlaneFitSLICTest(Mat& leftim, Mat& rightim, Mat& GT)
 	Mat disparity;
 	//guiShift(leftim, rightim);
 	sgbm->compute(leftim, rightim, disparity);
-	
+
 	//GT.convertTo(disparity, CV_16S, 8);
-	
+
 	Mat disp = disparity.clone();
 
 	//fillOcclusion(disparity, 0, cp::FILL_DISPARITY);
-	fillOcclusion(disparity, 16*(mindisparity-1), cp::FILL_DISPARITY);
+	fillOcclusion(disparity, 16 * (mindisparity - 1), cp::FILL_DISPARITY);
 	/*{
 		Mat temp1, temp2;
 
@@ -30,7 +30,7 @@ void guiDisparityPlaneFitSLICTest(Mat& leftim, Mat& rightim, Mat& GT)
 
 	Mat dispshowRef;
 	disparity.convertTo(dispshowRef, CV_8U, 0.125);
-	
+
 	int a = 0; createTrackbar("a", wname, &a, 100);
 	int S = 16; createTrackbar("S", wname, &S, 200);
 	int m = 30; createTrackbar("m", wname, &m, 800);
@@ -55,13 +55,13 @@ void guiDisparityPlaneFitSLICTest(Mat& leftim, Mat& rightim, Mat& GT)
 			Timer t;
 			disparityFitPlane(disparity, leftim, refine, S, (float)m, (int)(mrs / 100.0f), iter, nransac, (float)transac);
 		}
-		
+
 		//binalyWeightedRangeFilter(disparity, disparity, Size(7, 7), 16);
 		if (isStop) buffer.copyTo(refine);
 		else refine.copyTo(buffer);
 
 		SLIC(leftim, seg, S, (float)m, mrs / 100.0f, iter);
-		
+
 		refine.convertTo(dispshow, CV_8U, 0.125);
 		imshow(wname, dispshow);
 
@@ -70,10 +70,10 @@ void guiDisparityPlaneFitSLICTest(Mat& leftim, Mat& rightim, Mat& GT)
 
 		alphaBlend(dispshowRef, dispshow, a / 100.0, show);
 		imshow(wname, show);
-		
+
 		key = waitKey(1);
 
-		
+
 		Mat save; cvtColor(show, save, COLOR_GRAY2BGR); static int count = 0; imwrite(format("GIF/out%d.png", count++), save);
 		if (key == 'p')
 		{
@@ -88,7 +88,7 @@ void guiDisparityPlaneFitSLICTest(Mat& leftim, Mat& rightim, Mat& GT)
 
 }
 
-void guiStereoBMTest(Mat& leftim , Mat& rightim, const int numDisparities, const int disparity_min)
+void testCVStereoBM(Mat& leftim, Mat& rightim, const int numDisparities, const int disparity_min)
 {
 	String wname = "Stereo BM Test";
 	namedWindow(wname);
@@ -100,9 +100,9 @@ void guiStereoBMTest(Mat& leftim , Mat& rightim, const int numDisparities, const
 	int spWindow = 100; createTrackbar("speckle win", wname, &spWindow, 2550);
 	int spRange = 32; createTrackbar("speck range", wname, &spRange, 255);
 	int minDisp = disparity_min; createTrackbar("min disp", wname, &minDisp, 255);
-	int numDisp = numDisparities/16; createTrackbar("num disp", wname, &numDisp, numDisparities/16*2);
-	
-	Ptr<StereoBM> bm = StereoBM::create(numDisparities, 2* blockRadius+1);
+	int numDisp = numDisparities / 16; createTrackbar("num disp", wname, &numDisp, numDisparities / 16 * 2);
+
+	Ptr<StereoBM> bm = StereoBM::create(numDisparities, 2 * blockRadius + 1);
 
 	Mat disp, dispshow;
 	int key = 0;
@@ -110,15 +110,15 @@ void guiStereoBMTest(Mat& leftim , Mat& rightim, const int numDisparities, const
 	{
 		int SADWindowSize = 2 * blockRadius + 1;
 		bm->setPreFilterCap(max(1, prefilterCap));
-		bm->setBlockSize(max(SADWindowSize,5));
+		bm->setBlockSize(max(SADWindowSize, 5));
 		bm->setTextureThreshold(textureThreshold);
 		bm->setUniquenessRatio(uniquenessRatio);
 		bm->setDisp12MaxDiff(lrThreshold);
 		bm->setSpeckleWindowSize(spWindow);
 		bm->setSpeckleRange(spRange);
 		bm->setMinDisparity(minDisp);
-		bm->setNumDisparities(numDisp*16);
-			
+		bm->setNumDisparities(numDisp * 16);
+
 		bm->compute(leftim, rightim, disp);
 		normalize(disp, dispshow, minDisp, numDisp * 16, NORM_MINMAX, CV_8U);
 		//disp.convertTo(dispshow, CV_8U, 255.0/(16.0*numDisparities));
@@ -127,12 +127,12 @@ void guiStereoBMTest(Mat& leftim , Mat& rightim, const int numDisparities, const
 	}
 }
 
-void guiStereoSGBMTest(Mat& leftim, Mat& rightim, const int numDisparities, const int disparity_min)
+void testCVStereoSGBM(Mat& leftim, Mat& rightim, const int numDisparities, const int disparity_min)
 {
 	String wname = "Stereo SGBM Test";
 	namedWindow(wname);
 	int blockRadius = 1; createTrackbar("bs", wname, &blockRadius, 30);
-	
+
 	int P1 = 8; createTrackbar("P1", wname, &P1, 255);
 	int P2 = 32; createTrackbar("P2", wname, &P2, 255);
 	int prefilterCap = 31; createTrackbar("pre cap", wname, &prefilterCap, 63);
@@ -167,9 +167,25 @@ void guiStereoSGBMTest(Mat& leftim, Mat& rightim, const int numDisparities, cons
 		bm->setNumDisparities(numberOfDisparities);
 		*/
 		bm->compute(lim, rim, disp);
-		disp.convertTo(dispshowROI, CV_8U, 255.0 / (16.0*numDisparities));
+		disp.convertTo(dispshowROI, CV_8U, 255.0 / (16.0 * numDisparities));
 		Mat(dispshowROI(Rect(numDisparities, 0, leftim.cols, leftim.rows))).copyTo(dispshow);
 		imshow(wname, dispshow);
 		key = waitKey(1);
 	}
+}
+
+void testStereoBase()
+{
+	Mat disp;
+	Mat left = imread("img/stereo/Dolls/view1.png");
+	Mat right = imread("img/stereo/Dolls/view5.png");
+	//guiShift(left, right, 300);
+	cp::StereoEval eval;
+	//Mat dmap = imread("img/stereo/Dolls/disp1.png", 0);
+	//resize(left, left, Size(), 1, 0.25);
+	//resize(right, right, Size(), 1, 0.25);
+
+	StereoBase sbm(5, get_simd_ceil(32, 16), get_simd_ceil(100, 16));
+	sbm.gui(left, right, disp, eval);
+	//sbm.check(leftg, rightg, disp);
 }

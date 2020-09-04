@@ -40,9 +40,6 @@ void guiGuidedImageFilterTest(cv::Mat& img_p = cv::Mat(), cv::Mat& img_I = cv::M
 void guiEdgePresevingFilterOpenCV(cv::Mat& src);
 void guiWeightMapTest();
 void guiCrossBasedLocalFilter(cv::Mat& src);
-void guiStereoBMTest(cv::Mat& leftim, cv::Mat& rightim, const int numDisparities, const int disparity_min);
-void guiStereoSGBMTest(cv::Mat& leftim, cv::Mat& rightim, const int numDisparities, const int disparity_min);
-
 void guiBilateralFilterTest(cv::Mat& src);
 void guiSeparableBilateralFilterTest(cv::Mat& src);
 
@@ -66,6 +63,11 @@ void guiDomainTransformFilter(cv::Mat& src);
 void guiNonLocalMeansTest(cv::Mat& src);
 void guiSeparableNLMTest(cv::Mat& src);
 void guiIterativeBackProjectionTest(cv::Mat& src);
+
+//sterep
+void testCVStereoBM(cv::Mat& leftim, cv::Mat& rightim, const int numDisparities, const int disparity_min);
+void testCVStereoSGBM(cv::Mat& leftim, cv::Mat& rightim, const int numDisparities, const int disparity_min);
+void testStereoBase();
 
 //for application
 void guiDetailEnhancement(cv::Mat& src);
