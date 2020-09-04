@@ -106,6 +106,16 @@ void guiLocalDiffHistogram(Mat& src, bool isWait, string wname)
 	if (!isWait)destroyWindow(wname);
 }
 
+void filter2DTest(Mat& src)
+{
+	Mat dst;
+	Mat kernel = cv::getGaussianKernel(11, 3, CV_32F);
+	filter2D(src, dst, -1, kernel*kernel.t());
+
+	imshowNormalize("a", dst);
+	waitKey();
+}
+
 int main(int argc, char** argv)
 {
 #pragma region setup
@@ -114,7 +124,7 @@ int main(int argc, char** argv)
 
 	//Mat img = imread("img/lenna.png");
 	Mat img = imread("img/Kodak/kodim07.png");
-
+	//filter2DTest(img); return 0;
 #pragma endregion
 
 #pragma region core

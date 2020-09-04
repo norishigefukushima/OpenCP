@@ -84,13 +84,13 @@ void GuidedImageFilterTiling::filter_SSAT()
 				const int i = n % div.width;
 				Point idx = Point(i, j);
 				int sub_index = div.width*j + i;
-				createSubImage(src, src_sub_vec[sub_index], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImage(guide, guide_sub_vec[sub_index], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(src, src_sub_vec[sub_index], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(guide, guide_sub_vec[sub_index], div, idx, 2 * r, BORDER_REPLICATE);
 
 				Mat temp(src_sub_vec[sub_index].size(), CV_32FC1);
 				tiling::guidedFilter_Merge_nonVec(src_sub_vec[sub_index], guide_sub_vec[sub_index], temp, r, eps, parallelType).filter();
 
-				setSubImage(temp, dest, div, idx, 2 * r);
+				pasteTile(temp, dest, div, idx, 2 * r);
 			}
 		}
 	}
@@ -112,18 +112,18 @@ void GuidedImageFilterTiling::filter_SSAT()
 				const int i = n % div.width;
 				Point idx = Point(i, j);
 				int sub_index = div.width*j + i;
-				createSubImage(src, src_sub_vec[sub_index], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(src, src_sub_vec[sub_index], div, idx, 2 * r, BORDER_REPLICATE);
 
 				vector<Mat> guide_sub_temp(3);
-				createSubImage(vGuide[0], guide_sub_temp[0], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImage(vGuide[1], guide_sub_temp[1], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImage(vGuide[2], guide_sub_temp[2], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vGuide[0], guide_sub_temp[0], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vGuide[1], guide_sub_temp[1], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vGuide[2], guide_sub_temp[2], div, idx, 2 * r, BORDER_REPLICATE);
 				merge(guide_sub_temp, guide_sub_vec[sub_index]);
 
 				Mat temp(src_sub_vec[sub_index].size(), CV_32FC1);
 				tiling::guidedFilter_Merge_nonVec(src_sub_vec[sub_index], guide_sub_vec[sub_index], temp, r, eps, parallelType).filter();
 
-				setSubImage(temp, dest, div, idx, 2 * r);
+				pasteTile(temp, dest, div, idx, 2 * r);
 			}
 		}
 	}
@@ -150,11 +150,11 @@ void GuidedImageFilterTiling::filter_SSAT()
 
 
 				vector<Mat> src_sub_temp(3);
-				createSubImage(vSrc[0], src_sub_temp[0], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImage(vSrc[1], src_sub_temp[1], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImage(vSrc[2], src_sub_temp[2], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vSrc[0], src_sub_temp[0], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vSrc[1], src_sub_temp[1], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vSrc[2], src_sub_temp[2], div, idx, 2 * r, BORDER_REPLICATE);
 
-				createSubImage(guide, guide_sub_vec[sub_index], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(guide, guide_sub_vec[sub_index], div, idx, 2 * r, BORDER_REPLICATE);
 
 				vector<Mat> dest_sub_temp(3);
 				dest_sub_temp[0] = Mat(src_sub_temp[0].size(), CV_32FC1);
@@ -165,9 +165,9 @@ void GuidedImageFilterTiling::filter_SSAT()
 				tiling::guidedFilter_Merge_nonVec(src_sub_temp[1], guide_sub_vec[sub_index], dest_sub_temp[1], r, eps, parallelType).filter();
 				tiling::guidedFilter_Merge_nonVec(src_sub_temp[2], guide_sub_vec[sub_index], dest_sub_temp[2], r, eps, parallelType).filter();
 
-				setSubImage(dest_sub_temp[0], vDest[0], div, idx, 2 * r);
-				setSubImage(dest_sub_temp[1], vDest[1], div, idx, 2 * r);
-				setSubImage(dest_sub_temp[2], vDest[2], div, idx, 2 * r);
+				pasteTile(dest_sub_temp[0], vDest[0], div, idx, 2 * r);
+				pasteTile(dest_sub_temp[1], vDest[1], div, idx, 2 * r);
+				pasteTile(dest_sub_temp[2], vDest[2], div, idx, 2 * r);
 			}
 			merge(vDest, dest);
 		}
@@ -212,14 +212,14 @@ void GuidedImageFilterTiling::filter_SSAT()
 				int sub_index = div.width*j + i;
 
 				vector<Mat> src_sub_temp(3);
-				createSubImage(vSrc[0], src_sub_temp[0], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImage(vSrc[1], src_sub_temp[1], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImage(vSrc[2], src_sub_temp[2], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vSrc[0], src_sub_temp[0], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vSrc[1], src_sub_temp[1], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vSrc[2], src_sub_temp[2], div, idx, 2 * r, BORDER_REPLICATE);
 
 				vector<Mat> guide_sub_temp(3);
-				createSubImage(vGuide[0], guide_sub_temp[0], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImage(vGuide[1], guide_sub_temp[1], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImage(vGuide[2], guide_sub_temp[2], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vGuide[0], guide_sub_temp[0], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vGuide[1], guide_sub_temp[1], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vGuide[2], guide_sub_temp[2], div, idx, 2 * r, BORDER_REPLICATE);
 				merge(guide_sub_temp, guide_sub_vec[sub_index]);
 
 				vector<Mat> dest_sub_temp(3);
@@ -232,9 +232,9 @@ void GuidedImageFilterTiling::filter_SSAT()
 				tiling::guidedFilter_Merge_nonVec(src_sub_temp[2], guide_sub_vec[sub_index], dest_sub_temp[2], r, eps, parallelType).filter();
 
 
-				setSubImage(dest_sub_temp[0], vDest[0], div, idx, 2 * r);
-				setSubImage(dest_sub_temp[1], vDest[1], div, idx, 2 * r);
-				setSubImage(dest_sub_temp[2], vDest[2], div, idx, 2 * r);
+				pasteTile(dest_sub_temp[0], vDest[0], div, idx, 2 * r);
+				pasteTile(dest_sub_temp[1], vDest[1], div, idx, 2 * r);
+				pasteTile(dest_sub_temp[2], vDest[2], div, idx, 2 * r);
 			}
 			merge(vDest, dest);
 #else
@@ -307,13 +307,13 @@ void GuidedImageFilterTiling::filter_OPSAT()
 				const int i = n % div.width;
 				Point idx = Point(i, j);
 				int sub_index = div.width*j + i;
-				createSubImage(src, src_sub_vec[sub_index], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImage(guide, guide_sub_vec[sub_index], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(src, src_sub_vec[sub_index], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(guide, guide_sub_vec[sub_index], div, idx, 2 * r, BORDER_REPLICATE);
 
 				Mat temp(src_sub_vec[sub_index].size(), CV_32FC1);
 				guidedFilter_Merge_OnePass(src_sub_vec[sub_index], guide_sub_vec[sub_index], temp, r, eps, parallelType).filter();
 
-				setSubImage(temp, dest, div, idx, 2 * r);
+				pasteTile(temp, dest, div, idx, 2 * r);
 			}
 		}
 	}
@@ -335,18 +335,18 @@ void GuidedImageFilterTiling::filter_OPSAT()
 				const int i = n % div.width;
 				Point idx = Point(i, j);
 				int sub_index = div.width*j + i;
-				createSubImageAlign(src, src_sub_vec[sub_index], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTileAlign(src, src_sub_vec[sub_index], div, idx, 2 * r, BORDER_REPLICATE);
 
 				vector<Mat> guide_sub_temp(3);
-				createSubImage(vGuide[0], guide_sub_temp[0], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImage(vGuide[1], guide_sub_temp[1], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImage(vGuide[2], guide_sub_temp[2], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vGuide[0], guide_sub_temp[0], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vGuide[1], guide_sub_temp[1], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vGuide[2], guide_sub_temp[2], div, idx, 2 * r, BORDER_REPLICATE);
 				merge(guide_sub_temp, guide_sub_vec[sub_index]);
 
 				Mat temp(src_sub_vec[sub_index].size(), CV_32FC1);
 				guidedFilter_Merge_OnePass(src_sub_vec[sub_index], guide_sub_vec[sub_index], temp, r, eps, parallelType).filter();
 
-				setSubImage(temp, dest, div, idx, 2 * r);
+				pasteTile(temp, dest, div, idx, 2 * r);
 			}
 		}
 	}
@@ -373,16 +373,16 @@ void GuidedImageFilterTiling::filter_OPSAT()
 				int sub_index = div.width*j + i;
 
 				vector<Mat> src_sub_temp(3);
-				createSubImage(vSrc[0], src_sub_temp[0], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImage(vSrc[1], src_sub_temp[1], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImage(vSrc[2], src_sub_temp[2], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vSrc[0], src_sub_temp[0], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vSrc[1], src_sub_temp[1], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vSrc[2], src_sub_temp[2], div, idx, 2 * r, BORDER_REPLICATE);
 
 				vector<Mat> dest_sub_temp(3);
 				dest_sub_temp[0] = Mat::zeros(src_sub_temp[0].size(), CV_32FC1);
 				dest_sub_temp[1] = Mat::zeros(src_sub_temp[0].size(), CV_32FC1);
 				dest_sub_temp[2] = Mat::zeros(src_sub_temp[0].size(), CV_32FC1);
 
-				createSubImage(guide, guide_sub_vec[sub_index], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(guide, guide_sub_vec[sub_index], div, idx, 2 * r, BORDER_REPLICATE);
 
 				//Mat temp(src_sub_vec[sub_index].size(), src.type());
 				guidedFilter_Merge_OnePass(src_sub_temp[0], guide_sub_vec[sub_index], dest_sub_temp[0], r, eps, parallelType).filter();
@@ -390,9 +390,9 @@ void GuidedImageFilterTiling::filter_OPSAT()
 				guidedFilter_Merge_OnePass(src_sub_temp[2], guide_sub_vec[sub_index], dest_sub_temp[2], r, eps, parallelType).filter();
 
 				//merge(dest_sub_temp, temp);
-				setSubImage(dest_sub_temp[0], vDest[0], div, idx, 2 * r);
-				setSubImage(dest_sub_temp[1], vDest[1], div, idx, 2 * r);
-				setSubImage(dest_sub_temp[2], vDest[2], div, idx, 2 * r);
+				pasteTile(dest_sub_temp[0], vDest[0], div, idx, 2 * r);
+				pasteTile(dest_sub_temp[1], vDest[1], div, idx, 2 * r);
+				pasteTile(dest_sub_temp[2], vDest[2], div, idx, 2 * r);
 			}
 			merge(vDest, dest);
 #else
@@ -456,14 +456,14 @@ void GuidedImageFilterTiling::filter_OPSAT()
 				int sub_index = div.width*j + i;
 
 				vector<Mat> src_sub_temp(3);
-				createSubImage(vSrc[0], src_sub_temp[0], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImage(vSrc[1], src_sub_temp[1], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImage(vSrc[2], src_sub_temp[2], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vSrc[0], src_sub_temp[0], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vSrc[1], src_sub_temp[1], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vSrc[2], src_sub_temp[2], div, idx, 2 * r, BORDER_REPLICATE);
 
 				vector<Mat> guide_sub_temp(3);
-				createSubImage(vGuide[0], guide_sub_temp[0], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImage(vGuide[1], guide_sub_temp[1], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImage(vGuide[2], guide_sub_temp[2], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vGuide[0], guide_sub_temp[0], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vGuide[1], guide_sub_temp[1], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vGuide[2], guide_sub_temp[2], div, idx, 2 * r, BORDER_REPLICATE);
 				merge(guide_sub_temp, guide_sub_vec[sub_index]);
 
 				vector<Mat> dest_sub_temp(3);
@@ -477,9 +477,9 @@ void GuidedImageFilterTiling::filter_OPSAT()
 
 				//Mat temp(src_sub_temp[0].size(), src.type());
 				//merge(dest_sub_temp, temp);
-				setSubImage(dest_sub_temp[0], vDest[0], div, idx, 2 * r);
-				setSubImage(dest_sub_temp[1], vDest[1], div, idx, 2 * r);
-				setSubImage(dest_sub_temp[2], vDest[2], div, idx, 2 * r);
+				pasteTile(dest_sub_temp[0], vDest[0], div, idx, 2 * r);
+				pasteTile(dest_sub_temp[1], vDest[1], div, idx, 2 * r);
+				pasteTile(dest_sub_temp[2], vDest[2], div, idx, 2 * r);
 			}
 			merge(vDest, dest);
 #else
@@ -552,13 +552,13 @@ void GuidedImageFilterTiling::filter_SSAT_AVX()
 				const int i = n % div.width;
 				Point idx = Point(i, j);
 				int sub_index = div.width*j + i;
-				createSubImageAlign(src, src_sub_vec[sub_index], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImageAlign(guide, guide_sub_vec[sub_index], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTileAlign(src, src_sub_vec[sub_index], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTileAlign(guide, guide_sub_vec[sub_index], div, idx, 2 * r, BORDER_REPLICATE);
 
 				Mat temp(src_sub_vec[sub_index].size(), CV_32FC1);
 				tiling::guidedFilter_Merge_AVX(src_sub_vec[sub_index], guide_sub_vec[sub_index], temp, r, eps, parallelType).filter();
 
-				setSubImage(temp, dest, div, idx, 2 * r);
+				pasteTile(temp, dest, div, idx, 2 * r);
 			}
 		}
 	}
@@ -580,18 +580,18 @@ void GuidedImageFilterTiling::filter_SSAT_AVX()
 				const int i = n % div.width;
 				Point idx = Point(i, j);
 				int sub_index = div.width*j + i;
-				createSubImageAlign(src, src_sub_vec[sub_index], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTileAlign(src, src_sub_vec[sub_index], div, idx, 2 * r, BORDER_REPLICATE);
 
 				vector<Mat> guide_sub_temp(3);
-				createSubImageAlign(vGuide[0], guide_sub_temp[0], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImageAlign(vGuide[1], guide_sub_temp[1], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImageAlign(vGuide[2], guide_sub_temp[2], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTileAlign(vGuide[0], guide_sub_temp[0], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTileAlign(vGuide[1], guide_sub_temp[1], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTileAlign(vGuide[2], guide_sub_temp[2], div, idx, 2 * r, BORDER_REPLICATE);
 				merge(guide_sub_temp, guide_sub_vec[sub_index]);
 
 				Mat temp(src_sub_vec[sub_index].size(), CV_32FC1);
 				tiling::guidedFilter_Merge_AVX(src_sub_vec[sub_index], guide_sub_vec[sub_index], temp, r, eps, parallelType).filter();
 
-				setSubImage(temp, dest, div, idx, 2 * r);
+				pasteTile(temp, dest, div, idx, 2 * r);
 			}
 		}
 	}
@@ -618,16 +618,16 @@ void GuidedImageFilterTiling::filter_SSAT_AVX()
 				int sub_index = div.width*j + i;
 
 				vector<Mat> src_sub_temp(3);
-				createSubImage(vSrc[0], src_sub_temp[0], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImage(vSrc[1], src_sub_temp[1], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImage(vSrc[2], src_sub_temp[2], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vSrc[0], src_sub_temp[0], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vSrc[1], src_sub_temp[1], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vSrc[2], src_sub_temp[2], div, idx, 2 * r, BORDER_REPLICATE);
 				//merge(src_sub_temp, src_sub_vec[sub_index]);
 				vector<Mat> dest_sub_temp(3);
 				dest_sub_temp[0] = Mat(src_sub_temp[0].size(), CV_32FC1);
 				dest_sub_temp[1] = Mat(src_sub_temp[0].size(), CV_32FC1);
 				dest_sub_temp[2] = Mat(src_sub_temp[0].size(), CV_32FC1);
 
-				createSubImage(guide, guide_sub_vec[sub_index], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(guide, guide_sub_vec[sub_index], div, idx, 2 * r, BORDER_REPLICATE);
 
 				//Mat temp(src_sub_vec[sub_index].size(), src.type());
 				tiling::guidedFilter_Merge_AVX(src_sub_temp[0], guide_sub_vec[sub_index], dest_sub_temp[0], r, eps, parallelType).filter();
@@ -635,9 +635,9 @@ void GuidedImageFilterTiling::filter_SSAT_AVX()
 				tiling::guidedFilter_Merge_AVX(src_sub_temp[2], guide_sub_vec[sub_index], dest_sub_temp[2], r, eps, parallelType).filter();
 
 				//merge(dest_sub_temp, temp);
-				setSubImage(dest_sub_temp[0], vDest[0], div, idx, 2 * r);
-				setSubImage(dest_sub_temp[1], vDest[1], div, idx, 2 * r);
-				setSubImage(dest_sub_temp[2], vDest[2], div, idx, 2 * r);
+				pasteTile(dest_sub_temp[0], vDest[0], div, idx, 2 * r);
+				pasteTile(dest_sub_temp[1], vDest[1], div, idx, 2 * r);
+				pasteTile(dest_sub_temp[2], vDest[2], div, idx, 2 * r);
 
 
 			}
@@ -685,14 +685,14 @@ void GuidedImageFilterTiling::filter_SSAT_AVX()
 				int sub_index = div.width*j + i;
 
 				vector<Mat> src_sub_temp(3);
-				createSubImage(vSrc[0], src_sub_temp[0], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImage(vSrc[1], src_sub_temp[1], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImage(vSrc[2], src_sub_temp[2], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vSrc[0], src_sub_temp[0], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vSrc[1], src_sub_temp[1], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vSrc[2], src_sub_temp[2], div, idx, 2 * r, BORDER_REPLICATE);
 
 				vector<Mat> guide_sub_temp(3);
-				createSubImage(vGuide[0], guide_sub_temp[0], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImage(vGuide[1], guide_sub_temp[1], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImage(vGuide[2], guide_sub_temp[2], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vGuide[0], guide_sub_temp[0], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vGuide[1], guide_sub_temp[1], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vGuide[2], guide_sub_temp[2], div, idx, 2 * r, BORDER_REPLICATE);
 				merge(guide_sub_temp, guide_sub_vec[sub_index]);
 
 				vector<Mat> dest_sub_temp(3);
@@ -706,9 +706,9 @@ void GuidedImageFilterTiling::filter_SSAT_AVX()
 
 				//Mat temp(src_sub_temp[0].size(), src.type());
 				//merge(dest_sub_temp, temp);
-				setSubImage(dest_sub_temp[0], vDest[0], div, idx, 2 * r);
-				setSubImage(dest_sub_temp[1], vDest[1], div, idx, 2 * r);
-				setSubImage(dest_sub_temp[2], vDest[2], div, idx, 2 * r);
+				pasteTile(dest_sub_temp[0], vDest[0], div, idx, 2 * r);
+				pasteTile(dest_sub_temp[1], vDest[1], div, idx, 2 * r);
+				pasteTile(dest_sub_temp[2], vDest[2], div, idx, 2 * r);
 			}
 			merge(vDest, dest);
 #else
@@ -796,12 +796,12 @@ void GuidedImageFilterTiling::filter(int guidedType)
 			const int i = n % div.width;
 			Point idx = Point(i, j);
 
-			createSubImageAlign(src, sub_src[tidx][0], div, idx, 2 * r, BORDER_REPLICATE);
-			createSubImageAlign(guide, sub_guide[tidx][0], div, idx, 2 * r, BORDER_REPLICATE);
+			cropTileAlign(src, sub_src[tidx][0], div, idx, 2 * r, BORDER_REPLICATE);
+			cropTileAlign(guide, sub_guide[tidx][0], div, idx, 2 * r, BORDER_REPLICATE);
 
 			gf[tidx].filter(sub_src[tidx][0], sub_guide[tidx][0], sub_src[tidx][0], r, eps, guidedType, ParallelTypes::NAIVE);
 
-			setSubImage(sub_src[tidx][0], dest, div, idx, 2 * r);
+			pasteTile(sub_src[tidx][0], dest, div, idx, 2 * r);
 		}
 	}
 	else if (src.channels() == 1 && guide.channels() == 3)
@@ -818,18 +818,18 @@ void GuidedImageFilterTiling::filter(int guidedType)
 			const int i = n % div.width;
 			const Point idx = Point(i, j);
 
-			createSubImageAlign(src, sub_src[tidx][0], div, idx, 2 * r, BORDER_REPLICATE);
+			cropTileAlign(src, sub_src[tidx][0], div, idx, 2 * r, BORDER_REPLICATE);
 
-			createSubImageAlign(vGuide[0], sub_guide[tidx][0], div, idx, 2 * r, BORDER_REPLICATE);
-			createSubImageAlign(vGuide[1], sub_guide[tidx][1], div, idx, 2 * r, BORDER_REPLICATE);
-			createSubImageAlign(vGuide[2], sub_guide[tidx][2], div, idx, 2 * r, BORDER_REPLICATE);
+			cropTileAlign(vGuide[0], sub_guide[tidx][0], div, idx, 2 * r, BORDER_REPLICATE);
+			cropTileAlign(vGuide[1], sub_guide[tidx][1], div, idx, 2 * r, BORDER_REPLICATE);
+			cropTileAlign(vGuide[2], sub_guide[tidx][2], div, idx, 2 * r, BORDER_REPLICATE);
 
 			//cv::merge(sub_guide[tidx], sub_guideColor[tidx]);
 			//gf[tidx].filter(sub_src[tidx][0], sub_guideColor[tidx], sub_src[tidx][0], r, eps, guidedType, ParallelTypes::NAIVE);
 
 			gf[tidx].filter(sub_src[tidx][0], sub_guide[tidx], sub_src[tidx][0], r, eps, guidedType, ParallelTypes::NAIVE);
 
-			setSubImage(sub_src[tidx][0], dest, div, idx, 2 * r);
+			pasteTile(sub_src[tidx][0], dest, div, idx, 2 * r);
 		}
 	}
 	else if (src.channels() == 3 && guide.channels() == 1)
@@ -847,18 +847,18 @@ void GuidedImageFilterTiling::filter(int guidedType)
 			const int i = n % div.width;
 			const Point idx = Point(i, j);
 
-			createSubImageAlign(vSrc[0], sub_src[tidx][0], div, idx, 2 * r, BORDER_REPLICATE);
-			createSubImageAlign(vSrc[1], sub_src[tidx][1], div, idx, 2 * r, BORDER_REPLICATE);
-			createSubImageAlign(vSrc[2], sub_src[tidx][2], div, idx, 2 * r, BORDER_REPLICATE);
-			createSubImageAlign(guide, sub_guide[tidx][0], div, idx, 2 * r, BORDER_REPLICATE);
+			cropTileAlign(vSrc[0], sub_src[tidx][0], div, idx, 2 * r, BORDER_REPLICATE);
+			cropTileAlign(vSrc[1], sub_src[tidx][1], div, idx, 2 * r, BORDER_REPLICATE);
+			cropTileAlign(vSrc[2], sub_src[tidx][2], div, idx, 2 * r, BORDER_REPLICATE);
+			cropTileAlign(guide, sub_guide[tidx][0], div, idx, 2 * r, BORDER_REPLICATE);
 
 			//merge(sub_src[tidx], sub_guideColor[tidx]);
 
 			gf[tidx].filter(sub_src[tidx], sub_guide[tidx][0], sub_src[tidx], r, eps, guidedType, ParallelTypes::NAIVE);
 
-			setSubImage(sub_src[tidx][0], vDest[0], div, idx, 2 * r);
-			setSubImage(sub_src[tidx][1], vDest[1], div, idx, 2 * r);
-			setSubImage(sub_src[tidx][2], vDest[2], div, idx, 2 * r);
+			pasteTile(sub_src[tidx][0], vDest[0], div, idx, 2 * r);
+			pasteTile(sub_src[tidx][1], vDest[1], div, idx, 2 * r);
+			pasteTile(sub_src[tidx][2], vDest[2], div, idx, 2 * r);
 		}
 		merge(vDest, dest);
 	}
@@ -878,20 +878,20 @@ void GuidedImageFilterTiling::filter(int guidedType)
 			const int i = n % div.width;
 			const Point idx = Point(i, j);
 
-			createSubImageAlign(vSrc[0], sub_src[tidx][0], div, idx, 2 * r, BORDER_REPLICATE);
-			createSubImageAlign(vSrc[1], sub_src[tidx][1], div, idx, 2 * r, BORDER_REPLICATE);
-			createSubImageAlign(vSrc[2], sub_src[tidx][2], div, idx, 2 * r, BORDER_REPLICATE);
-			createSubImageAlign(vGuide[0], sub_guide[tidx][0], div, idx, 2 * r, BORDER_REPLICATE);
-			createSubImageAlign(vGuide[1], sub_guide[tidx][1], div, idx, 2 * r, BORDER_REPLICATE);
-			createSubImageAlign(vGuide[2], sub_guide[tidx][2], div, idx, 2 * r, BORDER_REPLICATE);
+			cropTileAlign(vSrc[0], sub_src[tidx][0], div, idx, 2 * r, BORDER_REPLICATE);
+			cropTileAlign(vSrc[1], sub_src[tidx][1], div, idx, 2 * r, BORDER_REPLICATE);
+			cropTileAlign(vSrc[2], sub_src[tidx][2], div, idx, 2 * r, BORDER_REPLICATE);
+			cropTileAlign(vGuide[0], sub_guide[tidx][0], div, idx, 2 * r, BORDER_REPLICATE);
+			cropTileAlign(vGuide[1], sub_guide[tidx][1], div, idx, 2 * r, BORDER_REPLICATE);
+			cropTileAlign(vGuide[2], sub_guide[tidx][2], div, idx, 2 * r, BORDER_REPLICATE);
 			
 			//merge(sub_src[tidx], sub_guideColor[tidx]);
 
 			gf[tidx].filter(sub_src[tidx], sub_guide[tidx], sub_src[tidx], r, eps, guidedType, ParallelTypes::NAIVE);
 
-			setSubImage(sub_src[tidx][0], vDest[0], div, idx, 2 * r);
-			setSubImage(sub_src[tidx][1], vDest[1], div, idx, 2 * r);
-			setSubImage(sub_src[tidx][2], vDest[2], div, idx, 2 * r);
+			pasteTile(sub_src[tidx][0], vDest[0], div, idx, 2 * r);
+			pasteTile(sub_src[tidx][1], vDest[1], div, idx, 2 * r);
+			pasteTile(sub_src[tidx][2], vDest[2], div, idx, 2 * r);
 		}
 		merge(vDest, dest);
 	}
@@ -914,13 +914,13 @@ void GuidedImageFilterTiling::filter_func(int guidedType)
 				const int i = n % div.width;
 				Point idx = Point(i, j);
 				int sub_index = div.width*j + i;
-				createSubImageAlign(src, src_sub_vec[sub_index], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImageAlign(guide, guide_sub_vec[sub_index], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTileAlign(src, src_sub_vec[sub_index], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTileAlign(guide, guide_sub_vec[sub_index], div, idx, 2 * r, BORDER_REPLICATE);
 
 				Mat temp(src_sub_vec[sub_index].size(), CV_32FC1);
 				guidedImageFilter(src_sub_vec[sub_index], guide_sub_vec[sub_index], temp, r, eps, guidedType, 0, ParallelTypes::NAIVE);
 
-				setSubImage(temp, dest, div, idx, 2 * r);
+				pasteTile(temp, dest, div, idx, 2 * r);
 			}
 		}
 		else if (src.channels() == 1 && guide.channels() == 3)
@@ -935,18 +935,18 @@ void GuidedImageFilterTiling::filter_func(int guidedType)
 				const int i = n % div.width;
 				Point idx = Point(i, j);
 				int sub_index = div.width*j + i;
-				createSubImageAlign(src, src_sub_vec[sub_index], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTileAlign(src, src_sub_vec[sub_index], div, idx, 2 * r, BORDER_REPLICATE);
 
 				vector<Mat> guide_sub_temp(3);
-				createSubImageAlign(vGuide[0], guide_sub_temp[0], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImageAlign(vGuide[1], guide_sub_temp[1], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImageAlign(vGuide[2], guide_sub_temp[2], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTileAlign(vGuide[0], guide_sub_temp[0], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTileAlign(vGuide[1], guide_sub_temp[1], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTileAlign(vGuide[2], guide_sub_temp[2], div, idx, 2 * r, BORDER_REPLICATE);
 				merge(guide_sub_temp, guide_sub_vec[sub_index]);
 
 				Mat temp(src_sub_vec[sub_index].size(), CV_32FC1);
 				guidedImageFilter(src_sub_vec[sub_index], guide_sub_vec[sub_index], temp, r, eps, guidedType, 0, ParallelTypes::NAIVE);
 
-				setSubImage(temp, dest, div, idx, 2 * r);
+				pasteTile(temp, dest, div, idx, 2 * r);
 			}
 		}
 		else if (src.channels() == 3 && guide.channels() == 1)
@@ -967,16 +967,16 @@ void GuidedImageFilterTiling::filter_func(int guidedType)
 				int sub_index = div.width*j + i;
 
 				vector<Mat> src_sub_temp(3);
-				createSubImage(vSrc[0], src_sub_temp[0], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImage(vSrc[1], src_sub_temp[1], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImage(vSrc[2], src_sub_temp[2], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vSrc[0], src_sub_temp[0], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vSrc[1], src_sub_temp[1], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vSrc[2], src_sub_temp[2], div, idx, 2 * r, BORDER_REPLICATE);
 				//merge(src_sub_temp, src_sub_vec[sub_index]);
 				vector<Mat> dest_sub_temp(3);
 				dest_sub_temp[0] = Mat(src_sub_temp[0].size(), CV_32FC1);
 				dest_sub_temp[1] = Mat(src_sub_temp[0].size(), CV_32FC1);
 				dest_sub_temp[2] = Mat(src_sub_temp[0].size(), CV_32FC1);
 
-				createSubImage(guide, guide_sub_vec[sub_index], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(guide, guide_sub_vec[sub_index], div, idx, 2 * r, BORDER_REPLICATE);
 
 				//Mat temp(src_sub_vec[sub_index].size(), src.type());
 				tiling::guidedFilter_Merge_AVX(src_sub_temp[0], guide_sub_vec[sub_index], dest_sub_temp[0], r, eps, parallelType).filter();
@@ -984,9 +984,9 @@ void GuidedImageFilterTiling::filter_func(int guidedType)
 				tiling::guidedFilter_Merge_AVX(src_sub_temp[2], guide_sub_vec[sub_index], dest_sub_temp[2], r, eps, parallelType).filter();
 
 				//merge(dest_sub_temp, temp);
-				setSubImage(dest_sub_temp[0], vDest[0], div, idx, 2 * r);
-				setSubImage(dest_sub_temp[1], vDest[1], div, idx, 2 * r);
-				setSubImage(dest_sub_temp[2], vDest[2], div, idx, 2 * r);
+				pasteTile(dest_sub_temp[0], vDest[0], div, idx, 2 * r);
+				pasteTile(dest_sub_temp[1], vDest[1], div, idx, 2 * r);
+				pasteTile(dest_sub_temp[2], vDest[2], div, idx, 2 * r);
 			}
 			merge(vDest, dest);
 #else
@@ -1023,14 +1023,14 @@ void GuidedImageFilterTiling::filter_func(int guidedType)
 				int sub_index = div.width*j + i;
 
 				vector<Mat> src_sub_temp(3);
-				createSubImage(vSrc[0], src_sub_temp[0], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImage(vSrc[1], src_sub_temp[1], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImage(vSrc[2], src_sub_temp[2], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vSrc[0], src_sub_temp[0], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vSrc[1], src_sub_temp[1], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vSrc[2], src_sub_temp[2], div, idx, 2 * r, BORDER_REPLICATE);
 
 				vector<Mat> guide_sub_temp(3);
-				createSubImage(vGuide[0], guide_sub_temp[0], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImage(vGuide[1], guide_sub_temp[1], div, idx, 2 * r, BORDER_REPLICATE);
-				createSubImage(vGuide[2], guide_sub_temp[2], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vGuide[0], guide_sub_temp[0], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vGuide[1], guide_sub_temp[1], div, idx, 2 * r, BORDER_REPLICATE);
+				cropTile(vGuide[2], guide_sub_temp[2], div, idx, 2 * r, BORDER_REPLICATE);
 				merge(guide_sub_temp, guide_sub_vec[sub_index]);
 
 				vector<Mat> dest_sub_temp(3);
@@ -1044,9 +1044,9 @@ void GuidedImageFilterTiling::filter_func(int guidedType)
 
 				//Mat temp(src_sub_temp[0].size(), src.type());
 				//merge(dest_sub_temp, temp);
-				setSubImage(dest_sub_temp[0], vDest[0], div, idx, 2 * r);
-				setSubImage(dest_sub_temp[1], vDest[1], div, idx, 2 * r);
-				setSubImage(dest_sub_temp[2], vDest[2], div, idx, 2 * r);
+				pasteTile(dest_sub_temp[0], vDest[0], div, idx, 2 * r);
+				pasteTile(dest_sub_temp[1], vDest[1], div, idx, 2 * r);
+				pasteTile(dest_sub_temp[2], vDest[2], div, idx, 2 * r);
 			}
 			merge(vDest, dest);
 #else

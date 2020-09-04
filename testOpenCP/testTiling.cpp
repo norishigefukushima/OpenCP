@@ -54,7 +54,7 @@ void testTilingTime(Mat& src, const int r = 32, const Size div = Size(4, 4), con
 		for (int i = 0; i < iteration; i++)
 		{
 			for (int c = 0; c < 3; c++)
-				createSubImageAlign(vsrc[c], vtile[c], div, index, r, borderType, 8, 8);
+				cropTileAlign(vsrc[c], vtile[c], div, index, r, borderType, 8, 8);
 		}
 	}
 	{
@@ -96,12 +96,12 @@ void testTilingAccuracy(Mat& src, bool isPrint = false, const int r = 32, const 
 				sv[c] = Mat::zeros(sv[c].size(), src.depth());
 			}
 			for (int c = 0; c < 3; c++)
-				createSubImageAlign(vsrc[c], sv[c], div, index, r, borderType, 8, 8);
+				cropTileAlign(vsrc[c], sv[c], div, index, r, borderType, 8, 8);
 			merge(sv, tile);
 			psnr = getPSNR(tile_refcv, tile, 0, 0);
 			if (psnr != 0)isOK = false;
 			if (isPrint)cout << "sub  :" << psnr << endl;
-			setSubImageAlign(tile, dest_tile, div, index, r);
+			pasteTileAlign(tile, dest_tile, div, index, r);
 
 #if 0
 			if (i == 3 && j == 0)
@@ -123,7 +123,7 @@ void testTilingAccuracy(Mat& src, bool isPrint = false, const int r = 32, const 
 			psnr = getPSNR(tile_refcv, tile_s, 0, 0);
 			if (psnr != 0)isOK = false;
 			if (isPrint)cout << "sub s:" << psnr << endl;
-			setSubImageAlign(tile_s, dest_tile_s, div, index, r);
+			pasteTileAlign(tile_s, dest_tile_s, div, index, r);
 
 #if 0
 			if (i == 3 && j == 0)
