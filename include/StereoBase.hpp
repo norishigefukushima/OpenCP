@@ -37,6 +37,7 @@ namespace cp
 		enum
 		{
 			Pixel_Matching_SAD,
+			Pixel_Matching_SADSobel,
 			Pixel_Matching_SAD_TextureBlend,
 			Pixel_Matching_BT,
 			Pixel_Matching_BT_TextureBlend,
@@ -57,8 +58,10 @@ namespace cp
 		void preFilter(cv::Mat& src, cv::Mat& dest, int param);
 
 		void textureAlpha(cv::Mat& src, cv::Mat& dest, const int th1, const int th2, const int r);
-		void getPixelMatchingCostSADAlpha(std::vector<cv::Mat>& target, std::vector<cv::Mat>& refference, cv::Mat& alpha, const int d, cv::Mat& dest);
+		
 		void getPixelMatchingCostSAD(std::vector<cv::Mat>& target, std::vector<cv::Mat>& refference, const int d, cv::Mat& dest);
+		void getPixelMatchingCostSADSobel(std::vector<cv::Mat>& target, std::vector<cv::Mat>& refference, const int d, cv::Mat& dest);
+		void getPixelMatchingCostSADAlpha(std::vector<cv::Mat>& target, std::vector<cv::Mat>& refference, cv::Mat& alpha, const int d, cv::Mat& dest);
 		void getPixelMatchingCostBT(std::vector<cv::Mat>& target, std::vector<cv::Mat>& refference, const int d, cv::Mat& dest);
 		void getPixelMatchingCostBTAlpha(std::vector<cv::Mat>& target, std::vector<cv::Mat>& refference, cv::Mat& alpha, const int d, cv::Mat& dest);
 

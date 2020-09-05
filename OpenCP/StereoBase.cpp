@@ -19,7 +19,7 @@ using namespace cv;
 
 namespace cp
 {
-#pragma correctDisparityBoundary
+#pragma region correctDisparityBoundary
 	template <class T>
 	void correctDisparityBoundaryECV(Mat& src, Mat& refimg, const int r, const int edgeth, Mat& dest)
 	{
@@ -410,7 +410,7 @@ namespace cp
 			sbl += step;
 		}
 	}
-#pragma end region
+#pragma endregion
 
 	StereoBase::StereoBase(int blockSize, int minDisp, int disparityRange)
 	{
@@ -610,6 +610,124 @@ namespace cp
 		}
 	}
 
+	void shiftAbsDiffTruncate_AVX_8u(const Mat& src1, const Mat& src2, const int disparity, uchar thresh, Mat& dest)
+	{
+		dest.create(src1.size(), CV_8U);
+
+		const __m256i mtruncation = _mm256_set1_epi8(thresh);
+		const int WIDTH = get_simd_floor(src1.cols, 32);
+		if (disparity >= 0)
+		{
+			for (int j = 0; j < src1.rows; j++)
+			{
+				const uchar* s1 = src1.ptr<uchar>(j);
+				const uchar* s2 = src2.ptr<uchar>(j);
+				uchar* d = dest.ptr<uchar>(j);
+
+				for (int i = 0; i < disparity; i++)
+				{
+					d[i] = std::min((uchar)abs(s1[i] - s2[0]), thresh);
+				}
+				for (int i = disparity; i < WIDTH; i += 32)
+				{
+					__m256i a = _mm256_loadu_si256((__m256i*)(s1 + i));
+					__m256i b = _mm256_loadu_si256((__m256i*)(s2 - disparity + i));
+
+					_mm256_storeu_si256((__m256i*)(d + i), _mm256_min_epi8(_mm256_add_epi8(_mm256_subs_epu8(a, b), _mm256_subs_epu8(b, a)), mtruncation));
+				}
+				for (int i = WIDTH; i < src1.cols; i++)
+				{
+					d[i] = std::min((uchar)abs(s1[i] - s2[i - disparity]), thresh);
+				}
+			}
+		}
+	}
+
+	/*
+	* void alphaBlendFixedPoint_AVX(Mat& src1, Mat& src2, int alpha, Mat& dst)
+	{
+		int size = src1.size().area() * src1.channels();
+		int simdsize = get_simd_floor(size, 32);
+		uchar* s1 = src1.data;
+		uchar* s2 = src2.data;
+		uchar* d = dst.data;
+
+		const __m256i ma = _mm256_set1_epi16(alpha << 7);
+		//a*(s1-s2)+s2
+		for (int i = 0; i < simdsize; i += 32)
+		{
+			__m256i ms1 = _mm256_load_epu8cvtepi16((__m128i*)s1);
+			__m256i ms2 = _mm256_load_epu8cvtepi16((__m128i*)s2);
+			_mm_store_si128((__m128i*)d, _mm256_cvtepi16_epu8(_mm256_add_epi16(ms2, _mm256_mulhrs_epi16(ma, _mm256_sub_epi16(ms1, ms2)))));
+
+			ms1 = _mm256_load_epu8cvtepi16((__m128i*)(s1 + 16));
+			ms2 = _mm256_load_epu8cvtepi16((__m128i*)(s2 + 16));
+			_mm_store_si128((__m128i*)(d + 16), _mm256_cvtepi16_epu8(_mm256_add_epi16(ms2, _mm256_mulhrs_epi16(ma, _mm256_sub_epi16(ms1, ms2)))));
+
+			s1 += 32;
+			s2 += 32;
+			d += 32;
+		}
+
+		s1 = src1.data;
+		s2 = src2.data;
+		d = dst.data;
+		double a = alpha / 255.0;
+		for (int i = simdsize; i < size; i++)
+		{
+			d[i] = saturate_cast<uchar>(a * (s1[i] - s2[i]) + s2[i]);
+		}
+	}
+	*/
+	void shiftAbsDiffTruncateSobelBlend_AVX_8u(const Mat& src1, const Mat& src2, const Mat& src3, const Mat& src4, const int disparity, uchar thresh, const float alpha, Mat& dest)
+	{
+		dest.create(src1.size(), CV_8U);
+
+		const __m256i mtruncation = _mm256_set1_epi8(thresh);
+		const int WIDTH = get_simd_floor(src1.cols, 32);
+		const int alpha_int = cvRound(255 * alpha);
+		const __m256i ma = _mm256_set1_epi16(alpha_int << 7);
+
+		if (disparity >= 0)
+		{
+			for (int j = 0; j < src1.rows; j++)
+			{
+				const uchar* s1 = src1.ptr<uchar>(j);
+				const uchar* s2 = src2.ptr<uchar>(j);
+				const uchar* s3 = src3.ptr<uchar>(j);
+				const uchar* s4 = src4.ptr<uchar>(j);
+				uchar* d = dest.ptr<uchar>(j);
+
+				for (int i = 0; i < disparity; i++)
+				{
+					d[i] = alpha * std::min((uchar)abs(s1[i] - s2[0]), thresh) + (1 - alpha) * std::min((uchar)abs(s3[i] - s4[0]), thresh);
+				}
+				for (int i = disparity; i < WIDTH; i += 32)
+				{
+					__m256i a = _mm256_loadu_si256((__m256i*)(s1 + i));
+					__m256i b = _mm256_loadu_si256((__m256i*)(s2 - disparity + i));
+					a = _mm256_min_epu8(_mm256_adds_epu8(_mm256_subs_epu8(a, b), _mm256_subs_epu8(b, a)), mtruncation);
+
+					b = _mm256_loadu_si256((__m256i*)(s3 + i));
+					__m256i c = _mm256_loadu_si256((__m256i*)(s4 - disparity + i));
+					b = _mm256_min_epu8(_mm256_adds_epu8(_mm256_subs_epu8(b, c), _mm256_subs_epu8(c, b)), mtruncation);
+
+					__m256i a2 = _mm256_cvtepu8_epi16(_mm256_castsi256_si128(a));
+					__m256i b2 = _mm256_cvtepu8_epi16(_mm256_castsi256_si128(b));
+					_mm_store_si128((__m128i*)(d + i), _mm256_cvtepi16_epu8(_mm256_add_epi16(b2, _mm256_mulhrs_epi16(ma, _mm256_sub_epi16(a2, b2)))));
+					a2 = _mm256_cvtepu8_epi16(_mm256_castsi256hi_si128(a));
+					b2 = _mm256_cvtepu8_epi16(_mm256_castsi256hi_si128(b));
+					_mm_store_si128((__m128i*)(d + i + 16), _mm256_cvtepi16_epu8(_mm256_add_epi16(b2, _mm256_mulhrs_epi16(ma, _mm256_sub_epi16(a2, b2)))));
+				}
+				for (int i = WIDTH; i < src1.cols; i++)
+				{
+					d[i] = alpha * std::min((uchar)abs(s1[i] - s2[disparity]), thresh)
+						+ (1 - alpha) * std::min((uchar)abs(s3[i] - s4[disparity]), thresh);
+				}
+			}
+		}
+	}
+
 	void StereoBase::textureAlpha(Mat& src, Mat& dest, const int th1, const int th2, const int r)
 	{
 		if (dest.empty())dest.create(src.size(), CV_8U);
@@ -640,18 +758,27 @@ namespace cp
 		//imshow("texture", dest);
 	}
 
+
 	void StereoBase::getPixelMatchingCostSAD(vector<Mat>& t, vector<Mat>& r, const int d, Mat& dest)
 	{
-		bufferGray1.create(t[0].size(), t[0].type());
+		shiftAbsDiffTruncate_AVX_8u(t[0], r[0], d, pixelMatchErrorCap, dest);
+	}
 
-		shiftImage(r[0], bufferGray1, d);
-		absDiffTruncate_SSE_8u(t[0], bufferGray1, pixelMatchErrorCap, dest);
+	void StereoBase::getPixelMatchingCostSADSobel(vector<Mat>& t, vector<Mat>& r, const int d, Mat& dest)
+	{
+		shiftAbsDiffTruncateSobelBlend_AVX_8u(t[0], r[0], t[1], r[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
+		/*
+	bufferGray1.create(t[0].size(), t[0].type());
 
-		shiftImage(r[1], bufferGray1, d);
-		absDiffTruncate_SSE_8u(t[1], bufferGray1, pixelMatchErrorCap, bufferGray1);
+	shiftImage(r[0], bufferGray1, d);
+	absDiffTruncate_SSE_8u(t[0], bufferGray1, pixelMatchErrorCap, dest);
 
-		double a = costAlphaImageSobel / 100.0;
-		alphaBlend(dest, bufferGray1, a, dest);
+	shiftImage(r[1], bufferGray1, d);
+	absDiffTruncate_SSE_8u(t[1], bufferGray1, pixelMatchErrorCap, bufferGray1);
+
+	double a = costAlphaImageSobel / 100.0;
+	alphaBlend(dest, bufferGray1, a, dest);
+	*/
 	}
 
 	void StereoBase::getPixelMatchingCostSADAlpha(vector<Mat>& t, vector<Mat>& r, Mat& alpha, const int d, Mat& dest)
@@ -887,6 +1014,10 @@ namespace cp
 		if (PixelMatchingMethod == Pixel_Matching_SAD)
 		{
 			getPixelMatchingCostSAD(target, reference, d, dest);
+		}
+		else if (PixelMatchingMethod == Pixel_Matching_SADSobel)
+		{
+			getPixelMatchingCostSADSobel(target, reference, d, dest);
 		}
 		else if (PixelMatchingMethod == Pixel_Matching_SAD_TextureBlend)
 		{
@@ -1154,7 +1285,7 @@ namespace cp
 					*disp = 0;//(minDisparity-1)<<4;
 				}
 			}*/
-			
+
 			//simd
 			const __m256i md = _mm256_set1_epi16(d);
 			const __m256i m16 = _mm256_set1_epi16(16);
@@ -1914,8 +2045,8 @@ namespace cp
 	//main function
 	void StereoBase::matching(Mat& leftim, Mat& rightim, Mat& destDisparityMap)
 	{
-		if (destDisparityMap.empty()||leftim.size()!=destDisparityMap.size()) destDisparityMap.create(leftim.size(), CV_16S);
-		minCostMap.create(leftim.size(), CV_8U); 
+		if (destDisparityMap.empty() || leftim.size() != destDisparityMap.size()) destDisparityMap.create(leftim.size(), CV_16S);
+		minCostMap.create(leftim.size(), CV_8U);
 		minCostMap.setTo(255);
 		if ((int)DSI.size() < numberOfDisparities)DSI.resize(numberOfDisparities);
 
@@ -1932,7 +2063,7 @@ namespace cp
 
 			if (AggregationMethod == Aggregation_CrossBasedBox) clf.makeKernel(guideImage, aggregationRadiusH, aggregationGuidedfilterEps, 0);
 
-#pragma omp parallel for
+			//#pragma omp parallel for
 			for (int i = 0; i < numberOfDisparities; i++)
 			{
 				const int d = minDisparity + i;
@@ -1944,7 +2075,7 @@ namespace cp
 		{
 			{
 				Timer t("Cost computation");
-//#pragma omp parallel for
+				//#pragma omp parallel for
 				for (int i = 0; i < numberOfDisparities; i++)
 				{
 					const int d = minDisparity + i;
@@ -1954,7 +2085,7 @@ namespace cp
 			if (AggregationMethod == Aggregation_CrossBasedBox)clf.makeKernel(guideImage, aggregationRadiusH, aggregationGuidedfilterEps, 0);
 			{
 				Timer t("Cost aggregation");
-//#pragma omp parallel for
+				//#pragma omp parallel for
 				for (int i = 0; i < numberOfDisparities; i++)
 				{
 					Mat dsi = DSI[i];
@@ -2044,13 +2175,14 @@ namespace cp
 	void StereoBase::gui(Mat& leftim, Mat& rightim, Mat& destDisparity, StereoEval& eval)
 	{
 		ConsoleImage ci(Size(640, 580));
+		ci.setFontSize(12);
 		string wname = "";
 		string wname2 = "Disparity Map";
 
 		namedWindow(wname2);
 		moveWindow(wname2, 200, 200);
 		int display_image_depth_alpha = 0; createTrackbar("disp-image: alpha", wname, &display_image_depth_alpha, 100);
-
+		PixelMatchingMethod = 1;
 		createTrackbar("pix match method", wname, &PixelMatchingMethod, Pixel_Matching_Method_Size - 1);
 		//pre filter
 		createTrackbar("pcap", wname, &preFilterCap, 255);
@@ -2523,14 +2655,11 @@ namespace cp
 				Mat maskbadpixel = Mat::zeros(destDisparity.size(), CV_8U);
 
 				eval(destDisparity, 0.25, true, 16);
-				ci(eval.message);
-
+				ci("th0.25:" + eval.message);
 				eval(destDisparity, 0.5, true, 16);
-				ci(eval.message);
-
+				ci("th 0.5:" + eval.message);
 				eval(destDisparity, 1, true, 16);
-				ci(eval.message);
-
+				ci("th 1.0:" + eval.message);
 
 				if (maskType != 0)
 				{

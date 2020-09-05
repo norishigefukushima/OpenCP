@@ -177,15 +177,16 @@ void testCVStereoSGBM(Mat& leftim, Mat& rightim, const int numDisparities, const
 void testStereoBase()
 {
 	Mat disp;
-	Mat left = imread("img/stereo/Dolls/view1.png");
+	Mat left_ = imread("img/stereo/Dolls/view1.png");
 	Mat right = imread("img/stereo/Dolls/view5.png");
+	Mat dmap_ = imread("img/stereo/Dolls/disp1.png", 0);
 	//guiShift(left, right, 300);
-	cp::StereoEval eval;
-	//Mat dmap = imread("img/stereo/Dolls/disp1.png", 0);
+	cp::StereoEval eval(dmap_,2);
+	
 	//resize(left, left, Size(), 1, 0.25);
 	//resize(right, right, Size(), 1, 0.25);
 
 	StereoBase sbm(5, get_simd_ceil(32, 16), get_simd_ceil(100, 16));
-	sbm.gui(left, right, disp, eval);
+	sbm.gui(left_, right, disp, eval);
 	//sbm.check(leftg, rightg, disp);
 }

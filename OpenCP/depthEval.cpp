@@ -126,13 +126,14 @@ namespace cp
 		state_disc = Mat::zeros(ground_truth.size(), CV_8UC3);
 	}
 
-	void StereoEval::init(Mat& ground_truth_, double amp_)
+	void StereoEval::init(Mat& ground_truth, double amp)
 	{
-		ground_truth = ground_truth_;
-		amp = amp_;
+		CV_Assert(!ground_truth.empty());
+		this->ground_truth = ground_truth;
+		this->amp = amp;
 
-		createDisparityALLMask(ground_truth_, mask_all);
-		createDisparityNonOcclusionMask(ground_truth_, amp_, 1, mask_nonocc);
+		createDisparityALLMask(ground_truth, mask_all);
+		createDisparityNonOcclusionMask(ground_truth, amp, 1, mask_nonocc);
 		mask_nonocc.copyTo(mask_disc);//under construction
 		
 		threshmap_init();
@@ -279,7 +280,6 @@ namespace cp
 		state_all.setTo(Scalar(255, 0, 0), v);
 		split(state_all, sa);
 		{
-
 			int tcount = countNonZero(mask_all);
 			cv::compare(sa[2], 255, mask, cv::CMP_EQ);
 			int degrade = countNonZero(mask);
