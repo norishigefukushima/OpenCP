@@ -121,61 +121,13 @@ namespace cp
 		bool isUpdate = false;
 		if (guide.empty())
 		{
-			cv::Scalar v;
-			if (_guide.type() == CV_32FC1)
-			{
-				v = cv::Scalar(_guide.at<float>(0, 0));
-			}
-			else if (_guide.type() == CV_32FC3)
-			{
-				v = cv::Scalar(_guide.at<float>(0, 0), _guide.at<float>(0, 1), _guide.at<float>(0, 2));
-			}
-			if (_guide.type() == CV_8UC1)
-			{
-				v = cv::Scalar(_guide.at<uchar>(0, 0));
-			}
-			else if (_guide.type() == CV_8UC3)
-			{
-				v = cv::Scalar(_guide.at<uchar>(0, 0), _guide.at<uchar>(0, 1), _guide.at<uchar>(0, 2));
-			}
-			guide_samples.push_back(v);
+			checkimage.isSameImage(_guide);
 			isUpdate = true;
 		}
 		else
 		{
-			cv::Scalar v;
-			if (_guide.type() == CV_32FC1)
-			{
-				v = cv::Scalar(_guide.at<float>(0, 0));
-			}
-			else if (_guide.type() == CV_32FC3)
-			{
-				v = cv::Scalar(_guide.at<float>(0, 0), _guide.at<float>(0, 1), _guide.at<float>(0, 2));
-			}
-			if (_guide.type() == CV_8UC1)
-			{
-				v = cv::Scalar(_guide.at<uchar>(0, 0));
-			}
-			else if (_guide.type() == CV_8UC3)
-			{
-				v = cv::Scalar(_guide.at<uchar>(0, 0), _guide.at<uchar>(0, 1), _guide.at<uchar>(0, 2));
-			}
-
-			if (guide_samples.size() == 0)
-			{
-				guide_samples.push_back(v);
-				isUpdate = true;
-			}
-			else if (v == guide_samples[0])
-			{
-				if (r != _r || eps != _eps)isUpdate = true;
-				else isUpdate = false;
-			}
-			else
-			{
-				isUpdate = true;
-				guide_samples[0] = v;
-			}
+			isUpdate = !checkimage.isSameImage(_guide);
+			if (r != _r || eps != _eps)isUpdate = true;
 		}
 
 		src = _src;

@@ -3,6 +3,7 @@
 #include "common.hpp"
 #include "parallel_type.hpp"
 #include "boxFilter.hpp"
+#include "checkSameImage.hpp"
 
 namespace cp
 {
@@ -155,7 +156,7 @@ namespace cp
 
 	class GuidedFilterBase
 	{
-		std::vector<cv::Scalar> guide_samples;//checker for filterGuidePrecomputed
+		cp::CheckSameImage checkimage;//checker for filterGuidePrecomputed
 	protected:
 		cv::Mat src;
 		cv::Mat guide;

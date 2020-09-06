@@ -162,6 +162,7 @@ namespace cp
 		return ret;
 	}
 
+
 	bool checkSameImage(cv::Mat& src, cv::Mat& ref, const int num_check_points)
 	{
 		CheckSameImage csi;
