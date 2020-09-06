@@ -7,7 +7,7 @@ void guidedFilter_nonSplit_nonVec(cv::Mat& src, cv::Mat& guide, cv::Mat& dest, i
 {
 	if (src.channels() == 1)
 	{
-		guidedFilter_Merge_nonVec gf(src, guide, dest, r, eps, parallelType);
+		guidedImageFilter_Merge_Base gf(src, guide, dest, r, eps, parallelType);
 		gf.filter();
 	}
 	else if (src.channels() == 3)

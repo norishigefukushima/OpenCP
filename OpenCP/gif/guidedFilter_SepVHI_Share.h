@@ -12,6 +12,10 @@ protected:
 	std::vector<cv::Mat> ar_p;
 	std::vector<cv::Mat> b_p;
 
+	cv::Mat mean_I;
+	cv::Mat var;
+	void computeVarCov() override;
+
 	//for upsampling
 	cv::Mat mean_a_b;
 	cv::Mat mean_a_g;
@@ -21,6 +25,7 @@ protected:
 	cv::Mat a_high_b;
 	cv::Mat a_high_g;
 	cv::Mat a_high_r;
+
 public:
 
 	guidedFilter_SepVHI_Share(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps, int _parallelType)
@@ -35,5 +40,6 @@ public:
 
 	void filter() override;
 	void filterVector() override;
+	void filterGuidePrecomputed()override;
 	void upsample() override;
 };

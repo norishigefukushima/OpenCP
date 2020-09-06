@@ -2,7 +2,7 @@
 
 #include "guidedFilter_Merge.h"
 
-class guidedFilter_Merge_Transpose_Inverse_nonVec : public guidedFilter_Merge_nonVec
+class guidedFilter_Merge_Transpose_Inverse_nonVec : public guidedImageFilter_Merge_Base
 {
 protected:
 	cv::Size t_size;
@@ -12,7 +12,7 @@ protected:
 	void filter_Guide3(cv::Mat& input, cv::Mat& output) override;
 public:
 	guidedFilter_Merge_Transpose_Inverse_nonVec(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps, int _parallelType, const bool isInit=true)
-		: guidedFilter_Merge_nonVec(_src, _guide, _dest, _r, _eps, _parallelType, false)
+		: guidedImageFilter_Merge_Base(_src, _guide, _dest, _r, _eps, _parallelType, false)
 	{
 		implementation = cp::GUIDED_MERGE_TRANSPOSE_INVERSE;
 		t_size = cv::Size(src.rows, src.cols);

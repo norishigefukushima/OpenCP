@@ -108,7 +108,7 @@ namespace cp
 
 			if (isGuiDiffInfo)putText(show, text, Point(30, 30), FONT_HERSHEY_SIMPLEX, 1, COLOR_WHITE, 2);
 			imshow(wname, show);
-			key = waitKey(1);
+			
 
 			if (key == 'i')
 			{
@@ -133,6 +133,7 @@ namespace cp
 			}
 
 			if (!isWait)break;
+			key = waitKey(1);
 		}
 
 		if (isWait) destroyWindow(wname);

@@ -1037,7 +1037,6 @@ namespace cp
 			}
 
 			imshow(wname, render);
-			keyboard = waitKey(1);
 
 			if (keyboard == '?')
 			{
@@ -1129,6 +1128,7 @@ namespace cp
 			}
 
 			if (!isWait) break;
+			keyboard = waitKey(1);
 		}
 
 		if (isWait) destroyWindow(wname);

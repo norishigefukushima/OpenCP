@@ -35,8 +35,9 @@ void fitPlaneTest();
 void guiColorCorrectionTest(cv::Mat& src, cv::Mat& ref);
 
 //filter
+void testGuidedImageFilter(cv::Mat& img_p = cv::Mat(), cv::Mat& img_I = cv::Mat());
 void guiHazeRemoveTest();
-void guiGuidedImageFilterTest(cv::Mat& img_p = cv::Mat(), cv::Mat& img_I = cv::Mat());
+
 void guiEdgePresevingFilterOpenCV(cv::Mat& src);
 void guiWeightMapTest();
 void guiCrossBasedLocalFilter(cv::Mat& src);
@@ -64,7 +65,7 @@ void guiNonLocalMeansTest(cv::Mat& src);
 void guiSeparableNLMTest(cv::Mat& src);
 void guiIterativeBackProjectionTest(cv::Mat& src);
 
-//sterep
+//stereo
 void testCVStereoBM(cv::Mat& leftim, cv::Mat& rightim, const int numDisparities, const int disparity_min);
 void testCVStereoSGBM(cv::Mat& leftim, cv::Mat& rightim, const int numDisparities, const int disparity_min);
 void testStereoBase();

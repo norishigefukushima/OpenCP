@@ -3,7 +3,7 @@
 using namespace std;
 using namespace cv;
 
-void guidedFilter_Merge_Share_nonVec::init()
+void guidedFilter_Merge_Share_Base::init()
 {
 	b.create(src.size(), CV_32F);
 	if (guide.channels() == 1)
@@ -37,19 +37,19 @@ void guidedFilter_Merge_Share_nonVec::init()
 	}
 }
 
-void guidedFilter_Merge_Share_nonVec::compute_Var()
+void guidedFilter_Merge_Share_Base::compute_Var()
 {
 	RowSumFilter_Var			rsf_var(guide, temp, r, parallelType);				rsf_var.filter();
 	ColumnSumFilter_Var_nonVec	csf_var(temp, var, mean_I, r, eps, parallelType);	csf_var.filter();
 }
 
-void guidedFilter_Merge_Share_nonVec::compute_Cov()
+void guidedFilter_Merge_Share_Base::compute_Cov()
 {
 	RowSumFilter_Cov			rsf_cov(vI, temp, r, parallelType);							rsf_cov.filter();
 	ColumnSumFilter_Cov_nonVec	csf_cov(temp, vCov, det, vMean_I, r, eps, parallelType);	csf_cov.filter();
 }
 
-void guidedFilter_Merge_Share_nonVec::filter()
+void guidedFilter_Merge_Share_Base::filter()
 {
 	//cout << "Merge: parallel type " << parallelType << endl;
 	if (src.channels() == 1 && guide.channels() == 1)
@@ -92,7 +92,7 @@ void guidedFilter_Merge_Share_nonVec::filter()
 	}
 }
 
-void guidedFilter_Merge_Share_nonVec::filterVector()
+void guidedFilter_Merge_Share_Base::filterVector()
 {
 	//cout << "Merge: parallel type " << parallelType << endl;
 	if (src.channels() == 1 && guide.channels() == 1)
@@ -126,7 +126,7 @@ void guidedFilter_Merge_Share_nonVec::filterVector()
 	}
 }
 
-void guidedFilter_Merge_Share_nonVec::filter_Guide1(cv::Mat& input, cv::Mat& output)
+void guidedFilter_Merge_Share_Base::filter_Guide1(cv::Mat& input, cv::Mat& output)
 {
 	RowSumFilter_Ip2ab_Guide1_Share				rsf_ip2ab(input, guide, temp, r, parallelType);				rsf_ip2ab.filter();
 	ColumnSumFilter_Ip2ab_Guide1_Share_nonVec	csf_ip2ab(temp, var, mean_I, a, b, r, parallelType);	csf_ip2ab.filter();
@@ -134,7 +134,7 @@ void guidedFilter_Merge_Share_nonVec::filter_Guide1(cv::Mat& input, cv::Mat& out
 	ColumnSumFilter_ab2q_Guide1_nonVec			csf_ab2q(temp, guide, output, r, parallelType);				csf_ab2q.filter();
 }
 
-void guidedFilter_Merge_Share_nonVec::filter_Guide3(cv::Mat& input, cv::Mat& output)
+void guidedFilter_Merge_Share_Base::filter_Guide3(cv::Mat& input, cv::Mat& output)
 {
 	RowSumFilter_Ip2ab_Guide3_Share				rsf_ip2ab(input, vI, temp, r, parallelType);						rsf_ip2ab.filter();
 	ColumnSumFilter_Ip2ab_Guide3_Share_nonVec	csf_ip2ab(temp, vCov, det, vMean_I, va, b, r, parallelType);	csf_ip2ab.filter();

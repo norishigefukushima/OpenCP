@@ -597,7 +597,7 @@ namespace cp
 		const int gstep = gim.cols * c;
 		cross* cdata = crossdata;
 		const int cstep = guide.cols;
-		int arm_threshold = c*thresh;
+		int arm_threshold = c * thresh;
 
 		int i, j;
 		if (method == CrossBasedLocalFilter::CROSS_BASED_LOCAL_FILTER_ARM_BASIC)

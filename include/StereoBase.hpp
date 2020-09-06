@@ -11,18 +11,9 @@ namespace cp
 
 	class CP_EXPORT StereoBase
 	{
-		cv::Mat bufferGray;
-		cv::Mat bufferGray1;
-		cv::Mat bufferGray2;
-		cv::Mat bufferGray3;
-		cv::Mat bufferGray4;
-		cv::Mat bufferGray5;
-
 		std::vector<cv::Mat> target;//0: image, 1: Sobel
 		std::vector<cv::Mat> reference;//0: image, 1: Sobel
 		cv::Mat specklebuffer;
-
-		void shiftImage(cv::Mat& src, cv::Mat& dest, const int shift);
 
 		bool scheduleCostComputationAndAggregation = true;
 		CrossBasedLocalFilter clf;
@@ -36,11 +27,24 @@ namespace cp
 		//PixelMatchingCost
 		enum
 		{
-			Pixel_Matching_SAD,
-			Pixel_Matching_SADSobel,
-			Pixel_Matching_SAD_TextureBlend,
+			Pixel_Matching_SD,
+			Pixel_Matching_SDSobel,
+			Pixel_Matching_SDSobelBlend,
+			Pixel_Matching_AD,
+			Pixel_Matching_ADSobel,
+			Pixel_Matching_ADSobelBlend,
 			Pixel_Matching_BT,
-			Pixel_Matching_BT_TextureBlend,
+			Pixel_Matching_BTSobel,
+			Pixel_Matching_BTSobelBlend,
+			Pixel_Matching_BTFull,
+			Pixel_Matching_BTFullSobel,
+			Pixel_Matching_BTFullSobelBlend,
+			Pixel_Matching_CENSUS3x3,
+			Pixel_Matching_CENSUS5x5,
+			Pixel_Matching_CENSUS7x5,
+			Pixel_Matching_CENSUS9x1,
+			//Pixel_Matching_SAD_TextureBlend,
+			//Pixel_Matching_BT_TextureBlend,
 
 			Pixel_Matching_Method_Size
 		};
@@ -57,12 +61,21 @@ namespace cp
 		void prefilter(cv::Mat& targetImage, cv::Mat& referenceImage);
 		void preFilter(cv::Mat& src, cv::Mat& dest, int param);
 
+		void getPixelMatchingCostSD(cv::Mat& target, cv::Mat& refference, const int d, cv::Mat& dest);
+		void getPixelMatchingCostSDSobelBlend(std::vector<cv::Mat>& target, std::vector<cv::Mat>& refference, const int d, cv::Mat& dest);
+		void getPixelMatchingCostAD(cv::Mat& target, cv::Mat& refference, const int d, cv::Mat& dest);
+		void getPixelMatchingCostADSobelBlend(std::vector<cv::Mat>& target, std::vector<cv::Mat>& refference, const int d, cv::Mat& dest);
+		void getPixelMatchingCostBT(cv::Mat& target, cv::Mat& refference, const int d, cv::Mat& dest);
+		void getPixelMatchingCostBTSobelBlend(std::vector<cv::Mat>& target, std::vector<cv::Mat>& refference, const int d, cv::Mat& dest);
+		void getPixelMatchingCostBTFull(cv::Mat& target, cv::Mat& refference, const int d, cv::Mat& dest);
+		void getPixelMatchingCostBTFullSobelBlend(std::vector<cv::Mat>& target, std::vector<cv::Mat>& refference, const int d, cv::Mat& dest);
+		void getPixelMatchingCostCENSUS3x3(cv::Mat& target, cv::Mat& refference, const int d, cv::Mat& dest);
+		void getPixelMatchingCostCENSUS5x5(cv::Mat& target, cv::Mat& refference, const int d, cv::Mat& dest);
+		void getPixelMatchingCostCENSUS7x5(cv::Mat& target, cv::Mat& refference, const int d, cv::Mat& dest);
+		void getPixelMatchingCostCENSUS9x1(cv::Mat& target, cv::Mat& refference, const int d, cv::Mat& dest);
+		//under debug
 		void textureAlpha(cv::Mat& src, cv::Mat& dest, const int th1, const int th2, const int r);
-		
-		void getPixelMatchingCostSAD(std::vector<cv::Mat>& target, std::vector<cv::Mat>& refference, const int d, cv::Mat& dest);
-		void getPixelMatchingCostSADSobel(std::vector<cv::Mat>& target, std::vector<cv::Mat>& refference, const int d, cv::Mat& dest);
-		void getPixelMatchingCostSADAlpha(std::vector<cv::Mat>& target, std::vector<cv::Mat>& refference, cv::Mat& alpha, const int d, cv::Mat& dest);
-		void getPixelMatchingCostBT(std::vector<cv::Mat>& target, std::vector<cv::Mat>& refference, const int d, cv::Mat& dest);
+		void getPixelMatchingCostADAlpha(std::vector<cv::Mat>& target, std::vector<cv::Mat>& refference, cv::Mat& alpha, const int d, cv::Mat& dest);
 		void getPixelMatchingCostBTAlpha(std::vector<cv::Mat>& target, std::vector<cv::Mat>& refference, cv::Mat& alpha, const int d, cv::Mat& dest);
 
 		enum
@@ -82,6 +95,7 @@ namespace cp
 
 		cv::Size aggregationShiftableKernel = cv::Size(3, 3);
 		double aggregationGuidedfilterEps;
+		double aggregationSigmaSpace;
 
 		int aggregationRadiusH;
 		int aggregationRadiusV;
@@ -118,7 +132,7 @@ namespace cp
 		int speckleWindowSize;
 		int speckleRange;
 
-		
+
 		bool isMinCostFilter = false;
 		void minCostFilter(cv::Mat& costMap, cv::Mat& dest);
 
@@ -128,7 +142,7 @@ namespace cp
 		cv::Mat weightMap;
 		void refineFromCost(cv::Mat& src, cv::Mat& dest);
 		void getWeightUniqness(cv::Mat& disp);
-		
+
 
 		//internal of matching
 		void getPixelMatchingCost(const int d, cv::Mat& dest);

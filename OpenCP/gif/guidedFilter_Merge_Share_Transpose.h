@@ -2,7 +2,7 @@
 
 #include "guidedFilter_Merge_Share.h"
 
-class guidedFilter_Merge_Share_Transpose_nonVec : public guidedFilter_Merge_Share_nonVec
+class guidedFilter_Merge_Share_Transpose_nonVec : public guidedFilter_Merge_Share_Base
 {
 protected:
 	cv::Size t_size;
@@ -16,7 +16,7 @@ protected:
 	void compute_Cov() override;
 public:
 	guidedFilter_Merge_Share_Transpose_nonVec(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps, int _parallelType, const bool isInit = true)
-		: guidedFilter_Merge_Share_nonVec(_src, _guide, _dest, _r, _eps, _parallelType, false)
+		: guidedFilter_Merge_Share_Base(_src, _guide, _dest, _r, _eps, _parallelType, false)
 	{
 		implementation = cp::GUIDED_MERGE_SHARE_TRANSPOSE;
 

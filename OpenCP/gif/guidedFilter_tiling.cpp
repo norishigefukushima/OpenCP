@@ -73,7 +73,7 @@ void GuidedImageFilterTiling::filter_SSAT()
 	{
 		if (div.area() == 1)
 		{
-			guidedFilter_Merge_nonVec(src, guide, dest, r, eps, OMP).filter();
+			guidedImageFilter_Merge_Base(src, guide, dest, r, eps, OMP).filter();
 		}
 		else
 		{
@@ -98,7 +98,7 @@ void GuidedImageFilterTiling::filter_SSAT()
 	{
 		if (div.area() == 1)
 		{
-			guidedFilter_Merge_nonVec(src, guide, dest, r, eps, OMP).filter();
+			guidedImageFilter_Merge_Base(src, guide, dest, r, eps, OMP).filter();
 		}
 		else
 		{
@@ -131,7 +131,7 @@ void GuidedImageFilterTiling::filter_SSAT()
 	{
 		if (div.area() == 1)
 		{
-			guidedFilter_Merge_nonVec(src, guide, dest, r, eps, OMP).filter();
+			guidedImageFilter_Merge_Base(src, guide, dest, r, eps, OMP).filter();
 		}
 #if 1
 		else
@@ -193,7 +193,7 @@ void GuidedImageFilterTiling::filter_SSAT()
 	{
 		if (div.area() == 1)
 		{
-			guidedFilter_Merge_nonVec(src, guide, dest, r, eps, OMP).filter();
+			guidedImageFilter_Merge_Base(src, guide, dest, r, eps, OMP).filter();
 		}
 		else
 		{
@@ -763,7 +763,7 @@ void GuidedImageFilterTiling::filter_SSAT_AVX()
 	}
 }
 
-void GuidedImageFilterTiling::filter(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, const int _r, const float _eps, const cv::Size _div, const int guidedType)
+void GuidedImageFilterTiling::filter(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, const int _r, const float _eps, const cv::Size _div, const GuidedTypes guidedType)
 {
 	src = _src;
 	guide = _guide;
@@ -783,7 +783,7 @@ void GuidedImageFilterTiling::filter(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _d
 	filter(guidedType);
 }
 
-void GuidedImageFilterTiling::filter(int guidedType)
+void GuidedImageFilterTiling::filter(GuidedTypes guidedType)
 {
 	if (src.channels() == 1 && guide.channels() == 1)
 	{
@@ -897,11 +897,12 @@ void GuidedImageFilterTiling::filter(int guidedType)
 	}
 }
 
-void GuidedImageFilterTiling::filter_func(int guidedType)
+void GuidedImageFilterTiling::filter_func(GuidedTypes guidedType)
 {
 	if (div.area() == 1)
 	{
-		guidedImageFilter(src, guide, dest, r, eps, guidedType, 0, ParallelTypes::NAIVE);
+		
+		guidedImageFilter(src, guide, dest, r, eps, guidedType, BoxTypes::BOX_OPENCV, ParallelTypes::NAIVE);
 	}
 	else
 	{
@@ -918,7 +919,7 @@ void GuidedImageFilterTiling::filter_func(int guidedType)
 				cropTileAlign(guide, guide_sub_vec[sub_index], div, idx, 2 * r, BORDER_REPLICATE);
 
 				Mat temp(src_sub_vec[sub_index].size(), CV_32FC1);
-				guidedImageFilter(src_sub_vec[sub_index], guide_sub_vec[sub_index], temp, r, eps, guidedType, 0, ParallelTypes::NAIVE);
+				guidedImageFilter(src_sub_vec[sub_index], guide_sub_vec[sub_index], temp, r, eps, guidedType, BoxTypes::BOX_OPENCV, ParallelTypes::NAIVE);
 
 				pasteTile(temp, dest, div, idx, 2 * r);
 			}
@@ -944,7 +945,7 @@ void GuidedImageFilterTiling::filter_func(int guidedType)
 				merge(guide_sub_temp, guide_sub_vec[sub_index]);
 
 				Mat temp(src_sub_vec[sub_index].size(), CV_32FC1);
-				guidedImageFilter(src_sub_vec[sub_index], guide_sub_vec[sub_index], temp, r, eps, guidedType, 0, ParallelTypes::NAIVE);
+				guidedImageFilter(src_sub_vec[sub_index], guide_sub_vec[sub_index], temp, r, eps, guidedType, BoxTypes::BOX_OPENCV, ParallelTypes::NAIVE);
 
 				pasteTile(temp, dest, div, idx, 2 * r);
 			}

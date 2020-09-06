@@ -3,14 +3,14 @@
 using namespace cv;
 using namespace std;
 using namespace cp;
-guidedFilter_Merge_nonVec::guidedFilter_Merge_nonVec(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps, int _parallelType, const bool isInit)
+guidedImageFilter_Merge_Base::guidedImageFilter_Merge_Base(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps, int _parallelType, const bool isInit)
 	: GuidedFilterBase(_src, _guide, _dest, _r, _eps), parallelType(_parallelType)
 {
 	implementation = GUIDED_MERGE;
 	if (isInit)init();
 }
 
-void guidedFilter_Merge_nonVec::init()
+void guidedImageFilter_Merge_Base::init()
 {
 	//cout << "merge_nonvec::init" << endl;
 	b.create(src.size(), CV_32F);
@@ -41,7 +41,7 @@ void guidedFilter_Merge_nonVec::init()
 	}
 }
 
-void guidedFilter_Merge_nonVec::filter()
+void guidedImageFilter_Merge_Base::filter()
 {
 	//cout << "Merge: parallel type " << parallelType << endl;
 	if (src.channels() == 1 && guide.channels() == 1)
@@ -79,7 +79,7 @@ void guidedFilter_Merge_nonVec::filter()
 	}
 }
 
-void guidedFilter_Merge_nonVec::filterVector()
+void guidedImageFilter_Merge_Base::filterVector()
 {
 	//cout << "Merge: parallel type " << parallelType << endl;
 	if (src.channels() == 1 && guide.channels() == 1)
@@ -108,7 +108,7 @@ void guidedFilter_Merge_nonVec::filterVector()
 	}
 }
 
-void guidedFilter_Merge_nonVec::filter_Guide1(cv::Mat& input, cv::Mat& output)
+void guidedImageFilter_Merge_Base::filter_Guide1(cv::Mat& input, cv::Mat& output)
 {
 	RowSumFilter_Ip2ab_Guide1(input, guide, temp, r, parallelType).filter();
 	ColumnSumFilter_Ip2ab_Guide1_nonVec(temp, a, b, r, eps, parallelType).filter();
@@ -116,7 +116,7 @@ void guidedFilter_Merge_nonVec::filter_Guide1(cv::Mat& input, cv::Mat& output)
 	ColumnSumFilter_ab2q_Guide1_nonVec(temp, guide, output, r, parallelType).filter();
 }
 
-void guidedFilter_Merge_nonVec::filter_Guide3(cv::Mat& input, cv::Mat& output)
+void guidedImageFilter_Merge_Base::filter_Guide3(cv::Mat& input, cv::Mat& output)
 {
 	RowSumFilter_Ip2ab_Guide3(input, vI, temp, r, parallelType).filter();
 	ColumnSumFilter_Ip2ab_Guide3_nonVec(temp, va, b, r, eps, parallelType).filter();

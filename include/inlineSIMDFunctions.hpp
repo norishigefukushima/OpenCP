@@ -1261,3 +1261,14 @@ inline void _mm256_storeu_auto(float* dest, __m256 src)
 }
 
 
+inline __m256i _mm256_alphablend_epu8(__m256i a, __m256i b, __m256i ma)
+{
+	__m256i a2 = _mm256_cvtepu8_epi16(_mm256_castsi256_si128(a));
+	__m256i b2 = _mm256_cvtepu8_epi16(_mm256_castsi256_si128(b));
+	__m128i d1 = _mm256_cvtepi16_epu8(_mm256_add_epi16(b2, _mm256_mulhrs_epi16(ma, _mm256_sub_epi16(a2, b2))));
+
+	a2 = _mm256_cvtepu8_epi16(_mm256_castsi256hi_si128(a));
+	b2 = _mm256_cvtepu8_epi16(_mm256_castsi256hi_si128(b));
+	__m128i d2 = _mm256_cvtepi16_epu8(_mm256_add_epi16(b2, _mm256_mulhrs_epi16(ma, _mm256_sub_epi16(a2, b2))));
+	return _mm256_set_m128i(d2, d1);
+}

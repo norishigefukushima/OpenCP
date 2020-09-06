@@ -105,9 +105,93 @@ namespace cp
 		filterFast(ratio);
 	}
 
+	void GuidedFilterBase::computeVarCov()
+	{
+		;
+	}
+
+	void GuidedFilterBase::filterGuidePrecomputed()
+	{
+		printf("%s: this type of guide precomputed is not implemented\n", cp::getGuidedType(implementation).c_str());
+		guide.copyTo(dest);
+	}
+
+	void GuidedFilterBase::filterGuidePrecomputed(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps)
+	{
+		bool isUpdate = false;
+		if (guide.empty())
+		{
+			std::cout << "here" << std::endl;
+			cv::Scalar v;
+			if (_guide.type() == CV_32FC1)
+			{
+				v = cv::Scalar(_guide.at<float>(0, 0));
+			}
+			else if (_guide.type() == CV_32FC3)
+			{
+				v = cv::Scalar(_guide.at<float>(0, 0), _guide.at<float>(0, 1), _guide.at<float>(0, 2));
+			}
+			if (_guide.type() == CV_8UC1)
+			{
+				v = cv::Scalar(_guide.at<uchar>(0, 0));
+			}
+			else if (_guide.type() == CV_8UC3)
+			{
+				v = cv::Scalar(_guide.at<uchar>(0, 0), _guide.at<uchar>(0, 1), _guide.at<uchar>(0, 2));
+			}
+			guide_samples.push_back(v);
+			isUpdate = true;
+
+		}
+		else
+		{
+			cv::Scalar v;
+			if (_guide.type() == CV_32FC1)
+			{
+				v = cv::Scalar(_guide.at<float>(0, 0));
+			}
+			else if (_guide.type() == CV_32FC3)
+			{
+				v = cv::Scalar(_guide.at<float>(0, 0), _guide.at<float>(0, 1), _guide.at<float>(0, 2));
+			}
+			if (_guide.type() == CV_8UC1)
+			{
+				v = cv::Scalar(_guide.at<uchar>(0, 0));
+			}
+			else if (_guide.type() == CV_8UC3)
+			{
+				v = cv::Scalar(_guide.at<uchar>(0, 0), _guide.at<uchar>(0, 1), _guide.at<uchar>(0, 2));
+			}
+
+			if (guide_samples.size() == 0)
+			{
+				guide_samples.push_back(v);
+				isUpdate = true;
+			}
+			else if (v == guide_samples[0])
+			{
+				if (r != _r || eps != _eps)isUpdate = true;
+				else isUpdate = false;
+			}
+			else
+			{
+				isUpdate = true;
+				guide_samples[0] = v;
+			}
+		}
+
+		src = _src;
+		guide = _guide;
+		dest = _dest;
+		r = _r;
+		eps = _eps;
+		if (isUpdate)computeVarCov();
+		filterGuidePrecomputed();
+	}
+
 	void GuidedFilterBase::upsample()
 	{
-		printf("%s: this type of GIU is not implemented\n", cp::getGuidedType(implementation).c_str());
+		printf("%s: this type of upsample is not implemented\n", cp::getGuidedType(implementation).c_str());
 		guide.copyTo(dest);
 	}
 
@@ -144,7 +228,7 @@ namespace cp
 
 
 
-	void guidedImageFilter(cv::InputArray src_, cv::InputArray guide_, cv::OutputArray dest, const int r, const float eps, const int guidedType, const int boxType, const int parallelType)
+	void guidedImageFilter(cv::InputArray src_, cv::InputArray guide_, cv::OutputArray dest, const int r, const float eps, const GuidedTypes guidedType, const BoxTypes boxType, const ParallelTypes parallelType)
 	{
 		cv::Mat src = src_.getMat();
 		cv::Mat guide = guide_.getMat();
@@ -195,6 +279,7 @@ namespace cp
 		}
 
 	}
+
 	void GuidedImageFilter::setUpsampleMethod(const int method)
 	{
 		upsample_method = method;
@@ -238,7 +323,7 @@ namespace cp
 		case GUIDED_SEP_VHI_SHARE:
 			ret = new guidedFilter_SepVHI_Share(src, guide, dest, r, eps, parallel_type); break;
 		case GUIDED_MERGE:
-			ret = new guidedFilter_Merge_nonVec(src, guide, dest, r, eps, parallel_type); break;
+			ret = new guidedImageFilter_Merge_Base(src, guide, dest, r, eps, parallel_type); break;
 		case GUIDED_MERGE_SSE:
 			ret = new guidedFilter_Merge_SSE(src, guide, dest, r, eps, parallel_type); break;
 		case GUIDED_MERGE_AVX:
@@ -256,7 +341,7 @@ namespace cp
 		case GUIDED_MERGE_TRANSPOSE_INVERSE_AVX:
 			ret = new guidedFilter_Merge_Transpose_Inverse_AVX(src, guide, dest, r, eps, parallel_type); break;
 		case GUIDED_MERGE_SHARE:
-			ret = new guidedFilter_Merge_Share_nonVec(src, guide, dest, r, eps, parallel_type); break;
+			ret = new guidedFilter_Merge_Share_Base(src, guide, dest, r, eps, parallel_type); break;
 		case GUIDED_MERGE_SHARE_SSE:
 			ret = new guidedFilter_Merge_Share_SSE(src, guide, dest, r, eps, parallel_type); break;
 		case GUIDED_MERGE_SHARE_AVX:
@@ -373,6 +458,41 @@ namespace cp
 		else
 		{
 			gf[0]->filter(srcImage, guideImage, destImage, r, eps);
+		}
+
+		if (isdestinit) destImage.convertTo(dest, src.depth());
+	}
+
+	void GuidedImageFilter::filterGuidePrecomputed(cv::Mat& src, cv::Mat& guide, cv::OutputArray dest, const int r, const float eps, const int guided_type, const int parallel_type_current)
+	{
+		bool isdestinit = initialize(src, guide, dest);
+
+		bool init = false;
+
+		if (gf[0].empty())
+		{
+			init = true;
+		}
+		else if (
+			gf[0]->getImplementation() != guided_type ||
+			parallel_type != parallel_type_current ||
+			gf[0]->src_channels() != src.channels() ||
+			gf[0]->guide_channels() != guide.channels() ||
+			gf[0]->size() != src.size()
+			)
+		{
+			init = true;
+		}
+
+		if (init)
+		{
+			parallel_type = parallel_type_current;
+			gf[0] = getGuidedFilter(srcImage, guideImage, destImage, r, eps, guided_type);
+			gf[0]->filterGuidePrecomputed();
+		}
+		else
+		{
+			gf[0]->filterGuidePrecomputed(srcImage, guideImage, destImage, r, eps);
 		}
 
 		if (isdestinit) destImage.convertTo(dest, src.depth());
@@ -500,7 +620,7 @@ namespace cp
 			parallel_type = parallel_type_current;
 			gf[0] = getGuidedFilter(srcImage, guideImage, destImage, r, eps, guided_type);
 		}
-		
+
 		gf[0]->upsample(srcImage, guideImage, destImage, r, eps);
 
 		if (isdestinit) destImage.convertTo(dest, src.depth());
@@ -843,17 +963,17 @@ void FilterEngine::init(const Ptr<BaseFilter>& _filter2D,
 
 	borderElemSize = srcElemSize / (CV_MAT_DEPTH(srcType) >= CV_32S ? sizeof(int) : 1);
 	int borderLength = std::max(ksize.width - 1, 1);
-	borderTab.resize(borderLength*borderElemSize);
+	borderTab.resize(borderLength * borderElemSize);
 
 	maxWidth = bufStep = 0;
 	constBorderRow.clear();
 
 	if (rowBorderType == BORDER_CONSTANT || columnBorderType == BORDER_CONSTANT)
 	{
-		constBorderValue.resize(srcElemSize*borderLength);
+		constBorderValue.resize(srcElemSize * borderLength);
 		int srcType1 = CV_MAKETYPE(CV_MAT_DEPTH(srcType), MIN(CV_MAT_CN(srcType), 4));
 		scalarToRawData(_borderValue, &constBorderValue[0], srcType1,
-			borderLength*CV_MAT_CN(srcType));
+			borderLength * CV_MAT_CN(srcType));
 	}
 
 	wholeSize = Size(-1, -1);
@@ -884,13 +1004,13 @@ int FilterEngine::start(Size _wholeSize, Rect _roi, int _maxBufRows)
 		rows.resize(_maxBufRows);
 		maxWidth = std::max(maxWidth, roi.width);
 		int cn = CV_MAT_CN(srcType);
-		srcRow.resize(esz*(maxWidth + ksize.width - 1));
+		srcRow.resize(esz * (maxWidth + ksize.width - 1));
 		if (columnBorderType == BORDER_CONSTANT)
 		{
-			constBorderRow.resize(getElemSize(bufType)*(maxWidth + ksize.width - 1 + VEC_ALIGN));
-			uchar *dst = alignPtr(&constBorderRow[0], VEC_ALIGN), *tdst;
+			constBorderRow.resize(getElemSize(bufType) * (maxWidth + ksize.width - 1 + VEC_ALIGN));
+			uchar* dst = alignPtr(&constBorderRow[0], VEC_ALIGN), * tdst;
 			int n = (int)constBorderValue.size(), N;
-			N = (maxWidth + ksize.width - 1)*esz;
+			N = (maxWidth + ksize.width - 1) * esz;
 			tdst = isSeparable() ? &srcRow[0] : dst;
 
 			for (i = 0; i < N; i += n)
@@ -906,7 +1026,7 @@ int FilterEngine::start(Size _wholeSize, Rect _roi, int _maxBufRows)
 
 		int maxBufStep = bufElemSize * (int)alignSize(maxWidth +
 			(!isSeparable() ? ksize.width - 1 : 0), VEC_ALIGN);
-		ringBuf.resize(maxBufStep*rows.size() + VEC_ALIGN);
+		ringBuf.resize(maxBufStep * rows.size() + VEC_ALIGN);
 	}
 
 	// adjust bufstep so that the used part of the ring buffer stays compact in memory
@@ -924,8 +1044,8 @@ int FilterEngine::start(Size _wholeSize, Rect _roi, int _maxBufRows)
 			for (i = 0; i < nr; i++)
 			{
 				uchar* dst = isSeparable() ? &srcRow[0] : alignPtr(&ringBuf[0], VEC_ALIGN) + bufStep * i;
-				memcpy(dst, constVal, dx1*esz);
-				memcpy(dst + (roi.width + ksize.width - 1 - dx2)*esz, constVal, dx2*esz);
+				memcpy(dst, constVal, dx1 * esz);
+				memcpy(dst + (roi.width + ksize.width - 1 - dx2) * esz, constVal, dx2 * esz);
 			}
 		}
 		else
@@ -937,16 +1057,16 @@ int FilterEngine::start(Size _wholeSize, Rect _roi, int _maxBufRows)
 
 			for (i = 0; i < dx1; i++)
 			{
-				int p0 = (borderInterpolate(i - dx1, wholeWidth, rowBorderType) + xofs1)*btab_esz;
+				int p0 = (borderInterpolate(i - dx1, wholeWidth, rowBorderType) + xofs1) * btab_esz;
 				for (j = 0; j < btab_esz; j++)
-					btab[i*btab_esz + j] = p0 + j;
+					btab[i * btab_esz + j] = p0 + j;
 			}
 
 			for (i = 0; i < dx2; i++)
 			{
-				int p0 = (borderInterpolate(wholeWidth + i, wholeWidth, rowBorderType) + xofs1)*btab_esz;
+				int p0 = (borderInterpolate(wholeWidth + i, wholeWidth, rowBorderType) + xofs1) * btab_esz;
 				for (j = 0; j < btab_esz; j++)
-					btab[(i + dx1)*btab_esz + j] = p0 + j;
+					btab[(i + dx1) * btab_esz + j] = p0 + j;
 			}
 		}
 	}
@@ -1001,7 +1121,7 @@ int FilterEngine::proceed(const uchar* src, int srcstep, int count,
 {
 	CV_Assert(wholeSize.width > 0 && wholeSize.height > 0);
 
-	const int *btab = &borderTab[0];
+	const int* btab = &borderTab[0];
 	int esz = (int)getElemSize(srcType), btab_esz = borderElemSize;
 	uchar** brows = &rows[0];
 	int bufRows = (int)rows.size();
@@ -1038,26 +1158,26 @@ int FilterEngine::proceed(const uchar* src, int srcstep, int count,
 				++startY;
 			}
 
-			memcpy(row + _dx1 * esz, src, (width1 - _dx2 - _dx1)*esz);
+			memcpy(row + _dx1 * esz, src, (width1 - _dx2 - _dx1) * esz);
 
 			if (makeBorder)
 			{
-				if (btab_esz*(int)sizeof(int) == esz)
+				if (btab_esz * (int)sizeof(int) == esz)
 				{
 					const int* isrc = (const int*)src;
 					int* irow = (int*)row;
 
-					for (i = 0; i < _dx1*btab_esz; i++)
+					for (i = 0; i < _dx1 * btab_esz; i++)
 						irow[i] = isrc[btab[i]];
-					for (i = 0; i < _dx2*btab_esz; i++)
-						irow[i + (width1 - _dx2)*btab_esz] = isrc[btab[i + _dx1 * btab_esz]];
+					for (i = 0; i < _dx2 * btab_esz; i++)
+						irow[i + (width1 - _dx2) * btab_esz] = isrc[btab[i + _dx1 * btab_esz]];
 				}
 				else
 				{
-					for (i = 0; i < _dx1*esz; i++)
+					for (i = 0; i < _dx1 * esz; i++)
 						row[i] = src[btab[i]];
-					for (i = 0; i < _dx2*esz; i++)
-						row[i + (width1 - _dx2)*esz] = src[btab[i + _dx1 * esz]];
+					for (i = 0; i < _dx2 * esz; i++)
+						row[i + (width1 - _dx2) * esz] = src[btab[i + _dx1 * esz]];
 				}
 			}
 
@@ -1085,7 +1205,7 @@ int FilterEngine::proceed(const uchar* src, int srcstep, int count,
 			break;
 		i -= kheight - 1;
 		if (isSeparable())
-			(*columnFilter)((const uchar**)brows, dst, dststep, i, roi.width*cn);
+			(*columnFilter)((const uchar**)brows, dst, dststep, i, roi.width * cn);
 		else
 			(*filter2D)((const uchar**)brows, dst, dststep, i, roi.width, cn);
 	}
@@ -1113,10 +1233,10 @@ void FilterEngine::apply(const Mat& src, Mat& dst,
 		dstOfs.y + srcRoi.height <= dst.rows);
 
 	int y = start(src, srcRoi, isolated);
-	proceed(src.ptr() + y * src.step + srcRoi.x*src.elemSize(),
+	proceed(src.ptr() + y * src.step + srcRoi.x * src.elemSize(),
 		(int)src.step, endY - startY,
 		dst.ptr(dstOfs.y) +
-		dstOfs.x*dst.elemSize(), (int)dst.step);
+		dstOfs.x * dst.elemSize(), (int)dst.step);
 }
 
 
@@ -1139,7 +1259,7 @@ template<typename T, typename ST> struct RowSum : public BaseRowFilter
 		ST* D = (ST*)dst;
 		int i = 0, k, ksz_cn = ksize * cn;
 
-		width = (width - 1)*cn;
+		width = (width - 1) * cn;
 		for (k = 0; k < cn; k++, S++, D++)
 		{
 			ST s = 0;
@@ -1242,7 +1362,7 @@ struct ColumnSumFF : public BaseColumnFilter
 				for (; i < width; i++)
 				{
 					float s0 = SUM[i] + Sp[i];
-					D[i] = saturate_cast<float>(s0*_scale);
+					D[i] = saturate_cast<float>(s0 * _scale);
 					SUM[i] = s0 - Sm[i];
 				}
 			}
@@ -1284,7 +1404,7 @@ cv::Ptr<cv::FilterEngine> createBoxFilterFFF(int cn, Size ksize, Point anchor, b
 {
 	Ptr<BaseRowFilter> rowFilter = Ptr<BaseRowFilter>(new RowSum<float, float>(ksize.width, anchor.x < 0 ? ksize.width / 2 : anchor.x));
 
-	Ptr<BaseColumnFilter> columnFilter = Ptr<BaseColumnFilter>(new ColumnSumFF(ksize.height, anchor.y < 0 ? ksize.height / 2 : anchor.y, normalize ? 1. / (ksize.width*ksize.height) : 1));
+	Ptr<BaseColumnFilter> columnFilter = Ptr<BaseColumnFilter>(new ColumnSumFF(ksize.height, anchor.y < 0 ? ksize.height / 2 : anchor.y, normalize ? 1. / (ksize.width * ksize.height) : 1));
 	//??fukushima
 	return Ptr<FilterEngine>(new FilterEngine(Ptr<BaseFilter>(), rowFilter, columnFilter,
 		CV_32F, CV_32F, CV_32F, borderType));
@@ -1711,7 +1831,7 @@ namespace cp
 				const float c5 = *rb * *rg - *rr * *gb;
 				const float c8 = *rr * *gg - *rg * *rg;
 
-				const float det = (*rr * *gg * *bb) + (*rg * *gb * *rb) + (*rb * *rg * *gb) - (*rr * *gb * *gb) - (*rb * *gg * *rb) - (*rg * *rg* *bb);
+				const float det = (*rr * *gg * *bb) + (*rg * *gb * *rb) + (*rb * *rg * *gb) - (*rr * *gb * *gb) - (*rb * *gg * *rb) - (*rg * *rg * *bb);
 				const float id = 1.f / det;
 
 
@@ -1719,9 +1839,9 @@ namespace cp
 				const float g = *covg;
 				const float b = *covb;
 
-				*covr = id * (r*c0 + g * c1 + b * c2);
-				*covg = id * (r*c1 + g * c4 + b * c5);
-				*covb = id * (r*c2 + g * c5 + b * c8);
+				*covr = id * (r * c0 + g * c1 + b * c2);
+				*covg = id * (r * c1 + g * c4 + b * c5);
+				*covb = id * (r * c2 + g * c5 + b * c8);
 
 				//SSE4 vc2010 make faster code... 
 				/*const __m128 v = _mm_set_ps(r,g,b,0.f);
@@ -1886,7 +2006,7 @@ namespace cp
 			}
 			for (int i = 0; i < nn; i++)
 			{
-				*s0 = amp* (*s0 + (*s1 * *d1) + (*s2 * *d2) + (*s3 * *d3));
+				*s0 = amp * (*s0 + (*s1 * *d1) + (*s2 * *d2) + (*s3 * *d3));
 				s0++, s1++, s2++, s3++, d1++, d2++, d3++;
 			}
 		}
@@ -2041,7 +2161,7 @@ namespace cp
 			 *covg = r*inv(0,1) + g*inv(1,1) + b*inv(2,1);
 			 *covb = r*inv(0,2) + g*inv(1,2) + b*inv(2,2);*/
 
-				const float det = (*rr * *gg * *bb) + (*rg * *gb * *rb) + (*rb * *rg * *gb) - (*rr * *gb * *gb) - (*rb * *gg * *rb) - (*rg * *rg* *bb);
+				const float det = (*rr * *gg * *bb) + (*rg * *gb * *rb) + (*rb * *rg * *gb) - (*rr * *gb * *gb) - (*rb * *gg * *rb) - (*rg * *rg * *bb);
 				const float id = 1.f / det;
 
 				float c0 = *gg * *bb - *gb * *gb;
@@ -2053,9 +2173,9 @@ namespace cp
 				const float r = *covr;
 				const float g = *covg;
 				const float b = *covb;
-				*covr = id * (r*c0 + g * c1 + b * c2);
-				*covg = id * (r*c1 + g * c4 + b * c5);
-				*covb = id * (r*c2 + g * c5 + b * c8);
+				*covr = id * (r * c0 + g * c1 + b * c2);
+				*covg = id * (r * c1 + g * c4 + b * c5);
+				*covb = id * (r * c2 + g * c5 + b * c8);
 
 				/*cout<<format("%f %f %f \n %f %f %f \n %f %f %f \n",
 				id*(*gg * *bb - *gb * *gb),//c0
@@ -2567,7 +2687,7 @@ namespace cp
 			}
 			for (int i = 0; i < nn; i++)
 			{
-				const float v = *s2 - (*s1 **s1);
+				const float v = *s2 - (*s1 * *s1);
 				*s2 = v / (v + e);
 				*s3 = (*s2 * *s1) - *s1;
 				s1++, s2++, s3++;
@@ -2855,7 +2975,7 @@ namespace cp
 
 		//cout<<"variance computation"<<endl;
 
-		vector<Mat> var_I_vec(channels*channels);
+		vector<Mat> var_I_vec(channels * channels);
 		for (int j = 0; j < channels; j++)
 		{
 			for (int i = 0; i < channels; i++)
@@ -2886,7 +3006,7 @@ namespace cp
 			//CalcTime t("cov");
 			for (int i = 0; i < size; i++)
 			{
-				for (int n = 0; n < channels*channels; n++)
+				for (int n = 0; n < channels * channels; n++)
 				{
 					sigmaEps.at<float>(n) = var_I_vec[n].at<float>(i);
 				}
@@ -2901,7 +3021,7 @@ namespace cp
 					for (int n = 0; n < channels; n++)
 					{
 						int idx = channels * m + n;
-						vec.at<float>(n) += inv.at<float>(m, n)*cov_Ip_vec[n].at<float>(i);
+						vec.at<float>(n) += inv.at<float>(m, n) * cov_Ip_vec[n].at<float>(i);
 					}
 				}
 

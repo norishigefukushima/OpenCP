@@ -181,7 +181,7 @@
     <ClCompile Include="guiDomainTransformTest.cpp" />
     <ClCompile Include="guiEdgePreservingFilter.cpp" />
     <ClCompile Include="guiEPFWeightMapTest.cpp" />
-    <ClCompile Include="guiGuidedImageFilterTest.cpp" />
+    <ClCompile Include="testGuidedImageFilter.cpp" />
     <ClCompile Include="guiHazeRemoveTest.cpp" />
     <ClCompile Include="testStereo.cpp" />
     <ClCompile Include="guiUpsampleTest.cpp" />

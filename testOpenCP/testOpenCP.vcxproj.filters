@@ -60,9 +60,6 @@
     <ClCompile Include="guiEdgePreservingFilter.cpp">
       <Filter>ソース ファイル\test\filter</Filter>
     </ClCompile>
-    <ClCompile Include="guiGuidedImageFilterTest.cpp">
-      <Filter>ソース ファイル\test\filter</Filter>
-    </ClCompile>
     <ClCompile Include="guiBlendTest.cpp">
       <Filter>ソース ファイル\test\core</Filter>
     </ClCompile>
@@ -140,6 +137,9 @@
     </ClCompile>
     <ClCompile Include="testStereo.cpp">
       <Filter>ソース ファイル\test\stereo</Filter>
+    </ClCompile>
+    <ClCompile Include="testGuidedImageFilter.cpp">
+      <Filter>ソース ファイル\test\filter</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

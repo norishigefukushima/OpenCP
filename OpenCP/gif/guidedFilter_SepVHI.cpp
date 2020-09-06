@@ -6,8 +6,8 @@ using namespace cv;
 #include <arithmetic.hpp>
 #include <inlineSIMDFunctions.hpp>
 using namespace cp;
-
-void Ip2ab_Guide1_sep_VHI_AVX(cv::Mat& I, cv::Mat& p, const int r, float eps, cv::Mat& a, cv::Mat& b)
+//SepVHI
+void Ip2ab_Guide1_sep_VHI_Share_AVX(cv::Mat& I, cv::Mat& p, const int r, float eps, cv::Mat& a, cv::Mat& b)
 {
 	const int width = I.cols;
 	const int height = I.rows;
@@ -205,6 +205,7 @@ void Ip2ab_Guide1_sep_VHI_AVX(cv::Mat& I, cv::Mat& p, const int r, float eps, cv
 	}
 }
 
+//SepVHI
 void Ip2ab_Guide1_sep_VHI_AVX_omp(cv::Mat& I, cv::Mat& p, const int r, float eps, cv::Mat& a, cv::Mat& b)
 {
 	const int width = I.cols;
@@ -406,6 +407,7 @@ void Ip2ab_Guide1_sep_VHI_AVX_omp(cv::Mat& I, cv::Mat& p, const int r, float eps
 	}
 }
 
+//SepVHI
 void Ip2ab_Guide1_sep_VHI_CenterAvoid_AVX_omp(cv::Mat& I, cv::Mat& p, const int r, float eps, cv::Mat& a, cv::Mat& b)
 {
 	const int width = I.cols;
@@ -620,6 +622,7 @@ void Ip2ab_Guide1_sep_VHI_CenterAvoid_AVX_omp(cv::Mat& I, cv::Mat& p, const int 
 }
 
 
+//SepVHI
 void ab2q_Guide1_sep_VHI_AVX(cv::Mat& a, cv::Mat& b, cv::Mat& guide, const int r, cv::Mat& dest)
 {
 	const int width = a.cols;
@@ -765,6 +768,7 @@ void ab2q_Guide1_sep_VHI_AVX(cv::Mat& a, cv::Mat& b, cv::Mat& guide, const int r
 	}
 }
 
+//SepVHI
 void ab2q_Guide1_sep_VHI_AVX_omp(cv::Mat& a, cv::Mat& b, cv::Mat& guide, const int r, cv::Mat& dest)
 {
 	const int width = a.cols;
@@ -913,6 +917,7 @@ void ab2q_Guide1_sep_VHI_AVX_omp(cv::Mat& a, cv::Mat& b, cv::Mat& guide, const i
 	}
 }
 
+//SepVHI
 void ab2q_Guide1_sep_VHI_CenterAboid_AVX_omp(cv::Mat& a, cv::Mat& b, cv::Mat& guide, const int r, cv::Mat& dest)
 {
 	const int width = a.cols;
@@ -5369,12 +5374,12 @@ void guidedFilter_SepVHI::filter_Guide1(cv::Mat& input, cv::Mat& guide, cv::Mat&
 	//ip2ab
 	if (parallelType == NAIVE)
 	{
-		Ip2ab_Guide1_sep_VHI_AVX(guide, input, r, eps, a, b);
+		Ip2ab_Guide1_sep_VHI_Share_AVX(guide, input, r, eps, a, b);
 	}
 	else
 	{
-		Ip2ab_Guide1_sep_VHI_CenterAvoid_AVX_omp(guide, input, r, eps, a, b);
-		//Ip2ab_Guide1_sep_VHI_AVX_omp(guide, input, r, eps, a, b);
+		//Ip2ab_Guide1_sep_VHI_CenterAvoid_AVX_omp(guide, input, r, eps, a, b);
+		Ip2ab_Guide1_sep_VHI_AVX_omp(guide, input, r, eps, a, b);
 	}
 
 	//ab2q
@@ -5384,8 +5389,8 @@ void guidedFilter_SepVHI::filter_Guide1(cv::Mat& input, cv::Mat& guide, cv::Mat&
 	}
 	else
 	{
-		//ab2q_Guide1_sep_VHI_AVX_omp(a, b, guide, r, output);
-		cp::fmadd(a, guide, b, output);
+		ab2q_Guide1_sep_VHI_AVX_omp(a, b, guide, r, output);
+		//cp::fmadd(a, guide, b, output);
 		//ab2q_Guide1_sep_VHI_CenterAboid_AVX_omp(a, b, guide, r, output);
 	}
 }
@@ -5395,7 +5400,7 @@ void guidedFilter_SepVHI::upsample_Guide1(cv::Mat& input_low, cv::Mat& guide, cv
 	//ip2ab
 	if (parallelType == NAIVE)
 	{
-		Ip2ab_Guide1_sep_VHI_AVX(guide_low, input_low, r, eps, a, b);
+		Ip2ab_Guide1_sep_VHI_Share_AVX(guide_low, input_low, r, eps, a, b);
 	}
 	else
 	{

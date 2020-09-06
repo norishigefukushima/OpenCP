@@ -2,7 +2,7 @@
 
 #include "guidedFilter_Merge_Share.h"
 
-class guidedFilter_Merge_Share_Mixed_nonVec : public guidedFilter_Merge_nonVec
+class guidedFilter_Merge_Share_Mixed_nonVec : public guidedImageFilter_Merge_Base
 {
 protected:
 	cv::Mat mean_I;
@@ -26,7 +26,7 @@ protected:
 
 public:
 	guidedFilter_Merge_Share_Mixed_nonVec(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps, int _parallelType)
-		: guidedFilter_Merge_nonVec(_src, _guide, _dest, _r, _eps, _parallelType, false)
+		: guidedImageFilter_Merge_Base(_src, _guide, _dest, _r, _eps, _parallelType, false)
 	{
 		implementation = cp::GUIDED_MERGE_SHARE_EX;
 		init();

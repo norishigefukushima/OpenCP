@@ -6,11 +6,9 @@ using namespace std;
 using namespace cv;
 using namespace cp;
 
-void guidedFilter_Naive_Share::filter()
+void guidedFilter_Naive_Share::computeVarCov()
 {
-	//cout << "Conventional: parallel type" << parallelType << endl;
-
-	if (src.depth() == CV_32F)
+	if (guide.depth() == CV_32F)
 	{
 		average_method = BOX_32F;
 	}
@@ -19,20 +17,26 @@ void guidedFilter_Naive_Share::filter()
 		average_method = BOX_64F;
 	}
 
+	if (guide.channels() == 1)
+	{
+		computeVar(guide);
+	}
+	else if (guide.channels() == 3)
+	{
+		split(guide, vguide);
+		computerCov(vguide);
+	}
+}
+void guidedFilter_Naive_Share::filterGuidePrecomputed()
+{
 	if (src.channels() == 1)
 	{
 		if (guide.channels() == 1)
 		{
-			computeVarCov_Guide1(guide);
-
 			filter_Guide1(src, guide, dest);
 		}
 		else if (guide.channels() == 3)
 		{
-			split(guide, vguide);
-
-			computeVarCov_Guide3(vguide);
-
 			filter_Guide3(src, vguide, dest);
 		}
 	}
@@ -48,18 +52,12 @@ void guidedFilter_Naive_Share::filter()
 
 		if (guide.channels() == 1)
 		{
-			computeVarCov_Guide1(guide);
-
 			filter_Guide1(vsrc[0], guide, vdest[0]);
 			filter_Guide1(vsrc[1], guide, vdest[1]);
 			filter_Guide1(vsrc[2], guide, vdest[2]);
 		}
 		else if (guide.channels() == 3)
 		{
-			split(guide, vguide);
-
-			computeVarCov_Guide3(vguide);
-
 			filter_Guide3(vsrc[0], vguide, vdest[0]);
 			filter_Guide3(vsrc[1], vguide, vdest[1]);
 			filter_Guide3(vsrc[2], vguide, vdest[2]);
@@ -67,6 +65,12 @@ void guidedFilter_Naive_Share::filter()
 
 		merge(vdest, dest);
 	}
+}
+void guidedFilter_Naive_Share::filter()
+{
+	//cout << "Conventional: parallel type" << parallelType << endl;
+	computeVarCov();
+	filterGuidePrecomputed();
 }
 
 void guidedFilter_Naive_Share::filterVector()
@@ -86,13 +90,13 @@ void guidedFilter_Naive_Share::filterVector()
 	{
 		if (guide.channels() == 1)
 		{
-			computeVarCov_Guide1(vguide[0]);
+			computeVar(vguide[0]);
 
 			filter_Guide1(vsrc[0], vdest[0]);
 		}
 		else if (guide.channels() == 3)
 		{
-			computeVarCov_Guide3(vguide);
+			computerCov(vguide);
 
 			filter_Guide3(vsrc[0], vguide, vdest[0]);
 		}
@@ -103,7 +107,7 @@ void guidedFilter_Naive_Share::filterVector()
 
 		if (guide.channels() == 1)
 		{
-			computeVarCov_Guide1(guide);
+			computeVar(guide);
 
 			filter_Guide1(vsrc[0], vguide[0], vdest[0]);
 			filter_Guide1(vsrc[1], vguide[0], vdest[1]);
@@ -111,7 +115,7 @@ void guidedFilter_Naive_Share::filterVector()
 		}
 		else if (guide.channels() == 3)
 		{
-			computeVarCov_Guide3(vguide);
+			computerCov(vguide);
 
 			filter_Guide3(vsrc[0], vguide, vdest[0]);
 			filter_Guide3(vsrc[1], vguide, vdest[1]);
@@ -140,7 +144,7 @@ void guidedFilter_Naive_Share::upsample()
 	{
 		if (guide.channels() == 1)
 		{
-			computeVarCov_Guide1(guide_low);
+			computeVar(guide_low);
 
 			filterFast_Guide1(src_low, guide, guide_low, dest);
 		}
@@ -149,7 +153,7 @@ void guidedFilter_Naive_Share::upsample()
 			split(guide, vguide);
 			split(guide_low, vguide_low);
 
-			computeVarCov_Guide3(vguide_low);
+			computerCov(vguide_low);
 
 			filterFast_Guide3(src_low, vguide, vguide_low, dest);
 		}
@@ -166,7 +170,7 @@ void guidedFilter_Naive_Share::upsample()
 
 		if (guide.channels() == 1)
 		{
-			computeVarCov_Guide1(guide_low);
+			computeVar(guide_low);
 
 			filterFast_Guide1(vsrc_low[0], guide, guide_low, vdest[0]);
 			filterFast_Guide1(vsrc_low[1], guide, guide_low, vdest[1]);
@@ -177,7 +181,7 @@ void guidedFilter_Naive_Share::upsample()
 			split(guide, vguide);
 			split(guide_low, vguide_low);
 
-			computeVarCov_Guide3(vguide_low);
+			computerCov(vguide_low);
 
 			filterFast_Guide3(vsrc_low[0], vguide, vguide_low, vdest[0]);
 			filterFast_Guide3(vsrc_low[1], vguide, vguide_low, vdest[1]);
@@ -200,7 +204,7 @@ void guidedFilter_Naive_Share::average(Mat& src, Mat& dest, const int r)
 	}
 }
 
-void guidedFilter_Naive_Share::computeVarCov_Guide1(cv::Mat& guide)
+void guidedFilter_Naive_Share::computeVar(cv::Mat& guide)
 {
 	const Size imsize = guide.size();
 	const int imtype = guide.depth();
@@ -1109,7 +1113,7 @@ void guidedFilter_Naive_Share::computeCovariance(const int depth)
 	}
 }
 
-void guidedFilter_Naive_Share::computeVarCov_Guide3(vector<Mat>& guide)
+void guidedFilter_Naive_Share::computerCov(vector<Mat>& guide)
 {
 	I_b = guide[0], I_g = guide[1], I_r = guide[2];
 

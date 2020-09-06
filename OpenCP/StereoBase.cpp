@@ -17,6 +17,8 @@
 using namespace std;
 using namespace cv;
 
+//#define TIMER_STEREO_BASE
+
 namespace cp
 {
 #pragma region correctDisparityBoundary
@@ -441,46 +443,6 @@ namespace cp
 		P2 = 0;
 	}
 
-	void StereoBase::shiftImage(Mat& src, Mat& dest, const int shift)
-	{
-		if (bufferGray.size() != src.size() || bufferGray.type() != src.type())bufferGray.create(src.size(), src.type());
-
-		if (shift >= 0)
-		{
-			//copyMakeBorder(src,bufferGray,0,0,shift,0,cv::BORDER_REPLICATE);
-			//bufferGray(Rect(0,0,src.cols,src.rows)).copyTo(dest);
-			const int step = src.cols;
-			uchar* s = src.ptr<uchar>(0);
-			uchar* d = dest.ptr<uchar>(0);
-			int j; j = 0;
-			for (; j < src.rows; j++)
-			{
-				const uchar v = s[0];
-				memset(d, v, shift);
-				memcpy(d + shift, s, step - shift);
-				s += step; d += step;
-			}
-		}
-		else
-		{
-			/*int s=-shift;
-			copyMakeBorder(src,bufferGray,0,0,0,s,cv::BORDER_REPLICATE);
-			bufferGray(Rect(s,0,src.cols,src.rows)).copyTo(dest);*/
-			const int step = src.cols;
-			uchar* s = src.ptr<uchar>(0);
-			uchar* d = dest.ptr<uchar>(0);
-			int j; j = 0;
-			for (; j < src.rows; j++)
-			{
-				const uchar v = s[step - 1];
-
-				memcpy(d, s + shift, step - shift);
-				memset(d + step - shift, v, shift);
-				s += step; d += step;
-			}
-		}
-	}
-
 	void StereoBase::imshowDisparity(string wname, Mat& disp, int option, OutputArray output)
 	{
 		//cvtDisparityColor(disp,output,minDisparity,numberOfDisparities,option,16);
@@ -499,9 +461,9 @@ namespace cp
 #pragma region cost computation of pixel matching
 
 #define  CV_CAST_8U(t)  (uchar)(!((t) & ~255) ? (t) : (t) > 0 ? 255 : 0)
-	void prefilterXSobel(Mat& src, Mat& dst, const int preFilterCap)
+	static void prefilterXSobel(Mat& src, Mat& dst, const int preFilterCap)
 	{
-		if (dst.empty())dst.create(src.size(), CV_8U);
+		if (dst.empty() || dst.depth() != CV_8U)dst.create(src.size(), CV_8U);
 		int x, y;
 		const int OFS = 256 * 4, TABSZ = OFS * 2 + 256;
 
@@ -563,6 +525,220 @@ namespace cp
 		}
 	}
 
+	static void censusTrans8U_3x3(Mat& src, Mat& dest)
+	{
+		if (dest.empty() || dest.depth() != CV_8U)dest.create(src.size(), CV_8U);
+		const int r = 1;
+		const int r2 = 2 * r;
+		Mat im; copyMakeBorder(src, im, r, r, r, r, cv::BORDER_REFLECT101);
+
+		uchar* s = im.ptr<uchar>(r); s += r;
+		uchar* d = dest.ptr<uchar>(0);
+		uchar val; uchar* ss;
+		const int step1 = -r - im.cols;
+		const int step2 = -3 + im.cols;
+		const int w = src.cols;
+		const int h = src.rows;
+		for (int j = 0; j < h; j++)
+		{
+			for (int i = 0; i < w; i++)
+			{
+				val = 0;//init value
+				ss = s + step1;
+
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+
+				ss += step2;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				ss++;//skip r=0
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				ss += step2;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++;
+
+				*(d++) = val;
+				s++;
+			}
+			s += r2;
+		}
+	}
+
+	static void censusTrans32S_5x5(Mat& src, Mat& dest)
+	{
+		if (dest.empty() || dest.depth() != CV_32S)dest.create(src.size(), CV_32S);
+		const int r = 2;
+		const int r2 = 2 * r;
+		const int D = 2 * r + 1;
+		Mat im; copyMakeBorder(src, im, r, r, r, r, cv::BORDER_REFLECT101);
+
+		uchar* s = im.ptr<uchar>(r); s += r;
+		int* d = dest.ptr<int>();
+		uchar val; uchar* ss;
+		const int step1 = -r - r * im.cols;
+		const int step2 = -D + im.cols;
+		const int w = src.cols;
+		const int h = src.rows;
+		for (int j = 0; j < h; j++)
+		{
+			for (int i = 0; i < w; i++)
+			{
+				val = 0;//init value
+				ss = s + step1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+
+				ss += step2;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+
+				ss += step2;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				ss++;//skip r=0
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+
+				ss += step2;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+
+				ss += step2;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++;
+
+				*(d++) = val;
+				s++;
+			}
+			s += r2;
+		}
+	}
+
+	static void censusTrans32S_7x5(Mat& src, Mat& dest)
+	{
+		if (dest.empty() || dest.depth() != CV_32S)dest.create(src.size(), CV_32S);
+		const int r = 3;
+		const int r2 = 2 * r;
+		const int D = 2 * r + 1;
+		const int vr = 2;
+		Mat im; copyMakeBorder(src, im, vr, vr, r, r, cv::BORDER_REFLECT101);
+
+		uchar* s = im.ptr<uchar>(vr); s += r;
+		int* d = dest.ptr<int>();
+		uchar val; uchar* ss;
+		const int step1 = -r - vr * im.cols;
+		const int step2 = -D + im.cols;
+		const int w = src.cols;
+		const int h = src.rows;
+		for (int j = 0; j < h; j++)
+		{
+			for (int i = 0; i < w; i++)
+			{
+				val = 0;//init value
+				ss = s + step1;
+				ss++;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				ss++;
+
+				ss += step2;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+
+				ss += step2;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				ss++;//skip r=0
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+
+				ss += step2;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+
+				ss += step2;
+				ss++;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++;
+				ss++;
+
+				*(d++) = val;
+				s++;
+			}
+			s += r2;
+		}
+	}
+
+	static void censusTrans8u_9x1(Mat& src, Mat& dest)
+	{
+		if (dest.empty() || dest.depth() != CV_8U)dest.create(src.size(), CV_8U);
+		const int w = src.cols;
+		const int h = src.rows;
+
+		const int r = 4;
+		const int r2 = 2 * r;
+		Mat im; copyMakeBorder(src, im, 0, 0, r, r, cv::BORDER_REPLICATE);
+
+		uchar* s = im.ptr<uchar>(0); s += r;
+		uchar* d = dest.ptr<uchar>(0);
+		uchar val;//init value
+		uchar* ss;
+		for (int j = 0; j < h; j++)
+		{
+			for (int i = 0; i < w; i++)
+			{
+				val = 0;//init value
+				ss = s - r;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				ss++;//skip r=0
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*ss < *s) ? val | 1 : val; ss++;
+
+				*d = val;
+				d++;
+				s++;
+			}
+			s += r2;
+		}
+	}
+
 	void StereoBase::preFilter(Mat& src, Mat& dest, int param)
 	{
 		vector<Mat> img;
@@ -574,158 +750,40 @@ namespace cp
 		merge(img, dest);
 	}
 
+	//0: gray image, 1: sobel image/CENSUS
 	void StereoBase::prefilter(Mat& targetImage, Mat& referenceImage)
 	{
 		target.resize(2);
 		reference.resize(2);
 		cvtColor(targetImage, target[0], COLOR_BGR2GRAY);
 		cvtColor(referenceImage, reference[0], COLOR_BGR2GRAY);
-
-		prefilterXSobel(target[0], target[1], preFilterCap);
-		prefilterXSobel(reference[0], reference[1], preFilterCap);
+		if (PixelMatchingMethod == Pixel_Matching_CENSUS3x3)
+		{
+			censusTrans8U_3x3(target[0], target[1]);
+			censusTrans8U_3x3(reference[0], reference[1]);
+		}
+		else if (PixelMatchingMethod == Pixel_Matching_CENSUS9x1)
+		{
+			censusTrans8u_9x1(target[0], target[1]);
+			censusTrans8u_9x1(reference[0], reference[1]);
+		}
+		else if (PixelMatchingMethod == Pixel_Matching_CENSUS5x5)
+		{
+			censusTrans32S_5x5(target[0], target[1]);
+			censusTrans32S_5x5(reference[0], reference[1]);
+		}
+		else if (PixelMatchingMethod == Pixel_Matching_CENSUS7x5)
+		{
+			censusTrans32S_7x5(target[0], target[1]);
+			censusTrans32S_7x5(reference[0], reference[1]);
+		}
+		else
+		{
+			prefilterXSobel(target[0], target[1], preFilterCap);
+			prefilterXSobel(reference[0], reference[1], preFilterCap);
+		}
 		//GaussianBlur(target[0],target[0],Size(2*prefSize+1,2*prefSize+1),1.0);
 		//GaussianBlur(refference[0],refference[0],Size(2*prefSize+1,2*prefSize+1),1.0);
-	}
-
-	void absDiffTruncate_SSE_8u(Mat& src1, Mat& src2, uchar thresh, Mat& dest)
-	{
-		dest.create(src1.size(), CV_8U);
-
-		const int size = src1.size().area();
-		uchar* s1 = src1.ptr<uchar>(0);
-		uchar* s2 = src2.ptr<uchar>(0);
-		uchar* d = dest.ptr<uchar>(0);
-
-		const __m128i trunc = _mm_set1_epi8(thresh);
-		for (int i = 0; i < size; i += 16)
-		{
-			__m128i a = _mm_loadu_si128((__m128i*)(s1));
-			__m128i b = _mm_loadu_si128((__m128i*)(s2));
-
-			_mm_stream_si128((__m128i*)(d), _mm_min_epi8(_mm_add_epi8(_mm_subs_epu8(a, b), _mm_subs_epu8(b, a)), trunc));
-
-			s1 += 16;
-			s2 += 16;
-			d += 16;
-		}
-	}
-
-	void shiftAbsDiffTruncate_AVX_8u(const Mat& src1, const Mat& src2, const int disparity, uchar thresh, Mat& dest)
-	{
-		dest.create(src1.size(), CV_8U);
-
-		const __m256i mtruncation = _mm256_set1_epi8(thresh);
-		const int WIDTH = get_simd_floor(src1.cols, 32);
-		if (disparity >= 0)
-		{
-			for (int j = 0; j < src1.rows; j++)
-			{
-				const uchar* s1 = src1.ptr<uchar>(j);
-				const uchar* s2 = src2.ptr<uchar>(j);
-				uchar* d = dest.ptr<uchar>(j);
-
-				for (int i = 0; i < disparity; i++)
-				{
-					d[i] = std::min((uchar)abs(s1[i] - s2[0]), thresh);
-				}
-				for (int i = disparity; i < WIDTH; i += 32)
-				{
-					__m256i a = _mm256_loadu_si256((__m256i*)(s1 + i));
-					__m256i b = _mm256_loadu_si256((__m256i*)(s2 - disparity + i));
-
-					_mm256_storeu_si256((__m256i*)(d + i), _mm256_min_epi8(_mm256_add_epi8(_mm256_subs_epu8(a, b), _mm256_subs_epu8(b, a)), mtruncation));
-				}
-				for (int i = WIDTH; i < src1.cols; i++)
-				{
-					d[i] = std::min((uchar)abs(s1[i] - s2[i - disparity]), thresh);
-				}
-			}
-		}
-	}
-
-	/*
-	* void alphaBlendFixedPoint_AVX(Mat& src1, Mat& src2, int alpha, Mat& dst)
-	{
-		int size = src1.size().area() * src1.channels();
-		int simdsize = get_simd_floor(size, 32);
-		uchar* s1 = src1.data;
-		uchar* s2 = src2.data;
-		uchar* d = dst.data;
-
-		const __m256i ma = _mm256_set1_epi16(alpha << 7);
-		//a*(s1-s2)+s2
-		for (int i = 0; i < simdsize; i += 32)
-		{
-			__m256i ms1 = _mm256_load_epu8cvtepi16((__m128i*)s1);
-			__m256i ms2 = _mm256_load_epu8cvtepi16((__m128i*)s2);
-			_mm_store_si128((__m128i*)d, _mm256_cvtepi16_epu8(_mm256_add_epi16(ms2, _mm256_mulhrs_epi16(ma, _mm256_sub_epi16(ms1, ms2)))));
-
-			ms1 = _mm256_load_epu8cvtepi16((__m128i*)(s1 + 16));
-			ms2 = _mm256_load_epu8cvtepi16((__m128i*)(s2 + 16));
-			_mm_store_si128((__m128i*)(d + 16), _mm256_cvtepi16_epu8(_mm256_add_epi16(ms2, _mm256_mulhrs_epi16(ma, _mm256_sub_epi16(ms1, ms2)))));
-
-			s1 += 32;
-			s2 += 32;
-			d += 32;
-		}
-
-		s1 = src1.data;
-		s2 = src2.data;
-		d = dst.data;
-		double a = alpha / 255.0;
-		for (int i = simdsize; i < size; i++)
-		{
-			d[i] = saturate_cast<uchar>(a * (s1[i] - s2[i]) + s2[i]);
-		}
-	}
-	*/
-	void shiftAbsDiffTruncateSobelBlend_AVX_8u(const Mat& src1, const Mat& src2, const Mat& src3, const Mat& src4, const int disparity, uchar thresh, const float alpha, Mat& dest)
-	{
-		dest.create(src1.size(), CV_8U);
-
-		const __m256i mtruncation = _mm256_set1_epi8(thresh);
-		const int WIDTH = get_simd_floor(src1.cols, 32);
-		const int alpha_int = cvRound(255 * alpha);
-		const __m256i ma = _mm256_set1_epi16(alpha_int << 7);
-
-		if (disparity >= 0)
-		{
-			for (int j = 0; j < src1.rows; j++)
-			{
-				const uchar* s1 = src1.ptr<uchar>(j);
-				const uchar* s2 = src2.ptr<uchar>(j);
-				const uchar* s3 = src3.ptr<uchar>(j);
-				const uchar* s4 = src4.ptr<uchar>(j);
-				uchar* d = dest.ptr<uchar>(j);
-
-				for (int i = 0; i < disparity; i++)
-				{
-					d[i] = alpha * std::min((uchar)abs(s1[i] - s2[0]), thresh) + (1 - alpha) * std::min((uchar)abs(s3[i] - s4[0]), thresh);
-				}
-				for (int i = disparity; i < WIDTH; i += 32)
-				{
-					__m256i a = _mm256_loadu_si256((__m256i*)(s1 + i));
-					__m256i b = _mm256_loadu_si256((__m256i*)(s2 - disparity + i));
-					a = _mm256_min_epu8(_mm256_adds_epu8(_mm256_subs_epu8(a, b), _mm256_subs_epu8(b, a)), mtruncation);
-
-					b = _mm256_loadu_si256((__m256i*)(s3 + i));
-					__m256i c = _mm256_loadu_si256((__m256i*)(s4 - disparity + i));
-					b = _mm256_min_epu8(_mm256_adds_epu8(_mm256_subs_epu8(b, c), _mm256_subs_epu8(c, b)), mtruncation);
-
-					__m256i a2 = _mm256_cvtepu8_epi16(_mm256_castsi256_si128(a));
-					__m256i b2 = _mm256_cvtepu8_epi16(_mm256_castsi256_si128(b));
-					_mm_store_si128((__m128i*)(d + i), _mm256_cvtepi16_epu8(_mm256_add_epi16(b2, _mm256_mulhrs_epi16(ma, _mm256_sub_epi16(a2, b2)))));
-					a2 = _mm256_cvtepu8_epi16(_mm256_castsi256hi_si128(a));
-					b2 = _mm256_cvtepu8_epi16(_mm256_castsi256hi_si128(b));
-					_mm_store_si128((__m128i*)(d + i + 16), _mm256_cvtepi16_epu8(_mm256_add_epi16(b2, _mm256_mulhrs_epi16(ma, _mm256_sub_epi16(a2, b2)))));
-				}
-				for (int i = WIDTH; i < src1.cols; i++)
-				{
-					d[i] = alpha * std::min((uchar)abs(s1[i] - s2[disparity]), thresh)
-						+ (1 - alpha) * std::min((uchar)abs(s3[i] - s4[disparity]), thresh);
-				}
-			}
-		}
 	}
 
 	void StereoBase::textureAlpha(Mat& src, Mat& dest, const int th1, const int th2, const int r)
@@ -758,241 +816,706 @@ namespace cp
 		//imshow("texture", dest);
 	}
 
-
-	void StereoBase::getPixelMatchingCostSAD(vector<Mat>& t, vector<Mat>& r, const int d, Mat& dest)
+	inline __m256i _mm256_sduareddistance_epu8(__m256i src1, __m256i src2)
 	{
-		shiftAbsDiffTruncate_AVX_8u(t[0], r[0], d, pixelMatchErrorCap, dest);
+		__m256i s1 = _mm256_cvtepu8_epi16(_mm256_castsi256_si128(src1));
+		__m256i s2 = _mm256_cvtepu8_epi16(_mm256_castsi256_si128(src2));
+		__m256i sub = _mm256_sub_epi16(s1, s2);
+		__m128i d1 = _mm256_cvtepi16_epu8(_mm256_mullo_epi16(sub, sub));
+		s1 = _mm256_cvtepu8_epi16(_mm256_castsi256hi_si128(src1));
+		s2 = _mm256_cvtepu8_epi16(_mm256_castsi256hi_si128(src2));
+		sub = _mm256_sub_epi16(s1, s2);
+		__m128i d2 = _mm256_cvtepi16_epu8(_mm256_mullo_epi16(sub, sub));
+		return _mm256_set_m128i(d2, d1);
 	}
 
-	void StereoBase::getPixelMatchingCostSADSobel(vector<Mat>& t, vector<Mat>& r, const int d, Mat& dest)
+	static void SDTruncate_8UC1(const Mat& src1, const Mat& src2, const int disparity, uchar thresh, Mat& dest)
 	{
-		shiftAbsDiffTruncateSobelBlend_AVX_8u(t[0], r[0], t[1], r[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
-		/*
-	bufferGray1.create(t[0].size(), t[0].type());
+		dest.create(src1.size(), CV_8U);
 
-	shiftImage(r[0], bufferGray1, d);
-	absDiffTruncate_SSE_8u(t[0], bufferGray1, pixelMatchErrorCap, dest);
-
-	shiftImage(r[1], bufferGray1, d);
-	absDiffTruncate_SSE_8u(t[1], bufferGray1, pixelMatchErrorCap, bufferGray1);
-
-	double a = costAlphaImageSobel / 100.0;
-	alphaBlend(dest, bufferGray1, a, dest);
-	*/
-	}
-
-	void StereoBase::getPixelMatchingCostSADAlpha(vector<Mat>& t, vector<Mat>& r, Mat& alpha, const int d, Mat& dest)
-	{
-		bufferGray1.create(t[0].size(), t[0].type());
-
-		shiftImage(r[0], bufferGray1, d);
-		absDiffTruncate_SSE_8u(t[0], bufferGray1, pixelMatchErrorCap, dest);
-
-		shiftImage(r[1], bufferGray1, d);
-		absDiffTruncate_SSE_8u(t[1], bufferGray1, pixelMatchErrorCap, bufferGray1);
-
-		alphaBlend(dest, bufferGray1, alpha, dest);
-	}
-
-	void halfPixel_8u(Mat& src, Mat& srcp, Mat& srcm)
-	{
-		const int size = src.size().area();
-
-		uchar* s1 = src.ptr<uchar>(0);
-		uchar* s2 = srcp.ptr<uchar>(0);
-		uchar* s3 = srcm.ptr<uchar>(0);
-
-		const __m128i zero = _mm_setzero_si128();
-		for (int i = 0; i < size; i += 16)
+		const __m256i mtruncation = _mm256_set1_epi8(thresh);
+		const int WIDTH = get_simd_floor(src1.cols, 32);
+		if (disparity >= 0)
 		{
-			__m128i a1 = _mm_load_si128((__m128i*)(s1));
-			__m128i b1 = _mm_load_si128((__m128i*)(s2));
+			for (int j = 0; j < src1.rows; j++)
+			{
+				const uchar* s1 = src1.ptr<uchar>(j);
+				const uchar* s2 = src2.ptr<uchar>(j);
+				uchar* d = dest.ptr<uchar>(j);
 
-			__m128i a2 = _mm_unpacklo_epi8(a1, zero);
-			a1 = _mm_unpackhi_epi8(a1, zero);
-			__m128i b2 = _mm_unpacklo_epi8(b1, zero);
-			b1 = _mm_unpackhi_epi8(b1, zero);
-
-			b1 = _mm_adds_epu16(a1, b1);
-			b1 = _mm_srli_epi16(b1, 1);
-			b2 = _mm_adds_epu16(a2, b2);
-			b2 = _mm_srli_epi16(b2, 1);
-			b2 = _mm_packus_epi16(b2, b1);
-			_mm_stream_si128((__m128i*)(s2), b2);
-
-			b1 = _mm_load_si128((__m128i*)(s3));
-			b2 = _mm_unpacklo_epi8(b1, zero);
-			b1 = _mm_unpackhi_epi8(b1, zero);
-
-			b1 = _mm_adds_epu16(a1, b1);
-			b1 = _mm_srli_epi16(b1, 1);
-			b2 = _mm_adds_epu16(a2, b2);
-			b2 = _mm_srli_epi16(b2, 1);
-			b2 = _mm_packus_epi16(b2, b1);
-			_mm_stream_si128((__m128i*)(s3), b2);
-
-			s1 += 16;
-			s2 += 16;
-			s3 += 16;
+				for (int i = 0; i < disparity; i++)
+				{
+					d[i] = std::min((s1[i] - s2[0]) * (s1[i] - s2[0]), (int)thresh);
+				}
+				for (int i = disparity; i < WIDTH; i += 32)
+				{
+					__m256i a = _mm256_loadu_si256((__m256i*)(s1 + i));
+					__m256i b = _mm256_loadu_si256((__m256i*)(s2 - disparity + i));
+					_mm256_storeu_si256((__m256i*)(d + i), _mm256_min_epu8(_mm256_sduareddistance_epu8(a, b), mtruncation));
+				}
+				for (int i = WIDTH; i < src1.cols; i++)
+				{
+					d[i] = std::min((s1[i] - s2[i - disparity]) * (s1[i] - s2[i - disparity]), (int)thresh);
+				}
+			}
 		}
 	}
 
-	void StereoBase::getPixelMatchingCostBT(vector<Mat>& target, vector<Mat>& refference, const int d, Mat& dest)
+	void StereoBase::getPixelMatchingCostSD(Mat& t, Mat& r, const int d, Mat& dest)
 	{
-		Size size = target[0].size();
-		int type = target[0].type();
-		if (dest.empty())dest.create(size, type);
-		if (bufferGray1.size() != size || bufferGray1.type() != type) bufferGray1.create(size, type);
-		if (bufferGray2.size() != size || bufferGray2.type() != type) bufferGray2.create(size, type);
-		if (bufferGray3.size() != size || bufferGray3.type() != type) bufferGray3.create(size, type);
-		if (bufferGray4.size() != size || bufferGray4.type() != type) bufferGray4.create(size, type);
-		if (bufferGray5.size() != size || bufferGray5.type() != type) bufferGray5.create(size, type);
-
-		shiftImage(refference[0], bufferGray1, d);
-		shiftImage(refference[0], bufferGray2, d + 1);
-		shiftImage(refference[0], bufferGray3, d - 1);
-		halfPixel_8u(bufferGray1, bufferGray2, bufferGray3);
-		//guiAlphaBlend(bufferGray1,bufferGray2);
-		//guiAlphaBlend(bufferGray1,bufferGray3);
-		//addWeighted(bufferGray1,0.5,bufferGray3,0.5,0.0,bufferGray3);
-		cv::max(bufferGray1, bufferGray2, bufferGray4);
-		cv::max(bufferGray4, bufferGray3, bufferGray4);
-		//cv::max(target[0]-bufferGray4,0,dest);
-		dest = target[0] - bufferGray4;
-		//subtract(target[0],bufferGray4,dest);
-		cv::min(bufferGray1, bufferGray2, bufferGray4);
-		cv::min(bufferGray4, bufferGray3, bufferGray4);
-		cv::max(bufferGray4 - target[0], dest, dest);
-
-		shiftImage(refference[1], bufferGray1, d);
-		shiftImage(refference[1], bufferGray2, d + 1);
-		shiftImage(refference[1], bufferGray3, d - 1);
-		halfPixel_8u(bufferGray1, bufferGray2, bufferGray3);
-		//addWeighted(bufferGray1,0.5,bufferGray2,0.5,0.0,bufferGray2);
-		//addWeighted(bufferGray1,0.5,bufferGray3,0.5,0.0,bufferGray3);
-		cv::max(bufferGray1, bufferGray2, bufferGray4);
-		cv::max(bufferGray4, bufferGray3, bufferGray4);
-		//cv::max(target[1]-bufferGray4,0,bufferGray5);
-		bufferGray5 = target[1] - bufferGray4;
-		//subtract(target[1],bufferGray4,bufferGray5);
-		cv::min(bufferGray1, bufferGray2, bufferGray4);
-		cv::min(bufferGray4, bufferGray3, bufferGray4);
-		cv::max(bufferGray4 - target[1], bufferGray5, bufferGray5);
-
-		//add(dest,bufferGray5,dest);
-		double a = costAlphaImageSobel / 100.0;
-		alphaBlend(dest, bufferGray5, a, dest);
-		min(dest, pixelMatchErrorCap, dest);
-		/*
-		shiftImage(refference[2],bufferGray1,d);
-		shiftImage(refference[2],bufferGray2,d+1);
-		shiftImage(refference[2],bufferGray3,d-1);
-		halfPixel(bufferGray1,bufferGray2,bufferGray3);
-		//addWeighted(bufferGray1,0.5,bufferGray2,0.5,0.0,bufferGray2);
-		//addWeighted(bufferGray1,0.5,bufferGray3,0.5,0.0,bufferGray3);
-		cv::max(bufferGray1,bufferGray2,bufferGray4);
-		cv::max(bufferGray4,bufferGray3,bufferGray4);
-		//cv::max(target[2]-bufferGray4,0,bufferGray5);
-		bufferGray5 = target[2]-bufferGray4;
-		//subtract(target[2],bufferGray4,bufferGray5);
-		cv::min(bufferGray1,bufferGray2,bufferGray4);
-		cv::min(bufferGray4,bufferGray3,bufferGray4);
-		cv::max(bufferGray4-target[2],bufferGray5,bufferGray5);
-		add(dest,bufferGray5,dest);*/
-
-		/*
-		shiftImage(refference[0],bufferGray1,d);
-		shiftImage(refference[1],bufferGray2,d);
-		shiftImage(refference[2],bufferGray3,d);
-		uchar* t1 = target[0].data;
-		uchar* t2 = target[1].data;
-		uchar* t3 = target[2].data;
-		uchar* r1 = bufferGray1.data;
-		uchar* r2 = bufferGray2.data;
-		uchar* r3 = bufferGray3.data;
-		uchar* dst = dest.data;
-		for(int i=1;i<size.area()-1;i++)
-		{
-		int v = r1[i];
-		int m = (v+r1[i-1])>>1;
-		int p = (v+r1[i+1])>>1;
-
-		int maxv = IMAX3(v,m,p);
-		int minv = IMIN3(v,m,p);
-		//dst[i]=IMAX3(0,(int)t1[i]-maxv,minv-(int)t1[i]);
-		dst[i]=IMIN3(abs(t1[i]-v),abs(t1[i]-p),abs(t1[i]-m));
-
-
-		v = r2[i];
-		m = (v+r2[i-1])>>1;
-		p = (v+r2[i+1])>>1;
-
-		maxv = IMAX3(v,m,p);
-		minv = IMIN3(v,m,p);
-		//dst[i]=saturate_cast<uchar>(dst[i]+IMAX3(0,(int)t2[i]-maxv,minv-(int)t2[i]));
-		dst[i]=saturate_cast<uchar>(dst[i]+IMIN3(abs(t2[i]-v),abs(t2[i]-p),abs(t2[i]-m)));
-
-		v = r3[i];
-		m = (v+r3[i-1])>>1;
-		p = (v+r3[i+1])>>1;
-
-		maxv = IMAX3(v,m,p);
-		minv = IMIN3(v,m,p);
-		//dst[i]=saturate_cast<uchar>(dst[i]+IMAX3(0,(int)t3[i]-maxv,minv-(int)t3[i]));
-		dst[i]=saturate_cast<uchar>(dst[i]+IMIN3(abs(t3[i]-v),abs(t3[i]-p),abs(t3[i]-m)));
-		}*/
-		//min(dest,error_truncate,dest);
+		SDTruncate_8UC1(t, r, d, pixelMatchErrorCap, dest);
 	}
 
+	static void SDTruncateBlend_8UC1(const Mat& src1, const Mat& src2, const Mat& src3, const Mat& src4, const int disparity, const uchar thresh, const float alpha, Mat& dest)
+	{
+		dest.create(src1.size(), CV_8U);
+
+		const __m256i mtruncation = _mm256_set1_epi8(thresh);
+		const int WIDTH = get_simd_floor(src1.cols, 32);
+		const int alpha_int = cvRound(255 * alpha);
+		const __m256i ma = _mm256_set1_epi16(alpha_int << 7);
+
+		if (disparity >= 0)
+		{
+			for (int j = 0; j < src1.rows; j++)
+			{
+				const uchar* s1 = src1.ptr<uchar>(j);
+				const uchar* s2 = src2.ptr<uchar>(j);
+				const uchar* s3 = src3.ptr<uchar>(j);
+				const uchar* s4 = src4.ptr<uchar>(j);
+				uchar* d = dest.ptr<uchar>(j);
+
+				for (int i = 0; i < disparity; i++)
+				{
+					d[i] = saturate_cast<uchar>(alpha * std::min((s1[i] - s2[0]) * (s1[i] - s2[0]), (int)thresh)
+						+ (1 - alpha) * std::min((s3[i] - s4[0]) * (s3[i] - s4[0]), (int)thresh));
+				}
+				for (int i = disparity; i < WIDTH; i += 32)
+				{
+					__m256i a = _mm256_loadu_si256((__m256i*)(s1 + i));
+					__m256i b = _mm256_loadu_si256((__m256i*)(s2 - disparity + i));
+					a = _mm256_min_epu8(_mm256_sduareddistance_epu8(a, b), mtruncation);
+
+					b = _mm256_loadu_si256((__m256i*)(s3 + i));
+					__m256i c = _mm256_loadu_si256((__m256i*)(s4 - disparity + i));
+					b = _mm256_min_epu8(_mm256_sduareddistance_epu8(b, c), mtruncation);
+
+					_mm256_storeu_si256((__m256i*)(d + i), _mm256_alphablend_epu8(a, b, ma));
+				}
+				for (int i = WIDTH; i < src1.cols; i++)
+				{
+					d[i] = saturate_cast<uchar>(alpha * std::min((s1[i] - s2[i - disparity]) * (s1[i] - s2[i - disparity]), (int)thresh)
+						+ (1.f - alpha) * std::min((s3[i] - s4[i - disparity]) * (s3[i] - s4[i - disparity]), (int)thresh));
+				}
+			}
+		}
+	}
+
+	void StereoBase::getPixelMatchingCostSDSobelBlend(vector<Mat>& t, vector<Mat>& r, const int d, Mat& dest)
+	{
+		SDTruncateBlend_8UC1(t[0], r[0], t[1], r[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
+	}
+
+	static void ADTruncate_8UC1(const Mat& src1, const Mat& src2, const int disparity, const uchar thresh, Mat& dest)
+	{
+		dest.create(src1.size(), CV_8U);
+
+		const __m256i mtruncation = _mm256_set1_epi8(thresh);
+		const int WIDTH = get_simd_floor(src1.cols, 32);
+		if (disparity >= 0)
+		{
+			for (int j = 0; j < src1.rows; j++)
+			{
+				const uchar* s1 = src1.ptr<uchar>(j);
+				const uchar* s2 = src2.ptr<uchar>(j);
+				uchar* d = dest.ptr<uchar>(j);
+
+				for (int i = 0; i < disparity; i++)
+				{
+					d[i] = std::min((uchar)abs(s1[i] - s2[0]), thresh);
+				}
+				for (int i = disparity; i < WIDTH; i += 32)
+				{
+					__m256i a = _mm256_loadu_si256((__m256i*)(s1 + i));
+					__m256i b = _mm256_loadu_si256((__m256i*)(s2 - disparity + i));
+
+					_mm256_storeu_si256((__m256i*)(d + i), _mm256_min_epu8(_mm256_adds_epu8(_mm256_subs_epu8(a, b), _mm256_subs_epu8(b, a)), mtruncation));
+				}
+				for (int i = WIDTH; i < src1.cols; i++)
+				{
+					d[i] = std::min((uchar)abs(s1[i] - s2[i - disparity]), thresh);
+				}
+			}
+		}
+	}
+
+	void StereoBase::getPixelMatchingCostAD(Mat& t, Mat& r, const int d, Mat& dest)
+	{
+		ADTruncate_8UC1(t, r, d, pixelMatchErrorCap, dest);
+	}
+
+	static void ADTruncateBlend_8UC1(const Mat& src1, const Mat& src2, const Mat& src3, const Mat& src4, const int disparity, const uchar thresh, const float alpha, Mat& dest)
+	{
+		dest.create(src1.size(), CV_8U);
+
+		const __m256i mtruncation = _mm256_set1_epi8(thresh);
+		const int WIDTH = get_simd_floor(src1.cols, 32);
+		const int alpha_int = cvRound(255 * alpha);
+		const __m256i ma = _mm256_set1_epi16(alpha_int << 7);
+
+		if (disparity >= 0)
+		{
+			for (int j = 0; j < src1.rows; j++)
+			{
+				const uchar* s1 = src1.ptr<uchar>(j);
+				const uchar* s2 = src2.ptr<uchar>(j);
+				const uchar* s3 = src3.ptr<uchar>(j);
+				const uchar* s4 = src4.ptr<uchar>(j);
+				uchar* d = dest.ptr<uchar>(j);
+
+				for (int i = 0; i < disparity; i++)
+				{
+					d[i] = saturate_cast<uchar>(alpha * std::min((uchar)abs(s1[i] - s2[0]), thresh)
+						+ (1 - alpha) * std::min((uchar)abs(s3[i] - s4[0]), thresh));
+				}
+				for (int i = disparity; i < WIDTH; i += 32)
+				{
+					__m256i a = _mm256_loadu_si256((__m256i*)(s1 + i));
+					__m256i b = _mm256_loadu_si256((__m256i*)(s2 - disparity + i));
+					a = _mm256_min_epu8(_mm256_adds_epu8(_mm256_subs_epu8(a, b), _mm256_subs_epu8(b, a)), mtruncation);
+
+					b = _mm256_loadu_si256((__m256i*)(s3 + i));
+					__m256i c = _mm256_loadu_si256((__m256i*)(s4 - disparity + i));
+					b = _mm256_min_epu8(_mm256_adds_epu8(_mm256_subs_epu8(b, c), _mm256_subs_epu8(c, b)), mtruncation);
+
+					_mm256_storeu_si256((__m256i*)(d + i), _mm256_alphablend_epu8(a, b, ma));
+				}
+				for (int i = WIDTH; i < src1.cols; i++)
+				{
+					d[i] = saturate_cast<uchar>(alpha * std::min((uchar)abs(s1[i] - s2[i - disparity]), thresh)
+						+ (1.f - alpha) * std::min((uchar)abs(s3[i] - s4[i - disparity]), thresh));
+				}
+			}
+		}
+	}
+
+	void StereoBase::getPixelMatchingCostADSobelBlend(vector<Mat>& t, vector<Mat>& r, const int d, Mat& dest)
+	{
+		ADTruncateBlend_8UC1(t[0], r[0], t[1], r[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
+	}
+
+
+	static void BTTruncate_8UC1(const Mat& src1, const Mat& src2, const int disparity, const uchar thresh, Mat& dest)
+	{
+		dest.create(src1.size(), CV_8U);
+		const __m256i mtruncation = _mm256_set1_epi8(thresh);
+		const int WIDTH = get_simd_floor(src1.cols, 32);
+		const int DISPARITY = get_simd_floor(disparity, 32);
+
+		if (disparity >= 0)
+		{
+			for (int j = 0; j < src1.rows; j++)
+			{
+				const uchar* s1 = src1.ptr<uchar>(j);
+				const uchar* s2 = src2.ptr<uchar>(j);
+				uchar* d = dest.ptr<uchar>(j);
+
+				for (int i = 0; i < DISPARITY; i += 32)
+				{
+					__m256i v1 = _mm256_loadu_si256((__m256i*)(s1 + i));
+					__m256i v2 = _mm256_loadu_si256((__m256i*)(s2 + 0));
+					__m256i p2 = _mm256_avg_epu8(v2, _mm256_loadu_si256((__m256i*)(s2 + 1)));
+					__m256i v2x = _mm256_max_epu8(p2, v2);
+					__m256i v2n = _mm256_min_epu8(p2, v2);
+					_mm256_storeu_si256((__m256i*)(d + i), _mm256_min_epu8(_mm256_max_epu8(_mm256_subs_epu8(v1, v2x), _mm256_subs_epu8(v2n, v1)), mtruncation));
+				}
+				for (int i = DISPARITY; i < disparity; i++)
+				{
+					int v1 = s1[i];
+					int v2 = s2[0];
+					int p2 = (s2[1] + v2) >> 1;
+					int v2x = max(v2, p2);
+					int v2n = min(v2, p2);
+					int a = max(0, max(v1 - v2x, v2n - v1));
+					d[i] = min(a, (int)thresh);
+				}
+				for (int i = disparity; i < WIDTH; i += 32)
+				{
+					__m256i v1 = _mm256_loadu_si256((__m256i*)(s1 + i));
+					__m256i v2 = _mm256_loadu_si256((__m256i*)(s2 + i - disparity + 0));
+					__m256i p2 = _mm256_avg_epu8(v2, _mm256_loadu_si256((__m256i*)(s2 + i - disparity + 1)));
+					__m256i m2 = _mm256_avg_epu8(v2, _mm256_loadu_si256((__m256i*)(s2 + i - disparity - 1)));
+					__m256i v2x = _mm256_max_epu8(_mm256_max_epu8(m2, p2), v2);
+					__m256i v2n = _mm256_min_epu8(_mm256_min_epu8(m2, p2), v2);
+					_mm256_storeu_si256((__m256i*)(d + i), _mm256_min_epu8(_mm256_max_epu8(_mm256_subs_epu8(v1, v2x), _mm256_subs_epu8(v2n, v1)), mtruncation));
+				}
+				for (int i = WIDTH; i < src1.cols; i++)
+				{
+					uchar v1 = s1[i];
+					uchar v2 = (s2[i - disparity + 0]);
+					uchar p2 = (s2[i - disparity + 1] + v2) >> 1;
+					uchar m2 = (s2[i - disparity - 1] + v2) >> 1;
+					uchar v2x = max(max(m2, p2), v2);
+					uchar v2n = min(min(m2, p2), v2);
+
+					uchar a = max(0, max(v1 - v2x, v2n - v1));
+					d[i] = min(a, thresh);
+				}
+			}
+		}
+	}
+
+	void StereoBase::getPixelMatchingCostBT(Mat& target, Mat& reference, const int d, Mat& dest)
+	{
+		BTTruncate_8UC1(target, reference, d, pixelMatchErrorCap, dest);
+	}
+
+	static void BTTruncateBlend_8UC1(const Mat& src1, const Mat& src2, const Mat& src3, const Mat& src4, const int disparity, uchar thresh, const float alpha, Mat& dest)
+	{
+		dest.create(src1.size(), CV_8U);
+		const __m256i mtruncation = _mm256_set1_epi8(thresh);
+		const int WIDTH = get_simd_floor(src1.cols, 32);
+		const int DISPARITY = get_simd_floor(disparity, 32);
+		const int alpha_int = cvRound(255 * alpha);
+		const __m256i ma = _mm256_set1_epi16(alpha_int << 7);
+
+		if (disparity >= 0)
+		{
+			for (int j = 0; j < src1.rows; j++)
+			{
+				const uchar* s1 = src1.ptr<uchar>(j);
+				const uchar* s2 = src2.ptr<uchar>(j);
+				const uchar* s3 = src3.ptr<uchar>(j);
+				const uchar* s4 = src4.ptr<uchar>(j);
+				uchar* d = dest.ptr<uchar>(j);
+
+				for (int i = 0; i < DISPARITY; i += 32)
+				{
+					__m256i v1 = _mm256_loadu_si256((__m256i*)(s1 + i));
+					__m256i v2 = _mm256_loadu_si256((__m256i*)(s2));
+					__m256i p2 = _mm256_avg_epu8(v2, _mm256_loadu_si256((__m256i*)(s2 + 1)));
+					__m256i v2x = _mm256_max_epu8(p2, v2);
+					__m256i v2n = _mm256_min_epu8(p2, v2);
+
+					__m256i d1 = _mm256_min_epu8(_mm256_max_epu8(_mm256_subs_epu8(v1, v2x), _mm256_subs_epu8(v2n, v1)), mtruncation);
+
+					v1 = _mm256_loadu_si256((__m256i*)(s3 + i));
+					v2 = _mm256_loadu_si256((__m256i*)(s4));
+					p2 = _mm256_avg_epu8(v2, _mm256_loadu_si256((__m256i*)(s4 + 1)));
+					v2x = _mm256_max_epu8(p2, v2);
+					v2n = _mm256_min_epu8(p2, v2);
+
+					__m256i d2 = _mm256_min_epu8(_mm256_max_epu8(_mm256_subs_epu8(v1, v2x), _mm256_subs_epu8(v2n, v1)), mtruncation);
+
+					_mm256_storeu_si256((__m256i*)(d + i), _mm256_alphablend_epu8(d1, d2, ma));
+				}
+				//for (int i = 0; i < disparity; i++)
+				for (int i = DISPARITY; i < disparity; i++)
+				{
+					uchar v1 = s1[i];
+					uchar v2 = (s2[0]);
+					uchar p2 = (s2[1] + v2) >> 1;
+					uchar v2x = max(p2, v2);
+					uchar v2n = min(p2, v2);
+
+					uchar d1 = std::min((uchar)std::max(0, std::max(v1 - v2x, v2n - v1)), thresh);
+
+					v1 = s3[i];
+					v2 = (s4[0]);
+					p2 = (s4[1] + v2) >> 1;
+					v2x = max(p2, v2);
+					v2n = min(p2, v2);
+					uchar d2 = std::min((uchar)std::max(0, std::max(v1 - v2x, v2n - v1)), thresh);
+					d[i] = saturate_cast<uchar>(alpha * d1 + (1.f - alpha) * d2);
+				}
+				for (int i = disparity; i < WIDTH; i += 32)
+				{
+					__m256i v1 = _mm256_loadu_si256((__m256i*)(s1 + i));
+					__m256i v2 = _mm256_loadu_si256((__m256i*)(s2 + i - disparity + 0));
+					__m256i p2 = _mm256_avg_epu8(v2, _mm256_loadu_si256((__m256i*)(s2 + i - disparity + 1)));
+					__m256i m2 = _mm256_avg_epu8(v2, _mm256_loadu_si256((__m256i*)(s2 + i - disparity - 1)));
+					__m256i v2x = _mm256_max_epu8(_mm256_max_epu8(m2, p2), v2);
+					__m256i v2n = _mm256_min_epu8(_mm256_min_epu8(m2, p2), v2);
+
+					__m256i d1 = _mm256_min_epu8(_mm256_max_epu8(_mm256_subs_epu8(v1, v2x), _mm256_subs_epu8(v2n, v1)), mtruncation);
+
+					v1 = _mm256_loadu_si256((__m256i*)(s3 + i));
+					v2 = _mm256_loadu_si256((__m256i*)(s4 + i - disparity + 0));
+					p2 = _mm256_avg_epu8(v2, _mm256_loadu_si256((__m256i*)(s4 + i - disparity + 1)));
+					m2 = _mm256_avg_epu8(v2, _mm256_loadu_si256((__m256i*)(s4 + i - disparity - 1)));
+					v2x = _mm256_max_epu8(_mm256_max_epu8(m2, p2), v2);
+					v2n = _mm256_min_epu8(_mm256_min_epu8(m2, p2), v2);
+
+					__m256i d2 = _mm256_min_epu8(_mm256_max_epu8(_mm256_subs_epu8(v1, v2x), _mm256_subs_epu8(v2n, v1)), mtruncation);
+
+					_mm256_storeu_si256((__m256i*)(d + i), _mm256_alphablend_epu8(d1, d2, ma));
+				}
+				//for (int i = disparity; i < src1.cols; i++)
+				for (int i = WIDTH; i < src1.cols; i++)
+				{
+					uchar v1 = s1[i];
+					uchar v2 = (s2[i - disparity + 0]);
+					uchar p2 = (s2[i - disparity + 1] + v2) >> 1;
+					uchar m2 = (s2[i - disparity - 1] + v2) >> 1;
+					uchar v2x = max(max(m2, p2), v2);
+					uchar v2n = min(min(m2, p2), v2);
+
+					uchar d1 = std::min((uchar)std::max(0, std::max(v1 - v2x, v2n - v1)), thresh);
+
+					v1 = s3[i];
+					v2 = (s4[i - disparity + 0]);
+					p2 = (s4[i - disparity + 1] + v2) >> 1;
+					m2 = (s4[i - disparity - 1] + v2) >> 1;
+					v2x = max(max(m2, p2), v2);
+					v2n = min(min(m2, p2), v2);
+					uchar d2 = std::min((uchar)std::max(0, std::max(v1 - v2x, v2n - v1)), thresh);
+					d[i] = saturate_cast<uchar>(alpha * d1 + (1.f - alpha) * d2);
+				}
+			}
+		}
+	}
+
+	void StereoBase::getPixelMatchingCostBTSobelBlend(vector<Mat>& target, vector<Mat>& reference, const int d, Mat& dest)
+	{
+		BTTruncateBlend_8UC1(target[0], reference[0], target[1], reference[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
+	}
+
+
+	static void BTFullTruncate_8UC1(const Mat& src1, const Mat& src2, const int disparity, const uchar thresh, Mat& dest)
+	{
+		dest.create(src1.size(), CV_8U);
+
+		const __m256i mtruncation = _mm256_set1_epi8(thresh);
+		const int WIDTH = get_simd_floor(src1.cols, 32);
+		const int DISPARITY = get_simd_floor(disparity, 32);
+
+		if (disparity >= 0)
+		{
+			for (int j = 0; j < src1.rows; j++)
+			{
+				const uchar* s1 = src1.ptr<uchar>(j);
+				const uchar* s2 = src2.ptr<uchar>(j);
+				uchar* d = dest.ptr<uchar>(j);
+
+				for (int i = 0; i < DISPARITY; i += 32)
+				{
+					__m256i v1 = _mm256_loadu_si256((__m256i*)(s1 + i));
+					__m256i p1 = _mm256_avg_epu8(v1, _mm256_loadu_si256((__m256i*)(s1 + i + 1)));
+					__m256i m1 = _mm256_avg_epu8(v1, _mm256_loadu_si256((__m256i*)(s1 + max(i - 1, 0))));
+					__m256i v1x = _mm256_max_epu8(_mm256_max_epu8(m1, p1), v1);
+					__m256i v1n = _mm256_min_epu8(_mm256_min_epu8(m1, p1), v1);
+
+					__m256i v2 = _mm256_loadu_si256((__m256i*)(s2 + 0));
+					__m256i p2 = _mm256_avg_epu8(v2, _mm256_loadu_si256((__m256i*)(s2 + 1)));
+					__m256i v2x = _mm256_max_epu8(p2, v2);
+					__m256i v2n = _mm256_min_epu8(p2, v2);
+
+					__m256i a = _mm256_max_epu8(_mm256_subs_epu8(v1, v2x), _mm256_subs_epu8(v2n, v1));
+					__m256i b = _mm256_max_epu8(_mm256_subs_epu8(v2, v1x), _mm256_subs_epu8(v1n, v2));
+
+					_mm256_storeu_si256((__m256i*)(d + i), _mm256_min_epu8(_mm256_min_epu8(a, b), mtruncation));
+				}
+				//for (int i = 0; i < disparity; i++)
+				for (int i = DISPARITY; i < disparity; i++)
+				{
+					uchar v1 = s1[i];
+					uchar p1 = (s1[i + 1] + v1) >> 1;
+					uchar m1 = (s1[max(i - 1, 0)] + v1) >> 1;
+					uchar v1x = max(max(m1, p1), v1);
+					uchar v1n = min(min(m1, p1), v1);
+
+					uchar v2 = s2[0];
+					uchar p2 = (s2[1] + v2) >> 1;
+					uchar v2x = max(p2, v2);
+					uchar v2n = min(p2, v2);
+
+					uchar a = max(0, max(v1 - v2x, v2n - v1));
+					uchar b = max(0, max(v2 - v1x, v1n - v2));
+
+					d[i] = min(min(a, b), thresh);
+				}
+				for (int i = disparity; i < WIDTH; i += 32)
+				{
+					__m256i v1 = _mm256_loadu_si256((__m256i*)(s1 + i));
+					__m256i p1 = _mm256_avg_epu8(v1, _mm256_loadu_si256((__m256i*)(s1 + i + 1)));
+					__m256i m1 = _mm256_avg_epu8(v1, _mm256_loadu_si256((__m256i*)(s1 + i - 1)));
+					__m256i v1x = _mm256_max_epu8(_mm256_max_epu8(m1, p1), v1);
+					__m256i v1n = _mm256_min_epu8(_mm256_min_epu8(m1, p1), v1);
+
+					__m256i v2 = _mm256_loadu_si256((__m256i*)(s2 + i - disparity + 0));
+					__m256i p2 = _mm256_avg_epu8(v2, _mm256_loadu_si256((__m256i*)(s2 + i - disparity + 1)));
+					__m256i m2 = _mm256_avg_epu8(v2, _mm256_loadu_si256((__m256i*)(s2 + i - disparity - 1)));
+					__m256i v2x = _mm256_max_epu8(_mm256_max_epu8(m2, p2), v2);
+					__m256i v2n = _mm256_min_epu8(_mm256_min_epu8(m2, p2), v2);
+
+					__m256i a = _mm256_max_epu8(_mm256_subs_epu8(v1, v2x), _mm256_subs_epu8(v2n, v1));
+					__m256i b = _mm256_max_epu8(_mm256_subs_epu8(v2, v1x), _mm256_subs_epu8(v1n, v2));
+
+					_mm256_storeu_si256((__m256i*)(d + i), _mm256_min_epu8(_mm256_min_epu8(a, b), mtruncation));
+				}
+				//for (int i = disparity; i < src1.cols; i++)
+				for (int i = WIDTH; i < src1.cols; i++)
+				{
+					uchar v1 = s1[i];
+					uchar p1 = (s1[i + 1] + v1) >> 1;
+					uchar m1 = (s1[i - 1] + v1) >> 1;
+					uchar v1x = max(max(m1, p1), v1);
+					uchar v1n = min(min(m1, p1), v1);
+
+					uchar v2 = (s2[i - disparity + 0]);
+					uchar p2 = (s2[i - disparity + 1] + v2) >> 1;
+					uchar m2 = (s2[i - disparity - 1] + v2) >> 1;
+					uchar v2x = max(max(m2, p2), v2);
+					uchar v2n = min(min(m2, p2), v2);
+
+					uchar a = max(0, max(v1 - v2x, v2n - v1));
+					uchar b = max(0, max(v2 - v1x, v1n - v2));
+
+					d[i] = min(min(a, b), thresh);
+				}
+			}
+		}
+	}
+
+	void StereoBase::getPixelMatchingCostBTFull(Mat& target, Mat& reference, const int d, Mat& dest)
+	{
+		BTFullTruncate_8UC1(target, reference, d, pixelMatchErrorCap, dest);
+	}
+
+	static void BTFullTruncateBlend_8UC1(const Mat& src1, const Mat& src2, const Mat& src3, const Mat& src4, const int disparity, uchar thresh, const float alpha, Mat& dest)
+	{
+		dest.create(src1.size(), CV_8U);
+		const __m256i mtruncation = _mm256_set1_epi8(thresh);
+		const int WIDTH = get_simd_floor(src1.cols, 32);
+		const int DISPARITY = get_simd_floor(disparity, 32);
+		const int alpha_int = cvRound(255 * alpha);
+		const __m256i ma = _mm256_set1_epi16(alpha_int << 7);
+
+		if (disparity >= 0)
+		{
+			for (int j = 0; j < src1.rows; j++)
+			{
+				const uchar* s1 = src1.ptr<uchar>(j);
+				const uchar* s2 = src2.ptr<uchar>(j);
+				const uchar* s3 = src3.ptr<uchar>(j);
+				const uchar* s4 = src4.ptr<uchar>(j);
+				uchar* d = dest.ptr<uchar>(j);
+
+				for (int i = 0; i < DISPARITY; i += 32)
+				{
+					__m256i v1 = _mm256_loadu_si256((__m256i*)(s1 + i + 0));
+					__m256i p1 = _mm256_avg_epu8(v1, _mm256_loadu_si256((__m256i*)(s1 + i + 1)));
+					__m256i m1 = _mm256_avg_epu8(v1, _mm256_loadu_si256((__m256i*)(s1 + max(i - 1, 0))));
+					__m256i v1x = _mm256_max_epu8(_mm256_max_epu8(m1, p1), v1);
+					__m256i v1n = _mm256_min_epu8(_mm256_min_epu8(m1, p1), v1);
+
+					__m256i v2 = _mm256_loadu_si256((__m256i*)(s2 + 0));
+					__m256i p2 = _mm256_avg_epu8(v2, _mm256_loadu_si256((__m256i*)(s2 + 1)));
+					__m256i v2x = _mm256_max_epu8(p2, v2);
+					__m256i v2n = _mm256_min_epu8(p2, v2);
+
+					__m256i a = _mm256_max_epu8(_mm256_subs_epu8(v1, v2x), _mm256_subs_epu8(v2n, v1));
+					__m256i b = _mm256_max_epu8(_mm256_subs_epu8(v2, v1x), _mm256_subs_epu8(v1n, v2));
+					__m256i d1 = _mm256_min_epu8(_mm256_min_epu8(a, b), mtruncation);
+
+					v1 = _mm256_loadu_si256((__m256i*)(s3 + i));
+					p1 = _mm256_avg_epu8(v1, _mm256_loadu_si256((__m256i*)(s3 + i + 1)));
+					m1 = _mm256_avg_epu8(v1, _mm256_loadu_si256((__m256i*)(s3 + i - 1)));
+					v1x = _mm256_max_epu8(_mm256_max_epu8(m1, p1), v1);
+					v1n = _mm256_min_epu8(_mm256_min_epu8(m1, p1), v1);
+
+					v2 = _mm256_loadu_si256((__m256i*)(s4));
+					p2 = _mm256_avg_epu8(v2, _mm256_loadu_si256((__m256i*)(s4 + 1)));
+					v2x = _mm256_max_epu8(p2, v2);
+					v2n = _mm256_min_epu8(p2, v2);
+
+					a = _mm256_max_epu8(_mm256_subs_epu8(v1, v2x), _mm256_subs_epu8(v2n, v1));
+					b = _mm256_max_epu8(_mm256_subs_epu8(v2, v1x), _mm256_subs_epu8(v1n, v2));
+					__m256i d2 = _mm256_min_epu8(_mm256_min_epu8(a, b), mtruncation);
+
+					_mm256_storeu_si256((__m256i*)(d + i), _mm256_alphablend_epu8(d1, d2, ma));
+				}
+				//for (int i = 0; i < disparity; i++)
+				for (int i = DISPARITY; i < disparity; i++)
+				{
+
+					uchar v1 = (s1[i + 0]);
+					uchar p1 = (s1[i + 1] + v1) >> 1;
+					uchar m1 = (s1[max(i - 1, 0)] + v1) >> 1;
+					uchar v1x = max(max(m1, p1), v1);
+					uchar v1n = min(min(m1, p1), v1);
+
+					uchar v2 = (s2[0]);
+					uchar p2 = (s2[1] + v2) >> 1;
+					uchar v2x = max(p2, v2);
+					uchar v2n = min(p2, v2);
+
+					uchar a = max(0, max(v1 - v2x, v2n - v1));
+					uchar b = max(0, max(v2 - v1x, v1n - v2));
+					uchar d1 = std::min((uchar)std::min(a, b), thresh);
+
+					v1 = s3[i];
+					p1 = (s3[i + 1] + v1) >> 1;
+					m1 = (s3[i - 1] + v1) >> 1;
+					v1x = max(max(m1, p1), v1);
+					v1n = min(min(m1, p1), v1);
+
+					v2 = (s4[0]);
+					p2 = (s4[1] + v2) >> 1;
+					v2x = max(p2, v2);
+					v2n = min(p2, v2);
+
+					a = max(0, max(v1 - v2x, v2n - v1));
+					b = max(0, max(v2 - v1x, v1n - v2));
+					uchar d2 = std::min((uchar)std::min(a, b), thresh);
+
+					d[i] = saturate_cast<uchar>(alpha * d1 + (1.f - alpha) * d2);
+				}
+				for (int i = disparity; i < WIDTH; i += 32)
+				{
+					__m256i v1 = _mm256_loadu_si256((__m256i*)(s1 + i + 0));
+					__m256i p1 = _mm256_avg_epu8(v1, _mm256_loadu_si256((__m256i*)(s1 + i + 1)));
+					__m256i m1 = _mm256_avg_epu8(v1, _mm256_loadu_si256((__m256i*)(s1 + i - 1)));
+					__m256i v1x = _mm256_max_epu8(_mm256_max_epu8(m1, p1), v1);
+					__m256i v1n = _mm256_min_epu8(_mm256_min_epu8(m1, p1), v1);
+
+					__m256i v2 = _mm256_loadu_si256((__m256i*)(s2 + i - disparity + 0));
+					__m256i p2 = _mm256_avg_epu8(v2, _mm256_loadu_si256((__m256i*)(s2 + i - disparity + 1)));
+					__m256i m2 = _mm256_avg_epu8(v2, _mm256_loadu_si256((__m256i*)(s2 + i - disparity - 1)));
+					__m256i v2x = _mm256_max_epu8(_mm256_max_epu8(m2, p2), v2);
+					__m256i v2n = _mm256_min_epu8(_mm256_min_epu8(m2, p2), v2);
+
+					__m256i a = _mm256_max_epu8(_mm256_subs_epu8(v1, v2x), _mm256_subs_epu8(v2n, v1));
+					__m256i b = _mm256_max_epu8(_mm256_subs_epu8(v2, v1x), _mm256_subs_epu8(v1n, v2));
+					__m256i d1 = _mm256_min_epu8(_mm256_min_epu8(a, b), mtruncation);
+
+					v1 = _mm256_loadu_si256((__m256i*)(s3 + i));
+					p1 = _mm256_avg_epu8(v1, _mm256_loadu_si256((__m256i*)(s3 + i + 1)));
+					m1 = _mm256_avg_epu8(v1, _mm256_loadu_si256((__m256i*)(s3 + i - 1)));
+					v1x = _mm256_max_epu8(_mm256_max_epu8(m1, p1), v1);
+					v1n = _mm256_min_epu8(_mm256_min_epu8(m1, p1), v1);
+
+					v2 = _mm256_loadu_si256((__m256i*)(s4 + i - disparity + 0));
+					p2 = _mm256_avg_epu8(v2, _mm256_loadu_si256((__m256i*)(s4 + i - disparity + 1)));
+					m2 = _mm256_avg_epu8(v2, _mm256_loadu_si256((__m256i*)(s4 + i - disparity - 1)));
+					v2x = _mm256_max_epu8(_mm256_max_epu8(m2, p2), v2);
+					v2n = _mm256_min_epu8(_mm256_min_epu8(m2, p2), v2);
+
+					a = _mm256_max_epu8(_mm256_subs_epu8(v1, v2x), _mm256_subs_epu8(v2n, v1));
+					b = _mm256_max_epu8(_mm256_subs_epu8(v2, v1x), _mm256_subs_epu8(v1n, v2));
+					__m256i d2 = _mm256_min_epu8(_mm256_min_epu8(a, b), mtruncation);
+
+					_mm256_storeu_si256((__m256i*)(d + i), _mm256_alphablend_epu8(d1, d2, ma));
+				}
+				//for (int i = disparity; i < src1.cols; i++)
+				for (int i = WIDTH; i < src1.cols; i++)
+				{
+					uchar v1 = (s1[i + 0]);
+					uchar p1 = (s1[i + 1] + v1) >> 1;
+					uchar m1 = (s1[i - 1] + v1) >> 1;
+					uchar v1x = max(max(m1, p1), v1);
+					uchar v1n = min(min(m1, p1), v1);
+
+					uchar v2 = (s2[i - disparity + 0]);
+					uchar p2 = (s2[i - disparity + 1] + v2) >> 1;
+					uchar m2 = (s2[i - disparity - 1] + v2) >> 1;
+					uchar v2x = max(max(m2, p2), v2);
+					uchar v2n = min(min(m2, p2), v2);
+
+					uchar a = max(0, max(v1 - v2x, v2n - v1));
+					uchar b = max(0, max(v2 - v1x, v1n - v2));
+					uchar d1 = std::min((uchar)std::min(a, b), thresh);
+
+					v1 = s3[i];
+					p1 = (s3[i + 1] + v1) >> 1;
+					m1 = (s3[i - 1] + v1) >> 1;
+					v1x = max(max(m1, p1), v1);
+					v1n = min(min(m1, p1), v1);
+					v2 = (s4[i - disparity + 0]);
+					p2 = (s4[i - disparity + 1] + v2) >> 1;
+					m2 = (s4[i - disparity - 1] + v2) >> 1;
+					v2x = max(max(m2, p2), v2);
+					v2n = min(min(m2, p2), v2);
+
+					a = max(0, max(v1 - v2x, v2n - v1));
+					b = max(0, max(v2 - v1x, v1n - v2));
+					uchar d2 = std::min((uchar)std::min(a, b), thresh);
+
+					d[i] = saturate_cast<uchar>(alpha * d1 + (1.f - alpha) * d2);
+				}
+			}
+		}
+	}
+
+	void StereoBase::getPixelMatchingCostBTFullSobelBlend(vector<Mat>& target, vector<Mat>& refference, const int d, Mat& dest)
+	{
+		BTFullTruncateBlend_8UC1(target[0], reference[0], target[1], reference[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
+	}
+
+	//simple stereo matching implementaion
+	template<typename T>
+	static void HammingDistance_32SC1(Mat& src1, Mat& src2, const int disparity, Mat& dest)
+	{
+		if (dest.empty())dest.create(src1.size(), CV_8U);
+		const int WIDTH = get_simd_floor(src1.cols, 32);
+		const int h = src1.rows;
+
+		for (int j = 0; j < h; j++)
+		{
+			T* s1 = src1.ptr<T>(j);
+			T* s2 = src2.ptr<T>(j);
+			uchar* d = dest.ptr<uchar>(j);
+			for (int i = 0; i < disparity; i++)
+			{
+				d[i] = _mm_popcnt_u32((s1[i] ^ s2[0]));
+
+			}
+			/* for AVX512
+						for (int i = disparity; i < WIDTH; i += 32)
+						{
+							__m256i ms1 = _mm256_loadu_si256((__m256i*)(s1+i));
+							__m256i ms2 = _mm256_loadu_si256((__m256i*)(s2+i-disparity));
+							__m256i md = _mm256_xor_si256(ms1, ms2);
+							_mm256_storeu_si256((__m256i*)(d+i), _mm256_popcnt_epi8(md));
+							//_mm256_storeu_si256((__m256i*)(d + i), md);
+						}
+						for (int i = WIDTH; i < src1.cols; i++)
+							*/
+			for (int i = disparity; i < src1.cols; i++)
+			{
+				d[i] = _mm_popcnt_u32((s1[i] ^ s2[i - disparity]));
+			}
+		}
+
+	}
+
+	void StereoBase::getPixelMatchingCostCENSUS3x3(Mat& target, Mat& reference, const int d, Mat& dest)
+	{
+		HammingDistance_32SC1<uchar>(target, reference, d, dest);
+	}
+
+	void StereoBase::getPixelMatchingCostCENSUS9x1(Mat& target, Mat& reference, const int d, Mat& dest)
+	{
+		HammingDistance_32SC1<uchar>(target, reference, d, dest);
+	}
+
+	void StereoBase::getPixelMatchingCostCENSUS5x5(Mat& target, Mat& reference, const int d, Mat& dest)
+	{
+		HammingDistance_32SC1<int>(target, reference, d, dest);
+	}
+
+	void StereoBase::getPixelMatchingCostCENSUS7x5(Mat& target, Mat& reference, const int d, Mat& dest)
+	{
+		HammingDistance_32SC1<int>(target, reference, d, dest);
+	}
+
+	void StereoBase::getPixelMatchingCostADAlpha(vector<Mat>& t, vector<Mat>& r, Mat& alpha, const int d, Mat& dest)
+	{
+		;
+	}
 	void StereoBase::getPixelMatchingCostBTAlpha(vector<Mat>& target, vector<Mat>& refference, Mat& alpha, const int d, Mat& dest)
 	{
-		Size size = target[0].size();
-		int type = target[0].type();
-		if (dest.empty())dest.create(size, type);
-		if (bufferGray1.size() != size || bufferGray1.type() != type) bufferGray1.create(size, type);
-		if (bufferGray2.size() != size || bufferGray2.type() != type) bufferGray2.create(size, type);
-		if (bufferGray3.size() != size || bufferGray3.type() != type) bufferGray3.create(size, type);
-		if (bufferGray4.size() != size || bufferGray4.type() != type) bufferGray4.create(size, type);
-		if (bufferGray5.size() != size || bufferGray5.type() != type) bufferGray5.create(size, type);
-
-		shiftImage(refference[0], bufferGray1, d);
-		shiftImage(refference[0], bufferGray2, d + 1);
-		shiftImage(refference[0], bufferGray3, d - 1);
-		halfPixel_8u(bufferGray1, bufferGray2, bufferGray3);
-		//guiAlphaBlend(bufferGray1,bufferGray2);
-		//guiAlphaBlend(bufferGray1,bufferGray3);
-		//addWeighted(bufferGray1,0.5,bufferGray3,0.5,0.0,bufferGray3);
-		cv::max(bufferGray1, bufferGray2, bufferGray4);
-		cv::max(bufferGray4, bufferGray3, bufferGray4);
-		//cv::max(target[0]-bufferGray4,0,dest);
-		dest = target[0] - bufferGray4;
-		//subtract(target[0],bufferGray4,dest);
-		cv::min(bufferGray1, bufferGray2, bufferGray4);
-		cv::min(bufferGray4, bufferGray3, bufferGray4);
-		cv::max(bufferGray4 - target[0], dest, dest);
-
-		shiftImage(refference[1], bufferGray1, d);
-		shiftImage(refference[1], bufferGray2, d + 1);
-		shiftImage(refference[1], bufferGray3, d - 1);
-		halfPixel_8u(bufferGray1, bufferGray2, bufferGray3);
-		//addWeighted(bufferGray1,0.5,bufferGray2,0.5,0.0,bufferGray2);
-		//addWeighted(bufferGray1,0.5,bufferGray3,0.5,0.0,bufferGray3);
-		cv::max(bufferGray1, bufferGray2, bufferGray4);
-		cv::max(bufferGray4, bufferGray3, bufferGray4);
-		//cv::max(target[1]-bufferGray4,0,bufferGray5);
-		bufferGray5 = target[1] - bufferGray4;
-		//subtract(target[1],bufferGray4,bufferGray5);
-		cv::min(bufferGray1, bufferGray2, bufferGray4);
-		cv::min(bufferGray4, bufferGray3, bufferGray4);
-		cv::max(bufferGray4 - target[1], bufferGray5, bufferGray5);
-
-		//add(dest,bufferGray5,dest);
-		//double a = sobelAlpha/100.0;
-		//alphaBlend(dest,bufferGray5,a,dest);
-		min(bufferGray5, pixelMatchErrorCap, bufferGray5);
-
-		//alphaBlendSSE_8u(dest,bufferGray5,alpha,dest);
-		alphaBlend(dest, bufferGray5, alpha, dest);
+		;
 	}
 
 	string StereoBase::getPixelMatchingMethodName(int method)
@@ -1000,10 +1523,26 @@ namespace cp
 		string mes;
 		switch (method)
 		{
-		case Pixel_Matching_SAD:				mes = "Cost_Computation_SAD"; break;
-		case Pixel_Matching_SAD_TextureBlend:	mes = "Cost_Computation_SAD_TextureBlend"; break;
-		case Pixel_Matching_BT:				mes = "Cost_Computation_BT"; break;
-		case Pixel_Matching_BT_TextureBlend:	mes = "Cost_Computation_BTTextureBlend"; break;
+		case Pixel_Matching_SD:					mes = "SD"; break;
+		case Pixel_Matching_SDSobel:			mes = "SDSobel"; break;
+		case Pixel_Matching_SDSobelBlend:		mes = "SDSobelBlend"; break;
+		case Pixel_Matching_AD:					mes = "AD"; break;
+		case Pixel_Matching_ADSobel:			mes = "ADSobel"; break;
+		case Pixel_Matching_ADSobelBlend:		mes = "ADSobelBlend"; break;
+		case Pixel_Matching_BT:					mes = "BT"; break;
+		case Pixel_Matching_BTSobel:			mes = "BTSobel"; break;
+		case Pixel_Matching_BTSobelBlend:		mes = "BTSobelBlend"; break;
+		case Pixel_Matching_BTFull:				mes = "BTFull"; break;
+		case Pixel_Matching_BTFullSobel:		mes = "BTFullSobel"; break;
+		case Pixel_Matching_BTFullSobelBlend:	mes = "BTFullSobelBlend"; break;
+		case Pixel_Matching_CENSUS3x3:			mes = "CENSUS3x3"; break;
+		case Pixel_Matching_CENSUS5x5:			mes = "CENSUS5x5"; break;
+		case Pixel_Matching_CENSUS7x5:			mes = "CENSUS7x5"; break;
+		case Pixel_Matching_CENSUS9x1:			mes = "CENSUS9x1"; break;
+
+
+			//case Pixel_Matching_SAD_TextureBlend:	mes = "Cost_Computation_SAD_TextureBlend"; break;
+			//case Pixel_Matching_BT_TextureBlend:	mes = "Cost_Computation_BTTextureBlend"; break;
 		default:								mes = "This cost computation method is not supported"; break;
 		}
 		return mes;
@@ -1011,30 +1550,82 @@ namespace cp
 
 	void StereoBase::getPixelMatchingCost(const int d, Mat& dest)
 	{
-		if (PixelMatchingMethod == Pixel_Matching_SAD)
+		if (PixelMatchingMethod == Pixel_Matching_SD)
 		{
-			getPixelMatchingCostSAD(target, reference, d, dest);
+			getPixelMatchingCostSD(target[0], reference[0], d, dest);
 		}
-		else if (PixelMatchingMethod == Pixel_Matching_SADSobel)
+		else if (PixelMatchingMethod == Pixel_Matching_SDSobel)
 		{
-			getPixelMatchingCostSADSobel(target, reference, d, dest);
+			getPixelMatchingCostSD(target[1], reference[1], d, dest);
 		}
-		else if (PixelMatchingMethod == Pixel_Matching_SAD_TextureBlend)
+		else if (PixelMatchingMethod == Pixel_Matching_SDSobelBlend)
+		{
+			getPixelMatchingCostSDSobelBlend(target, reference, d, dest);
+		}
+		else if (PixelMatchingMethod == Pixel_Matching_AD)
+		{
+			getPixelMatchingCostAD(target[0], reference[0], d, dest);
+		}
+		else if (PixelMatchingMethod == Pixel_Matching_ADSobel)
+		{
+			getPixelMatchingCostAD(target[1], reference[1], d, dest);
+		}
+		else if (PixelMatchingMethod == Pixel_Matching_ADSobelBlend)
+		{
+			getPixelMatchingCostADSobelBlend(target, reference, d, dest);
+		}
+		else if (PixelMatchingMethod == Pixel_Matching_BT)
+		{
+			getPixelMatchingCostBT(target[0], reference[0], d, dest);
+		}
+		else if (PixelMatchingMethod == Pixel_Matching_BTSobel)
+		{
+			getPixelMatchingCostBT(target[1], reference[1], d, dest);
+		}
+		else if (PixelMatchingMethod == Pixel_Matching_BTSobelBlend)
+		{
+			getPixelMatchingCostBTSobelBlend(target, reference, d, dest);
+		}
+		else if (PixelMatchingMethod == Pixel_Matching_BTFull)
+		{
+			getPixelMatchingCostBTFull(target[0], reference[0], d, dest);
+		}
+		else if (PixelMatchingMethod == Pixel_Matching_BTFullSobel)
+		{
+			getPixelMatchingCostBTFull(target[1], reference[1], d, dest);
+		}
+		else if (PixelMatchingMethod == Pixel_Matching_BTFullSobelBlend)
+		{
+			getPixelMatchingCostBTFullSobelBlend(target, reference, d, dest);
+		}
+		else if (PixelMatchingMethod == Pixel_Matching_CENSUS3x3)
+		{
+			getPixelMatchingCostCENSUS3x3(target[1], reference[1], d, dest);
+		}
+		else if (PixelMatchingMethod == Pixel_Matching_CENSUS9x1)
+		{
+			getPixelMatchingCostCENSUS9x1(target[1], reference[1], d, dest);
+		}
+		else if (PixelMatchingMethod == Pixel_Matching_CENSUS5x5)
+		{
+			getPixelMatchingCostCENSUS5x5(target[1], reference[1], d, dest);
+		}
+		else if (PixelMatchingMethod == Pixel_Matching_CENSUS7x5)
+		{
+			getPixelMatchingCostCENSUS7x5(target[1], reference[1], d, dest);
+		}
+		/*else if (PixelMatchingMethod == Pixel_Matching_SAD_TextureBlend)
 		{
 			Mat alpha;
 			textureAlpha(target[0], alpha, sobelBlendMapParam2, sobelBlendMapParam1, sobelBlendMapParam_Size);
 			getPixelMatchingCostSADAlpha(target, reference, alpha, d, dest);
-		}
-		else if (PixelMatchingMethod == Pixel_Matching_BT)
-		{
-			getPixelMatchingCostBT(target, reference, d, dest);
 		}
 		else if (PixelMatchingMethod == Pixel_Matching_BT_TextureBlend)
 		{
 			Mat alpha;
 			textureAlpha(target[0], alpha, sobelBlendMapParam2, sobelBlendMapParam1, sobelBlendMapParam_Size);
 			getPixelMatchingCostBTAlpha(target, reference, alpha, d, dest);
-		}
+		}*/
 		else
 		{
 			cout << "This pixel matching method is not supported." << endl;
@@ -1049,25 +1640,25 @@ namespace cp
 		string mes;
 		switch (method)
 		{
-		case Aggregation_Box:				mes = "Aggregation_Box"; break;
-		case Aggregation_BoxShiftable:		mes = "Aggregation_BoxShiftable"; break;
-		case Aggregation_Gauss:				mes = "Aggregation_Gauss"; break;
-		case Aggregation_GaussShiftable:	mes = "Aggregation_GaussShiftable"; break;
-		case Aggregation_Guided:			mes = "Aggregation_Guided"; break;
-		case Aggregation_CrossBasedBox:		mes = "Aggregation_CrossBasedBox"; break;
-		case Aggregation_Bilateral:			mes = "Aggregation_Bilateral"; break;
+		case Aggregation_Box:				mes = "Box"; break;
+		case Aggregation_BoxShiftable:		mes = "BoxShiftable"; break;
+		case Aggregation_Gauss:				mes = "Gauss"; break;
+		case Aggregation_GaussShiftable:	mes = "GaussShiftable"; break;
+		case Aggregation_Guided:			mes = "Guided"; break;
+		case Aggregation_CrossBasedBox:		mes = "CrossBasedBox"; break;
+		case Aggregation_Bilateral:			mes = "Bilateral"; break;
 
 		default:							mes = "This cost computation method is not supported"; break;
 		}
 		return mes;
 	}
 
-	void StereoBase::getCostAggregation(Mat& src, Mat& dest, cv::InputArray guide_)
+	void StereoBase::getCostAggregation(Mat& src, Mat& dest, cv::InputArray guideImage)
 	{
-		const float sigma_s_h = aggregationRadiusH / 3.f;
-		const float sigma_s_v = aggregationRadiusV / 3.f;
+		const float sigma_s_h = aggregationSigmaSpace;
+		const float sigma_s_v = aggregationSigmaSpace;
 
-		Mat guide = guide_.getMat();
+		Mat guide = guideImage.getMat();
 		if (aggregationRadiusH != 1)
 		{
 			//GaussianBlur(dsi,DSI[i],Size(SADWindowSize,SADWindowSize),3);
@@ -1093,7 +1684,8 @@ namespace cp
 			}
 			else if (AggregationMethod == Aggregation_Guided)
 			{
-				guidedImageFilter(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps * aggregationGuidedfilterEps);
+				guidedImageFilter(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps * aggregationGuidedfilterEps,GuidedTypes::GUIDED_SEP_VHI_SHARE, BoxTypes::BOX_OPENCV, ParallelTypes::NAIVE);
+				//guidedImageFilter(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps * aggregationGuidedfilterEps, GuidedTypes::GUIDED_SEP_VHI_SHARE, BoxTypes::BOX_OPENCV, ParallelTypes::OMP);
 			}
 			else if (AggregationMethod == Aggregation_CrossBasedBox)
 			{
@@ -1101,27 +1693,8 @@ namespace cp
 			}
 			else if (AggregationMethod == Aggregation_Bilateral)
 			{
-				jointBilateralFilter(src, guide, dest, max(2 * aggregationRadiusH + 1, 2 * aggregationRadiusV + 1), aggregationGuidedfilterEps, sigma_s_h);
-
+				jointBilateralFilter(src, guide, dest, max(2 * aggregationRadiusH + 1, 2 * aggregationRadiusV + 1), aggregationGuidedfilterEps, sigma_s_h, FILTER_RECTANGLE);
 			}
-
-			/*
-			//stack box
-			Mat dest1;
-
-			boxFilter(src, dest, -1, Size(SADWindowSize, 3));
-			boxFilter(src, dest1, -1, Size(SADWindowSize, 1));
-			min(dest, dest1, dest);
-			boxFilter(src, dest1, -1, Size(2 * (SADWindowSize - 1) + 1, 1));
-			min(dest, dest1, dest);
-			boxFilter(src, dest1, -1, Size(1, SADWindowSizeH));
-			min(dest, dest1, dest);
-			boxFilter(src, dest1, -1, Size(3, SADWindowSizeH));
-			min(dest, dest1, dest);
-			*/
-
-			//weightedJointBilateralFilterSP(src,joint,weightMap,dest,Size(SADWindowSize,SADWindowSize),eps*100.0,100.0,1.0,0.0);
-			//jointBilateralFilter(src,dest,SADWindowSize,eps,5.0,joint);
 		}
 		else
 		{
@@ -1218,8 +1791,8 @@ namespace cp
 	void StereoBase::getWTA(vector<Mat>& dsi, Mat& dest, Mat& minimumCostMap)
 	{
 		const int imsize = dest.size().area();
-		const int simdsize = get_simd_ceil(imsize, 32);
-
+		const int simdsize = get_simd_floor(imsize, 32);
+#if 0
 		for (int i = 0; i < numberOfDisparities; i++)
 		{
 			const short d = ((minDisparity + i) << 4);
@@ -1228,14 +1801,6 @@ namespace cp
 			uchar* pDSI = dsi[i].data;
 			uchar* cost = minimumCostMap.data;
 
-			/*for (int j = imsize; j--; pDSI++, cost++, disp++)
-			{
-				if (*pDSI < *cost)
-				{
-					*cost = *pDSI;
-					*disp = d;
-				}
-			}*/
 			const __m256i md = _mm256_set1_epi16(d);
 			for (int j = simdsize; j -= 32; pDSI += 32, cost += 32, disp += 32)
 			{
@@ -1253,54 +1818,111 @@ namespace cp
 				_mm256_store_si256((__m256i*)(disp + 16), _mm256_blendv_epi8(mdisp, md, _mm256_cvtepi8_epi16(_mm256_extractf128_si256(mask, 1))));
 			}
 		}
+#else
+		short* disparityMapPtr = dest.ptr<short>();
+#pragma omp parallel for
+		for (int i = 0; i < simdsize; i += 32)
+		{
+			__m256i mcost = _mm256_set1_epi8(255);
+			__m256i mdisp1 = _mm256_setzero_si256();
+			__m256i mdisp2 = _mm256_setzero_si256();
+			for (int d = 0; d < numberOfDisparities; d++)
+			{
+				const short disp_val = ((minDisparity + d) << 4);
+				uchar* pDSI = dsi[d].data;
+				const __m256i md = _mm256_set1_epi16(disp_val);
+				__m256i mdsi = _mm256_load_si256((__m256i*) (pDSI + i));
+				__m256i  mask = _mm256_cmpgt_epu8(mcost, mdsi);
+				mcost = _mm256_blendv_epi8(mcost, mdsi, mask);
+				mdisp1 = _mm256_blendv_epi8(mdisp1, md, _mm256_cvtepi8_epi16(_mm256_castsi256_si128(mask)));
+				mdisp2 = _mm256_blendv_epi8(mdisp2, md, _mm256_cvtepi8_epi16(_mm256_extractf128_si256(mask, 1)));
+			}
+			uchar* cost = minimumCostMap.data;
+			_mm256_store_si256((__m256i*)(cost + i), mcost);
+			_mm256_store_si256((__m256i*)(disparityMapPtr + i), mdisp1);
+			_mm256_store_si256((__m256i*)(disparityMapPtr + i + 16), mdisp2);
+		}
+		for (int i = simdsize; i < imsize; i++)
+		{
+			uchar mcost = 255;
+			short mind = 0;
+
+			for (int d = 0; d < numberOfDisparities; d++)
+			{
+				const short disp_val = ((minDisparity + d) << 4);
+				uchar* pDSI = dsi[d].data;
+				if (pDSI[i] < mcost)
+				{
+					mcost = pDSI[i];
+					mind = d;
+				}
+			}
+			uchar* cost = minimumCostMap.data;
+			cost[i] = mcost;
+			disparityMapPtr[i] = mind;
+		}
+#endif
 	}
 #pragma endregion
 
 #pragma region post filter
 	//post filter
-	void StereoBase::uniquenessFilter(Mat& costMap, Mat& dest)
+	void StereoBase::uniquenessFilter(Mat& minCostMap, Mat& dest)
 	{
 		if (uniquenessRatio == 0)return;
 		if (!isUniquenessFilter) return;
 
 		const int imsize = dest.size().area();
-		const int simdsize = get_simd_ceil(imsize, 16);
+		const int simdsize = get_simd_floor(imsize, 16);
 
 		const float mul = 1.f + uniquenessRatio / 100.f;
 		const __m256i mmul = _mm256_set1_epi16((short)((mul - 1.f) * pow(2, 15)));
-		for (int i = 0; i < numberOfDisparities; i++)
+
+		uchar* mincostPtr = minCostMap.data;
+		short* destPtr = dest.ptr<short>();
+
+		for (int d = 0; d < numberOfDisparities; d++)
 		{
-			const short d = ((minDisparity + i) << 4);
-			short* disp = dest.ptr<short>(0);
-			uchar* pDSI = DSI[i].data;
-			uchar* cost = costMap.data;
+			const short disparity = ((minDisparity + d) << 4);
+			uchar* DSIPtr = DSI[d].data;
 
+#if 0
 			//naive
-			/*for (int j = imsize; j--; pDSI++, cost++, disp++)
+			for (int i = 0; i < imsize; i++)
 			{
-				int v = ((*cost) * mul);
-				short dd = (*disp);
-				if ((*pDSI) < v && abs(d - dd) > 16)
+				const int v = (mincostPtr[i] * mul);
+				if ((*DSIPtr) < v && abs(disparity - destPtr[i]) > 16)
 				{
-					*disp = 0;//(minDisparity-1)<<4;
+					destPtr[i] = 0;//(minDisparity-1)<<4;
 				}
-			}*/
-
+			}
+#else
 			//simd
-			const __m256i md = _mm256_set1_epi16(d);
+			const __m256i md = _mm256_set1_epi16(disparity);
 			const __m256i m16 = _mm256_set1_epi16(16);
-			for (int j = simdsize; j -= 16; pDSI += 16, cost += 16, disp += 16)
+			for (int i = 0; i < simdsize; i += 16)
 			{
-				__m256i mdsi = _mm256_cvtepu8_epi16(_mm_load_si128((__m128i*)pDSI));
-				__m256i mc = _mm256_cvtepu8_epi16(_mm_load_si128((__m128i*)cost));
+				__m256i mc = _mm256_cvtepu8_epi16(_mm_load_si128((__m128i*)(mincostPtr + i)));
 				__m256i mv = _mm256_add_epi16(mc, _mm256_mulhrs_epi16(mc, mmul));
+				__m256i mdsi = _mm256_cvtepu8_epi16(_mm_load_si128((__m128i*)(DSIPtr + i)));
+				__m256i mdest = _mm256_load_si256((__m256i*)(destPtr + i));
 
 				__m256i mask1 = _mm256_cmpgt_epi16(mv, mdsi);
-				__m256i mdd = _mm256_load_si256((__m256i*)disp);
-				__m256i mask2 = _mm256_cmpgt_epi16(_mm256_abs_epi16(_mm256_sub_epi16(md, mdd)), m16);
+				__m256i mask2 = _mm256_cmpgt_epi16(_mm256_abs_epi16(_mm256_sub_epi16(md, mdest)), m16);
 				mask1 = _mm256_and_si256(mask1, mask2);
-				_mm256_store_si256((__m256i*)disp, _mm256_blendv_epi8(_mm256_load_si256((__m256i*)disp), _mm256_setzero_si256(), mask1));
+
+				_mm256_store_si256((__m256i*)(destPtr + i), _mm256_blendv_epi8(mdest, _mm256_setzero_si256(), mask1));
 			}
+			for (int i = simdsize; i < imsize; i++)
+			{
+				int v = (mincostPtr[i] * mul);
+				if ((*DSIPtr) < v && abs(disparity - destPtr[i]) > 16)
+				{
+					destPtr[i] = 0;//(minDisparity-1)<<4;
+				}
+			}
+
+#endif
 		}
 	}
 
@@ -1505,16 +2127,16 @@ namespace cp
 		dest.setTo(0, mask);
 	}
 
-	void StereoBase::minCostFilter(Mat& costMap, Mat& dest)
+	void StereoBase::minCostFilter(Mat& minCostMap, Mat& dest)
 	{
 		if (isMinCostFilter)
 		{
 			const int imsize = dest.size().area();
-			Mat dest2 = dest.clone();
+			Mat disptemp = dest.clone();
 			const int step = dest.cols;
-			short* disp2 = dest2.ptr<short>(0);
-			short* disp = dest.ptr<short>(0);
-			uchar* cost = costMap.ptr<uchar>(0);
+			short* disptempPtr = disptemp.ptr<short>(0);
+			short* destPtr = dest.ptr<short>(0);
+			uchar* costPtr = minCostMap.ptr<uchar>();
 			//for(int j=0;j<imsize-step;j++)
 			for (int j = 0; j < imsize; j++)
 			{
@@ -1529,21 +2151,21 @@ namespace cp
 				disp[step]=disp2[0];
 				}
 				}*/
-				if (disp[0] != 0 && disp[-1] != 0 && abs(disp[-1] - disp[0]) >= 16)
+				if (destPtr[0] != 0 && destPtr[-1] != 0 && abs(destPtr[-1] - destPtr[0]) >= 16)
 				{
-					if (cost[-1] < cost[0])
+					if (costPtr[-1] < costPtr[0])
 					{
-						disp[0] = disp2[-1];
+						destPtr[0] = disptempPtr[-1];
 					}
 					else
 					{
-						disp[-1] = disp2[0];
+						destPtr[-1] = disptempPtr[0];
 					}
 				}
 
-				disp++;
-				disp2++;
-				cost++;
+				destPtr++;
+				disptempPtr++;
+				costPtr++;
 			}
 		}
 	}
@@ -2054,16 +2676,20 @@ namespace cp
 		cvtColor(leftim, guideImage, COLOR_BGR2GRAY);
 
 		{
+#ifdef TIMER_STEREO_BASE
 			Timer t("pre filter");
+#endif
 			prefilter(leftim, rightim);
 		}
+
 		if (scheduleCostComputationAndAggregation)
 		{
+#ifdef TIMER_STEREO_BASE
 			Timer t("Cost computation & aggregation");
-
+#endif
 			if (AggregationMethod == Aggregation_CrossBasedBox) clf.makeKernel(guideImage, aggregationRadiusH, aggregationGuidedfilterEps, 0);
 
-			//#pragma omp parallel for
+#pragma omp parallel for
 			for (int i = 0; i < numberOfDisparities; i++)
 			{
 				const int d = minDisparity + i;
@@ -2074,8 +2700,10 @@ namespace cp
 		else
 		{
 			{
+#ifdef TIMER_STEREO_BASE
 				Timer t("Cost computation");
-				//#pragma omp parallel for
+#endif
+#pragma omp parallel for
 				for (int i = 0; i < numberOfDisparities; i++)
 				{
 					const int d = minDisparity + i;
@@ -2084,8 +2712,10 @@ namespace cp
 			}
 			if (AggregationMethod == Aggregation_CrossBasedBox)clf.makeKernel(guideImage, aggregationRadiusH, aggregationGuidedfilterEps, 0);
 			{
+#ifdef TIMER_STEREO_BASE
 				Timer t("Cost aggregation");
-				//#pragma omp parallel for
+#endif
+#pragma omp parallel for
 				for (int i = 0; i < numberOfDisparities; i++)
 				{
 					Mat dsi = DSI[i];
@@ -2096,48 +2726,64 @@ namespace cp
 		}
 
 		{
+#ifdef TIMER_STEREO_BASE
 			Timer t("Cost Optimization");
+#endif
 			if (P1 != 0 && P2 != 0)
 				getOptScanline();
 		}
 
-		const int imsize = DSI[0].size().area();
 		{
+#ifdef TIMER_STEREO_BASE
 			Timer t("DisparityComputation");
+#endif
 			getWTA(DSI, destDisparityMap, minCostMap);
 		}
 
 		{
+#ifdef TIMER_STEREO_BASE
 			Timer t("===Post Filterings===");
-
+#endif
 			//medianBlur(dest,dest,3);
 			{
+#ifdef TIMER_STEREO_BASE
 				Timer t("Post: uniqueness");
+#endif
 				uniquenessFilter(minCostMap, destDisparityMap);
 			}
 			//subpix;
 			{
+#ifdef TIMER_STEREO_BASE
 				Timer t("Post: subpix");
+#endif
 				subpixelInterpolation(destDisparityMap, subpixelInterpolationMethod);
 				if (isRangeFilterSubpix) binalyWeightedRangeFilter(destDisparityMap, destDisparityMap, subpixelRangeFilterWindow, subpixelRangeFilterCap);
 			}
 			//R depth map;
 
 			{
+#ifdef TIMER_STEREO_BASE
 				Timer t("Post: LR");
+#endif
 				if (isLRCheck)fastLRCheck(minCostMap, destDisparityMap);
 			}
 			{
+#ifdef TIMER_STEREO_BASE
 				Timer t("Post: mincost");
+#endif
 				minCostFilter(minCostMap, destDisparityMap);
 			}
 			{
+#ifdef TIMER_STEREO_BASE
 				Timer t("Post: filterSpeckles");
+#endif
 				if (isSpeckleFilter)
 					filterSpeckles(destDisparityMap, 0, speckleWindowSize, speckleRange, specklebuffer);
 			}
 		}
+#ifdef TIMER_STEREO_BASE
 		cout << "=====================" << endl;
+#endif
 	}
 
 	void StereoBase::operator()(Mat& leftim, Mat& rightim, Mat& dest)
@@ -2175,14 +2821,15 @@ namespace cp
 	void StereoBase::gui(Mat& leftim, Mat& rightim, Mat& destDisparity, StereoEval& eval)
 	{
 		ConsoleImage ci(Size(640, 580));
-		ci.setFontSize(12);
+		//ci.setFontSize(12);
 		string wname = "";
 		string wname2 = "Disparity Map";
 
 		namedWindow(wname2);
 		moveWindow(wname2, 200, 200);
 		int display_image_depth_alpha = 0; createTrackbar("disp-image: alpha", wname, &display_image_depth_alpha, 100);
-		PixelMatchingMethod = 1;
+		PixelMatchingMethod = Pixel_Matching_BT;
+		//PixelMatchingMethod = Pixel_Matching_CENSUS3x3;
 		createTrackbar("pix match method", wname, &PixelMatchingMethod, Pixel_Matching_Method_Size - 1);
 		//pre filter
 		createTrackbar("pcap", wname, &preFilterCap, 255);
@@ -2199,11 +2846,11 @@ namespace cp
 		createTrackbar("agg method", wname, &AggregationMethod, Aggregation_Method_Size - 1);
 		createTrackbar("agg r width", wname, &aggregationRadiusH, 20);
 		createTrackbar("agg r height", wname, &aggregationRadiusV, 20);
-		int aggeps = 100; createTrackbar("agg guide sigma/eps", wname, &aggeps, 255);
+		int aggeps = 100; createTrackbar("agg guide color sigma/eps", wname, &aggeps, 255);
+		int aggss = 100; createTrackbar("agg guide space sigma", wname, &aggss, 255);
 
 		createTrackbar("P1", wname, &P1, 20);
 		createTrackbar("P2", wname, &P2, 20);
-
 
 		uniquenessRatio = 10;
 		createTrackbar("uniq", wname, &uniquenessRatio, 100);
@@ -2272,6 +2919,9 @@ namespace cp
 		createTrackbar("px", wname, &mpt.x, leftim.cols - 1);
 		createTrackbar("py", wname, &mpt.y, leftim.rows - 1);
 
+		bool isPlotCostFunction = true;
+		bool isPlotSignal = true;
+
 		bool isGrid = false;
 		bool isReCost = false;
 
@@ -2297,10 +2947,11 @@ namespace cp
 		{
 			//init
 			aggregationGuidedfilterEps = aggeps;
+			aggregationSigmaSpace = aggss;
 			ci.clear();
 			destDisparity.setTo(0);
-			ci(getPixelMatchingMethodName(PixelMatchingMethod) + ": (i)");
-			ci(getAggregationMethodName(AggregationMethod) + ": (@)");
+			ci(getPixelMatchingMethodName(PixelMatchingMethod) + ": (i-u)");
+			ci(getAggregationMethodName(AggregationMethod) + ": (@-[)");
 			ci(getSubpixelInterpolationMethodName(subpixelInterpolationMethod) + ":  (p)");
 			ci(getOcclusionMethodName(occlusionMethod) + ": (o)");
 			ci("=======================");
@@ -2318,14 +2969,19 @@ namespace cp
 
 			{
 				Mat base = destDisparity.clone();
-
+#ifdef TIMER_STEREO_BASE
 				Timer t("Post 2");
+#else 
+				Timer t("Post 2", 0, false);
+#endif
 				if (occlusionMethod == 1)
 				{
+#ifdef TIMER_STEREO_BASE
 					Timer t("occ");
+#endif
 					//fillOcclusion(destDisparity, (minDisparity - 1) * 16);
 					fillOcclusion(destDisparity);
-				}
+			}
 				else if (occlusionMethod == 2)
 				{
 					//LRCheckDisparity(destfill, destR, 0, 16, 0, 16);
@@ -2521,7 +3177,7 @@ namespace cp
 					//refineFromCost(dest,dest);
 				}
 				ci("a-post time: %f ms", t.getTime());//additional post processing time
-			}
+		}
 
 			compare(destDisparity, 0, zeromask, cv::CMP_EQ);
 			if (isShowZeroMask)imshow("zero B", zeromask);
@@ -2530,6 +3186,12 @@ namespace cp
 			if (isShowSubpixelDisparityDistribution)
 			{
 				histp.clear();
+				histp.setYLabel("number of pixels");
+				histp.setXLabel("subpixel_16");
+				histp.setKey(0);
+				histp.setGrid(0);
+				histp.setIsDrawMousePosition(false);
+
 				short* d = destDisparity.ptr<short>(0);
 				int hist[16];
 				for (int i = 0; i < 16; i++)hist[i] = 0;
@@ -2544,48 +3206,71 @@ namespace cp
 
 				for (int i = 0; i < 16; i++)
 				{
-					histp.push_back(i - 8, hist[(i + 8) % 16]);
+					histp.push_back(i, hist[(i + 8) % 16]);
 				}
-				histp.recomputeXYRangeMAXMIN();
-				histp.setYOriginZERO();
-				//histp.setXOriginZERO();
 
-				histp.plotData();
-				imshow("subpixel disparity distribution", histp.render);
+				histp.plot("subpixel disparity distribution", false);
 			}
 
 			if (dispColor)cvtDisparityColor(destDisparity, dispOutput, minDisparity, numberOfDisparities - 10, 2, 16);
 			else			cvtDisparityColor(destDisparity, dispOutput, 0, numberOfDisparities, 0);
 
-			if (eval.isInit)
+			//plot cost function
+			if (isPlotCostFunction)
 			{
 				p.clear();
+				p.setYLabel("error");
+				p.setXLabel("disparity");
+				p.setPlotTitle(0, "cost");
+				p.setPlotTitle(1, "answer");
+				p.setPlotTitle(2, "result");
+				p.setGrid(0);
+				p.setIsDrawMousePosition(false);
 				p.setXYRange(0, numberOfDisparities + minDisparity + 1, 0, 64);
 
-				const int dd = (int)(eval.ground_truth.at<uchar>(mpt.y, mpt.x) / eval.amp + 0.5);
-				const int dd2 = (int)((double)destDisparity.at<short>(mpt.y, mpt.x) / (16.0) + 0.5);
-
-				const double ddd = (eval.ground_truth.at<uchar>(mpt.y, mpt.x) / eval.amp);
-				const double ddd2 = ((double)destDisparity.at<short>(mpt.y, mpt.x) / (16.0));
-				for (int i = 0; i < numberOfDisparities; i++)
+				if (eval.isInit)
 				{
-					p.push_back(i + minDisparity, DSI[i].at<uchar>(mpt.y, mpt.x), 0);
+					const int dd = (int)(eval.ground_truth.at<uchar>(mpt.y, mpt.x) / eval.amp + 0.5);
+					const int dd2 = (int)((double)destDisparity.at<short>(mpt.y, mpt.x) / (16.0) + 0.5);
 
-					if (abs(i + minDisparity - dd) <= 3)
-						p.push_back(ddd, 0, 1);
-					else
-						p.push_back(i + minDisparity, 127, 1);
+					const double ddd = (eval.ground_truth.at<uchar>(mpt.y, mpt.x) / eval.amp);
+					const double ddd2 = ((double)destDisparity.at<short>(mpt.y, mpt.x) / (16.0));
+					for (int i = 0; i < numberOfDisparities; i++)
+					{
+						p.push_back(i + minDisparity, DSI[i].at<uchar>(mpt.y, mpt.x), 0);
 
-					if (abs(i + minDisparity - dd2) == 0)
-						p.push_back(ddd2, 0, 2);
-					else
-						p.push_back(i + minDisparity, 64, 2);
+						if (abs(i + minDisparity - dd) <= 1)
+							p.push_back(ddd, 0, 1);
+						else
+							p.push_back(i + minDisparity, 127, 1);
+
+						if (abs(i + minDisparity - dd2) == 0)
+							p.push_back(ddd2, 0, 2);
+						else
+							p.push_back(i + minDisparity, 64, 2);
+					}
+				}
+				else
+				{
+					const int dd2 = (int)((double)destDisparity.at<short>(mpt.y, mpt.x) / (16.0) + 0.5);
+					const double ddd2 = ((double)destDisparity.at<short>(mpt.y, mpt.x) / (16.0));
+					for (int i = 0; i < numberOfDisparities; i++)
+					{
+						p.push_back(i + minDisparity, DSI[i].at<uchar>(mpt.y, mpt.x), 0);
+
+						if (abs(i + minDisparity - dd2) == 0)
+							p.push_back(ddd2, 0, 2);
+						else
+							p.push_back(i + minDisparity, 64, 2);
+					}
 				}
 
-				p.plotData();
-				imshow("cost", p.render);
+				p.plot("cost function", false);
+
 			}
-			if (eval.isInit)
+
+			//plot signal
+			if (isPlotSignal)
 			{
 				signal.clear();
 				const int mindisp = 15;
@@ -2647,25 +3332,24 @@ namespace cp
 					imshow("signal", show);
 				}
 			}
+
+			//compute StereoEval
 			if (eval.isInit)
 			{
-				//Mat mask=Mat::zeros(dd.size(),CV_8U);rectangle(mask,Rect(250,20,200,115),255,CV_FILLED); eval.ground_truth.copyTo(dd,mask);
-				//Mat mask=Mat::zeros(dd.size(),CV_8U);rectangle(mask,Rect(50,20,400,315),255,CV_FILLED); eval.ground_truth.copyTo(dd,mask);
-
 				Mat maskbadpixel = Mat::zeros(destDisparity.size(), CV_8U);
-
-				eval(destDisparity, 0.25, true, 16);
+				bool isPrintEval = false;
+				eval(destDisparity, 0.25, isPrintEval, 16);
 				ci("th0.25:" + eval.message);
-				eval(destDisparity, 0.5, true, 16);
+				eval(destDisparity, 0.5, isPrintEval, 16);
 				ci("th 0.5:" + eval.message);
-				eval(destDisparity, 1, true, 16);
+				eval(destDisparity, 1, isPrintEval, 16);
 				ci("th 1.0:" + eval.message);
 
 				if (maskType != 0)
 				{
-					if (maskPrec == 0)eval(destDisparity, 1, true, 16);
-					if (maskPrec == 1)eval(destDisparity, 0.5, true, 16);
-					if (maskPrec == 2)eval(destDisparity, 0.25, true, 16);
+					if (maskPrec == 0)eval(destDisparity, 1, isPrintEval, 16);
+					if (maskPrec == 1)eval(destDisparity, 0.5, isPrintEval, 16);
+					if (maskPrec == 2)eval(destDisparity, 0.25, isPrintEval, 16);
 
 					if (maskType == 1)
 						eval.nonocc_th.copyTo(maskbadpixel);
@@ -2721,9 +3405,8 @@ namespace cp
 			if (isMedian)ci(CV_RGB(0, 255, 0), "Median (8): true");
 			else ci(CV_RGB(255, 0, 0), "Median (8): false");
 
-			if (isGuided) ci(CV_RGB(0, 255, 0), "Guided (8): true");
-			else 	ci(CV_RGB(255, 0, 0), "Guided (8): false");
-
+			if (isGuided) ci(CV_RGB(0, 255, 0), "Guided (9): true");
+			else 	ci(CV_RGB(255, 0, 0), "Guided (9): false");
 
 
 			if (isShowGT)
@@ -2779,14 +3462,14 @@ namespace cp
 			if (key == '8') isMedian = (isMedian) ? false : true;
 			if (key == '9') isGuided = (isGuided) ? false : true;
 
-
-
 			if (key == 'a')	isReCost = (isReCost) ? false : true;
 
 			if (key == 'g')isGrid = (isGrid) ? false : true;
 			if (key == 'c') guiAlphaBlend(dispOutput, leftim);
 			if (key == 'i') { PixelMatchingMethod++; PixelMatchingMethod = (PixelMatchingMethod > Pixel_Matching_Method_Size - 1) ? 0 : PixelMatchingMethod; }
+			if (key == 'u') { PixelMatchingMethod--; PixelMatchingMethod = (PixelMatchingMethod < 0) ? Pixel_Matching_Method_Size - 2 : PixelMatchingMethod; }
 			if (key == '@') { AggregationMethod++; AggregationMethod = (AggregationMethod > Aggregation_Method_Size - 1) ? 0 : AggregationMethod; }
+			if (key == '[') { AggregationMethod--; AggregationMethod = (AggregationMethod < 0) ? Aggregation_Method_Size - 2 : AggregationMethod; }
 
 			if (key == 'o') { occlusionMethod++; if (occlusionMethod > 4)occlusionMethod = 0; }
 			if (key == 'p') { subpixelInterpolationMethod++; subpixelInterpolationMethod = (subpixelInterpolationMethod > 2) ? 0 : subpixelInterpolationMethod; }
@@ -2802,8 +3485,9 @@ namespace cp
 			if (key == 'y')maskPrec++; maskPrec = maskPrec > 3 ? 0 : maskPrec;
 			if (key == 'u')maskPrec--; maskPrec = maskPrec < 0 ? 2 : maskPrec;
 			*/
-		}
 	}
+}
+
 	//class CostVolumeRefinement
 	//{
 	//public:
@@ -3392,282 +4076,6 @@ namespace cp
 		}
 	}
 #endif
-
-	//simple stereo matching implementaion
-	void calcHammingDistance8u(Mat& src1, Mat& src2, Mat& dest)
-	{
-		if (dest.empty())dest.create(src1.size(), CV_8U);
-		const int w = src1.cols;
-		const int h = src1.rows;
-		int i, j;
-		uchar* s1 = src1.ptr<uchar>(0);
-		uchar* s2 = src2.ptr<uchar>(0);
-		uchar* d = dest.ptr<uchar>(0);
-
-		//		__declspec(align()) uchar* buff = new  uchar[16];
-
-		for (j = 0; j < h; j++)
-		{
-			for (i = 0; i < w; i++)
-			{
-				*d = _mm_popcnt_u32((*s1 ^ *s2));
-				s1++; s2++, d++;
-			}
-			/*for(i=hstep;i--;)
-			{
-			__m128i ms1 = _mm_load_si128((__m128i*)s1);
-			__m128i ms2 = _mm_load_si128((__m128i*)s2);
-			__m128i md = _mm_xor_si128 (ms1, ms2);
-
-			__m128i md2 = _mm_cvtepi8_epi32(md);
-			d[0] = _mm_popcnt_u32(_mm_extract_epi32(md2,0));
-			d[1] = _mm_popcnt_u32(_mm_extract_epi32(md2,1));
-			d[2] = _mm_popcnt_u32(_mm_extract_epi32(md2,2));
-			d[3] = _mm_popcnt_u32(_mm_extract_epi32(md2,3));
-
-			md2 = _mm_srli_si128(md, 4);
-			md2 = _mm_cvtepi8_epi32(md2);
-			d[4] = _mm_popcnt_u32(_mm_extract_epi32(md2,0));
-			d[5] = _mm_popcnt_u32(_mm_extract_epi32(md2,1));
-			d[6] = _mm_popcnt_u32(_mm_extract_epi32(md2,2));
-			d[7] = _mm_popcnt_u32(_mm_extract_epi32(md2,3));
-
-			md2 = _mm_srli_si128(md, 8);
-			md2 = _mm_cvtepi8_epi32(md2);
-			d[8] = _mm_popcnt_u32(_mm_extract_epi32(md2,0));
-			d[9] = _mm_popcnt_u32(_mm_extract_epi32(md2,1));
-			d[10] = _mm_popcnt_u32(_mm_extract_epi32(md2,2));
-			d[11] = _mm_popcnt_u32(_mm_extract_epi32(md2,3));
-
-			md2 = _mm_srli_si128(md, 12);
-			md2 = _mm_cvtepi8_epi32(md2);
-			d[12] = _mm_popcnt_u32(_mm_extract_epi32(md2,0));
-			d[13] = _mm_popcnt_u32(_mm_extract_epi32(md2,1));
-			d[14] = _mm_popcnt_u32(_mm_extract_epi32(md2,2));
-			d[15] = _mm_popcnt_u32(_mm_extract_epi32(md2,3));
-			s1+=16;s2+=16,d+=16;
-			}*/
-			/*for(i=0;i<rad;i++)
-			{
-			*d = _mm_popcnt_u32((unsigned int)(*s1^*s2));
-			s1++;s2++,d++;
-			}*/
-		}
-		//		delete[] buff;
-	}
-
-	void censusTrans8u_3x3(Mat& src, Mat& dest)
-	{
-		if (dest.empty())dest.create(src.size(), CV_8U);
-		const int r = 1;
-		const int r2 = 2 * r;
-		Mat im; copyMakeBorder(src, im, r, r, r, r, cv::BORDER_REPLICATE);
-
-		int i, j;
-		uchar* s = im.ptr<uchar>(r); s += r;
-		uchar* d = dest.ptr<uchar>(0);
-		uchar val; uchar* ss;
-		const int step1 = -r - im.cols;
-		const int step2 = -3 + im.cols;
-		const int w = src.cols;
-		const int h = src.rows;
-		for (j = 0; j < h; j++)
-		{
-			for (i = 0; i < w; i++)
-			{
-				val = 0;//init value
-				ss = s + step1;
-
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-
-				ss += step2;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				ss++;//skip r=0
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				ss += step2;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++;
-
-				*(d++) = val;
-				s++;
-			}
-			s += r2;
-		}
-	}
-	void censusTrans8u_9x1(Mat& src, Mat& dest)
-	{
-		if (dest.empty())dest.create(src.size(), CV_8U);
-		const int w = src.cols;
-		const int h = src.rows;
-
-		const int r = 4;
-		const int r2 = 2 * r;
-		Mat im; copyMakeBorder(src, im, 0, 0, r, r, cv::BORDER_REPLICATE);
-
-		int i, j, n;
-
-		uchar* s = im.ptr<uchar>(0); s += r;
-		uchar* d = dest.ptr<uchar>(0);
-		uchar val;//init value
-		uchar* ss;
-		for (j = 0; j < h; j++)
-		{
-			for (i = 0; i < w; i++)
-			{
-				val = 0;//init value
-				ss = s - r;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				ss++;//skip r=0
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++;
-
-				*d = val;
-				d++;
-				s++;
-			}
-			s += r2;
-		}
-	}
-
-	void shiftImage8u(Mat& src, Mat& dest, const int shift)
-	{
-		if (dest.empty())dest.create(src.size(), CV_8U);
-
-		if (shift >= 0)
-		{
-			const int step = src.cols;
-			uchar* s = src.ptr<uchar>(0);
-			uchar* d = dest.ptr<uchar>(0);
-			int j; j = 0;
-			for (; j < src.rows; j++)
-			{
-				const uchar v = s[0];
-				memset(d, v, shift);
-				memcpy(d + shift, s, step - shift);
-				s += step; d += step;
-			}
-		}
-		else
-		{
-			const int step = src.cols;
-			uchar* s = src.ptr<uchar>(0);
-			uchar* d = dest.ptr<uchar>(0);
-			int j; j = 0;
-			for (; j < src.rows; j++)
-			{
-				const uchar v = s[step - 1];
-				memcpy(d, s + shift, step - shift);
-				memset(d + step - shift, v, shift);
-				s += step; d += step;
-			}
-		}
-	}
-
-	void stereoCensus9x1(Mat& leftim, Mat& rightim, Mat& dest, int minDisparity, int range, int r)
-	{
-		if (dest.empty())dest.create(leftim.size(), CV_8U);
-		Mat lim, rim;
-		if (leftim.channels() == 3)cvtColor(leftim, lim, COLOR_BGR2GRAY);
-		else lim = leftim;
-		if (rightim.channels() == 3)cvtColor(rightim, rim, COLOR_BGR2GRAY);
-		else rim = rightim;
-
-		Mat limCensus, rimCensus;
-
-		censusTrans8u_9x1(lim, limCensus);
-		censusTrans8u_9x1(rim, rimCensus);
-		Mat rwarp;
-		Mat distance;
-
-		vector<Mat> dsv(range);
-		Size size = dest.size();
-		Mat cost = Mat::ones(size, CV_8U) * 255;
-		Mat mask;
-		Mat pcost;
-		for (int i = 0; i < range; i++)
-		{
-			shiftImage8u(rimCensus, rwarp, minDisparity + i);
-			calcHammingDistance8u(limCensus, rwarp, distance);
-			blur(distance, distance, Size(2 * r + 1, 2 * r + 1));
-
-			cost.copyTo(pcost);
-			min(pcost, distance, cost);
-			compare(pcost, cost, mask, cv::CMP_NE);
-			dest.setTo(i + minDisparity, mask);
-		}
-	}
-
-	void stereoCensus3x3(Mat& leftim, Mat& rightim, Mat& dest, int minDisparity, int range, int r)
-	{
-		if (dest.empty())dest.create(leftim.size(), CV_8U);
-		Mat lim, rim;
-		if (leftim.channels() == 3)cvtColor(leftim, lim, COLOR_BGR2GRAY);
-		else lim = leftim;
-		if (rightim.channels() == 3)cvtColor(rightim, rim, COLOR_BGR2GRAY);
-		else rim = rightim;
-
-		Mat limCensus, rimCensus;
-
-
-		censusTrans8u_3x3(lim, limCensus);
-		censusTrans8u_3x3(rim, rimCensus);
-		Mat rwarp;
-		Mat distance;
-
-		vector<Mat> dsi(range);
-
-		Mat cost = Mat::ones(dest.size(), CV_8U) * 255;
-		Mat pcost;
-		Mat mask;
-		for (int i = 0; i < range; i++)
-		{
-			shiftImage8u(rimCensus, rwarp, minDisparity + i);
-			calcHammingDistance8u(limCensus, rwarp, distance);
-			blur(distance, dsi[i], Size(2 * r + 1, 2 * r + 1));
-
-			cost.copyTo(pcost);
-			min(pcost, dsi[i], cost);
-			compare(pcost, cost, mask, cv::CMP_NE);
-			dest.setTo(i + minDisparity, mask);
-		}
-	}
-
-	void stereoSAD(Mat& leftim, Mat& rightim, Mat& dest, int minDisparity, int range, int r)
-	{
-		if (dest.empty())dest.create(leftim.size(), CV_8U);
-		Mat lim, rim;
-		if (leftim.channels() == 3)cvtColor(leftim, lim, COLOR_BGR2GRAY);
-		else lim = leftim;
-		if (rightim.channels() == 3)cvtColor(rightim, rim, COLOR_BGR2GRAY);
-		else rim = rightim;
-
-		Mat rwarp;
-		Mat distance;
-		vector<Mat> dsi(range);
-		Size size = dest.size();
-		Mat cost = Mat::ones(size, VOLUME_TYPE) * 255;
-		Mat mask;
-		Mat pcost;
-		for (int i = 0; i < range; i++)
-		{
-			shiftImage8u(rim, rwarp, minDisparity + i);
-			absdiff(lim, rwarp, distance);
-			blur(distance, dsi[i], Size(2 * r + 1, 2 * r + 1));
-
-			cost.copyTo(pcost);
-			min(pcost, dsi[i], cost);
-			compare(pcost, cost, mask, cv::CMP_NE);
-			dest.setTo(i + minDisparity, mask);
-		}
-	}
 
 	void resizeDown(Mat& src, Mat& dest, int rfact, int method)
 	{

@@ -3,7 +3,7 @@
 #include "guidedFilter.hpp"
 #include "guidedFilter_Merge_Base.h"
 
-class guidedFilter_Merge_nonVec : public cp::GuidedFilterBase
+class guidedImageFilter_Merge_Base : public cp::GuidedFilterBase
 {
 protected:
 	int parallelType;
@@ -21,33 +21,33 @@ protected:
 
 public:
 
-	guidedFilter_Merge_nonVec(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps, int _parallelType, const bool isInit = true);
+	guidedImageFilter_Merge_Base(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps, int _parallelType, const bool isInit = true);
 	virtual void init();
 	virtual void filter();
 	virtual void filterVector();
 };
 
-class guidedFilter_Merge_SSE : public guidedFilter_Merge_nonVec
+class guidedFilter_Merge_SSE : public guidedImageFilter_Merge_Base
 {
 private:
 	void filter_Guide1(cv::Mat& input, cv::Mat& output) override;
 	void filter_Guide3(cv::Mat& input, cv::Mat& output) override;
 public:
 	guidedFilter_Merge_SSE(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps, int _parallelType)
-		: guidedFilter_Merge_nonVec(_src, _guide, _dest, _r, _eps, _parallelType)
+		: guidedImageFilter_Merge_Base(_src, _guide, _dest, _r, _eps, _parallelType)
 	{
 		implementation = cp::GUIDED_MERGE_SSE;
 	}
 };
 
-class guidedFilter_Merge_AVX : public guidedFilter_Merge_nonVec
+class guidedFilter_Merge_AVX : public guidedImageFilter_Merge_Base
 {
 private:
 	void filter_Guide1(cv::Mat& input, cv::Mat& output) override;
 	void filter_Guide3(cv::Mat& input, cv::Mat& output) override;
 public:
 	guidedFilter_Merge_AVX(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps, int _parallelType)
-		: guidedFilter_Merge_nonVec(_src, _guide, _dest, _r, _eps, _parallelType)
+		: guidedImageFilter_Merge_Base(_src, _guide, _dest, _r, _eps, _parallelType)
 	{
 		implementation = cp::GUIDED_MERGE_AVX;
 	}

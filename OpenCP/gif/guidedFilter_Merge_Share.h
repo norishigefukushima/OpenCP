@@ -2,7 +2,7 @@
 
 #include "guidedFilter_Merge.h"
 
-class guidedFilter_Merge_Share_nonVec : public guidedFilter_Merge_nonVec
+class guidedFilter_Merge_Share_Base : public guidedImageFilter_Merge_Base
 {
 protected:
 	cv::Mat mean_I;
@@ -18,8 +18,8 @@ protected:
 	virtual void compute_Var();
 	virtual void compute_Cov();
 public:
-	guidedFilter_Merge_Share_nonVec::guidedFilter_Merge_Share_nonVec(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps, int _parallelType, const bool isInit = true)
-		: guidedFilter_Merge_nonVec(_src, _guide, _dest, _r, _eps, _parallelType, false)
+	guidedFilter_Merge_Share_Base::guidedFilter_Merge_Share_Base(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps, int _parallelType, const bool isInit = true)
+		: guidedImageFilter_Merge_Base(_src, _guide, _dest, _r, _eps, _parallelType, false)
 	{
 		implementation = cp::GUIDED_MERGE_SHARE;
 		if (isInit)init();
@@ -29,7 +29,7 @@ public:
 	void filterVector() override;
 };
 
-class guidedFilter_Merge_Share_SSE : public guidedFilter_Merge_Share_nonVec
+class guidedFilter_Merge_Share_SSE : public guidedFilter_Merge_Share_Base
 {
 protected:
 	void filter_Guide1(cv::Mat& input, cv::Mat& output) override;
@@ -39,13 +39,13 @@ protected:
 	void compute_Cov() override;
 public:
 	guidedFilter_Merge_Share_SSE::guidedFilter_Merge_Share_SSE(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps, int _parallelType)
-		: guidedFilter_Merge_Share_nonVec(_src, _guide, _dest, _r, _eps, _parallelType, true)
+		: guidedFilter_Merge_Share_Base(_src, _guide, _dest, _r, _eps, _parallelType, true)
 	{
 		implementation = cp::GUIDED_MERGE_SHARE_SSE;
 	}
 };
 
-class guidedFilter_Merge_Share_AVX : public guidedFilter_Merge_Share_nonVec
+class guidedFilter_Merge_Share_AVX : public guidedFilter_Merge_Share_Base
 {
 protected:
 	void filter_Guide1(cv::Mat& input, cv::Mat& output) override;
@@ -55,7 +55,7 @@ protected:
 	void compute_Cov() override;
 public:
 	guidedFilter_Merge_Share_AVX::guidedFilter_Merge_Share_AVX(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps, int _parallelType)
-		: guidedFilter_Merge_Share_nonVec(_src, _guide, _dest, _r, _eps, _parallelType, true)
+		: guidedFilter_Merge_Share_Base(_src, _guide, _dest, _r, _eps, _parallelType, true)
 	{
 		implementation = cp::GUIDED_MERGE_SHARE_AVX;
 	}

@@ -7,7 +7,7 @@ Documentation for implementation of [Guided Image Filtering](http://kaiminghe.co
 ```cpp
 void guidedImageFilter(cv::InputArray src, cv::InputArray guide, cv::OutputArray dest, 
 	const int r, const float eps, 
-	const int guidedType = GuidedTypes::GUIDED_SEP_VHI_SHARE, const int boxType = BoxTypes::BOX_OPENCV, const int parallelType = ParallelTypes::OMP);
+	const GuidedTypes guidedType = GuidedTypes::GUIDED_SEP_VHI_SHARE, const BoxTypes boxType = BoxTypes::BOX_OPENCV, const ParallelTypes parallelType = ParallelTypes::OMP);
 ```
 ## Usage
 `src`：入力，`guide`：ガイド画像．srcと同一でも可，`dest`：出力画像  

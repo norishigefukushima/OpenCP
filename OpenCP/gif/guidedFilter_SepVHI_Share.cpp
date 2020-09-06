@@ -25,7 +25,7 @@ void Ip2ab_Guide1Src3_sep_VHIShare_AVX(cv::Mat& I, std::vector<cv::Mat>& p, cons
 	const int d = 2 * r + 1;
 	const int R = get_simd_ceil(r, 8);
 	const int roffset = R - r;//R-r
-	const __m256 mDiv = _mm256_set1_ps(1.f / (d*d));
+	const __m256 mDiv = _mm256_set1_ps(1.f / (d * d));
 
 	Mat temp(Size(width + 2 * R, 8 * omp_get_max_threads()), CV_32FC1);
 
@@ -352,7 +352,7 @@ void Ip2ab_Guide1Src3_sep_VHIShare_AVX_omp(cv::Mat& I, std::vector<cv::Mat>& p, 
 	const int d = 2 * r + 1;
 	const int R = get_simd_ceil(r, 8);
 	const int roffset = R - r;//R-r
-	const __m256 mDiv = _mm256_set1_ps(1.f / (d*d));
+	const __m256 mDiv = _mm256_set1_ps(1.f / (d * d));
 
 	Mat buff(Size(width + 2 * R, 8 * omp_get_max_threads()), CV_32FC1);
 
@@ -692,7 +692,7 @@ void Ip2ab_Guide3Src3_sep_VHIShare_AVX(std::vector<cv::Mat>& I, std::vector<cv::
 	const int d = 2 * r + 1;
 	const int R = get_simd_ceil(r, 8);
 	const int roffset = R - r;//R-r
-	const __m256 mDiv = _mm256_set1_ps(1.f / (d*d));
+	const __m256 mDiv = _mm256_set1_ps(1.f / (d * d));
 
 	Mat temp(Size(width + 2 * R, 21), CV_32FC1);
 
@@ -1545,7 +1545,7 @@ void Ip2ab_Guide3Src3_sep_VHIShare_AVX_omp(std::vector<cv::Mat>& I, std::vector<
 	const int R = get_simd_ceil(r, 8);
 	const int roffset = R - r;//R-r
 	const int d = 2 * r + 1;
-	const __m256 mDiv = _mm256_set1_ps(1.f / (d*d));
+	const __m256 mDiv = _mm256_set1_ps(1.f / (d * d));
 
 	Mat buff(Size(width + 2 * R, 21 * omp_get_max_threads()), CV_32FC1);
 
@@ -2387,7 +2387,7 @@ void ab2q_Guide3Src3_sep_VHIShare_AVX(std::vector<cv::Mat>& a_b, std::vector<Mat
 	const int R = get_simd_ceil(r, 8);
 	const int roffset = R - r;//R-r
 	const int d = 2 * r + 1;
-	__m256 mDiv = _mm256_set1_ps(1.f / (d*d));
+	__m256 mDiv = _mm256_set1_ps(1.f / (d * d));
 
 	Mat temp(Size(width + 2 * R, 12), CV_32FC1);
 
@@ -2840,7 +2840,7 @@ void ab2q_Guide3Src3_sep_VHIShare_AVX_omp(std::vector<cv::Mat>& a_b, std::vector
 	const int R = get_simd_ceil(r, 8);
 	const int roffset = R - r;//R-r
 	const int d = 2 * r + 1;
-	__m256 mDiv = _mm256_set1_ps(1.f / (d*d));
+	__m256 mDiv = _mm256_set1_ps(1.f / (d * d));
 
 	Mat buff(Size(width + 2 * R, 12 * omp_get_max_threads()), CV_32FC1);
 
@@ -3296,7 +3296,7 @@ void ab2q_Guide3Src3_sep_VHIShare_Unroll2_AVX(std::vector<cv::Mat>& a_b, std::ve
 
 	const int R = get_simd_ceil(r, 8);
 	const int roffset = R - r;//R-r
-	__m256 mDiv = _mm256_set1_ps(1.f / ((2 * r + 1)*(2 * r + 1)));
+	__m256 mDiv = _mm256_set1_ps(1.f / ((2 * r + 1) * (2 * r + 1)));
 
 	Mat temp(Size(width + 2 * R, 12), CV_32FC1);
 
@@ -3773,7 +3773,7 @@ void ab2q_Guide3Src3_sep_VHIShare_Unroll2_AVX_omp(std::vector<cv::Mat>& a_b, std
 
 	const int R = get_simd_ceil(r, 8);
 	const int roffset = R - r;//R-r
-	__m256 mDiv = _mm256_set1_ps(1.f / ((2 * r + 1)*(2 * r + 1)));
+	__m256 mDiv = _mm256_set1_ps(1.f / ((2 * r + 1) * (2 * r + 1)));
 
 	Mat buff(Size(width + 2 * R, 12 * omp_get_max_threads()), CV_32FC1);
 
@@ -4246,8 +4246,673 @@ void ab2q_Guide3Src3_sep_VHIShare_Unroll2_AVX_omp(std::vector<cv::Mat>& a_b, std
 	}
 }
 
+#pragma region guide1
+void compute_Var_sep_VHI_Share_AVX(const cv::Mat& I, const int r, float eps, cv::Mat& mean_I, cv::Mat& var)
+{
+	/*Mat corr_I;
+	blur(I, mean_I, Size(2 * r + 1, 2 * r + 1), Point(-1,-1), cv::BORDER_REPLICATE);
+	multiply(I, I, corr_I);
+	blur(corr_I, corr_I, Size(2 * r + 1, 2 * r + 1), Point(-1, -1), cv::BORDER_REPLICATE);
+	fnmadd(mean_I, mean_I, corr_I, var);
+	add(var, eps, var, noArray(), var.depth());//var_I+=eps
+	return;*/
 
-void guidedFilter_SepVHI_Share::filter()
+	const int width = I.cols;
+	const int height = I.rows;
+	cv::Size size = cv::Size(width, height);
+	mean_I.create(size, CV_32F);
+	var.create(size, CV_32F);
+
+	const int d = 2 * r + 1;
+	const int R = get_simd_ceil(r, 8);
+	const int roffset = R - r;//R-r
+	const __m256 mDiv = _mm256_set1_ps(1.f / (d * d));
+
+	Mat temp(Size(width + 2 * R, 2), CV_32FC1);
+
+	for (int i = 0; i < height; i++)
+	{
+		float* tp__I = temp.ptr<float>(0, R);
+		float* tp_II = temp.ptr<float>(1, R);
+
+		if (r <= i && i <= height - 1 - r)
+		{
+			for (int j = 0; j < width; j += 8)
+			{
+				const float* Iptr = I.ptr<float>(i - r, j);
+
+				__m256 mSum_I = _mm256_load_ps(Iptr);
+				__m256 mSum_II = _mm256_mul_ps(mSum_I, mSum_I);
+
+				Iptr += width;
+				for (int k = 1; k < d; k++)
+				{
+					__m256 mi = _mm256_load_ps(Iptr);
+					mSum_I = _mm256_add_ps(mSum_I, mi);
+					mSum_II = _mm256_fmadd_ps(mi, mi, mSum_II);
+					Iptr += width;
+				}
+
+				_mm256_store_ps(tp__I, mSum_I);
+				_mm256_store_ps(tp_II, mSum_II);
+				tp__I += 8;
+				tp_II += 8;
+			}
+
+			copyMakeBorderReplicateForLineBuffers(temp, R);
+
+			float* varptr = var.ptr<float>(i);
+			float* m_Iptr = mean_I.ptr<float>(i);
+
+			tp__I = temp.ptr<float>(0, roffset);
+			tp_II = temp.ptr<float>(1, roffset);
+
+			for (int j = 0; j < width; j += 8)
+			{
+				__m256 mSum_I = _mm256_loadu_ps(tp__I);
+				__m256 mSum_II = _mm256_loadu_ps(tp_II);
+
+				for (int k = 1; k < d; k++)
+				{
+					mSum_I = _mm256_add_ps(mSum_I, _mm256_loadu_ps(tp__I + k));
+					mSum_II = _mm256_add_ps(mSum_II, _mm256_loadu_ps(tp_II + k));
+				}
+
+				const __m256 m_I = _mm256_mul_ps(mSum_I, mDiv);
+				const __m256 mII = _mm256_mul_ps(mSum_II, mDiv);
+
+				const __m256 meps = _mm256_set1_ps(eps);
+				__m256 mvar = _mm256_fnmadd_ps(m_I, m_I, mII);
+				mvar = _mm256_add_ps(mvar, meps);
+
+				_mm256_store_ps(m_Iptr, m_I);
+				m_Iptr += 8;
+
+				_mm256_store_ps(varptr, mvar);
+				varptr += 8;
+
+				tp__I += 8;
+				tp_II += 8;
+			}
+		}
+		else
+		{
+			for (int j = 0; j < width; j += 8)
+			{
+				int v = max(0, min(height - 1, i - r));
+				const float* Iptr = I.ptr<float>(v, j);
+
+				__m256 mSum_I = _mm256_load_ps(Iptr);
+				__m256 mSum_II = _mm256_mul_ps(mSum_I, mSum_I);
+
+				for (int k = 1; k < d; k++)
+				{
+					int v = max(0, min(height - 1, i - r + k));
+					const float* Iptr = I.ptr<float>(v, j);
+
+					const __m256 mb0 = _mm256_load_ps(Iptr);
+					mSum_I = _mm256_add_ps(mSum_I, mb0);
+					mSum_II = _mm256_fmadd_ps(mb0, mb0, mSum_II);
+				}
+
+				_mm256_store_ps(tp__I, mSum_I);
+				_mm256_store_ps(tp_II, mSum_II);
+
+				tp__I += 8;
+				tp_II += 8;
+			}
+
+			copyMakeBorderReplicateForLineBuffers(temp, R);
+
+			float* varptr = var.ptr<float>(i);
+			float* m_Iptr = mean_I.ptr<float>(i);
+
+			tp__I = temp.ptr<float>(0, roffset);
+			tp_II = temp.ptr<float>(1, roffset);
+
+			for (int j = 0; j < width; j += 8)
+			{
+				__m256 mSum_I = _mm256_loadu_ps(tp__I);
+				__m256 mSum_II = _mm256_loadu_ps(tp_II);
+
+				for (int k = 1; k < d; k++)
+				{
+					mSum_I = _mm256_add_ps(mSum_I, _mm256_loadu_ps(tp__I + k));
+					mSum_II = _mm256_add_ps(mSum_II, _mm256_loadu_ps(tp_II + k));
+				}
+
+				const __m256 m_I = _mm256_mul_ps(mSum_I, mDiv);
+				const __m256 mII = _mm256_mul_ps(mSum_II, mDiv);
+
+				__m256 mvar = _mm256_fnmadd_ps(m_I, m_I, mII);
+				mvar = _mm256_add_ps(mvar, _mm256_set1_ps(eps));
+
+				_mm256_store_ps(m_Iptr, m_I);
+				m_Iptr += 8;
+
+				_mm256_store_ps(varptr, mvar);
+				varptr += 8;
+
+				tp__I += 8;
+				tp_II += 8;
+			}
+		}
+	}
+}
+
+void compute_Var_sep_VHI_Share_AVX_omp(const cv::Mat& I, const int r, float eps, cv::Mat& mean_I, cv::Mat& var)
+{
+	/*Mat corr_I;
+	blur(I, mean_I, Size(2 * r + 1, 2 * r + 1), Point(-1,-1), cv::BORDER_REPLICATE);
+	multiply(I, I, corr_I);
+	blur(corr_I, corr_I, Size(2 * r + 1, 2 * r + 1), Point(-1, -1), cv::BORDER_REPLICATE);
+	fnmadd(mean_I, mean_I, corr_I, var);
+	add(var, eps, var, noArray(), var.depth());//var_I+=eps
+	return;*/
+
+	const int width = I.cols;
+	const int height = I.rows;
+	cv::Size size = cv::Size(width, height);
+	mean_I.create(size, CV_32F);
+	var.create(size, CV_32F);
+
+	const int d = 2 * r + 1;
+	const int R = get_simd_ceil(r, 8);
+	const int roffset = R - r;//R-r
+	const __m256 mDiv = _mm256_set1_ps(1.f / (d * d));
+
+	Mat buff(Size(width + 2 * R, 2 * omp_get_max_threads()), CV_32FC1);
+#pragma omp parallel for
+	for (int i = 0; i < height; i++)
+	{
+		Mat temp = buff(Rect(0, 2 * omp_get_thread_num(), width + 2 * R, 2));
+
+		float* tp__I = temp.ptr<float>(0, R);
+		float* tp_II = temp.ptr<float>(1, R);
+
+		if (r <= i && i <= height - 1 - r)
+		{
+			for (int j = 0; j < width; j += 8)
+			{
+				const float* Iptr = I.ptr<float>(i - r, j);
+
+				__m256 mSum_I = _mm256_load_ps(Iptr);
+				__m256 mSum_II = _mm256_mul_ps(mSum_I, mSum_I);
+
+				Iptr += width;
+				for (int k = 1; k < d; k++)
+				{
+					__m256 mi = _mm256_load_ps(Iptr);
+					mSum_I = _mm256_add_ps(mSum_I, mi);
+					mSum_II = _mm256_fmadd_ps(mi, mi, mSum_II);
+					Iptr += width;
+				}
+
+				_mm256_store_ps(tp__I, mSum_I);
+				_mm256_store_ps(tp_II, mSum_II);
+				tp__I += 8;
+				tp_II += 8;
+			}
+
+			copyMakeBorderReplicateForLineBuffers(temp, R);
+
+			float* varptr = var.ptr<float>(i);
+			float* m_Iptr = mean_I.ptr<float>(i);
+
+			tp__I = temp.ptr<float>(0, roffset);
+			tp_II = temp.ptr<float>(1, roffset);
+
+			for (int j = 0; j < width; j += 8)
+			{
+				__m256 mSum_I = _mm256_loadu_ps(tp__I);
+				__m256 mSum_II = _mm256_loadu_ps(tp_II);
+
+				for (int k = 1; k < d; k++)
+				{
+					mSum_I = _mm256_add_ps(mSum_I, _mm256_loadu_ps(tp__I + k));
+					mSum_II = _mm256_add_ps(mSum_II, _mm256_loadu_ps(tp_II + k));
+				}
+
+				const __m256 m_I = _mm256_mul_ps(mSum_I, mDiv);
+				const __m256 mII = _mm256_mul_ps(mSum_II, mDiv);
+
+				const __m256 meps = _mm256_set1_ps(eps);
+				__m256 mvar = _mm256_fnmadd_ps(m_I, m_I, mII);
+				mvar = _mm256_add_ps(mvar, meps);
+
+				_mm256_store_ps(m_Iptr, m_I);
+				m_Iptr += 8;
+
+				_mm256_store_ps(varptr, mvar);
+				varptr += 8;
+
+				tp__I += 8;
+				tp_II += 8;
+			}
+		}
+		else
+		{
+			for (int j = 0; j < width; j += 8)
+			{
+				int v = max(0, min(height - 1, i - r));
+				const float* Iptr = I.ptr<float>(v, j);
+
+				__m256 mSum_I = _mm256_load_ps(Iptr);
+				__m256 mSum_II = _mm256_mul_ps(mSum_I, mSum_I);
+
+				for (int k = 1; k < d; k++)
+				{
+					int v = max(0, min(height - 1, i - r + k));
+					const float* Iptr = I.ptr<float>(v, j);
+
+					const __m256 mb0 = _mm256_load_ps(Iptr);
+					mSum_I = _mm256_add_ps(mSum_I, mb0);
+					mSum_II = _mm256_fmadd_ps(mb0, mb0, mSum_II);
+				}
+
+				_mm256_store_ps(tp__I, mSum_I);
+				_mm256_store_ps(tp_II, mSum_II);
+
+				tp__I += 8;
+				tp_II += 8;
+			}
+
+			copyMakeBorderReplicateForLineBuffers(temp, R);
+
+			float* varptr = var.ptr<float>(i);
+			float* m_Iptr = mean_I.ptr<float>(i);
+
+			tp__I = temp.ptr<float>(0, roffset);
+			tp_II = temp.ptr<float>(1, roffset);
+
+			for (int j = 0; j < width; j += 8)
+			{
+				__m256 mSum_I = _mm256_loadu_ps(tp__I);
+				__m256 mSum_II = _mm256_loadu_ps(tp_II);
+
+				for (int k = 1; k < d; k++)
+				{
+					mSum_I = _mm256_add_ps(mSum_I, _mm256_loadu_ps(tp__I + k));
+					mSum_II = _mm256_add_ps(mSum_II, _mm256_loadu_ps(tp_II + k));
+				}
+
+				const __m256 m_I = _mm256_mul_ps(mSum_I, mDiv);
+				const __m256 mII = _mm256_mul_ps(mSum_II, mDiv);
+
+				__m256 mvar = _mm256_fnmadd_ps(m_I, m_I, mII);
+				mvar = _mm256_add_ps(mvar, _mm256_set1_ps(eps));
+
+				_mm256_store_ps(m_Iptr, m_I);
+				m_Iptr += 8;
+
+				_mm256_store_ps(varptr, mvar);
+				varptr += 8;
+
+				tp__I += 8;
+				tp_II += 8;
+			}
+		}
+	}
+}
+
+void Ip2ab_Guide1_sep_VHI_Share_AVX(cv::Mat& I, cv::Mat& p, cv::Mat& mean_I, cv::Mat& var, const int r, cv::Mat& a, cv::Mat& b)
+{
+	/*Mat mean_p;
+	Mat corr_Ip;
+	Mat cov_Ip;
+	blur(p, mean_p, Size(2*r+1, 2 * r + 1), Point(-1, -1), cv::BORDER_REPLICATE);
+	multiply(I, p, corr_Ip);
+	blur(corr_Ip, corr_Ip, Size(2 * r + 1, 2 * r + 1), Point(-1, -1), cv::BORDER_REPLICATE);
+	fnmadd(mean_I, mean_p, corr_Ip, cov_Ip);
+	divide(cov_Ip, var, a);
+	fnmadd(a, mean_I, mean_p, b);
+	return;*/
+
+	const int width = I.cols;
+	const int height = I.rows;
+	cv::Size size = cv::Size(width, height);
+	a.create(size, CV_32F);
+	b.create(size, CV_32F);
+
+	const int d = 2 * r + 1;
+	const int R = get_simd_ceil(r, 8);
+	const int roffset = R - r;//R-r
+	const __m256 mDiv = _mm256_set1_ps(1.f / (d * d));
+
+	Mat temp(Size(width + 2 * R, 2), CV_32FC1);
+
+	for (int i = 0; i < height; i++)
+	{
+		float* tp__p = temp.ptr<float>(0, R);
+		float* tp_Ip = temp.ptr<float>(1, R);
+
+		if (r <= i && i <= height - 1 - r)
+		{
+			for (int j = 0; j < width; j += 8)
+			{
+				float* Iptr = I.ptr<float>(i - r, j);
+				float* pptr = p.ptr<float>(i - r, j);
+
+				__m256 mSum_p = _mm256_load_ps(pptr);
+				__m256 mSum_Ip = _mm256_mul_ps(_mm256_load_ps(Iptr), mSum_p);
+
+				Iptr += width;
+				pptr += width;
+				for (int k = 1; k < d; k++)
+				{
+					__m256 mi = _mm256_load_ps(Iptr);
+					__m256 mp = _mm256_load_ps(pptr);
+					mSum_p = _mm256_add_ps(mSum_p, mp);
+					mSum_Ip = _mm256_fmadd_ps(mp, mi, mSum_Ip);
+
+					Iptr += width;
+					pptr += width;
+				}
+				_mm256_store_ps(tp__p, mSum_p);
+				_mm256_store_ps(tp_Ip, mSum_Ip);
+
+				tp__p += 8;
+				tp_Ip += 8;
+			}
+
+			copyMakeBorderReplicateForLineBuffers(temp, R);
+
+			float* varptr = var.ptr<float>(i);
+			float* m_Iptr = mean_I.ptr<float>(i);
+			float* bptr = b.ptr<float>(i);
+			float* aptr = a.ptr<float>(i);
+
+			tp__p = temp.ptr<float>(0, roffset);
+			tp_Ip = temp.ptr<float>(1, roffset);
+
+			for (int j = 0; j < width; j += 8)
+			{
+				__m256 mSum_p = _mm256_loadu_ps(tp__p);
+				__m256 mSum_Ip = _mm256_loadu_ps(tp_Ip);
+
+				for (int k = 1; k < d; k++)
+				{
+					mSum_p = _mm256_add_ps(mSum_p, _mm256_loadu_ps(tp__p + k));
+					mSum_Ip = _mm256_add_ps(mSum_Ip, _mm256_loadu_ps(tp_Ip + k));
+				}
+
+				const __m256 m_p = _mm256_mul_ps(mSum_p, mDiv);
+				const __m256 mIp = _mm256_mul_ps(mSum_Ip, mDiv);
+
+				__m256 m_I = _mm256_load_ps(m_Iptr + j);
+				__m256 mvar = _mm256_load_ps(varptr + j);
+				__m256 mcov = _mm256_fnmadd_ps(m_I, m_p, mIp);
+
+				__m256 ma = _mm256_div_ps(mcov, mvar);
+				_mm256_store_ps(aptr, ma);
+				aptr += 8;
+
+				_mm256_store_ps(bptr, _mm256_fnmadd_ps(ma, m_I, m_p));
+				bptr += 8;
+
+				tp__p += 8;
+				tp_Ip += 8;
+			}
+		}
+		else
+		{
+			for (int j = 0; j < width; j += 8)
+			{
+				int v = max(0, min(height - 1, i - r));
+				float* Iptr = I.ptr<float>(v, j);
+				float* pptr = p.ptr<float>(v, j);
+
+				__m256 mSum_p = _mm256_load_ps(pptr);
+				__m256 mSum_Ip = _mm256_mul_ps(_mm256_load_ps(Iptr), mSum_p);
+
+				for (int k = 1; k < d; k++)
+				{
+					int v = max(0, min(height - 1, i - r + k));
+					float* Iptr = I.ptr<float>(v, j);
+					float* pptr = p.ptr<float>(v, j);
+
+					const __m256 mb0 = _mm256_load_ps(Iptr);
+					__m256 mpl = _mm256_load_ps(pptr);
+					mSum_p = _mm256_add_ps(mSum_p, mpl);
+					mSum_Ip = _mm256_fmadd_ps(mpl, mb0, mSum_Ip);
+				}
+
+				_mm256_store_ps(tp__p, mSum_p);
+				_mm256_store_ps(tp_Ip, mSum_Ip);
+
+				tp__p += 8;
+				tp_Ip += 8;
+			}
+
+			copyMakeBorderReplicateForLineBuffers(temp, R);
+
+			float* varptr = var.ptr<float>(i);
+			float* m_Iptr = mean_I.ptr<float>(i);
+			float* bptr = b.ptr<float>(i);
+			float* aptr = a.ptr<float>(i);
+
+			tp__p = temp.ptr<float>(0, roffset);
+			tp_Ip = temp.ptr<float>(1, roffset);
+
+			for (int j = 0; j < width; j += 8)
+			{
+				__m256 mSum_p = _mm256_loadu_ps(tp__p);
+				__m256 mSum_Ip = _mm256_loadu_ps(tp_Ip);
+
+				for (int k = 1; k < d; k++)
+				{
+					mSum_p = _mm256_add_ps(mSum_p, _mm256_loadu_ps(tp__p + k));
+					mSum_Ip = _mm256_add_ps(mSum_Ip, _mm256_loadu_ps(tp_Ip + k));
+				}
+
+				const __m256 m_p = _mm256_mul_ps(mSum_p, mDiv);
+				const __m256 mIp = _mm256_mul_ps(mSum_Ip, mDiv);
+				__m256 m_I = _mm256_load_ps(m_Iptr + j);
+				__m256 mvar = _mm256_load_ps(varptr + j);
+				__m256 mcov = _mm256_fnmadd_ps(m_I, m_p, mIp);
+
+				__m256 ma = _mm256_div_ps(mcov, mvar);
+				_mm256_store_ps(aptr, ma);
+				aptr += 8;
+
+				_mm256_store_ps(bptr, _mm256_fnmadd_ps(ma, m_I, m_p));
+				bptr += 8;
+
+				tp__p += 8;
+				tp_Ip += 8;
+			}
+		}
+	}
+}
+
+void Ip2ab_Guide1_sep_VHI_Share_AVX_omp(cv::Mat& I, cv::Mat& p, cv::Mat& mean_I, cv::Mat& var, const int r, cv::Mat& a, cv::Mat& b)
+{
+	/*Mat mean_p;
+	Mat corr_Ip;
+	Mat cov_Ip;
+	blur(p, mean_p, Size(2*r+1, 2 * r + 1), Point(-1, -1), cv::BORDER_REPLICATE);
+	multiply(I, p, corr_Ip);
+	blur(corr_Ip, corr_Ip, Size(2 * r + 1, 2 * r + 1), Point(-1, -1), cv::BORDER_REPLICATE);
+	fnmadd(mean_I, mean_p, corr_Ip, cov_Ip);
+	divide(cov_Ip, var, a);
+	fnmadd(a, mean_I, mean_p, b);
+	return;*/
+
+	const int width = I.cols;
+	const int height = I.rows;
+	cv::Size size = cv::Size(width, height);
+	a.create(size, CV_32F);
+	b.create(size, CV_32F);
+
+	const int d = 2 * r + 1;
+	const int R = get_simd_ceil(r, 8);
+	const int roffset = R - r;//R-r
+	const __m256 mDiv = _mm256_set1_ps(1.f / (d * d));
+
+	Mat buff(Size(width + 2 * R, 2 * omp_get_max_threads()), CV_32FC1);
+#pragma omp parallel for
+	for (int i = 0; i < height; i++)
+	{
+		Mat temp = buff(Rect(0, 2 * omp_get_thread_num(), width + 2 * R, 2));
+		float* tp__p = temp.ptr<float>(0, R);
+		float* tp_Ip = temp.ptr<float>(1, R);
+
+		if (r <= i && i <= height - 1 - r)
+		{
+			for (int j = 0; j < width; j += 8)
+			{
+				float* Iptr = I.ptr<float>(i - r, j);
+				float* pptr = p.ptr<float>(i - r, j);
+
+				__m256 mSum_p = _mm256_load_ps(pptr);
+				__m256 mSum_Ip = _mm256_mul_ps(_mm256_load_ps(Iptr), mSum_p);
+
+				Iptr += width;
+				pptr += width;
+				for (int k = 1; k < d; k++)
+				{
+					__m256 mi = _mm256_load_ps(Iptr);
+					__m256 mp = _mm256_load_ps(pptr);
+					mSum_p = _mm256_add_ps(mSum_p, mp);
+					mSum_Ip = _mm256_fmadd_ps(mp, mi, mSum_Ip);
+
+					Iptr += width;
+					pptr += width;
+				}
+				_mm256_store_ps(tp__p, mSum_p);
+				_mm256_store_ps(tp_Ip, mSum_Ip);
+
+				tp__p += 8;
+				tp_Ip += 8;
+			}
+
+			copyMakeBorderReplicateForLineBuffers(temp, R);
+
+			float* varptr = var.ptr<float>(i);
+			float* m_Iptr = mean_I.ptr<float>(i);
+			float* bptr = b.ptr<float>(i);
+			float* aptr = a.ptr<float>(i);
+
+			tp__p = temp.ptr<float>(0, roffset);
+			tp_Ip = temp.ptr<float>(1, roffset);
+
+			for (int j = 0; j < width; j += 8)
+			{
+				__m256 mSum_p = _mm256_loadu_ps(tp__p);
+				__m256 mSum_Ip = _mm256_loadu_ps(tp_Ip);
+
+				for (int k = 1; k < d; k++)
+				{
+					mSum_p = _mm256_add_ps(mSum_p, _mm256_loadu_ps(tp__p + k));
+					mSum_Ip = _mm256_add_ps(mSum_Ip, _mm256_loadu_ps(tp_Ip + k));
+				}
+
+				const __m256 m_p = _mm256_mul_ps(mSum_p, mDiv);
+				const __m256 mIp = _mm256_mul_ps(mSum_Ip, mDiv);
+
+				__m256 m_I = _mm256_load_ps(m_Iptr + j);
+				__m256 mvar = _mm256_load_ps(varptr + j);
+				__m256 mcov = _mm256_fnmadd_ps(m_I, m_p, mIp);
+
+				__m256 ma = _mm256_div_ps(mcov, mvar);
+				_mm256_store_ps(aptr, ma);
+				aptr += 8;
+
+				_mm256_store_ps(bptr, _mm256_fnmadd_ps(ma, m_I, m_p));
+				bptr += 8;
+
+				tp__p += 8;
+				tp_Ip += 8;
+			}
+		}
+		else
+		{
+			for (int j = 0; j < width; j += 8)
+			{
+				int v = max(0, min(height - 1, i - r));
+				float* Iptr = I.ptr<float>(v, j);
+				float* pptr = p.ptr<float>(v, j);
+
+				__m256 mSum_p = _mm256_load_ps(pptr);
+				__m256 mSum_Ip = _mm256_mul_ps(_mm256_load_ps(Iptr), mSum_p);
+
+				for (int k = 1; k < d; k++)
+				{
+					int v = max(0, min(height - 1, i - r + k));
+					float* Iptr = I.ptr<float>(v, j);
+					float* pptr = p.ptr<float>(v, j);
+
+					const __m256 mb0 = _mm256_load_ps(Iptr);
+					__m256 mpl = _mm256_load_ps(pptr);
+					mSum_p = _mm256_add_ps(mSum_p, mpl);
+					mSum_Ip = _mm256_fmadd_ps(mpl, mb0, mSum_Ip);
+				}
+
+				_mm256_store_ps(tp__p, mSum_p);
+				_mm256_store_ps(tp_Ip, mSum_Ip);
+
+				tp__p += 8;
+				tp_Ip += 8;
+			}
+
+			copyMakeBorderReplicateForLineBuffers(temp, R);
+
+			float* varptr = var.ptr<float>(i);
+			float* m_Iptr = mean_I.ptr<float>(i);
+			float* bptr = b.ptr<float>(i);
+			float* aptr = a.ptr<float>(i);
+
+			tp__p = temp.ptr<float>(0, roffset);
+			tp_Ip = temp.ptr<float>(1, roffset);
+
+			for (int j = 0; j < width; j += 8)
+			{
+				__m256 mSum_p = _mm256_loadu_ps(tp__p);
+				__m256 mSum_Ip = _mm256_loadu_ps(tp_Ip);
+
+				for (int k = 1; k < d; k++)
+				{
+					mSum_p = _mm256_add_ps(mSum_p, _mm256_loadu_ps(tp__p + k));
+					mSum_Ip = _mm256_add_ps(mSum_Ip, _mm256_loadu_ps(tp_Ip + k));
+				}
+
+				const __m256 m_p = _mm256_mul_ps(mSum_p, mDiv);
+				const __m256 mIp = _mm256_mul_ps(mSum_Ip, mDiv);
+				__m256 m_I = _mm256_load_ps(m_Iptr + j);
+				__m256 mvar = _mm256_load_ps(varptr + j);
+				__m256 mcov = _mm256_fnmadd_ps(m_I, m_p, mIp);
+
+				__m256 ma = _mm256_div_ps(mcov, mvar);
+				_mm256_store_ps(aptr, ma);
+				aptr += 8;
+
+				_mm256_store_ps(bptr, _mm256_fnmadd_ps(ma, m_I, m_p));
+				bptr += 8;
+
+				tp__p += 8;
+				tp_Ip += 8;
+			}
+		}
+	}
+}
+#pragma endregion
+
+void guidedFilter_SepVHI_Share::computeVarCov()
+{
+	if (guide.channels() == 1)
+	{
+		if (parallelType == NAIVE)
+			compute_Var_sep_VHI_Share_AVX(guide, r, eps, mean_I, var);
+		else
+			compute_Var_sep_VHI_Share_AVX_omp(guide, r, eps, mean_I, var);
+	}
+	else
+	{
+		cout << "not implemented guidedFilter_SepVHI_Share::computeVarCov" << endl;
+	}
+}
+
+void guidedFilter_SepVHI_Share::filterGuidePrecomputed()
 {
 	if (src.channels() == 1)
 	{
@@ -4255,12 +4920,12 @@ void guidedFilter_SepVHI_Share::filter()
 		{
 			if (parallelType == NAIVE)
 			{
-				Ip2ab_Guide1_sep_VHI_AVX(guide, src, r, eps, ab_p[0], b_p[0]);
+				Ip2ab_Guide1_sep_VHI_Share_AVX(guide, src, mean_I, var, r, ab_p[0], b_p[0]);
 				ab2q_Guide1_sep_VHI_AVX(ab_p[0], b_p[0], guide, r, dest);
 			}
 			else
 			{
-				Ip2ab_Guide1_sep_VHI_AVX_omp(guide, src, r, eps, ab_p[0], b_p[0]);
+				Ip2ab_Guide1_sep_VHI_Share_AVX_omp(guide, src, mean_I, var, r, ab_p[0], b_p[0]);
 				ab2q_Guide1_sep_VHI_AVX_omp(ab_p[0], b_p[0], guide, r, dest);
 			}
 		}
@@ -4339,6 +5004,12 @@ void guidedFilter_SepVHI_Share::filter()
 	}
 }
 
+void guidedFilter_SepVHI_Share::filter()
+{
+	computeVarCov();
+	filterGuidePrecomputed();
+}
+
 void guidedFilter_SepVHI_Share::filterVector()
 {
 	if (src.channels() == 1)
@@ -4347,7 +5018,7 @@ void guidedFilter_SepVHI_Share::filterVector()
 		{
 			if (parallelType == NAIVE)
 			{
-				Ip2ab_Guide1_sep_VHI_AVX(vguide[0], vsrc[0], r, eps, ab_p[0], b_p[0]);
+				Ip2ab_Guide1_sep_VHI_Share_AVX(vguide[0], vsrc[0], r, eps, ab_p[0], b_p[0]);
 				ab2q_Guide1_sep_VHI_AVX(ab_p[0], b_p[0], vguide[0], r, vdest[0]);
 			}
 			else
@@ -4426,7 +5097,7 @@ void guidedFilter_SepVHI_Share::upsample()
 		{
 			if (parallelType == NAIVE)
 			{
-				Ip2ab_Guide1_sep_VHI_AVX(guide_low, src_low, r, eps, ab_p[0], b_p[0]);
+				Ip2ab_Guide1_sep_VHI_Share_AVX(guide_low, src_low, r, eps, ab_p[0], b_p[0]);
 
 				blurSeparableVHI(ab_p[0], b_p[0], r, mean_a_b, mean_b);
 
