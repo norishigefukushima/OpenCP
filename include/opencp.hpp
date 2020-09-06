@@ -7,6 +7,7 @@
 *************************************************************/
 #include "arithmetic.hpp"
 #include "bitconvert.hpp"
+#include "checkSameImage.hpp"
 #include "concat.hpp"
 #include "consoleImage.hpp"
 #include "copyMakeBorder.hpp"

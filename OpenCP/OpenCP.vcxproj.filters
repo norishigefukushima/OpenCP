@@ -543,6 +543,9 @@
     <ClCompile Include="highguiEx.cpp">
       <Filter>ソース ファイル\core</Filter>
     </ClCompile>
+    <ClCompile Include="checkSameImage.cpp">
+      <Filter>ソース ファイル\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libGaussian\gaussian_conv.h">
@@ -963,6 +966,9 @@
       <Filter>ヘッダー ファイル\headers\imgproc</Filter>
     </ClInclude>
     <ClInclude Include="..\include\highguiex.hpp">
+      <Filter>ヘッダー ファイル\headers\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\checkSameImage.hpp">
       <Filter>ヘッダー ファイル\headers\core</Filter>
     </ClInclude>
   </ItemGroup>

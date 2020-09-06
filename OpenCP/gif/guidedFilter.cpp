@@ -121,7 +121,6 @@ namespace cp
 		bool isUpdate = false;
 		if (guide.empty())
 		{
-			std::cout << "here" << std::endl;
 			cv::Scalar v;
 			if (_guide.type() == CV_32FC1)
 			{
@@ -141,7 +140,6 @@ namespace cp
 			}
 			guide_samples.push_back(v);
 			isUpdate = true;
-
 		}
 		else
 		{

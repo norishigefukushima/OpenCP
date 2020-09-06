@@ -8,6 +8,11 @@ Documents in Japanese for Lab's members
 
 # core
 
+## checkSameImage.hpp
+ランダムサンプルによる同一画像かどうかの確認する関数群
+* [class CheckSameImage](checkSameImage.md "class CheckSameImage")
+* [checkSameImage](checkSameImage.md "checkSameImage")
+
 ## concat.hpp
 画像の連結・分解の関数群
 * [concat/concatMerge](concat_jp.md "#concat/concatMerge")
@@ -18,6 +23,7 @@ Documents in Japanese for Lab's members
 cv::copyMakeBorderを高速化した関数群
 * [copyMakeBorderReplicate](copyMakeBorder_jp.md "copyMakeBorderReplicate")
 * [splitCopyMakeBorder](copyMakeBorder_jp.md "splitCopyMakeBorder")
+
 ## count.hpp
 画像の画素の属性をカウントする関数群
  * [countNaN](count_jp.md "#countNaN")
