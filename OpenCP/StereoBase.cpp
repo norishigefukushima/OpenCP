@@ -414,7 +414,7 @@ namespace cp
 	}
 #pragma endregion
 
-	StereoBase::StereoBase(int blockSize, int minDisp, int disparityRange)
+	StereoBase::StereoBase(int blockSize, int minDisp, int disparityRange):thread_max(omp_get_max_threads())
 	{
 		border = 0;
 		speckleWindowSize = 20;
@@ -428,6 +428,7 @@ namespace cp
 
 		pixelMatchErrorCap = 31;
 		aggregationGuidedfilterEps = 0.1;
+		aggregationSigmaSpace = 255.0;
 		aggregationRadiusH = blockSize;
 		aggregationRadiusV = blockSize;
 		minDisparity = minDisp;
@@ -441,6 +442,12 @@ namespace cp
 
 		P1 = 0;
 		P2 = 0;
+		gif = new GuidedImageFilter[thread_max];
+	}
+
+	StereoBase::~StereoBase()
+	{
+		delete[] gif;
 	}
 
 	void StereoBase::imshowDisparity(string wname, Mat& disp, int option, OutputArray output)
@@ -1684,7 +1691,9 @@ namespace cp
 			}
 			else if (AggregationMethod == Aggregation_Guided)
 			{
-				guidedImageFilter(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps * aggregationGuidedfilterEps,GuidedTypes::GUIDED_SEP_VHI_SHARE, BoxTypes::BOX_OPENCV, ParallelTypes::NAIVE);
+				//guidedImageFilter(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps * aggregationGuidedfilterEps,GuidedTypes::GUIDED_SEP_VHI, BoxTypes::BOX_OPENCV, ParallelTypes::NAIVE);
+				//guidedImageFilter(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps * aggregationGuidedfilterEps, GuidedTypes::GUIDED_SEP_VHI_SHARE, BoxTypes::BOX_OPENCV, ParallelTypes::NAIVE);
+				gif[omp_get_thread_num()].filterGuidePrecomputed(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps * aggregationGuidedfilterEps, GuidedTypes::GUIDED_SEP_VHI_SHARE, ParallelTypes::NAIVE);
 				//guidedImageFilter(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps * aggregationGuidedfilterEps, GuidedTypes::GUIDED_SEP_VHI_SHARE, BoxTypes::BOX_OPENCV, ParallelTypes::OMP);
 			}
 			else if (AggregationMethod == Aggregation_CrossBasedBox)
@@ -2843,6 +2852,7 @@ namespace cp
 		createTrackbar("Soble alpha p 1", wname, &sobelBlendMapParam1, 255);
 		createTrackbar("Soble alpha p 2", wname, &sobelBlendMapParam2, 255);
 
+		AggregationMethod = Aggregation_Guided;
 		createTrackbar("agg method", wname, &AggregationMethod, Aggregation_Method_Size - 1);
 		createTrackbar("agg r width", wname, &aggregationRadiusH, 20);
 		createTrackbar("agg r height", wname, &aggregationRadiusV, 20);

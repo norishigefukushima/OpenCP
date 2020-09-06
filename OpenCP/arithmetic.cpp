@@ -143,6 +143,9 @@ namespace cp
 
 	void fnmsub(Mat& a, Mat& x, Mat& b, Mat& dest)
 	{
+		CV_Assert(!a.empty());
+		CV_Assert(!x.empty());
+		CV_Assert(!b.empty());
 		CV_Assert(a.depth() == CV_32F || a.depth() == CV_64F);
 		dest.create(a.size(), a.type());
 
@@ -193,6 +196,9 @@ namespace cp
 
 	void fnmadd(Mat& a, Mat& x, Mat& b, Mat& dest)
 	{
+		CV_Assert(!a.empty());
+		CV_Assert(!x.empty());
+		CV_Assert(!b.empty());
 		CV_Assert(a.depth() == CV_32F || a.depth() == CV_64F);
 		dest.create(a.size(), a.type());
 
@@ -243,6 +249,9 @@ namespace cp
 
 	void fmsub(Mat& a, Mat& x, Mat& b, Mat& dest)
 	{
+		CV_Assert(!a.empty());
+		CV_Assert(!x.empty());
+		CV_Assert(!b.empty());
 		CV_Assert(a.depth() == CV_32F || a.depth() == CV_64F);
 		dest.create(a.size(), a.type());
 
@@ -293,6 +302,9 @@ namespace cp
 
 	void fmadd(Mat& a, Mat& x, Mat& b, Mat& dest)
 	{
+		CV_Assert(!a.empty());
+		CV_Assert(!x.empty());
+		CV_Assert(!b.empty());
 		CV_Assert(a.depth() == CV_32F || a.depth() == CV_64F);
 		dest.create(a.size(), a.type());
 

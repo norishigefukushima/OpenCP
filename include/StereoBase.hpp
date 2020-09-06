@@ -3,6 +3,7 @@
 #include "common.hpp"
 #include "depthEval.hpp"
 #include "crossBasedLocalFilter.hpp"
+#include "guidedFilter.hpp"
 
 namespace cp
 {
@@ -16,8 +17,13 @@ namespace cp
 		cv::Mat specklebuffer;
 
 		bool scheduleCostComputationAndAggregation = true;
-		CrossBasedLocalFilter clf;
+		CrossBasedLocalFilter clf;//filtering function is thread safe.
+		//cv::Ptr<GuidedImageFilter> gif;
+		GuidedImageFilter* gif;
+		const int thread_max;
 	public:
+		StereoBase(int blockSize, int minDisp, int disparityRange);
+		~StereoBase();
 		int border;
 		int numberOfDisparities;
 		int minDisparity;
@@ -156,7 +162,6 @@ namespace cp
 		void operator()(cv::Mat& leftim, cv::Mat& rightim, cv::Mat& dest);
 		void gui(cv::Mat& leftim, cv::Mat& rightim, cv::Mat& dest, StereoEval& eval);
 
-		StereoBase(int blockSize, int minDisp, int disparityRange);
 		void imshowDisparity(std::string wname, cv::Mat& disp, int option, cv::Mat& output, int mindis, int range);
 		void imshowDisparity(std::string wname, cv::Mat& disp, int option, cv::OutputArray output = cv::noArray());
 	};

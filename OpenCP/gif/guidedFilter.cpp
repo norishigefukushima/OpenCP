@@ -488,7 +488,7 @@ namespace cp
 		{
 			parallel_type = parallel_type_current;
 			gf[0] = getGuidedFilter(srcImage, guideImage, destImage, r, eps, guided_type);
-			gf[0]->filterGuidePrecomputed();
+			gf[0]->filterGuidePrecomputed(srcImage, guideImage, destImage, r, eps);
 		}
 		else
 		{
