@@ -99,7 +99,6 @@
 *************************************************************/
 #include "Calibrator.hpp"
 #include "depth2disparity.hpp"
-#include "depthEval.hpp"
 #include "depthfilter.hpp"
 #include "disparityFitPlane.hpp"
 #include "MultiCameraCalibrator.hpp"
@@ -108,6 +107,7 @@
 #include "stereo_core.hpp"
 #include "StereoBase.hpp"
 #include "StereoBM2.hpp"
+#include "stereoEval.hpp"
 #include "StereoEx.hpp"
 #include "StereoIterativeBM.hpp"
 #include "StereoSGM2.hpp"

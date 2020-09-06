@@ -1,7 +1,7 @@
 #pragma once
 
 #include "common.hpp"
-#include "depthEval.hpp"
+#include "stereoEval.hpp"
 #include "StereoSGM2.hpp"
 
 namespace cp

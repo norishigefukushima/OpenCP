@@ -252,9 +252,6 @@
     <ClCompile Include="diffPixel.cpp">
       <Filter>ソース ファイル\imgproc</Filter>
     </ClCompile>
-    <ClCompile Include="depthEval.cpp">
-      <Filter>ソース ファイル\stereo</Filter>
-    </ClCompile>
     <ClCompile Include="video.cpp">
       <Filter>ソース ファイル\core</Filter>
     </ClCompile>
@@ -546,6 +543,9 @@
     <ClCompile Include="checkSameImage.cpp">
       <Filter>ソース ファイル\core</Filter>
     </ClCompile>
+    <ClCompile Include="stereoEval.cpp">
+      <Filter>ソース ファイル\stereo</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libGaussian\gaussian_conv.h">
@@ -681,9 +681,6 @@
       <Filter>ヘッダー ファイル\headers\stereo</Filter>
     </ClInclude>
     <ClInclude Include="..\include\depth2disparity.hpp">
-      <Filter>ヘッダー ファイル\headers\stereo</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\depthEval.hpp">
       <Filter>ヘッダー ファイル\headers\stereo</Filter>
     </ClInclude>
     <ClInclude Include="..\include\depthfilter.hpp">
@@ -970,6 +967,9 @@
     </ClInclude>
     <ClInclude Include="..\include\checkSameImage.hpp">
       <Filter>ヘッダー ファイル\headers\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\StereoEval.hpp">
+      <Filter>ヘッダー ファイル\headers\stereo</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
