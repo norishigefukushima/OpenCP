@@ -1,6 +1,6 @@
 #include "stereoEval.hpp"
 #include "depthfilter.hpp"
-
+#include "metrics.hpp"
 using namespace std;
 using namespace cv;
 
@@ -52,7 +52,7 @@ namespace cp
 				}
 			}
 		}
-		return ((double)c2 / count)*100.0;
+		return ((double)c2 / count) * 100.0;
 	}
 
 	double calcBadPixel(InputArray groundtruth_, InputArray disparityImage_, InputArray mask_, double th, double amp, OutputArray outErr)
@@ -61,9 +61,9 @@ namespace cp
 		Mat disparityImage = disparityImage_.getMat();
 		Mat mask = mask_.getMat();
 
-		if (outErr.empty() || outErr.size() != groundtruth_.size() || outErr.type()!=CV_8U)
-		outErr.create(groundtruth.rows, groundtruth.cols, groundtruth.type());
-		
+		if (outErr.empty() || outErr.size() != groundtruth_.size() || outErr.type() != CV_8U)
+			outErr.create(groundtruth.rows, groundtruth.cols, groundtruth.type());
+
 		Mat dsterr = outErr.getMat();
 		dsterr.setTo(0);
 
@@ -71,7 +71,7 @@ namespace cp
 		th *= amp;
 		int count = 0;
 		int c2 = 0;
-		
+
 		for (int j = 0; j < disparityImage.rows; j++)
 		{
 			const uchar* src = disparityImage.ptr<uchar>(j);
@@ -93,7 +93,7 @@ namespace cp
 				}
 			}
 		}
-		return ((double)c2 / count)*100.0;
+		return ((double)c2 / count) * 100.0;
 	}
 
 	StereoEval::StereoEval(std::string groundtruthPath, std::string maskNonoccPath, std::string maskAllPath, std::string maskDiscPath, double amp_)
@@ -126,16 +126,23 @@ namespace cp
 		state_disc = Mat::zeros(ground_truth.size(), CV_8UC3);
 	}
 
-	void StereoEval::init(Mat& ground_truth, double amp)
+	void StereoEval::init(Mat& ground_truth, const double amp, const int ignoreLeftBoundary)
 	{
 		CV_Assert(!ground_truth.empty());
 		this->ground_truth = ground_truth;
 		this->amp = amp;
-
+		
 		createDisparityALLMask(ground_truth, mask_all);
 		createDisparityNonOcclusionMask(ground_truth, amp, 1, mask_nonocc);
-		mask_nonocc.copyTo(mask_disc);//under construction
-		
+		mask_disc = Mat::zeros(ground_truth.size(), ground_truth.type());//under construction
+		if (ignoreLeftBoundary > 0)
+		{
+			Mat mask(ground_truth.size(), CV_8U);
+			rectangle(mask, Rect(0, 0, ignoreLeftBoundary, mask.rows), 255, cv::FILLED);
+			mask_all.setTo(0, mask);
+			mask_nonocc.setTo(0, mask);
+			mask_disc.setTo(0, mask);
+		}
 		threshmap_init();
 	}
 
@@ -159,9 +166,9 @@ namespace cp
 		init(ground_truth_, mask_nonocc_, mask_all_, mask_disc_, amp_);
 	}
 
-	StereoEval::StereoEval(Mat& ground_truth_, double amp_)
+	StereoEval::StereoEval(Mat& ground_truth, const double amp, const int ignoreLeftBoundary)
 	{
-		init(ground_truth_,  amp_);
+		init(ground_truth, amp, ignoreLeftBoundary);
 	}
 
 	void  StereoEval::getBadPixel(Mat& src, double threshold, bool isPrint)
@@ -182,18 +189,19 @@ namespace cp
 
 	void  StereoEval::getMSE(Mat& src, bool isPrint)
 	{
-		/*	all_th.setTo(0);
-			nonocc_th.setTo(0);
-			disc_th.setTo(0);
-			allMSE = calcMSE(ground_truth,src,0,0,mask_all);
-			nonoccMSE = calcMSE(ground_truth,src,0,0,mask_nonocc);
-			discMSE = calcMSE(ground_truth,src,0,0,mask_disc);
+		all_th.setTo(0);
+		nonocc_th.setTo(0);
+		disc_th.setTo(0);
 
-			message = format("nonocc,all,disc: %2.2f, %2.2f, %2.2f",nonoccMSE, allMSE, discMSE);
-			if(isPrint)
-			{
-			cout<<message<<endl;
-			}*/
+		allMSE = cp::getMSE(ground_truth, src, mask_all);
+		nonoccMSE = cp::getMSE(ground_truth, src, mask_nonocc);
+		discMSE = cp::getMSE(ground_truth, src, mask_disc);
+
+		message = format("nonocc,all,disc: %2.2f, %2.2f, %2.2f", nonoccMSE, allMSE, discMSE);
+		if (isPrint)
+		{
+			cout << message << endl;
+		}
 	}
 
 	void StereoEval::operator() (InputArray src_, double threshold, bool isPrint, int disparity_scale)
@@ -269,7 +277,7 @@ namespace cp
 			int  improve = countNonZero(mask);
 			cv::compare(sa[0], 255, mask, cv::CMP_EQ);
 			int  remainbad = countNonZero(mask);
-			cout << format("nonocc: deg: -%2.2f, imp: %2.2f, rmn: %2.2f, rmn+deg: %2.2f \n", (100.0*degrade / (double)tcount), (100.0*improve / (double)tcount), (100.0*remainbad / (double)tcount), 100.0*(remainbad + degrade) / (double)tcount);
+			cout << format("nonocc: deg: -%2.2f, imp: %2.2f, rmn: %2.2f, rmn+deg: %2.2f \n", (100.0 * degrade / (double)tcount), (100.0 * improve / (double)tcount), (100.0 * remainbad / (double)tcount), 100.0 * (remainbad + degrade) / (double)tcount);
 		}
 
 		state_all.setTo(Scalar(0, 0, 255), ~pall);
@@ -287,7 +295,7 @@ namespace cp
 			int  improve = countNonZero(mask);
 			cv::compare(sa[0], 255, mask, cv::CMP_EQ);
 			int  remainbad = countNonZero(mask);
-			cout << format("all   : deg: -%2.2f, imp: %2.2f, rmn: %2.2f, rmn+deg: %2.2f \n", (100.0*degrade / (double)tcount), (100.0*improve / (double)tcount), (100.0*remainbad / (double)tcount), 100.0*(remainbad + degrade) / (double)tcount);
+			cout << format("all   : deg: -%2.2f, imp: %2.2f, rmn: %2.2f, rmn+deg: %2.2f \n", (100.0 * degrade / (double)tcount), (100.0 * improve / (double)tcount), (100.0 * remainbad / (double)tcount), 100.0 * (remainbad + degrade) / (double)tcount);
 		}
 
 		state_disc.setTo(Scalar(0, 0, 255), ~pdisc);
@@ -306,7 +314,7 @@ namespace cp
 			int  improve = countNonZero(mask);
 			cv::compare(sa[0], 255, mask, cv::CMP_EQ);
 			int  remainbad = countNonZero(mask);
-			cout << format("disc  : deg: -%2.2f, imp: %2.2f, rmn: %2.2f, rmn+deg: %2.2f \n", (100.0*degrade / (double)tcount), (100.0*improve / (double)tcount), (100.0*remainbad / (double)tcount), 100.0*(remainbad + degrade) / (double)tcount);
+			cout << format("disc  : deg: -%2.2f, imp: %2.2f, rmn: %2.2f, rmn+deg: %2.2f \n", (100.0 * degrade / (double)tcount), (100.0 * improve / (double)tcount), (100.0 * remainbad / (double)tcount), 100.0 * (remainbad + degrade) / (double)tcount);
 		}
 		//
 	}

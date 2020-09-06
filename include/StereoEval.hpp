@@ -35,12 +35,12 @@ namespace cp
 		double discMSE;
 
 		void init(cv::Mat& groundtruth, cv::Mat& maskNonocc, cv::Mat& maskAll, cv::Mat& maskDisc, double amp);
-		void init(cv::Mat& groundtruth, double amp);
+		void init(cv::Mat& groundtruth, const double amp, const int ignoreLeftBoundary);
 
 		StereoEval();
 		StereoEval(std::string groundtruthPath, std::string maskNonoccPath, std::string maskAllPath, std::string maskDiscPath, double amp);
 		StereoEval(cv::Mat& groundtruth, cv::Mat& maskNonocc, cv::Mat& maskAll, cv::Mat& maskDisc, double amp);
-		StereoEval(cv::Mat& groundtruth, double amp);
+		StereoEval(cv::Mat& groundtruth, const double amp, const int ignoreLeftBoundary = 0);
 
 		void getBadPixel(cv::Mat& src, double threshold = 1.0, bool isPrint = true);
 		void getMSE(cv::Mat& src, bool isPrint = true);

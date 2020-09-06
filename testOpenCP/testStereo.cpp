@@ -181,12 +181,14 @@ void testStereoBase()
 	Mat right = imread("img/stereo/Dolls/view5.png");
 	Mat dmap_ = imread("img/stereo/Dolls/disp1.png", 0);
 	//guiShift(left, right, 300);
-	cp::StereoEval eval(dmap_,2);
-	
+	const int disp_min = get_simd_ceil(32, 16);
+	const int disp_max = get_simd_ceil(100, 16);
+	cp::StereoEval eval(dmap_, 2, disp_max);
+
 	//resize(left, left, Size(), 1, 0.25);
 	//resize(right, right, Size(), 1, 0.25);
 
-	StereoBase sbm(5, get_simd_ceil(32, 16), get_simd_ceil(100, 16));
+	StereoBase sbm(5, disp_min, disp_max);
 	sbm.gui(left_, right, disp, eval);
 	//sbm.check(leftg, rightg, disp);
 }
