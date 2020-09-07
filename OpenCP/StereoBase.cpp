@@ -414,7 +414,7 @@ namespace cp
 	}
 #pragma endregion
 
-	StereoBase::StereoBase(int blockSize, int minDisp, int disparityRange):thread_max(omp_get_max_threads())
+	StereoBase::StereoBase(int blockSize, int minDisp, int disparityRange) :thread_max(omp_get_max_threads())
 	{
 		border = 0;
 		speckleWindowSize = 20;
@@ -471,7 +471,7 @@ namespace cp
 	static void prefilterXSobel(Mat& src, Mat& dst, const int preFilterCap)
 	{
 		if (dst.empty() || dst.depth() != CV_8U)dst.create(src.size(), CV_8U);
-		int x, y;
+
 		const int OFS = 256 * 4, TABSZ = OFS * 2 + 256;
 
 		Size size = src.size();
@@ -482,6 +482,10 @@ namespace cp
 		uchar* dptr0 = dst.ptr<uchar>();
 		uchar* dptr1 = dptr0 + dst.step;
 
+		const int WIDTH = get_simd_floor(size.width - 1, 8);
+		const int e = size.width - 1;
+
+		int y;
 		//unrolling y0 and y1
 		for (y = 0; y < size.height - 1; y += 2)
 		{
@@ -489,12 +493,13 @@ namespace cp
 			const uchar* srow2 = y < size.height - 1 ? srow1 + src.step : size.height > 1 ? srow1 - src.step : srow1;
 			const uchar* srow3 = y < size.height - 2 ? srow1 + src.step * 2 : srow1;
 
-			dptr0[0] = dptr0[size.width - 1] = dptr1[0] = dptr1[size.width - 1] = val0;
-			x = 1;
+			dptr0[0] = saturate_cast<uchar>(min(preFilterCap * 2, (srow0[0] - srow0[1]) + 4 * (srow1[0] - srow1[1]) + (srow2[0] - srow2[1]) + preFilterCap));
+			dptr1[0] = saturate_cast<uchar>(min(preFilterCap * 2, (srow1[0] - srow1[1]) + 4 * (srow2[0] - srow2[1]) + (srow3[0] - srow3[1]) + preFilterCap));
 
 			__m128i zero = _mm_setzero_si128(), ftz = _mm_set1_epi16((short)preFilterCap),
 				ftz2 = _mm_set1_epi8(CV_CAST_8U(preFilterCap * 2));
-			for (; x <= size.width - 9; x += 8)
+#if 0
+			for (int x = 1; x < WIDTH; x += 8)
 			{
 				__m128i c0 = _mm_unpacklo_epi8(_mm_loadl_epi64((__m128i*)(srow0 + x - 1)), zero);
 				__m128i c1 = _mm_unpacklo_epi8(_mm_loadl_epi64((__m128i*)(srow1 + x - 1)), zero);
@@ -520,15 +525,30 @@ namespace cp
 				_mm_storel_epi64((__m128i*)(dptr0 + x), v0);
 				_mm_storel_epi64((__m128i*)(dptr1 + x), _mm_unpackhi_epi64(v0, v0));
 			}
+#endif
+			//for (int x = WIDTH; x < size.width - 1; x++)
+			for (int x = 1; x < size.width - 1; x++)
+			{
+				dptr0[x] = saturate_cast<uchar>(min(preFilterCap * 2, (srow0[x - 1] - srow0[x + 1]) + 4 * (srow1[x - 1] - srow1[x + 1]) + (srow2[x - 1] - srow2[x + 1]) + preFilterCap));
+				dptr1[x] = saturate_cast<uchar>(min(preFilterCap * 2, (srow1[x - 1] - srow1[x + 1]) + 4 * (srow2[x - 1] - srow2[x + 1]) + (srow3[x - 1] - srow3[x + 1]) + preFilterCap));
+			}
+			dptr0[e] = saturate_cast<uchar>(min(preFilterCap * 2, (srow0[e] - srow0[e - 1]) + 4 * (srow1[e] - srow1[e - 1]) + (srow2[e] - srow2[e - 1]) + preFilterCap));
+			dptr1[e] = saturate_cast<uchar>(min(preFilterCap * 2, (srow1[e] - srow1[e - 1]) + 4 * (srow2[e] - srow2[e - 1]) + (srow3[e] - srow3[e - 1]) + preFilterCap));
 			srow1 += step;
 			dptr0 += step;
 			dptr1 += step;
 		}
+		srow1 -= src.cols;
 		for (; y < size.height; y++)
 		{
 			uchar* dptr = dst.ptr<uchar>(y);
-			for (x = 0; x < size.width; x++)
-				dptr[x] = val0;
+			const uchar* srow0 = y > 0 ? srow1 - src.step : size.height > 1 ? srow1 + src.step : srow1;
+			dptr[0] = saturate_cast<uchar>(min(preFilterCap * 2, 2*(srow0[0] - srow0[1]) + 3 * (srow1[0] - srow1[1]) + preFilterCap));
+			for (int x = 1; x < size.width - 1; x++)
+			{
+				dptr[x] = saturate_cast<uchar>(min(preFilterCap * 2, 2 * (srow0[x - 1] - srow0[x + 1]) + 3 * (srow1[x - 1] - srow1[x + 1]) + preFilterCap));
+			}
+			dptr[e] = saturate_cast<uchar>(min(preFilterCap * 2, 2 * (srow0[e] - srow0[e-1]) + 3 * (srow1[e] - srow1[e-1]) + preFilterCap));
 		}
 	}
 
@@ -1825,7 +1845,7 @@ namespace cp
 
 				mdisp = _mm256_load_si256((__m256i*) (disp + 16));
 				_mm256_store_si256((__m256i*)(disp + 16), _mm256_blendv_epi8(mdisp, md, _mm256_cvtepi8_epi16(_mm256_extractf128_si256(mask, 1))));
-			}
+}
 		}
 #else
 		short* disparityMapPtr = dest.ptr<short>();
@@ -1871,7 +1891,7 @@ namespace cp
 			disparityMapPtr[i] = mind;
 		}
 #endif
-	}
+		}
 #pragma endregion
 
 #pragma region post filter
@@ -1903,8 +1923,8 @@ namespace cp
 				if ((*DSIPtr) < v && abs(disparity - destPtr[i]) > 16)
 				{
 					destPtr[i] = 0;//(minDisparity-1)<<4;
-				}
-			}
+		}
+	}
 #else
 			//simd
 			const __m256i md = _mm256_set1_epi16(disparity);
@@ -2789,11 +2809,11 @@ namespace cp
 				if (isSpeckleFilter)
 					filterSpeckles(destDisparityMap, 0, speckleWindowSize, speckleRange, specklebuffer);
 			}
-		}
+			}
 #ifdef TIMER_STEREO_BASE
 		cout << "=====================" << endl;
 #endif
-	}
+			}
 
 	void StereoBase::operator()(Mat& leftim, Mat& rightim, Mat& dest)
 	{
@@ -2837,7 +2857,7 @@ namespace cp
 		namedWindow(wname2);
 		moveWindow(wname2, 200, 200);
 		int display_image_depth_alpha = 0; createTrackbar("disp-image: alpha", wname, &display_image_depth_alpha, 100);
-		PixelMatchingMethod = Pixel_Matching_BT;
+		PixelMatchingMethod = Pixel_Matching_ADSobelBlend;
 		//PixelMatchingMethod = Pixel_Matching_CENSUS3x3;
 		createTrackbar("pix match method", wname, &PixelMatchingMethod, Pixel_Matching_Method_Size - 1);
 		//pre filter
@@ -2991,7 +3011,7 @@ namespace cp
 #endif
 					//fillOcclusion(destDisparity, (minDisparity - 1) * 16);
 					fillOcclusion(destDisparity);
-			}
+				}
 				else if (occlusionMethod == 2)
 				{
 					//LRCheckDisparity(destfill, destR, 0, 16, 0, 16);
@@ -3496,7 +3516,7 @@ namespace cp
 			if (key == 'u')maskPrec--; maskPrec = maskPrec < 0 ? 2 : maskPrec;
 			*/
 	}
-}
+			}
 
 	//class CostVolumeRefinement
 	//{
@@ -4083,8 +4103,8 @@ namespace cp
 			imshow("console", ci.image);
 			key = waitKey(1);
 
+			}
 		}
-	}
 #endif
 
 	void resizeDown(Mat& src, Mat& dest, int rfact, int method)
@@ -4108,4 +4128,4 @@ namespace cp
 			a.copyTo(dest);
 		}
 	}
-}
+		}
