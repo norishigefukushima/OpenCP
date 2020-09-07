@@ -79,6 +79,7 @@ namespace cp
 		void getPixelMatchingCostCENSUS5x5(cv::Mat& target, cv::Mat& refference, const int d, cv::Mat& dest);
 		void getPixelMatchingCostCENSUS7x5(cv::Mat& target, cv::Mat& refference, const int d, cv::Mat& dest);
 		void getPixelMatchingCostCENSUS9x1(cv::Mat& target, cv::Mat& refference, const int d, cv::Mat& dest);
+		void addCostIterativeFeedback(cv::Mat& cost, const int current_disparity, const cv::Mat& disparity, const int functionType, const int clip);
 		//under debug
 		void textureAlpha(cv::Mat& src, cv::Mat& dest, const int th1, const int th2, const int r);
 		void getPixelMatchingCostADAlpha(std::vector<cv::Mat>& target, std::vector<cv::Mat>& refference, cv::Mat& alpha, const int d, cv::Mat& dest);
@@ -158,7 +159,7 @@ namespace cp
 
 
 		//body
-		void matching(cv::Mat& leftim, cv::Mat& rightim, cv::Mat& dest);
+		void matching(cv::Mat& leftim, cv::Mat& rightim, cv::Mat& dest, const bool isFeedback=false);
 		void operator()(cv::Mat& leftim, cv::Mat& rightim, cv::Mat& dest);
 		void gui(cv::Mat& leftim, cv::Mat& rightim, cv::Mat& dest, StereoEval& eval);
 

@@ -545,12 +545,12 @@ namespace cp
 		{
 			uchar* dptr = dst.ptr<uchar>(y);
 			const uchar* srow0 = y > 0 ? srow1 - src.step : size.height > 1 ? srow1 + src.step : srow1;
-			dptr[0] = saturate_cast<uchar>(min(preFilterCap * 2, 2*(srow0[0] - srow0[1]) + 3 * (srow1[0] - srow1[1]) + preFilterCap));
+			dptr[0] = saturate_cast<uchar>(min(preFilterCap * 2, 2 * (srow0[0] - srow0[1]) + 3 * (srow1[0] - srow1[1]) + preFilterCap));
 			for (int x = 1; x < size.width - 1; x++)
 			{
 				dptr[x] = saturate_cast<uchar>(min(preFilterCap * 2, 2 * (srow0[x - 1] - srow0[x + 1]) + 3 * (srow1[x - 1] - srow1[x + 1]) + preFilterCap));
 			}
-			dptr[e] = saturate_cast<uchar>(min(preFilterCap * 2, 2 * (srow0[e] - srow0[e-1]) + 3 * (srow1[e] - srow1[e-1]) + preFilterCap));
+			dptr[e] = saturate_cast<uchar>(min(preFilterCap * 2, 2 * (srow0[e] - srow0[e - 1]) + 3 * (srow1[e] - srow1[e - 1]) + preFilterCap));
 		}
 	}
 
@@ -1660,6 +1660,18 @@ namespace cp
 			cout << "This pixel matching method is not supported." << endl;
 		}
 	}
+
+	void StereoBase::addCostIterativeFeedback(cv::Mat& cost, const int current_disparity, const cv::Mat& disparity, const int functionType, const int clip)
+	{
+		CV_Assert(disparity.depth() == CV_16S);
+		const short* dptr = disparity.ptr<short>();
+		uchar* cptr = cost.ptr<uchar>();
+		for (int i = 0; i < cost.size().area(); i++)
+		{
+			cptr[i] = saturate_cast<uchar>(cptr[i] + min(abs(current_disparity - dptr[i] / 16.0), (double)clip));
+		}
+	}
+
 #pragma endregion
 
 #pragma region cost aggregation
@@ -1847,7 +1859,7 @@ namespace cp
 
 				mdisp = _mm256_load_si256((__m256i*) (disp + 16));
 				_mm256_store_si256((__m256i*)(disp + 16), _mm256_blendv_epi8(mdisp, md, _mm256_cvtepi8_epi16(_mm256_extractf128_si256(mask, 1))));
-}
+			}
 		}
 #else
 		short* disparityMapPtr = dest.ptr<short>();
@@ -1893,7 +1905,7 @@ namespace cp
 			disparityMapPtr[i] = mind;
 		}
 #endif
-		}
+	}
 #pragma endregion
 
 #pragma region post filter
@@ -1925,8 +1937,8 @@ namespace cp
 				if ((*DSIPtr) < v && abs(disparity - destPtr[i]) > 16)
 				{
 					destPtr[i] = 0;//(minDisparity-1)<<4;
-		}
-	}
+				}
+			}
 #else
 			//simd
 			const __m256i md = _mm256_set1_epi16(disparity);
@@ -2696,7 +2708,7 @@ namespace cp
 #pragma endregion
 
 	//main function
-	void StereoBase::matching(Mat& leftim, Mat& rightim, Mat& destDisparityMap)
+	void StereoBase::matching(Mat& leftim, Mat& rightim, Mat& destDisparityMap, const bool isFeedback)
 	{
 		if (destDisparityMap.empty() || leftim.size() != destDisparityMap.size()) destDisparityMap.create(leftim.size(), CV_16S);
 		minCostMap.create(leftim.size(), CV_8U);
@@ -2725,7 +2737,9 @@ namespace cp
 			{
 				const int d = minDisparity + i;
 				getPixelMatchingCost(d, DSI[i]);
+				if (isFeedback)addCostIterativeFeedback(DSI[i], d, destDisparityMap, 0, 2);
 				getCostAggregation(DSI[i], DSI[i], guideImage);
+
 			}
 		}
 		else
@@ -2811,11 +2825,11 @@ namespace cp
 				if (isSpeckleFilter)
 					filterSpeckles(destDisparityMap, 0, speckleWindowSize, speckleRange, specklebuffer);
 			}
-			}
+		}
 #ifdef TIMER_STEREO_BASE
 		cout << "=====================" << endl;
 #endif
-			}
+	}
 
 	void StereoBase::operator()(Mat& leftim, Mat& rightim, Mat& dest)
 	{
@@ -2958,7 +2972,7 @@ namespace cp
 		bool isReCost = false;
 
 		bool isStreak = false;
-		bool isGuided = false;
+		bool isRefinement = false;
 		bool isMedian = false;
 
 		bool isShowGT = false;
@@ -2975,13 +2989,15 @@ namespace cp
 		bool isShowDiffFillOcclution = false;
 
 		Mat dispOutput;
+		bool feedback = true;
+		destDisparity.setTo(0);
 		while (key != 'q')
 		{
 			//init
 			aggregationGuidedfilterEps = aggeps;
 			aggregationSigmaSpace = aggss;
 			ci.clear();
-			destDisparity.setTo(0);
+
 			ci(getPixelMatchingMethodName(PixelMatchingMethod) + ": (i-u)");
 			ci(getAggregationMethodName(AggregationMethod) + ": (@-[)");
 			ci(getSubpixelInterpolationMethodName(subpixelInterpolationMethod) + ":  (p)");
@@ -2990,7 +3006,7 @@ namespace cp
 			//body
 			{
 				Timer t("BM", 0, false);
-				matching(leftim, rightim, destDisparity);
+				matching(leftim, rightim, destDisparity, feedback);
 				ci("Total time: %f ms", t.getTime());
 			}
 
@@ -3183,9 +3199,9 @@ namespace cp
 				{
 					medianBlur(destDisparity, destDisparity, 3);
 				}
-				if (isGuided)
+				if (isRefinement)
 				{
-					Timer t("guided");
+					Timer t("refinement", 0, false);
 					//crossBasedAdaptiveBoxFilter(destDisparity, leftim, destDisparity, Size(2 * gr + 1, 2 * gr + 1), ge);
 					Mat temp;
 					guidedImageFilter(destDisparity, leftim, temp, 4, 1, GUIDED_SEP_VHI);
@@ -3196,7 +3212,7 @@ namespace cp
 
 					//guidedImageFilter(destDisparity, leftim, temp, 4, 1, GUIDED_SEP_VHI);
 					//jointNearestFilter(temp, destDisparity, Size(3, 3), destDisparity);
-					
+
 					ci("refine: %f ms", t.getTime());
 					/*Mat base = dest.clone();
 					Mat gfil = dest.clone();
@@ -3219,7 +3235,7 @@ namespace cp
 					//refineFromCost(dest,dest);
 				}
 				ci("a-post time: %f ms", t.getTime());//additional post processing time
-		}
+			}
 
 			compare(destDisparity, 0, zeromask, cv::CMP_EQ);
 			if (isShowZeroMask)imshow("zero B", zeromask);
@@ -3447,7 +3463,7 @@ namespace cp
 			if (isMedian)ci(CV_RGB(0, 255, 0), "Median (8): true");
 			else ci(CV_RGB(255, 0, 0), "Median (8): false");
 
-			if (isGuided) ci(CV_RGB(0, 255, 0), "Guided (9): true");
+			if (isRefinement) ci(CV_RGB(0, 255, 0), "Guided (9): true");
 			else 	ci(CV_RGB(255, 0, 0), "Guided (9): false");
 
 
@@ -3502,7 +3518,7 @@ namespace cp
 
 			if (key == '7') isStreak = (isStreak) ? false : true;
 			if (key == '8') isMedian = (isMedian) ? false : true;
-			if (key == '9') isGuided = (isGuided) ? false : true;
+			if (key == '9') isRefinement = (isRefinement) ? false : true;
 
 			if (key == 'a')	isReCost = (isReCost) ? false : true;
 
@@ -3521,603 +3537,19 @@ namespace cp
 			if (key == 'e')isShowGT = (isShowGT) ? false : true;
 			if (key == 'b') guiCrossBasedLocalFilter(leftim);
 
+			if (key == 'r')
+			{
+				destDisparity.setTo(0);
+			}
+
 			/*
 			if (key == 'r')maskType++; maskType = maskType > 4 ? 0 : maskType;
 			if (key == 't')maskType--; maskType = maskType < 0 ? 3 : maskType;
 			if (key == 'y')maskPrec++; maskPrec = maskPrec > 3 ? 0 : maskPrec;
 			if (key == 'u')maskPrec--; maskPrec = maskPrec < 0 ? 2 : maskPrec;
 			*/
+		}
 	}
-			}
-
-	//class CostVolumeRefinement
-	//{
-	//public:
-	//#define VOLUME_TYPE CV_8U
-	//	enum
-	//	{
-	//		L1_NORM = 0,
-	//		L2_NORM = 1
-	//	};
-	//	enum
-	//	{
-	//		COST_VOLUME_BOX=0,
-	//		COST_VOLUME_GAUSSIAN,
-	//		COST_VOLUME_MEDIAN,
-	//		COST_VOLUME_BILATERAL,
-	//		COST_VOLUME_BILATERAL_SP,
-	//		COST_VOLUME_GUIDED,
-	//		COST_VOLUME_CROSS_BASED_ADAPTIVE_BOX
-	//	};
-	//	enum
-	//	{
-	//		SUBPIXEL_NONE=0,
-	//		SUBPIXEL_QUAD,
-	//		SUBPIXEL_LINEAR
-	//	};
-	//	//L1: min(abs(d-D(p)),data_trunc) or L2: //min((d-D(p))^2,data_trunc)
-	//	void buildCostVolume(Mat& disp, Mat& mask,int data_trunc, int metric)
-	//	{
-	//		Size size = disp.size();
-	//
-	//		Mat a(size,disp.type());
-	//		Mat v;
-	//		for(int i=0;i<numDisparity;i++)
-	//		{
-	//			a.setTo(minDisparity+i);
-	//			if(metric==L1_NORM)
-	//			{
-	//				absdiff(a,disp,v);
-	//				min(v,data_trunc,v);
-	//			}
-	//			else
-	//			{
-	//
-	//				//v=a-disp;
-	//				//cv::subtract(a,disp,v,Mat(),VOLUME_TYPE);
-	//				absdiff(a,disp,v);
-	//				cv::multiply(v,v,v);
-	//				min(v,data_trunc*data_trunc,v);
-	//			}
-	//			v.setTo(data_trunc,mask);
-	//			v.convertTo(dsv[i],VOLUME_TYPE);
-	//		}
-	//	}
-	//	void buildCostVolume(Mat& disp, int dtrunc, int metric)
-	//	{
-	//		Size size = disp.size();
-	//
-	//		Mat a(size,disp.type());
-	//		Mat v;
-	//		for(int i=0;i<numDisparity;i++)
-	//		{
-	//			a.setTo(minDisparity+i);
-	//			if(metric==L1_NORM)
-	//			{
-	//				absdiff(a,disp,v);
-	//				min(v,dtrunc,v);
-	//			}
-	//			else
-	//			{
-	//				//v=a-disp;
-	//				absdiff(a,disp,v);
-	//				//cv::subtract(a,disp,v,Mat(),VOLUME_TYPE);
-	//				cv::multiply(v,v,v);
-	//				min(v,dtrunc*dtrunc,v);
-	//			}
-	//			v.convertTo(dsv[i],VOLUME_TYPE);
-	//		}
-	//	}
-	//	void subpixelInterpolation(Mat& dest, int method)
-	//	{
-	//		if(method == SUBPIXEL_NONE)
-	//		{
-	//			dest*=16;
-	//			return;
-	//		}
-	//		short* disp = dest.ptr<short>(0);
-	//		const int imsize = dest.size().area();
-	//		if(method == SUBPIXEL_QUAD)
-	//		{
-	//			for(int j=0;j<imsize;j++)
-	//			{
-	//				short d = disp[j];
-	//				int l = d-minDisparity;
-	//				if(l<1 || l>numDisparity-2)
-	//				{
-	//					;
-	//				}
-	//				else
-	//				{
-	//					int f = dsv[l].data[j];
-	//					int p = dsv[l+1].data[j];
-	//					int m = dsv[l-1].data[j];
-	//
-	//					int md = ((p+m-(f<<1))<<1);
-	//					if(md!=0)
-	//					{
-	//						double dd = (double)d -(double)(p-m)/(double)md;
-	//						disp[j]=(short)(16.0*dd+0.5);
-	//					}
-	//				}
-	//			}
-	//		}
-	//		else if(method == SUBPIXEL_LINEAR)
-	//		{
-	//			for(int j=0;j<imsize;j++)
-	//			{
-	//				short d = disp[j];
-	//				int l = d-minDisparity;
-	//				if(l<1 || l>numDisparity-2)
-	//				{
-	//					;
-	//				}
-	//				else
-	//				{
-	//					const double m1 = (double)dsv[l].data[j];
-	//					const double m3 = (double)dsv[l+1].data[j];
-	//					const double m2 = (double)dsv[l-1].data[j];
-	//					const double m31 = m3-m1;
-	//					const double m21 = m2-m1;
-	//					double md;
-	//
-	//					if(m2>m3)
-	//					{
-	//						md = 0.5-0.25*((m31*m31)/(m21*m21)+m31/m21);
-	//					}
-	//					else
-	//					{
-	//						md = -(0.5-0.25*((m21*m21)/(m31*m31)+m21/m31));
-	//
-	//					}
-	//
-	//					disp[j]=(short)(16.0*((double)d+md)+0.5);
-	//
-	//				}
-	//			}
-	//		}
-	//	}
-	//	void wta(Mat& dest)
-	//	{
-	//		Size size = dest.size();
-	//		Mat cost = Mat::ones(size,VOLUME_TYPE)*255;
-	//		Mat mask;
-	//		const int imsize = size.area();
-	//		for(int i=0;i<numDisparity;i++)
-	//		{
-	//			Mat pcost;
-	//			cost.copyTo(pcost);
-	//			min(pcost,dsv[i],cost);
-	//			compare(pcost,cost,mask,cv::CMP_NE);
-	//			dest.setTo(i+minDisparity,mask);
-	//		}
-	//	}
-	//	int minDisparity;
-	//	int numDisparity;
-	//	int sub_method;
-	//	vector<Mat> dsv;
-	//	CostVolumeRefinement(int disparitymin, int disparity_range)
-	//	{
-	//		sub_method = 1;
-	//		minDisparity = disparitymin;
-	//		numDisparity = disparity_range;
-	//		dsv.resize(disparity_range+1);
-	//	}
-	//
-	//	void crossBasedAdaptiveboxRefinement(Mat& disp, Mat& guide,Mat& dest, int data_trunc, int metric, int r, int thresh,int iter=1)
-	//	{
-	//		if(iter==0)disp.convertTo(dest,CV_16S,16);
-	//		if(dest.empty())dest.create(disp.size(),CV_16S);
-	//
-	//		CrossBasedLocalFilter cbabf(guide,r,thresh);
-	//		Mat in = disp.clone();
-	//		for(int i=0;i<iter;i++)
-	//		{
-	//			{
-	//				CalcTime t("build");
-	//				buildCostVolume(in,data_trunc,metric);
-	//			}
-	//			{
-	//				CalcTime t("filter");
-	//				for(int n=0;n<numDisparity;n++)
-	//				{
-	//					cbabf(dsv[n],dsv[n]);
-	//				}
-	//			}
-	//			{
-	//				CalcTime t("wta");
-	//				wta(dest);
-	//			}
-	//			dest.copyTo(in);
-	//			{
-	//				CalcTime t("dubpix");
-	//				subpixelInterpolation(dest,sub_method);
-	//			}
-	//
-	//		}
-	//	}
-	//	void medianRefinement(Mat& disp, Mat& dest, int data_trunc, int metric, int r, int iter=1)
-	//	{
-	//		if(iter==0)disp.convertTo(dest,CV_16S,16);
-	//		if(dest.empty())dest.create(disp.size(),CV_16S);
-	//		Mat in = disp.clone();
-	//		for(int i=0;i<iter;i++)
-	//		{
-	//			{
-	//				CalcTime t("build");
-	//				buildCostVolume(in,data_trunc,metric);
-	//			}
-	//			{
-	//				CalcTime t("filter");
-	//				for(int n=0;n<numDisparity;n++)
-	//				{
-	//					medianBlur(dsv[n],dsv[n],2*r+1);
-	//				}
-	//			}
-	//			{
-	//				CalcTime t("wta");
-	//				wta(dest);
-	//			}
-	//			dest.copyTo(in);
-	//			{
-	//				CalcTime t("dubpix");
-	//				subpixelInterpolation(dest,sub_method);
-	//			}
-	//
-	//		}
-	//	}
-	//	void boxRefinement(Mat& disp, Mat& dest, int data_trunc, int metric, int r, int iter=1)
-	//	{
-	//		if(iter==0)disp.convertTo(dest,CV_16S,16);
-	//		if(dest.empty())dest.create(disp.size(),CV_16S);
-	//		Mat in = disp.clone();
-	//		for(int i=0;i<iter;i++)
-	//		{
-	//			{
-	//				CalcTime t("build");
-	//				buildCostVolume(in,data_trunc,metric);
-	//			}
-	//			{
-	//				CalcTime t("filter");
-	//				for(int n=0;n<numDisparity;n++)
-	//				{
-	//					boxFilter(dsv[n],dsv[n],VOLUME_TYPE,Size(2*r+1,2*r+1));
-	//					//medianBlur(dsv[n],dsv[n],2*r+1);
-	//				}
-	//			}
-	//			{
-	//				CalcTime t("wta");
-	//				wta(dest);
-	//			}
-	//			dest.copyTo(in);
-	//			{
-	//				CalcTime t("dubpix");
-	//				subpixelInterpolation(dest,sub_method);
-	//			}
-	//
-	//		}
-	//	}
-	//	void jointBilateralRefinement(Mat& disp, Mat& guide,Mat& dest, int data_trunc, int metric, int r, double sigma_c, double sigma_s,int iter=1)
-	//	{
-	//		if(iter==0)disp.convertTo(dest,CV_16S,16);
-	//		if(dest.empty())dest.create(disp.size(),CV_16S);
-	//
-	//		Mat in = disp.clone();
-	//		for(int i=0;i<iter;i++)
-	//		{
-	//			{
-	//				CalcTime t("build");
-	//				buildCostVolume(in,data_trunc,metric);
-	//			}
-	//			{
-	//				CalcTime t("filter");
-	//				for(int n=0;n<numDisparity;n++)
-	//				{
-	//					jointBilateralFilter(dsv[n],dsv[n],2*r+1,sigma_c,sigma_s,guide);
-	//				}
-	//			}
-	//			{
-	//				CalcTime t("wta");
-	//				wta(dest);
-	//			}
-	//			dest.copyTo(in);
-	//			{
-	//				CalcTime t("dubpix");
-	//				subpixelInterpolation(dest,sub_method);
-	//			}
-	//		}
-	//	}
-	//	void guidedRefinement(Mat& disp, Mat& guide,Mat& dest, int data_trunc, int metric, int r, double eps,int iter=1)
-	//	{
-	//		if(iter==0)disp.convertTo(dest,CV_16S,16);
-	//		if(dest.empty())dest.create(disp.size(),CV_16S);
-	//
-	//		Mat in = disp.clone();
-	//		for(int i=0;i<iter;i++)
-	//		{
-	//			{
-	//				CalcTime t("build");
-	//				buildCostVolume(in,data_trunc,metric);
-	//			}
-	//			{
-	//				CalcTime t("filter");
-	//				for(int n=0;n<numDisparity;n++)
-	//				{
-	//					guidedFilter(dsv[n],guide,dsv[n],r,eps);
-	//				}
-	//			}
-	//			{
-	//				CalcTime t("wta");
-	//				wta(dest);
-	//			}
-	//			dest.copyTo(in);
-	//			{
-	//				CalcTime t("dubpix");
-	//				subpixelInterpolation(dest,sub_method);
-	//			}
-	//		}
-	//	}
-	//	void crossBasedLocalMultipointRefinement(Mat& disp, Mat& guide,Mat& dest, int data_trunc, int metric, int r, int thresh,double eps,int iter=1)
-	//	{
-	//		if(iter==0)disp.convertTo(dest,CV_16S,16);
-	//		if(dest.empty())dest.create(disp.size(),CV_16S);
-	//
-	//		Mat in = disp.clone();
-	//
-	//		CrossBasedLocalMultipointFilter cmlf;
-	//		for(int i=0;i<iter;i++)
-	//		{
-	//			{
-	//				CalcTime t("build");
-	//				buildCostVolume(in,data_trunc,metric);
-	//			}
-	//			{
-	//				CalcTime t("filter");
-	//				bool flag=true;
-	//				for(int n=0;n<numDisparity;n++)
-	//				{
-	//					cmlf(dsv[n],guide,dsv[n],r,thresh,eps,flag);
-	//					flag=false;
-	//				}
-	//			}
-	//			{
-	//				CalcTime t("wta");
-	//				wta(dest);
-	//			}
-	//			dest.copyTo(in);
-	//			{
-	//				CalcTime t("dubpix");
-	//				subpixelInterpolation(dest,sub_method);
-	//			}
-	//		}
-	//	}
-	//};
-
-#if CV_MAJOR_VERSION <=3
-	void testStereo(Mat& leftim, Mat& rightim)
-	{
-		/*Mat disp1,disp2,disp3;
-		const int r = 9;
-		int range = 64	;
-		{
-		CalcTime t("SAD");
-		stereoSAD(leftim,rightim,disp1,0,range,r);
-		}
-		{
-		CalcTime t("CENSUS33");
-		stereoCensus3x3(leftim,rightim,disp2,0,range,r);
-		}
-		{
-		CalcTime t("CENSUS91");
-		stereoCensus9x1(leftim,rightim,disp3,0,range,r);
-		}
-		disp1*=4;
-		disp2*=4;
-		disp3*=4;
-		guiAlphaBlend(disp1,disp2);
-		guiAlphaBlend(disp3,disp2);*/
-
-		StereoBMEx sbm(0, 64, 7);
-		sbm.minDisparity = 15;
-		Mat disp;
-		sbm.speckleRange = 20;
-		sbm.speckleWindowSize = 20;
-		sbm.disp12MaxDiff = 0;
-		sbm.uniquenessRatio = 10;
-		sbm(leftim, rightim, disp, 32);
-		fillOcclusion(disp, 16 * 16);
-
-		Mat dd = imread("sgm.png", 0);
-		dd.convertTo(disp, CV_16S, 4);
-		string wname = "costvolume";
-		namedWindow(wname);
-		int key = 0;
-		Mat show;
-
-		char* dir = "C:/fukushima/media/sequence/Middlebury/";
-
-		char* sequence = "Teddy";
-		double amp = 4.0;
-		char name[128];
-		sprintf(name, "%s%s/%s.png", dir, sequence, "groundtruth");
-		Mat gt = imread(name, 0);//�K���O���[�X�P�[���œ���
-
-		sprintf(name, "%s%s/%s.png", dir, sequence, "all");
-		Mat all = imread(name, 0);
-		sprintf(name, "%s%s/%s.png", dir, sequence, "disc");
-		Mat disc = imread(name, 0);
-		sprintf(name, "%s%s/%s.png", dir, sequence, "nonocc");
-		Mat nonocc = imread(name, 0);
-		StereoEval eval(gt, nonocc, all, disc, amp);
-
-		CostVolumeRefinement cbf(0, 64);
-
-		int alpha = 0;
-		createTrackbar("alpha", wname, &alpha, 100);
-		int mr = 1;
-		createTrackbar("median r", wname, &mr, 20);
-
-		int res = 1;
-		createTrackbar("resize", wname, &res, 10);
-		int norm = 1;
-		createTrackbar("norm", wname, &norm, 1);
-		int clipval = 2;
-		createTrackbar("clip", wname, &clipval, 100);
-		int iter = 2;
-		createTrackbar("iter", wname, &iter, 10);
-
-		int gr = 1;
-		createTrackbar("r", wname, &gr, 20);
-		int gth = 15;
-		createTrackbar("gth", wname, &gth, 255);
-		int sigma_s = 5;
-		createTrackbar("sigma_s", wname, &sigma_s, 500);
-		int eps = 1;
-		createTrackbar("eps", wname, &eps, 1000);
-		cbf.sub_method = 1;
-		createTrackbar("sub", wname, &cbf.sub_method, 2);
-
-		int cr = 1;
-		createTrackbar("cr", wname, &cr, 20);
-		int crth = 32;
-		createTrackbar("crth", wname, &crth, 256);
-		int method = 0;
-		createTrackbar("method", wname, &method, 4);
-		Mat g; cvtColor(leftim, g, COLOR_BGR2GRAY);
-		ConsoleImage ci(Size(640, 480));
-
-
-		int resmethod = 0;
-		createTrackbar("resmethod", wname, &resmethod, 1);
-
-		int isLR = 0;
-		createTrackbar("isLR", wname, &isLR, 1);
-
-		while (key != 'q')
-		{
-
-			Mat dispr;
-			Mat dispi;
-			//resize(disp,dispr,Size(disp.cols/(res+1),disp.rows/(res+1)),0,0,cv::INTER_NEAREST);
-			//resize(dispr,dispi,Size(disp.cols,disp.rows),0,0,cv::INTER_NEAREST);
-
-			if (resmethod == 0)
-			{
-				resize(disp, dispr, Size(), 1.0 / (res + 1), 1.0 / (res + 1), cv::INTER_NEAREST);
-				resize(dispr, dispi, Size(disp.cols, disp.rows), 0, 0, cv::INTER_NEAREST);
-			}
-			else
-			{
-				resizeDown(disp, dispr, res + 1, cv::INTER_NEAREST);
-				dispi.create(disp.size(), disp.type());
-				resizeUP(dispr, dispi, res + 1, cv::INTER_NEAREST);
-			}
-
-			ci.clear();
-
-			Mat dsp, dsp4;
-
-			disp.convertTo(dsp4, CV_8U, 1.0 / 16.0);
-			dsp4 *= 4;
-			imshow(wname + "before", dsp4);
-			eval(dsp4, 0.5, false, 1);
-			ci("beforeres 0.5" + eval.message);
-			eval(dsp4, 1, false, 1);
-			ci("beforeres 1.0" + eval.message);
-			imshow(wname + "before", dsp4);
-
-			dispi.convertTo(dsp4, CV_8U, 1.0 / 16.0);
-			dsp4 *= 4;
-			imshow(wname + "before", dsp4);
-			eval(dsp4, 0.5, false, 1);
-			ci("before 0.5" + eval.message);
-			eval(dsp4, 1, false, 1);
-			ci("before 1.0" + eval.message);
-			imshow(wname + "before", dsp4);
-
-			dispi.convertTo(dsp, CV_8U, 1.0 / 16.0);
-
-			medianBlur(dsp4, dsp4, 2 * mr + 1);
-			//boxFilter(dsp4,dsp4,CV_8U,Size(2*gr+1,2*gr+1));
-			/*cout<<"after box: 0.5";	eval(dsp4,0.5,true,1);
-			cout<<"after box: 0.5";	eval(dsp4,1,true,1);
-			imshow(wname+"direct",dsp4);*/
-
-			dsp4.convertTo(dsp, CV_8U, 1 / 4.0);
-			Mat fdisp;
-
-			if (method == 0)
-				guidedFilter(dsp, g, fdisp, gr, eps / 1000.0);
-			else if (method == 1)
-				crossBasedLocalMultipointFilter(dsp, g, fdisp, gr, crth, eps / 1000.0);
-			else if (method == 2)
-			{
-				crossBasedAdaptiveBoxFilter(dsp, g, fdisp, Size(2 * gr + 1, 2 * gr + 1), crth);
-				crossBasedAdaptiveBoxFilter(fdisp, g, fdisp, Size(2 * gr + 1, 2 * gr + 1), crth);
-			}
-			else if (method == 3)
-			{
-				CrossBasedLocalFilter clf;
-				clf.makeKernel(g, gr, crth, 1);
-				clf(dsp, fdisp);
-				Mat weight;
-				clf.getCrossAreaCountMap(weight, CV_8U);
-				clf(fdisp, weight, fdisp);
-			}
-
-
-			/*if(method==0)
-			cbf.boxRefinement(dsp,fdisp,clipval,norm,gr,iter);
-			else if(method==1)
-			cbf.crossBasedAdaptiveboxRefinement(dsp,g,fdisp,clipval,norm,gr,gth,iter);
-
-			else if(method==2)
-			{
-			Mat joint;
-			crossBasedAdaptiveBoxFilter(g,g,joint,Size(2*gr+1,2*gr+1),crth);
-			cbf.crossBasedAdaptiveboxRefinement(dsp,joint,fdisp,clipval,norm,gr,gth,iter);
-			}
-			else if(method==3)
-			cbf.guidedRefinement(dsp,g,fdisp,clipval,norm,gr,eps/1000.0,iter);
-			else if(method==4)
-			cbf.crossBasedLocalMultipointRefinement(dsp,g,fdisp,clipval,norm,gr,gth,eps/1000.0,iter);
-			//cbf.guidedRefinement(dsp,dsp,fdisp,clipval,norm,gr,eps/1000.0,iter);
-			//cbf.jointBilateralRefinement(dsp,leftim,fdisp,clipval,norm,gr,eps/100.0,sigma_s/10.0,iter);
-			else
-			{
-			Mat dsp2;
-			dsp.convertTo(dsp2,CV_8U);
-
-			medianBlur(dsp2,dsp2,2*gr+1);
-			dsp2.convertTo(fdisp,CV_16S,16);
-			}
-
-			crossBasedAdaptiveBoxFilter(fdisp,fdisp,Size(2*cr+1,2*cr+1),crth);*/
-
-			if (isLR)
-			{
-				singleDisparityLRCheck(fdisp, 1.0, 1, 0, 64);
-				fillOcclusion(fdisp, 0);
-			}
-
-
-			//fdisp.convertTo(dsp,CV_8U,4.0/16.0);
-			fdisp.convertTo(dsp, CV_8U, 4.0);
-			cout << "after cvf 0.5:";	eval(dsp, 0.5, true, 1);
-			eval(dsp, 0.5, false, 1);
-			ci("cvf 0.5" + eval.message);
-			eval(dsp, 1.0, false, 1);
-			ci("cvf 0.5" + eval.message);
-
-			Mat show;
-			alphaBlend(leftim, dsp, alpha / 100.0, show);
-			imshow(wname, show);
-			imshow("console", ci.image);
-			key = waitKey(1);
-
-			}
-		}
-#endif
 
 	void resizeDown(Mat& src, Mat& dest, int rfact, int method)
 	{
@@ -4140,4 +3572,4 @@ namespace cp
 			a.copyTo(dest);
 		}
 	}
-		}
+}
