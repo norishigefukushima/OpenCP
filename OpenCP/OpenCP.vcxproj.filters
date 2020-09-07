@@ -105,9 +105,6 @@
     <ClCompile Include="noise.cpp">
       <Filter>ソース ファイル\core</Filter>
     </ClCompile>
-    <ClCompile Include="nonLocalMeans.cpp">
-      <Filter>ソース ファイル\filter</Filter>
-    </ClCompile>
     <ClCompile Include="iterativeBackProjection.cpp">
       <Filter>ソース ファイル\imgproc</Filter>
     </ClCompile>
@@ -139,12 +136,6 @@
       <Filter>ソース ファイル\filter</Filter>
     </ClCompile>
     <ClCompile Include="minmaxfilter.cpp">
-      <Filter>ソース ファイル\filter</Filter>
-    </ClCompile>
-    <ClCompile Include="weightedModeFilter.cpp">
-      <Filter>ソース ファイル\filter</Filter>
-    </ClCompile>
-    <ClCompile Include="PermutohedralLattice.cpp">
       <Filter>ソース ファイル\filter</Filter>
     </ClCompile>
     <ClCompile Include="GaussianFilterSpectralRecursive.cpp">
@@ -545,6 +536,15 @@
     </ClCompile>
     <ClCompile Include="stereoEval.cpp">
       <Filter>ソース ファイル\stereo</Filter>
+    </ClCompile>
+    <ClCompile Include="nonLocalMeans.cpp">
+      <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="PermutohedralLattice.cpp">
+      <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="weightedModeFilter.cpp">
+      <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

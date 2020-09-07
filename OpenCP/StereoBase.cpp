@@ -7,6 +7,7 @@
 #include "jointBilateralFilter.hpp"
 #include "binalyWeightedRangeFilter.hpp"
 #include "jointNearestFilter.hpp"
+#include "weightedModeFilter.hpp"
 #include "minmaxfilter.hpp"
 #include "plot.hpp"
 #include "timer.hpp"
@@ -3188,12 +3189,15 @@ namespace cp
 					//crossBasedAdaptiveBoxFilter(destDisparity, leftim, destDisparity, Size(2 * gr + 1, 2 * gr + 1), ge);
 					Mat temp;
 					guidedImageFilter(destDisparity, leftim, temp, 4, 1, GUIDED_SEP_VHI);
+					//guidedImageFilter(destDisparity, target[0], temp, 4, 1, GUIDED_SEP_VHI);
 					jointNearestFilter(temp, destDisparity, Size(5, 5), destDisparity);
+
+					//cp::weightedModeFilter(destDisparity, leftim, destDisparity, 4, 2, 10, 500, 0, 2);
+
 					//guidedImageFilter(destDisparity, leftim, temp, 4, 1, GUIDED_SEP_VHI);
 					//jointNearestFilter(temp, destDisparity, Size(3, 3), destDisparity);
 					
-
-					ci("cross: %f", t.getTime());
+					ci("refine: %f ms", t.getTime());
 					/*Mat base = dest.clone();
 					Mat gfil = dest.clone();
 					guidedFilter(dest,leftim,gfil,gr,ge/1000.0);

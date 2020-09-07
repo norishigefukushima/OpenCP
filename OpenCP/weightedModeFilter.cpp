@@ -1,5 +1,6 @@
 #include "weightedModeFilter.hpp"
-
+#include "debugcp.hpp"
+#include <inlineSIMDFunctions.hpp>
 using namespace std;
 using namespace cv;
 
@@ -55,7 +56,7 @@ namespace cp
 		int truncate;
 		float* hist;
 
-		Histogram(int truncate_val, int mode_);
+		Histogram(int truncate_val, int mode_ = Histogram::MAX, const int max_val = 256);
 		~Histogram();
 
 		void clear();
@@ -76,23 +77,15 @@ namespace cp
 		int returnMedianwithRange();
 	};
 
-
-	int Histogram::returnVal()
-	{
-		if (mode == 0)
-			return returnMax();
-		else
-			return returnMedian();
-
-	}
 	Histogram::~Histogram()
 	{
 		_mm_free(histbuff);
 	}
-	Histogram::Histogram(int truncate_val, int mode_ = Histogram::MAX)
+
+	Histogram::Histogram(int truncate_val, int mode_, const int max_val)
 	{
-		histbuffsize = 256 + truncate_val * 2;
-		histbuff = (float*)_mm_malloc(sizeof(float)*histbuffsize, 16);
+		histbuffsize = max_val + truncate_val * 2;
+		histbuff = (float*)_mm_malloc(sizeof(float) * histbuffsize, 16);
 		hist = histbuff + truncate_val;
 		truncate = truncate_val;
 		mode = mode_;
@@ -100,10 +93,18 @@ namespace cp
 		clear();
 	}
 
+	int Histogram::returnVal()
+	{
+		if (mode == 0)
+			return returnMax();
+		else
+			return returnMedian();
+	}
+
 	void Histogram::clear()
 	{
 		histMin = 0;
-		histMax = 255;
+		histMax = histbuffsize - truncate * 2;
 		int ssecount = histbuffsize / 4;
 		float* h = histbuff;
 		for (int i = 0; i < ssecount; i++)
@@ -136,7 +137,7 @@ namespace cp
 				float div = 1.f / (float)(sqr(truncate));
 				for (int i = 1; i < truncate; i++)
 				{
-					val = addval * ((float)sqr((truncate - i))*div);
+					val = addval * ((float)sqr((truncate - i)) * div);
 					hist[bin + i] += val;
 					hist[bin - i] += val;
 				}
@@ -174,7 +175,7 @@ namespace cp
 				float div = 1.f / (float)(sqr(truncate));
 				for (int i = 1; i < truncate; i++)
 				{
-					val = addval * ((float)sqr((truncate - i))*div);
+					val = addval * ((float)sqr((truncate - i)) * div);
 					hist[bin + i] += val;
 					hist[bin - i] += val;
 				}
@@ -343,7 +344,7 @@ namespace cp
 
 			float* lutc1 = new float[768];
 			float* lutc2 = new float[768];
-			float* luts = new float[(2 * r + 1)*(2 * r + 1)];
+			float* luts = new float[(2 * r + 1) * (2 * r + 1)];
 
 
 			for (int j = 0, idx = 0; j < 2 * r + 1; j++)
@@ -459,7 +460,7 @@ namespace cp
 
 			float* lutc1 = new float[256];
 			float* lutc2 = new float[256];
-			float* luts = new float[(2 * r + 1)*(2 * r + 1)];
+			float* luts = new float[(2 * r + 1) * (2 * r + 1)];
 
 
 			for (int j = 0, idx = 0; j < 2 * r + 1; j++)
@@ -471,8 +472,8 @@ namespace cp
 			}
 			for (int i = 0; i < 256; i++)
 			{
-				lutc1[i] = (float)(exp(-sqr(i) / (2.0*sqr(sig_c1))));
-				lutc2[i] = (float)(exp(-sqr(i) / (2.0*sqr(sig_c2))));
+				lutc1[i] = (float)(exp(-sqr(i) / (2.0 * sqr(sig_c1))));
+				lutc2[i] = (float)(exp(-sqr(i) / (2.0 * sqr(sig_c2))));
 			}
 
 			if (method == Histogram::BILATERAL)
@@ -601,7 +602,7 @@ namespace cp
 			Mat guideR; copyMakeBorder(R, guideR, r, r, r, r, borderType);
 
 			float* lutc = new float[768];
-			float* luts = new float[(2 * r + 1)*(2 * r + 1)];
+			float* luts = new float[(2 * r + 1) * (2 * r + 1)];
 
 
 			for (int j = 0, idx = 0; j < 2 * r + 1; j++)
@@ -712,7 +713,7 @@ namespace cp
 			Mat G; copyMakeBorder(guide, G, r, r, r, r, borderType);
 
 			float* lutc = new float[256];
-			float* luts = new float[(2 * r + 1)*(2 * r + 1)];
+			float* luts = new float[(2 * r + 1) * (2 * r + 1)];
 
 
 			for (int j = 0, idx = 0; j < 2 * r + 1; j++)
@@ -724,7 +725,7 @@ namespace cp
 			}
 			for (int i = 0; i < 256; i++)
 			{
-				lutc[i] = (float)(exp(-sqr(i) / (2.0*sqr(sig_c))));
+				lutc[i] = (float)(exp(-sqr(i) / (2.0 * sqr(sig_c))));
 			}
 
 			if (method == Histogram::BILATERAL)
@@ -813,12 +814,16 @@ namespace cp
 		}
 	}
 
-	void weightedHistogramFilter(Mat& src, Mat& guide, Mat& dst, int r, int truncate, double sig_c, double sig_s, int metric, int method)
+	template<typename srcType, typename guideType>
+	void weightedHistogramFilter_(Mat& src, Mat& guide, Mat& dst, int r, int truncate, double sig_c, double sig_s, int metric, int method)
 	{
+		double src_max;
+		minMaxLoc(src, NULL, &src_max);
+		src_max = get_simd_ceil(src_max,4);
 		int width = src.cols;
 		int height = src.rows;
 
-		Mat src2; copyMakeBorder(src, src2, r, r, r, r, 1);
+		Mat srcBorder; copyMakeBorder(src, srcBorder, r, r, r, r, 1);
 
 		int mode = Histogram::MAX;
 		if (method >= Histogram::NO_WEIGHT_MEDIAN)
@@ -839,7 +844,7 @@ namespace cp
 			Mat guideR; copyMakeBorder(R, guideR, r, r, r, r, borderType);
 
 			float* lutc = new float[768];
-			float* luts = new float[(2 * r + 1)*(2 * r + 1)];
+			float* luts = new float[(2 * r + 1) * (2 * r + 1)];
 
 
 			for (int j = 0, idx = 0; j < 2 * r + 1; j++)
@@ -856,23 +861,24 @@ namespace cp
 
 			if (method == Histogram::BILATERAL)
 			{
+
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
-					Histogram h(truncate, mode);
+					Histogram h(truncate, mode, src_max);
 					for (int x = 0; x < width; x++)
 					{
 						h.clear();
-						const uchar bb = B.at<uchar>(y, x);
-						const uchar gg = G.at<uchar>(y, x);
-						const uchar rr = R.at<uchar>(y, x);
+						const guideType bb = B.at<guideType>(y, x);
+						const guideType gg = G.at<guideType>(y, x);
+						const guideType rr = R.at<guideType>(y, x);
 
 						for (int j = 0, idx = 0; j < 2 * r + 1; j++)
 						{
-							uchar* sp = src2.ptr<uchar>(y + j); sp += x;
-							uchar* bp = guideB.ptr<uchar>(y + j); bp += x;
-							uchar* gp = guideG.ptr<uchar>(y + j); gp += x;
-							uchar* rp = guideR.ptr<uchar>(y + j); rp += x;
+							srcType* sp = srcBorder.ptr<srcType>(y + j); sp += x;
+							guideType* bp = guideB.ptr<guideType>(y + j); bp += x;
+							guideType* gp = guideG.ptr<guideType>(y + j); gp += x;
+							guideType* rp = guideR.ptr<guideType>(y + j); rp += x;
 
 							for (int i = 0; i < 2 * r + 1; i++, idx++)
 							{
@@ -888,7 +894,7 @@ namespace cp
 								rp++;
 							}
 						}
-						dst.at<uchar>(y, x) = h.returnVal();
+						dst.at<srcType>(y, x) = h.returnVal();
 					}
 				}
 			}
@@ -903,7 +909,7 @@ namespace cp
 						h.clear();
 						for (int j = 0, idx = 0; j < 2 * r + 1; j++)
 						{
-							uchar* sp = src2.ptr<uchar>(y + j); sp += x;
+							srcType* sp = srcBorder.ptr<srcType>(y + j); sp += x;
 							for (int i = 0; i < 2 * r + 1; i++, idx++)
 							{
 								float addval = luts[idx];
@@ -911,7 +917,7 @@ namespace cp
 								sp++;
 							}
 						}
-						dst.at<uchar>(y, x) = h.returnVal();
+						dst.at<srcType>(y, x) = h.returnVal();
 					}
 				}
 			}
@@ -929,10 +935,10 @@ namespace cp
 							for (int i = 0; i < 2 * r + 1; i++, idx++)
 							{
 								float addval = 1.f;
-								h.add(addval, src2.at<uchar>(y + j, x + i), metric);
+								h.add(addval, srcBorder.at<srcType>(y + j, x + i), metric);
 							}
 						}
-						dst.at<uchar>(y, x) = h.returnVal();
+						dst.at<srcType>(y, x) = h.returnVal();
 					}
 				}
 			}
@@ -941,10 +947,11 @@ namespace cp
 		}
 		else if (guide.channels() == 1)
 		{
+
 			Mat G; copyMakeBorder(guide, G, r, r, r, r, borderType);
 
 			float* lutc = new float[256];
-			float* luts = new float[(2 * r + 1)*(2 * r + 1)];
+			float* luts = new float[(2 * r + 1) * (2 * r + 1)];
 
 
 			for (int j = 0, idx = 0; j < 2 * r + 1; j++)
@@ -956,7 +963,7 @@ namespace cp
 			}
 			for (int i = 0; i < 256; i++)
 			{
-				lutc[i] = (float)(exp(-sqr(i) / (2.0*sqr(sig_c))));
+				lutc[i] = (float)(exp(-sqr(i) / (2.0 * sqr(sig_c))));
 			}
 
 			if (method == Histogram::BILATERAL)
@@ -968,11 +975,11 @@ namespace cp
 					for (int x = 0; x < width; x++)
 					{
 						h.clear();
-						const uchar gg = guide.at<uchar>(y, x);
+						const guideType gg = guide.at<guideType>(y, x);
 						for (int j = 0, idx = 0; j < 2 * r + 1; j++)
 						{
-							uchar* sp = src2.ptr<uchar>(y + j); sp += x;
-							uchar* gp = G.ptr<uchar>(y + j); gp += x;
+							srcType* sp = srcBorder.ptr<srcType>(y + j); sp += x;
+							guideType* gp = G.ptr<guideType>(y + j); gp += x;
 							for (int i = 0; i < 2 * r + 1; i++, idx++)
 							{
 								float addval = luts[idx];
@@ -983,7 +990,7 @@ namespace cp
 								gp++;
 							}
 						}
-						dst.at<uchar>(y, x) = h.returnVal();
+						dst.at<srcType>(y, x) = h.returnVal();
 					}
 				}
 			}
@@ -998,7 +1005,7 @@ namespace cp
 						h.clear();
 						for (int j = 0, idx = 0; j < 2 * r + 1; j++)
 						{
-							uchar* sp = src2.ptr<uchar>(y + j); sp += x;
+							srcType* sp = srcBorder.ptr<srcType>(y + j); sp += x;
 							for (int i = 0; i < 2 * r + 1; i++, idx++)
 							{
 								float addval = luts[idx];
@@ -1006,7 +1013,7 @@ namespace cp
 								sp++;
 							}
 						}
-						dst.at<uchar>(y, x) = h.returnVal();
+						dst.at<srcType>(y, x) = h.returnVal();
 					}
 				}
 			}
@@ -1024,16 +1031,25 @@ namespace cp
 							for (int i = 0; i < 2 * r + 1; i++, idx++)
 							{
 								float addval = 1.f;
-								h.add(addval, src2.at<uchar>(y + j, x + i), metric);
+								h.add(addval, srcBorder.at<srcType >(y + j, x + i), metric);
 							}
 						}
-						dst.at<uchar>(y, x) = h.returnVal();
+						dst.at<srcType>(y, x) = h.returnVal();
 					}
 				}
 			}
 			delete[] lutc;
 			delete[] luts;
 		}
+	}
+
+	void weightedHistogramFilter(Mat& src, Mat& guide, Mat& dst, int r, int truncate, double sig_c, double sig_s, int metric, int method)
+	{
+		CV_Assert(guide.depth() == CV_8U);
+		if (src.depth() == CV_8U && guide.depth() == CV_8U)weightedHistogramFilter_<uchar, uchar>(src, guide, dst, r, truncate, sig_c, sig_s, metric, method);
+		if (src.depth() == CV_16S && guide.depth() == CV_8U)weightedHistogramFilter_<short, uchar>(src, guide, dst, r, truncate, sig_c, sig_s, metric, method);
+		if (src.depth() == CV_16U && guide.depth() == CV_8U)weightedHistogramFilter_<ushort, uchar>(src, guide, dst, r, truncate, sig_c, sig_s, metric, method);
+		if (src.depth() == CV_32F && guide.depth() == CV_8U)weightedHistogramFilter_<float, uchar>(src, guide, dst, r, truncate, sig_c, sig_s, metric, method);
 	}
 
 	//with mask
@@ -1076,7 +1092,7 @@ namespace cp
 
 			float* lutc1 = new float[768];
 			float* lutc2 = new float[768];
-			float* luts = new float[(2 * r + 1)*(2 * r + 1)];
+			float* luts = new float[(2 * r + 1) * (2 * r + 1)];
 
 
 			for (int j = 0, idx = 0; j < 2 * r + 1; j++)
@@ -1198,7 +1214,7 @@ namespace cp
 
 			float* lutc1 = new float[256];
 			float* lutc2 = new float[256];
-			float* luts = new float[(2 * r + 1)*(2 * r + 1)];
+			float* luts = new float[(2 * r + 1) * (2 * r + 1)];
 
 
 			for (int j = 0, idx = 0; j < 2 * r + 1; j++)
@@ -1210,8 +1226,8 @@ namespace cp
 			}
 			for (int i = 0; i < 256; i++)
 			{
-				lutc1[i] = (float)(exp(-sqr(i) / (2.0*sqr(sig_c1))));
-				lutc2[i] = (float)(exp(-sqr(i) / (2.0*sqr(sig_c2))));
+				lutc1[i] = (float)(exp(-sqr(i) / (2.0 * sqr(sig_c1))));
+				lutc2[i] = (float)(exp(-sqr(i) / (2.0 * sqr(sig_c2))));
 			}
 
 			if (method == Histogram::BILATERAL)
@@ -1347,7 +1363,7 @@ namespace cp
 			Mat guideR; copyMakeBorder(R, guideR, r, r, r, r, borderType);
 
 			float* lutc = new float[768];
-			float* luts = new float[(2 * r + 1)*(2 * r + 1)];
+			float* luts = new float[(2 * r + 1) * (2 * r + 1)];
 
 
 			for (int j = 0, idx = 0; j < 2 * r + 1; j++)
@@ -1465,7 +1481,7 @@ namespace cp
 			Mat G; copyMakeBorder(guide, G, r, r, r, r, borderType);
 
 			float* lutc = new float[256];
-			float* luts = new float[(2 * r + 1)*(2 * r + 1)];
+			float* luts = new float[(2 * r + 1) * (2 * r + 1)];
 
 
 			for (int j = 0, idx = 0; j < 2 * r + 1; j++)
@@ -1477,7 +1493,7 @@ namespace cp
 			}
 			for (int i = 0; i < 256; i++)
 			{
-				lutc[i] = (float)(exp(-sqr(i) / (2.0*sqr(sig_c))));
+				lutc[i] = (float)(exp(-sqr(i) / (2.0 * sqr(sig_c))));
 			}
 
 			if (method == Histogram::BILATERAL)
