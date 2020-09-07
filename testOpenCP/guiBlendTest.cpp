@@ -83,13 +83,13 @@ Mat generateHorizontalGradationMask(Size size, const int depth)
 	return ret;
 }
 
-template<class T>
+template<class srcType>
 void alphaBlendMask8U_Naive_(Mat& src1, Mat& src2, Mat& alpha, Mat& dst)
 {
 	int size = src1.size().area();
-	T* s1 = src1.ptr<T>();
-	T* s2 = src2.ptr<T>();
-	T* d = dst.ptr<T>();
+	srcType* s1 = src1.ptr<srcType>();
+	srcType* s2 = src2.ptr<srcType>();
+	srcType* d = dst.ptr<srcType>();
 	uchar* a = alpha.ptr<uchar>();
 	const float inv = 1.f / 255.0;
 	if (src1.channels() == 1)
@@ -97,7 +97,7 @@ void alphaBlendMask8U_Naive_(Mat& src1, Mat& src2, Mat& alpha, Mat& dst)
 		for (int i = 0; i < size; i++)
 		{
 			const float aa = inv * a[i];
-			d[i] = saturate_cast<T>(aa * s1[i] + (1.f - aa) * s2[i]);
+			d[i] = saturate_cast<srcType>(aa * s1[i] + (1.f - aa) * s2[i]);
 		}
 	}
 	else if (src1.channels() == 3)
@@ -105,27 +105,27 @@ void alphaBlendMask8U_Naive_(Mat& src1, Mat& src2, Mat& alpha, Mat& dst)
 		for (int i = 0; i < size; i++)
 		{
 			const float aa = inv * a[i];
-			d[3 * i + 0] = saturate_cast<T>(aa * s1[3 * i + 0] + (1.f - aa) * s2[3 * i + 0]);
-			d[3 * i + 1] = saturate_cast<T>(aa * s1[3 * i + 1] + (1.f - aa) * s2[3 * i + 1]);
-			d[3 * i + 2] = saturate_cast<T>(aa * s1[3 * i + 2] + (1.f - aa) * s2[3 * i + 2]);
+			d[3 * i + 0] = saturate_cast<srcType>(aa * s1[3 * i + 0] + (1.f - aa) * s2[3 * i + 0]);
+			d[3 * i + 1] = saturate_cast<srcType>(aa * s1[3 * i + 1] + (1.f - aa) * s2[3 * i + 1]);
+			d[3 * i + 2] = saturate_cast<srcType>(aa * s1[3 * i + 2] + (1.f - aa) * s2[3 * i + 2]);
 		}
 	}
 }
 
-template<class T>
+template<class srcType>
 void alphaBlendMask32F_Naive_(Mat& src1, Mat& src2, Mat& alpha, Mat& dst)
 {
 	int size = src1.size().area();
-	T* s1 = src1.ptr<T>();
-	T* s2 = src2.ptr<T>();
-	T* d = dst.ptr<T>();
+	srcType* s1 = src1.ptr<srcType>();
+	srcType* s2 = src2.ptr<srcType>();
+	srcType* d = dst.ptr<srcType>();
 	float* a = alpha.ptr<float>();
 	if (src1.channels() == 1)
 	{
 		for (int i = 0; i < size; i++)
 		{
 			const float aa = a[i];
-			d[i] = saturate_cast<T>(aa * s1[i] + (1.f - aa) * s2[i]);
+			d[i] = saturate_cast<srcType>(aa * s1[i] + (1.f - aa) * s2[i]);
 		}
 	}
 	else if (src1.channels() == 3)
@@ -133,9 +133,9 @@ void alphaBlendMask32F_Naive_(Mat& src1, Mat& src2, Mat& alpha, Mat& dst)
 		for (int i = 0; i < size; i++)
 		{
 			const float aa = a[i];
-			d[3 * i + 0] = saturate_cast<T>(aa * s1[3 * i + 0] + (1.f - aa) * s2[3 * i + 0]);
-			d[3 * i + 1] = saturate_cast<T>(aa * s1[3 * i + 1] + (1.f - aa) * s2[3 * i + 1]);
-			d[3 * i + 2] = saturate_cast<T>(aa * s1[3 * i + 2] + (1.f - aa) * s2[3 * i + 2]);
+			d[3 * i + 0] = saturate_cast<srcType>(aa * s1[3 * i + 0] + (1.f - aa) * s2[3 * i + 0]);
+			d[3 * i + 1] = saturate_cast<srcType>(aa * s1[3 * i + 1] + (1.f - aa) * s2[3 * i + 1]);
+			d[3 * i + 2] = saturate_cast<srcType>(aa * s1[3 * i + 2] + (1.f - aa) * s2[3 * i + 2]);
 		}
 	}
 }

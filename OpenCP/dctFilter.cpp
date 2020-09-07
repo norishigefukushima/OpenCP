@@ -4,35 +4,35 @@ using namespace cv;
 
 namespace cp
 {
-	template<class T>
-	void createGaussianDCTIWiener_(Mat& src, const T sigma, const T eps)
+	template<class srcType>
+	void createGaussianDCTIWiener_(Mat& src, const srcType sigma, const srcType eps)
 	{
-		T temp = sigma*(T)CV_PI / (src.cols);
-		T a = -temp*temp / (T)2.0;
+		srcType temp = sigma*(srcType)CV_PI / (src.cols);
+		srcType a = -temp*temp / (srcType)2.0;
 
 		for (int j = 0; j < src.rows; j++)
 		{
 			for (int i = 0; i < src.cols; i++)
 			{
-				T d = (T)(i*i + j*j);
-				T v = exp(a*d);
-				src.at<T>(j, i) = v*v / (v*v + eps);
+				srcType d = (srcType)(i*i + j*j);
+				srcType v = exp(a*d);
+				src.at<srcType>(j, i) = v*v / (v*v + eps);
 			}
 		}
 	}
 
-	template<class T>
-	void createGaussianDCTITihkonov_(Mat& src, const T sigma, const T eps)
+	template<class srcType>
+	void createGaussianDCTITihkonov_(Mat& src, const srcType sigma, const srcType eps)
 	{
-		T temp = sigma*(T)CV_PI / (src.cols);
-		T a = -temp*temp / (T)2.0;
+		srcType temp = sigma*(srcType)CV_PI / (src.cols);
+		srcType a = -temp*temp / (srcType)2.0;
 
 		for (int j = 0; j < src.rows; j++)
 		{
 			for (int i = 0; i < src.cols; i++)
 			{
-				T d = (T)(i*i + j*j);
-				T v = exp(a*d);
+				srcType d = (srcType)(i*i + j*j);
+				srcType v = exp(a*d);
 				//src.at<T>(j, i) = v*v / (v*v + eps);
 
 				//v = (1.0 - eps)*v;
@@ -41,7 +41,7 @@ namespace cp
 				
 
 				//src.at<T>(j, i) *= (1.f + eps);
-				src.at<T>(j, i) = v*v*v*v / (v*v*v*v + eps);
+				src.at<srcType>(j, i) = v*v*v*v / (v*v*v*v + eps);
 				
 				/*
 				if(i==j)
@@ -53,36 +53,36 @@ namespace cp
 		}
 	}
 
-	template<class T>
-	void createGaussianDCTIT_(Mat& src, const T sigma, const T eps)
+	template<class srcType>
+	void createGaussianDCTIT_(Mat& src, const srcType sigma, const srcType eps)
 	{
-		T temp = sigma*CV_PI / (src.cols);
-		T a = -temp*temp / 2.0;
+		srcType temp = sigma*CV_PI / (src.cols);
+		srcType a = -temp*temp / 2.0;
 
 		for (int j = 0; j < src.rows; j++)
 		{
 			for (int i = 0; i < src.cols; i++)
 			{
-				T d = i*i + j*j;
-				T v = exp(a*d);
-				src.at<T>(j, i) = v + eps;
+				srcType d = i*i + j*j;
+				srcType v = exp(a*d);
+				src.at<srcType>(j, i) = v + eps;
 			}
 		}
 	}
 
-	template<class T>
-	void createGaussianDCTI_(Mat& src, const T sigma, const T max_clip_eps)
+	template<class srcType>
+	void createGaussianDCTI_(Mat& src, const srcType sigma, const srcType max_clip_eps)
 	{
-		T temp = sigma*(T)CV_PI / (src.cols);
-		T a = -temp*temp / (T)2.0;
+		srcType temp = sigma*(srcType)CV_PI / (src.cols);
+		srcType a = -temp*temp / (srcType)2.0;
 
 		for (int j = 0; j < src.rows; j++)
 		{
 			for (int i = 0; i < src.cols; i++)
 			{
-				T d = (T)(i*i + j*j);
-				T v = max(max_clip_eps, exp(a*d));
-				src.at<T>(j, i) = v;
+				srcType d = (srcType)(i*i + j*j);
+				srcType v = max(max_clip_eps, exp(a*d));
+				src.at<srcType>(j, i) = v;
 			}
 		}
 	}

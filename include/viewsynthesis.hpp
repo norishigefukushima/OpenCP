@@ -30,7 +30,7 @@ namespace cp
 		cv::Mat mslice;
 		double calcReprojectionError(const cv::Mat& leftim, const cv::Mat& rightim, const cv::Mat& leftdisp, const cv::Mat& rightdisp, int disp_amp, bool left2right = true);
 
-		template <class S, class T>
+		template <class S, class srcType>
 		void getDisparitySubPixel_Integer(cv::Mat& src, cv::Mat& dest, int disp_amp);
 		void bluidCostSlice(const cv::Mat& src1, const cv::Mat& src2, cv::Mat& dest, int metric, int truncate);
 	public:
@@ -45,13 +45,13 @@ namespace cp
 
 	private:
 		void depthfilter(cv::Mat& depth, cv::Mat& depth2, cv::Mat& mask2, int viewstep, double disp_amp);
-		template <class T>
+		template <class srcType>
 		void analyzeSynthesizedViewDetail_(cv::Mat& srcL, cv::Mat& srcR, cv::Mat& dispL, cv::Mat& dispR, double alpha, int invalidvalue, double disp_amp, cv::Mat& srcsynth, cv::Mat& ref);
-		template <class T>
+		template <class srcType>
 		void viewsynth(const cv::Mat& srcL, const cv::Mat& srcR, const cv::Mat& dispL, const cv::Mat& dispR, cv::Mat& dest, cv::Mat& destdisp, double alpha, int invalidvalue, double disp_amp, int disptype);
-		template <class T>
+		template <class srcType>
 		void makeMask_(cv::Mat& srcL, cv::Mat& srcR, cv::Mat& dispL, cv::Mat& dispR, double alpha, int invalidvalue, double disp_amp);
-		template <class T>
+		template <class srcType>
 		void viewsynthSingle(cv::Mat& src, cv::Mat& disp, cv::Mat& dest, cv::Mat& destdisp, double alpha, int invalidvalue, double disp_amp, int disptype);
 
 	public:

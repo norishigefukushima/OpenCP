@@ -29,8 +29,8 @@
 #define M_SQRT2PI   2.50662827463100050241576528481104525
 #endif
 
-template <typename T>
-static void make_filter(T *result_b, T *result_a, const complex4c *alpha, const complex4c *beta, int K, T sigma);
+template <typename srcType>
+static void make_filter(srcType *result_b, srcType *result_a, const complex4c *alpha, const complex4c *beta, int K, srcType sigma);
 
 /**
  * \brief Precompute coefficients for Deriche's Gaussian approximation
@@ -57,8 +57,8 @@ static void make_filter(T *result_b, T *result_a, const complex4c *alpha, const 
  * \f[ \frac{\sum_{k=1}^K b^-_k z^k}{1+\sum_{k=1}^K a_k z^k}= H^{(K)}(z^{-1})-
 h_0^{(K)}=\frac{\sum_{k=1}^K(b^+_k-a_k b^+_0)z^k}{1+\sum_{k=1}^K a_k z^k}. \f]
  */
-template<typename T>
-void deriche_precomp_(deriche_coeffs<T> *c, T sigma, int K, T tol)
+template<typename srcType>
+void deriche_precomp_(deriche_coeffs<srcType> *c, srcType sigma, int K, srcType tol)
 {
     /* Deriche's optimized filter parameters. */
     static const complex4c alpha[DERICHE_MAX_K - DERICHE_MIN_K + 1][4] = {
@@ -89,10 +89,10 @@ void deriche_precomp_(deriche_coeffs<T> *c, T sigma, int K, T tol)
     }
     
     /* Compute the causal filter coefficients */
-    make_filter<T>(c->b_causal, c->a, alpha[K - DERICHE_MIN_K], beta, K, sigma);
+    make_filter<srcType>(c->b_causal, c->a, alpha[K - DERICHE_MIN_K], beta, K, sigma);
     
     /* Numerator coefficients of the anticausal filter */
-    c->b_anticausal[0] = (T)(0.0);
+    c->b_anticausal[0] = (srcType)(0.0);
     
     for (k = 1; k < K; ++k)
         c->b_anticausal[k] = c->b_causal[k] - c->a[k] * c->b_causal[0];
@@ -106,14 +106,14 @@ void deriche_precomp_(deriche_coeffs<T> *c, T sigma, int K, T tol)
     for (k = 0, accum = 0.0; k < K; ++k)
         accum += c->b_causal[k];
     
-    c->sum_causal = (T)(accum / accum_denom);
+    c->sum_causal = (srcType)(accum / accum_denom);
     
     for (k = 1, accum = 0.0; k <= K; ++k)
         accum += c->b_anticausal[k];
     
-    c->sum_anticausal = (T)(accum / accum_denom);
+    c->sum_anticausal = (srcType)(accum / accum_denom);
     
-    c->sigma = (T)sigma;
+    c->sigma = (srcType)sigma;
     c->K = K;
     c->tol = tol;
     c->max_iter = (int)ceil(10.0 * sigma);
@@ -150,8 +150,8 @@ z^{-1}}=\frac{\sum_{k=0}^{K-1}b_k z^{-k}}{1+\sum_{k=1}^{K}a_k z^{-k}} \f]
  * \f[ \frac{b(z)}{a(z)}\leftarrow\frac{b(z)}{a(z)}+\frac{\alpha_k}{1+\beta_k
 z^{-1}}=\frac{b(z)(1+\beta_kz^{-1})+a(z)\alpha_k}{a(z)(1+\beta_kz^{-1})}. \f]
  */
-template<typename T>
-static void make_filter(T *result_b, T *result_a, const complex4c *alpha, const complex4c *beta, int K, T sigma)
+template<typename srcType>
+static void make_filter(srcType *result_b, srcType *result_a, const complex4c *alpha, const complex4c *beta, int K, srcType sigma)
 {
     const double denom = sigma * M_SQRT2PI;
     complex4c b[DERICHE_MAX_K], a[DERICHE_MAX_K + 1];
@@ -179,8 +179,8 @@ static void make_filter(T *result_b, T *result_a, const complex4c *alpha, const 
     
     for (k = 0; k < K; ++k)
     {
-        result_b[k] = (T)(b[k].real / denom);
-        result_a[k + 1] = (T)a[k + 1].real;
+        result_b[k] = (srcType)(b[k].real / denom);
+        result_a[k + 1] = (srcType)a[k + 1].real;
     }
     
     return;
@@ -217,14 +217,14 @@ static void make_filter(T *result_b, T *result_a, const complex4c *alpha, const 
  * results may be inaccurate for large values of sigma.
  */
 
-template<typename T>
-void deriche_gaussian_conv_(deriche_coeffs<T> c, T *dest, T *buffer, const T *src, long N, long stride)
+template<typename srcType>
+void deriche_gaussian_conv_(deriche_coeffs<srcType> c, srcType *dest, srcType *buffer, const srcType *src, long N, long stride)
 {
     const long stride_2 = stride * 2;
     const long stride_3 = stride * 3;
     const long stride_4 = stride * 4;
     const long stride_N = stride * N;
-    T *y_causal, *y_anticausal;
+    srcType *y_causal, *y_anticausal;
     long i, n;
     
     assert(dest && buffer && src && buffer != src && N > 0 && stride != 0);
@@ -240,7 +240,7 @@ void deriche_gaussian_conv_(deriche_coeffs<T> c, T *dest, T *buffer, const T *sr
     y_anticausal = buffer + N;
     
     /* Initialize the causal filter on the left boundary. */
-    init_recursive_filter_<T>(y_causal, src, N, stride,
+    init_recursive_filter_<srcType>(y_causal, src, N, stride,
         c.b_causal, c.K - 1, c.a, c.K, c.sum_causal, c.tol, c.max_iter);
     
     /* The following filters the interior samples according to the filter
@@ -363,8 +363,8 @@ void deriche_gaussian_conv(deriche_coeffs<double> c, double *dest, double *buffe
  * \note When the #num typedef is set to single-precision arithmetic,
  * results may be inaccurate for large values of sigma.
  */
-template<typename T>
-void deriche_gaussian_conv_image_(deriche_coeffs<T> c, T *dest, T *buffer, const T *src, int width, int height, int num_channels)
+template<typename srcType>
+void deriche_gaussian_conv_image_(deriche_coeffs<srcType> c, srcType *dest, srcType *buffer, const srcType *src, int width, int height, int num_channels)
 {
     long num_pixels = ((long)width) * ((long)height);
     int x, y, channel;
@@ -374,8 +374,8 @@ void deriche_gaussian_conv_image_(deriche_coeffs<T> c, T *dest, T *buffer, const
     /* Loop over the image channels. */
     for (channel = 0; channel < num_channels; ++channel)
     {
-        T *dest_y = dest;
-        const T *src_y = src;
+        srcType *dest_y = dest;
+        const srcType *src_y = src;
         
         /* Filter each row of the channel. */
         for (y = 0; y < height; ++y)

@@ -176,8 +176,8 @@ static void expand_pole_product(double *c, const complex4c *poles, int K)
  * \f[ u_{N-K+m}=\sum_{n=0}^{K-1}M(m,n)\,q_{N-K+m},\quad m=0,\ldots,K-1. \f]
  */
 
-template <typename T>
-void vyv_precomp_(vyv_coeffs<T> *c, T sigma, int K, T tol)
+template <typename srcType>
+void vyv_precomp_(vyv_coeffs<srcType> *c, srcType sigma, int K, srcType tol)
 {
 	/* Optimized unscaled pole locations. */
 	__declspec(align(16)) static const complex4c poles0[VYV_MAX_K - VYV_MIN_K + 1][5] = {
@@ -221,13 +221,13 @@ void vyv_precomp_(vyv_coeffs<T> *c, T sigma, int K, T tol)
 
 	/* Store precomputations in coeffs struct. */
 	for (i = 0; i <= K; ++i)
-		c->filter[i] = (T)filter[i];
+		c->filter[i] = (srcType)filter[i];
 
 	for (i = 0; i < matrix_size; ++i)
-		c->M[i] = (T)inv_A[i];
+		c->M[i] = (srcType)inv_A[i];
 
 	c->K = K;
-	c->sigma = (T)sigma;
+	c->sigma = (srcType)sigma;
 	c->tol = tol;
 	c->max_iter = (int)(10.0 * sigma);
 	return;
@@ -265,15 +265,15 @@ void vyv_precomp(vyv_coeffs<double> *c, double sigma, int K, double tol)
  * results may be inaccurate for large values of sigma.
  */
 
-template <typename T>
-void vyv_gaussian_conv(const vyv_coeffs<T> c, T *dest, const T *src, const int N, const int stride)
+template <typename srcType>
+void vyv_gaussian_conv(const vyv_coeffs<srcType> c, srcType *dest, const srcType *src, const int N, const int stride)
 {
 	const int stride_2 = stride * 2;
 	const int stride_3 = stride * 3;
 	const int stride_4 = stride * 4;
 	const int stride_5 = stride * 5;
 	const int stride_N = stride * N;
-	T q[VYV_MAX_K];
+	srcType q[VYV_MAX_K];
 	long i;
 	int m, n;
 
@@ -287,7 +287,7 @@ void vyv_gaussian_conv(const vyv_coeffs<T> c, T *dest, const T *src, const int N
 
 
 	/* Handle the left boundary. */
-	init_recursive_filter_<T>(q, src, N, stride, c.filter, 0, c.filter, c.K, (T)1.0, c.tol, c.max_iter);
+	init_recursive_filter_<srcType>(q, src, N, stride, c.filter, 0, c.filter, c.K, (srcType)1.0, c.tol, c.max_iter);
 
 	for (m = 0; m < c.K; ++m)
 		dest[stride * m] = q[m];
@@ -339,7 +339,7 @@ void vyv_gaussian_conv(const vyv_coeffs<T> c, T *dest, const T *src, const int N
 	   dest(N - K + m) = \sum_{n=0}^{K-1} M(m, n) q(n). */
 	for (m = 0; m < c.K; ++m)
 	{
-		T accum = (T)0.0;
+		srcType accum = (srcType)0.0;
 
 		for (n = 0; n < c.K; ++n)
 			accum += c.M[m + c.K*n] * q[n];
@@ -388,11 +388,11 @@ void vyv_gaussian_conv(const vyv_coeffs<T> c, T *dest, const T *src, const int N
 	return;
 }
 
-template <typename T>
-void vyv_gaussian_conv_w(const vyv_coeffs<T> c, T *dest, const T *src, const int N)
+template <typename srcType>
+void vyv_gaussian_conv_w(const vyv_coeffs<srcType> c, srcType *dest, const srcType *src, const int N)
 {
 	//const vyv_coeffs<T> c = c_;
-	__declspec(align(16)) T q[VYV_MAX_K];
+	__declspec(align(16)) srcType q[VYV_MAX_K];
 	long i;
 	int m, n;
 
@@ -406,7 +406,7 @@ void vyv_gaussian_conv_w(const vyv_coeffs<T> c, T *dest, const T *src, const int
 
 
 	/* Handle the left boundary. */
-	init_recursive_filter_<T>(q, src, N, 1, c.filter, 0, c.filter, c.K, (T)1.0, c.tol, c.max_iter);
+	init_recursive_filter_<srcType>(q, src, N, 1, c.filter, 0, c.filter, c.K, (srcType)1.0, c.tol, c.max_iter);
 
 	for (m = 0; m < c.K; ++m)
 		dest[m] = q[m];
@@ -458,7 +458,7 @@ void vyv_gaussian_conv_w(const vyv_coeffs<T> c, T *dest, const T *src, const int
 	dest(N - K + m) = \sum_{n=0}^{K-1} M(m, n) q(n). */
 	for (m = 0; m < c.K; ++m)
 	{
-		T accum = (T)0.0;
+		srcType accum = (srcType)0.0;
 
 		for (n = 0; n < c.K; ++n)
 			accum += c.M[m + c.K*n] * q[n];
@@ -666,8 +666,8 @@ void vyv_gaussian_conv_w<float>(const vyv_coeffs<float> c, float *dest, const fl
  * \note When the #num typedef is set to single-precision arithmetic,
  * results may be inaccurate for large values of sigma.
  */
-template <typename T>
-void vyv_gaussian_conv_image_(vyv_coeffs<T> c, T *dest, const T *src, const int width, const int height, const int num_channels)
+template <typename srcType>
+void vyv_gaussian_conv_image_(vyv_coeffs<srcType> c, srcType *dest, const srcType *src, const int width, const int height, const int num_channels)
 {
 	const int num_pixels = (width)* (height);
 	int x, y, channel;
@@ -677,8 +677,8 @@ void vyv_gaussian_conv_image_(vyv_coeffs<T> c, T *dest, const T *src, const int 
 	/* Loop over the image channels. */
 	for (channel = 0; channel < num_channels; ++channel)
 	{
-		T *dest_y = dest;
-		const T *src_y = src;
+		srcType *dest_y = dest;
+		const srcType *src_y = src;
 
 		/* Filter each row of the channel. */
 		{
@@ -686,7 +686,7 @@ void vyv_gaussian_conv_image_(vyv_coeffs<T> c, T *dest, const T *src, const int 
 			for (y = 0; y < height; ++y)
 			{
 				//vyv_gaussian_conv<T>(c, dest_y, src_y, width, 1);
-				vyv_gaussian_conv_w<T>(c, dest_y, src_y, width);
+				vyv_gaussian_conv_w<srcType>(c, dest_y, src_y, width);
 
 				dest_y += width;
 				src_y += width;
@@ -697,7 +697,7 @@ void vyv_gaussian_conv_image_(vyv_coeffs<T> c, T *dest, const T *src, const int 
 		{
 			//CalcTime t("height");
 			for (x = 0; x < width; ++x)
-				vyv_gaussian_conv<T>(c, dest + x, dest + x, height, width);
+				vyv_gaussian_conv<srcType>(c, dest + x, dest + x, height, width);
 		}
 		dest += num_pixels;
 		src += num_pixels;

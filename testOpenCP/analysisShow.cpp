@@ -14,12 +14,12 @@ void guiAnalysisCompare(Mat& src1, Mat& src2)
 	}
 }
 
-template <class T>
+template <class srcType>
 void getImageLine_(Mat& src, int channel, vector<Point>& v, const int line)
 {
 	const int ch = src.channels();
 
-	T* s = src.ptr<T>(line);
+	srcType* s = src.ptr<srcType>(line);
 	if (ch == 1)
 	{
 		for (int i = 0; i < src.cols; i++)

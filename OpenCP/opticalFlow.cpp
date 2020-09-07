@@ -312,14 +312,14 @@ namespace cp
 		}
 	}
 
-	template <class T>
-	static void fillOcclusionAbs_(Mat& src, const T invalidvalue, const T maxval)
+	template <class srcType>
+	static void fillOcclusionAbs_(Mat& src, const srcType invalidvalue, const srcType maxval)
 	{
 		const int MAX_LENGTH = (int)(src.cols*0.5);
 		//#pragma omp parallel for
 		for (int j = 0; j < src.rows; j++)
 		{
-			T* s = src.ptr<T>(j);
+			srcType* s = src.ptr<srcType>(j);
 
 			s[0] = maxval;
 			s[src.cols - 1] = maxval;
@@ -335,7 +335,7 @@ namespace cp
 						if (t > src.cols - 1)break;
 					} while (s[t] == invalidvalue);
 
-					T dd;
+					srcType dd;
 					if (abs(s[i - 1]) < abs(s[t]))
 						dd = s[i - 1];
 					else
@@ -629,7 +629,7 @@ namespace cp
 		mergeFlow(after, xaf, ybf);
 	}
 
-	template <class T>
+	template <class srcType>
 	void dilateFlow_(Mat& src, Mat& mag, Mat& dest, Size size)
 	{
 		if (dest.empty()) dest.create(src.size(), src.type());
@@ -644,16 +644,16 @@ namespace cp
 
 		for (int j = 0; j < height; j++)
 		{
-			T* d = dest.ptr<T>(j);
+			srcType* d = dest.ptr<srcType>(j);
 			for (int i = 0; i < width; i++)
 			{
-				T argmax_u = (T)0;
-				T argmax_v = (T)0;
-				T maxval = (T)0;
+				srcType argmax_u = (srcType)0;
+				srcType argmax_v = (srcType)0;
+				srcType maxval = (srcType)0;
 				for (int l = -hh; l <= hh; l++)
 				{
-					T* s = im.ptr<T>(j + l + hh) + 2 * hw;
-					T* m = mim.ptr<T>(j + l + hh) + hw;
+					srcType* s = im.ptr<srcType>(j + l + hh) + 2 * hw;
+					srcType* m = mim.ptr<srcType>(j + l + hh) + hw;
 
 					for (int k = -hw; k <= hw; k++)
 					{

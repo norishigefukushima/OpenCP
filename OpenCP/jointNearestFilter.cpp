@@ -7,7 +7,7 @@ namespace cp
 {
 	//|s-b|<thresh d = b(center)
 	//else b(srgmin)
-	template <class T>
+	template <class srcType>
 	void jointNearestFilterBF_(const Mat& src, const Mat& before, const Size ksize, Mat& dest, int thresh)
 	{
 		if (dest.empty())dest.create(src.size(), src.depth());
@@ -34,21 +34,21 @@ namespace cp
 		}
 		const int steps = sim.cols;
 		const int step = dest.cols;
-		T* jptr = sim.ptr<T>(radiush); jptr += radiusw;
-		T* dst = dest.ptr<T>(0);
-		T* sr = (T*)src.ptr<T>(0);
+		srcType* jptr = sim.ptr<srcType>(radiush); jptr += radiusw;
+		srcType* dst = dest.ptr<srcType>(0);
+		srcType* sr = (srcType*)src.ptr<srcType>(0);
 		for (int i = 0; i < src.rows; i++)
 		{
 			for (int j = 0; j < src.cols; j++)
 			{
-				T val0 = sr[j];
-				T valc = jptr[j];
+				srcType val0 = sr[j];
+				srcType valc = jptr[j];
 
 				int minv = INT_MAX;
-				T mind = 0;
+				srcType mind = 0;
 				for (int k = 0; k < maxk; k++)
 				{
-					T val = jptr[j + space_ofs_before[k]];
+					srcType val = jptr[j + space_ofs_before[k]];
 					int ab = (int)((val - val0)*(val - val0));
 					if (ab < minv)
 					{
@@ -69,7 +69,7 @@ namespace cp
 
 
 
-	template <class T>
+	template <class srcType>
 	void jointNearestFilterBase_(const Mat& src, const Mat& before, const Size ksize, Mat& dest)
 	{
 		if (dest.empty())dest.create(src.size(), src.type());
@@ -99,21 +99,21 @@ namespace cp
 		const int steps = sim.cols*channels;
 		const int step = dest.cols*channels;
 
-		T* jptr = sim.ptr<T>(radiush); jptr += radiusw*channels;
-		T* dst = dest.ptr<T>(0);
-		T* sr = (T*)src.ptr<T>(0);
+		srcType* jptr = sim.ptr<srcType>(radiush); jptr += radiusw*channels;
+		srcType* dst = dest.ptr<srcType>(0);
+		srcType* sr = (srcType*)src.ptr<srcType>(0);
 		if (channels == 1)
 		{
 			for (int i = 0; i < src.rows; i++)
 			{
 				for (int j = 0; j < src.cols; j++)
 				{
-					T val0 = sr[j];
+					srcType val0 = sr[j];
 					int minv = INT_MAX;
-					T mind = 0;
+					srcType mind = 0;
 					for (int k = 0; k < maxk; k++)
 					{
-						T val = jptr[j + space_ofs_before[k]];
+						srcType val = jptr[j + space_ofs_before[k]];
 						int ab = (int)((val - val0)*(val - val0));
 						if (ab < minv)
 						{
@@ -134,19 +134,19 @@ namespace cp
 			{
 				for (int j = 0; j < src.cols; j++)
 				{
-					T val0_b = sr[3 * j + 0];
-					T val0_g = sr[3 * j + 1];
-					T val0_r = sr[3 * j + 2];
+					srcType val0_b = sr[3 * j + 0];
+					srcType val0_g = sr[3 * j + 1];
+					srcType val0_r = sr[3 * j + 2];
 					int minv = INT_MAX;
-					T mind_b = 0;
-					T mind_g = 0;
-					T mind_r = 0;
+					srcType mind_b = 0;
+					srcType mind_g = 0;
+					srcType mind_r = 0;
 
 					for (int k = 0; k < maxk; k++)
 					{
-						T val_b = jptr[3 * j + space_ofs_before[k] + 0];
-						T val_g = jptr[3 * j + space_ofs_before[k] + 1];
-						T val_r = jptr[3 * j + space_ofs_before[k] + 2];
+						srcType val_b = jptr[3 * j + space_ofs_before[k] + 0];
+						srcType val_g = jptr[3 * j + space_ofs_before[k] + 1];
+						srcType val_r = jptr[3 * j + space_ofs_before[k] + 2];
 						//L2
 						int ab = (int)((val_b - val0_b)*(val_b - val0_b) + (val_g - val0_g)*(val_g - val0_g) + ((val_r - val0_r)*(val_r - val0_r)));
 

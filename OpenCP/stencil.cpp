@@ -6,7 +6,7 @@ using namespace cv;
 namespace cp
 {
 
-	template <class T>
+	template <class srcType>
 	void splitToGrid_(const Mat& src, vector<Mat>& dest, Size gridNum, int borderRadius)
 	{
 		int w = (src.cols%gridNum.width == 0) ? src.cols / gridNum.width : src.cols / gridNum.width + 1;
@@ -49,18 +49,18 @@ namespace cp
 			dest[i].create(Size(bwidth, bheight), src.type());
 
 		//copy
-		T* sptr = (T*)im.ptr<T>(0);
+		srcType* sptr = (srcType*)im.ptr<srcType>(0);
 		for (int j = 0; j < gnumheight; j++)
 		{
 			for (int i = 0; i < gnumwidth; i++)
 			{
 				const int idx = gnumwidth*j + i;
-				T* dst = dest[idx].ptr<T>(0);
-				T* s = sptr + j*ghstep + i*gwstep;
+				srcType* dst = dest[idx].ptr<srcType>(0);
+				srcType* s = sptr + j*ghstep + i*gwstep;
 
 				for (int k = 0; k < bheight; k++)
 				{
-					memcpy(dst, s, sizeof(T)*bwstep);
+					memcpy(dst, s, sizeof(srcType)*bwstep);
 					dst += bwstep;
 					s += step;
 				}
@@ -183,7 +183,7 @@ namespace cp
 	}
 
 	using namespace std;
-	template <class T>
+	template <class srcType>
 	void mergeFromGrid_(vector<Mat>& src, Size beforeSize, Mat& dest, Size grid, int borderRadius)
 	{
 		const int width = beforeSize.width;
@@ -218,7 +218,7 @@ namespace cp
 		Mat dbuff = Mat::zeros(Size(beforeSize.width + beforeSize.width%grid.width,
 			beforeSize.height + beforeSize.height%grid.height), src[0].type());
 
-		T* dptr = (T*)dbuff.ptr<T>(0);
+		srcType* dptr = (srcType*)dbuff.ptr<srcType>(0);
 		const int step = dbuff.cols*channels;
 		const int ghstep = gheight*step;
 
@@ -227,12 +227,12 @@ namespace cp
 			for (int i = 0; i < gnumwidth; i++)
 			{
 				const int idx = gnumwidth*j + i;
-				T* ss = src[idx].ptr<T>(borderRadius) +soffset;
-				T* dst = dptr + j*ghstep + i*gwstep;
+				srcType* ss = src[idx].ptr<srcType>(borderRadius) +soffset;
+				srcType* dst = dptr + j*ghstep + i*gwstep;
 
 				for (int k = 0; k < gheight; k++)
 				{
-					memcpy(dst, ss, sizeof(T)*gwstep);
+					memcpy(dst, ss, sizeof(srcType)*gwstep);
 					//memset(dst, 128, sizeof(T)*gwstep);
 					ss += bwstep;
 					dst += step;

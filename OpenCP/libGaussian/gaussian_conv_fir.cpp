@@ -38,21 +38,21 @@
  * The filter should be released by the caller
  * with \c free().
  */
-template <typename T>
-static T *make_g_trunc(T sigma, long r)
+template <typename srcType>
+static srcType *make_g_trunc(srcType sigma, long r)
 {
-    T *g_trunc = NULL;
+    srcType *g_trunc = NULL;
     
-    if ((g_trunc = (T *)malloc(sizeof(T) * (r + 1))))
+    if ((g_trunc = (srcType *)malloc(sizeof(srcType) * (r + 1))))
     {
-        T accum = g_trunc[0] = 1.0;
+        srcType accum = g_trunc[0] = 1.0;
         long m;
         
         for (m = 1; m <= r; ++m)
         {
-            T temp = m / sigma;
-            g_trunc[m] = (T)exp(-0.5 * temp * temp);
-            accum += (T)(2.0 * g_trunc[m]);
+            srcType temp = m / sigma;
+            g_trunc[m] = (srcType)exp(-0.5 * temp * temp);
+            accum += (srcType)(2.0 * g_trunc[m]);
         }
         
         /* Normalize such that the filter has unit sum. */
@@ -77,14 +77,14 @@ static T *make_g_trunc(T sigma, long r)
  \mathrm{src[stride*(n-m)]}, \f]
  * where \c src is extrapolated with half-sample symmetry.
  */
-template <typename T>
-static void conv_sym(T *dest, const T *src, long N, long stride, const T *h, long r)
+template <typename srcType>
+static void conv_sym(srcType *dest, const srcType *src, long N, long stride, const srcType *h, long r)
 {
     long n;
     
     for (n = 0; n < N; ++n)
     {
-        T accum = h[0] * src[stride * n];
+        srcType accum = h[0] * src[stride * n];
         long m;
         
         /* Compute \sum_m h_m ( src(n - m) + src(n + m) ). */
@@ -141,8 +141,8 @@ int fir_precomp(fir_coeffs<double> *c, double sigma, double tol)
  * \note The computation is out-of-place, `src` and `dest` must be distinct.
  */
 
-template <typename T>
-void fir_gaussian_conv_(fir_coeffs<T> c, T *dest, const T *src, long N, long stride)
+template <typename srcType>
+void fir_gaussian_conv_(fir_coeffs<srcType> c, srcType *dest, const srcType *src, long N, long stride)
 {
     assert(c.g_trunc && dest && src && dest != src && N > 0 && stride != 0);
     conv_sym(dest, src, N, stride, c.g_trunc, c.radius);
@@ -172,8 +172,8 @@ void fir_gaussian_conv(fir_coeffs<double> c, double *dest, const double *src, lo
  * Similar to fir_gaussian_conv(), this routine performs 2D FIR-based
  * Gaussian convolution.
  */
-template <typename T>
-void fir_gaussian_conv_image_(fir_coeffs<T> c, T *dest, T *buffer, const T *src, int width, int height, int num_channels)
+template <typename srcType>
+void fir_gaussian_conv_image_(fir_coeffs<srcType> c, srcType *dest, srcType *buffer, const srcType *src, int width, int height, int num_channels)
 {
     const long num_pixels = ((long)width) * ((long)height);
     int x, y, channel;
@@ -184,8 +184,8 @@ void fir_gaussian_conv_image_(fir_coeffs<T> c, T *dest, T *buffer, const T *src,
     /* Loop over the image channels. */
     for (channel = 0; channel < num_channels; ++channel)
     {
-        T *dest_y = dest;
-        const T *src_y = src;
+        srcType *dest_y = dest;
+        const srcType *src_y = src;
         
         /* Filter each column of the channel. */
         for (x = 0; x < width; ++x)
@@ -195,7 +195,7 @@ void fir_gaussian_conv_image_(fir_coeffs<T> c, T *dest, T *buffer, const T *src,
         for (y = 0; y < height; ++y)
         {
             conv_sym(buffer, dest_y, width, 1, c.g_trunc, c.radius);
-            memcpy(dest_y, buffer, sizeof(T) * width);
+            memcpy(dest_y, buffer, sizeof(srcType) * width);
             dest_y += width;
             src_y += width;
         }
@@ -220,8 +220,8 @@ void fir_gaussian_conv_image(fir_coeffs<double> c, double *dest, double *buffer,
  * \brief Release memory associated with fir_coeffs struct
  * \param c    fir_coeffs created by fir_precomp()
  */
-template <typename T>
-void fir_free_(fir_coeffs<T> *c)
+template <typename srcType>
+void fir_free_(fir_coeffs<srcType> *c)
 {
     if (c && c->g_trunc)
     {

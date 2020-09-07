@@ -659,42 +659,42 @@ static void dctDenoisingSingleAAN(Mat& src, Mat& dest, float th, int sw, float e
 }
 
 
-template<class T>
-void createGaussianDCTIWiener_(Mat& src, const T sigma, const T eps)
+template<class srcType>
+void createGaussianDCTIWiener_(Mat& src, const srcType sigma, const srcType eps)
 {
-	T temp = sigma * (T)CV_PI / (src.cols);
-	T a = -temp * temp / (T)2.0;
+	srcType temp = sigma * (srcType)CV_PI / (src.cols);
+	srcType a = -temp * temp / (srcType)2.0;
 
 	float s = 1.f / ((src.rows - 1)*(src.cols - 1));
 	for (int j = 0; j < src.rows; j++)
 	{
 		for (int i = 0; i < src.cols; i++)
 		{
-			T d = (T)(i*i + j * j);
-			T v = exp(a*d);
+			srcType d = (srcType)(i*i + j * j);
+			srcType v = exp(a*d);
 			//src.at<T>(j, i) = v / (v + eps);
-			src.at<T>(j, i) = v * v / (v*v + eps);
+			src.at<srcType>(j, i) = v * v / (v*v + eps);
 			//src.at<T>(j, i) = sqrt(v)*v / (sqrt(v)*v + eps);
 			//src.at<T>(j, i) = v*v*v / (v*v*v + eps);
 		}
 	}
 }
 
-template<class T>
-void createGaussianDCTIWienerSobolev_(Mat& src, const T sigma, const T eps)
+template<class srcType>
+void createGaussianDCTIWienerSobolev_(Mat& src, const srcType sigma, const srcType eps)
 {
-	T temp = sigma * (T)CV_PI / (src.cols);
-	T a = -temp * temp / (T)2.0;
+	srcType temp = sigma * (srcType)CV_PI / (src.cols);
+	srcType a = -temp * temp / (srcType)2.0;
 
 	float s = 1.f / ((src.rows - 1)*(src.cols - 1));
 	for (int j = 0; j < src.rows; j++)
 	{
 		for (int i = 0; i < src.cols; i++)
 		{
-			T d = (T)(i*i + j * j);
-			T v = exp(a*d);
+			srcType d = (srcType)(i*i + j * j);
+			srcType v = exp(a*d);
 			//src.at<T>(j, i) = v / (v + eps);
-			src.at<T>(j, i) = v * v / (v*v + eps * d*s);
+			src.at<srcType>(j, i) = v * v / (v*v + eps * d*s);
 			//src.at<T>(j, i) = sqrt(v)*v / (sqrt(v)*v + eps);
 			//src.at<T>(j, i) = v*v*v / (v*v*v + eps);
 		}

@@ -6,8 +6,8 @@ using namespace cv;
 namespace cp
 {
 
-	template <class T>
-	void jointColorDepthFillOcclusion_(const Mat& src, const Mat& guide, Mat& dest, const Size ksize, T threshold)
+	template <class srcType>
+	void jointColorDepthFillOcclusion_(const Mat& src, const Mat& guide, Mat& dest, const Size ksize, srcType threshold)
 	{
 		if (dest.empty())dest.create(src.size(), src.type());
 		Mat sim, gim;
@@ -34,27 +34,27 @@ namespace cp
 		const int steps = sim.cols;
 		const int step = dest.cols;
 
-		T* sptr = sim.ptr<T>(radiush); sptr += radiusw;
+		srcType* sptr = sim.ptr<srcType>(radiush); sptr += radiusw;
 		uchar* jptr = gim.ptr<uchar>(radiush); jptr += radiusw;
 
-		T* dst = dest.ptr<T>(0);
+		srcType* dst = dest.ptr<srcType>(0);
 
-		T th2 = threshold*threshold;
+		srcType th2 = threshold*threshold;
 		for (int i = 0; i < src.rows; i++)
 		{
 			for (int j = 0; j < src.cols; j++)
 			{
-				const T val0j = jptr[j];
+				const srcType val0j = jptr[j];
 
 				int minv = INT_MAX;
-				T mind = 0;
+				srcType mind = 0;
 				if (sptr[j] == 0)
 				{
 					for (int k = 0; k < maxk; k++)
 					{
 						if (sptr[j + space_ofs_before[k]] == 0) continue;
 
-						const T valj = jptr[j + space_ofs_before[k]];
+						const srcType valj = jptr[j + space_ofs_before[k]];
 						int ab = (int)((valj - val0j)*(valj - val0j));
 						if (ab < minv)
 						{
@@ -97,14 +97,14 @@ namespace cp
 	}
 
 
-	template <class T>
-	static void fillOcclusion_(Mat& src, const T invalidvalue, const T maxval)
+	template <class srcType>
+	static void fillOcclusion_(Mat& src, const srcType invalidvalue, const srcType maxval)
 	{
 		const int MAX_LENGTH = (int)(src.cols);
 		//#pragma omp parallel for
 		for (int j = 0; j < src.rows; ++j)
 		{
-			T* s = src.ptr<T>(j);
+			srcType* s = src.ptr<srcType>(j);
 
 			s[0] = maxval;
 			s[src.cols - 1] = maxval;
@@ -120,7 +120,7 @@ namespace cp
 						if (t > src.cols - 1)break;
 					} while (s[t] == invalidvalue);
 
-					const T dd = min(s[i - 1], s[t]);
+					const srcType dd = min(s[i - 1], s[t]);
 					if (t - i > MAX_LENGTH)
 					{
 						for (int n = 0; n < src.cols; ++n)
@@ -142,14 +142,14 @@ namespace cp
 		}
 	}
 
-	template <class T>
-	static void fillOcclusionInv_(Mat& src, const T invalidvalue, const T minval)
+	template <class srcType>
+	static void fillOcclusionInv_(Mat& src, const srcType invalidvalue, const srcType minval)
 	{
 		const int MAX_LENGTH = (int)(src.cols);
 		//#pragma omp parallel for
 		for (int j = 0; j < src.rows; j++)
 		{
-			T* s = src.ptr<T>(j);
+			srcType* s = src.ptr<srcType>(j);
 
 			s[0] = minval;
 			s[src.cols - 1] = minval;
@@ -165,7 +165,7 @@ namespace cp
 						if (t > src.cols - 1)break;
 					} while (s[t] == invalidvalue);
 
-					const T dd = max(s[i - 1], s[t]);
+					const srcType dd = max(s[i - 1], s[t]);
 					if (t - i > MAX_LENGTH)
 					{
 						for (int n = 0; n < src.cols; n++)
@@ -794,18 +794,18 @@ namespace cp
 		dst.copyTo(dest);
 	}
 
-	template <class T>
-	static void LRCheckDisparity_(Mat& left_disp, Mat& right_disp, const int disp12diff, T invalidvalue, const int amp, int disparity_max, const int mode)
+	template <class srcType>
+	static void LRCheckDisparity_(Mat& left_disp, Mat& right_disp, const int disp12diff, srcType invalidvalue, const int amp, int disparity_max, const int mode)
 	{
 		Mat rdisp = right_disp.clone();
 		Mat ldisp = left_disp.clone();
 		double iamp = 1.0 / amp;
 
 		const int step = left_disp.cols;
-		T* dld = left_disp.ptr<T>(0);
-		T* drd = right_disp.ptr<T>(0);
-		T* ld = ldisp.ptr<T>(0);
-		T* rd = rdisp.ptr<T>(0);
+		srcType* dld = left_disp.ptr<srcType>(0);
+		srcType* drd = right_disp.ptr<srcType>(0);
+		srcType* ld = ldisp.ptr<srcType>(0);
+		srcType* rd = rdisp.ptr<srcType>(0);
 		if (amp == 1)
 		{
 			if (mode == LR_CHECK_DISPARITY_BOTH)
@@ -814,7 +814,7 @@ namespace cp
 				{
 					for (int i = disparity_max; i < left_disp.cols - disparity_max; i++)
 					{
-						T d = ld[i];
+						srcType d = ld[i];
 						int move = (int)(d);
 						if (i - move > 0)
 						{
@@ -848,7 +848,7 @@ namespace cp
 				{
 					for (int i = disparity_max; i < left_disp.cols - disparity_max; i++)
 					{
-						const T d = ld[i];
+						const srcType d = ld[i];
 						const int move = (int)(d);
 						if (i - move > 0)
 						{
@@ -869,7 +869,7 @@ namespace cp
 				{
 					for (int i = disparity_max; i < left_disp.cols - disparity_max; i++)
 					{
-						const T d = rd[i];
+						const srcType d = rd[i];
 						const int move = (int)(d);
 						if (i + move<left_disp.cols)
 						{
@@ -894,7 +894,7 @@ namespace cp
 				{
 					for (int i = disparity_max; i < left_disp.cols - disparity_max; i++)
 					{
-						T d = ld[i];
+						srcType d = ld[i];
 						int move = (int)(d*iamp);
 						if (i - move >= 0)
 						{
@@ -933,7 +933,7 @@ namespace cp
 				{
 					for (int i = disparity_max; i < left_disp.cols - disparity_max; i++)
 					{
-						const T d = ld[i];
+						const srcType d = ld[i];
 						const int move = (int)(d*iamp);
 						if (i - move > 0)
 						{
@@ -951,7 +951,7 @@ namespace cp
 				{
 					for (int i = disparity_max; i < left_disp.cols - disparity_max; i++)
 					{
-						const T d = rd[i];
+						const srcType d = rd[i];
 						const int move = (int)(d*iamp);
 						if (i + move<left_disp.cols)
 						{
@@ -969,14 +969,14 @@ namespace cp
 		}
 	}
 
-	template <class T>
-	void fastLRCheck_(Mat& disp, T disp12diff)
+	template <class srcType>
+	void fastLRCheck_(Mat& disp, srcType disp12diff)
 	{
 		Mat temp = Mat::zeros(disp.size(), disp.type());
 		for (int j = 0; j < disp.rows; j++)
 		{
-			T* dsp = disp.ptr<T>(j);
-			T* tmp = temp.ptr<T>(j);
+			srcType* dsp = disp.ptr<srcType>(j);
+			srcType* tmp = temp.ptr<srcType>(j);
 			for (int i = 0; i < disp.cols; i++)
 			{
 				int d = cvRound(dsp[i]);
@@ -1037,7 +1037,7 @@ namespace cp
 		compare(disp, 0, mask, CMP_EQ);
 		disp_.setTo(0, mask);
 	}
-	template <class T>
+	template <class srcType>
 	static void LRCheckDisparityAdd_(Mat& left_disp, Mat& right_disp, const int disp12diff, const int amp)
 	{
 		Mat rdisp = right_disp.clone();
@@ -1046,20 +1046,20 @@ namespace cp
 #pragma omp parallel for
 		for (int j = 0; j<left_disp.rows; j++)
 		{
-			T* dld = left_disp.ptr<T>(j);
-			T* drd = right_disp.ptr<T>(j);
-			T* ld = ldisp.ptr<T>(j);
-			T* rd = rdisp.ptr<T>(j);
+			srcType* dld = left_disp.ptr<srcType>(j);
+			srcType* drd = right_disp.ptr<srcType>(j);
+			srcType* ld = ldisp.ptr<srcType>(j);
+			srcType* rd = rdisp.ptr<srcType>(j);
 			for (int i = 0; i < left_disp.cols; i++)
 			{
-				T d = ld[i];
+				srcType d = ld[i];
 				int move = (int)(d*iamp);
 				if (i - move > 0)
 				{
 					if (abs(rd[i - move] - d)>disp12diff)
 					{
 						//drd[i-move]=invalidvalue;
-						dld[i] = (T)((rd[i - move] + d)*0.5);
+						dld[i] = (srcType)((rd[i - move] + d)*0.5);
 					}
 				}
 
@@ -1070,7 +1070,7 @@ namespace cp
 					if (abs(ld[i + move] - d)>disp12diff)
 					{
 						//dld[i+move]=invalidvalue;
-						drd[i] = (T)((ld[i + move] + d)*0.5);
+						drd[i] = (srcType)((ld[i + move] + d)*0.5);
 					}
 				}
 			}

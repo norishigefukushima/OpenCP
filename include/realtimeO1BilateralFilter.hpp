@@ -28,10 +28,10 @@ namespace cp
 		void setColorLUT(double sigma_color, int channlels);
 
 		int normType;
-		template <typename T, typename S>
-		void splatting(const T* s, S* su, S* sd, const uchar* j, const uchar v, const int imageSize, const int channels);
-		template <typename T, typename S>
-		void splattingColor(const T* s, S* su, S* sd, const uchar* j, const uchar* v, const int imageSize, const int channels, const int type);
+		template <typename srcType, typename S>
+		void splatting(const srcType* s, S* su, S* sd, const uchar* j, const uchar v, const int imageSize, const int channels);
+		template <typename srcType, typename S>
+		void splattingColor(const srcType* s, S* su, S* sd, const uchar* j, const uchar* v, const int imageSize, const int channels, const int type);
 
 		double sigma_space;
 		int radius;
@@ -39,9 +39,9 @@ namespace cp
 		int filter_type;
 		void blurring(const cv::Mat& src, cv::Mat& dest);
 
-		template <typename T, typename S>
+		template <typename srcType, typename S>
 		void bodySaveMemorySize_(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dest);
-		template <typename T, typename S>
+		template <typename srcType, typename S>
 		void body_(const cv::Mat& src, const cv::Mat& joint, cv::Mat& dest);
 
 		void body(cv::InputArray src, cv::InputArray joint, cv::OutputArray dest, bool save_memorySize);

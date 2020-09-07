@@ -7,15 +7,15 @@ using namespace cv;
 namespace cp
 {
 
-	template <class T>
-	void HMIN(Mat& src, Mat& ref, Mat& dest, T thresh)
+	template <class srcType>
+	void HMIN(Mat& src, Mat& ref, Mat& dest, srcType thresh)
 	{
 		dest = Mat::zeros(src.size(), CV_8U);
 		for (int j = 0; j < src.rows; j++)
 		{
-			T* s = src.ptr<T>(j);
-			T* r = ref.ptr<T>(j);
-			T* d = dest.ptr<T>(j);
+			srcType* s = src.ptr<srcType>(j);
+			srcType* r = ref.ptr<srcType>(j);
+			srcType* d = dest.ptr<srcType>(j);
 			for (int i = 0; i<src.cols; i++)
 			{
 				if (abs(s[i] - r[i])>thresh)
@@ -33,15 +33,15 @@ namespace cp
 		}
 	}
 
-	template <class T>
-	void HMAX(Mat& src, Mat& ref, Mat& dest, T thresh)
+	template <class srcType>
+	void HMAX(Mat& src, Mat& ref, Mat& dest, srcType thresh)
 	{
 		dest = Mat::zeros(src.size(), CV_8U);
 		for (int j = 0; j < src.rows; j++)
 		{
-			T* s = src.ptr<T>(j);
-			T* r = ref.ptr<T>(j);
-			T* d = dest.ptr<T>(j);
+			srcType* s = src.ptr<srcType>(j);
+			srcType* r = ref.ptr<srcType>(j);
+			srcType* d = dest.ptr<srcType>(j);
 			for (int i = 0; i<src.cols; i++)
 			{
 				if (abs(s[i] - r[i])>thresh)
@@ -59,15 +59,15 @@ namespace cp
 		}
 	}
 
-	template <class T>
-	void VMIN(Mat& src, Mat& ref, Mat& dest, T thresh)
+	template <class srcType>
+	void VMIN(Mat& src, Mat& ref, Mat& dest, srcType thresh)
 	{
 		dest = Mat::zeros(src.size(), CV_8U);
 		for (int j = 0; j < src.rows; j++)
 		{
-			T* s = src.ptr<T>(j);
-			T* r = ref.ptr<T>(j);
-			T* d = dest.ptr<T>(j);
+			srcType* s = src.ptr<srcType>(j);
+			srcType* r = ref.ptr<srcType>(j);
+			srcType* d = dest.ptr<srcType>(j);
 			for (int i = 0; i<src.cols; i++)
 			{
 				if (abs(s[i] - r[i])>thresh)
@@ -85,15 +85,15 @@ namespace cp
 		}
 	}
 
-	template <class T>
-	void VMAX(Mat& src, Mat& ref, Mat& dest, T thresh)
+	template <class srcType>
+	void VMAX(Mat& src, Mat& ref, Mat& dest, srcType thresh)
 	{
 		dest = Mat::zeros(src.size(), CV_8U);
 		for (int j = 0; j < src.rows; j++)
 		{
-			T* s = src.ptr<T>(j);
-			T* r = ref.ptr<T>(j);
-			T* d = dest.ptr<T>(j);
+			srcType* s = src.ptr<srcType>(j);
+			srcType* r = ref.ptr<srcType>(j);
+			srcType* d = dest.ptr<srcType>(j);
 			for (int i = 0; i<src.cols; i++)
 			{
 				if (abs(s[i] - r[i])>thresh)

@@ -34,21 +34,37 @@ namespace cp
 		enum
 		{
 			Pixel_Matching_SD,
+			Pixel_Matching_SDColor,
 			Pixel_Matching_SDSobel,
+			Pixel_Matching_SDSobelColor,
 			Pixel_Matching_SDSobelBlend,
+			Pixel_Matching_SDSobelBlendColor,
 			Pixel_Matching_AD,
+			Pixel_Matching_ADColor,
 			Pixel_Matching_ADSobel,
+			Pixel_Matching_ADSobelColor,
 			Pixel_Matching_ADSobelBlend,
+			Pixel_Matching_ADSobelBlendColor,
 			Pixel_Matching_BT,
+			Pixel_Matching_BTColor,
 			Pixel_Matching_BTSobel,
+			Pixel_Matching_BTSobelColor,
 			Pixel_Matching_BTSobelBlend,
+			Pixel_Matching_BTSobelBlendColor,
 			Pixel_Matching_BTFull,
+			Pixel_Matching_BTFullColor,
 			Pixel_Matching_BTFullSobel,
+			Pixel_Matching_BTFullSobelColor,
 			Pixel_Matching_BTFullSobelBlend,
+			Pixel_Matching_BTFullSobelBlendColor,
 			Pixel_Matching_CENSUS3x3,
+			Pixel_Matching_CENSUS3x3Color,
 			Pixel_Matching_CENSUS5x5,
+			Pixel_Matching_CENSUS5x5Color,
 			Pixel_Matching_CENSUS7x5,
+			Pixel_Matching_CENSUS7x5Color,
 			Pixel_Matching_CENSUS9x1,
+			Pixel_Matching_CENSUS9x1Color,
 			//Pixel_Matching_SAD_TextureBlend,
 			//Pixel_Matching_BT_TextureBlend,
 
@@ -65,21 +81,8 @@ namespace cp
 		int sobelBlendMapParam2;
 		std::string getPixelMatchingMethodName(int method);
 		void prefilter(cv::Mat& targetImage, cv::Mat& referenceImage);
-		void preFilter(cv::Mat& src, cv::Mat& dest, int param);
 
-		void getPixelMatchingCostSD(cv::Mat& target, cv::Mat& refference, const int d, cv::Mat& dest);
-		void getPixelMatchingCostSDSobelBlend(std::vector<cv::Mat>& target, std::vector<cv::Mat>& refference, const int d, cv::Mat& dest);
-		void getPixelMatchingCostAD(cv::Mat& target, cv::Mat& refference, const int d, cv::Mat& dest);
-		void getPixelMatchingCostADSobelBlend(std::vector<cv::Mat>& target, std::vector<cv::Mat>& refference, const int d, cv::Mat& dest);
-		void getPixelMatchingCostBT(cv::Mat& target, cv::Mat& refference, const int d, cv::Mat& dest);
-		void getPixelMatchingCostBTSobelBlend(std::vector<cv::Mat>& target, std::vector<cv::Mat>& refference, const int d, cv::Mat& dest);
-		void getPixelMatchingCostBTFull(cv::Mat& target, cv::Mat& refference, const int d, cv::Mat& dest);
-		void getPixelMatchingCostBTFullSobelBlend(std::vector<cv::Mat>& target, std::vector<cv::Mat>& refference, const int d, cv::Mat& dest);
-		void getPixelMatchingCostCENSUS3x3(cv::Mat& target, cv::Mat& refference, const int d, cv::Mat& dest);
-		void getPixelMatchingCostCENSUS5x5(cv::Mat& target, cv::Mat& refference, const int d, cv::Mat& dest);
-		void getPixelMatchingCostCENSUS7x5(cv::Mat& target, cv::Mat& refference, const int d, cv::Mat& dest);
-		void getPixelMatchingCostCENSUS9x1(cv::Mat& target, cv::Mat& refference, const int d, cv::Mat& dest);
-		void addCostIterativeFeedback(cv::Mat& cost, const int current_disparity, const cv::Mat& disparity, const int functionType, const int clip);
+		void addCostIterativeFeedback(cv::Mat& cost, const int current_disparity, const cv::Mat& disparity, const int functionType, const int clip, float amp);
 		//under debug
 		void textureAlpha(cv::Mat& src, cv::Mat& dest, const int th1, const int th2, const int r);
 		void getPixelMatchingCostADAlpha(std::vector<cv::Mat>& target, std::vector<cv::Mat>& refference, cv::Mat& alpha, const int d, cv::Mat& dest);

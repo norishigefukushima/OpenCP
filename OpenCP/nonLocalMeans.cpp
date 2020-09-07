@@ -9,7 +9,7 @@ using namespace cv;
 namespace cp
 {
 
-	template <class T>
+	template <class srcType>
 	class NonlocalMeansFilterNonzeroBaseInvorker_ : public cv::ParallelLoopBody
 	{
 	private:
@@ -44,7 +44,7 @@ namespace cp
 			{
 				for (int j = r.start; j < r.end; j++)
 				{
-					T* d = dest->ptr<T>(j);
+					srcType* d = dest->ptr<srcType>(j);
 					for (int i = 0; i < dest->cols; i++)
 					{
 						double r = 0.0;
@@ -53,18 +53,18 @@ namespace cp
 						double tweight = 0.0;
 						float wmax = 0.f;
 						//search loop
-						const T* tprt = im->ptr<T>(sr_y + j) + 3 * (sr_x + i);
-						const T* sptr2 = im->ptr<T>(j) +3 * (i);
+						const srcType* tprt = im->ptr<srcType>(sr_y + j) + 3 * (sr_x + i);
+						const srcType* sptr2 = im->ptr<srcType>(j) +3 * (i);
 
 						for (int l = searchWindowSizeY; l--;)
 						{
-							const T* sptr = sptr2 + imstep*(l);
+							const srcType* sptr = sptr2 + imstep*(l);
 							for (int k = searchWindowSizeX; k--;)
 							{
 								//templete loop
 								double e = 0.0;
-								const T* t = tprt;
-								T* s = (T*)(sptr + 3 * k);
+								const srcType* t = tprt;
+								srcType* s = (srcType*)(sptr + 3 * k);
 								for (int n = templeteWindowSizeY; n--;)
 								{
 									for (int m = templeteWindowSizeX; m--;)
@@ -84,7 +84,7 @@ namespace cp
 
 								if (k == sr_x&&l == sr_y){ ; }
 								else wmax = max(wmax, www);
-								const T* ss = sptr2 + imstep*(tr_y + l) + 3 * (tr_x + k);
+								const srcType* ss = sptr2 + imstep*(tr_y + l) + 3 * (tr_x + k);
 								r += ss[0] * www;
 								g += ss[1] * www;
 								b += ss[2] * www;
@@ -93,7 +93,7 @@ namespace cp
 							}
 						}
 
-						const T* ss = sptr2 + imstep*(tr_y + sr_y) + 3 * (tr_x + sr_x);
+						const srcType* ss = sptr2 + imstep*(tr_y + sr_y) + 3 * (tr_x + sr_x);
 						r -= ss[0];
 						g -= ss[1];
 						b -= ss[2];
@@ -104,9 +104,9 @@ namespace cp
 						b += wmax*ss[2];
 						tweight += wmax;
 
-						d[0] = saturate_cast<T>(r / tweight);
-						d[1] = saturate_cast<T>(g / tweight);
-						d[2] = saturate_cast<T>(b / tweight);
+						d[0] = saturate_cast<srcType>(r / tweight);
+						d[1] = saturate_cast<srcType>(g / tweight);
+						d[2] = saturate_cast<srcType>(b / tweight);
 						d += 3;
 					}//i
 				}//j
@@ -115,25 +115,25 @@ namespace cp
 			{
 				for (int j = r.start; j < r.end; j++)
 				{
-					T* d = dest->ptr<T>(j);
+					srcType* d = dest->ptr<srcType>(j);
 					for (int i = 0; i < dest->cols; i++)
 					{
 						double value = 0.0;
 						double tweight = 0.0;
 						float wmax = 0.f;
 						//search loop
-						T* tprt = im->ptr<T>(sr_y + j) + (sr_x + i);
-						T* sptr2 = im->ptr<T>(j) +(i);
+						srcType* tprt = im->ptr<srcType>(sr_y + j) + (sr_x + i);
+						srcType* sptr2 = im->ptr<srcType>(j) +(i);
 
 						for (int l = searchWindowSizeY; l--;)
 						{
-							T* sptr = sptr2 + imstep*(l);
+							srcType* sptr = sptr2 + imstep*(l);
 							for (int k = searchWindowSizeX; k--;)
 							{
 								//templete loop
 								double e = 0.0;
-								T* t = tprt;
-								T* s = sptr + k;
+								srcType* t = tprt;
+								srcType* s = sptr + k;
 								for (int n = templeteWindowSizeY; n--;)
 								{
 									for (int m = templeteWindowSizeX; m--;)
@@ -155,7 +155,7 @@ namespace cp
 								tweight += www;
 							}
 						}
-						const T* ss = sptr2 + imstep*(tr_y + sr_y) + (tr_x + sr_x);
+						const srcType* ss = sptr2 + imstep*(tr_y + sr_y) + (tr_x + sr_x);
 						value -= ss[0];
 						tweight -= 1.0;
 
@@ -163,14 +163,14 @@ namespace cp
 						tweight += wmax;
 
 						//weight normalization
-						*(d++) = saturate_cast<T>(value / tweight);
+						*(d++) = saturate_cast<srcType>(value / tweight);
 					}//i
 				}//j
 			}
 		}
 	};
 
-	template <class T>
+	template <class srcType>
 	class NonlocalMeansFilterBaseInvorker_ : public cv::ParallelLoopBody
 	{
 	private:
@@ -206,7 +206,7 @@ namespace cp
 			{
 				for (int j = r.start; j < r.end; j++)
 				{
-					T* d = dest->ptr<T>(j);
+					srcType* d = dest->ptr<srcType>(j);
 					for (int i = 0; i < dest->cols; i++)
 					{
 						double r = 0.0;
@@ -214,18 +214,18 @@ namespace cp
 						double b = 0.0;
 						double tweight = 0.0;
 						//search loop
-						const T* tprt = im->ptr<T>(sr_y + j) + 3 * (sr_x + i);
-						const T* sptr2 = im->ptr<T>(j) +3 * (i);
+						const srcType* tprt = im->ptr<srcType>(sr_y + j) + 3 * (sr_x + i);
+						const srcType* sptr2 = im->ptr<srcType>(j) +3 * (i);
 
 						for (int l = searchWindowSizeY; l--;)
 						{
-							const T* sptr = sptr2 + imstep*(l);
+							const srcType* sptr = sptr2 + imstep*(l);
 							for (int k = searchWindowSizeX; k--;)
 							{
 								//templete loop
 								double e = 0.0;
-								const T* t = tprt;
-								T* s = (T*)(sptr + 3 * k);
+								const srcType* t = tprt;
+								srcType* s = (srcType*)(sptr + 3 * k);
 								for (int n = templeteWindowSizeY; n--;)
 								{
 									for (int m = templeteWindowSizeX; m--;)
@@ -240,7 +240,7 @@ namespace cp
 								const int ediv = cvRound(e*tdiv);
 								float www = w[ediv];
 
-								const T* ss = sptr2 + imstep*(tr_y + l) + 3 * (tr_x + k);
+								const srcType* ss = sptr2 + imstep*(tr_y + l) + 3 * (tr_x + k);
 								r += ss[0] * www;
 								g += ss[1] * www;
 								b += ss[2] * www;
@@ -248,9 +248,9 @@ namespace cp
 								tweight += www;
 							}
 						}
-						d[0] = saturate_cast<T>(r / tweight);
-						d[1] = saturate_cast<T>(g / tweight);
-						d[2] = saturate_cast<T>(b / tweight);
+						d[0] = saturate_cast<srcType>(r / tweight);
+						d[1] = saturate_cast<srcType>(g / tweight);
+						d[2] = saturate_cast<srcType>(b / tweight);
 						d += 3;
 					}//i
 				}//j
@@ -259,24 +259,24 @@ namespace cp
 			{
 				for (int j = r.start; j < r.end; j++)
 				{
-					T* d = dest->ptr<T>(j);
+					srcType* d = dest->ptr<srcType>(j);
 					for (int i = 0; i < dest->cols; i++)
 					{
 						double value = 0.0;
 						double tweight = 0.0;
 						//search loop
-						T* tprt = im->ptr<T>(sr_y + j) + (sr_x + i);
-						T* sptr2 = im->ptr<T>(j) +(i);
+						srcType* tprt = im->ptr<srcType>(sr_y + j) + (sr_x + i);
+						srcType* sptr2 = im->ptr<srcType>(j) +(i);
 
 						for (int l = searchWindowSizeY; l--;)
 						{
-							T* sptr = sptr2 + imstep*(l);
+							srcType* sptr = sptr2 + imstep*(l);
 							for (int k = searchWindowSizeX; k--;)
 							{
 								//templete loop
 								double e = 0.0;
-								T* t = tprt;
-								T* s = sptr + k;
+								srcType* t = tprt;
+								srcType* s = sptr + k;
 								for (int n = templeteWindowSizeY; n--;)
 								{
 									for (int m = templeteWindowSizeX; m--;)
@@ -296,7 +296,7 @@ namespace cp
 							}
 						}
 						//weight normalization
-						*(d++) = saturate_cast<T>(value / tweight);
+						*(d++) = saturate_cast<srcType>(value / tweight);
 					}//i
 				}//j
 			}

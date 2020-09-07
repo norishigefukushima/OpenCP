@@ -74,11 +74,11 @@ static long extension(long N, long n)
 		return n;
 }
 
-template<typename T>
-void recursive_filter_impulse(T *h, long N, const T *b, int p, const T *a, int q);
+template<typename srcType>
+void recursive_filter_impulse(srcType *h, long N, const srcType *b, int p, const srcType *a, int q);
 
-template<typename T>
-void init_recursive_filter(T *dest, const T *src, long N, long stride, const T *b, int p, const T *a, int q, T sum, T tol, int max_iter);
+template<typename srcType>
+void init_recursive_filter(srcType *dest, const srcType *src, long N, long stride, const srcType *b, int p, const srcType *a, int q, srcType sum, srcType tol, int max_iter);
 void init_recursive_filter(double *dest, const double *src, long N, long stride, const double *b, int p, const double *a, int q, double sum, double tol, int max_iter);
 void init_recursive_filter(float *dest, const float *src, long N, long stride, const float *b, int p, const float *a, int q, float sum, float tol, int max_iter);
 
@@ -193,7 +193,7 @@ dct_free(&c);
 
 /** \brief FFTW plans and coefficients for DCT-based Gaussian convolution */
 
-template <typename T>
+template <typename srcType>
 struct dct_coeffs
 {
 	;
@@ -376,11 +376,11 @@ free(buffer);
 */
 
 /** \brief Coefficients for extended box filter Gaussian approximation */
-template <typename T>
+template <typename srcType>
 struct ebox_coeffs
 {
-	T c_1;        /**< Outer box weight           */
-	T c_2;        /**< Inner box weight           */
+	srcType c_1;        /**< Outer box weight           */
+	srcType c_2;        /**< Inner box weight           */
 	long r;         /**< Inner box radius           */
 	int K;          /**< Number of filtering passes */
 };
@@ -421,10 +421,10 @@ fir_free(&c);
 
 //for
 /** \brief Coefficients for FIR Gaussian approximation */
-template <typename T>
+template <typename srcType>
 struct fir_coeffs
 {
-	T *g_trunc;   /**< FIR filter coefficients            */
+	srcType *g_trunc;   /**< FIR filter coefficients            */
 	long radius;    /**< The radius of the filter's support */
 };
 
@@ -486,10 +486,10 @@ free(buffer);
 #define SII_VALID_K(K)  (SII_MIN_K <= (K) && (K) <= SII_MAX_K)
 
 /** \brief Parameters for stacked integral images Gaussian approximation */
-template<typename T>
+template<typename srcType>
 struct sii_coeffs
 {
-	__declspec(align(16)) T weights[SII_MAX_K];     /**< Box weights     */
+	__declspec(align(16)) srcType weights[SII_MAX_K];     /**< Box weights     */
 	__declspec(align(16)) int radii[SII_MAX_K];      /**< Box radii       */
 	int K;                      /**< Number of boxes */
 };
@@ -570,17 +570,17 @@ free(buffer);
 * This coefficients struct is precomputed by deriche_precomp() and then used
 * by deriche_gaussian_conv() or deriche_gaussian_conv_image().
 */
-template<typename T>
+template<typename srcType>
 struct deriche_coeffs
 {
-	__declspec(align(16)) T a[DERICHE_MAX_K + 1];             /**< Denominator coeffs          */
-	__declspec(align(16)) T b_causal[DERICHE_MAX_K];          /**< Causal numerator            */
-	__declspec(align(16)) T b_anticausal[DERICHE_MAX_K + 1];  /**< Anticausal numerator        */
-	T sum_causal;                       /**< Causal filter sum           */
-	T sum_anticausal;                   /**< Anticausal filter sum       */
-	T sigma;                            /**< Gaussian standard deviation */
+	__declspec(align(16)) srcType a[DERICHE_MAX_K + 1];             /**< Denominator coeffs          */
+	__declspec(align(16)) srcType b_causal[DERICHE_MAX_K];          /**< Causal numerator            */
+	__declspec(align(16)) srcType b_anticausal[DERICHE_MAX_K + 1];  /**< Anticausal numerator        */
+	srcType sum_causal;                       /**< Causal filter sum           */
+	srcType sum_anticausal;                   /**< Anticausal filter sum       */
+	srcType sigma;                            /**< Gaussian standard deviation */
 	int K;                                /**< Filter order = 2, 3, or 4   */
-	T tol;                              /**< Boundary accuracy           */
+	srcType tol;                              /**< Boundary accuracy           */
 	int max_iter;
 };
 
@@ -650,27 +650,27 @@ vyv_gaussian_conv(c, dest, src, N, stride);
 * This coefficients struct is precomputed by vyv_precomp() and then used
 * by vyv_gaussian_conv() or vyv_gaussian_conv_image().
 */
-template <typename T>
+template <typename srcType>
 struct vyv_coeffs
 {
-	__declspec(align(16)) T filter[VYV_MAX_K + 1];     /**< Recursive filter coefficients       */
-	__declspec(align(16)) T M[VYV_MAX_K * VYV_MAX_K];  /**< Matrix for handling right boundary  */
-	T sigma;                     /**< Gaussian standard deviation         */
-	T tol;                       /**< Boundary accuracy                   */
+	__declspec(align(16)) srcType filter[VYV_MAX_K + 1];     /**< Recursive filter coefficients       */
+	__declspec(align(16)) srcType M[VYV_MAX_K * VYV_MAX_K];  /**< Matrix for handling right boundary  */
+	srcType sigma;                     /**< Gaussian standard deviation         */
+	srcType tol;                       /**< Boundary accuracy                   */
 	int K;                         /**< Filter order                        */
 	int max_iter;                 /**< Max iterations for left boundary    */
 };
 
 
 
-template <typename T>
-void vyv_precomp_(vyv_coeffs<T> *c, T sigma, int K, T tol);
+template <typename srcType>
+void vyv_precomp_(vyv_coeffs<srcType> *c, srcType sigma, int K, srcType tol);
 void vyv_precomp(vyv_coeffs<double> *c, double sigma, int K, double tol);
 void vyv_precomp(vyv_coeffs<float> *c, float sigma, int K, float tol);
 
 
-template <typename T>
-void vyv_gaussian_conv(const vyv_coeffs<T> c, T *dest, const T *src, const int N, const int stride);
+template <typename srcType>
+void vyv_gaussian_conv(const vyv_coeffs<srcType> c, srcType *dest, const srcType *src, const int N, const int stride);
 
 void vyv_gaussian_conv_image(vyv_coeffs<double> c, double *dest, const double *src, const int width, const int height, const int num_channels);
 void vyv_gaussian_conv_image(vyv_coeffs<float> c, float *dest, const float *src, const int width, const int height, const int num_channels);
@@ -699,10 +699,10 @@ void vyv_gaussian_conv_image(vyv_coeffs<float> c, float *dest, const float *src,
 * \f[ u_m=\sum_{n=-m}^\infty h_{n+m}\Tilde{f}_{-n} \approx \sum_{n=-m}^{k-1}
 h_{n+m} \Tilde{f}_{-n}, \quad m = 0, \ldots, q - 1. \f]
 */
-template<typename T>
-void init_recursive_filter_(T *dest, const T *src, long N, long stride, const T *b, int p, const T *a, int q, T sum, T tol, int max_iter)
+template<typename srcType>
+void init_recursive_filter_(srcType *dest, const srcType *src, long N, long stride, const srcType *b, int p, const srcType *a, int q, srcType sum, srcType tol, int max_iter)
 {
-	__declspec(align(16)) T h[MAX_Q + 1];
+	__declspec(align(16)) srcType h[MAX_Q + 1];
 	long n;
 	int m;
 
@@ -718,7 +718,7 @@ void init_recursive_filter_(T *dest, const T *src, long N, long stride, const T 
 
 	for (n = 0; n < max_iter; ++n)
 	{
-		T cur = src[stride * extension(N, -n)];
+		srcType cur = src[stride * extension(N, -n)];
 
 		/* dest_m = dest_m + h_{n+m} src_{-n} */
 		for (m = 0; m < q; ++m)

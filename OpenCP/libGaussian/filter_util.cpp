@@ -42,8 +42,8 @@
  * for n = 0, ..., N-1 where \f$ \delta \f$ is the unit impulse. In the
  * denominator coefficient array, element a[0] is not used.
  */
-template<typename T>
-void recursive_filter_impulse(T *h, long N,  const T *b, int p, const T *a, int q)
+template<typename srcType>
+void recursive_filter_impulse(srcType *h, long N,  const srcType *b, int p, const srcType *a, int q)
 {
     long m, n;
     

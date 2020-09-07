@@ -1387,7 +1387,7 @@ namespace cp
 
 
 
-	template <class T>
+	template <class srcType>
 	class JointNonlocalMeansFilterBaseInvorker_ : public cv::ParallelLoopBody
 	{
 	private:
@@ -1419,7 +1419,7 @@ namespace cp
 			{
 				for (int j = r.start; j < r.end; j++)
 				{
-					T* d = dest->ptr<T>(j);
+					srcType* d = dest->ptr<srcType>(j);
 					for (int i = 0; i < dest->cols; i++)
 					{
 						double r = 0.0;
@@ -1427,19 +1427,19 @@ namespace cp
 						double b = 0.0;
 						double tweight = 0.0;
 						//search loop
-						const T* tprt = guide->ptr<T>(sr + j) + 3 * (sr + i);
-						const T* sptr2 = guide->ptr<T>(j) +3 * (i);
-						const T* vptr2 = im->ptr<T>(j) +3 * (i);
+						const srcType* tprt = guide->ptr<srcType>(sr + j) + 3 * (sr + i);
+						const srcType* sptr2 = guide->ptr<srcType>(j) +3 * (i);
+						const srcType* vptr2 = im->ptr<srcType>(j) +3 * (i);
 
 						for (int l = searchWindowSize; l--;)
 						{
-							const T* sptr = sptr2 + imstep*(l);
+							const srcType* sptr = sptr2 + imstep*(l);
 							for (int k = searchWindowSize; k--;)
 							{
 								//templete loop
 								double e = 0.0;
-								const T* t = tprt;
-								T* s = (T*)(sptr + 3 * k);
+								const srcType* t = tprt;
+								srcType* s = (srcType*)(sptr + 3 * k);
 								for (int n = templeteWindowSize; n--;)
 								{
 									for (int m = templeteWindowSize; m--;)
@@ -1454,7 +1454,7 @@ namespace cp
 								const int ediv = cvRound(e*tdiv);
 								float www = w[ediv];
 
-								const T* ss = vptr2 + imstep*(tr + l) + 3 * (tr + k);
+								const srcType* ss = vptr2 + imstep*(tr + l) + 3 * (tr + k);
 								r += ss[0] * www;
 								g += ss[1] * www;
 								b += ss[2] * www;
@@ -1462,9 +1462,9 @@ namespace cp
 								tweight += www;
 							}
 						}
-						d[0] = saturate_cast<T>(r / tweight);
-						d[1] = saturate_cast<T>(g / tweight);
-						d[2] = saturate_cast<T>(b / tweight);
+						d[0] = saturate_cast<srcType>(r / tweight);
+						d[1] = saturate_cast<srcType>(g / tweight);
+						d[2] = saturate_cast<srcType>(b / tweight);
 						d += 3;
 					}//i
 				}//j
@@ -1473,7 +1473,7 @@ namespace cp
 			{
 				for (int j = r.start; j < r.end; j++)
 				{
-					T* d = dest->ptr<T>(j);
+					srcType* d = dest->ptr<srcType>(j);
 					for (int i = 0; i < dest->cols; i++)
 					{
 						double r = 0.0;
@@ -1481,19 +1481,19 @@ namespace cp
 						double b = 0.0;
 						double tweight = 0.0;
 						//search loop
-						T* tprt = guide->ptr<T>(sr + j) + (sr + i);
-						T* sptr2 = guide->ptr<T>(j) +(i);
-						T* vptr2 = im->ptr<T>(j) +(3 * i);
+						srcType* tprt = guide->ptr<srcType>(sr + j) + (sr + i);
+						srcType* sptr2 = guide->ptr<srcType>(j) +(i);
+						srcType* vptr2 = im->ptr<srcType>(j) +(3 * i);
 
 						for (int l = searchWindowSize; l--;)
 						{
-							T* sptr = sptr2 + imstepg*(l);
+							srcType* sptr = sptr2 + imstepg*(l);
 							for (int k = searchWindowSize; k--;)
 							{
 								//templete loop
 								double e = 0.0;
-								T* t = tprt;
-								T* s = sptr + k;
+								srcType* t = tprt;
+								srcType* s = sptr + k;
 								for (int n = templeteWindowSize; n--;)
 								{
 									for (int m = templeteWindowSize; m--;)
@@ -1508,7 +1508,7 @@ namespace cp
 								const int ediv = cvRound(e*tdiv);
 								float www = w[ediv];
 
-								const T* ss = vptr2 + imstep*(tr + l) + 3 * (tr + k);
+								const srcType* ss = vptr2 + imstep*(tr + l) + 3 * (tr + k);
 								r += ss[0] * www;
 								g += ss[1] * www;
 								b += ss[2] * www;
@@ -1517,9 +1517,9 @@ namespace cp
 							}
 						}
 						//weight normalization
-						d[0] = saturate_cast<T>(r / tweight);
-						d[1] = saturate_cast<T>(g / tweight);
-						d[2] = saturate_cast<T>(b / tweight);
+						d[0] = saturate_cast<srcType>(r / tweight);
+						d[1] = saturate_cast<srcType>(g / tweight);
+						d[2] = saturate_cast<srcType>(b / tweight);
 						d += 3;
 					}//i
 				}//j
@@ -1529,25 +1529,25 @@ namespace cp
 				//cout<<"C1G3"<<endl;
 				for (int j = r.start; j < r.end; j++)
 				{
-					T* d = dest->ptr<T>(j);
+					srcType* d = dest->ptr<srcType>(j);
 					for (int i = 0; i < dest->cols; i++)
 					{
 						double value = 0.0;
 						double tweight = 0.0;
 						//search loop
-						const T* tprt = guide->ptr<T>(sr + j) + 3 * (sr + i);
-						const T* sptr2 = guide->ptr<T>(j) +(3 * i);
-						const T* vptr2 = im->ptr<T>(j) +(i);
+						const srcType* tprt = guide->ptr<srcType>(sr + j) + 3 * (sr + i);
+						const srcType* sptr2 = guide->ptr<srcType>(j) +(3 * i);
+						const srcType* vptr2 = im->ptr<srcType>(j) +(i);
 
 						for (int l = searchWindowSize; l--;)
 						{
-							const T* sptr = sptr2 + imstepg*(l);
+							const srcType* sptr = sptr2 + imstepg*(l);
 							for (int k = searchWindowSize; k--;)
 							{
 								//templete loop
 								double e = 0.0;
-								T* t = (T*)tprt;
-								T* s = (T*)(sptr + 3 * k);
+								srcType* t = (srcType*)tprt;
+								srcType* s = (srcType*)(sptr + 3 * k);
 								for (int n = templeteWindowSize; n--;)
 								{
 									for (int m = templeteWindowSize; m--;)
@@ -1567,7 +1567,7 @@ namespace cp
 								tweight += www;
 							}
 						}
-						*(d++) = saturate_cast<T>(value / tweight);
+						*(d++) = saturate_cast<srcType>(value / tweight);
 					}//i
 				}//j
 			}
@@ -1576,25 +1576,25 @@ namespace cp
 				//cout<<"C1G1"<<endl;
 				for (int j = r.start; j < r.end; j++)
 				{
-					T* d = dest->ptr<T>(j);
+					srcType* d = dest->ptr<srcType>(j);
 					for (int i = 0; i < dest->cols; i++)
 					{
 						double value = 0.0;
 						double tweight = 0.0;
 						//search loop
-						T* tprt = guide->ptr<T>(sr + j) + (sr + i);
-						T* sptr2 = guide->ptr<T>(j) +(i);
-						T* vptr2 = im->ptr<T>(j) +(i);
+						srcType* tprt = guide->ptr<srcType>(sr + j) + (sr + i);
+						srcType* sptr2 = guide->ptr<srcType>(j) +(i);
+						srcType* vptr2 = im->ptr<srcType>(j) +(i);
 
 						for (int l = searchWindowSize; l--;)
 						{
-							T* sptr = sptr2 + imstepg*(l);
+							srcType* sptr = sptr2 + imstepg*(l);
 							for (int k = searchWindowSize; k--;)
 							{
 								//templete loop
 								double e = 0.0;
-								T* t = tprt;
-								T* s = sptr + k;
+								srcType* t = tprt;
+								srcType* s = sptr + k;
 								for (int n = templeteWindowSize; n--;)
 								{
 									for (int m = templeteWindowSize; m--;)
@@ -1614,7 +1614,7 @@ namespace cp
 							}
 						}
 						//weight normalization
-						*(d++) = saturate_cast<T>(value / tweight);
+						*(d++) = saturate_cast<srcType>(value / tweight);
 					}//i
 				}//j
 			}

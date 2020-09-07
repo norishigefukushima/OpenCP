@@ -87,7 +87,7 @@ namespace cp
 		}
 	}
 
-	template <class T>
+	template <class srcType>
 	void shiftImInvNN_(const Mat& srcim, Mat& srcdisp, Mat& destim, double amp, Mat& mask, int invalid = 0)
 	{
 		if (amp > 0)
@@ -98,13 +98,13 @@ namespace cp
 				uchar* sim = (uchar*)srcim.ptr<uchar>(j);
 				uchar* dim = destim.ptr<uchar>(j);
 				uchar* m = mask.ptr<uchar>(j);
-				T* s = srcdisp.ptr<T>(j);
+				srcType* s = srcdisp.ptr<srcType>(j);
 
 				for (int i = srcdisp.cols - 1; i >= 0; i--)
 				{
 					if (m[i] != 255)continue;
 
-					const T disp = s[i];
+					const srcType disp = s[i];
 					if (disp == invalid)
 					{
 						dim[3 * (i)+0] = 0;
@@ -142,11 +142,11 @@ namespace cp
 				uchar* dim = destim.ptr<uchar>(j);
 				uchar* m = mask.ptr<uchar>(j);
 
-				T* s = srcdisp.ptr<T>(j);
+				srcType* s = srcdisp.ptr<srcType>(j);
 				for (int i = 0; i < srcdisp.cols; i++)
 				{
 					if (m[i] != 255)continue;
-					const T disp = s[i];
+					const srcType disp = s[i];
 					if (disp == invalid)
 					{
 						dim[3 * (i)+0] = 0;
@@ -184,7 +184,7 @@ namespace cp
 
 
 
-	template <class T>
+	template <class srcType>
 	void shiftImInvNN_(const Mat& srcim, Mat& srcdisp, Mat& destim, float amp, int invalid = 0)
 	{
 
@@ -195,11 +195,11 @@ namespace cp
 				Mat im; copyMakeBorder(srcim, im, 0, 0, 2, 0, BORDER_REPLICATE);
 				uchar* sim = (uchar*)im.ptr<uchar>(j); sim += 6;
 				uchar* dim = destim.ptr<uchar>(j);
-				T* s = srcdisp.ptr<T>(j);
+				srcType* s = srcdisp.ptr<srcType>(j);
 
 				for (int i = 0; i < srcdisp.cols; i++)
 				{
-					const T disp = s[i];
+					const srcType disp = s[i];
 					if (disp == invalid)
 					{
 						memset(dim + 3 * i, 0, 3);
@@ -221,10 +221,10 @@ namespace cp
 				uchar* sim = (uchar*)im.ptr<uchar>(j);
 				uchar* dim = destim.ptr<uchar>(j);
 
-				T* s = srcdisp.ptr<T>(j);
+				srcType* s = srcdisp.ptr<srcType>(j);
 				for (int i = 0; i < srcdisp.cols; i++)
 				{
-					const T disp = s[i];
+					const srcType disp = s[i];
 					if (disp == invalid)
 					{
 						memset(dim + 3 * i, 0, 3);
@@ -245,7 +245,7 @@ namespace cp
 		}
 	}
 
-	template <class T>
+	template <class srcType>
 	void shiftImInvCubicLUT_(const Mat& srcim, Mat& srcdisp, Mat& destim, float amp, int disp_amp, int invalid = 0)
 	{
 		const float cubic = -1.0f;
@@ -299,11 +299,11 @@ namespace cp
 			{
 				uchar* sim = im.ptr<uchar>(j); sim += 6;
 				uchar* dim = destim.ptr<uchar>(j);
-				T* s = srcdisp.ptr<T>(j);
+				srcType* s = srcdisp.ptr<srcType>(j);
 
 				for (int i = 0; i < srcdisp.cols; i++)
 				{
-					const T disp = s[i];
+					const srcType disp = s[i];
 					if (disp == invalid)
 					{
 						memset(dim + 3 * i, 0, 3);
@@ -367,10 +367,10 @@ namespace cp
 				uchar* sim = im.ptr<uchar>(j);
 				uchar* dim = destim.ptr<uchar>(j);
 
-				T* s = srcdisp.ptr<T>(j);
+				srcType* s = srcdisp.ptr<srcType>(j);
 				for (int i = 0; i < srcdisp.cols; i++)
 				{
-					const T disp = s[i];
+					const srcType disp = s[i];
 					if (disp == invalid)
 					{
 						memset(dim + 3 * i, 0, 3);
@@ -407,7 +407,7 @@ namespace cp
 		}
 	}
 
-	template <class T>
+	template <class srcType>
 	void shiftImInvCubic_(const Mat& srcim, Mat& srcdisp, Mat& destim, double amp, int invalid = 0)
 	{
 		const float cubic = -1.f;
@@ -427,11 +427,11 @@ namespace cp
 			{
 				uchar* sim = im.ptr<uchar>(j); sim += 6;
 				uchar* dim = destim.ptr<uchar>(j);
-				T* s = srcdisp.ptr<T>(j);
+				srcType* s = srcdisp.ptr<srcType>(j);
 
 				for (int i = 0; i < srcdisp.cols; i++)
 				{
-					const T disp = s[i];
+					const srcType disp = s[i];
 					if (disp == invalid)
 					{
 						memset(dim + 3 * i, 0, 3);
@@ -471,10 +471,10 @@ namespace cp
 				uchar* sim = im.ptr<uchar>(j);
 				uchar* dim = destim.ptr<uchar>(j);
 
-				T* s = srcdisp.ptr<T>(j);
+				srcType* s = srcdisp.ptr<srcType>(j);
 				for (int i = 0; i < srcdisp.cols; i++)
 				{
-					const T disp = s[i];
+					const srcType disp = s[i];
 					if (disp == invalid)
 					{
 						memset(dim + 3 * i, 0, 3);
@@ -512,7 +512,7 @@ namespace cp
 		}
 	}
 
-	template <class T>
+	template <class srcType>
 	void shiftImInvCubic_(const Mat& srcim, Mat& srcdisp, Mat& destim, double amp, Mat& mask, int invalid = 0)
 	{
 		const float cubic = -1.f;
@@ -533,13 +533,13 @@ namespace cp
 				uchar* sim = im.ptr<uchar>(j); sim += 6;
 				uchar* dim = destim.ptr<uchar>(j);
 				uchar* m = mask.ptr<uchar>(j);
-				T* s = srcdisp.ptr<T>(j);
+				srcType* s = srcdisp.ptr<srcType>(j);
 
 				for (int i = 0; i < srcdisp.cols; i++)
 				{
 					//if(m[i]!=255)continue;
 
-					const T disp = s[i];
+					const srcType disp = s[i];
 					if (disp == invalid)
 					{
 						dim[3 * (i)+0] = 0;
@@ -592,11 +592,11 @@ namespace cp
 				uchar* dim = destim.ptr<uchar>(j);
 				uchar* m = mask.ptr<uchar>(j);
 
-				T* s = srcdisp.ptr<T>(j);
+				srcType* s = srcdisp.ptr<srcType>(j);
 				for (int i = 0; i < srcdisp.cols; i++)
 				{
 					//if(m[i]!=255)continue;
-					const T disp = s[i];
+					const srcType disp = s[i];
 					if (disp == invalid)
 					{
 						dim[3 * (i)+0] = 0;
@@ -652,7 +652,7 @@ namespace cp
 	}
 
 
-	template <class T>
+	template <class srcType>
 	void shiftImInvLinear_(const Mat& srcim, Mat& srcdisp, Mat& destim, float amp, int invalid = 0)
 	{
 		if (amp > 0)
@@ -663,11 +663,11 @@ namespace cp
 			{
 				uchar* sim = im.ptr<uchar>(j); sim += 3;
 				uchar* dim = destim.ptr<uchar>(j);
-				T* s = srcdisp.ptr<T>(j);
+				srcType* s = srcdisp.ptr<srcType>(j);
 
 				for (int i = 0; i < srcdisp.cols; i++)
 				{
-					const T disp = s[i];
+					const srcType disp = s[i];
 					if (disp == invalid)
 					{
 						memset(dim + 3 * i, 0, 3);
@@ -698,10 +698,10 @@ namespace cp
 				uchar* sim = im.ptr<uchar>(j);
 				uchar* dim = destim.ptr<uchar>(j);
 
-				T* s = srcdisp.ptr<T>(j);
+				srcType* s = srcdisp.ptr<srcType>(j);
 				for (int i = 0; i < srcdisp.cols; i++)
 				{
-					const T disp = s[i];
+					const srcType disp = s[i];
 					if (disp == invalid)
 					{
 						memset(dim + 3 * i, 0, 3);
@@ -728,7 +728,7 @@ namespace cp
 		}
 	}
 
-	template <class T>
+	template <class srcType>
 	void shiftImInvLinear_(const Mat& srcim, Mat& srcdisp, Mat& destim, double amp, Mat& mask, int invalid = 0)
 	{
 		if (amp > 0)
@@ -740,13 +740,13 @@ namespace cp
 				uchar* sim = im.ptr<uchar>(j); sim += 3;
 				uchar* dim = destim.ptr<uchar>(j);
 				uchar* m = mask.ptr<uchar>(j);
-				T* s = srcdisp.ptr<T>(j);
+				srcType* s = srcdisp.ptr<srcType>(j);
 
 				for (int i = 0; i < srcdisp.cols; i++)
 				{
 					if (m[i] != 255)continue;
 
-					const T disp = s[i];
+					const srcType disp = s[i];
 					if (disp == invalid)
 					{
 						dim[3 * (i)+0] = 0;
@@ -786,11 +786,11 @@ namespace cp
 				uchar* dim = destim.ptr<uchar>(j);
 				uchar* m = mask.ptr<uchar>(j);
 
-				T* s = srcdisp.ptr<T>(j);
+				srcType* s = srcdisp.ptr<srcType>(j);
 				for (int i = 0; i < srcdisp.cols; i++)
 				{
 					if (m[i] != 255)continue;
-					const T disp = s[i];
+					const srcType disp = s[i];
 					if (disp == invalid)
 					{
 						dim[3 * (i)+0] = 0;
@@ -827,36 +827,36 @@ namespace cp
 		}
 	}
 
-	template <class T>
+	template <class srcType>
 	void shiftImInvWithMask_(const Mat& srcim, Mat& srcdisp, Mat& destim, double amp, Mat& mask, int invalid = 0, int inter_method = INTER_CUBIC)
 	{
 		destim.setTo(0);
 
 		if (inter_method == INTER_CUBIC)
-			shiftImInvCubic_<T>(srcim, srcdisp, destim, amp, mask, invalid);
+			shiftImInvCubic_<srcType>(srcim, srcdisp, destim, amp, mask, invalid);
 		else if (inter_method == INTER_LINEAR)
-			shiftImInvLinear_<T>(srcim, srcdisp, destim, amp, mask, invalid);
+			shiftImInvLinear_<srcType>(srcim, srcdisp, destim, amp, mask, invalid);
 		else if (inter_method == INTER_NEAREST)
-			shiftImInvNN_<T>(srcim, srcdisp, destim, amp, mask, invalid);
+			shiftImInvNN_<srcType>(srcim, srcdisp, destim, amp, mask, invalid);
 		else
 			cout << "support types are NN, linear and cubic" << endl;
 	}
 
 
-	template <class T>
+	template <class srcType>
 	void shiftImInv_(const Mat& srcim, Mat& srcdisp, Mat& destim, float amp, int invalid = 0, int inter_method = INTER_CUBIC)
 	{
 		destim.setTo(0);
 
 		if (inter_method == INTER_CUBIC)
 		{
-			if (srcdisp.type() != CV_8U)shiftImInvCubic_<T>(srcim, srcdisp, destim, amp, invalid);
-			else shiftImInvCubicLUT_<T>(srcim, srcdisp, destim, amp, invalid);
+			if (srcdisp.type() != CV_8U)shiftImInvCubic_<srcType>(srcim, srcdisp, destim, amp, invalid);
+			else shiftImInvCubicLUT_<srcType>(srcim, srcdisp, destim, amp, invalid);
 		}
 		else if (inter_method == INTER_LINEAR)
-			shiftImInvLinear_<T>(srcim, srcdisp, destim, amp, invalid);
+			shiftImInvLinear_<srcType>(srcim, srcdisp, destim, amp, invalid);
 		else if (inter_method == INTER_NEAREST)
-			shiftImInvNN_<T>(srcim, srcdisp, destim, amp, invalid);
+			shiftImInvNN_<srcType>(srcim, srcdisp, destim, amp, invalid);
 		else
 			cout << "support types are NN, linear and cubic" << endl;
 	}
@@ -871,7 +871,7 @@ namespace cp
 	}
 
 	//without mask mad jump
-	template <class T>
+	template <class srcType>
 	void shiftDisp_(const Mat& srcdisp, Mat& destdisp, float amp, const int sub_gap)
 	{
 		Mat dsp; copyMakeBorder(srcdisp, dsp, 0, 0, 1, 1, BORDER_REPLICATE);
@@ -884,12 +884,12 @@ namespace cp
 			for (int j = 0; j < srcdisp.rows; j++)
 			{
 				dst.setTo(0);
-				T* s = dsp.ptr<T>(j); s += 1;
-				T* d = dst.ptr<T>(0); d += offset;
+				srcType* s = dsp.ptr<srcType>(j); s += 1;
+				srcType* d = dst.ptr<srcType>(0); d += offset;
 
 				for (int i = srcdisp.cols; i >= 0; i--)
 				{
-					const T disp = s[i];
+					const srcType disp = s[i];
 					const int sub = (int)(abs(disp - s[i - 1]));
 
 					bool issub = (sub <= sub_gap && sub>0) ? true : false;
@@ -902,13 +902,13 @@ namespace cp
 						{
 							if (disp > d[i - dest - 1])
 							{
-								d[i - dest - 1] = (T)((disp + s[i - 1])*0.5);
+								d[i - dest - 1] = (srcType)((disp + s[i - 1])*0.5);
 								//d[i-dest-1]=disp;
 							}
 						}
 					}
 				}
-				memcpy(destdisp.ptr<T>(j), d, sizeof(T)*destdisp.cols);
+				memcpy(destdisp.ptr<srcType>(j), d, sizeof(srcType)*destdisp.cols);
 			}
 		}
 		else if (amp < 0)
@@ -917,11 +917,11 @@ namespace cp
 			for (int j = 0; j < srcdisp.rows; j++)
 			{
 				dst.setTo(0);
-				T* s = dsp.ptr<T>(j); s += 1;
-				T* d = dst.ptr<T>(0);
+				srcType* s = dsp.ptr<srcType>(j); s += 1;
+				srcType* d = dst.ptr<srcType>(0);
 				for (int i = 0; i < srcdisp.cols; i++)
 				{
-					const T disp = s[i];
+					const srcType disp = s[i];
 					const int sub = (int)(abs(disp - s[i + 1]));
 					bool issub = (sub <= sub_gap && sub>0) ? true : false;
 					//bool issub = (sub<=sub_gap)?true:false;
@@ -930,18 +930,18 @@ namespace cp
 
 					if (disp > d[i + dest])
 					{
-						d[i + dest] = (T)disp;
+						d[i + dest] = (srcType)disp;
 						if (issub)
 						{
 							if (disp > d[i + dest + 1])
 							{
-								d[i + dest + 1] = (T)((disp + s[i + 1])*0.5);
+								d[i + dest + 1] = (srcType)((disp + s[i + 1])*0.5);
 								//d[i+dest+1]=(disp);
 							}
 						}
 					}
 				}
-				memcpy(destdisp.ptr<T>(j), d, sizeof(T)*destdisp.cols);
+				memcpy(destdisp.ptr<srcType>(j), d, sizeof(srcType)*destdisp.cols);
 			}
 		}
 		else
@@ -951,7 +951,7 @@ namespace cp
 	}
 
 	//without mask
-	template <class T>
+	template <class srcType>
 	void shiftDisp_(const Mat& srcdisp, Mat& destdisp, float amp, const int large_jump, const int sub_gap)
 	{
 		Mat dsp; copyMakeBorder(srcdisp, dsp, 0, 0, 1, 1, BORDER_REPLICATE);
@@ -968,12 +968,12 @@ namespace cp
 			for (int j = 0; j < srcdisp.rows; j++)
 			{
 				dst.setTo(0);
-				T* s = dsp.ptr<T>(j); s += 1;
-				T* d = dst.ptr<T>(0); d += offset;
+				srcType* s = dsp.ptr<srcType>(j); s += 1;
+				srcType* d = dst.ptr<srcType>(0); d += offset;
 
 				for (int i = srcdisp.cols; i >= 0; i--)
 				{
-					const T disp = s[i];
+					const srcType disp = s[i];
 					const int sub = (int)(abs(disp - s[i - 1]));
 
 					bool issub = (sub <= sub_gap && sub>0) ? true : false;
@@ -993,13 +993,13 @@ namespace cp
 						{
 							if (disp > d[i - dest - 1])
 							{
-								d[i - dest - 1] = (T)((disp + s[i - 1])*0.5);
+								d[i - dest - 1] = (srcType)((disp + s[i - 1])*0.5);
 								//d[i-dest-1]=disp;
 							}
 						}
 					}
 				}
-				memcpy(destdisp.ptr<T>(j), d, sizeof(T)*destdisp.cols);
+				memcpy(destdisp.ptr<srcType>(j), d, sizeof(srcType)*destdisp.cols);
 			}
 		}
 		else if (amp<0)
@@ -1007,11 +1007,11 @@ namespace cp
 			for (int j = 0; j<srcdisp.rows; j++)
 			{
 				dst.setTo(0);
-				T* s = dsp.ptr<T>(j); s += 1;
-				T* d = dst.ptr<T>(0);
+				srcType* s = dsp.ptr<srcType>(j); s += 1;
+				srcType* d = dst.ptr<srcType>(0);
 				for (int i = 0; i < srcdisp.cols; i++)
 				{
-					const T disp = s[i];
+					const srcType disp = s[i];
 					const int sub = (int)(abs(disp - s[i + 1]));
 					bool issub = (sub <= sub_gap && sub>0) ? true : false;
 
@@ -1025,17 +1025,17 @@ namespace cp
 
 					if (disp > d[i + dest])
 					{
-						d[i + dest] = (T)disp;
+						d[i + dest] = (srcType)disp;
 						if (issub)
 						{
 							if (disp > d[i + dest + 1])
 							{
-								d[i + dest + 1] = (T)((disp + s[i + 1])*0.5);
+								d[i + dest + 1] = (srcType)((disp + s[i + 1])*0.5);
 							}
 						}
 					}
 				}
-				memcpy(destdisp.ptr<T>(j), d, sizeof(T)*destdisp.cols);
+				memcpy(destdisp.ptr<srcType>(j), d, sizeof(srcType)*destdisp.cols);
 			}
 		}
 		else
@@ -1046,7 +1046,7 @@ namespace cp
 
 
 	//with mask
-	template <class T>
+	template <class srcType>
 	void shiftDisp_(const Mat& srcdisp, Mat& destdisp, float amp, Mat& mask, const int large_jump, const int sub_gap)
 	{
 		Mat dsp; copyMakeBorder(srcdisp, dsp, 0, 0, 1, 1, BORDER_REPLICATE);
@@ -1063,13 +1063,13 @@ namespace cp
 			{
 				dst.setTo(0); msk.setTo(0);
 				uchar* m = msk.ptr<uchar>(0); m += offset;
-				T* s = dsp.ptr<T>(j); s += 1;
-				T* d = dst.ptr<T>(0); d += offset;
+				srcType* s = dsp.ptr<srcType>(j); s += 1;
+				srcType* d = dst.ptr<srcType>(0); d += offset;
 
 				for (int i = srcdisp.cols; i >= 0; i--)
 					//for(int i=0;i<srcdisp.cols;i++)
 				{
-					const T disp = s[i];
+					const srcType disp = s[i];
 					int sub = (int)(abs(disp - s[i - 1]));
 
 					bool issub = (sub <= sub_gap && sub>0) ? true : false;
@@ -1093,12 +1093,12 @@ namespace cp
 						if (disp > d[i - dest - 1])
 						{
 							m[i - dest - 1] = 255;
-							d[i - dest - 1] = (T)((disp + s[i - 1])*0.5);
+							d[i - dest - 1] = (srcType)((disp + s[i - 1])*0.5);
 							//d[i-dest-1]=disp;
 						}
 					}
 				}
-				memcpy(destdisp.ptr<T>(j), d, sizeof(T)*destdisp.cols);
+				memcpy(destdisp.ptr<srcType>(j), d, sizeof(srcType)*destdisp.cols);
 				memcpy(mask.ptr<uchar>(j), m, sizeof(uchar)*destdisp.cols);
 			}
 			//imshowNormalize("amp>0",destdisp);
@@ -1110,11 +1110,11 @@ namespace cp
 			{
 				dst.setTo(0); msk.setTo(0);
 				uchar* m = msk.ptr<uchar>(0);
-				T* s = dsp.ptr<T>(j); s += 1;
-				T* d = dst.ptr<T>(0);
+				srcType* s = dsp.ptr<srcType>(j); s += 1;
+				srcType* d = dst.ptr<srcType>(0);
 				for (int i = 0; i < srcdisp.cols; i++)
 				{
-					const T disp = s[i];
+					const srcType disp = s[i];
 					int sub = (int)(abs(disp - s[i + 1]));
 					bool issub = (sub <= sub_gap && sub>0) ? true : false;
 					//bool issub = (sub<=sub_gap)?true:false;
@@ -1130,19 +1130,19 @@ namespace cp
 					if (disp > d[i + dest])
 					{
 						m[i + dest] = 255;
-						d[i + dest] = (T)disp;
+						d[i + dest] = (srcType)disp;
 					}
 					if (issub)
 					{
 						if (disp > d[i + dest + 1])
 						{
 							m[i + dest + 1] = 255;
-							d[i + dest + 1] = (T)((disp + s[i + 1])*0.5);
+							d[i + dest + 1] = (srcType)((disp + s[i + 1])*0.5);
 							//d[i+dest+1]=(disp);
 						}
 					}
 				}
-				memcpy(destdisp.ptr<T>(j), d, sizeof(T)*destdisp.cols);
+				memcpy(destdisp.ptr<srcType>(j), d, sizeof(srcType)*destdisp.cols);
 				memcpy(mask.ptr<uchar>(j), m, sizeof(uchar)*destdisp.cols);
 			}
 			//imshowNormalize("amp<0",destdisp);
@@ -1155,7 +1155,7 @@ namespace cp
 	}
 
 
-	template <class T>
+	template <class srcType>
 	void shiftImDispNN_(Mat& srcim, Mat& srcdisp, Mat& destim, Mat& destdisp, double amp, Mat& mask, const int large_jump, const int sub_gap)
 	{
 		int ij = 0;
@@ -1169,12 +1169,12 @@ namespace cp
 				uchar* sim = srcim.ptr<uchar>(j);
 				uchar* dim = destim.ptr<uchar>(j);
 				uchar* m = mask.ptr<uchar>(j);
-				T* s = srcdisp.ptr<T>(j);
-				T* d = destdisp.ptr<T>(j);
+				srcType* s = srcdisp.ptr<srcType>(j);
+				srcType* d = destdisp.ptr<srcType>(j);
 
 				for (int i = srcdisp.cols - 1; i >= 1; i--)
 				{
-					const T disp = s[i];
+					const srcType disp = s[i];
 					int sub = (int)(abs(disp - s[i - 1]));
 					bool issub = (sub <= sub_gap) ? true : false;
 					const int dest = (int)(disp*amp + 0.5);
@@ -1218,11 +1218,11 @@ namespace cp
 				uchar* dim = destim.ptr<uchar>(j);
 				uchar* m = mask.ptr<uchar>(j);
 
-				T* s = srcdisp.ptr<T>(j);
-				T* d = destdisp.ptr<T>(j);
+				srcType* s = srcdisp.ptr<srcType>(j);
+				srcType* d = destdisp.ptr<srcType>(j);
 				for (int i = 0; i<srcdisp.cols; i++)
 				{
-					const T disp = s[i];
+					const srcType disp = s[i];
 					int sub = (int)(abs(disp - s[i + 1]));
 					bool issub = (sub <= sub_gap) ? true : false;
 					const int dest = (int)((-amp*disp) + 0.5);
@@ -1239,7 +1239,7 @@ namespace cp
 						if (disp > d[i + dest])
 						{
 							m[i + dest] = 255;
-							d[i + dest] = (T)disp;
+							d[i + dest] = (srcType)disp;
 
 							dim[3 * (i + dest) + 0] = sim[3 * i + 0];
 							dim[3 * (i + dest) + 1] = sim[3 * i + 1];
@@ -1248,7 +1248,7 @@ namespace cp
 							if (issub)
 							{
 								m[i + dest + 1] = 255;
-								d[i + dest + 1] = (T)disp;
+								d[i + dest + 1] = (srcType)disp;
 								dim[3 * (i + dest + 1) + 0] = sim[3 * i + 3];
 								dim[3 * (i + dest + 1) + 1] = sim[3 * i + 4];
 								dim[3 * (i + dest + 1) + 2] = sim[3 * i + 5];
@@ -1266,7 +1266,7 @@ namespace cp
 		}
 	}
 
-	template <class T>
+	template <class srcType>
 	void shiftImDispCubicS_(Mat& srcim, Mat& srcdisp, Mat& destim, Mat& destdisp, double amp, Mat& mask)
 	{
 		//	cout<<"Cubic"<<endl;
@@ -1286,12 +1286,12 @@ namespace cp
 				uchar* sim = srcim.ptr<uchar>(j);
 				uchar* dim = destim.ptr<uchar>(j);
 				uchar* m = mask.ptr<uchar>(j);
-				T* s = srcdisp.ptr<T>(j);
-				T* d = destdisp.ptr<T>(j);
+				srcType* s = srcdisp.ptr<srcType>(j);
+				srcType* d = destdisp.ptr<srcType>(j);
 
 				for (int i = srcdisp.cols - 2; i >= 0; i--)
 				{
-					const T disp = s[i];
+					const srcType disp = s[i];
 
 					const int dest = (int)(disp*amp);
 					const double ia = ((double)disp*amp) - dest;
@@ -1337,11 +1337,11 @@ namespace cp
 				uchar* dim = destim.ptr<uchar>(j);
 				uchar* m = mask.ptr<uchar>(j);
 
-				T* s = srcdisp.ptr<T>(j);
-				T* d = destdisp.ptr<T>(j);
+				srcType* s = srcdisp.ptr<srcType>(j);
+				srcType* d = destdisp.ptr<srcType>(j);
 				for (int i = 1; i < srcdisp.cols; i++)
 				{
-					const T disp = s[i];
+					const srcType disp = s[i];
 
 					const int dest = (int)(-amp*disp);//符号
 					const double ia = (-(double)disp*amp) - dest;
@@ -1354,7 +1354,7 @@ namespace cp
 							if (ia == 0.0)
 							{
 								m[i + dest] = 255;
-								d[i + dest] = (T)disp;
+								d[i + dest] = (srcType)disp;
 								dim[3 * (i + dest) + 0] = sim[3 * i + 0];
 								dim[3 * (i + dest) + 1] = sim[3 * i + 1];
 								dim[3 * (i + dest) + 2] = sim[3 * i + 2];
@@ -1386,7 +1386,7 @@ namespace cp
 		}
 	}
 
-	template <class T>
+	template <class srcType>
 	void shiftImDispCubic_(Mat& srcim, Mat& srcdisp, Mat& destim, Mat& destdisp, double amp, Mat& mask, const int large_jump, const int sub_gap)
 	{
 		const double cubic = -1.0;
@@ -1409,12 +1409,12 @@ namespace cp
 				uchar* sim = im.ptr<uchar>(j); sim += 3;
 				uchar* dim = destim.ptr<uchar>(j);
 				uchar* m = mask.ptr<uchar>(j);
-				T* s = srcdisp.ptr<T>(j);
-				T* d = destdisp.ptr<T>(j);
+				srcType* s = srcdisp.ptr<srcType>(j);
+				srcType* d = destdisp.ptr<srcType>(j);
 
 				for (int i = srcdisp.cols - 1; i >= 1; i--)
 				{
-					const T disp = s[i];
+					const srcType disp = s[i];
 					int sub = (int)(abs(disp - s[i - 1]));
 					bool issub = (sub <= sub_gap) ? true : false;
 					const int dest = (int)(disp*amp);
@@ -1483,11 +1483,11 @@ namespace cp
 				uchar* dim = destim.ptr<uchar>(j);
 				uchar* m = mask.ptr<uchar>(j);
 
-				T* s = srcdisp.ptr<T>(j);
-				T* d = destdisp.ptr<T>(j);
+				srcType* s = srcdisp.ptr<srcType>(j);
+				srcType* d = destdisp.ptr<srcType>(j);
 				for (int i = 0; i<srcdisp.cols; i++)
 				{
-					const T disp = s[i];
+					const srcType disp = s[i];
 					int sub = (int)(abs(disp - s[i + 1]));
 					bool issub = (sub <= sub_gap) ? true : false;
 					const int dest = (int)(-amp*disp);//符号
@@ -1507,14 +1507,14 @@ namespace cp
 							if (ia == 0.0)
 							{
 								m[i + dest] = 255;
-								d[i + dest] = (T)disp;
+								d[i + dest] = (srcType)disp;
 								dim[3 * (i + dest) + 0] = sim[3 * i + 0];
 								dim[3 * (i + dest) + 1] = sim[3 * i + 1];
 								dim[3 * (i + dest) + 2] = sim[3 * i + 2];
 								if (issub)
 								{
 									m[i + dest + 1] = 255;
-									d[i + dest + 1] = (T)disp;
+									d[i + dest + 1] = (srcType)disp;
 									dim[3 * (i + dest + 1) + 0] = sim[3 * i + 3];
 									dim[3 * (i + dest + 1) + 1] = sim[3 * i + 4];
 									dim[3 * (i + dest + 1) + 2] = sim[3 * i + 5];
@@ -1535,7 +1535,7 @@ namespace cp
 								if (issub)
 								{
 									m[i + dest + 1] = 255;
-									d[i + dest + 1] = (T)disp;
+									d[i + dest + 1] = (srcType)disp;
 
 									dim[3 * (i + dest + 1) + 0] = saturate_cast<uchar>(vaa*sim[3 * i + 6] + aa*sim[3 * i + 3] + iaa*sim[3 * i + 0] + viaa*sim[3 * i - 3]);
 									dim[3 * (i + dest + 1) + 1] = saturate_cast<uchar>(vaa*sim[3 * i + 7] + aa*sim[3 * i + 4] + iaa*sim[3 * i + 1] + viaa*sim[3 * i - 2]);
@@ -1556,7 +1556,7 @@ namespace cp
 		}
 	}
 
-	template <class T>
+	template <class srcType>
 	void shiftImDispLinear_(Mat& srcim, Mat& srcdisp, Mat& destim, Mat& destdisp, double amp, Mat& mask, const int large_jump, const int sub_gap)
 	{
 		int ij = 0;
@@ -1571,12 +1571,12 @@ namespace cp
 				uchar* sim = im.ptr<uchar>(j); sim += 3;
 				uchar* dim = destim.ptr<uchar>(j);
 				uchar* m = mask.ptr<uchar>(j);
-				T* s = srcdisp.ptr<T>(j);
-				T* d = destdisp.ptr<T>(j);
+				srcType* s = srcdisp.ptr<srcType>(j);
+				srcType* d = destdisp.ptr<srcType>(j);
 
 				for (int i = srcdisp.cols - 1; i >= 1; i--)
 				{
-					const T disp = s[i];
+					const srcType disp = s[i];
 					int sub = (int)(abs(disp - s[i - 1]));
 					bool issub = (sub <= sub_gap) ? true : false;
 					const int dest = (int)(disp*amp);
@@ -1625,11 +1625,11 @@ namespace cp
 				uchar* dim = destim.ptr<uchar>(j);
 				uchar* m = mask.ptr<uchar>(j);
 
-				T* s = srcdisp.ptr<T>(j);
-				T* d = destdisp.ptr<T>(j);
+				srcType* s = srcdisp.ptr<srcType>(j);
+				srcType* d = destdisp.ptr<srcType>(j);
 				for (int i = 0; i<srcdisp.cols; i++)
 				{
-					const T disp = s[i];
+					const srcType disp = s[i];
 					int sub = (int)(abs(disp - s[i + 1]));
 					bool issub = (sub <= sub_gap) ? true : false;
 					const int dest = (int)(-amp*disp);//符号
@@ -1647,7 +1647,7 @@ namespace cp
 						if (disp > d[i + dest])
 						{
 							m[i + dest] = 255;
-							d[i + dest] = (T)disp;
+							d[i + dest] = (srcType)disp;
 
 							dim[3 * (i + dest) + 0] = saturate_cast<uchar>(a*sim[3 * i + 0] + ia*sim[3 * i - 3]);
 							dim[3 * (i + dest) + 1] = saturate_cast<uchar>(a*sim[3 * i + 1] + ia*sim[3 * i - 2]);
@@ -1656,7 +1656,7 @@ namespace cp
 							if (issub)
 							{
 								m[i + dest + 1] = 255;
-								d[i + dest + 1] = (T)disp;
+								d[i + dest + 1] = (srcType)disp;
 
 								dim[3 * (i + dest + 1) + 0] = saturate_cast<uchar>(a*sim[3 * i + 3] + ia*sim[3 * i + 0]);
 								dim[3 * (i + dest + 1) + 1] = saturate_cast<uchar>(a*sim[3 * i + 4] + ia*sim[3 * i + 1]);
@@ -1677,7 +1677,7 @@ namespace cp
 	}
 
 	//input mask should be set to 0
-	template <class T>
+	template <class srcType>
 	void shiftImDisp(Mat& srcim, Mat& srcdisp, Mat& destim, Mat& destdisp, double amp, double sub_gap, const int large_jump = 3, Mat& mask = Mat(), int warpInterpolationMethod = INTER_CUBIC)
 	{
 		Mat mask_ = mask;
@@ -1713,12 +1713,12 @@ namespace cp
 		}
 
 		if (warpInterpolationMethod == INTER_NEAREST)
-			shiftImDispNN_<T>(srcim, srcdisp, destim, destdisp, amp, mask_, large_jump, (int)sub_gap);
+			shiftImDispNN_<srcType>(srcim, srcdisp, destim, destdisp, amp, mask_, large_jump, (int)sub_gap);
 		else if (warpInterpolationMethod == INTER_LINEAR)
-			shiftImDispLinear_<T>(srcim, srcdisp, destim, destdisp, amp, mask_, large_jump, (int)sub_gap);
+			shiftImDispLinear_<srcType>(srcim, srcdisp, destim, destdisp, amp, mask_, large_jump, (int)sub_gap);
 		else if (warpInterpolationMethod == INTER_CUBIC)
 		{
-			shiftImDispCubic_<T>(srcim, srcdisp, destim, destdisp, amp, mask_, large_jump, (int)sub_gap);
+			shiftImDispCubic_<srcType>(srcim, srcdisp, destim, destdisp, amp, mask_, large_jump, (int)sub_gap);
 			//shiftImDispCubicS_<T>(srcim,srcdisp,destim,destdisp,amp,mask_);
 		}
 		else
@@ -1816,18 +1816,18 @@ namespace cp
 		}
 	}
 
-	template <class T>
-	void fillOcclusionImDisp2_(Mat& im, Mat& src, T invalidvalue, int maxlength = 1000)
+	template <class srcType>
+	void fillOcclusionImDisp2_(Mat& im, Mat& src, srcType invalidvalue, int maxlength = 1000)
 	{
 		//Mat mask=Mat::zeros(im.size(),CV_8U);
 		//#pragma omp parallel for
 		for (int j = 0; j < src.rows; j++)
 		{
 			uchar* ims = im.ptr<uchar>(j);
-			T* s = src.ptr<T>(j);
+			srcType* s = src.ptr<srcType>(j);
 			//	uchar* m = mask.ptr<uchar>(j);
-			const T st = s[0];
-			const T ed = s[src.cols - 1];
+			const srcType st = s[0];
+			const srcType ed = s[src.cols - 1];
 
 			s[0] = 255;//可能性のある最大値を入力
 			s[src.cols - 1] = 255;//可能性のある最大値を入力
@@ -1851,7 +1851,7 @@ namespace cp
 
 
 						uchar ce[3];
-						T dd;
+						srcType dd;
 						if (s[i - 1]<s[t])
 						{
 							dd = s[i - 1];
@@ -1951,7 +1951,7 @@ namespace cp
 
 						uchar ce[3];
 
-						T dd;
+						srcType dd;
 						if (s[i - 1] < s[t])
 						{
 							dd = s[i - 1];
@@ -2011,23 +2011,23 @@ namespace cp
 		}
 	}
 
-	template <class T>
-	void fillOcclusionImDispH_(Mat& im, Mat& src, T invalidvalue, Mat& distance, int maxlength = 1000)
+	template <class srcType>
+	void fillOcclusionImDispH_(Mat& im, Mat& src, srcType invalidvalue, Mat& distance, int maxlength = 1000)
 	{
 		distance = Mat::zeros(im.size(), CV_16U);
-		T maxval;
-		if (sizeof(T) == 1)maxval = 255;
-		else maxval = (T)SHRT_MAX;
+		srcType maxval;
+		if (sizeof(srcType) == 1)maxval = 255;
+		else maxval = (srcType)SHRT_MAX;
 		//	Mat mask=Mat::zeros(im.size(),CV_8U);
 		//#pragma omp parallel for
 		for (int j = 0; j < src.rows; j++)
 		{
 			ushort* dist = distance.ptr<ushort>(j);
 			uchar* ims = im.ptr<uchar>(j);
-			T* s = src.ptr<T>(j);
+			srcType* s = src.ptr<srcType>(j);
 			//	uchar* m = mask.ptr<uchar>(j);
-			const T st = s[0];
-			const T ed = s[src.cols - 1];
+			const srcType st = s[0];
+			const srcType ed = s[src.cols - 1];
 
 			s[0] = maxval;
 			s[src.cols - 1] = maxval;
@@ -2056,7 +2056,7 @@ namespace cp
 
 					uchar CV_DECL_ALIGNED(16) ce[3];
 
-					T dd;
+					srcType dd;
 					bool flag = true;
 					if (s[i - 1] < s[t])
 					{
@@ -2136,8 +2136,8 @@ namespace cp
 	}
 
 
-	template <class T>
-	void fillOcclusionImDispHV_(Mat& im, Mat& src, T invalidvalue, int maxlength = 1000)
+	template <class srcType>
+	void fillOcclusionImDispHV_(Mat& im, Mat& src, srcType invalidvalue, int maxlength = 1000)
 	{
 		//Mat mask;comapre(src,invalidvalue,mask,CMP_EQ);
 		Mat imH = im.clone();
@@ -2149,16 +2149,16 @@ namespace cp
 		Mat distH;
 		Mat distV;
 
-		fillOcclusionImDispH_<T>(imH, dispH, invalidvalue, distH, maxlength);
-		fillOcclusionImDispH_<T>(imV, dispV, invalidvalue, distV, maxlength);
+		fillOcclusionImDispH_<srcType>(imH, dispH, invalidvalue, distH, maxlength);
+		fillOcclusionImDispH_<srcType>(imV, dispV, invalidvalue, distV, maxlength);
 		transpose(dispV, src);
 		transpose(imV, im);
 
 		uchar* sh = imH.data;
-		T* dh = dispH.ptr<T>(0);
+		srcType* dh = dispH.ptr<srcType>(0);
 
 		uchar* s = im.data;
-		T* d = src.ptr<T>(0);
+		srcType* d = src.ptr<srcType>(0);
 
 		for (int i = 0; i < im.size().area(); i++)
 		{
@@ -2175,21 +2175,21 @@ namespace cp
 
 
 
-	template <class T>
-	void fillOcclusionImDisp_(Mat& im, Mat& src, T invalidvalue, int maxlength = 1000)
+	template <class srcType>
+	void fillOcclusionImDisp_(Mat& im, Mat& src, srcType invalidvalue, int maxlength = 1000)
 	{
-		T maxval;
-		if (sizeof(T) == 1)maxval = 255;
-		else maxval = (T)32000;
+		srcType maxval;
+		if (sizeof(srcType) == 1)maxval = 255;
+		else maxval = (srcType)32000;
 		//	Mat mask=Mat::zeros(im.size(),CV_8U);
 		//#pragma omp parallel for
 		for (int j = 0; j < src.rows; j++)
 		{
 			uchar* ims = im.ptr<uchar>(j);
-			T* s = src.ptr<T>(j);
+			srcType* s = src.ptr<srcType>(j);
 			//	uchar* m = mask.ptr<uchar>(j);
-			const T st = s[0];
-			const T ed = s[src.cols - 1];
+			const srcType st = s[0];
+			const srcType ed = s[src.cols - 1];
 
 			s[0] = maxval;
 			s[src.cols - 1] = maxval;
@@ -2211,7 +2211,7 @@ namespace cp
 					//if(count>maxlength)break;
 
 					uchar CV_DECL_ALIGNED(16) ce[3];
-					T dd;
+					srcType dd;
 					if (s[i - 1] < s[t])
 					{
 						dd = s[i - 1];
@@ -2257,27 +2257,27 @@ namespace cp
 		}
 	}
 
-	template <class T>
-	void fillOcclusionImDispReflect_(Mat& im, Mat& src, T invalidvalue, int maxlength = 1000)
+	template <class srcType>
+	void fillOcclusionImDispReflect_(Mat& im, Mat& src, srcType invalidvalue, int maxlength = 1000)
 	{
 		Mat imc;
 		Mat sc;
 		im.copyTo(imc);
 		src.copyTo(sc);
-		fillOcclusionImDisp_<T>(imc, sc, invalidvalue);
+		fillOcclusionImDisp_<srcType>(imc, sc, invalidvalue);
 
 		//Mat mask=Mat::zeros(im.size(),CV_8U);
 		//#pragma omp parallel for
 		for (int j = 0; j < src.rows; j++)
 		{
-			T* dref = sc.ptr<T>(j);
+			srcType* dref = sc.ptr<srcType>(j);
 			uchar* imref = imc.ptr<uchar>(j);
 
 			uchar* ims = im.ptr<uchar>(j);
-			T* s = src.ptr<T>(j);
+			srcType* s = src.ptr<srcType>(j);
 			//uchar* m = mask.ptr<uchar>(j);
-			const T st = s[0];
-			const T ed = s[src.cols - 1];
+			const srcType st = s[0];
+			const srcType ed = s[src.cols - 1];
 
 			s[0] = 255;//可能性のある最大値を入力
 			s[src.cols - 1] = 255;//可能性のある最大値を入力
@@ -2300,18 +2300,18 @@ namespace cp
 					if (t == src.cols - 1)
 					{
 						memcpy(ims + 3 * i, imref + 3 * i, 3 * (src.cols - 1 - i));
-						memcpy(s + sizeof(T)*i, dref + sizeof(T)*i, sizeof(T)*(src.cols - 1 - i));
+						memcpy(s + sizeof(srcType)*i, dref + sizeof(srcType)*i, sizeof(srcType)*(src.cols - 1 - i));
 						continue;
 					}
 					if (i == 1)
 					{
 						memcpy(ims, imref, 3 * t);
-						memcpy(s, dref, sizeof(T)*t);
+						memcpy(s, dref, sizeof(srcType)*t);
 						i = t;
 						continue;
 					}
 
-					T dd;
+					srcType dd;
 
 					if (s[i - 1] < s[t])
 					{
@@ -2367,25 +2367,25 @@ namespace cp
 		}
 	}
 
-	template <class T>
-	void fillOcclusionImDispStretch_(Mat& im, Mat& src, T invalidvalue, int maxlength = 1000)
+	template <class srcType>
+	void fillOcclusionImDispStretch_(Mat& im, Mat& src, srcType invalidvalue, int maxlength = 1000)
 	{
 		Mat imc;
 		Mat sc;
 		im.copyTo(imc);
 		src.copyTo(sc);
-		fillOcclusionImDisp_<T>(imc, sc, invalidvalue);
+		fillOcclusionImDisp_<srcType>(imc, sc, invalidvalue);
 		//Mat mask=Mat::zeros(im.size(),CV_8U);
 		//#pragma omp parallel for
 		for (int j = 0; j < src.rows - 1; j++)
 		{
-			T* dref = sc.ptr<T>(j);
+			srcType* dref = sc.ptr<srcType>(j);
 			uchar* imref = imc.ptr<uchar>(j);
 			uchar* ims = im.ptr<uchar>(j);
-			T* s = src.ptr<T>(j);
+			srcType* s = src.ptr<srcType>(j);
 			//uchar* m = mask.ptr<uchar>(j);
-			const T st = s[0];
-			const T ed = s[src.cols - 1];
+			const srcType st = s[0];
+			const srcType ed = s[src.cols - 1];
 
 			s[0] = 255;//可能性のある最大値を入力
 			s[src.cols - 1] = 255;//可能性のある最大値を入力
@@ -2408,18 +2408,18 @@ namespace cp
 					if (t == src.cols - 1)
 					{
 						memcpy(ims + 3 * i, imref + 3 * i, 3 * (src.cols - 1 - i));
-						memcpy(s + sizeof(T)*i, dref + sizeof(T)*i, sizeof(T)*(src.cols - 1 - i));
+						memcpy(s + sizeof(srcType)*i, dref + sizeof(srcType)*i, sizeof(srcType)*(src.cols - 1 - i));
 						continue;
 					}
 					if (i == 1)
 					{
 						memcpy(ims, imref, 3 * t);
-						memcpy(s, dref, sizeof(T)*t);
+						memcpy(s, dref, sizeof(srcType)*t);
 						i = t;
 						continue;
 					}
 
-					T dd;
+					srcType dd;
 
 					if (s[i - 1] < s[t])
 					{
@@ -2507,17 +2507,17 @@ namespace cp
 			}
 		}
 	}
-	template <class T>
-	void fillOcclusionImDispBlur_(Mat& im, Mat& src, T invalidvalue)
+	template <class srcType>
+	void fillOcclusionImDispBlur_(Mat& im, Mat& src, srcType invalidvalue)
 	{
 		int bb = 1;
 		//#pragma omp parallel for
 		for (int j = bb; j < src.rows - bb; j++)
 		{
 			uchar* ims = im.ptr<uchar>(j);
-			T* s = src.ptr<T>(j);
-			const T st = s[0];
-			const T ed = s[src.cols - 1];
+			srcType* s = src.ptr<srcType>(j);
+			const srcType st = s[0];
+			const srcType ed = s[src.cols - 1];
 
 			s[0] = 255;//可能性のある最大値を入力
 			s[src.cols - 1] = 255;//可能性のある最大値を入力
@@ -2541,7 +2541,7 @@ namespace cp
 					ce[1] = ims[3 * t + 1];
 					ce[2] = ims[3 * t + 2];
 
-					T dd;
+					srcType dd;
 					if (s[i - 1] < s[t])
 					{
 						dd = s[i - 1];
@@ -2582,8 +2582,8 @@ namespace cp
 		}
 	}
 
-	template <class T>
-	void fillOcclusionImDispLRMax_(Mat& im, Mat& disp, Mat& lref, Mat& rref, T invalidvalue, double alpha, double amp, int mode)
+	template <class srcType>
+	void fillOcclusionImDispLRMax_(Mat& im, Mat& disp, Mat& lref, Mat& rref, srcType invalidvalue, double alpha, double amp, int mode)
 	{
 		double da = alpha / amp;
 		double ida = (1.0 - alpha) / amp;
@@ -2596,8 +2596,8 @@ namespace cp
 			uchar* imgl = lref.ptr<uchar>(j);
 			uchar* imgr = rref.ptr<uchar>(j);
 
-			T* d = disp.ptr<T>(j);
-			T* dm = dispm.ptr<T>(j);
+			srcType* d = disp.ptr<srcType>(j);
+			srcType* dm = dispm.ptr<srcType>(j);
 			for (int i = 0; i < im.cols; i++)
 			{
 				if (d[i] == invalidvalue && dm[i] != invalidvalue)
@@ -2780,14 +2780,14 @@ namespace cp
 		}
 	}
 
-	template <class T>
-	void setRectficatedInvalidMask_(Mat& disp, Mat& image, T invalidvalue)
+	template <class srcType>
+	void setRectficatedInvalidMask_(Mat& disp, Mat& image, srcType invalidvalue)
 	{
 		//#pragma omp parallel for
 		for (int j = 0; j < disp.rows; j++)
 		{
 			uchar* im = image.ptr<uchar>(j);
-			T* d = disp.ptr<T>(j);
+			srcType* d = disp.ptr<srcType>(j);
 			for (int i = 0; i < disp.cols; i++)
 			{
 				if (im[i] == 0)
@@ -2817,7 +2817,7 @@ namespace cp
 		}
 	}
 
-	template <class T>
+	template <class srcType>
 	void blendLR2(Mat& iml, Mat& imr, Mat& dispL, Mat& dispR, Mat& dest, Mat& destdisp, Mat& maskL, Mat& maskR, double a)
 	{
 		int dth = 5;
@@ -2840,9 +2840,9 @@ namespace cp
 			uchar* l = iml.ptr<uchar>(j);
 			uchar* r = imr.ptr<uchar>(j);
 
-			T* dd = destdisp.ptr<T>(j);
-			T* dl = dispL.ptr<T>(j);
-			T* dr = dispR.ptr<T>(j);
+			srcType* dd = destdisp.ptr<srcType>(j);
+			srcType* dl = dispL.ptr<srcType>(j);
+			srcType* dr = dispR.ptr<srcType>(j);
 
 			uchar* ml = maskL.ptr<uchar>(j);
 			uchar* mr = maskR.ptr<uchar>(j);
@@ -2853,7 +2853,7 @@ namespace cp
 				{
 					if (abs(dl[i] - dr[i]) < dth)
 					{
-						dd[i] = (T)((dl[i] + dr[i])*0.5);
+						dd[i] = (srcType)((dl[i] + dr[i])*0.5);
 						d[3 * i + 0] = saturate_cast<uchar>(ia*l[3 * i + 0] + a*r[3 * i + 0]);
 						d[3 * i + 1] = saturate_cast<uchar>(ia*l[3 * i + 1] + a*r[3 * i + 1]);
 						d[3 * i + 2] = saturate_cast<uchar>(ia*l[3 * i + 2] + a*r[3 * i + 2]);
@@ -2901,8 +2901,8 @@ namespace cp
 
 
 	// simplest without mask
-	template <class T>
-	void blendLRS(Mat& iml, Mat& imr, Mat& dispL, Mat& dispR, Mat& dest, Mat& destdisp, double a, T invalid)
+	template <class srcType>
+	void blendLRS(Mat& iml, Mat& imr, Mat& dispL, Mat& dispR, Mat& dest, Mat& destdisp, double a, srcType invalid)
 	{
 		a = max(0.0, min(a, 1.0));
 
@@ -2917,15 +2917,15 @@ namespace cp
 			uchar* l = iml.ptr<uchar>(j);
 			uchar* r = imr.ptr<uchar>(j);
 
-			T* dd = destdisp.ptr<T>(j);
-			T* dl = dispL.ptr<T>(j);
-			T* dr = dispR.ptr<T>(j);
+			srcType* dd = destdisp.ptr<srcType>(j);
+			srcType* dl = dispL.ptr<srcType>(j);
+			srcType* dr = dispR.ptr<srcType>(j);
 
 			for (int i = 0; i < iml.cols; i++)
 			{
 				if (dl[i] != invalid && dr[i] != invalid)
 				{
-					dd[i] = (T)((dl[i] + dr[i])*0.5);
+					dd[i] = (srcType)((dl[i] + dr[i])*0.5);
 					d[3 * i + 0] = saturate_cast<uchar>(ia*l[3 * i + 0] + a*r[3 * i + 0] + 0.5f);
 					d[3 * i + 1] = saturate_cast<uchar>(ia*l[3 * i + 1] + a*r[3 * i + 1] + 0.5f);
 					d[3 * i + 2] = saturate_cast<uchar>(ia*l[3 * i + 2] + a*r[3 * i + 2] + 0.5f);
@@ -2995,7 +2995,7 @@ namespace cp
 	}
 
 	// simplest
-	template <class T>
+	template <class srcType>
 	void blendLRS(Mat& iml, Mat& imr, Mat& dispL, Mat& dispR, Mat& dest, Mat& destdisp, Mat& maskL, Mat& maskR, double a)
 	{
 		a = max(0.0, min(a, 1.0));
@@ -3008,9 +3008,9 @@ namespace cp
 			uchar* l = iml.ptr<uchar>(j);
 			uchar* r = imr.ptr<uchar>(j);
 
-			T* dd = destdisp.ptr<T>(j);
-			T* dl = dispL.ptr<T>(j);
-			T* dr = dispR.ptr<T>(j);
+			srcType* dd = destdisp.ptr<srcType>(j);
+			srcType* dl = dispL.ptr<srcType>(j);
+			srcType* dr = dispR.ptr<srcType>(j);
 
 			uchar* ml = maskL.ptr<uchar>(j);
 			uchar* mr = maskR.ptr<uchar>(j);
@@ -3019,7 +3019,7 @@ namespace cp
 			{
 				if (ml[i] == 255 && mr[i] == 255)
 				{
-					dd[i] = (T)((dl[i] + dr[i])*0.5);
+					dd[i] = (srcType)((dl[i] + dr[i])*0.5);
 					d[3 * i + 0] = saturate_cast<uchar>(ia*l[3 * i + 0] + a*r[3 * i + 0] + 0.5);
 					d[3 * i + 1] = saturate_cast<uchar>(ia*l[3 * i + 1] + a*r[3 * i + 1] + 0.5);
 					d[3 * i + 2] = saturate_cast<uchar>(ia*l[3 * i + 2] + a*r[3 * i + 2] + 0.5);
@@ -3045,8 +3045,8 @@ namespace cp
 
 
 	//without mask
-	template <class T>
-	void blendLR_NearestMax(Mat& iml, Mat& imr, Mat& dispL, Mat& dispR, Mat& dest, Mat& destdisp, double a, T dth, T invalid)
+	template <class srcType>
+	void blendLR_NearestMax(Mat& iml, Mat& imr, Mat& dispL, Mat& dispR, Mat& dest, Mat& destdisp, double a, srcType dth, srcType invalid)
 	{
 		a = max(0.0, min(a, 1.0));
 
@@ -3061,12 +3061,12 @@ namespace cp
 			uchar* l = iml.ptr<uchar>(j);
 			uchar* r = imr.ptr<uchar>(j);
 
-			T* dd = destdisp.ptr<T>(j);
-			T* dl = dispL.ptr<T>(j);
-			T* dr = dispR.ptr<T>(j);
+			srcType* dd = destdisp.ptr<srcType>(j);
+			srcType* dl = dispL.ptr<srcType>(j);
+			srcType* dr = dispR.ptr<srcType>(j);
 
-			T* mdl = maxL.ptr<T>(j);
-			T* mdr = maxR.ptr<T>(j);
+			srcType* mdl = maxL.ptr<srcType>(j);
+			srcType* mdr = maxR.ptr<srcType>(j);
 
 			for (int i = 0; i < iml.cols; i++)
 			{
@@ -3074,7 +3074,7 @@ namespace cp
 				{
 					if (abs(dr[i] - dl[i]) <= dth)
 					{
-						dd[i] = (T)((dl[i] + dr[i])*0.5);
+						dd[i] = (srcType)((dl[i] + dr[i])*0.5);
 
 						d[3 * i + 0] = saturate_cast<uchar>(ia*l[3 * i + 0] + a*r[3 * i + 0] + 0.5);
 						d[3 * i + 1] = saturate_cast<uchar>(ia*l[3 * i + 1] + a*r[3 * i + 1] + 0.5);
@@ -3082,7 +3082,7 @@ namespace cp
 					}
 					else if (abs(mdr[i] - dl[i]) <= dth)
 					{
-						dd[i] = (T)((dl[i] + mdr[i])*0.5);
+						dd[i] = (srcType)((dl[i] + mdr[i])*0.5);
 
 						d[3 * i + 0] = saturate_cast<uchar>(ia*l[3 * i + 0] + a*r[3 * i + 0] + 0.5);
 						d[3 * i + 1] = saturate_cast<uchar>(ia*l[3 * i + 1] + a*r[3 * i + 1] + 0.5);
@@ -3090,7 +3090,7 @@ namespace cp
 					}
 					else  if (abs(dr[i] - mdl[i]) <= dth)
 					{
-						dd[i] = (T)((mdl[i] + dr[i])*0.5);
+						dd[i] = (srcType)((mdl[i] + dr[i])*0.5);
 
 						d[3 * i + 0] = saturate_cast<uchar>(ia*l[3 * i + 0] + a*r[3 * i + 0] + 0.5);
 						d[3 * i + 1] = saturate_cast<uchar>(ia*l[3 * i + 1] + a*r[3 * i + 1] + 0.5);
@@ -3131,8 +3131,8 @@ namespace cp
 	}
 
 	//without mask
-	template <class T>
-	void blendLR(Mat& iml, Mat& imr, Mat& dispL, Mat& dispR, Mat& dest, Mat& destdisp, double a, T dth, T invalid)
+	template <class srcType>
+	void blendLR(Mat& iml, Mat& imr, Mat& dispL, Mat& dispR, Mat& dest, Mat& destdisp, double a, srcType dth, srcType invalid)
 	{
 		a = max(0.0, min(a, 1.0));
 
@@ -3144,9 +3144,9 @@ namespace cp
 			uchar* l = iml.ptr<uchar>(j);
 			uchar* r = imr.ptr<uchar>(j);
 
-			T* dd = destdisp.ptr<T>(j);
-			T* dl = dispL.ptr<T>(j);
-			T* dr = dispR.ptr<T>(j);
+			srcType* dd = destdisp.ptr<srcType>(j);
+			srcType* dl = dispL.ptr<srcType>(j);
+			srcType* dr = dispR.ptr<srcType>(j);
 
 
 			for (int i = 0; i<iml.cols; i++)
@@ -3169,7 +3169,7 @@ namespace cp
 					}
 					else
 					{
-						dd[i] = (T)((dl[i] + dr[i])*0.5);
+						dd[i] = (srcType)((dl[i] + dr[i])*0.5);
 						d[3 * i + 0] = saturate_cast<uchar>(ia*l[3 * i + 0] + a*r[3 * i + 0] + 0.5);
 						d[3 * i + 1] = saturate_cast<uchar>(ia*l[3 * i + 1] + a*r[3 * i + 1] + 0.5);
 						d[3 * i + 2] = saturate_cast<uchar>(ia*l[3 * i + 2] + a*r[3 * i + 2] + 0.5);
@@ -3194,8 +3194,8 @@ namespace cp
 	}
 
 
-	template <class T>
-	void blendLR(Mat& iml, Mat& imr, Mat& dispL, Mat& dispR, Mat& dest, Mat& destdisp, Mat& maskL, Mat& maskR, double a, T dth)
+	template <class srcType>
+	void blendLR(Mat& iml, Mat& imr, Mat& dispL, Mat& dispR, Mat& dest, Mat& destdisp, Mat& maskL, Mat& maskR, double a, srcType dth)
 	{
 		a = max(0.0, min(a, 1.0));
 
@@ -3207,9 +3207,9 @@ namespace cp
 			uchar* l = iml.ptr<uchar>(j);
 			uchar* r = imr.ptr<uchar>(j);
 
-			T* dd = destdisp.ptr<T>(j);
-			T* dl = dispL.ptr<T>(j);
-			T* dr = dispR.ptr<T>(j);
+			srcType* dd = destdisp.ptr<srcType>(j);
+			srcType* dl = dispL.ptr<srcType>(j);
+			srcType* dr = dispR.ptr<srcType>(j);
 
 			uchar* ml = maskL.ptr<uchar>(j);
 			uchar* mr = maskR.ptr<uchar>(j);
@@ -3236,7 +3236,7 @@ namespace cp
 					}
 					else
 					{
-						dd[i] = (T)((dl[i] + dr[i])*0.5);
+						dd[i] = (srcType)((dl[i] + dr[i])*0.5);
 						d[3 * i + 0] = saturate_cast<uchar>(ia*l[3 * i + 0] + a*r[3 * i + 0] + 0.5);
 						d[3 * i + 1] = saturate_cast<uchar>(ia*l[3 * i + 1] + a*r[3 * i + 1] + 0.5);
 						d[3 * i + 2] = saturate_cast<uchar>(ia*l[3 * i + 2] + a*r[3 * i + 2] + 0.5);
@@ -3455,7 +3455,7 @@ namespace cp
 		}
 	}
 
-	template <class T>
+	template <class srcType>
 	void blendLRRes(Mat& iml, Mat& imr, Mat& dispL, Mat& dispR, Mat& dest, Mat& destdisp, Mat& maskL, Mat& maskR, double a, int dth = 32)
 	{
 		Mat resmap = Mat::zeros(iml.size(), CV_8U);
@@ -3498,9 +3498,9 @@ namespace cp
 			uchar* l = iml.ptr<uchar>(j);
 			uchar* r = imr.ptr<uchar>(j);
 
-			T* dd = destdisp.ptr<T>(j);
-			T* dl = dispL.ptr<T>(j);
-			T* dr = dispR.ptr<T>(j);
+			srcType* dd = destdisp.ptr<srcType>(j);
+			srcType* dl = dispL.ptr<srcType>(j);
+			srcType* dr = dispR.ptr<srcType>(j);
 
 			uchar* ml = maskL.ptr<uchar>(j);
 			uchar* mr = maskR.ptr<uchar>(j);
@@ -3509,7 +3509,7 @@ namespace cp
 			{
 				if (ml[i] == 255 && mr[i] == 255)
 				{
-					dd[i] = (T)((dl[i] + dr[i])*0.5);
+					dd[i] = (srcType)((dl[i] + dr[i])*0.5);
 					int emax = INT_MAX;
 					int argn = 0;
 					for (int n = 0; n < 11; n++)
@@ -3552,7 +3552,7 @@ namespace cp
 		imshow("resmap", resmap);
 	}
 
-	template <class T>
+	template <class srcType>
 	void blendLRRes2(Mat& iml, Mat& imr, Mat& imlP, Mat& imrP, Mat& dispL, Mat& dispR, Mat& dest, Mat& destdisp, Mat& maskL, Mat& maskR, double a, int dth = 32)
 	{
 		Mat resmap = Mat::zeros(iml.size(), CV_8U);
@@ -3595,9 +3595,9 @@ namespace cp
 			uchar* l = iml.ptr<uchar>(j);
 			uchar* r = imr.ptr<uchar>(j);
 
-			T* dd = destdisp.ptr<T>(j);
-			T* dl = dispL.ptr<T>(j);
-			T* dr = dispR.ptr<T>(j);
+			srcType* dd = destdisp.ptr<srcType>(j);
+			srcType* dl = dispL.ptr<srcType>(j);
+			srcType* dr = dispR.ptr<srcType>(j);
 
 			uchar* ml = maskL.ptr<uchar>(j);
 			uchar* mr = maskR.ptr<uchar>(j);
@@ -3606,7 +3606,7 @@ namespace cp
 			{
 				if (ml[i] == 255 && mr[i] == 255)
 				{
-					dd[i] = (T)((dl[i] + dr[i])*0.5);
+					dd[i] = (srcType)((dl[i] + dr[i])*0.5);
 
 					//cout<<dl[i]<<","<<dr[i]<<endl;
 					int disp = dd[i] / 16.0;
@@ -3661,14 +3661,14 @@ namespace cp
 		}
 		imshow("resmap", resmap);
 	}
-	template <class T>
+	template <class srcType>
 	void fillBoundingBoxDepthIm(Mat& src_im, Mat& src_dp, int occflag)
 	{
 		//#pragma omp parallel for
 		for (int j = 0; j < src_im.rows; j++)
 		{
 			uchar* sim = src_im.ptr<uchar>(j);
-			T* sdp = src_dp.ptr<T>(j);
+			srcType* sdp = src_dp.ptr<srcType>(j);
 
 			int k = 0;
 			int i = 0;
@@ -3705,13 +3705,13 @@ namespace cp
 			}
 		}
 	}
-	template <class T>
+	template <class srcType>
 	void fillBoundingBoxDepth(Mat& src_dp, int occflag)
 	{
 		//#pragma omp parallel for
 		for (int j = 0; j < src_dp.rows; j++)
 		{
-			T* sdp = src_dp.ptr<T>(j);
+			srcType* sdp = src_dp.ptr<srcType>(j);
 
 			int k = 0;
 			int i = 0;
@@ -3744,10 +3744,10 @@ namespace cp
 	}
 
 
-	template <class T>
-	void depthBasedInpaint(Mat& src_im, Mat& src_dp, Mat& dest_im, Mat& dest_dp, T OCC_FLAG)
+	template <class srcType>
+	void depthBasedInpaint(Mat& src_im, Mat& src_dp, Mat& dest_im, Mat& dest_dp, srcType OCC_FLAG)
 	{
-		const T DISPINF = 255;
+		const srcType DISPINF = 255;
 		int bs = 20;
 		//erode(src_dp,dest_dp,Mat());
 		src_dp.copyTo(dest_dp);
@@ -3766,18 +3766,18 @@ namespace cp
 			for (int j = bs; j < src_dp.rows - bs; j++)
 			{
 				uchar* dim = dest_im.ptr<uchar>(j);
-				T* ddp = dest_dp.ptr<T>(j);
-				T* sdp = src_dp.ptr<T>(j);
+				srcType* ddp = dest_dp.ptr<srcType>(j);
+				srcType* sdp = src_dp.ptr<srcType>(j);
 
 				for (int i = bs; i < src_dp.cols - bs; i++)
 				{
 					if (sdp[i] == OCC_FLAG)
 					{
 						loop = true;
-						T dmin = DISPINF;
+						srcType dmin = DISPINF;
 						for (int l = -bs; l <= bs; l++)
 						{
-							T* bddp = src_dp.ptr<T>(j + l);
+							srcType* bddp = src_dp.ptr<srcType>(j + l);
 							for (int k = -bs; k <= bs; k++)
 							{
 								if (bddp[k + i] != OCC_FLAG)
@@ -3795,7 +3795,7 @@ namespace cp
 						int count = 0;
 						for (int l = -bs; l <= bs; l++)
 						{
-							T* bddp = src_dp.ptr<T>(j + l);
+							srcType* bddp = src_dp.ptr<srcType>(j + l);
 							uchar* sim = src_im.ptr<uchar>(j + l);
 							for (int k = -bs; k <= bs; k++)
 							{
@@ -3819,20 +3819,20 @@ namespace cp
 		}
 	}
 
-	template <class T>
+	template <class srcType>
 	void shiftDisparity_(Mat& srcdisp, Mat& destdisp, double amp, const int large_jump, const int sub_gap)
 	{
 		const int ljump = max(large_jump, 1);
 		if (amp > 0)
 		{
 			const int step = srcdisp.cols;
-			T* s = srcdisp.ptr<T>(0);
-			T* d = destdisp.ptr<T>(0);
+			srcType* s = srcdisp.ptr<srcType>(0);
+			srcType* d = destdisp.ptr<srcType>(0);
 			for (int j = 0; j<srcdisp.rows; j++)
 			{
 				for (int i = srcdisp.cols - 1; i >= 0; i--)
 				{
-					const T disp = s[i];
+					const srcType disp = s[i];
 					int sub = (int)(abs(disp - s[i - 1]));
 					bool issub = (sub <= sub_gap) ? true : false;
 					const int dest = (int)(disp*amp);
@@ -3859,13 +3859,13 @@ namespace cp
 		else if (amp < 0)
 		{
 			const int step = srcdisp.cols;
-			T* s = srcdisp.ptr<T>(0);
-			T* d = destdisp.ptr<T>(0);
+			srcType* s = srcdisp.ptr<srcType>(0);
+			srcType* d = destdisp.ptr<srcType>(0);
 			for (int j = 0; j<srcdisp.rows; j++)
 			{
 				for (int i = 0; i<srcdisp.cols; i++)
 				{
-					const T disp = s[i];
+					const srcType disp = s[i];
 					int sub = (int)(abs(disp - s[i + 1]));
 					bool issub = (sub <= sub_gap) ? true : false;
 					const int dest = (int)(-disp*amp);
@@ -3930,15 +3930,15 @@ namespace cp
 	}
 
 
-	template<class T>
-	void crackRemove_(Mat& depth, Mat& depth_dest, T invalidvalue)
+	template<class srcType>
+	void crackRemove_(Mat& depth, Mat& depth_dest, srcType invalidvalue)
 	{
 
 		depth.copyTo(depth_dest);
 		for (int j = 0; j < depth.rows; j++)
 		{
-			T* s = depth.ptr<T>(j);
-			T* d = depth_dest.ptr<T>(j);
+			srcType* s = depth.ptr<srcType>(j);
+			srcType* d = depth_dest.ptr<srcType>(j);
 
 			for (int i = 1; i < depth.cols - 1; i++)
 			{
@@ -3946,7 +3946,7 @@ namespace cp
 				{
 					if (s[i - 1] != invalidvalue && s[i + 1] != invalidvalue)
 					{
-						d[i] = (T)((s[i - 1] + s[i + 1])*0.5);
+						d[i] = (srcType)((s[i - 1] + s[i + 1])*0.5);
 					}
 				}
 			}
@@ -4416,7 +4416,7 @@ namespace cp
 		analyzeSynthesizedView(srcsynth, ref);
 	}
 
-	template <class T>
+	template <class srcType>
 	void StereoViewSynthesis::analyzeSynthesizedViewDetail_(Mat& srcL, Mat& srcR, Mat& dispL, Mat& dispR, double alpha, int invalidvalue, double disp_amp, Mat& srcsynth, Mat& ref)
 	{
 		vector<Mat> draw;
@@ -4447,7 +4447,7 @@ namespace cp
 		depthfilter(temp, destdisp, maskTemp, cvRound(abs(alpha)), disp_amp);
 		compare(destdisp, 0, maskL, cv::CMP_NE);
 		dest.setTo(0);
-		shiftImInvWithMask_<T>(srcL, destdisp, dest, -alpha / disp_amp, maskL, 0, warpInterpolationMethod);
+		shiftImInvWithMask_<srcType>(srcL, destdisp, dest, -alpha / disp_amp, maskL, 0, warpInterpolationMethod);
 
 		draw.push_back(dest.clone());
 
@@ -4455,7 +4455,7 @@ namespace cp
 		depthfilter(temp, destdispR, maskTemp, cvRound(abs(alpha)), disp_amp);
 		compare(destdispR, 0, maskR, cv::CMP_NE);
 		destR.setTo(0);
-		shiftImInvWithMask_<T>(srcR, destdispR, destR, (1.0 - alpha) / disp_amp, maskR, 0, warpInterpolationMethod);
+		shiftImInvWithMask_<srcType>(srcR, destdispR, destR, (1.0 - alpha) / disp_amp, maskR, 0, warpInterpolationMethod);
 
 		draw.push_back(destR.clone());
 
@@ -4466,7 +4466,7 @@ namespace cp
 
 		bitwise_not(fullOcclusionMask, nonFullOcclusionMask);
 
-		blendLRS<T>(dest, destR, destdisp, destdispR, destR, destdispR, maskL, maskR, alpha);
+		blendLRS<srcType>(dest, destR, destdisp, destdispR, destR, destdispR, maskL, maskR, alpha);
 
 		draw.push_back(destR.clone());
 
@@ -4495,7 +4495,7 @@ namespace cp
 			analyzeSynthesizedViewDetail_<float>(srcL, srcR, dispL, dispR, alpha, invalidvalue, disp_amp, srcsynth, ref);
 	}
 
-	template <class T>
+	template <class srcType>
 	void StereoViewSynthesis::makeMask_(Mat& srcL, Mat& srcR, Mat& dispL, Mat& dispR, double alpha, int invalidvalue, double disp_amp)
 	{
 		vector<Mat> draw;
@@ -4526,7 +4526,7 @@ namespace cp
 		depthfilter(temp, destdisp, maskTemp, cvRound(abs(alpha)), disp_amp);
 		compare(destdisp, 0, maskL, cv::CMP_NE);
 		dest.setTo(0);
-		shiftImInvWithMask_<T>(srcL, destdisp, dest, -alpha / disp_amp, maskL, 0, warpInterpolationMethod);
+		shiftImInvWithMask_<srcType>(srcL, destdisp, dest, -alpha / disp_amp, maskL, 0, warpInterpolationMethod);
 
 		draw.push_back(dest.clone());
 
@@ -4534,7 +4534,7 @@ namespace cp
 		depthfilter(temp, destdispR, maskTemp, cvRound(abs(alpha)), disp_amp);
 		compare(destdispR, 0, maskR, cv::CMP_NE);
 		destR.setTo(0);
-		shiftImInvWithMask_<T>(srcR, destdispR, destR, (1.0 - alpha) / disp_amp, maskR, 0, warpInterpolationMethod);
+		shiftImInvWithMask_<srcType>(srcR, destdispR, destR, (1.0 - alpha) / disp_amp, maskR, 0, warpInterpolationMethod);
 
 		draw.push_back(destR.clone());
 
@@ -4545,7 +4545,7 @@ namespace cp
 
 		bitwise_not(fullOcclusionMask, nonFullOcclusionMask);
 
-		blendLRS<T>(dest, destR, destdisp, destdispR, destR, destdispR, maskL, maskR, alpha);
+		blendLRS<srcType>(dest, destR, destdisp, destdispR, destR, destdispR, maskL, maskR, alpha);
 
 		draw.push_back(destR.clone());
 
@@ -4557,7 +4557,7 @@ namespace cp
 	}
 
 	//#define VIS_SYNTH_INFO 0
-	template <class T>
+	template <class srcType>
 	void StereoViewSynthesis::viewsynth(const Mat& srcL, const Mat& srcR, const Mat& dispL, const Mat& dispR, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp, int disptype)
 	{
 		Mat disp8Ubuff;
@@ -4682,7 +4682,7 @@ namespace cp
 			{
 				//blendLRS<T>(dest,destR,destdisp,destdispR,destR,destdispR,maskL,maskR,alpha);
 				//	blendLRS<T>(dest,destR,destdisp,destdispR,destR,destdisp,alpha,invalidvalue);
-				if (blendMethod == 0) blendLRS<T>(dest, destR, destdisp, destdispR, destR, destdisp, alpha, invalidvalue);
+				if (blendMethod == 0) blendLRS<srcType>(dest, destR, destdisp, destdispR, destR, destdisp, alpha, invalidvalue);
 				else
 				{
 					blendLRS_8u_leftisout(dest, destR, destdisp, destdispR, alpha, invalidvalue);//faster, but not accurate.
@@ -4691,8 +4691,8 @@ namespace cp
 			}
 			else
 			{
-				if (blendMethod == 0) blendLR<T>(dest, destR, destdisp, destdispR, destR, destdisp, alpha, (T)(blend_z_thresh*disp_amp), invalidvalue);//
-				else blendLR_NearestMax<T>(dest, destR, destdisp, destdispR, destR, destdisp, alpha, (T)(blend_z_thresh*disp_amp), invalidvalue);//
+				if (blendMethod == 0) blendLR<srcType>(dest, destR, destdisp, destdispR, destR, destdisp, alpha, (srcType)(blend_z_thresh*disp_amp), invalidvalue);//
+				else blendLR_NearestMax<srcType>(dest, destR, destdisp, destdispR, destR, destdisp, alpha, (srcType)(blend_z_thresh*disp_amp), invalidvalue);//
 				//blendLR<T>(dest,destR,destdisp,destdispR,destR,destdisp,alpha, (T)(blend_z_thresh*disp_amp),invalidvalue);//
 				//blendLR<T>(dest,destR,destdisp,destdispR,destR,destdispR,maskL,maskR,alpha, (T)(blend_z_thresh*disp_amp));//
 
@@ -4788,7 +4788,7 @@ namespace cp
 }
 
 
-	template <class T>
+	template <class srcType>
 	void shiftImDispNN3_(const Mat& srcim, const Mat& srcdisp, Mat& destim, Mat& destdisp, double amp, Mat& mask, const int large_jump, const int sub_gap)
 	{
 		int ij = 0;
@@ -4801,12 +4801,12 @@ namespace cp
 				const uchar* sim = srcim.ptr<uchar>(j);
 				uchar* dim = destim.ptr<uchar>(j);
 				uchar* m = mask.ptr<uchar>(j);
-				const T* s = srcdisp.ptr<T>(j);
-				T* d = destdisp.ptr<T>(j);
+				const srcType* s = srcdisp.ptr<srcType>(j);
+				srcType* d = destdisp.ptr<srcType>(j);
 
 				for (int i = srcdisp.cols - 2; i >= 0; i--)
 				{
-					const T disp = s[i];
+					const srcType disp = s[i];
 					int sub = (int)(abs(disp - s[i - 1]));
 					bool issub = (sub <= sub_gap) ? true : false;
 					const int dest = (int)(disp*amp);
@@ -4851,11 +4851,11 @@ namespace cp
 				uchar* dim = destim.ptr<uchar>(j);
 				uchar* m = mask.ptr<uchar>(j);
 
-				const T* s = srcdisp.ptr<T>(j);
-				T* d = destdisp.ptr<T>(j);
+				const srcType* s = srcdisp.ptr<srcType>(j);
+				srcType* d = destdisp.ptr<srcType>(j);
 				for (int i = 1; i<srcdisp.cols; i++)
 				{
-					const T disp = s[i];
+					const srcType disp = s[i];
 					int sub = (int)(abs(disp - s[i + 1]));
 					bool issub = (sub <= sub_gap) ? true : false;
 					const int dest = (int)(-amp*disp);//符号
@@ -4874,7 +4874,7 @@ namespace cp
 						if (disp > d[i + dest])
 						{
 							m[i + dest] = 255;
-							d[i + dest] = (T)disp;
+							d[i + dest] = (srcType)disp;
 
 							dim[3 * (i + dest) + 0] = sim[3 * i + 0];
 							dim[3 * (i + dest) + 1] = sim[3 * i + 1];
@@ -4883,7 +4883,7 @@ namespace cp
 							if (issub)
 							{
 								m[i + dest + 1] = 255;
-								d[i + dest + 1] = (T)disp;
+								d[i + dest + 1] = (srcType)disp;
 								dim[3 * (i + dest + 1) + 0] = sim[3 * i + 3];
 								dim[3 * (i + dest + 1) + 1] = sim[3 * i + 4];
 								dim[3 * (i + dest + 1) + 2] = sim[3 * i + 5];
@@ -4945,7 +4945,7 @@ namespace cp
 		//guiAlphaBlend(dest,destdisp);
 	}
 
-	template <class T>
+	template <class srcType>
 	void StereoViewSynthesis::viewsynthSingle(Mat& src, Mat& disp, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp, int disptype)
 	{
 		Mat disp8Ubuff;
@@ -4974,11 +4974,11 @@ namespace cp
 
 		{
 			//CalcTime t("warp");
-			shiftImDisp<T>(src, disp, dest, temp, alpha / disp_amp, disp_amp, large_jump);
+			shiftImDisp<srcType>(src, disp, dest, temp, alpha / disp_amp, disp_amp, large_jump);
 
 			depthfilter(temp, destdisp, mask, cvRound(abs(alpha)), disp_amp);
 
-			shiftImInvWithMask_<T>(src, destdisp, dest, -alpha / disp_amp, mask);
+			shiftImInvWithMask_<srcType>(src, destdisp, dest, -alpha / disp_amp, mask);
 			//destdisp.convertTo(temp,CV_8U,5.0/disp_amp);imshow("a",temp);//waitKey();
 		}
 
@@ -5139,16 +5139,16 @@ namespace cp
 		;
 	}
 
-	template <class S, class T>
+	template <class S, class srcType>
 	void DepthMapSubpixelRefinment::getDisparitySubPixel_Integer(Mat& src, Mat& dest, int disp_amp)
 	{
-		T* disp = dest.ptr<T>(0);
+		srcType* disp = dest.ptr<srcType>(0);
 		S* s = src.ptr<S>(0);
 		const int imsize = src.size().area();
 
 		for (int j = 0; j < imsize; j++)
 		{
-			T d = (T)s[j];
+			srcType d = (srcType)s[j];
 			float f = cslice.at<float>(j);
 			float p = pslice.at<float>(j);
 			float m = mslice.at<float>(j);
@@ -5163,11 +5163,11 @@ namespace cp
 				else
 					dd = (float)d;
 				//cout<<d<<":"<<dd<<","<<md<<endl;getchar();
-				disp[j] = (T)(disp_amp*dd + 0.5f);
+				disp[j] = (srcType)(disp_amp*dd + 0.5f);
 			}
 			else
 			{
-				disp[j] = (T)(disp_amp*d + 0.5f);
+				disp[j] = (srcType)(disp_amp*d + 0.5f);
 			}
 		}
 	}

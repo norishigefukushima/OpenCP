@@ -6,7 +6,7 @@ using namespace cv;
 namespace cp
 {
 
-	template <class T>
+	template <class srcType>
 	void addNoiseSoltPepperMono_(Mat& src, Mat& dest, const double per, const int seed)
 	{
 		cv::RNG rng;
@@ -14,8 +14,8 @@ namespace cp
 		else rng.state = cv::getTickCount();
 		for (int j = 0; j < src.rows; j++)
 		{
-			T* s = src.ptr<T>(j);
-			T* d = dest.ptr<T>(j);
+			srcType* s = src.ptr<srcType>(j);
+			srcType* d = dest.ptr<srcType>(j);
 			for (int i = 0; i < src.cols; i++)
 			{
 				double a1 = rng.uniform((double)0, (double)1);
@@ -25,8 +25,8 @@ namespace cp
 				else
 				{
 					double a2 = rng.uniform((double)0, (double)1);
-					if (a2 > 0.5)d[i] = (T)0.0;
-					else d[i] = (T)255.0;
+					if (a2 > 0.5)d[i] = (srcType)0.0;
+					else d[i] = (srcType)255.0;
 				}
 			}
 		}

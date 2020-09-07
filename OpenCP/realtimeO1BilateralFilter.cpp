@@ -171,8 +171,8 @@ namespace cp
 		}
 	}
 
-	template <typename T, typename S>
-	void RealtimeO1BilateralFilter::splattingColor(const T* s, S* su, S* sd, const uchar* j, const uchar* v, const int imageSize, const int channels, const int type)
+	template <typename srcType, typename S>
+	void RealtimeO1BilateralFilter::splattingColor(const srcType* s, S* su, S* sd, const uchar* j, const uchar* v, const int imageSize, const int channels, const int type)
 	{
 		if (type == L1SQR)
 		{
@@ -298,8 +298,8 @@ namespace cp
 		}
 	}
 
-	template <typename T, typename S>
-	void RealtimeO1BilateralFilter::splatting(const T* s, S* su, S* sd, const uchar* j, const uchar v, const int imageSize, const int channels)
+	template <typename srcType, typename S>
+	void RealtimeO1BilateralFilter::splatting(const srcType* s, S* su, S* sd, const uchar* j, const uchar v, const int imageSize, const int channels)
 	{
 		if (channels == 3)
 		{
@@ -381,7 +381,7 @@ namespace cp
 		}
 	}
 
-	template <typename T, typename S>
+	template <typename srcType, typename S>
 	void RealtimeO1BilateralFilter::bodySaveMemorySize_(const Mat& src_, const Mat& guide_, Mat& dest)
 	{
 		if (bgrid.size() != 1 || bgrid[0].size() != src_.size())
@@ -422,7 +422,7 @@ namespace cp
 		}
 		disposeBin(num_bin);
 
-		const T* s = src.ptr<T>(0);
+		const srcType* s = src.ptr<srcType>(0);
 		const uchar* j = joint.ptr<uchar>(0);
 		const uchar* jfull = guide_.ptr<uchar>(0);
 		S* d = dst.ptr<S>(0);
@@ -434,7 +434,7 @@ namespace cp
 				S* sd = normalize_sub_range[0].ptr<S>(0);//down
 
 				uchar v = bin2num[b];
-				splatting<T, S>(s, su, sd, j, v, imageSize, src.channels());
+				splatting<srcType, S>(s, su, sd, j, v, imageSize, src.channels());
 
 				blurring(sub_range[0], sub_range[0]);
 				blurring(normalize_sub_range[0], normalize_sub_range[0]);
@@ -484,7 +484,7 @@ namespace cp
 				S* sd = normalize_sub_range[0].ptr<S>(0);//down
 
 				uchar v = bin2num[b];
-				splatting<T, S>(s, su, sd, j, v, imageSize, src.channels());
+				splatting<srcType, S>(s, su, sd, j, v, imageSize, src.channels());
 
 				blurring(sub_range[0], sub_range[0]);
 				blurring(normalize_sub_range[0], normalize_sub_range[0]);
@@ -557,7 +557,7 @@ namespace cp
 						bgr[0] = bin2num[b];
 						bgr[1] = bin2num[g];
 						bgr[2] = bin2num[r];
-						splattingColor<T, S>(s, su, sd, j, bgr, imageSize, src.channels(), normType);
+						splattingColor<srcType, S>(s, su, sd, j, bgr, imageSize, src.channels(), normType);
 
 						blurring(sub_range[0], sub_range[0]);
 						blurring(normalize_sub_range[0], normalize_sub_range[0]);
@@ -648,7 +648,7 @@ namespace cp
 						bgr[0] = bin2num[b];
 						bgr[1] = bin2num[g];
 						bgr[2] = bin2num[r];
-						splattingColor<T, S>(s, su, sd, j, bgr, imageSize, src.channels(), normType);
+						splattingColor<srcType, S>(s, su, sd, j, bgr, imageSize, src.channels(), normType);
 
 						blurring(sub_range[0], sub_range[0]);
 						blurring(normalize_sub_range[0], normalize_sub_range[0]);
@@ -731,7 +731,7 @@ namespace cp
 		}
 	}
 
-	template <typename T, typename S>
+	template <typename srcType, typename S>
 	void RealtimeO1BilateralFilter::body_(const Mat& src_, const Mat& guide_, Mat& dest)
 	{
 		if (bgrid.size() != num_bin || bgrid[0].size() != src_.size())
@@ -766,10 +766,10 @@ namespace cp
 			disposeBin(num_bin);
 		}
 
-		const T* s = src.ptr<T>(0);
+		const srcType* s = src.ptr<srcType>(0);
 		const uchar* j = guide.ptr<uchar>(0);
 		const uchar* jfull = guide_.ptr<uchar>(0);
-		T* d = dest.ptr<T>(0);
+		srcType* d = dest.ptr<srcType>(0);
 		if (src.channels() == 1 && guide.channels() == 1)
 		{
 #ifdef USE_OPENMP
@@ -784,7 +784,7 @@ namespace cp
 
 				uchar v = bin2num[b];
 
-				splatting<T, S>(s, su, sd, j, v, imageSize, src.channels());
+				splatting<srcType, S>(s, su, sd, j, v, imageSize, src.channels());
 
 				blurring(sub_range[b], sub_range[b]);
 				blurring(normalize_sub_range[b], normalize_sub_range[b]);
@@ -803,7 +803,7 @@ namespace cp
 				int id = idx[jfull[i]];
 				S ca = (S)a[jfull[i]];
 				S ica = (S)(1.f - ca);
-				d[i] = saturate_cast<T>(ca*bgrid[id].at<S>(i)+ica*bgrid[id + 1].at<S>(i));
+				d[i] = saturate_cast<srcType>(ca*bgrid[id].at<S>(i)+ica*bgrid[id + 1].at<S>(i));
 			}
 		}
 		else if (src.channels() == 3 && guide.channels() == 1)
@@ -819,7 +819,7 @@ namespace cp
 				S* sd = normalize_sub_range[b].ptr<S>(0);//down
 
 				uchar v = bin2num[b];
-				splatting<T, S>(s, su, sd, j, v, imageSize, src.channels());
+				splatting<srcType, S>(s, su, sd, j, v, imageSize, src.channels());
 
 				blurring(sub_range[b], sub_range[b]);
 				blurring(normalize_sub_range[b], normalize_sub_range[b]);
@@ -841,9 +841,9 @@ namespace cp
 				S ca = (S)a[jfull[i]];
 				S ica = (S)(1.f - ca);
 
-				d[3 * i + 0] = saturate_cast<T>(ca*bgrid[id].at<S>(3 * i + 0) + ica*bgrid[id + 1].at<S>(3 * i + 0));
-				d[3 * i + 1] = saturate_cast<T>(ca*bgrid[id].at<S>(3 * i + 1) + ica*bgrid[id + 1].at<S>(3 * i + 1));
-				d[3 * i + 2] = saturate_cast<T>(ca*bgrid[id].at<S>(3 * i + 2) + ica*bgrid[id + 1].at<S>(3 * i + 2));
+				d[3 * i + 0] = saturate_cast<srcType>(ca*bgrid[id].at<S>(3 * i + 0) + ica*bgrid[id + 1].at<S>(3 * i + 0));
+				d[3 * i + 1] = saturate_cast<srcType>(ca*bgrid[id].at<S>(3 * i + 1) + ica*bgrid[id + 1].at<S>(3 * i + 1));
+				d[3 * i + 2] = saturate_cast<srcType>(ca*bgrid[id].at<S>(3 * i + 2) + ica*bgrid[id + 1].at<S>(3 * i + 2));
 			}
 		}
 		else if (src.channels() == 1 && guide.channels() == 3)
@@ -870,7 +870,7 @@ namespace cp
 						bgr[0] = bin2num[b];
 						bgr[1] = bin2num[g];
 						bgr[2] = bin2num[r];
-						splattingColor<T, S>(s, su, sd, j, bgr, imageSize, src.channels(), normType);
+						splattingColor<srcType, S>(s, su, sd, j, bgr, imageSize, src.channels(), normType);
 
 						blurring(sub_range[b], sub_range[b]);
 						blurring(normalize_sub_range[b], normalize_sub_range[b]);
@@ -940,7 +940,7 @@ namespace cp
 						bgr[0] = bin2num[b];
 						bgr[1] = bin2num[g];
 						bgr[2] = bin2num[r];
-						splattingColor<T, S>(s, su, sd, j, bgr, imageSize, src.channels(), normType);
+						splattingColor<srcType, S>(s, su, sd, j, bgr, imageSize, src.channels(), normType);
 
 						blurring(sub_range[b], sub_range[b]);
 						blurring(normalize_sub_range[b], normalize_sub_range[b]);

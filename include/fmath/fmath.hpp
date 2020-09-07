@@ -92,14 +92,14 @@ namespace fmath {
 			return (1ULL << x) - 1;
 		}
 
-		template<class T>
-		inline const T* cast_to(const void *p)
+		template<class srcType>
+		inline const srcType* cast_to(const void *p)
 		{
-			return reinterpret_cast<const T*>(p);
+			return reinterpret_cast<const srcType*>(p);
 		}
 
-		template<class T, size_t N>
-		size_t NumOfArray(const T(&)[N]) { return N; }
+		template<class srcType, size_t N>
+		size_t NumOfArray(const srcType(&)[N]) { return N; }
 
 		/*
 			exp(88.722839f) = inf ; 0x42b17218

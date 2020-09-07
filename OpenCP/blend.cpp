@@ -900,7 +900,7 @@ namespace cp
 		return show;
 	}
 
-	template <class T>
+	template <class srcType>
 	void setTrapezoidMaskH(Mat& src, double ratio, double slant_ratio, Point& start_pt, Point& end_pt)
 	{
 		const int offset = (int)((0.5 - ratio) * src.cols);
@@ -909,9 +909,9 @@ namespace cp
 		src.setTo(0);
 		for (int j = 0; j < src.rows; j++)
 		{
-			T* s = src.ptr<T>(j);
+			srcType* s = src.ptr<srcType>(j);
 			int v = (int)(j * aspect) + boundary + offset;
-			memset(s, 1, (sizeof(T) * min(src.cols, max(src.cols - v, 0))));
+			memset(s, 1, (sizeof(srcType) * min(src.cols, max(src.cols - v, 0))));
 		}
 
 		start_pt.x = src.cols - 1 - offset - boundary;
@@ -920,7 +920,7 @@ namespace cp
 		end_pt.y = src.rows - 1;
 	}
 
-	template <class T>
+	template <class srcType>
 	void setTrapezoidMaskV(Mat& src, double ratio, double slant_ratio, Point& start_pt, Point& end_pt)
 	{
 		const int offset = int((0.5 - ratio) * src.rows);
@@ -938,15 +938,15 @@ namespace cp
 			{
 				if (j >= 0 && j < src.rows)
 				{
-					T* s = src.ptr<T>(j);
+					srcType* s = src.ptr<srcType>(j);
 					int v = min((int)((j - sty) * aspect), src.cols);
-					memset(s, 0, sizeof(T) * v);
+					memset(s, 0, sizeof(srcType) * v);
 				}
 			}
 			for (int j = edy; j < src.rows; j++)
 			{
-				T* s = src.ptr<T>(j);
-				memset(s, 0, sizeof(T) * src.cols);
+				srcType* s = src.ptr<srcType>(j);
+				memset(s, 0, sizeof(srcType) * src.cols);
 			}
 			start_pt.x = 0;
 			start_pt.y = sty;
@@ -965,14 +965,14 @@ namespace cp
 				if (j >= 1 && j < src.rows)
 				{
 					int v = max(0, min(src.cols, (int)((j - sty) * aspect)));
-					T* s = src.ptr<T>(j) - v;
-					memset(s, 0, sizeof(T) * v);
+					srcType* s = src.ptr<srcType>(j) - v;
+					memset(s, 0, sizeof(srcType) * v);
 				}
 			}
 			for (int j = edy; j < src.rows; j++)
 			{
-				T* s = src.ptr<T>(j);
-				memset(s, 0, sizeof(T) * src.cols);
+				srcType* s = src.ptr<srcType>(j);
+				memset(s, 0, sizeof(srcType) * src.cols);
 			}
 			start_pt.x = 0;
 			start_pt.y = edy;

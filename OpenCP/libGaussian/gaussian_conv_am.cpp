@@ -34,10 +34,10 @@
  * \f$ u_0 = \sum_{j=0}^\infty \nu^j \Tilde{x}_j \f$
  * by adding the first `num_terms` terms.
  */
-template<typename T>
-inline T am_left_boundary_(const T *data, long N, long stride, T nu, long num_terms)
+template<typename srcType>
+inline srcType am_left_boundary_(const srcType *data, long N, long stride, srcType nu, long num_terms)
 {
-    T h = 1, accum = data[0];
+    srcType h = 1, accum = data[0];
     long m;
     
     for (m = 1; m < num_terms; ++m)
@@ -77,13 +77,13 @@ inline T am_left_boundary_(const T *data, long N, long stride, T nu, long num_te
  * The convolution can be performed in-place by setting `src` = `dest` (the
  * source array is overwritten with the result).
  */
-template<typename T>
-void am_gaussian_conv_(T *dest, const T *src, long N, long stride,
-    double sigma, int K, T tol, bool use_adjusted_q)
+template<typename srcType>
+void am_gaussian_conv_(srcType *dest, const srcType *src, long N, long stride,
+    double sigma, int K, srcType tol, bool use_adjusted_q)
 {
     const long stride_N = stride * N;
     double q, lambda, dnu;
-    T nu, scale;
+    srcType nu, scale;
     long i, num_terms;
     int pass;
     
@@ -99,12 +99,12 @@ void am_gaussian_conv_(T *dest, const T *src, long N, long stride,
     /* Precompute the filter coefficient nu. */
     lambda = (q * q) / (2.0 * K);
     dnu = (1.0 + 2.0*lambda - sqrt(1.0 + 4.0*lambda))/(2.0*lambda);
-    nu = (T)dnu;
+    nu = (srcType)dnu;
     /* For handling the left boundary, determine the number of terms needed to
        approximate the sum with accuracy tol. */
     num_terms = (long)ceil(log((1.0 - dnu)*tol) / log(dnu));
     /* Precompute the constant scale factor. */
-    scale = (T)(pow(dnu / lambda, K));
+    scale = (srcType)(pow(dnu / lambda, K));
     
     /* Copy src to dest and multiply by the constant scale factor. */
     for (i = 0; i < stride_N; i += stride)
@@ -114,7 +114,7 @@ void am_gaussian_conv_(T *dest, const T *src, long N, long stride,
     for (pass = 0; pass < K; ++pass)
     {
         /* Initialize the recursive filter on the left boundary. */
-        dest[0] = am_left_boundary_<T>(dest, N, stride, nu, num_terms);
+        dest[0] = am_left_boundary_<srcType>(dest, N, stride, nu, num_terms);
         
         /* This loop applies the causal filter, implementing the pseudocode
            
@@ -166,8 +166,8 @@ void am_gaussian_conv(double *dest, const double *src, long N, long stride, doub
  * source array is overwritten with the result).
  */
 
-template<typename T>
-void am_gaussian_conv_image_(T *dest, const T *src, int width, int height, int num_channels, T sigma, int K, T tol, bool use_adjusted_q)
+template<typename srcType>
+void am_gaussian_conv_image_(srcType *dest, const srcType *src, int width, int height, int num_channels, srcType sigma, int K, srcType tol, bool use_adjusted_q)
 {
     const long num_pixels = ((long)width) * ((long)height);
     int x, y, channel;
@@ -177,20 +177,20 @@ void am_gaussian_conv_image_(T *dest, const T *src, int width, int height, int n
     /* Loop over the image channels. */
     for (channel = 0; channel < num_channels; ++channel)
     {
-        T *dest_y = dest;
-        const T *src_y = src;
+        srcType *dest_y = dest;
+        const srcType *src_y = src;
         
         /* Filter each row of the channel. */
         for (y = 0; y < height; ++y)
         {
-			am_gaussian_conv_<T>(dest_y, src_y, width, 1, sigma, K, tol, use_adjusted_q);
+			am_gaussian_conv_<srcType>(dest_y, src_y, width, 1, sigma, K, tol, use_adjusted_q);
             dest_y += width;
             src_y += width;
         }
         
         /* Filter each column of the channel. */
         for (x = 0; x < width; ++x)
-            am_gaussian_conv_<T>(dest + x, dest + x, height, width,
+            am_gaussian_conv_<srcType>(dest + x, dest + x, height, width,
                 sigma, K, tol, use_adjusted_q);
         
         dest += num_pixels;

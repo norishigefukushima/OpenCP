@@ -26,7 +26,7 @@ namespace cp
 		warpAffine(src, dest, aff, src.size(), inter_method, 0);
 	}
 
-	template <typename T>
+	template <typename srcType>
 	void warpShiftH_(InputArray src_, OutputArray dest_, const int shiftH)
 	{
 		if (dest_.empty())dest_.create(src_.size(), src_.type());
@@ -36,8 +36,8 @@ namespace cp
 		int c = src.channels();
 		int shiftPixel = shiftH*c;
 		const int step = src.cols*c;
-		T* s = src.ptr<T>(0);
-		T* d = dest.ptr<T>(0);
+		srcType* s = src.ptr<srcType>(0);
+		srcType* d = dest.ptr<srcType>(0);
 
 		if (shiftH >= 0)
 		{
@@ -45,9 +45,9 @@ namespace cp
 			{
 				for (int j = 0; j < src.rows; j++)
 				{
-					const T v = s[0];
+					const srcType v = s[0];
 					for (int n = 0; n < shiftPixel; n++) d[n] = v;
-					memcpy(d + shiftPixel, s, sizeof(T)*(step - shiftPixel));
+					memcpy(d + shiftPixel, s, sizeof(srcType)*(step - shiftPixel));
 					s += step; d += step;
 				}
 			}
@@ -55,9 +55,9 @@ namespace cp
 			{
 				for (int j = 0; j < src.rows; j++)
 				{
-					T* v = &s[0];
-					for (int i = 0; i < shiftH; i++) memcpy(d + 3 * i, v, sizeof(T) * 3);
-					memcpy(d + shiftPixel, s, sizeof(T)*(step - shiftPixel));
+					srcType* v = &s[0];
+					for (int i = 0; i < shiftH; i++) memcpy(d + 3 * i, v, sizeof(srcType) * 3);
+					memcpy(d + shiftPixel, s, sizeof(srcType)*(step - shiftPixel));
 					s += step; d += step;
 				}
 			}
@@ -68,8 +68,8 @@ namespace cp
 			{
 				for (int j = 0; j < src.rows; j++)
 				{
-					const T v = s[step - c];
-					memcpy(d, s - shiftPixel, sizeof(T)*(step + shiftPixel));
+					const srcType v = s[step - c];
+					memcpy(d, s - shiftPixel, sizeof(srcType)*(step + shiftPixel));
 					for (int n = 0; n < -shiftPixel; n++) d[step + shiftPixel + n] = v;
 					s += step; d += step;
 				}
@@ -78,10 +78,10 @@ namespace cp
 			{
 				for (int j = 0; j < src.rows; j++)
 				{
-					T* v = &s[step - c];
-					memcpy(d, s - shiftPixel, sizeof(T)*(step + shiftPixel));
+					srcType* v = &s[step - c];
+					memcpy(d, s - shiftPixel, sizeof(srcType)*(step + shiftPixel));
 					for (int i = -shiftH; i>0; i--)
-						memcpy(d + step - c * i, v, sizeof(T) * 3);
+						memcpy(d + step - c * i, v, sizeof(srcType) * 3);
 					s += step; d += step;
 				}
 			}

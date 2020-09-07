@@ -974,7 +974,7 @@ namespace cp
 		projectImagefromXYZ(image, destimage, xyz, R, t, K, dist, mask, isSub, pt, depth, isRotationThenTranspose);
 	}
 
-	template <class T>
+	template <class srcType>
 	void reprojectXYZ_(const Mat& depth, Mat& xyz, double f)
 	{
 		const float bigZ = 10000.f;
@@ -983,7 +983,7 @@ namespace cp
 		const float cw = (depth.cols - 1)*0.5f;
 		const float ch = (depth.rows - 1)*0.5f;
 
-		T* dep = (T*)depth.ptr<T>(0);
+		srcType* dep = (srcType*)depth.ptr<srcType>(0);
 		float* data = xyz.ptr<float>(0);
 		//#pragma omp parallel for
 		for (int j = 0; j < depth.rows; j++)
@@ -1073,7 +1073,7 @@ namespace cp
 	//	}
 	//}
 
-	template <class T>
+	template <class srcType>
 	void reprojectXYZ_(InputArray depth_, OutputArray xyz_, InputArray intrinsic_, InputArray distortion_)
 	{
 		if (xyz_.empty())xyz_.create(depth_.size().area(), 1, CV_32FC3);
@@ -1096,7 +1096,7 @@ namespace cp
 			//#pragma omp parallel for
 			for (int j = 0; j < depth.rows; j++)
 			{
-				T* dep = (T*)depth.ptr<T>(j);
+				srcType* dep = (srcType*)depth.ptr<srcType>(j);
 				float* data = xyz.ptr<float>(j*depth.cols);
 				for (int i = 0; i < depth.cols; i++, dep++, data += 3)
 				{
@@ -1123,7 +1123,7 @@ namespace cp
 				const float y = (j - ch)*fyinv;
 				const float yy = y*y;
 
-				T* dep = (T*)depth.ptr<T>(j);
+				srcType* dep = (srcType*)depth.ptr<srcType>(j);
 				float* data = xyz.ptr<float>(j*depth.cols);
 				for (int i = 0; i < depth.cols; i++, dep++, data += 3)
 				{

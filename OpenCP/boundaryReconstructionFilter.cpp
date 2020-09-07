@@ -5,16 +5,16 @@ using namespace cv;
 
 namespace cp
 {
-	template <class T>
+	template <class srcType>
 	struct BRFData
 	{
 		float distance;
 		int count;
-		T val;
+		srcType val;
 		float sub;
 	};
 
-	template <class T>
+	template <class srcType>
 	void boundaryReconstructionFilter_(InputArray src_, OutputArray dest_, Size ksize, const float frec, const float color, const float space)
 	{
 		dest_.create(src_.size(), src_.type());
@@ -51,17 +51,17 @@ namespace cp
 #pragma omp parallel for
 		for (int i = 0; i < src.size().height; i++)
 		{
-			T* jptr = sim.ptr<T>(i + radiush); jptr += radiusw;
-			T* dst = dest.ptr<T>(i);
-			T* sr = (T*)src.ptr<T>(i);
+			srcType* jptr = sim.ptr<srcType>(i + radiush); jptr += radiusw;
+			srcType* dst = dest.ptr<srcType>(i);
+			srcType* sr = (srcType*)src.ptr<srcType>(i);
 			for (int j = 0; j < src.cols; j++)
 			{
-				T val0 = sr[j];
+				srcType val0 = sr[j];
 
-				vector<BRFData<T>> rdata(0);
+				vector<BRFData<srcType>> rdata(0);
 				for (int k = 0; k < maxk; k++)
 				{
-					const T val = jptr[j + space_ofs_before[k]];
+					const srcType val = jptr[j + space_ofs_before[k]];
 
 					bool flag = true;
 					for (int n = 0; n < (int)rdata.size(); n++)
@@ -76,7 +76,7 @@ namespace cp
 					}
 					if (flag)
 					{
-						BRFData<T> rd;
+						BRFData<srcType> rd;
 						rd.count = 1;
 						rd.distance = space_dist[k];
 						rd.val = val;
@@ -96,8 +96,8 @@ namespace cp
 				int maxOcc = 0;
 				int minOcc = maxk;
 
-				T maxDiff = 0;
-				T minDiff = 255;
+				srcType maxDiff = 0;
+				srcType minDiff = 255;
 				for (int n = 0; n < (int)rdata.size(); n++)
 				{
 					rdata[n].distance = (float)(rdata[n].distance / (double)rdata[n].count);
@@ -106,8 +106,8 @@ namespace cp
 					minDis = std::min<float>(rdata[n].distance, minDis);
 					maxOcc = std::max<int>(rdata[n].count, maxOcc);
 					minOcc = std::min<int>(rdata[n].count, minOcc);
-					maxDiff = std::max<T>((T)abs(rdata[n].sub), maxDiff);
-					minDiff = std::min<T>((T)abs(rdata[n].sub), minDiff);
+					maxDiff = std::max<srcType>((srcType)abs(rdata[n].sub), maxDiff);
+					minDiff = std::min<srcType>((srcType)abs(rdata[n].sub), minDiff);
 				}
 
 				float divOcc = (maxOcc == minOcc) ? 0.00000001f : 1.0f / (float)(maxOcc - minOcc);
@@ -116,7 +116,7 @@ namespace cp
 
 
 				float maxE = 0.f;
-				T mind = val0;
+				srcType mind = val0;
 
 				for (int n = 0; n < (int)rdata.size(); n++)
 				{

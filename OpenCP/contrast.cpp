@@ -19,14 +19,14 @@ namespace cp
 		return ret;
 	}
 
-	template<typename T>
-	void contrastSToneExp_(T* src, T* dest, const int size, const double sigma, const double a, const double b)
+	template<typename srcType>
+	void contrastSToneExp_(srcType* src, srcType* dest, const int size, const double sigma, const double a, const double b)
 	{
 		const double coeff = -0.5 / (sigma * sigma);
 		for (int i = 0; i < size; i++)
 		{
 			double v = double(src[i] - b);
-			dest[i] = saturate_cast<T>(double(src[i]) + a * exp(v * v * coeff) * v);
+			dest[i] = saturate_cast<srcType>(double(src[i]) + a * exp(v * v * coeff) * v);
 		}
 	}
 
@@ -48,13 +48,13 @@ namespace cp
 		}
 	}
 
-	template<typename T>
-	void contrastGamma_(T* src, T* dest, const int size, const double gamma)
+	template<typename srcType>
+	void contrastGamma_(srcType* src, srcType* dest, const int size, const double gamma)
 	{
 		const double gm = 1.0 / gamma;
 		for (int i = 0; i < size; i++)
 		{
-			dest[i] = saturate_cast<T>(pow(src[i] / 255.0, gm) * 255.0);
+			dest[i] = saturate_cast<srcType>(pow(src[i] / 255.0, gm) * 255.0);
 		}
 	}
 
@@ -90,15 +90,15 @@ namespace cp
 		}
 	}
 
-	template<typename T>
-	void quantization_(T* src, T* dest, const int size, const int num_levels)
+	template<typename srcType>
+	void quantization_(srcType* src, srcType* dest, const int size, const int num_levels)
 	{
 		const double nl = 256.0 / (double)max(1, num_levels);
 		const double nlstep = 255.0 / (double)max(1, num_levels - 1);
 
 		for (int i = 0; i < size; i++)
 		{
-			dest[i] = saturate_cast<T>(saturate_cast<int>(src[i] / nl) * nlstep);
+			dest[i] = saturate_cast<srcType>(saturate_cast<int>(src[i] / nl) * nlstep);
 		}
 	}
 

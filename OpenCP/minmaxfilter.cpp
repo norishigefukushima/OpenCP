@@ -28,7 +28,7 @@ namespace cp
 		maxFilter(src, dest, Size(2 * radius + 1, 2 * radius + 1));
 	}
 
-	template<class T>
+	template<class srcType>
 	void blurRemoveMinMax_(const Mat& src, Mat& dest, const int r)
 	{
 		const Size ksize = Size(2 * r + 1, 2 * r + 1);
@@ -47,11 +47,11 @@ namespace cp
 		absdiff(src, xv, maxd);//
 		min(mind, maxd, mask);//
 
-		T* n = nv.ptr<T>(0);
-		T* x = xv.ptr<T>(0);
-		T* d = dest.ptr<T>(0);
-		T* nd = mind.ptr<T>(0);
-		T* mk = mask.ptr<T>(0);
+		srcType* n = nv.ptr<srcType>(0);
+		srcType* x = xv.ptr<srcType>(0);
+		srcType* d = dest.ptr<srcType>(0);
+		srcType* nd = mind.ptr<srcType>(0);
+		srcType* mk = mask.ptr<srcType>(0);
 
 		int remsize = src.size().area();
 

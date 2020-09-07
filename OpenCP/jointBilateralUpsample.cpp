@@ -7,7 +7,7 @@ using namespace cv;
 
 namespace cp
 {
-	template <class T>
+	template <class srcType>
 	static void nnUpsample_(Mat& src, Mat& dest)
 	{
 		const int dw = dest.cols / (src.cols);
@@ -20,14 +20,14 @@ namespace cp
 		for (int j = 0; j < src.rows; j++)
 		{
 			int n = j*dh;
-			T* s = sim.ptr<T>(j);
+			srcType* s = sim.ptr<srcType>(j);
 
 			for (int i = 0, m = 0; i < src.cols; i++, m += dw)
 			{
-				const T ltd = s[i];
+				const srcType ltd = s[i];
 				for (int l = 0; l < dh; l++)
 				{
-					T* d = dest.ptr<T>(n + l);
+					srcType* d = dest.ptr<srcType>(n + l);
 					for (int k = 0; k < dw; k++)
 					{
 						d[m + k] = ltd;
@@ -55,13 +55,13 @@ namespace cp
 		return (int)((b*a*lt + b*(1.0 - a)*rt + (1.0 - b)*a*lb + (1.0 - b)*(1.0 - a)*rb) + 0.5);
 	}
 
-	template <class T>
-	inline double linearinterpolate_(T lt, T rt, T lb, T rb, double a, double b)
+	template <class srcType>
+	inline double linearinterpolate_(srcType lt, srcType rt, srcType lb, srcType rb, double a, double b)
 	{
 		return (b*a*lt + b*(1.0 - a)*rt + (1.0 - b)*a*lb + (1.0 - b)*(1.0 - a)*rb);
 	}
 
-	template <class T>
+	template <class srcType>
 	static void linearUpsample_(Mat& src, Mat& dest)
 	{
 		const int dw = dest.cols / (src.cols - 1);
@@ -74,22 +74,22 @@ namespace cp
 		for (int j = 0; j < src.rows; j++)
 		{
 			int n = j*dh;
-			T* s = sim.ptr<T>(j);
+			srcType* s = sim.ptr<srcType>(j);
 
 			for (int i = 0, m = 0; i < src.cols; i++, m += dw)
 			{
-				const T ltd = s[i];
-				const T rtd = s[i + 1];
-				const T lbd = s[i + sim.cols];
-				const T rbd = s[i + 1 + sim.cols];
+				const srcType ltd = s[i];
+				const srcType rtd = s[i + 1];
+				const srcType lbd = s[i + sim.cols];
+				const srcType rbd = s[i + 1 + sim.cols];
 				for (int l = 0; l < dh; l++)
 				{
 					double beta = 1.0 - (double)l / dh;
-					T* d = dest.ptr<T>(n + l);
+					srcType* d = dest.ptr<srcType>(n + l);
 					for (int k = 0; k < dw; k++)
 					{
 						double alpha = 1.0 - (double)k / dw;
-						d[m + k] = saturate_cast<T> (linearinterpolate_<T>(ltd, rtd, lbd, rbd, alpha, beta));
+						d[m + k] = saturate_cast<srcType> (linearinterpolate_<srcType>(ltd, rtd, lbd, rbd, alpha, beta));
 					}
 				}
 			}
@@ -121,7 +121,7 @@ namespace cp
 			return 0.0;
 	}
 
-	template <class T>
+	template <class srcType>
 	static void cubicUpsample_(Mat& src, Mat& dest, double a)
 	{
 		const int dw = dest.cols / (src.cols - 1);
@@ -174,35 +174,35 @@ namespace cp
 		for (int j = 0; j < src.rows; j++)
 		{
 			int n = j*dh;
-			T* s = sim.ptr<T>(j + 1) + 1;
+			srcType* s = sim.ptr<srcType>(j + 1) + 1;
 
 			for (int i = 0, m = 0; i < src.cols; i++, m += dw)
 			{
-				const T v00 = s[i - 1 - sim.cols];
-				const T v01 = s[i - 0 - sim.cols];
-				const T v02 = s[i + 1 - sim.cols];
-				const T v03 = s[i + 2 - sim.cols];
-				const T v10 = s[i - 1];
-				const T v11 = s[i - 0];
-				const T v12 = s[i + 1];
-				const T v13 = s[i + 2];
-				const T v20 = s[i - 1 + sim.cols];
-				const T v21 = s[i - 0 + sim.cols];
-				const T v22 = s[i + 1 + sim.cols];
-				const T v23 = s[i + 2 + sim.cols];
-				const T v30 = s[i - 1 + 2 * sim.cols];
-				const T v31 = s[i - 0 + 2 * sim.cols];
-				const T v32 = s[i + 1 + 2 * sim.cols];
-				const T v33 = s[i + 2 + 2 * sim.cols];
+				const srcType v00 = s[i - 1 - sim.cols];
+				const srcType v01 = s[i - 0 - sim.cols];
+				const srcType v02 = s[i + 1 - sim.cols];
+				const srcType v03 = s[i + 2 - sim.cols];
+				const srcType v10 = s[i - 1];
+				const srcType v11 = s[i - 0];
+				const srcType v12 = s[i + 1];
+				const srcType v13 = s[i + 2];
+				const srcType v20 = s[i - 1 + sim.cols];
+				const srcType v21 = s[i - 0 + sim.cols];
+				const srcType v22 = s[i + 1 + sim.cols];
+				const srcType v23 = s[i + 2 + sim.cols];
+				const srcType v30 = s[i - 1 + 2 * sim.cols];
+				const srcType v31 = s[i - 0 + 2 * sim.cols];
+				const srcType v32 = s[i + 1 + 2 * sim.cols];
+				const srcType v33 = s[i + 2 + 2 * sim.cols];
 
 				int idx = 0;
 				for (int l = 0; l < dh; l++)
 				{
-					T* d = dest.ptr<T>(n + l);
+					srcType* d = dest.ptr<srcType>(n + l);
 					for (int k = 0; k < dw; k++)
 					{
 						
-						d[m + k] = saturate_cast<T>(
+						d[m + k] = saturate_cast<srcType>(
 							weight[idx][0] * v00 + weight[idx][1] * v01 + weight[idx][2] * v02 + weight[idx][3] * v03
 							+ weight[idx][4] * v10 + weight[idx][5] * v11 + weight[idx][6] * v12 + weight[idx][7] * v13
 							+ weight[idx][8] * v20 + weight[idx][9] * v21 + weight[idx][10] * v22 + weight[idx][11] * v23
@@ -251,21 +251,21 @@ namespace cp
 		}
 	}
 
-	template<class T>
-	inline T weightedinterpolation_(T lt, T rt, T lb, T rb, double wlt, double wrt, double wlb, double  wrb)
+	template<class srcType>
+	inline srcType weightedinterpolation_(srcType lt, srcType rt, srcType lb, srcType rb, double wlt, double wrt, double wlb, double  wrb)
 	{
-		return (T)((wlt*lt + wrt*rt + wlb*lb + wrb*rb) / (wlt + wrt + wlb + wrb) + 0.5);
+		return (srcType)((wlt*lt + wrt*rt + wlb*lb + wrb*rb) / (wlt + wrt + wlb + wrb) + 0.5);
 	}
 
-	template<class T>
-	inline T weightedlinearinterpolate_(T lt, T rt, T lb, T rb, double wlt, double wrt, double wlb, double  wrb, double a, double b)
+	template<class srcType>
+	inline srcType weightedlinearinterpolate_(srcType lt, srcType rt, srcType lb, srcType rb, double wlt, double wrt, double wlb, double  wrb, double a, double b)
 	{
-		return (T)((b*a*wlt*lt + b*(1.0 - a)*wrt*rt + (1.0 - b)*a*wlb*lb + (1.0 - b)*(1.0 - a)*wrb*rb) / (b*a*wlt + b*(1.0 - a)*wrt + (1.0 - b)*a*wlb + (1.0 - b)*(1.0 - a)*wrb) + 0.5);
+		return (srcType)((b*a*wlt*lt + b*(1.0 - a)*wrt*rt + (1.0 - b)*a*wlb*lb + (1.0 - b)*(1.0 - a)*wrb*rb) / (b*a*wlt + b*(1.0 - a)*wrt + (1.0 - b)*a*wlb + (1.0 - b)*(1.0 - a)*wrb) + 0.5);
 		//return (int)((b*a*lt + b*(1.0-a)*rt + (1.0-b)*a*lb + (1.0-b)*(1.0-a)*rb)+0.5);
 	}
 
 	//NAFDU:
-	template<class T>
+	template<class srcType>
 	static void noiseAwareFilterDepthUpsample_(Mat& src, Mat& joint, Mat& dest, double sigma_c, double sigma_d, double sigma_s, double eps, double tau)
 	{
 		Mat maxf;
@@ -328,8 +328,8 @@ namespace cp
 		{
 			int n = j*dh;
 
-			T* s = sim.ptr<T>(j);
-			T* minmaxdiff = diff.ptr<T>(j);
+			srcType* s = sim.ptr<srcType>(j);
+			srcType* minmaxdiff = diff.ptr<srcType>(j);
 			uchar* jnt_ = jim.ptr(n);
 
 			for (int i = 0, m = 0; i < src.cols; i++, m += dw)
@@ -351,19 +351,19 @@ namespace cp
 				const uchar rbb = jnt_[3 * (m + dw + jim.cols*dh) + 2];
 
 
-				const T ltd = s[i];
-				const T rtd = s[i + 1];
-				const T lbd = s[i + sim.cols];
-				const T rbd = s[i + 1 + sim.cols];
+				const srcType ltd = s[i];
+				const srcType rtd = s[i + 1];
+				const srcType lbd = s[i + sim.cols];
+				const srcType rbd = s[i + 1 + sim.cols];
 
 				double a = lut_sig[(int)minmaxdiff[i]];
 				double ia = 1.0 - a;
 
 				for (int l = 0; l < dh; l++)
 				{
-					T* d = dest.ptr<T>(n + l);
+					srcType* d = dest.ptr<srcType>(n + l);
 					uchar* jnt = jim.ptr<uchar>(n + l);
-					T* ud = uim.ptr<T>(n + l);
+					srcType* ud = uim.ptr<srcType>(n + l);
 					//double beta = 1.0-(double)l/dh;
 
 					for (int k = 0; k < dw; k++)
@@ -388,7 +388,7 @@ namespace cp
 						//if(wlt==0.0 && wlb==0.0 && wrt==0.0 && wrb==0.0)
 						//	d[m+k] = weiterdlinearinterpolate(ltd,rtd,lbd,rbd,0.5,0.5,0.5,0.5,alpha,beta);
 						///else
-						d[m + k] = weightedinterpolation_<T>(ltd, rtd, lbd, rbd, wlt, wrt, wlb, wrb);
+						d[m + k] = weightedinterpolation_<srcType>(ltd, rtd, lbd, rbd, wlt, wrt, wlb, wrb);
 					}
 				}
 			}
@@ -410,7 +410,7 @@ namespace cp
 		else if (src.depth() == CV_64F) noiseAwareFilterDepthUpsample_<double>(src, joint, dest, sigma_c, sigma_d, sigma_s, eps, tau);
 	}
 
-	template<class T>
+	template<class srcType>
 	static void jointBilateralLinearUpsample_(Mat& src, const Mat& joint, Mat& dest, double sigma_c)
 	{
 		if (dest.empty())dest.create(joint.size(), src.type());
@@ -432,7 +432,7 @@ namespace cp
 		{
 			int n = j*dh;
 
-			T* s = sim.ptr<T>(j);
+			srcType* s = sim.ptr<srcType>(j);
 			uchar* jnt_ = jim.ptr(n);
 
 			for (int i = 0, m = 0; i < src.cols; i++, m += dw)
@@ -453,14 +453,14 @@ namespace cp
 				const uchar rbg = jnt_[3 * (m + dw + jim.cols*dh) + 1];
 				const uchar rbb = jnt_[3 * (m + dw + jim.cols*dh) + 2];
 
-				const T ltd = s[i];
-				const T rtd = s[i + 1];
-				const T lbd = s[i + sim.cols];
-				const T rbd = s[i + 1 + sim.cols];
+				const srcType ltd = s[i];
+				const srcType rtd = s[i + 1];
+				const srcType lbd = s[i + sim.cols];
+				const srcType rbd = s[i + 1 + sim.cols];
 
 				for (int l = 0; l < dh; l++)
 				{
-					T* d = dest.ptr<T>(n + l);
+					srcType* d = dest.ptr<srcType>(n + l);
 					uchar* jnt = jim.ptr(n + l);
 					double beta = 1.0 - (double)l / dh;
 
@@ -515,7 +515,7 @@ namespace cp
 						//if(wlt==0.0 && wlb==0.0 && wrt==0.0 && wrb==0.0)
 						//	d[m+k] = weiterdlinearinterpolate(ltd,rtd,lbd,rbd,0.5,0.5,0.5,0.5,alpha,beta);
 						///else
-						d[m + k] = weightedlinearinterpolate_<T>(ltd, rtd, lbd, rbd, wlt, wrt, wlb, wrb, alpha, beta);
+						d[m + k] = weightedlinearinterpolate_<srcType>(ltd, rtd, lbd, rbd, wlt, wrt, wlb, wrb, alpha, beta);
 					}
 				}
 			}
@@ -542,7 +542,7 @@ namespace cp
 	}
 
 
-	template<class T>
+	template<class srcType>
 	static void jointBilateralUpsample_(Mat& src, Mat& joint, Mat& dest, double sigma_c, double sigma_s)
 	{
 		if (dest.empty())dest.create(joint.size(), src.type());
@@ -581,7 +581,7 @@ namespace cp
 		{
 			int n = j*dh;
 
-			T* s = sim.ptr<T>(j);
+			srcType* s = sim.ptr<srcType>(j);
 			uchar* jnt_ = jim.ptr(n);
 
 			for (int i = 0, m = 0; i < src.cols; i++, m += dw)
@@ -602,14 +602,14 @@ namespace cp
 				const uchar rbg = jnt_[3 * (m + dw + jim.cols*dh) + 1];
 				const uchar rbb = jnt_[3 * (m + dw + jim.cols*dh) + 2];
 
-				const T ltd = s[i];
-				const T rtd = s[i + 1];
-				const T lbd = s[i + sim.cols];
-				const T rbd = s[i + 1 + sim.cols];
+				const srcType ltd = s[i];
+				const srcType rtd = s[i + 1];
+				const srcType lbd = s[i + sim.cols];
+				const srcType rbd = s[i + 1 + sim.cols];
 
 				for (int l = 0; l < dh; l++)
 				{
-					T* d = dest.ptr<T>(n + l);
+					srcType* d = dest.ptr<srcType>(n + l);
 					uchar* jnt = jim.ptr(n + l);
 					//double beta = 1.0-(double)l/dh;
 
@@ -637,7 +637,7 @@ namespace cp
 						//if(wlt==0.0 && wlb==0.0 && wrt==0.0 && wrb==0.0)
 						//	d[m+k] = weiterdlinearinterpolate(ltd,rtd,lbd,rbd,0.5,0.5,0.5,0.5,alpha,beta);
 						///else
-						d[m + k] = weightedinterpolation_<T>(ltd, rtd, lbd, rbd, wlt, wrt, wlb, wrb);
+						d[m + k] = weightedinterpolation_<srcType>(ltd, rtd, lbd, rbd, wlt, wrt, wlb, wrb);
 					}
 				}
 			}
@@ -664,7 +664,7 @@ namespace cp
 	}
 
 
-	template<class T>
+	template<class srcType>
 	static void jointBilateralNNUpsample_(Mat& src, Mat& joint, Mat& dest, double sigma_c, double sigma_s)
 	{
 		Mat sim, jim, eim;
@@ -702,7 +702,7 @@ namespace cp
 		{
 			int n = j*dh;
 
-			T* s = sim.ptr<T>(j);
+			srcType* s = sim.ptr<srcType>(j);
 			uchar* jnt_ = jim.ptr(n);
 
 			for (int i = 0, m = 0; i < src.cols; i++, m += dw)
@@ -723,14 +723,14 @@ namespace cp
 				const uchar rbg = jnt_[3 * (m + dw + jim.cols*dh) + 1];
 				const uchar rbb = jnt_[3 * (m + dw + jim.cols*dh) + 2];
 
-				const T ltd = s[i];
-				const T rtd = s[i + 1];
-				const T lbd = s[i + sim.cols];
-				const T rbd = s[i + 1 + sim.cols];
+				const srcType ltd = s[i];
+				const srcType rtd = s[i + 1];
+				const srcType lbd = s[i + sim.cols];
+				const srcType rbd = s[i + 1 + sim.cols];
 
 				for (int l = 0; l < dh; l++)
 				{
-					T* d = dest.ptr<T>(n + l);
+					srcType* d = dest.ptr<srcType>(n + l);
 					uchar* jnt = jim.ptr(n + l);
 					double beta = 1.0 - (double)l / dh;
 
@@ -743,7 +743,7 @@ namespace cp
 						const uchar b = jnt[3 * (m + k) + 2];
 
 						int minE = abs(ltr - r) + abs(ltg - g) + abs(ltb - b);
-						T mind = ltd;
+						srcType mind = ltd;
 						//int minp=0;
 
 						double wlt = lut2[k + l] * lut[minE];

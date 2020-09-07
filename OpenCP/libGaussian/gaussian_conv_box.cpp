@@ -39,11 +39,11 @@
  *
  * \note The computation is out-of-place, src and dest must be distinct.
  */
-template <typename T>
-static void box_filter(T *dest, long dest_stride, const T *src, long src_stride, long N, long r)
+template <typename srcType>
+static void box_filter(srcType *dest, long dest_stride, const srcType *src, long src_stride, long N, long r)
 {
 	long n;
-	T accum = 0;
+	srcType accum = 0;
 
 	assert(dest && src && dest != src && N > 0 && r >= 0);
 
@@ -102,15 +102,15 @@ static void box_filter(T *dest, long dest_stride, const T *src, long src_stride,
  * be distinct from `dest_data`.
  */
 
-template <typename T>
-void box_gaussian_conv_(T *dest_data, T *buffer_data, const T *src, long N, long stride, T sigma, int K)
+template <typename srcType>
+void box_gaussian_conv_(srcType *dest_data, srcType *buffer_data, const srcType *src, long N, long stride, srcType sigma, int K)
 {
 	struct
 	{
-		T *data;
+		srcType *data;
 		long stride;
 	} dest, buffer, cur, next;
-	T scale;
+	srcType scale;
 	long r;
 	int step;
 
@@ -118,7 +118,7 @@ void box_gaussian_conv_(T *dest_data, T *buffer_data, const T *src, long N, long
 
 	/* Compute the box radius according to Wells' formula. */
 	r = (long)(0.5 * sqrt((12.0 * sigma * sigma) / K + 1.0));
-	scale = (T)(1.0 / (double)pow(2.0*r + 1.0, K));
+	scale = (srcType)(1.0 / (double)pow(2.0*r + 1.0, K));
 
 	dest.data = dest_data;
 	dest.stride = stride;
@@ -199,8 +199,8 @@ void box_gaussian_conv(double *dest_data, double *buffer_data, const double *src
  * source array is overwritten with the result). However, `buffer` must be
  * distinct from `dest`.
  */
-template <typename T>
-void box_gaussian_conv_image_(T *dest, T *buffer, const T *src, int width, int height, int num_channels, T sigma, int K)
+template <typename srcType>
+void box_gaussian_conv_image_(srcType *dest, srcType *buffer, const srcType *src, int width, int height, int num_channels, srcType sigma, int K)
 {
 	const long num_pixels = ((long)width) * ((long)height);
 	int x, y, channel;
@@ -210,8 +210,8 @@ void box_gaussian_conv_image_(T *dest, T *buffer, const T *src, int width, int h
 	/* Loop over the image channels. */
 	for (channel = 0; channel < num_channels; ++channel)
 	{
-		T *dest_y = dest;
-		const T *src_y = src;
+		srcType *dest_y = dest;
+		const srcType *src_y = src;
 
 		/* Filter each column of the channel. */
 		for (y = 0; y < height; ++y)

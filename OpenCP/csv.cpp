@@ -267,7 +267,7 @@ namespace cp
 		isCommaSeparator = flag;
 	}
 
-	template<typename T>
+	template<typename srcType>
 	void writeCSV_(string name, cv::Mat& src)
 	{
 		CSV csv(name, true, true);
@@ -275,7 +275,7 @@ namespace cp
 		{
 			for (int j = 0; j < src.cols; j++)
 			{
-				csv.write(src.at<T>(i, j));
+				csv.write(src.at<srcType>(i, j));
 			}
 			csv.end();
 		}

@@ -9,8 +9,8 @@ using namespace cv;
 
 namespace cp
 {
-	template <typename T, typename S>
-	void _SLICSegment2Vector3D_(cv::InputArray segment, cv::InputArray signal, T invalidValue, std::vector<std::vector<cv::Point3_<S>>>& segmentPoint)
+	template <typename srcType, typename S>
+	void _SLICSegment2Vector3D_(cv::InputArray segment, cv::InputArray signal, srcType invalidValue, std::vector<std::vector<cv::Point3_<S>>>& segmentPoint)
 	{
 		Mat sig = signal.getMat();
 		Mat seg = segment.getMat();
@@ -18,7 +18,7 @@ namespace cp
 		for (int j = 0; j < seg.rows; ++j)
 		{
 			int* s = seg.ptr<int>(j);
-			T* value = sig.ptr<T>(j);
+			srcType* value = sig.ptr<srcType>(j);
 			for (int i = 0; i < seg.cols; ++i)
 			{
 				if (value[i] != invalidValue)

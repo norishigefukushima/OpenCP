@@ -1978,16 +1978,16 @@ namespace cp
 #pragma endregion
 
 #pragma region pasteTile
-	template<typename T>
+	template<typename srcType>
 	void pasteTile_internal(const Mat& src, Mat& dest, const Size div_size, const Point idx, const int top, const int left)
 	{
 		const int tilex = dest.cols / div_size.width;
 		const int tiley = dest.rows / div_size.height;
 
 		int align = 0;
-		if (typeid(T) == typeid(uchar))align = 8;
-		if (typeid(T) == typeid(float))align = 8;
-		if (typeid(T) == typeid(double))align = 4;
+		if (typeid(srcType) == typeid(uchar))align = 8;
+		if (typeid(srcType) == typeid(float))align = 8;
+		if (typeid(srcType) == typeid(double))align = 4;
 		const int simd_tile_width = get_simd_floor(tilex, align) * src.channels();
 		const int rem = tilex * src.channels() - simd_tile_width;
 
@@ -1995,8 +1995,8 @@ namespace cp
 		{
 			for (int j = 0; j < tiley; j++)
 			{
-				T* d = dest.ptr<T>(tiley * idx.y + j, tilex * idx.x);
-				const T* s = src.ptr<T>(top + j, left);
+				srcType* d = dest.ptr<srcType>(tiley * idx.y + j, tilex * idx.x);
+				const srcType* s = src.ptr<srcType>(top + j, left);
 				for (int i = 0; i < simd_tile_width; i += align)
 				{
 					_mm256_storeu_auto(d + i, _mm256_loadu_auto(s + i));
@@ -2011,8 +2011,8 @@ namespace cp
 		{
 			for (int j = 0; j < tiley; j++)
 			{
-				T* d = dest.ptr<T>(tiley * idx.y + j, tilex * idx.x);
-				const T* s = src.ptr<T>(top + j, left);
+				srcType* d = dest.ptr<srcType>(tiley * idx.y + j, tilex * idx.x);
+				const srcType* s = src.ptr<srcType>(top + j, left);
 				for (int i = 0; i < simd_tile_width; i += align)
 				{
 					_mm256_storeu_auto(d + i, _mm256_loadu_auto(s + i));

@@ -1195,7 +1195,7 @@ void FilterEngine::apply(const Mat& src, Mat& dst,
 Box Filter
 \****************************************************************************************/
 
-template<typename T, typename ST> struct RowSum : public BaseRowFilter
+template<typename srcType, typename ST> struct RowSum : public BaseRowFilter
 {
 	RowSum(int _ksize, int _anchor)
 	{
@@ -1205,7 +1205,7 @@ template<typename T, typename ST> struct RowSum : public BaseRowFilter
 
 	void operator()(const uchar* src, uchar* dst, int width, int cn)
 	{
-		const T* S = (const T*)src;
+		const srcType* S = (const srcType*)src;
 		ST* D = (ST*)dst;
 		int i = 0, k, ksz_cn = ksize * cn;
 

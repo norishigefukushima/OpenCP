@@ -37,8 +37,8 @@
  * reference standard deviation \f$ \sigma_0 = 100/\pi \f$ from a table and
  * scales them to the specified value of sigma.
  */
-template<typename T>
-void sii_precomp_(sii_coeffs<T> &c, const T sigma, const int K)
+template<typename srcType>
+void sii_precomp_(sii_coeffs<srcType> &c, const srcType sigma, const int K)
 {
 	/* Elboher and Werman's optimal radii and weights. */
 	const double sigma0 = 100.0 / M_PI;
@@ -65,7 +65,7 @@ void sii_precomp_(sii_coeffs<T> &c, const T sigma, const int K)
 	}
 
 	for (k = 0; k < K; ++k)
-		c.weights[k] = (T)(weights0[i][k] / sum);
+		c.weights[k] = (srcType)(weights0[i][k] / sum);
 
 	return;
 }
@@ -89,8 +89,8 @@ void sii_precomp(sii_coeffs<double> &c, const double sigma, const int K)
  * of the signal (or in 2D, max(width, height)) plus the twice largest box
  * radius, for padding.
  */
-template<typename T>
-long sii_buffer_size_(sii_coeffs<T> c, long N)
+template<typename srcType>
+long sii_buffer_size_(sii_coeffs<srcType> c, long N)
 {
     long pad = c.radii[0] + 1;
     return N + 2 * pad;
@@ -123,10 +123,10 @@ long sii_buffer_size(sii_coeffs<double> c, long N)
  * source array is overwritten with the result). However, the buffer array
  * must be distinct from `src` and `dest`.
  */
-template<typename T>
-void sii_gaussian_conv_(sii_coeffs<T> c, T *dest, T *buffer, const T *src, long N, long stride)
+template<typename srcType>
+void sii_gaussian_conv_(sii_coeffs<srcType> c, srcType *dest, srcType *buffer, const srcType *src, long N, long stride)
 {
-    T accum;
+    srcType accum;
     int pad, n;
     int k;
     
@@ -184,8 +184,8 @@ void sii_gaussian_conv(sii_coeffs<double> c, double *dest, double *buffer, const
  * source array is overwritten with the result). However, the buffer array
  * must be distinct from `src` and `dest`.
  */
-template<typename T>
-void sii_gaussian_conv_image_(sii_coeffs<T> c, T *dest, T *buffer, const T *src, int width, int height, int num_channels)
+template<typename srcType>
+void sii_gaussian_conv_image_(sii_coeffs<srcType> c, srcType *dest, srcType *buffer, const srcType *src, int width, int height, int num_channels)
 {
     long num_pixels = ((long)width) * ((long)height);
     int x, y, channel;
@@ -195,8 +195,8 @@ void sii_gaussian_conv_image_(sii_coeffs<T> c, T *dest, T *buffer, const T *src,
     /* Loop over the image channels. */
     for (channel = 0; channel < num_channels; ++channel)
     {
-        T *dest_y = dest;
-        const T *src_y = src;
+        srcType *dest_y = dest;
+        const srcType *src_y = src;
         
         /* Filter each row of the channel. */
         for (y = 0; y < height; ++y)

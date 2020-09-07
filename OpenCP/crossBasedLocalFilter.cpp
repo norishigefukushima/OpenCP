@@ -7,11 +7,11 @@ using namespace cv;
 namespace cp
 {
 
-	template <class T>
+	template <class srcType>
 	void orthogonalIntegralImageFilterF(Mat& src, Mat& dest, CrossBasedLocalFilter::cross* crossdata)
 	{
-		T* s = src.ptr<T>(0);
-		T* d = dest.ptr<T>(0);
+		srcType* s = src.ptr<srcType>(0);
+		srcType* d = dest.ptr<srcType>(0);
 		CrossBasedLocalFilter::cross* cd = crossdata;
 
 		double* integral;
@@ -21,7 +21,7 @@ namespace cp
 			integral = new double[max(src.cols, src.rows) + 1];
 			double* IH;
 			int i, j;
-			T* ds = dest.ptr<T>(0);
+			srcType* ds = dest.ptr<srcType>(0);
 			CrossBasedLocalFilter::cross* cds = crossdata;
 
 			for (j = src.rows; j--;)
@@ -36,7 +36,7 @@ namespace cp
 				IH = integral;
 				for (i = src.cols; i--;)
 				{
-					*d = (T)((IH[1 + cd->hp] - IH[-cd->hm]) * cd->divh);
+					*d = (srcType)((IH[1 + cd->hp] - IH[-cd->hm]) * cd->divh);
 					d++, cd++, IH++;
 				}
 			}
@@ -44,7 +44,7 @@ namespace cp
 			for (i = src.cols; i--;)
 			{
 				integral[0] = 0;
-				T* dd = ds;
+				srcType* dd = ds;
 				IH = integral;
 				for (j = src.rows; j--;)
 				{
@@ -57,7 +57,7 @@ namespace cp
 				IH = integral;
 				for (j = src.rows; j--;)
 				{
-					*dd = (T)((IH[1 + cd->vp] - IH[-cd->vm]) * cd->divv);
+					*dd = (srcType)((IH[1 + cd->vp] - IH[-cd->vm]) * cd->divv);
 					IH++, dd += step, cd += dest.cols;
 				}
 				ds++;
@@ -69,7 +69,7 @@ namespace cp
 			integral = new double[(max(src.cols, src.rows) + 1) * 3];
 			double* IH;
 			int i, j;
-			T* ds = dest.ptr<T>(0);
+			srcType* ds = dest.ptr<srcType>(0);
 			CrossBasedLocalFilter::cross* cds = crossdata;
 
 			for (j = src.rows; j--;)
@@ -88,9 +88,9 @@ namespace cp
 				IH = integral;
 				for (i = src.cols; i--;)
 				{
-					d[0] = (T)((IH[3 + cd->hp * 3] - IH[-cd->hm * 3]) * cd->divh);
-					d[1] = (T)((IH[3 + cd->hp * 3 + 1] - IH[-cd->hm * 3 + 1]) * cd->divh);
-					d[2] = (T)((IH[3 + cd->hp * 3 + 2] - IH[-cd->hm * 3 + 2]) * cd->divh);
+					d[0] = (srcType)((IH[3 + cd->hp * 3] - IH[-cd->hm * 3]) * cd->divh);
+					d[1] = (srcType)((IH[3 + cd->hp * 3 + 1] - IH[-cd->hm * 3 + 1]) * cd->divh);
+					d[2] = (srcType)((IH[3 + cd->hp * 3 + 2] - IH[-cd->hm * 3 + 2]) * cd->divh);
 					d += 3, IH += 3, cd++;
 				}
 			}
@@ -100,7 +100,7 @@ namespace cp
 				integral[0] = 0;
 				integral[1] = 0;
 				integral[2] = 0;
-				T* dd = ds;
+				srcType* dd = ds;
 				IH = integral;
 				for (j = src.rows; j--;)
 				{
@@ -115,9 +115,9 @@ namespace cp
 				IH = integral;
 				for (j = src.rows; j--;)
 				{
-					dd[0] = (T)((IH[3 + cd->vp * 3] - IH[-cd->vm * 3]) * cd->divv);
-					dd[1] = (T)((IH[3 + cd->vp * 3 + 1] - IH[-cd->vm * 3 + 1]) * cd->divv);
-					dd[2] = (T)((IH[3 + cd->vp * 3 + 2] - IH[-cd->vm * 3 + 2]) * cd->divv);
+					dd[0] = (srcType)((IH[3 + cd->vp * 3] - IH[-cd->vm * 3]) * cd->divv);
+					dd[1] = (srcType)((IH[3 + cd->vp * 3 + 1] - IH[-cd->vm * 3 + 1]) * cd->divv);
+					dd[2] = (srcType)((IH[3 + cd->vp * 3 + 2] - IH[-cd->vm * 3 + 2]) * cd->divv);
 					IH += 3;
 					dd += step, cd += dest.cols;
 				}
@@ -129,14 +129,14 @@ namespace cp
 		delete[] integral;
 	}
 
-	template <class T>
+	template <class srcType>
 	void orthogonalIntegralImageFilterF(Mat& src, Mat& weight, Mat& dest, CrossBasedLocalFilter::cross* crossdata)
 	{
-		T* s = src.ptr<T>(0);
-		T* w = weight.ptr<T>(0);
-		T* ws = w;
-		T* d = dest.ptr<T>(0);
-		T* ds = d;
+		srcType* s = src.ptr<srcType>(0);
+		srcType* w = weight.ptr<srcType>(0);
+		srcType* ws = w;
+		srcType* d = dest.ptr<srcType>(0);
+		srcType* ds = d;
 		CrossBasedLocalFilter::cross* cd = crossdata;
 
 		double* integral;
@@ -167,7 +167,7 @@ namespace cp
 				IHW = integralW;
 				for (i = src.cols; i--;)
 				{
-					*d = (T)((IH[1 + cd->hp] - IH[-cd->hm]) / (T)(IHW[1 + cd->hp] - IHW[-cd->hm]));
+					*d = (srcType)((IH[1 + cd->hp] - IH[-cd->hm]) / (srcType)(IHW[1 + cd->hp] - IHW[-cd->hm]));
 					d++, cd++, IH++, IHW++;
 				}
 			}
@@ -178,8 +178,8 @@ namespace cp
 				integralW[0] = 0;
 				IH = integral;
 				IHW = integralW;
-				T* dd = ds;
-				T* ww = ws;
+				srcType* dd = ds;
+				srcType* ww = ws;
 				for (j = src.rows; j--;)
 				{
 					IH[1] = *IH + (*dd * *ww);
@@ -192,7 +192,7 @@ namespace cp
 				IHW = integralW;
 				for (j = src.rows; j--;)
 				{
-					*dd = (T)((IH[1 + cd->vp] - IH[-cd->vm]) / (T)(IHW[1 + cd->vp] - IHW[-cd->vm]));
+					*dd = (srcType)((IH[1 + cd->vp] - IH[-cd->vm]) / (srcType)(IHW[1 + cd->vp] - IHW[-cd->vm]));
 					IH++, IHW++, dd += step, cd += dest.cols;
 				}
 				ws++;
@@ -229,10 +229,10 @@ namespace cp
 				IHW = integralW;
 				for (i = src.cols; i--;)
 				{
-					T div = 1.0f / (T)(IHW[1 + cd->hp] - IHW[-cd->hm]);
-					d[0] = (T)((IH[3 + cd->hp * 3] - IH[-cd->hm * 3]) * div);
-					d[1] = (T)((IH[3 + cd->hp * 3 + 1] - IH[-cd->hm * 3 + 1]) * div);
-					d[2] = (T)((IH[3 + cd->hp * 3 + 2] - IH[-cd->hm * 3 + 2]) * div);
+					srcType div = 1.0f / (srcType)(IHW[1 + cd->hp] - IHW[-cd->hm]);
+					d[0] = (srcType)((IH[3 + cd->hp * 3] - IH[-cd->hm * 3]) * div);
+					d[1] = (srcType)((IH[3 + cd->hp * 3 + 1] - IH[-cd->hm * 3 + 1]) * div);
+					d[2] = (srcType)((IH[3 + cd->hp * 3 + 2] - IH[-cd->hm * 3 + 2]) * div);
 					d += 3, IH += 3, IHW++, cd++;
 				}
 			}
@@ -243,8 +243,8 @@ namespace cp
 				integral[1] = 0;
 				integral[2] = 0;
 				integralW[0] = 0;
-				T* dd = ds;
-				T* ww = ws;
+				srcType* dd = ds;
+				srcType* ww = ws;
 				IH = integral;
 				IHW = integralW;
 				for (j = src.rows; j--;)
@@ -262,10 +262,10 @@ namespace cp
 				IHW = integralW;
 				for (j = src.rows; j--;)
 				{
-					T div = 1.0f / (T)(IHW[1 + cd->vp] - IHW[-cd->vm]);
-					dd[0] = (T)((IH[3 + cd->vp * 3] - IH[-cd->vm * 3]) * div);
-					dd[1] = (T)((IH[3 + cd->vp * 3 + 1] - IH[-cd->vm * 3 + 1]) * div);
-					dd[2] = (T)((IH[3 + cd->vp * 3 + 2] - IH[-cd->vm * 3 + 2]) * div);
+					srcType div = 1.0f / (srcType)(IHW[1 + cd->vp] - IHW[-cd->vm]);
+					dd[0] = (srcType)((IH[3 + cd->vp * 3] - IH[-cd->vm * 3]) * div);
+					dd[1] = (srcType)((IH[3 + cd->vp * 3 + 1] - IH[-cd->vm * 3 + 1]) * div);
+					dd[2] = (srcType)((IH[3 + cd->vp * 3 + 2] - IH[-cd->vm * 3 + 2]) * div);
 					IH += 3, IHW++;
 					dd += step, cd += dest.cols;
 				}
@@ -278,11 +278,11 @@ namespace cp
 		delete[] integralW;
 	}
 
-	template <class T>
+	template <class srcType>
 	void orthogonalIntegralImageFilterI(Mat& src, Mat& dest, CrossBasedLocalFilter::cross* crossdata)
 	{
-		T* s = src.ptr<T>(0);
-		T* d = dest.ptr<T>(0);
+		srcType* s = src.ptr<srcType>(0);
+		srcType* d = dest.ptr<srcType>(0);
 		Mat vfilter = Mat::zeros(src.size(), CV_MAKE_TYPE(CV_32F, src.channels()));
 		float* v1 = vfilter.ptr<float>(0);
 		CrossBasedLocalFilter::cross* cd = crossdata;
@@ -314,7 +314,7 @@ namespace cp
 			}
 			//v
 			float* vs = vfilter.ptr<float>(0);
-			T* ds = dest.ptr<T>(0);
+			srcType* ds = dest.ptr<srcType>(0);
 			for (i = src.cols; i--;)
 			{
 				v1 = vs;
@@ -326,12 +326,12 @@ namespace cp
 					v1 += step, IH++;
 				}
 
-				T* dd = ds;
+				srcType* dd = ds;
 				cd = cds;
 				IH = integral;
 				for (j = src.rows; j--;)
 				{
-					*dd = (T)((IH[1 + cd->vp] - IH[-cd->vm]) * cd->divv + 0.5f);
+					*dd = (srcType)((IH[1 + cd->vp] - IH[-cd->vm]) * cd->divv + 0.5f);
 					IH++, dd += step, cd += dest.cols;
 				}
 				ds++;
@@ -344,7 +344,7 @@ namespace cp
 			integral = new float[(max(src.cols, src.rows) + 1) * 3];
 			float* IH;
 			int i, j;
-			T* ds = dest.ptr<T>(0);
+			srcType* ds = dest.ptr<srcType>(0);
 			CrossBasedLocalFilter::cross* cds = crossdata;
 
 			for (j = src.rows; j--;)
@@ -363,9 +363,9 @@ namespace cp
 				IH = integral;
 				for (i = src.cols; i--;)
 				{
-					d[0] = (T)((IH[3 + cd->hp * 3] - IH[-cd->hm * 3]) * cd->divh + 0.5f);
-					d[1] = (T)((IH[3 + cd->hp * 3 + 1] - IH[-cd->hm * 3 + 1]) * cd->divh + 0.5f);
-					d[2] = (T)((IH[3 + cd->hp * 3 + 2] - IH[-cd->hm * 3 + 2]) * cd->divh + 0.5f);
+					d[0] = (srcType)((IH[3 + cd->hp * 3] - IH[-cd->hm * 3]) * cd->divh + 0.5f);
+					d[1] = (srcType)((IH[3 + cd->hp * 3 + 1] - IH[-cd->hm * 3 + 1]) * cd->divh + 0.5f);
+					d[2] = (srcType)((IH[3 + cd->hp * 3 + 2] - IH[-cd->hm * 3 + 2]) * cd->divh + 0.5f);
 					d += 3, IH += 3, cd++;
 				}
 			}
@@ -375,7 +375,7 @@ namespace cp
 				integral[0] = 0;
 				integral[1] = 0;
 				integral[2] = 0;
-				T* dd = ds;
+				srcType* dd = ds;
 				IH = integral;
 				for (j = src.rows; j--;)
 				{
@@ -390,9 +390,9 @@ namespace cp
 				IH = integral;
 				for (j = src.rows; j--;)
 				{
-					dd[0] = (T)((IH[3 + cd->vp * 3] - IH[-cd->vm * 3]) * cd->divv + 0.5f);
-					dd[1] = (T)((IH[3 + cd->vp * 3 + 1] - IH[-cd->vm * 3 + 1]) * cd->divv + 0.5f);
-					dd[2] = (T)((IH[3 + cd->vp * 3 + 2] - IH[-cd->vm * 3 + 2]) * cd->divv + 0.5f);
+					dd[0] = (srcType)((IH[3 + cd->vp * 3] - IH[-cd->vm * 3]) * cd->divv + 0.5f);
+					dd[1] = (srcType)((IH[3 + cd->vp * 3 + 1] - IH[-cd->vm * 3 + 1]) * cd->divv + 0.5f);
+					dd[2] = (srcType)((IH[3 + cd->vp * 3 + 2] - IH[-cd->vm * 3 + 2]) * cd->divv + 0.5f);
 					IH += 3;
 					dd += step, cd += dest.cols;
 				}
@@ -403,14 +403,14 @@ namespace cp
 		delete[] integral;
 	}
 
-	template <class T>
+	template <class srcType>
 	void orthogonalIntegralImageFilterI(Mat& src, Mat& weight, Mat& dest, CrossBasedLocalFilter::cross* cd)
 	{
-		T* s = src.ptr<T>(0);
-		T* w = weight.ptr<T>(0);
-		T* ws = w;
-		T* d = dest.ptr<T>(0);
-		T* ds = d;
+		srcType* s = src.ptr<srcType>(0);
+		srcType* w = weight.ptr<srcType>(0);
+		srcType* ws = w;
+		srcType* d = dest.ptr<srcType>(0);
+		srcType* ds = d;
 		CrossBasedLocalFilter::cross* crossdata = cd;
 
 		unsigned int* integral = 0;
@@ -441,7 +441,7 @@ namespace cp
 				IHW = integralW;
 				for (i = src.cols; i--;)
 				{
-					*d = (T)((IH[1 + cd->hp] - IH[-cd->hm]) / (float)(IHW[1 + cd->hp] - IHW[-cd->hm]) + 0.5f);
+					*d = (srcType)((IH[1 + cd->hp] - IH[-cd->hm]) / (float)(IHW[1 + cd->hp] - IHW[-cd->hm]) + 0.5f);
 					d++, cd++, IH++, IHW++;
 				}
 			}
@@ -452,8 +452,8 @@ namespace cp
 				integralW[0] = 0;
 				IH = integral;
 				IHW = integralW;
-				T* dd = ds;
-				T* ww = ws;
+				srcType* dd = ds;
+				srcType* ww = ws;
 				for (j = src.rows; j--;)
 				{
 					IH[1] = *IH + (*dd * *ww);
@@ -466,7 +466,7 @@ namespace cp
 				IHW = integralW;
 				for (j = src.rows; j--;)
 				{
-					*dd = (T)((IH[1 + cd->vp] - IH[-cd->vm]) / (float)(IHW[1 + cd->vp] - IHW[-cd->vm]) + 0.5f);
+					*dd = (srcType)((IH[1 + cd->vp] - IH[-cd->vm]) / (float)(IHW[1 + cd->vp] - IHW[-cd->vm]) + 0.5f);
 					IH++, IHW++, dd += step, cd += dest.cols;
 				}
 				ws++;
@@ -504,9 +504,9 @@ namespace cp
 				for (i = src.cols; i--;)
 				{
 					float div = 1.0f / (float)(IHW[1 + cd->hp] - IHW[-cd->hm]);
-					d[0] = (T)((IH[3 + cd->hp * 3] - IH[-cd->hm * 3]) * div + 0.5f);
-					d[1] = (T)((IH[3 + cd->hp * 3 + 1] - IH[-cd->hm * 3 + 1]) * div + 0.5f);
-					d[2] = (T)((IH[3 + cd->hp * 3 + 2] - IH[-cd->hm * 3 + 2]) * div + 0.5f);
+					d[0] = (srcType)((IH[3 + cd->hp * 3] - IH[-cd->hm * 3]) * div + 0.5f);
+					d[1] = (srcType)((IH[3 + cd->hp * 3 + 1] - IH[-cd->hm * 3 + 1]) * div + 0.5f);
+					d[2] = (srcType)((IH[3 + cd->hp * 3 + 2] - IH[-cd->hm * 3 + 2]) * div + 0.5f);
 					d += 3, IH += 3, IHW++, cd++;
 				}
 			}
@@ -517,8 +517,8 @@ namespace cp
 				integral[1] = 0;
 				integral[2] = 0;
 				integralW[0] = 0;
-				T* dd = ds;
-				T* ww = ws;
+				srcType* dd = ds;
+				srcType* ww = ws;
 				IH = integral;
 				IHW = integralW;
 				for (j = src.rows; j--;)
@@ -537,9 +537,9 @@ namespace cp
 				for (j = src.rows; j--;)
 				{
 					float div = 1.0f / (float)(IHW[1 + cd->vp] - IHW[-cd->vm]);
-					dd[0] = (T)((IH[3 + cd->vp * 3] - IH[-cd->vm * 3]) * div + 0.5f);
-					dd[1] = (T)((IH[3 + cd->vp * 3 + 1] - IH[-cd->vm * 3 + 1]) * div + 0.5f);
-					dd[2] = (T)((IH[3 + cd->vp * 3 + 2] - IH[-cd->vm * 3 + 2]) * div + 0.5f);
+					dd[0] = (srcType)((IH[3 + cd->vp * 3] - IH[-cd->vm * 3]) * div + 0.5f);
+					dd[1] = (srcType)((IH[3 + cd->vp * 3 + 1] - IH[-cd->vm * 3 + 1]) * div + 0.5f);
+					dd[2] = (srcType)((IH[3 + cd->vp * 3 + 2] - IH[-cd->vm * 3 + 2]) * div + 0.5f);
 					IH += 3, IHW++;
 					dd += step, cd += dest.cols;
 				}
@@ -4026,7 +4026,7 @@ namespace cp
 	}
 
 
-	template <class S, class T>
+	template <class S, class srcType>
 	void crossBasedAdaptiveBoxFilterSP_(Mat& src, Mat& guide, Mat& dest, int r, int thresh)
 	{
 		if (dest.empty())dest.create(src.size(), src.type());
@@ -4042,10 +4042,10 @@ namespace cp
 		const int c = guide.channels();
 		const int gstep = gim.cols * c;
 
-		T* is = sim.ptr<T>(0);
-		T* s = is + hw;
+		srcType* is = sim.ptr<srcType>(0);
+		srcType* s = is + hw;
 		S* g = gim.ptr<S>(0); g += hw * c;
-		T* d = dest.ptr<T>(0);
+		srcType* d = dest.ptr<srcType>(0);
 		if (c == 1)
 		{
 			for (int j = 0; j < src.rows; j++)
@@ -4071,7 +4071,7 @@ namespace cp
 							break;
 						rr = n;
 					}
-					d[i] = (T)((iH[i + 1 + rr] - iH[i + rl]) / (float)(rr - rl + 1) + 0.5f);
+					d[i] = (srcType)((iH[i + 1 + rr] - iH[i + rl]) / (float)(rr - rl + 1) + 0.5f);
 				}
 				s += sim.cols;
 				is += sim.cols;
@@ -4089,9 +4089,9 @@ namespace cp
 
 				for (int i = 0; i < src.cols; i++)
 				{
-					const T rv = g[3 * i];
-					const T gv = g[3 * i + 1];
-					const T bv = g[3 * i + 2];
+					const srcType rv = g[3 * i];
+					const srcType gv = g[3 * i + 1];
+					const srcType bv = g[3 * i + 2];
 					int rl = 0;
 					for (int n = 1; n <= hw; n++)
 					{
@@ -4106,7 +4106,7 @@ namespace cp
 							break;
 						rr = n;
 					}
-					d[i] = (T)((iH[i + 1 + rr] - iH[i + rl]) / (float)(rr - rl + 1) + 0.5f);
+					d[i] = (srcType)((iH[i + 1 + rr] - iH[i + rl]) / (float)(rr - rl + 1) + 0.5f);
 				}
 				s += sim.cols;
 				is += sim.cols;
@@ -4118,26 +4118,26 @@ namespace cp
 		delete[] integral;
 	}
 
-	template <class T>
+	template <class srcType>
 	void crossBasedAdaptiveBoxFilter_(Mat& src, Mat& guide, Mat& dest, Size ksize, int thresh)
 	{
-		crossBasedAdaptiveBoxFilterSP_<uchar, T>(src, guide, dest, ksize.width / 2, thresh);
+		crossBasedAdaptiveBoxFilterSP_<uchar, srcType>(src, guide, dest, ksize.width / 2, thresh);
 		//crossBasedAdaptiveBoxFilterSP_<T>(src,guide,dest,0,thresh);
 		Mat st, gt;
 		transpose(dest, st);
 		transpose(guide, gt);
-		crossBasedAdaptiveBoxFilterSP_<uchar, T>(st, gt, st, ksize.height / 2, thresh);
+		crossBasedAdaptiveBoxFilterSP_<uchar, srcType>(st, gt, st, ksize.height / 2, thresh);
 		transpose(st, dest);
 	}
 
-	template <class T>
+	template <class srcType>
 	void crossBasedAdaptiveBoxFilter_(Mat& src, Mat& dest, Size ksize, int thresh)
 	{
-		crossBasedAdaptiveBoxFilterSP_<T, T>(src, src, dest, ksize.width / 2, thresh);
+		crossBasedAdaptiveBoxFilterSP_<srcType, srcType>(src, src, dest, ksize.width / 2, thresh);
 		//crossBasedAdaptiveBoxFilterSP_<T>(src,guide,dest,0,thresh);
 		Mat st, gt;
 		transpose(dest, st);
-		crossBasedAdaptiveBoxFilterSP_<T, T>(st, st, st, ksize.height / 2, thresh);
+		crossBasedAdaptiveBoxFilterSP_<srcType, srcType>(st, st, st, ksize.height / 2, thresh);
 		transpose(st, dest);
 	}
 

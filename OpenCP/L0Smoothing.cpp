@@ -49,8 +49,8 @@ namespace cp
 		return otf;
 	}
 
-	template<typename T>
-	T sqr(const T x) { return x*x; }
+	template<typename srcType>
+	srcType sqr(const srcType x) { return x*x; }
 
 	cv::Mat psf2otf_64F(const cv::Mat &psf, const cv::Size &outSize) {
 		cv::Size psfSize = psf.size();

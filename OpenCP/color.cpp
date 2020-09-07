@@ -7,15 +7,15 @@ using namespace cv;
 namespace cp
 {
 #pragma region merge
-	template<class T>
+	template<class srcType>
 	void mergeBase_(vector<Mat>& src, Mat& dest)
 	{
 		if (dest.empty())dest.create(src[0].size(), src[0].depth());
 		const int size = src[0].size().area();
-		T* d = dest.ptr<T>(0);
-		T* s0 = src[0].ptr<T>(0);
-		T* s1 = src[1].ptr<T>(0);
-		T* s2 = src[2].ptr<T>(0);
+		srcType* d = dest.ptr<srcType>(0);
+		srcType* s0 = src[0].ptr<srcType>(0);
+		srcType* s1 = src[1].ptr<srcType>(0);
+		srcType* s2 = src[2].ptr<srcType>(0);
 		for (int i = 0; i < size; i++)
 		{
 			d[0] = s0[0];
@@ -169,14 +169,14 @@ namespace cp
 #pragma endregion
 
 #pragma region split
-	template<class T>
+	template<class srcType>
 	void splitBase_(Mat& src, vector<Mat>& dst)
 	{
 		const int size = src.size().area();
-		T* s = src.ptr<T>(0);
-		T* d0 = dst[0].ptr<T>(0);
-		T* d1 = dst[1].ptr<T>(0);
-		T* d2 = dst[2].ptr<T>(0);
+		srcType* s = src.ptr<srcType>(0);
+		srcType* d0 = dst[0].ptr<srcType>(0);
+		srcType* d1 = dst[1].ptr<srcType>(0);
+		srcType* d2 = dst[2].ptr<srcType>(0);
 		for (int i = 0; i < size; i++)
 		{
 			d0[0] = s[0];
@@ -935,16 +935,16 @@ namespace cp
 		}
 	}
 
-	template <class T>
+	template <class srcType>
 	void cvtColorBGR2PLANE_(const Mat& src, Mat& dest, int depth)
 	{
 		vector<Mat> v(3);
 		split(src, v);
 		dest.create(Size(src.cols, src.rows * 3), depth);
 
-		memcpy(dest.data, v[0].data, src.size().area() * sizeof(T));
-		memcpy(dest.data + src.size().area() * sizeof(T), v[1].data, src.size().area() * sizeof(T));
-		memcpy(dest.data + 2 * src.size().area() * sizeof(T), v[2].data, src.size().area() * sizeof(T));
+		memcpy(dest.data, v[0].data, src.size().area() * sizeof(srcType));
+		memcpy(dest.data + src.size().area() * sizeof(srcType), v[1].data, src.size().area() * sizeof(srcType));
+		memcpy(dest.data + 2 * src.size().area() * sizeof(srcType), v[2].data, src.size().area() * sizeof(srcType));
 	}
 
 	void cvtColorBGR2PLANE(cv::InputArray src_, cv::OutputArray dest_)
@@ -983,14 +983,14 @@ namespace cp
 		}
 	}
 
-	template <class T>
+	template <class srcType>
 	void cvtColorPLANE2BGR_(const Mat& src, Mat& dest, int depth)
 	{
 		int width = src.cols;
 		int height = src.rows / 3;
-		T* b = (T*)src.ptr<T>(0);
-		T* g = (T*)src.ptr<T>(height);
-		T* r = (T*)src.ptr<T>(2 * height);
+		srcType* b = (srcType*)src.ptr<srcType>(0);
+		srcType* g = (srcType*)src.ptr<srcType>(height);
+		srcType* r = (srcType*)src.ptr<srcType>(2 * height);
 
 		Mat B(height, width, src.type(), b);
 		Mat G(height, width, src.type(), g);

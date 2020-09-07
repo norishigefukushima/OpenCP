@@ -60,8 +60,8 @@
  * Since the signals are of very short lengths, we compute the DCTs by
  * direct formulas rather than with FFTW.
  */
-template<typename T>
-void gaussian_short_conv_(T *dest, const T *src, const int N, const int stride, T sigma)
+template<typename srcType>
+void gaussian_short_conv_(srcType *dest, const srcType *src, const int N, const int stride, srcType sigma)
 {
     double alpha = (2.0 * M_PI_4 * M_PI_4) * (sigma * sigma);
     
@@ -77,8 +77,8 @@ void gaussian_short_conv_(T *dest, const T *src, const int N, const int stride, 
             double F0 = 0.5 * (src[0] + src[stride]);
             double F1 = 0.5 * (src[0] - src[stride]);
             F1 *= exp(-alpha);
-            dest[0] = (T)(F0 + F1);
-            dest[stride] = (T)(F0 - F1);
+            dest[0] = (srcType)(F0 + F1);
+            dest[stride] = (srcType)(F0 - F1);
         }
         break;
     case 3:
@@ -88,9 +88,9 @@ void gaussian_short_conv_(T *dest, const T *src, const int N, const int stride, 
             double F2 = (0.5*(src[0] + src[stride * 2]) - src[stride]) / 3.0;
             F1 *= exp(-alpha);
             F2 *= exp(-4.0 * alpha);
-            dest[0] = (T)(F0 + M_SQRT3 * F1 + F2);
-            dest[stride] = (T)(F0 - 2.0 * F2);
-            dest[stride * 2] = (T)(F0 - M_SQRT3 * F1 + F2);
+            dest[0] = (srcType)(F0 + M_SQRT3 * F1 + F2);
+            dest[stride] = (srcType)(F0 - 2.0 * F2);
+            dest[stride * 2] = (srcType)(F0 - M_SQRT3 * F1 + F2);
         }
         break;
     case 4:
@@ -106,13 +106,13 @@ void gaussian_short_conv_(T *dest, const T *src, const int N, const int stride, 
             F1 *= exp(-alpha);
             F2 *= exp(-4.0 * alpha);
             F3 *= exp(-9.0 * alpha);
-            dest[0] = (T)(F0 + 2.0 *
+            dest[0] = (srcType)(F0 + 2.0 *
                 (M_COSPI_8 * F1 + M_1_SQRT2 * F2 + M_COSPI3_8 * F3));
-            dest[stride] = (T)(F0 + 2.0 *
+            dest[stride] = (srcType)(F0 + 2.0 *
                 (M_COSPI3_8 * F1 - M_1_SQRT2 * F2 - M_COSPI_8 * F3));
-            dest[stride * 2] = (T)(F0 + 2.0 *
+            dest[stride * 2] = (srcType)(F0 + 2.0 *
                 (-M_COSPI3_8 * F1 - M_1_SQRT2 * F2 + M_COSPI_8 * F3));
-            dest[stride * 3] = (T)(F0 + 2.0 *
+            dest[stride * 3] = (srcType)(F0 + 2.0 *
                 (-M_COSPI_8 * F1 + M_1_SQRT2 * F2 - M_COSPI3_8 * F3));
         }
         break;

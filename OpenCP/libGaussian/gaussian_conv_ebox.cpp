@@ -31,8 +31,8 @@
  * This routine precomputes the coefficients for extended box filtering
  * Gaussian convolution approximation.
  */
-template <typename T>
-void ebox_precomp_(ebox_coeffs<T> *c, T sigma, const int K)
+template <typename srcType>
+void ebox_precomp_(ebox_coeffs<srcType> *c, srcType sigma, const int K)
 {
     double alpha;
     
@@ -42,8 +42,8 @@ void ebox_precomp_(ebox_coeffs<T> *c, T sigma, const int K)
     c->r = (long)(0.5 * sqrt((12.0 * sigma * sigma) / K + 1.0) - 0.5);
     alpha = (2 * c->r + 1) * (c->r * (c->r + 1) - 3.0 * sigma * sigma / K)
         / (6.0 * (sigma * sigma / K - (c->r + 1) * (c->r + 1)));
-    c->c_1 = (T)(alpha / (2.0 * (alpha + c->r) + 1));
-    c->c_2 = (T)((1.0 - alpha) / (2.0 * (alpha + c->r) + 1));
+    c->c_1 = (srcType)(alpha / (2.0 * (alpha + c->r) + 1));
+    c->c_2 = (srcType)((1.0 - alpha) / (2.0 * (alpha + c->r) + 1));
     c->K = K;
     return;
 }
@@ -74,11 +74,11 @@ void ebox_precomp(ebox_coeffs<double> *c, double sigma, const int K)
  *
  * \note The computation is out-of-place, `src` and `dest` must be distinct.
  */
-template <typename T>
-static void ebox_filter(T *dest, long dest_stride, const T *src, long src_stride, long N, long r, T c_1, T c_2)
+template <typename srcType>
+static void ebox_filter(srcType *dest, long dest_stride, const srcType *src, long src_stride, long N, long r, srcType c_1, srcType c_2)
 {
     long n;
-    T accum = 0;
+    srcType accum = 0;
     
     assert(dest && src && dest != src && N > 0 && r >= 0);
     
@@ -122,12 +122,12 @@ static void ebox_filter(T *dest, long dest_stride, const T *src, long src_stride
  * (the source array is overwritten with the result). However, `buffer_data`
  * must be distinct from `dest_data`.
  */
-template <typename T>
-void ebox_gaussian_conv_(ebox_coeffs<T> c, T *dest_data, T *buffer_data, const T *src, long N, long stride)
+template <typename srcType>
+void ebox_gaussian_conv_(ebox_coeffs<srcType> c, srcType *dest_data, srcType *buffer_data, const srcType *src, long N, long stride)
 {
     struct
     {
-        T *data;
+        srcType *data;
         long stride;
     } dest, buffer, cur, next;
     int step;
@@ -160,7 +160,7 @@ void ebox_gaussian_conv_(ebox_coeffs<T> c, T *dest_data, T *buffer_data, const T
     if (next.data != dest_data)
     {
         if (stride == 1)
-            memcpy(dest_data, buffer_data, sizeof(T) * N);
+            memcpy(dest_data, buffer_data, sizeof(srcType) * N);
         else
         {
             long n, i;
@@ -198,8 +198,8 @@ void ebox_gaussian_conv(ebox_coeffs<double> c, double *dest_data, double *buffer
  * source array is overwritten with the result). However, `buffer` must be
  * be distinct from `dest`.
  */
-template <typename T>
-void ebox_gaussian_conv_image_(ebox_coeffs<T> c, T *dest, T *buffer, const T *src, int width, int height, int num_channels)
+template <typename srcType>
+void ebox_gaussian_conv_image_(ebox_coeffs<srcType> c, srcType *dest, srcType *buffer, const srcType *src, int width, int height, int num_channels)
 {
     const long num_pixels = ((long)width) * ((long)height);
     int x, y, channel;
@@ -209,8 +209,8 @@ void ebox_gaussian_conv_image_(ebox_coeffs<T> c, T *dest, T *buffer, const T *sr
     /* Loop over the image channels. */
     for (channel = 0; channel < num_channels; ++channel)
     {
-        T *dest_y = dest;
-        const T *src_y = src;
+        srcType *dest_y = dest;
+        const srcType *src_y = src;
         
         /* Filter each row of the channel. */
         for (y = 0; y < height; ++y)

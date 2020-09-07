@@ -147,51 +147,51 @@ namespace cp
 				return table;
 			}
 
-			template <typename T>
-			inline void filter_h(int w, int h, T* src, T* dst)
+			template <typename srcType>
+			inline void filter_h(int w, int h, srcType* src, srcType* dst)
 			{
 				throw std::invalid_argument("Unsupported element type!");
 			}
-			template <typename T>
-			inline void filter_v(int w, int h, T* src, T* dst)
+			template <typename srcType>
+			inline void filter_v(int w, int h, srcType* src, srcType* dst)
 			{
 				throw std::invalid_argument("Unsupported element type!");
 			}
-			template <typename T>
-			inline void filter_sse_h(int w, int h, T* src, T* dst)
+			template <typename srcType>
+			inline void filter_sse_h(int w, int h, srcType* src, srcType* dst)
 			{
 				throw std::invalid_argument("Unsupported element type!");
 			}
-			template <typename T>
-			inline void filter_sse_v(int w, int h, T* src, T* dst)
+			template <typename srcType>
+			inline void filter_sse_v(int w, int h, srcType* src, srcType* dst)
 			{
 				throw std::invalid_argument("Unsupported element type!");
 			}
-			template <typename T>
-			inline void filter_avx_h(int w, int h, T* src, T* dst)
+			template <typename srcType>
+			inline void filter_avx_h(int w, int h, srcType* src, srcType* dst)
 			{
 				throw std::invalid_argument("Unsupported element type!");
 			}
-			template <typename T>
-			inline void filter_avx_v(int w, int h, T* src, T* dst)
+			template <typename srcType>
+			inline void filter_avx_v(int w, int h, srcType* src, srcType* dst)
 			{
 				throw std::invalid_argument("Unsupported element type!");
 			}
-			template <typename T>
-			inline void filter_avx_h_OMP(int w, int h, T* src, T* dst)
+			template <typename srcType>
+			inline void filter_avx_h_OMP(int w, int h, srcType* src, srcType* dst)
 			{
 				throw std::invalid_argument("Unsupported element type!");
 			}
-			template <typename T>
-			inline void filter_avx_v_OMP(int w, int h, T* src, T* dst)
+			template <typename srcType>
+			inline void filter_avx_v_OMP(int w, int h, srcType* src, srcType* dst)
 			{
 				throw std::invalid_argument("Unsupported element type!");
 			}
 
 		public:
 
-			template <typename T>
-			void filter(int w, int h, T* src, T* dst)
+			template <typename srcType>
+			void filter(int w, int h, srcType* src, srcType* dst)
 			{
 				if (w <= 4.0*sx || h <= 4.0*sy)
 					throw std::invalid_argument("\'sx\' and \'sy\' should be less than about w/4 or h/4!");
@@ -200,18 +200,18 @@ namespace cp
 				if (sx == 0.0 && sy == 0.0)
 					return;
 				else if (sx == 0.0)
-					filter_v<T>(w, h, src, dst);
+					filter_v<srcType>(w, h, src, dst);
 				else if (sy == 0.0)
-					filter_h<T>(w, h, src, dst);
+					filter_h<srcType>(w, h, src, dst);
 				else
 				{
-					filter_v<T>(w, h, src, dst);
-					filter_h<T>(w, h, dst, dst); //only filter_h() allows src==dst.
+					filter_v<srcType>(w, h, src, dst);
+					filter_h<srcType>(w, h, dst, dst); //only filter_h() allows src==dst.
 				}
 			}
 
-			template <typename T>
-			void filter_sse(int w, int h, T* src, T* dst)
+			template <typename srcType>
+			void filter_sse(int w, int h, srcType* src, srcType* dst)
 			{
 				if (w <= 4.0*sx || h <= 4.0*sy)
 					throw std::invalid_argument("\'sx\' and \'sy\' should be less than about w/4 or h/4!");
@@ -220,18 +220,18 @@ namespace cp
 				if (sx == 0.0 && sy == 0.0)
 					return;
 				else if (sx == 0.0)
-					filter_sse_v<T>(w, h, src, dst);
+					filter_sse_v<srcType>(w, h, src, dst);
 				else if (sy == 0.0)
-					filter_sse_h<T>(w, h, src, dst);
+					filter_sse_h<srcType>(w, h, src, dst);
 				else
 				{
-					filter_sse_v<T>(w, h, src, dst);
-					filter_sse_h<T>(w, h, dst, dst); //only filter_h() allows src==dst.
+					filter_sse_v<srcType>(w, h, src, dst);
+					filter_sse_h<srcType>(w, h, dst, dst); //only filter_h() allows src==dst.
 				}
 			}
 			
-			template <typename T>
-			void filter_avx(int w, int h, T* src, T* dst)
+			template <typename srcType>
+			void filter_avx(int w, int h, srcType* src, srcType* dst)
 			{
 				if (w <= 4.0*sx || h <= 4.0*sy)
 					throw std::invalid_argument("\'sx\' and \'sy\' should be less than about w/4 or h/4!");
@@ -240,18 +240,18 @@ namespace cp
 				if (sx == 0.0 && sy == 0.0)
 					return;
 				else if (sx == 0.0)
-					filter_avx_v<T>(w, h, src, dst);
+					filter_avx_v<srcType>(w, h, src, dst);
 				else if (sy == 0.0)
-					filter_avx_h<T>(w, h, src, dst);
+					filter_avx_h<srcType>(w, h, src, dst);
 				else
 				{
-					filter_avx_v<T>(w, h, src, dst);
-					filter_avx_h<T>(w, h, dst, dst); //only filter_h() allows src==dst.
+					filter_avx_v<srcType>(w, h, src, dst);
+					filter_avx_h<srcType>(w, h, dst, dst); //only filter_h() allows src==dst.
 				}
 			}
 
-			template <typename T>
-			void filter_avxOMP(int w, int h, T* src, T* dst)
+			template <typename srcType>
+			void filter_avxOMP(int w, int h, srcType* src, srcType* dst)
 			{
 				if (w <= 4.0*sx || h <= 4.0*sy)
 					throw std::invalid_argument("\'sx\' and \'sy\' should be less than about w/4 or h/4!");
@@ -260,13 +260,13 @@ namespace cp
 				if (sx == 0.0 && sy == 0.0)
 					return;
 				else if (sx == 0.0)
-					filter_avx_v_OMP<T>(w, h, src, dst);
+					filter_avx_v_OMP<srcType>(w, h, src, dst);
 				else if (sy == 0.0)
-					filter_avx_h_OMP<T>(w, h, src, dst);
+					filter_avx_h_OMP<srcType>(w, h, src, dst);
 				else
 				{
-					filter_avx_v_OMP<T>(w, h, src, dst);
-					filter_avx_h_OMP<T>(w, h, dst, dst); //only filter_h() allows src==dst.
+					filter_avx_v_OMP<srcType>(w, h, src, dst);
+					filter_avx_h_OMP<srcType>(w, h, dst, dst); //only filter_h() allows src==dst.
 				}
 			}
 

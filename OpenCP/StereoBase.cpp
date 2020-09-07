@@ -24,11 +24,10 @@ using namespace cv;
 namespace cp
 {
 #pragma region correctDisparityBoundary
-	template <class T>
+	template <class srcType>
 	void correctDisparityBoundaryECV(Mat& src, Mat& refimg, const int r, const int edgeth, Mat& dest)
 	{
-
-		T invalidvalue = 0;
+		srcType invalidvalue = 0;
 
 		vector<Mat> ref;
 		split(refimg, ref);
@@ -43,7 +42,7 @@ namespace cp
 		Sobel(ref[2], ss, CV_16S, 1, 0, 3);
 		max(sobel, abs(ss), sobel);
 
-		T* s = src.ptr<T>(0);
+		srcType* s = src.ptr<srcType>(0);
 		const int step = src.cols;
 		short* sbl = sobel.ptr<short>(0);
 
@@ -55,17 +54,17 @@ namespace cp
 			{
 				if (abs(s[i - 1] - s[i]) < edgeth) continue;
 
-				T maxd;
-				T mind;
+				srcType maxd;
+				srcType mind;
 
-				const T cd = s[i];
+				const srcType cd = s[i];
 				if (s[i - 1] < s[i])
 				{
 					const int rl = -(r);
 					const int rr = r;
 					mind = s[i - 1];
 					maxd = s[i];
-					const T sub = (maxd - mind);
+					const srcType sub = (maxd - mind);
 
 					int maxp;
 					int maxval = 0;
@@ -110,7 +109,7 @@ namespace cp
 					mind = s[i];
 					const int rl = -r;
 					const int rr = (r);
-					const T sub = (maxd - mind) * 2;
+					const srcType sub = (maxd - mind) * 2;
 
 					int maxp;
 					int maxval = 0;
@@ -152,11 +151,11 @@ namespace cp
 			sbl += step;
 		}
 	}
-	template <class T>
+	template <class srcType>
 	void correctDisparityBoundaryEC(Mat& src, Mat& refimg, const int r, const int edgeth, Mat& dest)
 	{
 
-		T invalidvalue = 0;
+		srcType invalidvalue = 0;
 
 		vector<Mat> ref;
 		split(refimg, ref);
@@ -171,7 +170,7 @@ namespace cp
 		Sobel(ref[2], ss, CV_16S, 1, 0, 3);
 		max(sobel, abs(ss), sobel);
 
-		T* s = src.ptr<T>(0);
+		srcType* s = src.ptr<srcType>(0);
 		const int step = src.cols;
 		short* sbl = sobel.ptr<short>(0);
 
@@ -183,17 +182,17 @@ namespace cp
 			{
 				if (abs(s[i - 1] - s[i]) < edgeth) continue;
 
-				T maxd;
-				T mind;
+				srcType maxd;
+				srcType mind;
 
-				const T cd = s[i];
+				const srcType cd = s[i];
 				if (s[i - 1] < s[i])
 				{
 					const int rl = -(r >> 1);
 					const int rr = r;
 					mind = s[i - 1];
 					maxd = s[i];
-					const T sub = (maxd - mind);
+					const srcType sub = (maxd - mind);
 
 					int maxp;
 					int maxval = 0;
@@ -238,7 +237,7 @@ namespace cp
 					mind = s[i];
 					const int rl = -r;
 					const int rr = (r >> 1);
-					const T sub = (maxd - mind) * 2;
+					const srcType sub = (maxd - mind) * 2;
 
 					int maxp;
 					int maxval = 0;
@@ -281,11 +280,11 @@ namespace cp
 		}
 	}
 
-	template <class T>
+	template <class srcType>
 	void correctDisparityBoundaryE(Mat& src, Mat& refimg, const int r, const int edgeth, Mat& dest, const int secondr, const int minedge)
 	{
 
-		T invalidvalue = 0;
+		srcType invalidvalue = 0;
 
 		Mat ref;
 		if (refimg.channels() == 3)cvtColor(refimg, ref, COLOR_BGR2GRAY);
@@ -295,7 +294,7 @@ namespace cp
 		Sobel(ref, sobel, CV_16S, 1, 0, 3);
 		sobel = abs(sobel);
 
-		T* s = src.ptr<T>(0);
+		srcType* s = src.ptr<srcType>(0);
 		const int step = src.cols;
 		short* sbl = sobel.ptr<short>(0);
 
@@ -307,16 +306,16 @@ namespace cp
 			{
 				if (abs(s[i - 1] - s[i]) < edgeth) continue;
 
-				T maxd;
-				T mind;
-				const T cd = s[i];
+				srcType maxd;
+				srcType mind;
+				const srcType cd = s[i];
 				if (s[i - 1] < s[i])
 				{
 					const int rl = -(r >> 1);
 					const int rr = r;
 					mind = s[i - 1];
 					maxd = s[i];
-					const T sub = (maxd - mind);
+					const srcType sub = (maxd - mind);
 
 					int maxp;
 					int maxval = 0;
@@ -365,7 +364,7 @@ namespace cp
 					const int rr = (r >> 1);
 					maxd = s[i - 1];
 					mind = s[i];
-					const T sub = (maxd - mind) * 2;
+					const srcType sub = (maxd - mind) * 2;
 
 					int maxp;
 					int maxval = 0;
@@ -563,7 +562,8 @@ namespace cp
 
 		uchar* s = im.ptr<uchar>(r); s += r;
 		uchar* d = dest.ptr<uchar>(0);
-		uchar val; uchar* ss;
+		uchar* sb;
+
 		const int step1 = -r - im.cols;
 		const int step2 = -3 + im.cols;
 		const int w = src.cols;
@@ -572,21 +572,21 @@ namespace cp
 		{
 			for (int i = 0; i < w; i++)
 			{
-				val = 0;//init value
-				ss = s + step1;
+				uchar val = 0;//init value
+				sb = s + step1;
 
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
 
-				ss += step2;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				ss++;//skip r=0
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				ss += step2;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++;
+				sb += step2;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				sb++;//skip r=0
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				sb += step2;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++;
 
 				*(d++) = val;
 				s++;
@@ -603,9 +603,9 @@ namespace cp
 		const int D = 2 * r + 1;
 		Mat im; copyMakeBorder(src, im, r, r, r, r, cv::BORDER_REFLECT101);
 
+		uchar* sb;//around
 		uchar* s = im.ptr<uchar>(r); s += r;
 		int* d = dest.ptr<int>();
-		uchar val; uchar* ss;
 		const int step1 = -r - r * im.cols;
 		const int step2 = -D + im.cols;
 		const int w = src.cols;
@@ -614,41 +614,41 @@ namespace cp
 		{
 			for (int i = 0; i < w; i++)
 			{
-				val = 0;//init value
-				ss = s + step1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				int val = 0;//init value
+				sb = s + step1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
 
-				ss += step2;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				sb += step2;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
 
-				ss += step2;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				ss++;//skip r=0
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				sb += step2;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				sb++;//skip r=0
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
 
-				ss += step2;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				sb += step2;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
 
-				ss += step2;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++;
+				sb += step2;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++;
 
 				*(d++) = val;
 				s++;
@@ -667,8 +667,9 @@ namespace cp
 		Mat im; copyMakeBorder(src, im, vr, vr, r, r, cv::BORDER_REFLECT101);
 
 		uchar* s = im.ptr<uchar>(vr); s += r;
+		uchar* sb;
 		int* d = dest.ptr<int>();
-		uchar val; uchar* ss;
+
 		const int step1 = -r - vr * im.cols;
 		const int step2 = -D + im.cols;
 		const int w = src.cols;
@@ -677,51 +678,51 @@ namespace cp
 		{
 			for (int i = 0; i < w; i++)
 			{
-				val = 0;//init value
-				ss = s + step1;
-				ss++;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				ss++;
+				int val = 0;//init value
+				sb = s + step1;
+				sb++;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				sb++;
 
-				ss += step2;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				sb += step2;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
 
-				ss += step2;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				ss++;//skip r=0
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				sb += step2;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				sb++;//skip r=0
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
 
-				ss += step2;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
+				sb += step2;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
 
-				ss += step2;
-				ss++;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++; val <<= 1;
-				val = (*ss < *s) ? val | 1 : val; ss++;
-				ss++;
+				sb += step2;
+				sb++;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++;
+				sb++;
 
 				*(d++) = val;
 				s++;
@@ -730,7 +731,7 @@ namespace cp
 		}
 	}
 
-	static void censusTrans8u_9x1(Mat& src, Mat& dest)
+	static void censusTrans8U_9x1(Mat& src, Mat& dest)
 	{
 		if (dest.empty() || dest.depth() != CV_8U)dest.create(src.size(), CV_8U);
 		const int w = src.cols;
@@ -768,51 +769,113 @@ namespace cp
 		}
 	}
 
-	void StereoBase::preFilter(Mat& src, Mat& dest, int param)
-	{
-		vector<Mat> img;
-		//split(leftim,img);
-		cvtColor(src, img[0], COLOR_BGR2GRAY); img[0].copyTo(img[1]); img[0].copyTo(img[2]);
-
-		for (int c = 0; c < 3; c++)
-			prefilterXSobel(img[c], img[c], preFilterCap);
-		merge(img, dest);
-	}
-
-	//0: gray image, 1: sobel image/CENSUS
+	//0: gray image, 1: sobel/CENSUS image
 	void StereoBase::prefilter(Mat& targetImage, Mat& referenceImage)
 	{
-		target.resize(2);
-		reference.resize(2);
-		cvtColor(targetImage, target[0], COLOR_BGR2GRAY);
-		cvtColor(referenceImage, reference[0], COLOR_BGR2GRAY);
-		if (PixelMatchingMethod == Pixel_Matching_CENSUS3x3)
+		const bool isColor = (PixelMatchingMethod % 2 == 1);
+		if (isColor)
 		{
-			censusTrans8U_3x3(target[0], target[1]);
-			censusTrans8U_3x3(reference[0], reference[1]);
-		}
-		else if (PixelMatchingMethod == Pixel_Matching_CENSUS9x1)
-		{
-			censusTrans8u_9x1(target[0], target[1]);
-			censusTrans8u_9x1(reference[0], reference[1]);
-		}
-		else if (PixelMatchingMethod == Pixel_Matching_CENSUS5x5)
-		{
-			censusTrans32S_5x5(target[0], target[1]);
-			censusTrans32S_5x5(reference[0], reference[1]);
-		}
-		else if (PixelMatchingMethod == Pixel_Matching_CENSUS7x5)
-		{
-			censusTrans32S_7x5(target[0], target[1]);
-			censusTrans32S_7x5(reference[0], reference[1]);
+			if (targetImage.channels() != 3 || referenceImage.channels() != 3)
+			{
+				std::cout << "input image must have 3 channels" << std::endl;
+				CV_Assert(targetImage.channels() == 3);
+				CV_Assert(referenceImage.channels() == 3);
+			}
+
+			target.resize(6);
+			reference.resize(6);
+			vector<Mat> temp;
+			split(targetImage, temp);
+			temp[0].copyTo(target[0]);
+			temp[1].copyTo(target[2]);
+			temp[2].copyTo(target[4]);
+			split(referenceImage, temp);
+			temp[0].copyTo(reference[0]);
+			temp[1].copyTo(reference[2]);
+			temp[2].copyTo(reference[4]);
+
+			if (PixelMatchingMethod == Pixel_Matching_CENSUS3x3Color)
+			{
+				censusTrans8U_3x3(target[0], target[1]);
+				censusTrans8U_3x3(reference[0], reference[1]);
+				censusTrans8U_3x3(target[2], target[3]);
+				censusTrans8U_3x3(reference[2], reference[3]);
+				censusTrans8U_3x3(target[4], target[5]);
+				censusTrans8U_3x3(reference[4], reference[5]);
+			}
+			else if (PixelMatchingMethod == Pixel_Matching_CENSUS9x1Color)
+			{
+				censusTrans8U_9x1(target[0], target[1]);
+				censusTrans8U_9x1(reference[0], reference[1]);
+				censusTrans8U_9x1(target[2], target[3]);
+				censusTrans8U_9x1(reference[2], reference[3]);
+				censusTrans8U_9x1(target[4], target[5]);
+				censusTrans8U_9x1(reference[4], reference[5]);
+			}
+			else if (PixelMatchingMethod == Pixel_Matching_CENSUS5x5Color)
+			{
+				censusTrans32S_5x5(target[0], target[1]);
+				censusTrans32S_5x5(reference[0], reference[1]);
+				censusTrans32S_5x5(target[2], target[3]);
+				censusTrans32S_5x5(reference[2], reference[3]);
+				censusTrans32S_5x5(target[4], target[5]);
+				censusTrans32S_5x5(reference[4], reference[5]);
+			}
+			else if (PixelMatchingMethod == Pixel_Matching_CENSUS7x5Color)
+			{
+				censusTrans32S_7x5(target[0], target[1]);
+				censusTrans32S_7x5(reference[0], reference[1]);
+				censusTrans32S_7x5(target[2], target[3]);
+				censusTrans32S_7x5(reference[2], reference[3]);
+				censusTrans32S_7x5(target[4], target[5]);
+				censusTrans32S_7x5(reference[4], reference[5]);
+			}
+			else
+			{
+				prefilterXSobel(target[0], target[1], preFilterCap);
+				prefilterXSobel(reference[0], reference[1], preFilterCap);
+				prefilterXSobel(target[2], target[3], preFilterCap);
+				prefilterXSobel(reference[2], reference[3], preFilterCap);
+				prefilterXSobel(target[4], target[5], preFilterCap);
+				prefilterXSobel(reference[4], reference[5], preFilterCap);
+			}
 		}
 		else
 		{
-			prefilterXSobel(target[0], target[1], preFilterCap);
-			prefilterXSobel(reference[0], reference[1], preFilterCap);
+			target.resize(2);
+			reference.resize(2);
+
+			if (targetImage.channels() == 3) cvtColor(targetImage, target[0], COLOR_BGR2GRAY);
+			else targetImage.copyTo(target[0]);
+			if (referenceImage.channels() == 3) cvtColor(referenceImage, reference[0], COLOR_BGR2GRAY);
+			else referenceImage.copyTo(reference[0]);
+
+			if (PixelMatchingMethod == Pixel_Matching_CENSUS3x3)
+			{
+				censusTrans8U_3x3(target[0], target[1]);
+				censusTrans8U_3x3(reference[0], reference[1]);
+			}
+			else if (PixelMatchingMethod == Pixel_Matching_CENSUS9x1)
+			{
+				censusTrans8U_9x1(target[0], target[1]);
+				censusTrans8U_9x1(reference[0], reference[1]);
+			}
+			else if (PixelMatchingMethod == Pixel_Matching_CENSUS5x5)
+			{
+				censusTrans32S_5x5(target[0], target[1]);
+				censusTrans32S_5x5(reference[0], reference[1]);
+			}
+			else if (PixelMatchingMethod == Pixel_Matching_CENSUS7x5)
+			{
+				censusTrans32S_7x5(target[0], target[1]);
+				censusTrans32S_7x5(reference[0], reference[1]);
+			}
+			else
+			{
+				prefilterXSobel(target[0], target[1], preFilterCap);
+				prefilterXSobel(reference[0], reference[1], preFilterCap);
+			}
 		}
-		//GaussianBlur(target[0],target[0],Size(2*prefSize+1,2*prefSize+1),1.0);
-		//GaussianBlur(refference[0],refference[0],Size(2*prefSize+1,2*prefSize+1),1.0);
 	}
 
 	void StereoBase::textureAlpha(Mat& src, Mat& dest, const int th1, const int th2, const int r)
@@ -845,7 +908,7 @@ namespace cp
 		//imshow("texture", dest);
 	}
 
-	inline __m256i _mm256_sduareddistance_epu8(__m256i src1, __m256i src2)
+	inline __m256i _mm256_squared_distance_epu8(__m256i src1, __m256i src2)
 	{
 		__m256i s1 = _mm256_cvtepu8_epi16(_mm256_castsi256_si128(src1));
 		__m256i s2 = _mm256_cvtepu8_epi16(_mm256_castsi256_si128(src2));
@@ -880,7 +943,7 @@ namespace cp
 				{
 					__m256i a = _mm256_loadu_si256((__m256i*)(s1 + i));
 					__m256i b = _mm256_loadu_si256((__m256i*)(s2 - disparity + i));
-					_mm256_storeu_si256((__m256i*)(d + i), _mm256_min_epu8(_mm256_sduareddistance_epu8(a, b), mtruncation));
+					_mm256_storeu_si256((__m256i*)(d + i), _mm256_min_epu8(_mm256_squared_distance_epu8(a, b), mtruncation));
 				}
 				for (int i = WIDTH; i < src1.cols; i++)
 				{
@@ -888,11 +951,6 @@ namespace cp
 				}
 			}
 		}
-	}
-
-	void StereoBase::getPixelMatchingCostSD(Mat& t, Mat& r, const int d, Mat& dest)
-	{
-		SDTruncate_8UC1(t, r, d, pixelMatchErrorCap, dest);
 	}
 
 	static void SDTruncateBlend_8UC1(const Mat& src1, const Mat& src2, const Mat& src3, const Mat& src4, const int disparity, const uchar thresh, const float alpha, Mat& dest)
@@ -923,11 +981,11 @@ namespace cp
 				{
 					__m256i a = _mm256_loadu_si256((__m256i*)(s1 + i));
 					__m256i b = _mm256_loadu_si256((__m256i*)(s2 - disparity + i));
-					a = _mm256_min_epu8(_mm256_sduareddistance_epu8(a, b), mtruncation);
+					a = _mm256_min_epu8(_mm256_squared_distance_epu8(a, b), mtruncation);
 
 					b = _mm256_loadu_si256((__m256i*)(s3 + i));
 					__m256i c = _mm256_loadu_si256((__m256i*)(s4 - disparity + i));
-					b = _mm256_min_epu8(_mm256_sduareddistance_epu8(b, c), mtruncation);
+					b = _mm256_min_epu8(_mm256_squared_distance_epu8(b, c), mtruncation);
 
 					_mm256_storeu_si256((__m256i*)(d + i), _mm256_alphablend_epu8(a, b, ma));
 				}
@@ -938,11 +996,6 @@ namespace cp
 				}
 			}
 		}
-	}
-
-	void StereoBase::getPixelMatchingCostSDSobelBlend(vector<Mat>& t, vector<Mat>& r, const int d, Mat& dest)
-	{
-		SDTruncateBlend_8UC1(t[0], r[0], t[1], r[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
 	}
 
 	static void ADTruncate_8UC1(const Mat& src1, const Mat& src2, const int disparity, const uchar thresh, Mat& dest)
@@ -976,11 +1029,6 @@ namespace cp
 				}
 			}
 		}
-	}
-
-	void StereoBase::getPixelMatchingCostAD(Mat& t, Mat& r, const int d, Mat& dest)
-	{
-		ADTruncate_8UC1(t, r, d, pixelMatchErrorCap, dest);
 	}
 
 	static void ADTruncateBlend_8UC1(const Mat& src1, const Mat& src2, const Mat& src3, const Mat& src4, const int disparity, const uchar thresh, const float alpha, Mat& dest)
@@ -1027,12 +1075,6 @@ namespace cp
 			}
 		}
 	}
-
-	void StereoBase::getPixelMatchingCostADSobelBlend(vector<Mat>& t, vector<Mat>& r, const int d, Mat& dest)
-	{
-		ADTruncateBlend_8UC1(t[0], r[0], t[1], r[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
-	}
-
 
 	static void BTTruncate_8UC1(const Mat& src1, const Mat& src2, const int disparity, const uchar thresh, Mat& dest)
 	{
@@ -1092,11 +1134,6 @@ namespace cp
 				}
 			}
 		}
-	}
-
-	void StereoBase::getPixelMatchingCostBT(Mat& target, Mat& reference, const int d, Mat& dest)
-	{
-		BTTruncate_8UC1(target, reference, d, pixelMatchErrorCap, dest);
 	}
 
 	static void BTTruncateBlend_8UC1(const Mat& src1, const Mat& src2, const Mat& src3, const Mat& src4, const int disparity, uchar thresh, const float alpha, Mat& dest)
@@ -1204,12 +1241,6 @@ namespace cp
 		}
 	}
 
-	void StereoBase::getPixelMatchingCostBTSobelBlend(vector<Mat>& target, vector<Mat>& reference, const int d, Mat& dest)
-	{
-		BTTruncateBlend_8UC1(target[0], reference[0], target[1], reference[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
-	}
-
-
 	static void BTFullTruncate_8UC1(const Mat& src1, const Mat& src2, const int disparity, const uchar thresh, Mat& dest)
 	{
 		dest.create(src1.size(), CV_8U);
@@ -1304,11 +1335,6 @@ namespace cp
 				}
 			}
 		}
-	}
-
-	void StereoBase::getPixelMatchingCostBTFull(Mat& target, Mat& reference, const int d, Mat& dest)
-	{
-		BTFullTruncate_8UC1(target, reference, d, pixelMatchErrorCap, dest);
 	}
 
 	static void BTFullTruncateBlend_8UC1(const Mat& src1, const Mat& src2, const Mat& src3, const Mat& src4, const int disparity, uchar thresh, const float alpha, Mat& dest)
@@ -1476,14 +1502,9 @@ namespace cp
 		}
 	}
 
-	void StereoBase::getPixelMatchingCostBTFullSobelBlend(vector<Mat>& target, vector<Mat>& refference, const int d, Mat& dest)
-	{
-		BTFullTruncateBlend_8UC1(target[0], reference[0], target[1], reference[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
-	}
-
 	//simple stereo matching implementaion
-	template<typename T>
-	static void HammingDistance_32SC1(Mat& src1, Mat& src2, const int disparity, Mat& dest)
+	template<typename srcType>
+	static void HammingDistance32S_8UC1(Mat& src1, Mat& src2, const int disparity, Mat& dest)
 	{
 		if (dest.empty())dest.create(src1.size(), CV_8U);
 		const int WIDTH = get_simd_floor(src1.cols, 32);
@@ -1491,8 +1512,8 @@ namespace cp
 
 		for (int j = 0; j < h; j++)
 		{
-			T* s1 = src1.ptr<T>(j);
-			T* s2 = src2.ptr<T>(j);
+			srcType* s1 = src1.ptr<srcType>(j);
+			srcType* s2 = src2.ptr<srcType>(j);
 			uchar* d = dest.ptr<uchar>(j);
 			for (int i = 0; i < disparity; i++)
 			{
@@ -1518,30 +1539,11 @@ namespace cp
 
 	}
 
-	void StereoBase::getPixelMatchingCostCENSUS3x3(Mat& target, Mat& reference, const int d, Mat& dest)
-	{
-		HammingDistance_32SC1<uchar>(target, reference, d, dest);
-	}
-
-	void StereoBase::getPixelMatchingCostCENSUS9x1(Mat& target, Mat& reference, const int d, Mat& dest)
-	{
-		HammingDistance_32SC1<uchar>(target, reference, d, dest);
-	}
-
-	void StereoBase::getPixelMatchingCostCENSUS5x5(Mat& target, Mat& reference, const int d, Mat& dest)
-	{
-		HammingDistance_32SC1<int>(target, reference, d, dest);
-	}
-
-	void StereoBase::getPixelMatchingCostCENSUS7x5(Mat& target, Mat& reference, const int d, Mat& dest)
-	{
-		HammingDistance_32SC1<int>(target, reference, d, dest);
-	}
-
 	void StereoBase::getPixelMatchingCostADAlpha(vector<Mat>& t, vector<Mat>& r, Mat& alpha, const int d, Mat& dest)
 	{
 		;
 	}
+
 	void StereoBase::getPixelMatchingCostBTAlpha(vector<Mat>& target, vector<Mat>& refference, Mat& alpha, const int d, Mat& dest)
 	{
 		;
@@ -1552,23 +1554,39 @@ namespace cp
 		string mes;
 		switch (method)
 		{
-		case Pixel_Matching_SD:					mes = "SD"; break;
-		case Pixel_Matching_SDSobel:			mes = "SDSobel"; break;
-		case Pixel_Matching_SDSobelBlend:		mes = "SDSobelBlend"; break;
-		case Pixel_Matching_AD:					mes = "AD"; break;
-		case Pixel_Matching_ADSobel:			mes = "ADSobel"; break;
-		case Pixel_Matching_ADSobelBlend:		mes = "ADSobelBlend"; break;
-		case Pixel_Matching_BT:					mes = "BT"; break;
-		case Pixel_Matching_BTSobel:			mes = "BTSobel"; break;
-		case Pixel_Matching_BTSobelBlend:		mes = "BTSobelBlend"; break;
-		case Pixel_Matching_BTFull:				mes = "BTFull"; break;
-		case Pixel_Matching_BTFullSobel:		mes = "BTFullSobel"; break;
-		case Pixel_Matching_BTFullSobelBlend:	mes = "BTFullSobelBlend"; break;
-		case Pixel_Matching_CENSUS3x3:			mes = "CENSUS3x3"; break;
-		case Pixel_Matching_CENSUS5x5:			mes = "CENSUS5x5"; break;
-		case Pixel_Matching_CENSUS7x5:			mes = "CENSUS7x5"; break;
-		case Pixel_Matching_CENSUS9x1:			mes = "CENSUS9x1"; break;
+		case Pixel_Matching_SD:						mes = "SD"; break;
+		case Pixel_Matching_SDSobel:				mes = "SDSobel"; break;
+		case Pixel_Matching_SDSobelBlend:			mes = "SDSobelBlend"; break;
+		case Pixel_Matching_AD:						mes = "AD"; break;
+		case Pixel_Matching_ADSobel:				mes = "ADSobel"; break;
+		case Pixel_Matching_ADSobelBlend:			mes = "ADSobelBlend"; break;
+		case Pixel_Matching_BT:						mes = "BT"; break;
+		case Pixel_Matching_BTSobel:				mes = "BTSobel"; break;
+		case Pixel_Matching_BTSobelBlend:			mes = "BTSobelBlend"; break;
+		case Pixel_Matching_BTFull:					mes = "BTFull"; break;
+		case Pixel_Matching_BTFullSobel:			mes = "BTFullSobel"; break;
+		case Pixel_Matching_BTFullSobelBlend:		mes = "BTFullSobelBlend"; break;
+		case Pixel_Matching_CENSUS3x3:				mes = "CENSUS3x3"; break;
+		case Pixel_Matching_CENSUS5x5:				mes = "CENSUS5x5"; break;
+		case Pixel_Matching_CENSUS7x5:				mes = "CENSUS7x5"; break;
+		case Pixel_Matching_CENSUS9x1:				mes = "CENSUS9x1"; break;
 
+		case Pixel_Matching_SDColor:				mes = "SDColor"; break;
+		case Pixel_Matching_SDSobelColor:			mes = "SDSobelColor"; break;
+		case Pixel_Matching_SDSobelBlendColor:		mes = "SDSobelBlendColor"; break;
+		case Pixel_Matching_ADColor:				mes = "ADColor"; break;
+		case Pixel_Matching_ADSobelColor:			mes = "ADSobelColor"; break;
+		case Pixel_Matching_ADSobelBlendColor:		mes = "ADSobelBlendColor"; break;
+		case Pixel_Matching_BTColor:				mes = "BTColor"; break;
+		case Pixel_Matching_BTSobelColor:			mes = "BTSobelColor"; break;
+		case Pixel_Matching_BTSobelBlendColor:		mes = "BTSobelBlendColor"; break;
+		case Pixel_Matching_BTFullColor:			mes = "BTFullColor"; break;
+		case Pixel_Matching_BTFullSobelColor:		mes = "BTFullSobelColor"; break;
+		case Pixel_Matching_BTFullSobelBlendColor:	mes = "BTFullSobelBlendColor"; break;
+		case Pixel_Matching_CENSUS3x3Color:			mes = "CENSUS3x3Color"; break;
+		case Pixel_Matching_CENSUS5x5Color:			mes = "CENSUS5x5Color"; break;
+		case Pixel_Matching_CENSUS7x5Color:			mes = "CENSUS7x5Color"; break;
+		case Pixel_Matching_CENSUS9x1Color:			mes = "CENSUS9x1Color"; break;
 
 			//case Pixel_Matching_SAD_TextureBlend:	mes = "Cost_Computation_SAD_TextureBlend"; break;
 			//case Pixel_Matching_BT_TextureBlend:	mes = "Cost_Computation_BTTextureBlend"; break;
@@ -1579,70 +1597,192 @@ namespace cp
 
 	void StereoBase::getPixelMatchingCost(const int d, Mat& dest)
 	{
+		//gray
 		if (PixelMatchingMethod == Pixel_Matching_SD)
 		{
-			getPixelMatchingCostSD(target[0], reference[0], d, dest);
+			SDTruncate_8UC1(target[0], reference[0], d, pixelMatchErrorCap, dest);
 		}
 		else if (PixelMatchingMethod == Pixel_Matching_SDSobel)
 		{
-			getPixelMatchingCostSD(target[1], reference[1], d, dest);
+			SDTruncate_8UC1(target[1], reference[1], d, pixelMatchErrorCap, dest);
 		}
 		else if (PixelMatchingMethod == Pixel_Matching_SDSobelBlend)
 		{
-			getPixelMatchingCostSDSobelBlend(target, reference, d, dest);
+			SDTruncateBlend_8UC1(target[0], reference[0], target[1], reference[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
 		}
 		else if (PixelMatchingMethod == Pixel_Matching_AD)
 		{
-			getPixelMatchingCostAD(target[0], reference[0], d, dest);
+			ADTruncate_8UC1(target[0], reference[0], d, pixelMatchErrorCap, dest);
 		}
 		else if (PixelMatchingMethod == Pixel_Matching_ADSobel)
 		{
-			getPixelMatchingCostAD(target[1], reference[1], d, dest);
+			ADTruncate_8UC1(target[1], reference[1], d, pixelMatchErrorCap, dest);
 		}
 		else if (PixelMatchingMethod == Pixel_Matching_ADSobelBlend)
 		{
-			getPixelMatchingCostADSobelBlend(target, reference, d, dest);
+			ADTruncateBlend_8UC1(target[0], reference[0], target[1], reference[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
 		}
 		else if (PixelMatchingMethod == Pixel_Matching_BT)
 		{
-			getPixelMatchingCostBT(target[0], reference[0], d, dest);
+			BTTruncate_8UC1(target[0], reference[0], d, pixelMatchErrorCap, dest);
 		}
 		else if (PixelMatchingMethod == Pixel_Matching_BTSobel)
 		{
-			getPixelMatchingCostBT(target[1], reference[1], d, dest);
+			BTTruncate_8UC1(target[1], reference[1], d, pixelMatchErrorCap, dest);
 		}
 		else if (PixelMatchingMethod == Pixel_Matching_BTSobelBlend)
 		{
-			getPixelMatchingCostBTSobelBlend(target, reference, d, dest);
+			BTTruncateBlend_8UC1(target[0], reference[0], target[1], reference[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
 		}
 		else if (PixelMatchingMethod == Pixel_Matching_BTFull)
 		{
-			getPixelMatchingCostBTFull(target[0], reference[0], d, dest);
+			BTFullTruncate_8UC1(target[0], reference[0], d, pixelMatchErrorCap, dest);
 		}
 		else if (PixelMatchingMethod == Pixel_Matching_BTFullSobel)
 		{
-			getPixelMatchingCostBTFull(target[1], reference[1], d, dest);
+			BTFullTruncate_8UC1(target[1], reference[1], d, pixelMatchErrorCap, dest);
 		}
 		else if (PixelMatchingMethod == Pixel_Matching_BTFullSobelBlend)
 		{
-			getPixelMatchingCostBTFullSobelBlend(target, reference, d, dest);
+			BTFullTruncateBlend_8UC1(target[0], reference[0], target[1], reference[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
 		}
-		else if (PixelMatchingMethod == Pixel_Matching_CENSUS3x3)
+		else if (PixelMatchingMethod == Pixel_Matching_CENSUS3x3 || PixelMatchingMethod == Pixel_Matching_CENSUS9x1)
 		{
-			getPixelMatchingCostCENSUS3x3(target[1], reference[1], d, dest);
+			HammingDistance32S_8UC1<uchar>(target[1], reference[1], d, dest);
 		}
-		else if (PixelMatchingMethod == Pixel_Matching_CENSUS9x1)
+		else if (PixelMatchingMethod == Pixel_Matching_CENSUS5x5 || PixelMatchingMethod == Pixel_Matching_CENSUS7x5)
 		{
-			getPixelMatchingCostCENSUS9x1(target[1], reference[1], d, dest);
+			HammingDistance32S_8UC1<int>(target[1], reference[1], d, dest);
 		}
-		else if (PixelMatchingMethod == Pixel_Matching_CENSUS5x5)
+
+		//color
+		else if (PixelMatchingMethod == Pixel_Matching_SDColor)
 		{
-			getPixelMatchingCostCENSUS5x5(target[1], reference[1], d, dest);
+			Mat temp;
+			SDTruncate_8UC1(target[0], reference[0], d, pixelMatchErrorCap, dest);
+			SDTruncate_8UC1(target[2], reference[2], d, pixelMatchErrorCap, temp);
+			add(dest, temp, dest);
+			SDTruncate_8UC1(target[4], reference[4], d, pixelMatchErrorCap, temp);
+			add(dest, temp, dest);
 		}
-		else if (PixelMatchingMethod == Pixel_Matching_CENSUS7x5)
+		else if (PixelMatchingMethod == Pixel_Matching_SDSobelColor)
 		{
-			getPixelMatchingCostCENSUS7x5(target[1], reference[1], d, dest);
+			Mat temp;
+			SDTruncate_8UC1(target[1], reference[1], d, pixelMatchErrorCap, dest);
+			SDTruncate_8UC1(target[3], reference[3], d, pixelMatchErrorCap, temp);
+			add(dest, temp, dest);
+			SDTruncate_8UC1(target[5], reference[5], d, pixelMatchErrorCap, temp);
+			add(dest, temp, dest);
 		}
+		else if (PixelMatchingMethod == Pixel_Matching_SDSobelBlendColor)
+		{
+			Mat temp;
+			SDTruncateBlend_8UC1(target[0], reference[0], target[1], reference[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
+			SDTruncateBlend_8UC1(target[2], reference[2], target[3], reference[3], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, temp);
+			add(dest, temp, dest);
+			SDTruncateBlend_8UC1(target[4], reference[4], target[5], reference[5], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, temp);
+			add(dest, temp, dest);
+		}
+		else if (PixelMatchingMethod == Pixel_Matching_ADColor)
+		{
+			Mat temp;
+			ADTruncate_8UC1(target[0], reference[0], d, pixelMatchErrorCap, dest);
+			ADTruncate_8UC1(target[2], reference[2], d, pixelMatchErrorCap, temp);
+			add(dest, temp, dest);
+			ADTruncate_8UC1(target[4], reference[4], d, pixelMatchErrorCap, temp);
+			add(dest, temp, dest);
+		}
+		else if (PixelMatchingMethod == Pixel_Matching_ADSobelColor)
+		{
+			Mat temp;
+			ADTruncate_8UC1(target[1], reference[1], d, pixelMatchErrorCap, dest);
+			ADTruncate_8UC1(target[3], reference[3], d, pixelMatchErrorCap, temp);
+			add(dest, temp, dest);
+			ADTruncate_8UC1(target[5], reference[5], d, pixelMatchErrorCap, temp);
+			add(dest, temp, dest);
+		}
+		else if (PixelMatchingMethod == Pixel_Matching_ADSobelBlendColor)
+		{
+			Mat temp;
+			ADTruncateBlend_8UC1(target[0], reference[0], target[1], reference[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
+			ADTruncateBlend_8UC1(target[2], reference[2], target[3], reference[3], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, temp);
+			add(dest, temp, dest);
+			ADTruncateBlend_8UC1(target[4], reference[4], target[5], reference[5], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, temp);
+			add(dest, temp, dest);
+		}
+		else if (PixelMatchingMethod == Pixel_Matching_BTColor)
+		{
+			Mat temp;
+			BTTruncate_8UC1(target[0], reference[0], d, pixelMatchErrorCap, dest);
+			BTTruncate_8UC1(target[2], reference[2], d, pixelMatchErrorCap, temp);
+			add(dest, temp, dest);
+			BTTruncate_8UC1(target[4], reference[4], d, pixelMatchErrorCap, temp);
+			add(dest, temp, dest);
+		}
+		else if (PixelMatchingMethod == Pixel_Matching_BTSobelColor)
+		{
+			Mat temp;
+			BTTruncate_8UC1(target[1], reference[1], d, pixelMatchErrorCap, dest);
+			BTTruncate_8UC1(target[3], reference[3], d, pixelMatchErrorCap, temp);
+			add(dest, temp, dest);
+			BTTruncate_8UC1(target[5], reference[5], d, pixelMatchErrorCap, temp);
+			add(dest, temp, dest);
+		}
+		else if (PixelMatchingMethod == Pixel_Matching_BTSobelBlendColor)
+		{
+			Mat temp;
+			BTTruncateBlend_8UC1(target[0], reference[0], target[1], reference[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
+			BTTruncateBlend_8UC1(target[2], reference[2], target[3], reference[3], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, temp);
+			add(dest, temp, dest);
+			BTTruncateBlend_8UC1(target[4], reference[4], target[5], reference[5], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, temp);
+			add(dest, temp, dest);
+		}
+		else if (PixelMatchingMethod == Pixel_Matching_BTFullColor)
+		{
+			Mat temp;
+			BTFullTruncate_8UC1(target[0], reference[0], d, pixelMatchErrorCap, dest);
+			BTFullTruncate_8UC1(target[2], reference[2], d, pixelMatchErrorCap, temp);
+			add(dest, temp, dest);
+			BTFullTruncate_8UC1(target[4], reference[4], d, pixelMatchErrorCap, temp);
+			add(dest, temp, dest);
+		}
+		else if (PixelMatchingMethod == Pixel_Matching_BTFullSobelColor)
+		{
+			Mat temp;
+			BTFullTruncate_8UC1(target[1], reference[1], d, pixelMatchErrorCap, dest);
+			BTFullTruncate_8UC1(target[3], reference[3], d, pixelMatchErrorCap, temp);
+			add(dest, temp, dest);
+			BTFullTruncate_8UC1(target[5], reference[5], d, pixelMatchErrorCap, temp);
+			add(dest, temp, dest);
+		}
+		else if (PixelMatchingMethod == Pixel_Matching_BTFullSobelBlendColor)
+		{
+			Mat temp;
+			BTFullTruncateBlend_8UC1(target[0], reference[0], target[1], reference[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
+			BTFullTruncateBlend_8UC1(target[2], reference[2], target[3], reference[3], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, temp);
+			add(dest, temp, dest);
+			BTFullTruncateBlend_8UC1(target[4], reference[4], target[5], reference[5], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, temp);
+			add(dest, temp, dest);
+		}
+		else if (PixelMatchingMethod == Pixel_Matching_CENSUS3x3Color || PixelMatchingMethod == Pixel_Matching_CENSUS9x1Color)
+		{
+			Mat temp;
+			HammingDistance32S_8UC1<uchar>(target[1], reference[1], d, dest);
+			HammingDistance32S_8UC1<uchar>(target[3], reference[3], d, temp);
+			add(dest, temp, dest);
+			HammingDistance32S_8UC1<uchar>(target[5], reference[5], d, temp);
+			add(dest, temp, dest);
+		}
+		else if (PixelMatchingMethod == Pixel_Matching_CENSUS5x5Color || PixelMatchingMethod == Pixel_Matching_CENSUS7x5Color)
+		{
+			Mat temp;
+			HammingDistance32S_8UC1<int>(target[1], reference[1], d, dest);
+			HammingDistance32S_8UC1<int>(target[3], reference[3], d, temp);
+			add(dest, temp, dest);
+			HammingDistance32S_8UC1<int>(target[5], reference[5], d, temp);
+			add(dest, temp, dest);
+		}
+
 		/*else if (PixelMatchingMethod == Pixel_Matching_SAD_TextureBlend)
 		{
 			Mat alpha;
@@ -1661,14 +1801,22 @@ namespace cp
 		}
 	}
 
-	void StereoBase::addCostIterativeFeedback(cv::Mat& cost, const int current_disparity, const cv::Mat& disparity, const int functionType, const int clip)
+	inline float distance_functionL1(float diff, float clip)
+	{
+		return min(abs(diff), clip);
+	}
+	inline float distance_functionL2(float diff, float clip)
+	{
+		return min(diff * diff, clip * clip);
+	}
+	void StereoBase::addCostIterativeFeedback(cv::Mat& cost, const int current_disparity, const cv::Mat& disparity, const int functionType, const int clip, float amp)
 	{
 		CV_Assert(disparity.depth() == CV_16S);
 		const short* dptr = disparity.ptr<short>();
 		uchar* cptr = cost.ptr<uchar>();
 		for (int i = 0; i < cost.size().area(); i++)
 		{
-			cptr[i] = saturate_cast<uchar>(cptr[i] + min(abs(current_disparity - dptr[i] / 16.0), (double)clip));
+			cptr[i] = saturate_cast<uchar>(cptr[i] + amp * distance_functionL1((float)current_disparity - dptr[i] / 16.f, (float)clip));
 		}
 	}
 
@@ -2278,7 +2426,7 @@ namespace cp
 		}
 	}
 
-	template <class T>
+	template <class srcType>
 	void singleDisparityLRCheck_(Mat& dest, double amp, int thresh, int minDisparity, int numberOfDisparities)
 	{
 		const int imsize = dest.size().area();
@@ -2286,22 +2434,22 @@ namespace cp
 		Mat disp8(dest.size(), dest.type());
 
 
-		T* dddd = dest.ptr<T>(0);
-		T* d8 = disp8.ptr<T>(0);
+		srcType* dddd = dest.ptr<srcType>(0);
+		srcType* d8 = disp8.ptr<srcType>(0);
 
 		const double div = 1.0 / amp;
 		if (amp != 1.0)
 		{
 			for (int i = 0; i < dest.size().area(); i++)
 			{
-				d8[i] = (T)(dddd[i] * div + 0.5);
+				d8[i] = (srcType)(dddd[i] * div + 0.5);
 			}
 		}
 		else
 			dest.copyTo(disp8);
 
-		T* disp = disp8.ptr<T>(0);
-		T* dispr = dispR.ptr<T>(0);
+		srcType* disp = disp8.ptr<srcType>(0);
+		srcType* dispr = dispR.ptr<srcType>(0);
 
 
 		disp += minDisparity + numberOfDisparities;
@@ -2339,11 +2487,11 @@ namespace cp
 
 	}
 
-	template <class T>
+	template <class srcType>
 	void correctDisparityBoundary(Mat& src, Mat& refimg, const int r, Mat& dest)
 	{
 
-		T invalidvalue = 0;
+		srcType invalidvalue = 0;
 		Mat sobel;
 		Mat ref;
 		if (refimg.channels() == 3)cvtColor(refimg, ref, COLOR_BGR2GRAY);
@@ -2357,7 +2505,7 @@ namespace cp
 		int bb = 0;
 		const int MAX_LENGTH = (int)(src.cols * 1.0);
 
-		T* s = src.ptr<T>(0);
+		srcType* s = src.ptr<srcType>(0);
 		const int step = src.cols;
 		short* sbl = sobel.ptr<short>(0);
 		Mat sobel2;
@@ -2387,8 +2535,8 @@ namespace cp
 							if (t > src.cols - 2)break;
 						} while (s[t] <= invalidvalue);
 
-						T maxd;
-						T mind;
+						srcType maxd;
+						srcType mind;
 						if (s[i - 1] < s[t])
 						{
 							mind = s[i - 1];
@@ -2476,11 +2624,11 @@ namespace cp
 		}
 	}
 
-	template <class T>
+	template <class srcType>
 	void correctDisparityBoundary_(Mat& src, Mat& refimg, const int r, Mat& dest)
 	{
 
-		T invalidvalue = 0;
+		srcType invalidvalue = 0;
 		Mat sobel;
 		Mat ref;
 		if (refimg.channels() == 3)cvtColor(refimg, ref, COLOR_BGR2GRAY);
@@ -2494,7 +2642,7 @@ namespace cp
 		int bb = 0;
 		const int MAX_LENGTH = (int)(src.cols * 1.0);
 
-		T* s = src.ptr<T>(0);
+		srcType* s = src.ptr<srcType>(0);
 		const int step = src.cols;
 		short* sbl = sobel.ptr<short>(0);
 		Mat sobel2;
@@ -2524,8 +2672,8 @@ namespace cp
 							if (t > src.cols - 2)break;
 						} while (s[t] <= invalidvalue);
 
-						T maxd;
-						T mind;
+						srcType maxd;
+						srcType mind;
 						if (s[i - 1] < s[t])
 						{
 							mind = s[i - 1];
@@ -2642,13 +2790,13 @@ namespace cp
 
 	}
 
-	template <class T>
-	static void fillOcclusionBox_(Mat& src, const T invalidvalue, const T maxval)
+	template <class srcType>
+	static void fillOcclusionBox_(Mat& src, const srcType invalidvalue, const srcType maxval)
 	{
 		int bb = 0;
 		const int MAX_LENGTH = (int)(src.cols * 1.0 - 5);
 
-		T* s = src.ptr<T>(0);
+		srcType* s = src.ptr<srcType>(0);
 		const int step = src.cols;
 		Mat testim = Mat::zeros(src.size(), CV_8U); const int lineth = 30;
 		for (int j = bb; j < src.rows - bb; j++)
@@ -2676,7 +2824,7 @@ namespace cp
 
 						if (t - i > lineth)line(testim, Point(i, j), Point(t, j), 255);
 
-						T dd;
+						srcType dd;
 						//if(s[i-1]<=invalidvalue)dd=s[t];
 						//else if(s[t]<=invalidvalue)dd=s[i-1];
 						//else dd = min(s[i-1],s[t]);
@@ -2684,7 +2832,7 @@ namespace cp
 						if (t - i > MAX_LENGTH)
 						{
 							//for(int n=0;n<src.cols;n++)s[n]=invalidvalue;
-							memcpy(s, s - step, step * sizeof(T));
+							memcpy(s, s - step, step * sizeof(srcType));
 						}
 						else
 						{
@@ -2737,9 +2885,8 @@ namespace cp
 			{
 				const int d = minDisparity + i;
 				getPixelMatchingCost(d, DSI[i]);
-				if (isFeedback)addCostIterativeFeedback(DSI[i], d, destDisparityMap, 0, 2);
+				if (isFeedback)addCostIterativeFeedback(DSI[i], d, destDisparityMap, 0, 2, 1.f);
 				getCostAggregation(DSI[i], DSI[i], guideImage);
-
 			}
 		}
 		else
@@ -2865,7 +3012,7 @@ namespace cp
 
 	void StereoBase::gui(Mat& leftim, Mat& rightim, Mat& destDisparity, StereoEval& eval)
 	{
-		ConsoleImage ci(Size(640, 580));
+		ConsoleImage ci(Size(640, 680));
 		//ci.setFontSize(12);
 		string wname = "";
 		string wname2 = "Disparity Map";
@@ -2873,8 +3020,8 @@ namespace cp
 		namedWindow(wname2);
 		moveWindow(wname2, 200, 200);
 		int display_image_depth_alpha = 0; createTrackbar("disp-image: alpha", wname, &display_image_depth_alpha, 100);
-		PixelMatchingMethod = Pixel_Matching_ADSobelBlend;
-		//PixelMatchingMethod = Pixel_Matching_CENSUS3x3;
+		PixelMatchingMethod = Pixel_Matching_SDSobelBlend;
+		//PixelMatchingMethod = Pixel_Matching_CENSUS5x5;
 		createTrackbar("pix match method", wname, &PixelMatchingMethod, Pixel_Matching_Method_Size - 1);
 		//pre filter
 		createTrackbar("pcap", wname, &preFilterCap, 255);
@@ -2989,7 +3136,7 @@ namespace cp
 		bool isShowDiffFillOcclution = false;
 
 		Mat dispOutput;
-		bool feedback = true;
+		bool isFeedback = false;
 		destDisparity.setTo(0);
 		while (key != 'q')
 		{
@@ -3002,11 +3149,14 @@ namespace cp
 			ci(getAggregationMethodName(AggregationMethod) + ": (@-[)");
 			ci(getSubpixelInterpolationMethodName(subpixelInterpolationMethod) + ":  (p)");
 			ci(getOcclusionMethodName(occlusionMethod) + ": (o)");
+			if(isFeedback) ci(CV_RGB(0, 255, 0), "feedback true (f)");
+			else  ci(CV_RGB(255, 0, 0), "feedback false (f)");
+
 			ci("=======================");
 			//body
 			{
 				Timer t("BM", 0, false);
-				matching(leftim, rightim, destDisparity, feedback);
+				matching(leftim, rightim, destDisparity, isFeedback);
 				ci("Total time: %f ms", t.getTime());
 			}
 
@@ -3521,7 +3671,7 @@ namespace cp
 			if (key == '9') isRefinement = (isRefinement) ? false : true;
 
 			if (key == 'a')	isReCost = (isReCost) ? false : true;
-
+			if (key == 'f') isFeedback = isFeedback ? false: true;
 			if (key == 'g')isGrid = (isGrid) ? false : true;
 			if (key == 'c') guiAlphaBlend(dispOutput, leftim);
 			if (key == 'i') { PixelMatchingMethod++; PixelMatchingMethod = (PixelMatchingMethod > Pixel_Matching_Method_Size - 1) ? 0 : PixelMatchingMethod; }
