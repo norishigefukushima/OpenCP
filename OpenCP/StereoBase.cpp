@@ -6,6 +6,7 @@
 #include "guidedFilter.hpp"
 #include "jointBilateralFilter.hpp"
 #include "binalyWeightedRangeFilter.hpp"
+#include "jointNearestFilter.hpp"
 #include "minmaxfilter.hpp"
 #include "plot.hpp"
 #include "timer.hpp"
@@ -1713,7 +1714,7 @@ namespace cp
 			{
 				//guidedImageFilter(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps * aggregationGuidedfilterEps,GuidedTypes::GUIDED_SEP_VHI, BoxTypes::BOX_OPENCV, ParallelTypes::NAIVE);
 				//guidedImageFilter(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps * aggregationGuidedfilterEps, GuidedTypes::GUIDED_SEP_VHI_SHARE, BoxTypes::BOX_OPENCV, ParallelTypes::NAIVE);
-				gif[omp_get_thread_num()].filterGuidePrecomputed(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps * aggregationGuidedfilterEps, GuidedTypes::GUIDED_SEP_VHI_SHARE, ParallelTypes::NAIVE);
+				gif[omp_get_thread_num()].filterGuidePrecomputed(src, guide, dest, min(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps * aggregationGuidedfilterEps, GuidedTypes::GUIDED_SEP_VHI_SHARE, ParallelTypes::NAIVE);
 				//guidedImageFilter(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps * aggregationGuidedfilterEps, GuidedTypes::GUIDED_SEP_VHI_SHARE, BoxTypes::BOX_OPENCV, ParallelTypes::OMP);
 			}
 			else if (AggregationMethod == Aggregation_CrossBasedBox)
@@ -1722,7 +1723,7 @@ namespace cp
 			}
 			else if (AggregationMethod == Aggregation_Bilateral)
 			{
-				jointBilateralFilter(src, guide, dest, max(2 * aggregationRadiusH + 1, 2 * aggregationRadiusV + 1), aggregationGuidedfilterEps, sigma_s_h, FILTER_RECTANGLE);
+				jointBilateralFilter(src, guide, dest, min(2 * aggregationRadiusH + 1, 2 * aggregationRadiusV + 1), aggregationGuidedfilterEps, sigma_s_h, FILTER_RECTANGLE);
 			}
 		}
 		else
@@ -2876,7 +2877,7 @@ namespace cp
 		createTrackbar("agg method", wname, &AggregationMethod, Aggregation_Method_Size - 1);
 		createTrackbar("agg r width", wname, &aggregationRadiusH, 20);
 		createTrackbar("agg r height", wname, &aggregationRadiusV, 20);
-		int aggeps = 100; createTrackbar("agg guide color sigma/eps", wname, &aggeps, 255);
+		int aggeps = 1; createTrackbar("agg guide color sigma/eps", wname, &aggeps, 255);
 		int aggss = 100; createTrackbar("agg guide space sigma", wname, &aggss, 255);
 
 		createTrackbar("P1", wname, &P1, 20);
@@ -2897,7 +2898,7 @@ namespace cp
 		speckleRange = 16;
 		createTrackbar("speckleDiff", wname, &speckleRange, 100);
 
-		int occlusionMethod = 0;
+		int occlusionMethod = 1;
 		createTrackbar("occlusionMethod", wname, &occlusionMethod, 3);
 
 		int occsearch2 = 4;
@@ -3184,7 +3185,14 @@ namespace cp
 				if (isGuided)
 				{
 					Timer t("guided");
-					crossBasedAdaptiveBoxFilter(destDisparity, leftim, destDisparity, Size(2 * gr + 1, 2 * gr + 1), ge);
+					//crossBasedAdaptiveBoxFilter(destDisparity, leftim, destDisparity, Size(2 * gr + 1, 2 * gr + 1), ge);
+					Mat temp;
+					guidedImageFilter(destDisparity, leftim, temp, 4, 1, GUIDED_SEP_VHI);
+					jointNearestFilter(temp, destDisparity, Size(5, 5), destDisparity);
+					//guidedImageFilter(destDisparity, leftim, temp, 4, 1, GUIDED_SEP_VHI);
+					//jointNearestFilter(temp, destDisparity, Size(3, 3), destDisparity);
+					
+
 					ci("cross: %f", t.getTime());
 					/*Mat base = dest.clone();
 					Mat gfil = dest.clone();
