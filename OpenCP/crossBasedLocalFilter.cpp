@@ -8,7 +8,7 @@ namespace cp
 {
 
 	template <class srcType>
-	void orthogonalIntegralImageFilterF(Mat& src, Mat& dest, CrossBasedLocalFilter::cross* crossdata)
+	void orthogonalIntegralImageFilterFloat(Mat& src, Mat& dest, CrossBasedLocalFilter::cross* crossdata)
 	{
 		srcType* s = src.ptr<srcType>(0);
 		srcType* d = dest.ptr<srcType>(0);
@@ -130,7 +130,7 @@ namespace cp
 	}
 
 	template <class srcType>
-	void orthogonalIntegralImageFilterF(Mat& src, Mat& weight, Mat& dest, CrossBasedLocalFilter::cross* crossdata)
+	void orthogonalIntegralImageFilterFloat(Mat& src, Mat& weight, Mat& dest, CrossBasedLocalFilter::cross* crossdata)
 	{
 		srcType* s = src.ptr<srcType>(0);
 		srcType* w = weight.ptr<srcType>(0);
@@ -279,12 +279,12 @@ namespace cp
 	}
 
 	template <class srcType>
-	void orthogonalIntegralImageFilterI(Mat& src, Mat& dest, CrossBasedLocalFilter::cross* crossdata)
+	void orthogonalIntegralImageFilterInteger(Mat& src, Mat& dest, CrossBasedLocalFilter::cross* crossdata)
 	{
-		srcType* s = src.ptr<srcType>(0);
-		srcType* d = dest.ptr<srcType>(0);
-		Mat vfilter = Mat::zeros(src.size(), CV_MAKE_TYPE(CV_32F, src.channels()));
-		float* v1 = vfilter.ptr<float>(0);
+		srcType* s = src.ptr<srcType>();
+		srcType* d = dest.ptr<srcType>();
+		Mat vfilter(src.size(), CV_MAKE_TYPE(CV_32F, src.channels()));//for keep floating values in horizontal filtering
+		float* v1 = vfilter.ptr<float>();
 		CrossBasedLocalFilter::cross* cd = crossdata;
 
 		float* integral;
@@ -313,8 +313,8 @@ namespace cp
 				}
 			}
 			//v
-			float* vs = vfilter.ptr<float>(0);
-			srcType* ds = dest.ptr<srcType>(0);
+			float* vs = vfilter.ptr<float>();
+			srcType* ds = dest.ptr<srcType>();
 			for (i = src.cols; i--;)
 			{
 				v1 = vs;
@@ -331,7 +331,7 @@ namespace cp
 				IH = integral;
 				for (j = src.rows; j--;)
 				{
-					*dd = (srcType)((IH[1 + cd->vp] - IH[-cd->vm]) * cd->divv + 0.5f);
+					*dd = saturate_cast<srcType>((IH[1 + cd->vp] - IH[-cd->vm]) * cd->divv);
 					IH++, dd += step, cd += dest.cols;
 				}
 				ds++;
@@ -404,7 +404,7 @@ namespace cp
 	}
 
 	template <class srcType>
-	void orthogonalIntegralImageFilterI(Mat& src, Mat& weight, Mat& dest, CrossBasedLocalFilter::cross* cd)
+	void orthogonalIntegralImageFilterInteger(Mat& src, Mat& weight, Mat& dest, CrossBasedLocalFilter::cross* cd)
 	{
 		srcType* s = src.ptr<srcType>(0);
 		srcType* w = weight.ptr<srcType>(0);
@@ -3959,30 +3959,34 @@ namespace cp
 	void CrossBasedLocalFilter::operator()(Mat& src, Mat& dest)
 	{
 		const int cn = src.channels();
-		if (dest.empty())dest.create(src.size(), src.type());
+		dest.create(src.size(), src.type());
 		if (src.channels() != dest.channels())dest.create(src.size(), src.type());
 		Mat src_ = src;
 		if (src.data == dest.data)src_ = src.clone();
 
-		if (src.type() == CV_MAKETYPE(CV_8U, cn))
+		if (src.depth() == CV_8U)
 		{
-			orthogonalIntegralImageFilterI<uchar>(src_, dest, crossdata);
+			orthogonalIntegralImageFilterInteger<uchar>(src_, dest, crossdata);
 		}
-		else if (src.type() == CV_MAKETYPE(CV_16S, cn))
+		else if (src.depth() == CV_16S)
 		{
-			orthogonalIntegralImageFilterI<short>(src_, dest, crossdata);
+			orthogonalIntegralImageFilterInteger<short>(src_, dest, crossdata);
 		}
-		else if (src.type() == CV_MAKETYPE(CV_16U, cn))
+		else if (src.depth() == CV_16U)
 		{
-			orthogonalIntegralImageFilterI<unsigned short>(src_, dest, crossdata);
+			orthogonalIntegralImageFilterInteger<ushort>(src_, dest, crossdata);
 		}
-		else if (src.type() == CV_MAKETYPE(CV_32F, cn))
+		else if (src.depth() == CV_32S)
 		{
-			orthogonalIntegralImageFilterF<float>(src_, dest, crossdata);
+			orthogonalIntegralImageFilterInteger<int>(src_, dest, crossdata);
 		}
-		else if (src.type() == CV_MAKETYPE(CV_64F, cn))
+		else if (src.depth() == CV_32F)
 		{
-			orthogonalIntegralImageFilterF<double>(src_, dest, crossdata);
+			orthogonalIntegralImageFilterFloat<float>(src_, dest, crossdata);
+		}
+		else if (src.depth() == CV_64F)
+		{
+			orthogonalIntegralImageFilterFloat<double>(src_, dest, crossdata);
 		}
 	}
 
@@ -3995,35 +3999,41 @@ namespace cp
 		Mat weight_;
 		if (src.data == dest.data)src_ = src.clone();
 
-		if (src.type() == CV_MAKETYPE(CV_8U, cn))
+		if (src.depth() == CV_8U)
 		{
-			if (weight.type() == CV_8U)weight_ = weight;
+			if (weight.depth() == CV_8U)weight_ = weight;
 			else weight.convertTo(weight_, CV_8U);
-			orthogonalIntegralImageFilterI<uchar>(src_, weight, dest, crossdata);
+			orthogonalIntegralImageFilterInteger<uchar>(src_, weight, dest, crossdata);
 		}
-		else if (src.type() == CV_MAKETYPE(CV_16S, cn))
+		else if (src.depth() == CV_16S)
 		{
-			if (weight.type() == CV_16S)weight_ = weight;
+			if (weight.depth() == CV_16S)weight_ = weight;
 			else weight.convertTo(weight_, CV_16S);
-			orthogonalIntegralImageFilterI<short>(src_, weight, dest, crossdata);
+			orthogonalIntegralImageFilterInteger<short>(src_, weight, dest, crossdata);
 		}
-		else if (src.type() == CV_MAKETYPE(CV_16U, cn))
+		else if (src.depth() == CV_16U)
 		{
-			if (weight.type() == CV_16U)weight_ = weight;
+			if (weight.depth() == CV_16U)weight_ = weight;
 			else weight.convertTo(weight_, CV_16U);
-			orthogonalIntegralImageFilterI<unsigned short>(src_, weight, dest, crossdata);
+			orthogonalIntegralImageFilterInteger<ushort>(src_, weight, dest, crossdata);
 		}
-		else if (src.type() == CV_MAKETYPE(CV_32F, cn))
+		else if (src.depth() == CV_32S)
 		{
-			if (weight.type() == CV_32F)weight_ = weight;
+			if (weight.depth() == CV_32S)weight_ = weight;
+			else weight.convertTo(weight_, CV_32S);
+			orthogonalIntegralImageFilterInteger<int>(src_, weight, dest, crossdata);
+		}
+		else if (src.depth() == CV_32F)
+		{
+			if (weight.depth() == CV_32F)weight_ = weight;
 			else weight.convertTo(weight_, CV_32F);
-			orthogonalIntegralImageFilterF<float>(src_, weight, dest, crossdata);
+			orthogonalIntegralImageFilterFloat<float>(src_, weight, dest, crossdata);
 		}
-		else if (src.type() == CV_MAKETYPE(CV_64F, cn))
+		else if (src.depth() == CV_64F)
 		{
-			if (weight.type() == CV_64F)weight_ = weight;
+			if (weight.depth() == CV_64F)weight_ = weight;
 			else weight.convertTo(weight_, CV_64F);
-			orthogonalIntegralImageFilterF<double>(src_, weight, dest, crossdata);
+			orthogonalIntegralImageFilterFloat<double>(src_, weight, dest, crossdata);
 		}
 	}
 
@@ -4248,7 +4258,6 @@ namespace cp
 					cbabf.makeKernel(gray, r, thresh, 1);
 					cbabf(gray, dest);
 				}
-
 			}
 			else
 			{
