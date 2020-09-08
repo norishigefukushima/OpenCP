@@ -1240,9 +1240,15 @@ inline __m256d _mm256_loadu_auto(const double* src)
 	return _mm256_loadu_pd(src);
 }
 
+
 inline void _mm256_store_auto(uchar* dest, __m256 src)
 {
 	_mm256_store_cvtps_epu8((__m128i*)dest, src);
+}
+
+inline void _mm256_store_auto(float* dest, __m256 src)
+{
+	_mm256_store_ps(dest, src);
 }
 
 inline void _mm256_storeu_auto(uchar* dest, __m256 src)
@@ -1250,15 +1256,17 @@ inline void _mm256_storeu_auto(uchar* dest, __m256 src)
 	_mm256_store_cvtps_epu8((__m128i*)dest, src);
 }
 
+inline void _mm256_storeu_auto(float* dest, __m256 src)
+{
+	_mm256_storeu_ps(dest, src);
+}
+
 inline void _mm256_storeu_auto(double* dest, __m256d src)
 {
 	_mm256_storeu_pd(dest, src);
 }
 
-inline void _mm256_storeu_auto(float* dest, __m256 src)
-{
-	_mm256_storeu_ps(dest, src);
-}
+
 
 
 inline __m256i _mm256_alphablend_epu8(__m256i a, __m256i b, __m256i ma)
