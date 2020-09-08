@@ -4270,17 +4270,6 @@ namespace cp
 			crossBasedAdaptiveBoxFilter(gray, src, dest2, Size(2 * r + 1, 2 * r + 1), thresh);
 			if (!isColor) guiAlphaBlend(dest, dest2);
 			imshow("2", dest2);
-			/*{
-			CalcTime t("single");
-
-			}*/
-
-			/*psf.setTo(0);
-			psf.at<short>(y,x)=SHRT_MAX;
-			crossBasedAdaptiveBoxFilter(psf,src,psf,Size(2*r+1,2*rh+1),thresh);
-			threshold(psf,psf,1,255,cv::THRESH_BINARY);
-
-			psf.convertTo(kernel,CV_8U);*/
 
 			if (isColor)
 				alphaBlend(show, src, alpha / 100.0, show);
@@ -4301,5 +4290,8 @@ namespace cp
 			if (key == 'c')isColor = (isColor) ? false : true;
 			if (key == 'w')isWeight = (isWeight) ? false : true;
 		}
+		destroyWindow(wname);
+		destroyWindow("filtered");
+		destroyWindow("2");
 	}
 }
