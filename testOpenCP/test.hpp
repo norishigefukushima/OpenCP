@@ -66,8 +66,8 @@ void guiSeparableNLMTest(cv::Mat& src);
 void guiIterativeBackProjectionTest(cv::Mat& src);
 
 //stereo
-void testCVStereoBM(cv::Mat& leftim, cv::Mat& rightim, const int numDisparities, const int disparity_min);
-void testCVStereoSGBM(cv::Mat& leftim, cv::Mat& rightim, const int numDisparities, const int disparity_min);
+void testCVStereoBM();
+void testCVStereoSGBM();
 void testStereoBase();
 
 //for application

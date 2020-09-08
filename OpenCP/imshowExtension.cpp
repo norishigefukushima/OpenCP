@@ -9,7 +9,7 @@ namespace cp
 	void imshowNormalize(string wname, InputArray src, const int norm_type)
 	{
 		Mat show;
-		normalize(src.getMat(), show, 255, 0, norm_type, CV_8U);
+		normalize(src, show, 255, 0, norm_type, CV_8U);
 		imshow(wname, show);
 	}
 
@@ -35,6 +35,7 @@ namespace cp
 		}
 		imshow(name, show);
 	}
+
 	void imshowCountDown(string wname, InputArray src, const int waitTime, Scalar color, const int pointSize, std::string fontName)
 	{
 		Mat s;

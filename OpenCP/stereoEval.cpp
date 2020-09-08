@@ -55,38 +55,29 @@ namespace cp
 		return ((double)c2 / count) * 100.0;
 	}
 
-	double calcBadPixel(InputArray groundtruth_, InputArray disparityImage_, InputArray mask_, double th, double amp, OutputArray outErr)
+	template<typename T>
+	double calcBadPixel_(Mat& groundtruth, Mat& disparityImage, Mat& mask, const double th, const double amp, Mat& dstErr)
 	{
-		Mat groundtruth = groundtruth_.getMat();
-		Mat disparityImage = disparityImage_.getMat();
-		Mat mask = mask_.getMat();
-
-		if (outErr.empty() || outErr.size() != groundtruth_.size() || outErr.type() != CV_8U)
-			outErr.create(groundtruth.rows, groundtruth.cols, groundtruth.type());
-
-		Mat dsterr = outErr.getMat();
-		dsterr.setTo(0);
+		dstErr.setTo(0);
 
 		if (mask.empty())mask = Mat::ones(groundtruth.size(), CV_8U);
-		th *= amp;
+		double thresh = th * amp;
 		int count = 0;
 		int c2 = 0;
 
 		for (int j = 0; j < disparityImage.rows; j++)
 		{
-			const uchar* src = disparityImage.ptr<uchar>(j);
-			const uchar* dest = groundtruth.ptr<uchar>(j);
+			const T* src = disparityImage.ptr<T>(j);
+			const T* dest = groundtruth.ptr<T>(j);
 			const uchar* mk = mask.ptr<uchar>(j);
 			for (int i = 0; i < disparityImage.cols; i++)
 			{
 				if (mk[i] != 0)
 				{
-					int s = src[i];
-					int d = dest[i];
-					int diff = s - d;
-					if (abs(diff) > th)
+					T diff = abs(src[i] - dest[i]);
+					if (diff > thresh)
 					{
-						dsterr.at<uchar>(j, i) = 255;//abs(diff);
+						dstErr.at<uchar>(j, i) = 255;
 						c2++;
 					}
 					count++;
@@ -94,6 +85,37 @@ namespace cp
 			}
 		}
 		return ((double)c2 / count) * 100.0;
+	}
+
+	double calcBadPixel(InputArray groundtruth_, InputArray disparityImage_, InputArray mask_, double th, double amp, OutputArray outErr)
+	{
+		CV_Assert(groundtruth_.depth() == disparityImage_.depth());
+		CV_Assert(groundtruth_.depth() == CV_8U ||
+			groundtruth_.depth() == CV_16U ||
+			groundtruth_.depth() == CV_16S ||
+			groundtruth_.depth() == CV_32S ||
+			groundtruth_.depth() == CV_32F);
+		if (outErr.empty() || outErr.size() != groundtruth_.size() || outErr.type() != CV_8U)
+			outErr.create(groundtruth_.size(), groundtruth_.type());
+
+		Mat groundtruth = groundtruth_.getMat();
+		Mat disparityImage = disparityImage_.getMat();
+		Mat mask = mask_.getMat();
+		Mat dsterr = outErr.getMat();
+
+		double ret = 0.0;
+		if (groundtruth.depth() == CV_8U)
+			ret = calcBadPixel_<uchar>(groundtruth, disparityImage, mask, th, amp, dsterr);
+		else if (groundtruth.depth() == CV_16S)
+			ret = calcBadPixel_<short>(groundtruth, disparityImage, mask, th, amp, dsterr);
+		else if (groundtruth.depth() == CV_16U)
+			ret = calcBadPixel_<ushort>(groundtruth, disparityImage, mask, th, amp, dsterr);
+		else if (groundtruth.depth() == CV_32S)
+			ret = calcBadPixel_<int>(groundtruth, disparityImage, mask, th, amp, dsterr);
+		else if (groundtruth.depth() == CV_32F)
+			ret = calcBadPixel_<float>(groundtruth, disparityImage, mask, th, amp, dsterr);
+
+		return ret;
 	}
 
 	StereoEval::StereoEval(std::string groundtruthPath, std::string maskNonoccPath, std::string maskAllPath, std::string maskDiscPath, double amp_)
@@ -131,9 +153,10 @@ namespace cp
 		CV_Assert(!ground_truth.empty());
 		this->ground_truth = ground_truth;
 		this->amp = amp;
-		
+
 		createDisparityALLMask(ground_truth, mask_all);
 		createDisparityNonOcclusionMask(ground_truth, amp, 1, mask_nonocc);
+		skip_disc = true;
 		mask_disc = Mat::zeros(ground_truth.size(), ground_truth.type());//under construction
 		if (ignoreLeftBoundary > 0)
 		{
@@ -148,6 +171,7 @@ namespace cp
 
 	void StereoEval::init(Mat& ground_truth_, Mat& mask_nonocc_, Mat& mask_all_, Mat& mask_disc_, double amp_)
 	{
+		CV_Assert(ground_truth_.channels() == 1);
 		ground_truth = ground_truth_;
 		mask_all = mask_all_;
 		mask_nonocc = mask_nonocc_;
@@ -171,77 +195,53 @@ namespace cp
 		init(ground_truth, amp, ignoreLeftBoundary);
 	}
 
-	void  StereoEval::getBadPixel(Mat& src, double threshold, bool isPrint)
+	string StereoEval::getBadPixel(Mat& src, double threshold, bool isPrint)
 	{
+		Mat gtf;
+		ground_truth.convertTo(gtf, CV_32S);
 		all_th.setTo(0);
 		nonocc_th.setTo(0);
 		disc_th.setTo(0);
-		all = calcBadPixel(ground_truth, src, mask_all, threshold, amp, all_th);
-		nonocc = calcBadPixel(ground_truth, src, mask_nonocc, threshold, amp, nonocc_th);
-		disc = calcBadPixel(ground_truth, src, mask_disc, threshold, amp, disc_th);
+		all = calcBadPixel(gtf, src, mask_all, threshold, amp, all_th);
+		nonocc = calcBadPixel(gtf, src, mask_nonocc, threshold, amp, nonocc_th);
+		if (skip_disc) disc = 0.0;
+		else disc = calcBadPixel(gtf, src, mask_disc, threshold, amp, disc_th);
 
 		message = format("nonocc,all,disc: %2.2f, %2.2f, %2.2f", nonocc, all, disc);
 		if (isPrint)
 		{
 			cout << message << endl;
 		}
+		return message;
 	}
 
-	void  StereoEval::getMSE(Mat& src, bool isPrint)
+	string StereoEval::getMSE(Mat& src, bool isPrint, int disparity_scale)
 	{
 		all_th.setTo(0);
 		nonocc_th.setTo(0);
 		disc_th.setTo(0);
 
-		allMSE = cp::getMSE(ground_truth, src, mask_all);
-		nonoccMSE = cp::getMSE(ground_truth, src, mask_nonocc);
-		discMSE = cp::getMSE(ground_truth, src, mask_disc);
+		Mat gtf; ground_truth.convertTo(gtf, CV_32F, 1.0 / amp);
+		Mat srcf; src.convertTo(srcf, CV_32F, 1.0 / disparity_scale);
+		allMSE = cp::getMSE(gtf, srcf, mask_all);
+		nonoccMSE = cp::getMSE(gtf, srcf, mask_nonocc);
+		if (skip_disc) discMSE = 0.0;
+		else discMSE = cp::getMSE(gtf, srcf, mask_disc);
 
 		message = format("nonocc,all,disc: %2.2f, %2.2f, %2.2f", nonoccMSE, allMSE, discMSE);
 		if (isPrint)
 		{
 			cout << message << endl;
 		}
+		return message;
 	}
 
-	void StereoEval::operator() (InputArray src_, double threshold, bool isPrint, int disparity_scale)
+	string StereoEval::operator() (InputArray src_, double threshold, bool isPrint, int input_disparity_scale)
 	{
 		Mat src = src_.getMat();
-		if (disparity_scale == 1)
-		{
-			getBadPixel(src, threshold, isPrint);
-		}
-		else
-		{
-			Mat cnv(src.size(), CV_8U);
-			const double div = amp / (double)disparity_scale;
-			uchar* dest = cnv.data;
-			if (src.type() == CV_16S)
-			{
-				short* data = src.ptr<short>(0);
-				for (int i = 0; i < src.size().area(); i++)
-				{
-					dest[i] = (uchar)(data[i] * div + 0.5);
-				}
-			}
-			else if (src.type() == CV_8U)
-			{
-				uchar* data = src.ptr<uchar>(0);
-				for (int i = 0; i < src.size().area(); i++)
-				{
-					dest[i] = (uchar)(data[i] * div + 0.5);
-				}
-			}
-			else if (src.type() == CV_32F)
-			{
-				float* data = src.ptr<float>(0);
-				for (int i = 0; i < src.size().area(); i++)
-				{
-					dest[i] = (uchar)(data[i] * div + 0.5);
-				}
-			}
-			getBadPixel(cnv, threshold, isPrint);
-		}
+		Mat cnv;
+		src.convertTo(cnv, CV_32S, amp / input_disparity_scale);
+		return getBadPixel(cnv, threshold, isPrint);
 	}
 
 	void StereoEval::compare(Mat& before, Mat& after, double threshold, bool isPrint)
@@ -269,7 +269,6 @@ namespace cp
 		state_nonocc.setTo(Scalar(255, 0, 0), v);
 		split(state_nonocc, sa);
 		{
-
 			int tcount = countNonZero(mask_nonocc);
 			cv::compare(sa[2], 255, mask, cv::CMP_EQ);
 			int degrade = countNonZero(mask);
@@ -306,7 +305,6 @@ namespace cp
 		state_disc.setTo(Scalar(255, 0, 0), v);
 		split(state_disc, sa);
 		{
-
 			int tcount = countNonZero(mask_disc);
 			cv::compare(sa[2], 255, mask, cv::CMP_EQ);
 			int degrade = countNonZero(mask);

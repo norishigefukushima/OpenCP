@@ -12,6 +12,7 @@ namespace cp
 	class CP_EXPORT StereoEval
 	{
 		void threshmap_init();
+		bool skip_disc = false;
 	public:
 		bool isInit = false;
 		std::string message;
@@ -42,9 +43,9 @@ namespace cp
 		StereoEval(cv::Mat& groundtruth, cv::Mat& maskNonocc, cv::Mat& maskAll, cv::Mat& maskDisc, double amp);
 		StereoEval(cv::Mat& groundtruth, const double amp, const int ignoreLeftBoundary = 0);
 
-		void getBadPixel(cv::Mat& src, double threshold = 1.0, bool isPrint = true);
-		void getMSE(cv::Mat& src, bool isPrint = true);
-		void operator() (cv::InputArray src, double threshold = 1.0, bool isPrint = true, int disparity_scale = 1);
+		std::string getBadPixel(cv::Mat& src, double threshold = 1.0, bool isPrint = true);
+		std::string getMSE(cv::Mat& src, bool isPrint = true, int disparity_scale = 1);
+		std::string operator() (cv::InputArray src, double threshold = 1.0, bool isPrint = true, int disparity_scale = 1);
 		void compare(cv::Mat& before, cv::Mat& after, double threshold = 1.0, bool isPrint = true);
 	};
 }

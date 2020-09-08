@@ -16,6 +16,9 @@
 #include "blend.hpp"
 
 #include "inlinesimdfunctions.hpp"
+
+#include "debugcp.hpp"
+
 using namespace std;
 using namespace cv;
 
@@ -1842,10 +1845,10 @@ namespace cp
 		return mes;
 	}
 
-	void StereoBase::getCostAggregation(Mat& src, Mat& dest, cv::InputArray guideImage)
+	void StereoBase::getCostAggregation(Mat& src, Mat& dest, cv::InputArray guideImage, const bool isFeedback, cv::Mat& weightMap)
 	{
-		const float sigma_s_h = aggregationSigmaSpace;
-		const float sigma_s_v = aggregationSigmaSpace;
+		const float sigma_s_h = (float)aggregationSigmaSpace;
+		const float sigma_s_v = (float)aggregationSigmaSpace;
 
 		Mat guide = guideImage.getMat();
 		if (aggregationRadiusH != 1)
@@ -1864,7 +1867,18 @@ namespace cp
 			}
 			else if (AggregationMethod == Aggregation_Gauss)
 			{
-				GaussianBlur(src, dest, kernelSize, sigma_s_h, sigma_s_v);
+				if (isFeedback && !weightMap.empty())
+				{
+					Mat a, b;
+					multiply(src, weightMap, a, 1.0, CV_32F);
+					GaussianBlur(a, a, kernelSize, sigma_s_h, sigma_s_v);
+					GaussianBlur(weightMap, b, kernelSize, sigma_s_h, sigma_s_v);
+					divide(a, b, dest, 1.0, CV_8U);
+				}
+				else
+				{
+					GaussianBlur(src, dest, kernelSize, sigma_s_h, sigma_s_v);
+				}
 			}
 			else if (AggregationMethod == Aggregation_GaussShiftable)
 			{
@@ -1873,10 +1887,21 @@ namespace cp
 			}
 			else if (AggregationMethod == Aggregation_Guided)
 			{
-				//guidedImageFilter(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps * aggregationGuidedfilterEps,GuidedTypes::GUIDED_SEP_VHI, BoxTypes::BOX_OPENCV, ParallelTypes::NAIVE);
-				//guidedImageFilter(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps * aggregationGuidedfilterEps, GuidedTypes::GUIDED_SEP_VHI_SHARE, BoxTypes::BOX_OPENCV, ParallelTypes::NAIVE);
-				gif[omp_get_thread_num()].filterGuidePrecomputed(src, guide, dest, min(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps * aggregationGuidedfilterEps, GuidedTypes::GUIDED_SEP_VHI_SHARE, ParallelTypes::NAIVE);
-				//guidedImageFilter(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps * aggregationGuidedfilterEps, GuidedTypes::GUIDED_SEP_VHI_SHARE, BoxTypes::BOX_OPENCV, ParallelTypes::OMP);
+				/*if (isFeedback && !weightMap.empty())
+				{
+					Mat a, b;
+					multiply(src, weightMap, a, 1.0, CV_32F);
+					gif[omp_get_thread_num()].filterGuidePrecomputed(a, guide, a, min(aggregationRadiusH, aggregationRadiusV), float(aggregationGuidedfilterEps * aggregationGuidedfilterEps), GuidedTypes::GUIDED_SEP_VHI_SHARE, ParallelTypes::NAIVE);
+					gif[omp_get_thread_num()].filterGuidePrecomputed(weightMap, guide, b, min(aggregationRadiusH, aggregationRadiusV), float(aggregationGuidedfilterEps * aggregationGuidedfilterEps), GuidedTypes::GUIDED_SEP_VHI_SHARE, ParallelTypes::NAIVE);
+					divide(a, b, dest, 1.0, CV_8U);
+				}
+				else*/
+				{
+					//guidedImageFilter(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps * aggregationGuidedfilterEps,GuidedTypes::GUIDED_SEP_VHI, BoxTypes::BOX_OPENCV, ParallelTypes::NAIVE);
+					//guidedImageFilter(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps * aggregationGuidedfilterEps, GuidedTypes::GUIDED_SEP_VHI_SHARE, BoxTypes::BOX_OPENCV, ParallelTypes::NAIVE);
+					gif[omp_get_thread_num()].filterGuidePrecomputed(src, guide, dest, min(aggregationRadiusH, aggregationRadiusV), float(aggregationGuidedfilterEps * aggregationGuidedfilterEps), GuidedTypes::GUIDED_SEP_VHI_SHARE, ParallelTypes::NAIVE);
+					//guidedImageFilter(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps * aggregationGuidedfilterEps, GuidedTypes::GUIDED_SEP_VHI_SHARE, BoxTypes::BOX_OPENCV, ParallelTypes::OMP);
+				}
 			}
 			else if (AggregationMethod == Aggregation_CrossBasedBox)
 			{
@@ -2106,7 +2131,7 @@ namespace cp
 			}
 			for (int i = simdsize; i < imsize; i++)
 			{
-				int v = (mincostPtr[i] * mul);
+				int v = saturate_cast<int>(mincostPtr[i] * mul);
 				if ((*DSIPtr) < v && abs(disparity - destPtr[i]) > 16)
 				{
 					destPtr[i] = 0;//(minDisparity-1)<<4;
@@ -2651,8 +2676,8 @@ namespace cp
 
 		for (int j = bb; j < src.rows - bb; j++)
 		{
-			s[0] = 255 * 16;//�\���̂���ő�l�����
-			s[src.cols - 1] = 255 * 16;//�\���̂���ő�l�����
+			s[0] = saturate_cast<srcType>(255 * 16);
+			s[src.cols - 1] = saturate_cast<srcType>(255 * 16);//�\���̂���ő�l�����
 			//��������0��������l�̓����Ă���ߖT�̃s�N�Z���i�G�s�|�[������j�̍ŏ��l�Ŗ��߂�
 			for (int i = 1; i < src.cols - 1; i++)
 			{
@@ -2856,7 +2881,7 @@ namespace cp
 #pragma endregion
 
 	//main function
-	void StereoBase::matching(Mat& leftim, Mat& rightim, Mat& destDisparityMap, const bool isFeedback)
+	void StereoBase::matching(Mat& leftim, Mat& rightim, Mat& destDisparityMap, const bool isFeedback, Mat& weightMap)
 	{
 		if (destDisparityMap.empty() || leftim.size() != destDisparityMap.size()) destDisparityMap.create(leftim.size(), CV_16S);
 		minCostMap.create(leftim.size(), CV_8U);
@@ -2873,7 +2898,6 @@ namespace cp
 			prefilter(leftim, rightim);
 		}
 
-		if (scheduleCostComputationAndAggregation)
 		{
 #ifdef TIMER_STEREO_BASE
 			Timer t("Cost computation & aggregation");
@@ -2886,34 +2910,7 @@ namespace cp
 				const int d = minDisparity + i;
 				getPixelMatchingCost(d, DSI[i]);
 				if (isFeedback)addCostIterativeFeedback(DSI[i], d, destDisparityMap, 0, 2, 1.f);
-				getCostAggregation(DSI[i], DSI[i], guideImage);
-			}
-		}
-		else
-		{
-			{
-#ifdef TIMER_STEREO_BASE
-				Timer t("Cost computation");
-#endif
-#pragma omp parallel for
-				for (int i = 0; i < numberOfDisparities; i++)
-				{
-					const int d = minDisparity + i;
-					getPixelMatchingCost(d, DSI[i]);
-				}
-			}
-			if (AggregationMethod == Aggregation_CrossBasedBox)clf.makeKernel(guideImage, aggregationRadiusH, aggregationGuidedfilterEps, 0);
-			{
-#ifdef TIMER_STEREO_BASE
-				Timer t("Cost aggregation");
-#endif
-#pragma omp parallel for
-				for (int i = 0; i < numberOfDisparities; i++)
-				{
-					Mat dsi = DSI[i];
-					const int d = minDisparity + i;
-					getCostAggregation(dsi, DSI[i], guideImage);
-				}
+				getCostAggregation(DSI[i], DSI[i], guideImage, isFeedback, weightMap);
 			}
 		}
 
@@ -3012,6 +3009,7 @@ namespace cp
 
 	void StereoBase::gui(Mat& leftim, Mat& rightim, Mat& destDisparity, StereoEval& eval)
 	{
+#pragma region setup
 		ConsoleImage ci(Size(640, 680));
 		//ci.setFontSize(12);
 		string wname = "";
@@ -3035,6 +3033,7 @@ namespace cp
 		createTrackbar("Soble alpha p 1", wname, &sobelBlendMapParam1, 255);
 		createTrackbar("Soble alpha p 2", wname, &sobelBlendMapParam2, 255);
 
+		//AggregationMethod = Aggregation_Gauss;
 		AggregationMethod = Aggregation_Guided;
 		createTrackbar("agg method", wname, &AggregationMethod, Aggregation_Method_Size - 1);
 		createTrackbar("agg r width", wname, &aggregationRadiusH, 20);
@@ -3099,11 +3098,11 @@ namespace cp
 		createTrackbar("Asubboxrange", wname, &bran, 64);
 
 		int gr = 3;
-		createTrackbar("guide r", wname, &gr, 10);
+		createTrackbar("ref:guide r", wname, &gr, 10);
 		int ge = 1;
-		createTrackbar("bguide e", wname, &ge, 1000);
-		int pr = 1;
-		createTrackbar("poss r", wname, &pr, 10);
+		createTrackbar("ref:guide e", wname, &ge, 1000);
+		int jnr = 2;
+		createTrackbar("ref:jn r", wname, &jnr, 10);
 
 		int boxb = 1;
 		createTrackbar("boxb", wname, &boxb, 10);
@@ -3132,37 +3131,42 @@ namespace cp
 		CostVolumeRefinement cbf(minDisparity, numberOfDisparities);
 
 		const bool isShowSubpixelDisparityDistribution = true;
-		const bool isShowZeroMask = false;
+		const bool isShowZeroMask = true;
 		bool isShowDiffFillOcclution = false;
 
 		Mat dispOutput;
 		bool isFeedback = false;
+		Mat weightMap = Mat::ones(leftim.size(), CV_32F);
 		destDisparity.setTo(0);
+#pragma endregion
+
 		while (key != 'q')
 		{
 			//init
 			aggregationGuidedfilterEps = aggeps;
 			aggregationSigmaSpace = aggss;
 			ci.clear();
-
 			ci(getPixelMatchingMethodName(PixelMatchingMethod) + ": (i-u)");
 			ci(getAggregationMethodName(AggregationMethod) + ": (@-[)");
 			ci(getSubpixelInterpolationMethodName(subpixelInterpolationMethod) + ":  (p)");
 			ci(getOcclusionMethodName(occlusionMethod) + ": (o)");
-			if(isFeedback) ci(CV_RGB(0, 255, 0), "feedback true (f)");
+			if (isFeedback) ci(CV_RGB(0, 255, 0), "feedback true (f)");
 			else  ci(CV_RGB(255, 0, 0), "feedback false (f)");
-
 			ci("=======================");
+
 			//body
 			{
 				Timer t("BM", 0, false);
-				matching(leftim, rightim, destDisparity, isFeedback);
+				matching(leftim, rightim, destDisparity, isFeedback, weightMap);
 				ci("Total time: %f ms", t.getTime());
 			}
 
 			Mat zeromask;
 			compare(destDisparity, 0, zeromask, cv::CMP_EQ);
-			if (isShowZeroMask)imshow("zero A", zeromask);
+			weightMap.setTo(1.f);
+			weightMap.setTo(0.1f, zeromask);
+			imshow("wmap", weightMap);
+			if (isShowZeroMask)imshow("zero mask before", zeromask);
 			ci("A: valid %f %%", 100.0 * countNonZero(destDisparity) / destDisparity.size().area());
 
 			{
@@ -3354,9 +3358,17 @@ namespace cp
 					Timer t("refinement", 0, false);
 					//crossBasedAdaptiveBoxFilter(destDisparity, leftim, destDisparity, Size(2 * gr + 1, 2 * gr + 1), ge);
 					Mat temp;
-					guidedImageFilter(destDisparity, leftim, temp, 4, 1, GUIDED_SEP_VHI);
+
+					/*
+					Mat a, b;
+					multiply(destDisparity, weightMap, a, 1, CV_32F);
+					guidedImageFilter(a, leftim, a, 4, 1, GUIDED_SEP_VHI);
+					guidedImageFilter(weightMap, leftim, b, 4, 1, GUIDED_SEP_VHI);
+					divide(a, b, temp, 1, CV_16S);
+					*/
+					guidedImageFilter(destDisparity, leftim, temp, gr, ge, GUIDED_SEP_VHI);
 					//guidedImageFilter(destDisparity, target[0], temp, 4, 1, GUIDED_SEP_VHI);
-					jointNearestFilter(temp, destDisparity, Size(5, 5), destDisparity);
+					jointNearestFilter(temp, destDisparity, Size(2 * jnr + 1, 2 * jnr + 1), destDisparity);
 
 					//cp::weightedModeFilter(destDisparity, leftim, destDisparity, 4, 2, 10, 500, 0, 2);
 
@@ -3364,19 +3376,6 @@ namespace cp
 					//jointNearestFilter(temp, destDisparity, Size(3, 3), destDisparity);
 
 					ci("refine: %f ms", t.getTime());
-					/*Mat base = dest.clone();
-					Mat gfil = dest.clone();
-					guidedFilter(dest,leftim,gfil,gr,ge/1000.0);
-					possibleFilter(gfil,dest,Size(2*pr+1,2*pr+1),dest);
-					filterSpeckles(dest,0,speckleWindowSize,speckleRange);
-					fillOcclusion(dest);
-					guidedFilter(dest,leftim,gfil,gr,ge/1000.0);
-					possibleFilter(gfil,dest,Size(2*pr+1,2*pr+1),dest);
-
-					Mat bbdest;
-					Mat mask = Mat::zeros(dest.size(),CV_8U);
-					cv::rectangle(mask,Rect(0,dest.rows-22,480,45),255,CV_FILLED);
-					base.copyTo(dest,mask);*/
 				}
 
 				if (isReCost)
@@ -3388,7 +3387,7 @@ namespace cp
 			}
 
 			compare(destDisparity, 0, zeromask, cv::CMP_EQ);
-			if (isShowZeroMask)imshow("zero B", zeromask);
+			if (isShowZeroMask)imshow("zero mask after", zeromask);
 			ci("B: valid %f %%", 100.0 * countNonZero(destDisparity) / destDisparity.size().area());
 
 			if (isShowSubpixelDisparityDistribution)
@@ -3546,18 +3545,18 @@ namespace cp
 			{
 				Mat maskbadpixel = Mat::zeros(destDisparity.size(), CV_8U);
 				bool isPrintEval = false;
-				eval(destDisparity, 0.25, isPrintEval, 16);
-				ci("th0.25:" + eval.message);
-				eval(destDisparity, 0.5, isPrintEval, 16);
-				ci("th 0.5:" + eval.message);
-				eval(destDisparity, 1, isPrintEval, 16);
-				ci("th 1.0:" + eval.message);
+				;
+				ci("th 0.5:" + eval(destDisparity, 0.5, isPrintEval, 16));
+				ci("th 1.0:" + eval(destDisparity, 1.0, isPrintEval, 16));
+				ci("th 2.0:" + eval(destDisparity, 2.0, isPrintEval, 16));
+				ci("MSE   :" + eval.getMSE(destDisparity, false, 16));
+				
 
 				if (maskType != 0)
 				{
-					if (maskPrec == 0)eval(destDisparity, 1, isPrintEval, 16);
-					if (maskPrec == 1)eval(destDisparity, 0.5, isPrintEval, 16);
-					if (maskPrec == 2)eval(destDisparity, 0.25, isPrintEval, 16);
+					if (maskPrec == 0)eval(destDisparity, 0.5, isPrintEval, 16);
+					if (maskPrec == 1)eval(destDisparity, 1.0, isPrintEval, 16);
+					if (maskPrec == 2)eval(destDisparity, 2.0, isPrintEval, 16);
 
 					if (maskType == 1)
 						eval.nonocc_th.copyTo(maskbadpixel);
@@ -3566,10 +3565,6 @@ namespace cp
 					else if (maskType == 3)
 						eval.disc_th.copyTo(maskbadpixel);
 				}
-
-				Mat eshow;
-				alphaBlend(leftim, eval.all_th, display_image_depth_alpha / 100.0, eshow);
-				imshow("eval", eshow);
 				if (isShowGT)
 				{
 					if (dispColor) { Mat a; eval.ground_truth.convertTo(a, CV_16S, 4); cvtDisparityColor(a, dispOutput, minDisparity, numberOfDisparities - 10, 2, 16); }
@@ -3627,25 +3622,25 @@ namespace cp
 				if (maskType != 0)
 				{
 					if (maskPrec == 2 && maskType == 1)
-						ci(CV_RGB(255, 0, 0), "mask: nonocc, prec: 0.25");
+						ci(CV_RGB(255, 0, 0), "mask: nonocc, prec: 2.0");
 					if (maskPrec == 1 && maskType == 1)
-						ci(CV_RGB(255, 0, 0), "mask: nonocc, prec: 0.50");
+						ci(CV_RGB(255, 0, 0), "mask: nonocc, prec: 1.0");
 					if (maskPrec == 0 && maskType == 1)
-						ci(CV_RGB(255, 0, 0), "mask: nonocc, prec: 1.00");
+						ci(CV_RGB(255, 0, 0), "mask: nonocc, prec: 0.5");
 
 					if (maskPrec == 2 && maskType == 2)
-						ci(CV_RGB(255, 0, 0), "mask: all, prec: 0.25");
+						ci(CV_RGB(255, 0, 0), "mask: all, prec: 2.0");
 					if (maskPrec == 1 && maskType == 2)
-						ci(CV_RGB(255, 0, 0), "mask: all, prec: 0.50");
+						ci(CV_RGB(255, 0, 0), "mask: all, prec: 1.0");
 					if (maskPrec == 0 && maskType == 2)
-						ci(CV_RGB(255, 0, 0), "mask: all, prec: 1.00");
+						ci(CV_RGB(255, 0, 0), "mask: all, prec: 0.5");
 
 					if (maskPrec == 2 && maskType == 3)
-						ci(CV_RGB(255, 0, 0), "mask: disc, prec: 0.25");
+						ci(CV_RGB(255, 0, 0), "mask: disc, prec: 2.0");
 					if (maskPrec == 1 && maskType == 3)
-						ci(CV_RGB(255, 0, 0), "mask: disc, prec: 0.50");
+						ci(CV_RGB(255, 0, 0), "mask: disc, prec: 1.0");
 					if (maskPrec == 0 && maskType == 3)
-						ci(CV_RGB(255, 0, 0), "mask: disc, prec: 1.00");
+						ci(CV_RGB(255, 0, 0), "mask: disc, prec: 0.5");
 				}
 				else
 				{
@@ -3671,8 +3666,8 @@ namespace cp
 			if (key == '9') isRefinement = (isRefinement) ? false : true;
 
 			if (key == 'a')	isReCost = (isReCost) ? false : true;
-			if (key == 'f') isFeedback = isFeedback ? false: true;
-			if (key == 'g')isGrid = (isGrid) ? false : true;
+			if (key == 'f') isFeedback = isFeedback ? false : true;
+			if (key == 'g') isGrid = (isGrid) ? false : true;
 			if (key == 'c') guiAlphaBlend(dispOutput, leftim);
 			if (key == 'i') { PixelMatchingMethod++; PixelMatchingMethod = (PixelMatchingMethod > Pixel_Matching_Method_Size - 1) ? 0 : PixelMatchingMethod; }
 			if (key == 'u') { PixelMatchingMethod--; PixelMatchingMethod = (PixelMatchingMethod < 0) ? Pixel_Matching_Method_Size - 2 : PixelMatchingMethod; }
@@ -3685,19 +3680,19 @@ namespace cp
 
 			if (key == 'w')dispColor = (dispColor) ? false : true;
 			if (key == 'e')isShowGT = (isShowGT) ? false : true;
-			if (key == 'b') guiCrossBasedLocalFilter(leftim);
+			//if (key == 'b') guiCrossBasedLocalFilter(leftim);
 
 			if (key == 'r')
 			{
 				destDisparity.setTo(0);
 			}
 
-			/*
-			if (key == 'r')maskType++; maskType = maskType > 4 ? 0 : maskType;
-			if (key == 't')maskType--; maskType = maskType < 0 ? 3 : maskType;
-			if (key == 'y')maskPrec++; maskPrec = maskPrec > 3 ? 0 : maskPrec;
-			if (key == 'u')maskPrec--; maskPrec = maskPrec < 0 ? 2 : maskPrec;
-			*/
+			
+			if (key == 'b')maskType++; maskType = maskType > 4 ? 0 : maskType;
+			if (key == 'n')maskType--; maskType = maskType < 0 ? 3 : maskType;
+			if (key == 'm')maskPrec++; maskPrec = maskPrec > 3 ? 0 : maskPrec;
+			if (key == ',')maskPrec--; maskPrec = maskPrec < 0 ? 2 : maskPrec;
+			
 		}
 	}
 
@@ -3722,4 +3717,4 @@ namespace cp
 			a.copyTo(dest);
 		}
 	}
-}
+	}

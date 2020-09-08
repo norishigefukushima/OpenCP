@@ -16,7 +16,6 @@ namespace cp
 		std::vector<cv::Mat> reference;//0: image, 1: Sobel
 		cv::Mat specklebuffer;
 
-		bool scheduleCostComputationAndAggregation = true;
 		CrossBasedLocalFilter clf;//filtering function is thread safe.
 		//cv::Ptr<GuidedImageFilter> gif;
 		GuidedImageFilter* gif;
@@ -156,13 +155,13 @@ namespace cp
 
 		//internal of matching
 		void getPixelMatchingCost(const int d, cv::Mat& dest);
-		void getCostAggregation(cv::Mat& src, cv::Mat& dest, cv::InputArray joint = cv::noArray());
+		void getCostAggregation(cv::Mat& src, cv::Mat& dest, cv::InputArray joint = cv::noArray(), const bool isFeedback = false, cv::Mat& weightMap = cv::Mat());
 		void getWTA(std::vector<cv::Mat>& dsi, cv::Mat& dest, cv::Mat& minimumCostMap);
 		void getOptScanline();
 
 
 		//body
-		void matching(cv::Mat& leftim, cv::Mat& rightim, cv::Mat& dest, const bool isFeedback=false);
+		void matching(cv::Mat& leftim, cv::Mat& rightim, cv::Mat& dest, const bool isFeedback = false, cv::Mat& weightMap = cv::Mat());
 		void operator()(cv::Mat& leftim, cv::Mat& rightim, cv::Mat& dest);
 		void gui(cv::Mat& leftim, cv::Mat& rightim, cv::Mat& dest, StereoEval& eval);
 

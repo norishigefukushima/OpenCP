@@ -349,7 +349,16 @@ namespace cp
 		}
 
 		bool ret = false;
-		if (dest.depth() == CV_32F || dest.depth() == CV_64F)
+		if (dest.empty())
+		{
+			if (src.channels() == CV_64F)
+				destImage.create(guide.size(), CV_MAKETYPE(CV_64F, src.channels()));
+			else
+				destImage.create(guide.size(), CV_MAKETYPE(CV_32F, src.channels()));
+
+			ret = true;
+		}
+		else if (dest.depth() == CV_32F || dest.depth() == CV_64F)
 		{
 			if (src.type() != dest.type() || src.channels() != dest.channels())
 			{
@@ -733,6 +742,13 @@ namespace cp
 		{
 			gf[0]->filterVector(vsrc, vguide, vdest, r, eps);
 		}
+	}
+
+	void GuidedImageFilter::print_parameter()
+	{
+		std::cout << "src   depth: " << srcImage.depth() << std::endl;
+		std::cout << "guide depth: " << guideImage.depth() << std::endl;
+		std::cout << "dest  depth: " << destImage.depth() << std::endl;
 	}
 }
 
@@ -1505,6 +1521,7 @@ namespace cp
 			s1++;
 		}
 	}
+
 	static void divideSSE_float(Mat& src1, Mat& src2, Mat& dest)
 	{
 		float* s1 = src1.ptr<float>(0);
@@ -1963,7 +1980,6 @@ namespace cp
 		temp.convertTo(dest, src.type());
 	}
 
-
 	static void guidedFilterSrc1Guidance3_(const Mat& src, const Mat& guidance, Mat& dest, const int radius, const float eps)
 	{
 		if (src.channels() != 1 && guidance.channels() != 3)
@@ -2359,6 +2375,7 @@ namespace cp
 		boxFilter(wsrc, dest, CV_32F, ksize, pt, true, border_type);
 		divideSSE_float(dest, sw, dest);
 	}
+
 	void weightedAdaptiveGuidedFilter(Mat& src, Mat& guidance, Mat& guidance2, Mat& weight, Mat& dest, const int radius, const float eps)
 	{
 		if (src.channels() != 1 && guidance.channels() != 1)
@@ -3278,4 +3295,4 @@ namespace cp
 	temp.convertTo(dest,src.type());
 	}
 	*/
-}
+	}

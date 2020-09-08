@@ -88,8 +88,17 @@ void guiDisparityPlaneFitSLICTest(Mat& leftim, Mat& rightim, Mat& GT)
 
 }
 
-void testCVStereoBM(Mat& leftim, Mat& rightim, const int numDisparities, const int disparity_min)
+void testCVStereoBM()
 {
+	Mat disp;
+	Mat leftim = imread("img/stereo/Dolls/view1.png", 0);
+	Mat rightim = imread("img/stereo/Dolls/view5.png", 0);
+	Mat dmap_ = imread("img/stereo/Dolls/disp1.png", 0);
+	//guiShift(left, right, 300);
+	const int disp_min = get_simd_ceil(32, 16);
+	const int disp_max = get_simd_ceil(100, 16);
+	cp::StereoEval eval(dmap_, 2, disp_max);
+
 	String wname = "Stereo BM Test";
 	namedWindow(wname);
 	int blockRadius = 4; createTrackbar("bs", wname, &blockRadius, 30);
@@ -99,13 +108,15 @@ void testCVStereoBM(Mat& leftim, Mat& rightim, const int numDisparities, const i
 	int lrThreshold = 1; createTrackbar("LR thresh", wname, &lrThreshold, 20);
 	int spWindow = 100; createTrackbar("speckle win", wname, &spWindow, 2550);
 	int spRange = 32; createTrackbar("speck range", wname, &spRange, 255);
-	int minDisp = disparity_min; createTrackbar("min disp", wname, &minDisp, 255);
-	int numDisp = numDisparities / 16; createTrackbar("num disp", wname, &numDisp, numDisparities / 16 * 2);
+	int minDisp = disp_min; createTrackbar("min disp", wname, &minDisp, 255);
+	//int numDisp = numDisparities / 16; createTrackbar("num disp", wname, &numDisp, numDisparities / 16 * 2);
 
-	Ptr<StereoBM> bm = StereoBM::create(numDisparities, 2 * blockRadius + 1);
+	Ptr<StereoBM> bm = StereoBM::create(disp_max - disp_min, 2 * blockRadius + 1);
 
-	Mat disp, dispshow;
+	Mat dispshow;
 	int key = 0;
+	ConsoleImage ci;
+
 	while (key != 'q')
 	{
 		int SADWindowSize = 2 * blockRadius + 1;
@@ -117,18 +128,33 @@ void testCVStereoBM(Mat& leftim, Mat& rightim, const int numDisparities, const i
 		bm->setSpeckleWindowSize(spWindow);
 		bm->setSpeckleRange(spRange);
 		bm->setMinDisparity(minDisp);
-		bm->setNumDisparities(numDisp * 16);
+		//bm->setNumDisparities(numDisp * 16);
 
 		bm->compute(leftim, rightim, disp);
-		normalize(disp, dispshow, minDisp, numDisp * 16, NORM_MINMAX, CV_8U);
+		const int invalid = (minDisp - 1) * 16;
+		fillOcclusion(disp, invalid);
+		//normalize(disp, dispshow, minDisp, numDisp * 16, NORM_MINMAX, CV_8U);
 		//disp.convertTo(dispshow, CV_8U, 255.0/(16.0*numDisparities));
-		imshow(wname, dispshow);
+		eval(disp, 1, false, 16);
+		ci("th 1.0:" + eval.message);
+		imshowScale(wname, disp, 1.0 / 16);
+		ci.show();
 		key = waitKey(1);
 	}
 }
 
-void testCVStereoSGBM(Mat& leftim, Mat& rightim, const int numDisparities, const int disparity_min)
+void testCVStereoSGBM()
 {
+	Mat disp;
+	Mat leftim = imread("img/stereo/Dolls/view1.png");
+	Mat rightim = imread("img/stereo/Dolls/view5.png");
+	Mat dmap_ = imread("img/stereo/Dolls/disp1.png",0);
+	//guiShift(left, right, 300);
+	const int disp_min = get_simd_ceil(32, 16);
+	const int disp_max = get_simd_ceil(100, 16);
+	int numDisparities = disp_max - disp_min;
+	cp::StereoEval eval(dmap_, 2, disp_max);
+
 	String wname = "Stereo SGBM Test";
 	namedWindow(wname);
 	int blockRadius = 1; createTrackbar("bs", wname, &blockRadius, 30);
@@ -142,12 +168,14 @@ void testCVStereoSGBM(Mat& leftim, Mat& rightim, const int numDisparities, const
 	int spWindow = 100; createTrackbar("speckle win", wname, &spWindow, 2550);
 	int spRange = 32; createTrackbar("speck range", wname, &spRange, 255);
 
-	Ptr<StereoSGBM> bm = StereoSGBM::create(disparity_min, numDisparities, 2 * blockRadius + 1);
+	Ptr<StereoSGBM> bm = StereoSGBM::create(disp_min, numDisparities, 2 * blockRadius + 1);
 
 	Mat lim; copyMakeBorder(leftim, lim, 0, 0, numDisparities, 0, BORDER_REPLICATE);
 	Mat rim; copyMakeBorder(rightim, rim, 0, 0, numDisparities, 0, BORDER_REPLICATE);
-	Mat disp, dispshowROI, dispshow;
+	Mat dispshowROI, dispshow;
 	int key = 0;
+	ConsoleImage ci;
+
 	while (key != 'q')
 	{
 		int SADWindowSize = 2 * blockRadius + 1;
@@ -167,9 +195,18 @@ void testCVStereoSGBM(Mat& leftim, Mat& rightim, const int numDisparities, const
 		bm->setNumDisparities(numberOfDisparities);
 		*/
 		bm->compute(lim, rim, disp);
-		disp.convertTo(dispshowROI, CV_8U, 255.0 / (16.0 * numDisparities));
-		Mat(dispshowROI(Rect(numDisparities, 0, leftim.cols, leftim.rows))).copyTo(dispshow);
-		imshow(wname, dispshow);
+
+		const int invalid = (disp_min - 1) * 16;
+		fillOcclusion(disp, invalid);
+		Mat(disp(Rect(numDisparities, 0, leftim.cols, leftim.rows))).copyTo(dispshow);
+		//guiAlphaBlend(dispshow, dmap_);
+		
+		imshowScale(wname, dispshow, 1.0 / 16);
+		
+		ci("th 0.5:" + eval(dispshow, 0.5, false, 16));
+		ci("th 1.0:" + eval(dispshow, 1.0, false, 16));
+		ci("th 2.0:" + eval(dispshow, 2.0, false, 16));
+		ci.show();
 		key = waitKey(1);
 	}
 }

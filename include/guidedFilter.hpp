@@ -252,6 +252,7 @@ namespace cp
 		void filter(cv::Mat& src, std::vector<cv::Mat>& guide, cv::Mat& dest, const int r, const float eps, const int guided_type = GuidedTypes::GUIDED_SEP_VHI_SHARE, const int parallel_type = ParallelTypes::OMP);
 		void filter(std::vector<cv::Mat>& src, cv::Mat& guide, std::vector<cv::Mat>& dest, const int r, const float eps, const int guided_type = GuidedTypes::GUIDED_SEP_VHI_SHARE, const int parallel_type = ParallelTypes::OMP);
 		void filter(std::vector<cv::Mat>& src, std::vector<cv::Mat>& guide, std::vector<cv::Mat>& dest, const int r, const float eps, const int guided_type = GuidedTypes::GUIDED_SEP_VHI_SHARE, const int parallel_type = ParallelTypes::OMP);
+		void print_parameter();
 	};
 
 	class CP_EXPORT GuidedImageFilterTiling

@@ -162,19 +162,9 @@ int main(int argc, char** argv)
 #pragma endregion
 
 #pragma region stereo
-	Mat left = imread("img/stereo/Dolls/view1.png");
-	Mat right = imread("img/stereo/Dolls/view5.png");
-	//resize(left, left, Size(), 1, 0.25);
-	//resize(right, right, Size(), 1, 0.25);
-	//guiShift(left, right, 300);
-
 	testStereoBase(); return 0;
-	Mat leftg, rightg;
-	cvtColor(left, leftg, COLOR_BGR2GRAY);
-	cvtColor(right, rightg, COLOR_BGR2GRAY);
-	testCVStereoBM(leftg, rightg, get_simd_ceil(326, 16), get_simd_ceil(100, 16)); return 0;
-
-	testCVStereoSGBM(left, right, get_simd_ceil(326, 16), get_simd_ceil(100, 16)); return 0;
+	//testCVStereoBM(); return 0;
+	//testCVStereoSGBM(); return 0;
 #pragma endregion
 	
 
