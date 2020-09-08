@@ -178,7 +178,7 @@ void StereoBMSimple::gui(Mat& leftim, Mat& rightim, Mat& dest, StereoEval& eval)
 デプスマップ，パラメータ調整バー，状態のコンソール，サブピクセル補間のヒストグラム．
 コンソールに書いてある(1)や(i)などは対応するキーボードショートカット．
 
-<img src="docimg/outputimage_stereobase.png" width="800px">
+<img src="./docimg/outputimage_stereobase.png" width="800px">
 
 # Reference
 
