@@ -22,7 +22,7 @@ namespace cp
 		fgets(buff, 256, fp);
 		if (sscanf(buff, "%d %d", &width, &height) != 2)
 		{
-			printf("couldn't figure out the size of image %s\n", filename);
+			printf("couldn't figure out the size of image %s\n", filename.c_str());
 		}
 		fgets(buff, 256, fp);
 		Mat ret = Mat::zeros(Size(width, height), CV_32F);

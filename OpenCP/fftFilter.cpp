@@ -194,7 +194,7 @@ namespace cp
 
 	void wienerDeconvolution(const cv::Mat& src_, cv::Mat& dest_, const cv::Mat & kernel, double mu)
 	{
-		wienerDeconvolution32F(src_, dest_, kernel, mu);
+		wienerDeconvolution32F(src_, dest_, kernel, (float)mu);
 		//wienerDeconvolution64F(src_, dest_, kernel, mu);
 	}
 
@@ -208,7 +208,7 @@ namespace cp
 
 		Mat kernel = kernelX * kernelY.t();
 
-		if (depth == CV_32F) wienerDeconvolution32F(src, dest, kernel, eps);
+		if (depth == CV_32F) wienerDeconvolution32F(src, dest, kernel, (float)eps);
 		else if (depth == CV_64F) wienerDeconvolution64F(src, dest, kernel, eps);
 	}
 }

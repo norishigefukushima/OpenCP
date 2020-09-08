@@ -6,49 +6,152 @@ StereoBase.hpp
 ```cpp
 void StereoBase::matching(Mat& leftim, Mat& rightim, Mat& destDisparityMap)
 {
-prefilter(leftim, rightim);
-getPixelMatchingCost(d, DSI[i]);
-getCostAggregation(DSI[i], DSI[i], guide);
-getWTA(DSI, dest);//最小コストの値を取る
-//postprocessings
-//...
+	computeGuideImageForAggregation(leftim);
+	prefilter(leftim, rightim);
+	getPixelMatchingCost(d, DSI[i]);
+	if (isFeedback)addCostIterativeFeedback(DSI[i], d, destDisparityMap, feedbackFunction, feedbackClip, feedbackAmp);
+	getCostAggregation(DSI[i], DSI[i], guide);
+	getWTA(DSI, dest);//最小コストの値を取る
+	//postprocessings
+	//...
 }
 ```
-
+## 0. ガイド画像の処理とプレフィルタ
 ```cpp
-//0. プレフィルタ
-prefilter(leftim, rightim);//X方向のSobelフィルタ min(2*preFilterCap, Sobel(x)+preFilterCap)
-//prefilterXSobelの呼び出し
+//leftimをグレイスケールに変換したり，多少のフィルタを掛けたりする
+computeGuideImageForAggregation(leftim);
 
-//1. マッチングコスト計算
-getPixelMatchingCost(d, DSI[i]);
+//* カラー画像の場合RGBにスプリット．
+//* X方向のSobelフィルタ min(2*preFilterCap, Sobel(x)．+preFilterCap)
+//* CENSUS変換するなどのマッチングに必要な画像を生成する．
+prefilter(leftim, rightim);
+```
 
-case Pixel_Matching_SAD:
-//getMatchingCostSAD() a*min(|L-R|, pixelMatchErrorCap)+(1-a)*min(|L'-R'|, pixelMatchErrorCap): a = costAlphaImageSobel*0.01, L' Sovel responce
-case Pixel_Matching_SAD_TextureBlend:
-//textureAlpha(target[0], alpha, prefParam2, prefParam, prefSize);の呼び出し
-//getMatchingCostSADAlpha() a*min(|L-R|, pixelMatchErrorCap)+(1-a)*min(|L-R|, pixelMatchErrorCap): a = alpha
-case Pixel_Matching_BT:
-//getMatchingCostBT() (a*BT(L-R)+(1-a)*BT(L'-R'),pixelMatchErrorCap): a = costAlphaImageSobel*0.01, L' Sobel 
-case Pixel_Matching_BT_TextureBlend
-//textureAlpha(target[0], alpha, prefParam2, prefParam, prefSize);の呼び出し
-//getMatchingCostBTAlpha() (a*BT(L-R)+(1-a)*BT(L'-R'),pixelMatchErrorCap): a = alpha, L' Sobel 
+## 1. マッチングコスト計算
+`getPixelMatchingCost(d, DSI[i])`内で，以下のオプションが選択可能．
+出力は`uchar (CV_8U)`．
+```cpp
+enum PixelMatching
+{
+	SD,
+	SDColor,
+	SDEdge,
+	SDEdgeColor,
+	SDEdgeBlend,
+	SDEdgeBlendColor,
+	AD,
+	ADColor,
+	ADEdge,
+	ADEdgeColor,
+	ADEdgeBlend,
+	ADEdgeBlendColor,
+	BT,
+	BTColor,
+	BTEdge,
+	BTEdgeColor,
+	BTEdgeBlend,
+	BTEdgeBlendColor,
+	BTFull,
+	BTFullColor,
+	BTFullEdge,
+	BTFullEdgeColor,
+	BTFullEdgeBlend,
+	BTFullEdgeBlendColor,
+	CENSUS3x3,
+	CENSUS3x3Color,
+	CENSUS5x5,
+	CENSUS5x5Color,
+	CENSUS7x5,
+	CENSUS7x5Color,
+	CENSUS9x1,
+	CENSUS9x1Color,
+	//Pixel_Matching_SAD_TextureBlend,
+	//Pixel_Matching_BT_TextureBlend,
 
+	Pixel_Matching_Method_Size
+};
+```
 
-//2. コストアグリゲーション
-getCostAggregation(DSI[i], DSI[i], guide);
-case Aggregation_Box://ブロックマッチング
-case Aggregation_BoxShiftable://シフタブルブロックマッチング
-case Aggregation_Gauss://ガウシアン窓のマッチング
-case Aggregation_GaussShiftable://ガウシアン窓のシフタブルマッチング
-case Aggregation_Guided://ガイデットフィルタによるマッチング．guide画像はこのメソッドしか使わない
-case Aggregation_CrossBasedBox:クロスベースのボックスフィルタによるアグリゲーション
+**例**（L,R：左右の画像，EL，ER：左右のエッジ画像）
 
-//3. 最適化・
-getOptScanline();//デバッグした記憶がない
-getWTA(DSI, dest);//最小コストの値を取る
+* AD: 絶対値誤差（偶数番号に格納）  
+	* min(|L-R|, pixelMatchErrorCap)
+* ADEdge: エッジ画像の絶対値誤差（奇数番号に格納）  
+	* min(|EL-ER|, pixelMatchErrorCap)
+* ADEdgeBlend: 上記二つのコストをαブレンド
+	* a*min(|L-R|, pixelMatchErrorCap)+(1-a)*min(|EL-ER|, pixelMatchErrorCap)
+* SD:二乗誤差（エッジ，ブレンドの場合も宇組む）
+	* min((L-R)^2, pixelMatchErrorCap)
+* BT: Birchfield and Tomasi
+	* サブピクセルに強いコスト（左画像のみ）
+* BTFull: 左右どちらにもBTを適用したもの
+	* なぜか精度が下がる
+* CENSUS: CENSUS変換．
+	* `uchar`で収まる8画素のセットと`int`で収まるいくつかのセットを用意
 
-//4. ポストフィルタ
+カラーの場合は，RGB情報をどのように扱うかが選択可能
+```cpp
+enum ColorDistance
+{
+	ADD,
+	AVG,
+	MIN,
+	MAX,
+	ColorDistance_Size
+};
+```
+例えば，ADColorは色の絶対値誤差の関数であり，その色を下記オプションで計算可能．
+* ADD：RGBの総和
+* AVG：RGBの平均値
+* MIN：最小値
+* MAX：最大値
+
+また，このコスト計算はフィードバックオプションを追加することが可能．
+すでに推定済みの視差画像を使ってその値でコスト関数を弱く拘束する．
+```cpp
+if (isFeedback)addCostIterativeFeedback(DSI[i], d, destDisparityMap, feedbackFunction, feedbackClip, feedbackAmp);
+
+inline float distance_functionEXP(float diff, float clip)
+{
+	return 1.f - exp(diff * diff / (-2.f * clip * clip));
+}
+inline float distance_functionL1(float diff, float clip)
+{
+	return min(abs(diff), clip);
+}
+inline float distance_functionL2(float diff, float clip)
+{
+	return min(diff * diff, clip * clip);
+}
+```
+詳しくは，以下の論文の参照のこと．  
+[T. Matsuo, S. Fujita, N. Fukushima, and Y. Ishibashi, "Efficient edge-awareness propagation via single-map filtering for edge-preserving stereo matching," in Proc. IS&T/SPIE Electronic Imaging, Three-Dimensional Image Processing, Measurement, and Applications, 9393-27, Feb. 2015.](https://fukushima.web.nitech.ac.jp/paper/2015_spie_ei_matsuo.pdf)
+
+### 備考
+CENSUSはブレンドがない．（作ってもよいかも．ただしハミング距離がAVX512からしかSIMD命令がない．）
+
+## 2. コストアグリゲーション
+`getCostAggregation(DSI[i], DSI[i], guide)`では以下のアグリゲーションが可能．
+```cpp
+enum Aggregation
+{
+	Box,//ブロックマッチング
+	BoxShiftable,//シフタブルブロックマッチング
+	Gaussian,//ガウシアン窓のマッチング
+	GaussShiftable,//ガウシアン窓のシフタブルマッチング
+	Guided,//ガイデットフィルタによるマッチング．プレフィルタで生成したguide画像を使用
+	CrossBasedBox,//クロスベースのボックスフィルタによるアグリゲーション．プレフィルタで生成したguide画像を使用．
+	Bilateral,//バイラテラルフィルタによるマッチング．プレフィルタで生成したguide画像を使用
+
+	Aggregation_Method_Size
+};
+```
+## 3. 最適化・
+`getWTA(DSI, dest)`でアグリゲーションしたコストの最小値をとることができる．
+なお，SGM関数である`getOptScanline()`を事前に呼べばSGMになるはずだが，デバッグが不十分．
+
+## 4. ポストフィルタ
+```cpp
 uniquenessFilter(minCostMap, dest);//エラーの最最小と2番目のエラーの差を見て曖昧性の高い物をはじく
 subpixelInterpolation(dest, subpixMethod);//サブピクセル補間
 case SUBPIXEL_NONE:
@@ -61,22 +164,23 @@ minCostFilter(minCostMap, dest);//最小コストによるフィルタ：DPな�
 filterSpeckles(dest, 0, speckleWindowSize, speckleRange, specklebuffer);//スペックルを除去するフィルタ
 ```
 
+Todo: joint nearest filterなどを突っ込む
 
 # StereoBMSimple::gui
 下記メソッドでGUIによるパラメータ調整が可能．
-Ctrl+Pでパラメータ調整バーーが呼び出せる．
+`Ctrl+p`でパラメータ調整バーが呼び出せる．
 
 ```cpp
 void StereoBMSimple::gui(Mat& leftim, Mat& rightim, Mat& dest, StereoEval& eval)
 ```
 
-##出力のイメージ．
+## 出力のイメージ．
 デプスマップ，パラメータ調整バー，状態のコンソール，サブピクセル補間のヒストグラム．
 コンソールに書いてある(1)や(i)などは対応するキーボードショートカット．
 
 <img src="docimg/outputimage_stereobase.png" width="800px">
 
-# reference
+# Reference
 
 * BT
 	* S. Birchfield and C. Tomasi. A pixel dissimilarity measure

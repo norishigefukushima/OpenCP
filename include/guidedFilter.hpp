@@ -208,7 +208,7 @@ namespace cp
 	};
 
 
-	void CP_EXPORT guidedImageFilter(cv::InputArray src, cv::InputArray guide, cv::OutputArray dest, const int r, const float eps, const GuidedTypes guidedType = GuidedTypes::GUIDED_SEP_VHI_SHARE, const BoxTypes boxType = BoxTypes::BOX_OPENCV, const ParallelTypes parallelType = ParallelTypes::OMP);
+	void CP_EXPORT guidedImageFilter(cv::InputArray src, cv::InputArray guide, cv::OutputArray dest, const int r, const float eps, const GuidedTypes guidedType = GuidedTypes::GUIDED_SEP_VHI, const BoxTypes boxType = BoxTypes::BOX_OPENCV, const ParallelTypes parallelType = ParallelTypes::OMP);
 
 	class CP_EXPORT GuidedImageFilter
 	{

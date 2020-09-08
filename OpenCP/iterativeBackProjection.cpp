@@ -114,7 +114,7 @@ namespace cp
 	{
 		const int v = error.cols;
 		float sigma = th;
-		const float sigmap = -0.5 / (sigma*sigma);
+		const float sigmap = -0.5f / (sigma*sigma);
 #pragma omp parallel for
 		for (int j = 1; j < error.rows - 1; j++)
 		{
@@ -129,7 +129,7 @@ namespace cp
 					+ abs(r[i - v] - r[i]);
 
 
-				e[i] *= (1.0 - exp(diff*sigmap));
+				e[i] *= (1.f - exp(diff*sigmap));
 				//if (diff < th) error.at<float>(j, i) = 0.f;
 			}
 		}
@@ -395,7 +395,7 @@ namespace cp
 			subtract(subf, Scalar(minv, minv, minv), subf);
 			multiply(subf, Scalar(2, 2, 2), subf);
 
-			cp::guidedImageFilter(subf, destf, subf, ksize.width / 4, eps);
+			cp::guidedImageFilter(subf, destf, subf, ksize.width / 4, (float)eps);
 
 			multiply(subf, Scalar(0.5, 0.5, 0.5), subf);
 			add(subf, Scalar(minv, minv, minv), subf);

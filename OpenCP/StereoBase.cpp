@@ -26,6 +26,21 @@ using namespace cv;
 
 namespace cp
 {
+	string getOcclusionMethodName(const int method)
+	{
+		string ret;
+		switch (method)
+		{
+		case 0: ret = "NO Filling"; break;
+		case 1: ret = "Method 1 (simplest)"; break;
+		case 2: ret = "Method 2"; break;
+		case 3: ret = "Method 3"; break;
+		case 4: ret = "Method 4"; break;
+		default:
+			break;
+		}
+		return ret;
+	}
 #pragma region correctDisparityBoundary
 	template <class srcType>
 	void correctDisparityBoundaryECV(Mat& src, Mat& refimg, const int r, const int edgeth, Mat& dest)
@@ -566,7 +581,7 @@ namespace cp
 		uchar* d1 = dst.ptr<uchar>();
 		for (int i = 0; i < src.size().area(); i++)
 		{
-			d1[i] = min(2.f * preFilterCap, preFilterCap - 5.f * (s[i] - d0[i]));
+			d1[i] = saturate_cast<uchar>(min(2.f * preFilterCap, preFilterCap - 5.f * (s[i] - d0[i])));
 		}
 		imshow("a", dst);
 	}
@@ -812,7 +827,7 @@ namespace cp
 			temp[1].copyTo(reference[2]);
 			temp[2].copyTo(reference[4]);
 
-			if (PixelMatchingMethod == Pixel_Matching_CENSUS3x3Color)
+			if (PixelMatchingMethod == CENSUS3x3Color)
 			{
 				censusTrans8U_3x3(target[0], target[1]);
 				censusTrans8U_3x3(reference[0], reference[1]);
@@ -821,7 +836,7 @@ namespace cp
 				censusTrans8U_3x3(target[4], target[5]);
 				censusTrans8U_3x3(reference[4], reference[5]);
 			}
-			else if (PixelMatchingMethod == Pixel_Matching_CENSUS9x1Color)
+			else if (PixelMatchingMethod == CENSUS9x1Color)
 			{
 				censusTrans8U_9x1(target[0], target[1]);
 				censusTrans8U_9x1(reference[0], reference[1]);
@@ -830,7 +845,7 @@ namespace cp
 				censusTrans8U_9x1(target[4], target[5]);
 				censusTrans8U_9x1(reference[4], reference[5]);
 			}
-			else if (PixelMatchingMethod == Pixel_Matching_CENSUS5x5Color)
+			else if (PixelMatchingMethod == CENSUS5x5Color)
 			{
 				censusTrans32S_5x5(target[0], target[1]);
 				censusTrans32S_5x5(reference[0], reference[1]);
@@ -839,7 +854,7 @@ namespace cp
 				censusTrans32S_5x5(target[4], target[5]);
 				censusTrans32S_5x5(reference[4], reference[5]);
 			}
-			else if (PixelMatchingMethod == Pixel_Matching_CENSUS7x5Color)
+			else if (PixelMatchingMethod == CENSUS7x5Color)
 			{
 				censusTrans32S_7x5(target[0], target[1]);
 				censusTrans32S_7x5(reference[0], reference[1]);
@@ -868,22 +883,22 @@ namespace cp
 			if (referenceImage.channels() == 3) cvtColor(referenceImage, reference[0], COLOR_BGR2GRAY);
 			else referenceImage.copyTo(reference[0]);
 
-			if (PixelMatchingMethod == Pixel_Matching_CENSUS3x3)
+			if (PixelMatchingMethod == CENSUS3x3)
 			{
 				censusTrans8U_3x3(target[0], target[1]);
 				censusTrans8U_3x3(reference[0], reference[1]);
 			}
-			else if (PixelMatchingMethod == Pixel_Matching_CENSUS9x1)
+			else if (PixelMatchingMethod == CENSUS9x1)
 			{
 				censusTrans8U_9x1(target[0], target[1]);
 				censusTrans8U_9x1(reference[0], reference[1]);
 			}
-			else if (PixelMatchingMethod == Pixel_Matching_CENSUS5x5)
+			else if (PixelMatchingMethod == CENSUS5x5)
 			{
 				censusTrans32S_5x5(target[0], target[1]);
 				censusTrans32S_5x5(reference[0], reference[1]);
 			}
-			else if (PixelMatchingMethod == Pixel_Matching_CENSUS7x5)
+			else if (PixelMatchingMethod == CENSUS7x5)
 			{
 				censusTrans32S_7x5(target[0], target[1]);
 				censusTrans32S_7x5(reference[0], reference[1]);
@@ -898,35 +913,6 @@ namespace cp
 		}
 	}
 
-	void StereoBase::textureAlpha(Mat& src, Mat& dest, const int th1, const int th2, const int r)
-	{
-		if (dest.empty())dest.create(src.size(), CV_8U);
-		Mat temp;
-		Sobel(src, temp, CV_16S, 1, 0);
-		Mat temp2;
-
-		convertScaleAbs(temp, temp2);
-		//maxFilter(temp2,temp2,Size(2*r+1,2*r+1));
-		//blur(temp2,temp2,Size(2*r+1,2*r+1));
-		temp2 -= th1;
-
-		max(temp2, th2, temp2);
-		Mat temp33;
-		temp2.convertTo(temp33, CV_32F, 1.0 / (double)th2);
-		multiply(temp33, temp33, temp33, 1);
-		temp33.convertTo(temp2, CV_8U, 255.0 / th2);
-		//temp2*=255.0/(double)th2;
-		//blur(temp2,temp2,Size(2*r+1,2*r+1));
-		//threshold(temp2,dest,th,255,cv::THRESH_BINARY);
-
-		maxFilter(temp2, dest, Size(aggregationRadiusH, 2 * r + 1));
-
-		//blur(temp2,dest,size(2*r+1,2*r+1));
-		//dest*=1.5;
-		//GaussianBlur(dest,dest,Size(2*r+1,2*r+1),r/1.5);
-
-		//imshow("texture", dest);
-	}
 
 	inline __m256i _mm256_squared_distance_epu8(__m256i src1, __m256i src2)
 	{
@@ -1559,58 +1545,48 @@ namespace cp
 
 	}
 
-	void StereoBase::getPixelMatchingCostADAlpha(vector<Mat>& t, vector<Mat>& r, Mat& alpha, const int d, Mat& dest)
-	{
-		;
-	}
-
-	void StereoBase::getPixelMatchingCostBTAlpha(vector<Mat>& target, vector<Mat>& refference, Mat& alpha, const int d, Mat& dest)
-	{
-		;
-	}
-
 	string StereoBase::getPixelMatchingMethodName(int method)
 	{
 		string mes;
 		switch (method)
 		{
-		case Pixel_Matching_SD:						mes = "SD"; break;
-		case Pixel_Matching_SDSobel:				mes = "SDSobel"; break;
-		case Pixel_Matching_SDSobelBlend:			mes = "SDSobelBlend"; break;
-		case Pixel_Matching_AD:						mes = "AD"; break;
-		case Pixel_Matching_ADSobel:				mes = "ADSobel"; break;
-		case Pixel_Matching_ADSobelBlend:			mes = "ADSobelBlend"; break;
-		case Pixel_Matching_BT:						mes = "BT"; break;
-		case Pixel_Matching_BTSobel:				mes = "BTSobel"; break;
-		case Pixel_Matching_BTSobelBlend:			mes = "BTSobelBlend"; break;
-		case Pixel_Matching_BTFull:					mes = "BTFull"; break;
-		case Pixel_Matching_BTFullSobel:			mes = "BTFullSobel"; break;
-		case Pixel_Matching_BTFullSobelBlend:		mes = "BTFullSobelBlend"; break;
-		case Pixel_Matching_CENSUS3x3:				mes = "CENSUS3x3"; break;
-		case Pixel_Matching_CENSUS5x5:				mes = "CENSUS5x5"; break;
-		case Pixel_Matching_CENSUS7x5:				mes = "CENSUS7x5"; break;
-		case Pixel_Matching_CENSUS9x1:				mes = "CENSUS9x1"; break;
+		case SD:					mes = "SD"; break;
+		case SDEdge:				mes = "SDEdge"; break;
+		case SDEdgeBlend:			mes = "SDEdgeBlend"; break;
+		case AD:					mes = "AD"; break;
+		case ADEdge:				mes = "ADEdge"; break;
+		case ADEdgeBlend:			mes = "ADEdgeBlend"; break;
+		case BT:					mes = "BT"; break;
+		case BTEdge:				mes = "BTEdge"; break;
+		case BTEdgeBlend:			mes = "BTEdgeBlend"; break;
+		case BTFull:				mes = "BTFull"; break;
+		case BTFullEdge:			mes = "BTFullSobel"; break;
+		case BTFullEdgeBlend:		mes = "BTFullSobelBlend"; break;
+		case CENSUS3x3:				mes = "CENSUS3x3"; break;
+		case CENSUS5x5:				mes = "CENSUS5x5"; break;
+		case CENSUS7x5:				mes = "CENSUS7x5"; break;
+		case CENSUS9x1:				mes = "CENSUS9x1"; break;
 
-		case Pixel_Matching_SDColor:				mes = "SDColor"; break;
-		case Pixel_Matching_SDSobelColor:			mes = "SDSobelColor"; break;
-		case Pixel_Matching_SDSobelBlendColor:		mes = "SDSobelBlendColor"; break;
-		case Pixel_Matching_ADColor:				mes = "ADColor"; break;
-		case Pixel_Matching_ADSobelColor:			mes = "ADSobelColor"; break;
-		case Pixel_Matching_ADSobelBlendColor:		mes = "ADSobelBlendColor"; break;
-		case Pixel_Matching_BTColor:				mes = "BTColor"; break;
-		case Pixel_Matching_BTSobelColor:			mes = "BTSobelColor"; break;
-		case Pixel_Matching_BTSobelBlendColor:		mes = "BTSobelBlendColor"; break;
-		case Pixel_Matching_BTFullColor:			mes = "BTFullColor"; break;
-		case Pixel_Matching_BTFullSobelColor:		mes = "BTFullSobelColor"; break;
-		case Pixel_Matching_BTFullSobelBlendColor:	mes = "BTFullSobelBlendColor"; break;
-		case Pixel_Matching_CENSUS3x3Color:			mes = "CENSUS3x3Color"; break;
-		case Pixel_Matching_CENSUS5x5Color:			mes = "CENSUS5x5Color"; break;
-		case Pixel_Matching_CENSUS7x5Color:			mes = "CENSUS7x5Color"; break;
-		case Pixel_Matching_CENSUS9x1Color:			mes = "CENSUS9x1Color"; break;
+		case SDColor:				mes = "SDColor"; break;
+		case SDEdgeColor:			mes = "SDEdgeColor"; break;
+		case SDEdgeBlendColor:		mes = "SDEdgeBlendColor"; break;
+		case ADColor:				mes = "ADColor"; break;
+		case ADEdgeColor:			mes = "ADEdgeColor"; break;
+		case ADEdgeBlendColor:		mes = "ADEdgeBlendColor"; break;
+		case BTColor:				mes = "BTColor"; break;
+		case BTEdgeColor:			mes = "BTEdgeColor"; break;
+		case BTEdgeBlendColor:		mes = "BTEdgeBlendColor"; break;
+		case BTFullColor:			mes = "BTFullColor"; break;
+		case BTFullEdgeColor:		mes = "BTFullEdgeColor"; break;
+		case BTFullEdgeBlendColor:	mes = "BTFullEdgeBlendColor"; break;
+		case CENSUS3x3Color:		mes = "CENSUS3x3Color"; break;
+		case CENSUS5x5Color:		mes = "CENSUS5x5Color"; break;
+		case CENSUS7x5Color:		mes = "CENSUS7x5Color"; break;
+		case CENSUS9x1Color:		mes = "CENSUS9x1Color"; break;
 
 			//case Pixel_Matching_SAD_TextureBlend:	mes = "Cost_Computation_SAD_TextureBlend"; break;
 			//case Pixel_Matching_BT_TextureBlend:	mes = "Cost_Computation_BTTextureBlend"; break;
-		default:								mes = "This cost computation method is not supported"; break;
+		default:					mes = "This cost computation method is not supported"; break;
 		}
 		return mes;
 	}
@@ -1643,65 +1619,65 @@ namespace cp
 	void StereoBase::getPixelMatchingCost(const int d, Mat& dest)
 	{
 		//gray
-		if (PixelMatchingMethod == Pixel_Matching_SD)
+		if (PixelMatchingMethod == SD)
 		{
 			SDTruncate_8UC1(target[0], reference[0], d, pixelMatchErrorCap, dest);
 		}
-		else if (PixelMatchingMethod == Pixel_Matching_SDSobel)
+		else if (PixelMatchingMethod == SDEdge)
 		{
 			SDTruncate_8UC1(target[1], reference[1], d, pixelMatchErrorCap, dest);
 		}
-		else if (PixelMatchingMethod == Pixel_Matching_SDSobelBlend)
+		else if (PixelMatchingMethod == SDEdgeBlend)
 		{
 			SDTruncateBlend_8UC1(target[0], reference[0], target[1], reference[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
 		}
-		else if (PixelMatchingMethod == Pixel_Matching_AD)
+		else if (PixelMatchingMethod == AD)
 		{
 			ADTruncate_8UC1(target[0], reference[0], d, pixelMatchErrorCap, dest);
 		}
-		else if (PixelMatchingMethod == Pixel_Matching_ADSobel)
+		else if (PixelMatchingMethod == ADEdge)
 		{
 			ADTruncate_8UC1(target[1], reference[1], d, pixelMatchErrorCap, dest);
 		}
-		else if (PixelMatchingMethod == Pixel_Matching_ADSobelBlend)
+		else if (PixelMatchingMethod == ADEdgeBlend)
 		{
 			ADTruncateBlend_8UC1(target[0], reference[0], target[1], reference[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
 		}
-		else if (PixelMatchingMethod == Pixel_Matching_BT)
+		else if (PixelMatchingMethod == BT)
 		{
 			BTTruncate_8UC1(target[0], reference[0], d, pixelMatchErrorCap, dest);
 		}
-		else if (PixelMatchingMethod == Pixel_Matching_BTSobel)
+		else if (PixelMatchingMethod == BTEdge)
 		{
 			BTTruncate_8UC1(target[1], reference[1], d, pixelMatchErrorCap, dest);
 		}
-		else if (PixelMatchingMethod == Pixel_Matching_BTSobelBlend)
+		else if (PixelMatchingMethod == BTEdgeBlend)
 		{
 			BTTruncateBlend_8UC1(target[0], reference[0], target[1], reference[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
 		}
-		else if (PixelMatchingMethod == Pixel_Matching_BTFull)
+		else if (PixelMatchingMethod == BTFull)
 		{
 			BTFullTruncate_8UC1(target[0], reference[0], d, pixelMatchErrorCap, dest);
 		}
-		else if (PixelMatchingMethod == Pixel_Matching_BTFullSobel)
+		else if (PixelMatchingMethod == BTFullEdge)
 		{
 			BTFullTruncate_8UC1(target[1], reference[1], d, pixelMatchErrorCap, dest);
 		}
-		else if (PixelMatchingMethod == Pixel_Matching_BTFullSobelBlend)
+		else if (PixelMatchingMethod == BTFullEdgeBlend)
 		{
 			BTFullTruncateBlend_8UC1(target[0], reference[0], target[1], reference[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
 		}
-		else if (PixelMatchingMethod == Pixel_Matching_CENSUS3x3 || PixelMatchingMethod == Pixel_Matching_CENSUS9x1)
+		else if (PixelMatchingMethod == CENSUS3x3 || PixelMatchingMethod == CENSUS9x1)
 		{
 			HammingDistance32S_8UC1<uchar>(target[1], reference[1], d, dest);
 		}
-		else if (PixelMatchingMethod == Pixel_Matching_CENSUS5x5 || PixelMatchingMethod == Pixel_Matching_CENSUS7x5)
+		else if (PixelMatchingMethod == CENSUS5x5 || PixelMatchingMethod == CENSUS7x5)
 		{
 			HammingDistance32S_8UC1<int>(target[1], reference[1], d, dest);
 		}
 
 		//color
-		else if (PixelMatchingMethod == Pixel_Matching_SDColor)
+		else if (PixelMatchingMethod == SDColor)
 		{
 			Mat temp;
 			SDTruncate_8UC1(target[0], reference[0], d, pixelMatchErrorCap, dest);
@@ -1716,7 +1692,7 @@ namespace cp
 			if (color_distance == AVG)divide(dest, 3, dest);
 
 		}
-		else if (PixelMatchingMethod == Pixel_Matching_SDSobelColor)
+		else if (PixelMatchingMethod == SDEdgeColor)
 		{
 			Mat temp;
 			SDTruncate_8UC1(target[1], reference[1], d, pixelMatchErrorCap, dest);
@@ -1730,7 +1706,7 @@ namespace cp
 			else if (color_distance == MAX)max(dest, temp, dest);
 			if (color_distance == AVG)divide(dest, 3, dest);
 		}
-		else if (PixelMatchingMethod == Pixel_Matching_SDSobelBlendColor)
+		else if (PixelMatchingMethod == SDEdgeBlendColor)
 		{
 			Mat temp;
 			SDTruncateBlend_8UC1(target[0], reference[0], target[1], reference[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
@@ -1744,7 +1720,7 @@ namespace cp
 			else if (color_distance == MAX)max(dest, temp, dest);
 			if (color_distance == AVG)divide(dest, 3, dest);
 		}
-		else if (PixelMatchingMethod == Pixel_Matching_ADColor)
+		else if (PixelMatchingMethod == ADColor)
 		{
 			Mat temp;
 			ADTruncate_8UC1(target[0], reference[0], d, pixelMatchErrorCap, dest);
@@ -1758,7 +1734,7 @@ namespace cp
 			else if (color_distance == MAX)max(dest, temp, dest);
 			if (color_distance == AVG)divide(dest, 3, dest);
 		}
-		else if (PixelMatchingMethod == Pixel_Matching_ADSobelColor)
+		else if (PixelMatchingMethod == ADEdgeColor)
 		{
 			Mat temp;
 			ADTruncate_8UC1(target[1], reference[1], d, pixelMatchErrorCap, dest);
@@ -1772,7 +1748,7 @@ namespace cp
 			else if (color_distance == MAX)max(dest, temp, dest);
 			if (color_distance == AVG)divide(dest, 3, dest);
 		}
-		else if (PixelMatchingMethod == Pixel_Matching_ADSobelBlendColor)
+		else if (PixelMatchingMethod == ADEdgeBlendColor)
 		{
 			Mat temp;
 			ADTruncateBlend_8UC1(target[0], reference[0], target[1], reference[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
@@ -1786,7 +1762,7 @@ namespace cp
 			else if (color_distance == MAX)max(dest, temp, dest);
 			if (color_distance == AVG)divide(dest, 3, dest);
 		}
-		else if (PixelMatchingMethod == Pixel_Matching_BTColor)
+		else if (PixelMatchingMethod == BTColor)
 		{
 			Mat temp;
 			BTTruncate_8UC1(target[0], reference[0], d, pixelMatchErrorCap, dest);
@@ -1800,7 +1776,7 @@ namespace cp
 			else if (color_distance == MAX)max(dest, temp, dest);
 			if (color_distance == AVG)divide(dest, 3, dest);
 		}
-		else if (PixelMatchingMethod == Pixel_Matching_BTSobelColor)
+		else if (PixelMatchingMethod == BTEdgeColor)
 		{
 			Mat temp;
 			BTTruncate_8UC1(target[1], reference[1], d, pixelMatchErrorCap, dest);
@@ -1811,7 +1787,7 @@ namespace cp
 			BTTruncate_8UC1(target[5], reference[5], d, pixelMatchErrorCap, temp);
 			add(dest, temp, dest);
 		}
-		else if (PixelMatchingMethod == Pixel_Matching_BTSobelBlendColor)
+		else if (PixelMatchingMethod == BTEdgeBlendColor)
 		{
 			Mat temp;
 			BTTruncateBlend_8UC1(target[0], reference[0], target[1], reference[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
@@ -1825,7 +1801,7 @@ namespace cp
 			else if (color_distance == MAX)max(dest, temp, dest);
 			if (color_distance == AVG)divide(dest, 3, dest);
 		}
-		else if (PixelMatchingMethod == Pixel_Matching_BTFullColor)
+		else if (PixelMatchingMethod == BTFullColor)
 		{
 			Mat temp;
 			BTFullTruncate_8UC1(target[0], reference[0], d, pixelMatchErrorCap, dest);
@@ -1839,7 +1815,7 @@ namespace cp
 			else if (color_distance == MAX)max(dest, temp, dest);
 			if (color_distance == AVG)divide(dest, 3, dest);
 		}
-		else if (PixelMatchingMethod == Pixel_Matching_BTFullSobelColor)
+		else if (PixelMatchingMethod == BTFullEdgeColor)
 		{
 			Mat temp;
 			BTFullTruncate_8UC1(target[1], reference[1], d, pixelMatchErrorCap, dest);
@@ -1853,7 +1829,7 @@ namespace cp
 			else if (color_distance == MAX)max(dest, temp, dest);
 			if (color_distance == AVG)divide(dest, 3, dest);
 		}
-		else if (PixelMatchingMethod == Pixel_Matching_BTFullSobelBlendColor)
+		else if (PixelMatchingMethod == BTFullEdgeBlendColor)
 		{
 			Mat temp;
 			BTFullTruncateBlend_8UC1(target[0], reference[0], target[1], reference[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
@@ -1864,7 +1840,7 @@ namespace cp
 			BTFullTruncateBlend_8UC1(target[4], reference[4], target[5], reference[5], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, temp);
 			add(dest, temp, dest);
 		}
-		else if (PixelMatchingMethod == Pixel_Matching_CENSUS3x3Color || PixelMatchingMethod == Pixel_Matching_CENSUS9x1Color)
+		else if (PixelMatchingMethod == CENSUS3x3Color || PixelMatchingMethod == CENSUS9x1Color)
 		{
 			Mat temp;
 			HammingDistance32S_8UC1<uchar>(target[1], reference[1], d, dest);
@@ -1878,7 +1854,7 @@ namespace cp
 			else if (color_distance == MAX)max(dest, temp, dest);
 			if (color_distance == AVG)divide(dest, 3, dest);
 		}
-		else if (PixelMatchingMethod == Pixel_Matching_CENSUS5x5Color || PixelMatchingMethod == Pixel_Matching_CENSUS7x5Color)
+		else if (PixelMatchingMethod == CENSUS5x5Color || PixelMatchingMethod == CENSUS7x5Color)
 		{
 			Mat temp;
 			HammingDistance32S_8UC1<int>(target[1], reference[1], d, dest);
@@ -1887,7 +1863,10 @@ namespace cp
 			else if (color_distance == MIN)min(dest, temp, dest);
 			else if (color_distance == MAX)max(dest, temp, dest);
 			HammingDistance32S_8UC1<int>(target[5], reference[5], d, temp);
-			add(dest, temp, dest);
+			if (color_distance == ADD || color_distance == AVG) add(dest, temp, dest);
+			else if (color_distance == MIN)min(dest, temp, dest);
+			else if (color_distance == MAX)max(dest, temp, dest);
+			if (color_distance == AVG)divide(dest, 3, dest);
 		}
 
 		/*else if (PixelMatchingMethod == Pixel_Matching_SAD_TextureBlend)
@@ -1908,6 +1887,11 @@ namespace cp
 		}
 	}
 
+
+	inline float distance_functionEXP(float diff, float clip)
+	{
+		return 1.f - exp(diff * diff / (-2.f * clip * clip));
+	}
 	inline float distance_functionL1(float diff, float clip)
 	{
 		return min(abs(diff), clip);
@@ -1929,15 +1913,65 @@ namespace cp
 				cptr[i] = saturate_cast<uchar>(cptr[i] + amp * distance_functionL2((float)current_disparity - dptr[i] / 16.f, (float)clip));
 			}
 		}
-		else
+		else if (functionType == 1)
 		{
 			for (int i = 0; i < cost.size().area(); i++)
 			{
 				cptr[i] = saturate_cast<uchar>(cptr[i] + amp * distance_functionL1((float)current_disparity - dptr[i] / 16.f, (float)clip));
 			}
 		}
+		else if (functionType == 0)
+		{
+			for (int i = 0; i < cost.size().area(); i++)
+			{
+				cptr[i] = saturate_cast<uchar>(cptr[i] + amp * distance_functionEXP((float)current_disparity - dptr[i] / 16.f, (float)clip));
+			}
+		}
+		else
+		{
+			std::cout << "not supported for this function type in feedback" << std::endl;
+		}
 	}
 
+	void StereoBase::textureAlpha(Mat& src, Mat& dest, const int th1, const int th2, const int r)
+	{
+		if (dest.empty())dest.create(src.size(), CV_8U);
+		Mat temp;
+		Sobel(src, temp, CV_16S, 1, 0);
+		Mat temp2;
+
+		convertScaleAbs(temp, temp2);
+		//maxFilter(temp2,temp2,Size(2*r+1,2*r+1));
+		//blur(temp2,temp2,Size(2*r+1,2*r+1));
+		temp2 -= th1;
+
+		max(temp2, th2, temp2);
+		Mat temp33;
+		temp2.convertTo(temp33, CV_32F, 1.0 / (double)th2);
+		multiply(temp33, temp33, temp33, 1);
+		temp33.convertTo(temp2, CV_8U, 255.0 / th2);
+		//temp2*=255.0/(double)th2;
+		//blur(temp2,temp2,Size(2*r+1,2*r+1));
+		//threshold(temp2,dest,th,255,cv::THRESH_BINARY);
+
+		maxFilter(temp2, dest, Size(aggregationRadiusH, 2 * r + 1));
+
+		//blur(temp2,dest,size(2*r+1,2*r+1));
+		//dest*=1.5;
+		//GaussianBlur(dest,dest,Size(2*r+1,2*r+1),r/1.5);
+
+		//imshow("texture", dest);
+	}
+
+	void StereoBase::getPixelMatchingCostADAlpha(vector<Mat>& t, vector<Mat>& r, Mat& alpha, const int d, Mat& dest)
+	{
+		;
+	}
+
+	void StereoBase::getPixelMatchingCostBTAlpha(vector<Mat>& target, vector<Mat>& refference, Mat& alpha, const int d, Mat& dest)
+	{
+		;
+	}
 #pragma endregion
 
 #pragma region cost aggregation
@@ -1947,15 +1981,15 @@ namespace cp
 		string mes;
 		switch (method)
 		{
-		case Aggregation_Box:				mes = "Box"; break;
-		case Aggregation_BoxShiftable:		mes = "BoxShiftable"; break;
-		case Aggregation_Gauss:				mes = "Gauss"; break;
-		case Aggregation_GaussShiftable:	mes = "GaussShiftable"; break;
-		case Aggregation_Guided:			mes = "Guided"; break;
-		case Aggregation_CrossBasedBox:		mes = "CrossBasedBox"; break;
-		case Aggregation_Bilateral:			mes = "Bilateral"; break;
+		case Box:				mes = "Box"; break;
+		case BoxShiftable:		mes = "BoxShiftable"; break;
+		case Gaussian:			mes = "Gauss"; break;
+		case GaussShiftable:	mes = "GaussShiftable"; break;
+		case Guided:			mes = "Guided"; break;
+		case CrossBasedBox:		mes = "CrossBasedBox"; break;
+		case Bilateral:			mes = "Bilateral"; break;
 
-		default:							mes = "This cost computation method is not supported"; break;
+		default:				mes = "This cost computation method is not supported"; break;
 		}
 		return mes;
 	}
@@ -1971,36 +2005,36 @@ namespace cp
 			//GaussianBlur(dsi,DSI[i],Size(SADWindowSize,SADWindowSize),3);
 			Size kernelSize = Size(2 * aggregationRadiusH + 1, 2 * aggregationRadiusV + 1);
 
-			if (AggregationMethod == Aggregation_Box)
+			if (AggregationMethod == Box)
 			{
 				boxFilter(src, dest, -1, kernelSize);
 			}
-			else if (AggregationMethod == Aggregation_BoxShiftable)
+			else if (AggregationMethod == BoxShiftable)
 			{
 				boxFilter(src, dest, -1, kernelSize);
 				minFilter(dest, dest, aggregationShiftableKernel);
 			}
-			else if (AggregationMethod == Aggregation_Gauss)
+			else if (AggregationMethod == Gaussian)
 			{
 				GaussianBlur(src, dest, kernelSize, sigma_s_h, sigma_s_v);
 			}
-			else if (AggregationMethod == Aggregation_GaussShiftable)
+			else if (AggregationMethod == GaussShiftable)
 			{
 				GaussianBlur(src, dest, kernelSize, sigma_s_h, sigma_s_v);
 				minFilter(dest, dest, aggregationShiftableKernel);
 			}
-			else if (AggregationMethod == Aggregation_Guided)
+			else if (AggregationMethod == Guided)
 			{
 				//guidedImageFilter(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps * aggregationGuidedfilterEps,GuidedTypes::GUIDED_SEP_VHI, BoxTypes::BOX_OPENCV, ParallelTypes::NAIVE);
 				//guidedImageFilter(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps * aggregationGuidedfilterEps, GuidedTypes::GUIDED_SEP_VHI_SHARE, BoxTypes::BOX_OPENCV, ParallelTypes::NAIVE);
 				gif[omp_get_thread_num()].filterGuidePrecomputed(src, guide, dest, min(aggregationRadiusH, aggregationRadiusV), float(aggregationGuidedfilterEps * aggregationGuidedfilterEps), GuidedTypes::GUIDED_SEP_VHI_SHARE, ParallelTypes::NAIVE);
 				//guidedImageFilter(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps * aggregationGuidedfilterEps, GuidedTypes::GUIDED_SEP_VHI_SHARE, BoxTypes::BOX_OPENCV, ParallelTypes::OMP);
 			}
-			else if (AggregationMethod == Aggregation_CrossBasedBox)
+			else if (AggregationMethod == CrossBasedBox)
 			{
 				clf(src, dest);
 			}
-			else if (AggregationMethod == Aggregation_Bilateral)
+			else if (AggregationMethod == Bilateral)
 			{
 				jointBilateralFilter(src, guide, dest, min(2 * aggregationRadiusH + 1, 2 * aggregationRadiusV + 1), aggregationGuidedfilterEps, sigma_s_h, FILTER_RECTANGLE);
 			}
@@ -2530,8 +2564,6 @@ namespace cp
 				int m = DSI[l - 1].data[j];
 				if (f > p || f > m)
 				{
-
-
 					int md = ((p + m - (f << 1)) << 1);
 					if (md != 0)
 					{
@@ -2569,7 +2601,6 @@ namespace cp
 		srcType* disp = disp8.ptr<srcType>(0);
 		srcType* dispr = dispR.ptr<srcType>(0);
 
-
 		disp += minDisparity + numberOfDisparities;
 		dispr += minDisparity + numberOfDisparities;
 		for (int j = imsize - (minDisparity + numberOfDisparities); j--; disp++, dispr++)
@@ -2579,7 +2610,7 @@ namespace cp
 			{
 				if (*(dispr - d) < *(disp))
 				{
-					*(dispr - d) = d;
+					*(dispr - d) = (srcType)d;
 				}
 			}
 		}
@@ -2973,6 +3004,29 @@ namespace cp
 	}
 #pragma endregion
 
+	void cvtColorBGR2GRAY_AVG(Mat& src, Mat& dest)
+	{
+		CV_Assert(src.channels() == 3);
+		dest.create(src.size(), CV_8U);
+		const int size = src.size().area();
+		uchar* s = src.ptr<uchar>();
+		uchar* d = dest.ptr<uchar>();
+		for (int i = 0; i < size; i++)
+		{
+			d[i] = saturate_cast<uchar>((s[3 * i + 0] + s[3 * i + 1] + s[3 * i + 2]) / 3.f);
+		}
+	}
+
+	void StereoBase::computeGuideImageForAggregation(Mat& input)
+	{
+		cvtColorBGR2GRAY_AVG(input, guideImage);
+		//cvtColor(input, guideImage, COLOR_BGR2BGRA);
+		//Mat temp;
+		//cv::decolor(input, guideImage, temp);
+		//guidedImageFilter(guideImage, guideImage, guideImage, 2, 2);
+		//guidedImageFilter(guideImage, guideImage, guideImage, 2, 2);
+	}
+
 	//main function
 	void StereoBase::matching(Mat& leftim, Mat& rightim, Mat& destDisparityMap, const bool isFeedback)
 	{
@@ -2981,8 +3035,8 @@ namespace cp
 		minCostMap.setTo(255);
 		if ((int)DSI.size() < numberOfDisparities)DSI.resize(numberOfDisparities);
 
-		Mat guideImage;
-		cvtColor(leftim, guideImage, COLOR_BGR2GRAY);
+#pragma region matching:prefilter
+		computeGuideImageForAggregation(leftim);
 
 		{
 #ifdef TIMER_STEREO_BASE
@@ -2990,23 +3044,26 @@ namespace cp
 #endif
 			prefilter(leftim, rightim);
 		}
-
+#pragma endregion
+#pragma region matching:pixelmatch and aggregation
 		{
 #ifdef TIMER_STEREO_BASE
 			Timer t("Cost computation & aggregation");
 #endif
-			if (AggregationMethod == Aggregation_CrossBasedBox) clf.makeKernel(guideImage, aggregationRadiusH, aggregationGuidedfilterEps, 0);
+			if (AggregationMethod == CrossBasedBox) clf.makeKernel(guideImage, aggregationRadiusH, (int)aggregationGuidedfilterEps, 0);
 
 #pragma omp parallel for
 			for (int i = 0; i < numberOfDisparities; i++)
 			{
 				const int d = minDisparity + i;
 				getPixelMatchingCost(d, DSI[i]);
-				if (isFeedback)addCostIterativeFeedback(DSI[i], d, destDisparityMap, 0, 2, 1.f);
+
+				if (isFeedback)addCostIterativeFeedback(DSI[i], d, destDisparityMap, feedbackFunction, feedbackClip, feedbackAmp);
 				getCostAggregation(DSI[i], DSI[i], guideImage);
 			}
 		}
-
+#pragma endregion
+#pragma region matching:optimization and WTA
 		{
 #ifdef TIMER_STEREO_BASE
 			Timer t("Cost Optimization");
@@ -3021,7 +3078,8 @@ namespace cp
 #endif
 			getWTA(DSI, destDisparityMap, minCostMap);
 		}
-
+#pragma endregion
+#pragma region matching:postfiltering
 		{
 #ifdef TIMER_STEREO_BASE
 			Timer t("===Post Filterings===");
@@ -3039,7 +3097,7 @@ namespace cp
 				Timer t("Post: subpix");
 #endif
 				subpixelInterpolation(destDisparityMap, subpixelInterpolationMethod);
-				if (isRangeFilterSubpix) binalyWeightedRangeFilter(destDisparityMap, destDisparityMap, subpixelRangeFilterWindow, subpixelRangeFilterCap);
+				if (isRangeFilterSubpix) binalyWeightedRangeFilter(destDisparityMap, destDisparityMap, subpixelRangeFilterWindow, (float)subpixelRangeFilterCap);
 			}
 			//R depth map;
 
@@ -3066,12 +3124,15 @@ namespace cp
 #ifdef TIMER_STEREO_BASE
 		cout << "=====================" << endl;
 #endif
+#pragma endregion
+
 	}
 
 	void StereoBase::operator()(Mat& leftim, Mat& rightim, Mat& dest)
 	{
 		matching(leftim, rightim, dest);
 	}
+
 
 	static void guiStereoMatchingOnMouse(int events, int x, int y, int flags, void* param)
 	{
@@ -3084,60 +3145,48 @@ namespace cp
 		}
 	}
 
-	string getOcclusionMethodName(const int method)
-	{
-		string ret;
-		switch (method)
-		{
-		case 0: ret = "NO Filling"; break;
-		case 1: ret = "Method 1 (simplest)"; break;
-		case 2: ret = "Method 2"; break;
-		case 3: ret = "Method 3"; break;
-		case 4: ret = "Method 4"; break;
-		default:
-			break;
-		}
-		return ret;
-	}
-
 	void StereoBase::gui(Mat& leftim, Mat& rightim, Mat& destDisparity, StereoEval& eval)
 	{
 #pragma region setup
 		ConsoleImage ci(Size(640, 680));
-		//ci.setFontSize(12);
+		ci.setFontSize(12);
 		string wname = "";
 		string wname2 = "Disparity Map";
 
 		namedWindow(wname2);
 		moveWindow(wname2, 200, 200);
 		int display_image_depth_alpha = 0; createTrackbar("disp-image: alpha", wname, &display_image_depth_alpha, 100);
-		PixelMatchingMethod = Pixel_Matching_SDSobelBlend;
-		//PixelMatchingMethod = Pixel_Matching_CENSUS5x5;
-		createTrackbar("pix match method", wname, &PixelMatchingMethod, Pixel_Matching_Method_Size - 1);
-		createTrackbar("pix match color method", wname, &color_distance, ColorDistance_Size - 1);
-
 		//pre filter
-		createTrackbar("pcap", wname, &preFilterCap, 255);
+		createTrackbar("prefilter: cap", wname, &preFilterCap, 255);
 
-		createTrackbar("Sobel blend a", wname, &costAlphaImageSobel, 100);
+		PixelMatchingMethod = SDEdgeBlend;
+		//PixelMatchingMethod = Pixel_Matching_CENSUS5x5;
+		createTrackbar("pix match: method", wname, &PixelMatchingMethod, Pixel_Matching_Method_Size - 1);
+		createTrackbar("pix match: color method", wname, &color_distance, ColorDistance_Size - 1);
+		createTrackbar("pix match: blend a", wname, &costAlphaImageSobel, 100);
 		pixelMatchErrorCap = preFilterCap;
-		createTrackbar("pixel err cap", wname, &pixelMatchErrorCap, 255);
+		createTrackbar("pix match: err cap", wname, &pixelMatchErrorCap, 255);
+
+		createTrackbar("feedback: function", wname, &feedbackFunction, 2);
+		createTrackbar("feedback: cap", wname, &feedbackClip, 10);
+		int feedbackAmpInt = 5; createTrackbar("feedback: amp*0.1", wname, &feedbackAmpInt, 50);
 
 		//cost computation for texture alpha
-		createTrackbar("Soble alpha p size", wname, &sobelBlendMapParam_Size, 10);
-		createTrackbar("Soble alpha p 1", wname, &sobelBlendMapParam1, 255);
-		createTrackbar("Soble alpha p 2", wname, &sobelBlendMapParam2, 255);
+		//createTrackbar("Soble alpha p size", wname, &sobelBlendMapParam_Size, 10);
+		//createTrackbar("Soble alpha p 1", wname, &sobelBlendMapParam1, 255);
+		//createTrackbar("Soble alpha p 2", wname, &sobelBlendMapParam2, 255);
 
 		//AggregationMethod = Aggregation_Gauss;
-		AggregationMethod = Aggregation_Guided;
-		createTrackbar("agg method", wname, &AggregationMethod, Aggregation_Method_Size - 1);
-		createTrackbar("agg r width", wname, &aggregationRadiusH, 20);
-		createTrackbar("agg r height", wname, &aggregationRadiusV, 20);
-		int aggeps = 1; createTrackbar("agg guide color sigma/eps", wname, &aggeps, 255);
-		int aggss = 100; createTrackbar("agg guide space sigma", wname, &aggss, 255);
+		AggregationMethod = Guided;
+		createTrackbar("agg: method", wname, &AggregationMethod, Aggregation_Method_Size - 1);
+		createTrackbar("agg: r width", wname, &aggregationRadiusH, 20);
+		createTrackbar("agg: r height", wname, &aggregationRadiusV, 20);
+		int aggeps = 1; createTrackbar("agg: guide color sigma/eps", wname, &aggeps, 255);
+		int aggss = 100; createTrackbar("agg: guide space sigma", wname, &aggss, 255);
 
-		createTrackbar("P1", wname, &P1, 20);
-		createTrackbar("P2", wname, &P2, 20);
+		// disable P1, P2 for optimization(under debug)
+		//createTrackbar("P1", wname, &P1, 20);
+		//createTrackbar("P2", wname, &P2, 20);
 
 		uniquenessRatio = 10;
 		createTrackbar("uniq", wname, &uniquenessRatio, 100);
@@ -3156,27 +3205,21 @@ namespace cp
 
 		int occlusionMethod = 1;
 		createTrackbar("occlusionMethod", wname, &occlusionMethod, 3);
-
+		// disable occlution options (under debug)
 		int occsearch2 = 4;
-		createTrackbar("occ:s2", wname, &occsearch2, 15);
-
+		//createTrackbar("occ:s2", wname, &occsearch2, 15);
 		int occth = 17;
-		createTrackbar("occ:th", wname, &occth, 128);
+		//createTrackbar("occ:th", wname, &occth, 128);
 		int occsearch = 4;
-		createTrackbar("occ:s", wname, &occsearch, 15);
-
+		//createTrackbar("occ:s", wname, &occsearch, 15);
 		int occsearchh = 2;
-		createTrackbar("occ:sH", wname, &occsearchh, 15);
+		//createTrackbar("occ:sH", wname, &occsearchh, 15);
 		int occiter = 0;
-		createTrackbar("occ:iter", wname, &occiter, 10);
+		//createTrackbar("occ:iter", wname, &occiter, 10);
 
-		int key = 0;
 
-		Mat lim, rim;
-		Mat bmdisp;
 		Plot p(Size(640, 240));
 		Plot histp(Size(640, 240));
-
 		Plot signal(Size(640, 240 * 3));
 		int vh = 0;
 		int diffmode = 0;
@@ -3188,9 +3231,9 @@ namespace cp
 		}
 
 		int bx = 3;
-		createTrackbar("AsubboxR", wname, &bx, 10);
+		createTrackbar("post:subboxR", wname, &bx, 10);
 		int bran = 31;
-		createTrackbar("Asubboxrange", wname, &bran, 64);
+		createTrackbar("post:subboxrange", wname, &bran, 64);
 
 		int gr = 3;
 		createTrackbar("ref:guide r", wname, &gr, 10);
@@ -3211,7 +3254,7 @@ namespace cp
 		bool isPlotCostFunction = true;
 		bool isPlotSignal = true;
 
-		bool isGrid = false;
+		bool isGrid = true;
 		bool isReCost = false;
 
 		bool isStreak = false;
@@ -3225,7 +3268,7 @@ namespace cp
 
 		setMouseCallback(wname2, guiStereoMatchingOnMouse, &mpt);
 
-		CostVolumeRefinement cbf(minDisparity, numberOfDisparities);
+		//CostVolumeRefinement cbf(minDisparity, numberOfDisparities);
 
 		const bool isShowSubpixelDisparityDistribution = true;
 		const bool isShowZeroMask = true;
@@ -3236,12 +3279,15 @@ namespace cp
 		Mat weightMap = Mat::ones(leftim.size(), CV_32F);
 		destDisparity.setTo(0);
 #pragma endregion
-
+		UpdateCheck uck(feedbackFunction, feedbackClip, feedbackAmpInt);
+		int key = 0;
 		while (key != 'q')
 		{
 			//init
 			aggregationGuidedfilterEps = aggeps;
 			aggregationSigmaSpace = aggss;
+			feedbackAmp = feedbackAmpInt * 0.1f;
+
 			ci.clear();
 			if (PixelMatchingMethod % 2 == 0)
 				ci(getPixelMatchingMethodName(PixelMatchingMethod) + ": (i-u)");
@@ -3348,7 +3394,7 @@ namespace cp
 					//crossBasedAdaptiveBoxFilter(destDisparity, leftim, destDisparity, Size(2 * gr + 1, 2 * gr + 1), ge);
 					//cp::weightedModeFilter(destDisparity, leftim, destDisparity, 4, 2, 10, 500, 0, 2);
 					Mat temp;
-					guidedImageFilter(destDisparity, leftim, temp, gr, ge, GUIDED_SEP_VHI);
+					guidedImageFilter(destDisparity, leftim, temp, gr, (float)ge, GUIDED_SEP_VHI);
 					jointNearestFilter(temp, destDisparity, Size(2 * jnr + 1, 2 * jnr + 1), destDisparity);
 					ci("refine: %f ms", t.getTime());
 				}
@@ -3366,14 +3412,14 @@ namespace cp
 					float* s = weightMap.ptr<float>();
 					for (int i = 0; i < weightMap.size().area(); i++)
 					{
-						float diff = (disp[i] - dispb[i]) * (disp[i] - dispb[i]) / (-2.0 * 16 * 16 * ws * ws);
+						float diff = (disp[i] - dispb[i]) * (disp[i] - dispb[i]) / (-2.f * 16 * 16 * ws * ws);
 						s[i] = exp(diff);
 					}
 
 					Mat a, b;
 					multiply(destDisparity, weightMap, a, 1, CV_32F);
-					guidedImageFilter(a, leftim, a, gr, ge, GUIDED_SEP_VHI);
-					guidedImageFilter(weightMap, leftim, b, gr, ge, GUIDED_SEP_VHI);
+					guidedImageFilter(a, leftim, a, gr, (float)ge, GUIDED_SEP_VHI);
+					guidedImageFilter(weightMap, leftim, b, gr, (float)ge, GUIDED_SEP_VHI);
 					Mat temp;
 					divide(a, b, temp, 1, CV_16S);
 					jointNearestFilter(temp, destDisparity, Size(2 * jnr + 1, 2 * jnr + 1), destDisparity);
@@ -3620,25 +3666,25 @@ namespace cp
 				if (maskType != 0)
 				{
 					if (maskPrec == 2 && maskType == 1)
-						ci(CV_RGB(255, 0, 0), "mask: nonocc, prec: 2.0");
+						ci(CV_RGB(0, 255, 0), "mask: nonocc, prec: 2.0");
 					if (maskPrec == 1 && maskType == 1)
-						ci(CV_RGB(255, 0, 0), "mask: nonocc, prec: 1.0");
+						ci(CV_RGB(0, 255, 0), "mask: nonocc, prec: 1.0");
 					if (maskPrec == 0 && maskType == 1)
-						ci(CV_RGB(255, 0, 0), "mask: nonocc, prec: 0.5");
+						ci(CV_RGB(0, 255, 0), "mask: nonocc, prec: 0.5");
 
 					if (maskPrec == 2 && maskType == 2)
-						ci(CV_RGB(255, 0, 0), "mask: all, prec: 2.0");
+						ci(CV_RGB(0, 255, 0), "mask: all, prec: 2.0");
 					if (maskPrec == 1 && maskType == 2)
-						ci(CV_RGB(255, 0, 0), "mask: all, prec: 1.0");
+						ci(CV_RGB(0, 255, 0), "mask: all, prec: 1.0");
 					if (maskPrec == 0 && maskType == 2)
-						ci(CV_RGB(255, 0, 0), "mask: all, prec: 0.5");
+						ci(CV_RGB(0, 255, 0), "mask: all, prec: 0.5");
 
 					if (maskPrec == 2 && maskType == 3)
-						ci(CV_RGB(255, 0, 0), "mask: disc, prec: 2.0");
+						ci(CV_RGB(0, 255, 0), "mask: disc, prec: 2.0");
 					if (maskPrec == 1 && maskType == 3)
-						ci(CV_RGB(255, 0, 0), "mask: disc, prec: 1.0");
+						ci(CV_RGB(0, 255, 0), "mask: disc, prec: 1.0");
 					if (maskPrec == 0 && maskType == 3)
-						ci(CV_RGB(255, 0, 0), "mask: disc, prec: 0.5");
+						ci(CV_RGB(0, 255, 0), "mask: disc, prec: 0.5");
 				}
 				else
 				{
@@ -3683,13 +3729,13 @@ namespace cp
 			if (key == 'e')isShowGT = (isShowGT) ? false : true;
 			if (key == 'b') guiCrossBasedLocalFilter(leftim);
 
-			if (key == 'r')
+			if (key == 'r' || uck.isUpdate(feedbackFunction, feedbackClip, feedbackAmpInt))
 			{
 				destDisparity.setTo(0);
 			}
 
-			if (key == 'm')maskType++; maskType = maskType > 4 ? 0 : maskType;
-			if (key == 'n')maskPrec++; maskPrec = maskPrec > 3 ? 0 : maskPrec;
+			if (key == 'm')maskType++; maskType = maskType > 3 ? 0 : maskType;
+			if (key == 'n')maskPrec++; maskPrec = maskPrec > 2 ? 0 : maskPrec;
 		}
 	}
 

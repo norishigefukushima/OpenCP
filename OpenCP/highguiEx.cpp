@@ -48,7 +48,7 @@ namespace cp
 
 	cv::Mat getTextImageQt(string message, string font, const int fontSize, Scalar text_color, Scalar background_color, bool isItalic)
 	{
-		int count = message.size() + 1;
+		int count = (int)message.size() + 1;
 		Mat image = Mat::zeros(2 * (fontSize + 1), (fontSize + 1) * count, CV_8UC3);
 		if (isItalic)
 		{
