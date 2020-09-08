@@ -135,7 +135,10 @@ namespace cp
 		dest = _dest;
 		r = _r;
 		eps = _eps;
-		if (isUpdate)computeVarCov();
+		if (isUpdate)
+		{
+			computeVarCov();
+		}
 		filterGuidePrecomputed();
 	}
 
@@ -360,9 +363,9 @@ namespace cp
 		}
 		else if (dest.depth() == CV_32F || dest.depth() == CV_64F)
 		{
-			if (src.type() != dest.type() || src.channels() != dest.channels())
+			if (src.channels() != dest.channels())
 			{
-				if (src.channels() == CV_64F)
+				if (src.depth() == CV_64F)
 					destImage.create(guide.size(), CV_MAKETYPE(CV_64F, src.channels()));
 				else
 					destImage.create(guide.size(), CV_MAKETYPE(CV_32F, src.channels()));
@@ -446,6 +449,7 @@ namespace cp
 		if (init)
 		{
 			parallel_type = parallel_type_current;
+			gf[0].release();
 			gf[0] = getGuidedFilter(srcImage, guideImage, destImage, r, eps, guided_type);
 			gf[0]->filterGuidePrecomputed(srcImage, guideImage, destImage, r, eps);
 		}

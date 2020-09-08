@@ -556,6 +556,21 @@ namespace cp
 		}
 	}
 
+	static void prefilterGuided(Mat& src, Mat& dst, const int preFilterCap)
+	{
+		dst.create(src.size(), CV_8U);
+		Mat dest(src.size(), CV_32F);
+		guidedImageFilter(src, src, dest, 2, 70, GUIDED_SEP_VHI);
+		uchar* s = src.ptr<uchar>();
+		float* d0 = dest.ptr<float>();
+		uchar* d1 = dst.ptr<uchar>();
+		for (int i = 0; i < src.size().area(); i++)
+		{
+			d1[i] = min(2.f * preFilterCap, preFilterCap - 5.f*(s[i] - d0[i]));
+		}
+		imshow("a", dst);
+	}
+
 	static void censusTrans8U_3x3(Mat& src, Mat& dest)
 	{
 		if (dest.empty() || dest.depth() != CV_8U)dest.create(src.size(), CV_8U);
@@ -875,6 +890,8 @@ namespace cp
 			}
 			else
 			{
+				//prefilterGuided(target[0], target[1], preFilterCap);
+				//prefilterGuided(reference[0], reference[1], preFilterCap);
 				prefilterXSobel(target[0], target[1], preFilterCap);
 				prefilterXSobel(reference[0], reference[1], preFilterCap);
 			}
@@ -1682,9 +1699,11 @@ namespace cp
 			Mat temp;
 			SDTruncateBlend_8UC1(target[0], reference[0], target[1], reference[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
 			SDTruncateBlend_8UC1(target[2], reference[2], target[3], reference[3], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, temp);
-			add(dest, temp, dest);
+			//add(dest, temp, dest);
+			min(dest, temp, dest);
 			SDTruncateBlend_8UC1(target[4], reference[4], target[5], reference[5], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, temp);
-			add(dest, temp, dest);
+			//add(dest, temp, dest);
+			min(dest, temp, dest);
 		}
 		else if (PixelMatchingMethod == Pixel_Matching_ADColor)
 		{
@@ -1817,9 +1836,20 @@ namespace cp
 		CV_Assert(disparity.depth() == CV_16S);
 		const short* dptr = disparity.ptr<short>();
 		uchar* cptr = cost.ptr<uchar>();
-		for (int i = 0; i < cost.size().area(); i++)
+
+		if (functionType == 2)
 		{
-			cptr[i] = saturate_cast<uchar>(cptr[i] + amp * distance_functionL1((float)current_disparity - dptr[i] / 16.f, (float)clip));
+			for (int i = 0; i < cost.size().area(); i++)
+			{
+				cptr[i] = saturate_cast<uchar>(cptr[i] + amp * distance_functionL2((float)current_disparity - dptr[i] / 16.f, (float)clip));
+			}
+		}
+		else
+		{
+			for (int i = 0; i < cost.size().area(); i++)
+			{
+				cptr[i] = saturate_cast<uchar>(cptr[i] + amp * distance_functionL1((float)current_disparity - dptr[i] / 16.f, (float)clip));
+			}
 		}
 	}
 
@@ -1845,7 +1875,7 @@ namespace cp
 		return mes;
 	}
 
-	void StereoBase::getCostAggregation(Mat& src, Mat& dest, cv::InputArray guideImage, const bool isFeedback, cv::Mat& weightMap)
+	void StereoBase::getCostAggregation(Mat& src, Mat& dest, cv::InputArray guideImage)
 	{
 		const float sigma_s_h = (float)aggregationSigmaSpace;
 		const float sigma_s_v = (float)aggregationSigmaSpace;
@@ -1867,18 +1897,7 @@ namespace cp
 			}
 			else if (AggregationMethod == Aggregation_Gauss)
 			{
-				if (isFeedback && !weightMap.empty())
-				{
-					Mat a, b;
-					multiply(src, weightMap, a, 1.0, CV_32F);
-					GaussianBlur(a, a, kernelSize, sigma_s_h, sigma_s_v);
-					GaussianBlur(weightMap, b, kernelSize, sigma_s_h, sigma_s_v);
-					divide(a, b, dest, 1.0, CV_8U);
-				}
-				else
-				{
-					GaussianBlur(src, dest, kernelSize, sigma_s_h, sigma_s_v);
-				}
+				GaussianBlur(src, dest, kernelSize, sigma_s_h, sigma_s_v);
 			}
 			else if (AggregationMethod == Aggregation_GaussShiftable)
 			{
@@ -1887,21 +1906,10 @@ namespace cp
 			}
 			else if (AggregationMethod == Aggregation_Guided)
 			{
-				/*if (isFeedback && !weightMap.empty())
-				{
-					Mat a, b;
-					multiply(src, weightMap, a, 1.0, CV_32F);
-					gif[omp_get_thread_num()].filterGuidePrecomputed(a, guide, a, min(aggregationRadiusH, aggregationRadiusV), float(aggregationGuidedfilterEps * aggregationGuidedfilterEps), GuidedTypes::GUIDED_SEP_VHI_SHARE, ParallelTypes::NAIVE);
-					gif[omp_get_thread_num()].filterGuidePrecomputed(weightMap, guide, b, min(aggregationRadiusH, aggregationRadiusV), float(aggregationGuidedfilterEps * aggregationGuidedfilterEps), GuidedTypes::GUIDED_SEP_VHI_SHARE, ParallelTypes::NAIVE);
-					divide(a, b, dest, 1.0, CV_8U);
-				}
-				else*/
-				{
-					//guidedImageFilter(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps * aggregationGuidedfilterEps,GuidedTypes::GUIDED_SEP_VHI, BoxTypes::BOX_OPENCV, ParallelTypes::NAIVE);
-					//guidedImageFilter(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps * aggregationGuidedfilterEps, GuidedTypes::GUIDED_SEP_VHI_SHARE, BoxTypes::BOX_OPENCV, ParallelTypes::NAIVE);
-					gif[omp_get_thread_num()].filterGuidePrecomputed(src, guide, dest, min(aggregationRadiusH, aggregationRadiusV), float(aggregationGuidedfilterEps * aggregationGuidedfilterEps), GuidedTypes::GUIDED_SEP_VHI_SHARE, ParallelTypes::NAIVE);
-					//guidedImageFilter(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps * aggregationGuidedfilterEps, GuidedTypes::GUIDED_SEP_VHI_SHARE, BoxTypes::BOX_OPENCV, ParallelTypes::OMP);
-				}
+				//guidedImageFilter(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps * aggregationGuidedfilterEps,GuidedTypes::GUIDED_SEP_VHI, BoxTypes::BOX_OPENCV, ParallelTypes::NAIVE);
+				//guidedImageFilter(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps * aggregationGuidedfilterEps, GuidedTypes::GUIDED_SEP_VHI_SHARE, BoxTypes::BOX_OPENCV, ParallelTypes::NAIVE);
+				gif[omp_get_thread_num()].filterGuidePrecomputed(src, guide, dest, min(aggregationRadiusH, aggregationRadiusV), float(aggregationGuidedfilterEps * aggregationGuidedfilterEps), GuidedTypes::GUIDED_SEP_VHI_SHARE, ParallelTypes::NAIVE);
+				//guidedImageFilter(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps * aggregationGuidedfilterEps, GuidedTypes::GUIDED_SEP_VHI_SHARE, BoxTypes::BOX_OPENCV, ParallelTypes::OMP);
 			}
 			else if (AggregationMethod == Aggregation_CrossBasedBox)
 			{
@@ -2881,7 +2889,7 @@ namespace cp
 #pragma endregion
 
 	//main function
-	void StereoBase::matching(Mat& leftim, Mat& rightim, Mat& destDisparityMap, const bool isFeedback, Mat& weightMap)
+	void StereoBase::matching(Mat& leftim, Mat& rightim, Mat& destDisparityMap, const bool isFeedback)
 	{
 		if (destDisparityMap.empty() || leftim.size() != destDisparityMap.size()) destDisparityMap.create(leftim.size(), CV_16S);
 		minCostMap.create(leftim.size(), CV_8U);
@@ -2910,7 +2918,7 @@ namespace cp
 				const int d = minDisparity + i;
 				getPixelMatchingCost(d, DSI[i]);
 				if (isFeedback)addCostIterativeFeedback(DSI[i], d, destDisparityMap, 0, 2, 1.f);
-				getCostAggregation(DSI[i], DSI[i], guideImage, isFeedback, weightMap);
+				getCostAggregation(DSI[i], DSI[i], guideImage);
 			}
 		}
 
@@ -3118,7 +3126,7 @@ namespace cp
 		bool isReCost = false;
 
 		bool isStreak = false;
-		bool isRefinement = false;
+		int isRefinement = 0;
 		bool isMedian = false;
 
 		bool isShowGT = false;
@@ -3157,17 +3165,14 @@ namespace cp
 			//body
 			{
 				Timer t("BM", 0, false);
-				matching(leftim, rightim, destDisparity, isFeedback, weightMap);
+				matching(leftim, rightim, destDisparity, isFeedback);
 				ci("Total time: %f ms", t.getTime());
 			}
 
 			Mat zeromask;
 			compare(destDisparity, 0, zeromask, cv::CMP_EQ);
-			weightMap.setTo(1.f);
-			weightMap.setTo(0.1f, zeromask);
-			imshow("wmap", weightMap);
-			if (isShowZeroMask)imshow("zero mask before", zeromask);
-			ci("A: valid %f %%", 100.0 * countNonZero(destDisparity) / destDisparity.size().area());
+			if (isShowZeroMask)imshow("zero mask", zeromask);
+			ci("valid %f %%", 100.0 * countNonZero(destDisparity) / destDisparity.size().area());
 
 			{
 				Mat base = destDisparity.clone();
@@ -3186,98 +3191,21 @@ namespace cp
 				}
 				else if (occlusionMethod == 2)
 				{
-					//LRCheckDisparity(destfill, destR, 0, 16, 0, 16);
-					/*Mat mask;
-					Mat destfill = dest.clone();
-					Mat destR,destL;
-					Mat dest1,dest2;
-					transpose(dest,dest1);
-
-					fillOcclusion(destfill);
-
-					destfill.copyTo(dest);
-					shiftDisparity(destfill,destR,1/16.0);
-					shiftDisparity(destfill,destL,-1/16.0);
-					imshowDisparity("warpl",destR,1);
-					imshowDisparity("warpr",destL,1);
-					LRCheckDisparity(destfill,destR,0,16,0,16);LRCheckDisparity(destfill,destR,0,16,0,16);
-					LRCheckDisparity(destL,dest,0,16,0,16);
-
-					compare(destfill,0,mask,cv::CMP_EQ);
-					dest.setTo(0,mask);*/
-
 					fillOcclusion(destDisparity);
 					{
 						Timer t("border");
 						correctDisparityBoundaryE<short>(destDisparity, leftim, occsearch, occth, destDisparity, occsearch2, 32);
 						ci("post Border: %f", t.getTime());
 					}
-
-					/*for(int i=0;i<occiter;i++)
-					{
-					//medianBlur(dest,dest,3);
-					boxSubpixelRefinement(dest,dest,3,24);
-					correctDisparityBoundaryE<short>(dest,leftim,occsearch,17,dest,occsearch2,30);
-					}*/
-					/*Mat dt;
-					transpose(dest,dt);
-					Mat lt;transpose(leftim,lt);
-					correctDisparityBoundaryE<short>(dt,lt,occsearch,32,dest);
-					transpose(dt,dest);*/
-					//correctDisparityBoundary<short>(dest,leftim,occsearch,dest);
-					//fillOcclusion(dest);
-
-					//fillOcclusion(desttemp);
-					//desttemp.copyTo(dest);
-					/*fillOcclusion(dest1);
-					transpose(dest1,desttemp);
-					desttemp.copyTo(dest,~mask);*/
-
-					//medianBlur(dest,dest,3);*/
 				}
 				else if (occlusionMethod == 3)
 				{
-					/*Mat mask;
-					Mat destfill = dest.clone();
-					Mat destR,destL;
-					Mat dest1,dest2;
-					transpose(dest,dest1);
-
-					fillOcclusion(destfill);
-
-					destfill.copyTo(dest);
-					shiftDisparity(destfill,destR,1/16.0);
-					shiftDisparity(destfill,destL,-1/16.0);
-					imshowDisparity("warpl",destR,1);
-					imshowDisparity("warpr",destL,1);
-					LRCheckDisparity(destfill,destR,0,16,0,16);
-					LRCheckDisparity(destL,dest,0,16,0,16);
-
-					compare(destfill,0,mask,cv::CMP_EQ);
-					dest.setTo(0,mask);*/
-
-					//fillOcclusionBox_<short>(dest,0,3000);
 					fillOcclusion(destDisparity);
 					correctDisparityBoundaryEC<short>(destDisparity, leftim, occsearch, occth, destDisparity);
-
-					/*for(int i=0;i<occiter;i++)
-					{
-					//medianBlur(dest,dest,3);
-					boxSubpixelRefinement(dest,dest,3,24);
-					correctDisparityBoundaryE<short>(dest,leftim,occsearch,17,dest,occsearch2,30);
-					}*/
 
 					Mat dt;
 					transpose(destDisparity, dt);
 					Mat lt; transpose(leftim, lt);
-
-					/*Mat sobel;
-					Mat ltg;cvtColor(lt,ltg,COLOR_BGR2GRAY);
-					Sobel(ltg,sobel,CV_16S,1,0,3);
-					Mat disp;dt.convertTo(disp,CV_8U,0.25);
-					Mat sobel2;Mat(abs(sobel)).convertTo(sobel2,CV_8U);
-					guiAlphaBlend(disp,sobel2);*/
-
 
 					correctDisparityBoundaryECV<short>(dt, lt, occsearchh, occth, dt);
 					Mat dest2;
@@ -3288,25 +3216,6 @@ namespace cp
 				}
 				else if (occlusionMethod == 4)
 				{
-					/*Mat mask;
-					Mat destfill = dest.clone();
-					Mat destR,destL;
-					Mat dest1,dest2;
-					transpose(dest,dest1);
-
-					fillOcclusion(destfill);
-
-					destfill.copyTo(dest);
-					shiftDisparity(destfill,destR,1/16.0);
-					shiftDisparity(destfill,destL,-1/16.0);
-					imshowDisparity("warpl",destR,1);
-					imshowDisparity("warpr",destL,1);
-					LRCheckDisparity(destfill,destR,0,16,0,16);
-					LRCheckDisparity(destL,dest,0,16,0,16);
-
-					compare(destfill,0,mask,cv::CMP_EQ);
-					dest.setTo(0,mask);*/
-
 					fillOcclusion(destDisparity);
 
 
@@ -3323,18 +3232,6 @@ namespace cp
 						filterSpeckles(destDisparity, 0, speckleWindowSize, speckleRange);
 						fillOcclusion(destDisparity);
 					}
-
-
-					//correctDisparityBoundary<short>(dest,leftim,occsearch,dest);
-					//fillOcclusion(dest);
-
-					//fillOcclusion(desttemp);
-					//desttemp.copyTo(dest);
-					/*fillOcclusion(dest1);
-					transpose(dest1,desttemp);
-					desttemp.copyTo(dest,~mask);*/
-
-					//medianBlur(dest,dest,3);*/
 				}
 
 				if (isShowDiffFillOcclution)
@@ -3353,28 +3250,29 @@ namespace cp
 				{
 					medianBlur(destDisparity, destDisparity, 3);
 				}
-				if (isRefinement)
+				if (isRefinement == 1)
 				{
 					Timer t("refinement", 0, false);
 					//crossBasedAdaptiveBoxFilter(destDisparity, leftim, destDisparity, Size(2 * gr + 1, 2 * gr + 1), ge);
+					//cp::weightedModeFilter(destDisparity, leftim, destDisparity, 4, 2, 10, 500, 0, 2);
 					Mat temp;
+					guidedImageFilter(destDisparity, leftim, temp, gr, ge, GUIDED_SEP_VHI);
+					jointNearestFilter(temp, destDisparity, Size(2 * jnr + 1, 2 * jnr + 1), destDisparity);
+					ci("refine: %f ms", t.getTime());
+				}
+				else if (isRefinement == 2)
+				{
+					weightMap.setTo(1.f);
+					weightMap.setTo(0.5f, zeromask);
 
-					/*
+					Timer t("refinement", 0, false);
 					Mat a, b;
 					multiply(destDisparity, weightMap, a, 1, CV_32F);
-					guidedImageFilter(a, leftim, a, 4, 1, GUIDED_SEP_VHI);
-					guidedImageFilter(weightMap, leftim, b, 4, 1, GUIDED_SEP_VHI);
+					guidedImageFilter(a, leftim, a, gr, ge, GUIDED_SEP_VHI);
+					guidedImageFilter(weightMap, leftim, b, gr, ge, GUIDED_SEP_VHI);
+					Mat temp;
 					divide(a, b, temp, 1, CV_16S);
-					*/
-					guidedImageFilter(destDisparity, leftim, temp, gr, ge, GUIDED_SEP_VHI);
-					//guidedImageFilter(destDisparity, target[0], temp, 4, 1, GUIDED_SEP_VHI);
 					jointNearestFilter(temp, destDisparity, Size(2 * jnr + 1, 2 * jnr + 1), destDisparity);
-
-					//cp::weightedModeFilter(destDisparity, leftim, destDisparity, 4, 2, 10, 500, 0, 2);
-
-					//guidedImageFilter(destDisparity, leftim, temp, 4, 1, GUIDED_SEP_VHI);
-					//jointNearestFilter(temp, destDisparity, Size(3, 3), destDisparity);
-
 					ci("refine: %f ms", t.getTime());
 				}
 
@@ -3385,10 +3283,6 @@ namespace cp
 				}
 				ci("a-post time: %f ms", t.getTime());//additional post processing time
 			}
-
-			compare(destDisparity, 0, zeromask, cv::CMP_EQ);
-			if (isShowZeroMask)imshow("zero mask after", zeromask);
-			ci("B: valid %f %%", 100.0 * countNonZero(destDisparity) / destDisparity.size().area());
 
 			if (isShowSubpixelDisparityDistribution)
 			{
@@ -3550,7 +3444,7 @@ namespace cp
 				ci("th 1.0:" + eval(destDisparity, 1.0, isPrintEval, 16));
 				ci("th 2.0:" + eval(destDisparity, 2.0, isPrintEval, 16));
 				ci("MSE   :" + eval.getMSE(destDisparity, false, 16));
-				
+
 
 				if (maskType != 0)
 				{
@@ -3608,8 +3502,10 @@ namespace cp
 			if (isMedian)ci(CV_RGB(0, 255, 0), "Median (8): true");
 			else ci(CV_RGB(255, 0, 0), "Median (8): false");
 
-			if (isRefinement) ci(CV_RGB(0, 255, 0), "Guided (9): true");
-			else 	ci(CV_RGB(255, 0, 0), "Guided (9): false");
+			if (isRefinement == 0) ci(CV_RGB(255, 0, 0), "Guided (9): false");
+			else if (isRefinement == 1) ci(CV_RGB(0, 255, 0), "Guided (9): GIF+JNF");
+			else if (isRefinement == 2) ci(CV_RGB(0, 255, 0), "Guided (9): WGIF+JNF");
+
 
 
 			if (isShowGT)
@@ -3663,7 +3559,7 @@ namespace cp
 
 			if (key == '7') isStreak = (isStreak) ? false : true;
 			if (key == '8') isMedian = (isMedian) ? false : true;
-			if (key == '9') isRefinement = (isRefinement) ? false : true;
+			if (key == '9') { isRefinement++; isRefinement = (isRefinement > 2) ? 0 : isRefinement; }
 
 			if (key == 'a')	isReCost = (isReCost) ? false : true;
 			if (key == 'f') isFeedback = isFeedback ? false : true;
@@ -3687,12 +3583,12 @@ namespace cp
 				destDisparity.setTo(0);
 			}
 
-			
+
 			if (key == 'b')maskType++; maskType = maskType > 4 ? 0 : maskType;
 			if (key == 'n')maskType--; maskType = maskType < 0 ? 3 : maskType;
 			if (key == 'm')maskPrec++; maskPrec = maskPrec > 3 ? 0 : maskPrec;
 			if (key == ',')maskPrec--; maskPrec = maskPrec < 0 ? 2 : maskPrec;
-			
+
 		}
 	}
 
@@ -3717,4 +3613,4 @@ namespace cp
 			a.copyTo(dest);
 		}
 	}
-	}
+}
