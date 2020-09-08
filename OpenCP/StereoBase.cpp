@@ -566,7 +566,7 @@ namespace cp
 		uchar* d1 = dst.ptr<uchar>();
 		for (int i = 0; i < src.size().area(); i++)
 		{
-			d1[i] = min(2.f * preFilterCap, preFilterCap - 5.f*(s[i] - d0[i]));
+			d1[i] = min(2.f * preFilterCap, preFilterCap - 5.f * (s[i] - d0[i]));
 		}
 		imshow("a", dst);
 	}
@@ -1615,6 +1615,31 @@ namespace cp
 		return mes;
 	}
 
+	void StereoBase::setPixelColorDistance(const ColorDistance method)
+	{
+		color_distance = method;
+	}
+
+	std::string StereoBase::getColorDistanceName(ColorDistance method)
+	{
+		std::string ret;
+		switch (method)
+		{
+		case cp::StereoBase::ADD: ret = "ADD";
+			break;
+		case cp::StereoBase::AVG: ret = "AVG";
+			break;
+		case cp::StereoBase::MIN: ret = "MIN";
+			break;
+		case cp::StereoBase::MAX: ret = "MAX";
+			break;
+		default:
+			ret = "not supported";
+			break;
+		}
+		return ret;
+	}
+
 	void StereoBase::getPixelMatchingCost(const int d, Mat& dest)
 	{
 		//gray
@@ -1681,72 +1706,108 @@ namespace cp
 			Mat temp;
 			SDTruncate_8UC1(target[0], reference[0], d, pixelMatchErrorCap, dest);
 			SDTruncate_8UC1(target[2], reference[2], d, pixelMatchErrorCap, temp);
-			add(dest, temp, dest);
+			if (color_distance == ADD || color_distance == AVG) add(dest, temp, dest);
+			else if (color_distance == MIN)min(dest, temp, dest);
+			else if (color_distance == MAX)max(dest, temp, dest);
 			SDTruncate_8UC1(target[4], reference[4], d, pixelMatchErrorCap, temp);
-			add(dest, temp, dest);
+			if (color_distance == ADD || color_distance == AVG) add(dest, temp, dest);
+			else if (color_distance == MIN)min(dest, temp, dest);
+			else if (color_distance == MAX)max(dest, temp, dest);
+			if (color_distance == AVG)divide(dest, 3, dest);
+
 		}
 		else if (PixelMatchingMethod == Pixel_Matching_SDSobelColor)
 		{
 			Mat temp;
 			SDTruncate_8UC1(target[1], reference[1], d, pixelMatchErrorCap, dest);
 			SDTruncate_8UC1(target[3], reference[3], d, pixelMatchErrorCap, temp);
-			add(dest, temp, dest);
+			if (color_distance == ADD || color_distance == AVG) add(dest, temp, dest);
+			else if (color_distance == MIN)min(dest, temp, dest);
+			else if (color_distance == MAX)max(dest, temp, dest);
 			SDTruncate_8UC1(target[5], reference[5], d, pixelMatchErrorCap, temp);
-			add(dest, temp, dest);
+			if (color_distance == ADD || color_distance == AVG) add(dest, temp, dest);
+			else if (color_distance == MIN)min(dest, temp, dest);
+			else if (color_distance == MAX)max(dest, temp, dest);
+			if (color_distance == AVG)divide(dest, 3, dest);
 		}
 		else if (PixelMatchingMethod == Pixel_Matching_SDSobelBlendColor)
 		{
 			Mat temp;
 			SDTruncateBlend_8UC1(target[0], reference[0], target[1], reference[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
 			SDTruncateBlend_8UC1(target[2], reference[2], target[3], reference[3], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, temp);
-			//add(dest, temp, dest);
-			min(dest, temp, dest);
+			if (color_distance == ADD || color_distance == AVG) add(dest, temp, dest);
+			else if (color_distance == MIN)min(dest, temp, dest);
+			else if (color_distance == MAX)max(dest, temp, dest);
 			SDTruncateBlend_8UC1(target[4], reference[4], target[5], reference[5], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, temp);
-			//add(dest, temp, dest);
-			min(dest, temp, dest);
+			if (color_distance == ADD || color_distance == AVG) add(dest, temp, dest);
+			else if (color_distance == MIN)min(dest, temp, dest);
+			else if (color_distance == MAX)max(dest, temp, dest);
+			if (color_distance == AVG)divide(dest, 3, dest);
 		}
 		else if (PixelMatchingMethod == Pixel_Matching_ADColor)
 		{
 			Mat temp;
 			ADTruncate_8UC1(target[0], reference[0], d, pixelMatchErrorCap, dest);
 			ADTruncate_8UC1(target[2], reference[2], d, pixelMatchErrorCap, temp);
-			add(dest, temp, dest);
+			if (color_distance == ADD || color_distance == AVG) add(dest, temp, dest);
+			else if (color_distance == MIN)min(dest, temp, dest);
+			else if (color_distance == MAX)max(dest, temp, dest);
 			ADTruncate_8UC1(target[4], reference[4], d, pixelMatchErrorCap, temp);
-			add(dest, temp, dest);
+			if (color_distance == ADD || color_distance == AVG) add(dest, temp, dest);
+			else if (color_distance == MIN)min(dest, temp, dest);
+			else if (color_distance == MAX)max(dest, temp, dest);
+			if (color_distance == AVG)divide(dest, 3, dest);
 		}
 		else if (PixelMatchingMethod == Pixel_Matching_ADSobelColor)
 		{
 			Mat temp;
 			ADTruncate_8UC1(target[1], reference[1], d, pixelMatchErrorCap, dest);
 			ADTruncate_8UC1(target[3], reference[3], d, pixelMatchErrorCap, temp);
-			add(dest, temp, dest);
+			if (color_distance == ADD || color_distance == AVG) add(dest, temp, dest);
+			else if (color_distance == MIN)min(dest, temp, dest);
+			else if (color_distance == MAX)max(dest, temp, dest);
 			ADTruncate_8UC1(target[5], reference[5], d, pixelMatchErrorCap, temp);
-			add(dest, temp, dest);
+			if (color_distance == ADD || color_distance == AVG) add(dest, temp, dest);
+			else if (color_distance == MIN)min(dest, temp, dest);
+			else if (color_distance == MAX)max(dest, temp, dest);
+			if (color_distance == AVG)divide(dest, 3, dest);
 		}
 		else if (PixelMatchingMethod == Pixel_Matching_ADSobelBlendColor)
 		{
 			Mat temp;
 			ADTruncateBlend_8UC1(target[0], reference[0], target[1], reference[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
 			ADTruncateBlend_8UC1(target[2], reference[2], target[3], reference[3], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, temp);
-			add(dest, temp, dest);
+			if (color_distance == ADD || color_distance == AVG) add(dest, temp, dest);
+			else if (color_distance == MIN)min(dest, temp, dest);
+			else if (color_distance == MAX)max(dest, temp, dest);
 			ADTruncateBlend_8UC1(target[4], reference[4], target[5], reference[5], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, temp);
-			add(dest, temp, dest);
+			if (color_distance == ADD || color_distance == AVG) add(dest, temp, dest);
+			else if (color_distance == MIN)min(dest, temp, dest);
+			else if (color_distance == MAX)max(dest, temp, dest);
+			if (color_distance == AVG)divide(dest, 3, dest);
 		}
 		else if (PixelMatchingMethod == Pixel_Matching_BTColor)
 		{
 			Mat temp;
 			BTTruncate_8UC1(target[0], reference[0], d, pixelMatchErrorCap, dest);
 			BTTruncate_8UC1(target[2], reference[2], d, pixelMatchErrorCap, temp);
-			add(dest, temp, dest);
+			if (color_distance == ADD || color_distance == AVG) add(dest, temp, dest);
+			else if (color_distance == MIN)min(dest, temp, dest);
+			else if (color_distance == MAX)max(dest, temp, dest);
 			BTTruncate_8UC1(target[4], reference[4], d, pixelMatchErrorCap, temp);
-			add(dest, temp, dest);
+			if (color_distance == ADD || color_distance == AVG) add(dest, temp, dest);
+			else if (color_distance == MIN)min(dest, temp, dest);
+			else if (color_distance == MAX)max(dest, temp, dest);
+			if (color_distance == AVG)divide(dest, 3, dest);
 		}
 		else if (PixelMatchingMethod == Pixel_Matching_BTSobelColor)
 		{
 			Mat temp;
 			BTTruncate_8UC1(target[1], reference[1], d, pixelMatchErrorCap, dest);
 			BTTruncate_8UC1(target[3], reference[3], d, pixelMatchErrorCap, temp);
-			add(dest, temp, dest);
+			if (color_distance == ADD || color_distance == AVG) add(dest, temp, dest);
+			else if (color_distance == MIN)min(dest, temp, dest);
+			else if (color_distance == MAX)max(dest, temp, dest);
 			BTTruncate_8UC1(target[5], reference[5], d, pixelMatchErrorCap, temp);
 			add(dest, temp, dest);
 		}
@@ -1755,34 +1816,51 @@ namespace cp
 			Mat temp;
 			BTTruncateBlend_8UC1(target[0], reference[0], target[1], reference[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
 			BTTruncateBlend_8UC1(target[2], reference[2], target[3], reference[3], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, temp);
-			add(dest, temp, dest);
+			if (color_distance == ADD || color_distance == AVG) add(dest, temp, dest);
+			else if (color_distance == MIN)min(dest, temp, dest);
+			else if (color_distance == MAX)max(dest, temp, dest);
 			BTTruncateBlend_8UC1(target[4], reference[4], target[5], reference[5], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, temp);
-			add(dest, temp, dest);
+			if (color_distance == ADD || color_distance == AVG) add(dest, temp, dest);
+			else if (color_distance == MIN)min(dest, temp, dest);
+			else if (color_distance == MAX)max(dest, temp, dest);
+			if (color_distance == AVG)divide(dest, 3, dest);
 		}
 		else if (PixelMatchingMethod == Pixel_Matching_BTFullColor)
 		{
 			Mat temp;
 			BTFullTruncate_8UC1(target[0], reference[0], d, pixelMatchErrorCap, dest);
 			BTFullTruncate_8UC1(target[2], reference[2], d, pixelMatchErrorCap, temp);
-			add(dest, temp, dest);
+			if (color_distance == ADD || color_distance == AVG) add(dest, temp, dest);
+			else if (color_distance == MIN)min(dest, temp, dest);
+			else if (color_distance == MAX)max(dest, temp, dest);
 			BTFullTruncate_8UC1(target[4], reference[4], d, pixelMatchErrorCap, temp);
-			add(dest, temp, dest);
+			if (color_distance == ADD || color_distance == AVG) add(dest, temp, dest);
+			else if (color_distance == MIN)min(dest, temp, dest);
+			else if (color_distance == MAX)max(dest, temp, dest);
+			if (color_distance == AVG)divide(dest, 3, dest);
 		}
 		else if (PixelMatchingMethod == Pixel_Matching_BTFullSobelColor)
 		{
 			Mat temp;
 			BTFullTruncate_8UC1(target[1], reference[1], d, pixelMatchErrorCap, dest);
 			BTFullTruncate_8UC1(target[3], reference[3], d, pixelMatchErrorCap, temp);
-			add(dest, temp, dest);
+			if (color_distance == ADD || color_distance == AVG) add(dest, temp, dest);
+			else if (color_distance == MIN)min(dest, temp, dest);
+			else if (color_distance == MAX)max(dest, temp, dest);
 			BTFullTruncate_8UC1(target[5], reference[5], d, pixelMatchErrorCap, temp);
-			add(dest, temp, dest);
+			if (color_distance == ADD || color_distance == AVG) add(dest, temp, dest);
+			else if (color_distance == MIN)min(dest, temp, dest);
+			else if (color_distance == MAX)max(dest, temp, dest);
+			if (color_distance == AVG)divide(dest, 3, dest);
 		}
 		else if (PixelMatchingMethod == Pixel_Matching_BTFullSobelBlendColor)
 		{
 			Mat temp;
 			BTFullTruncateBlend_8UC1(target[0], reference[0], target[1], reference[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
 			BTFullTruncateBlend_8UC1(target[2], reference[2], target[3], reference[3], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, temp);
-			add(dest, temp, dest);
+			if (color_distance == ADD || color_distance == AVG) add(dest, temp, dest);
+			else if (color_distance == MIN)min(dest, temp, dest);
+			else if (color_distance == MAX)max(dest, temp, dest);
 			BTFullTruncateBlend_8UC1(target[4], reference[4], target[5], reference[5], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, temp);
 			add(dest, temp, dest);
 		}
@@ -1791,16 +1869,23 @@ namespace cp
 			Mat temp;
 			HammingDistance32S_8UC1<uchar>(target[1], reference[1], d, dest);
 			HammingDistance32S_8UC1<uchar>(target[3], reference[3], d, temp);
-			add(dest, temp, dest);
+			if (color_distance == ADD || color_distance == AVG) add(dest, temp, dest);
+			else if (color_distance == MIN)min(dest, temp, dest);
+			else if (color_distance == MAX)max(dest, temp, dest);
 			HammingDistance32S_8UC1<uchar>(target[5], reference[5], d, temp);
-			add(dest, temp, dest);
+			if (color_distance == ADD || color_distance == AVG) add(dest, temp, dest);
+			else if (color_distance == MIN)min(dest, temp, dest);
+			else if (color_distance == MAX)max(dest, temp, dest);
+			if (color_distance == AVG)divide(dest, 3, dest);
 		}
 		else if (PixelMatchingMethod == Pixel_Matching_CENSUS5x5Color || PixelMatchingMethod == Pixel_Matching_CENSUS7x5Color)
 		{
 			Mat temp;
 			HammingDistance32S_8UC1<int>(target[1], reference[1], d, dest);
 			HammingDistance32S_8UC1<int>(target[3], reference[3], d, temp);
-			add(dest, temp, dest);
+			if (color_distance == ADD || color_distance == AVG) add(dest, temp, dest);
+			else if (color_distance == MIN)min(dest, temp, dest);
+			else if (color_distance == MAX)max(dest, temp, dest);
 			HammingDistance32S_8UC1<int>(target[5], reference[5], d, temp);
 			add(dest, temp, dest);
 		}
@@ -3029,6 +3114,8 @@ namespace cp
 		PixelMatchingMethod = Pixel_Matching_SDSobelBlend;
 		//PixelMatchingMethod = Pixel_Matching_CENSUS5x5;
 		createTrackbar("pix match method", wname, &PixelMatchingMethod, Pixel_Matching_Method_Size - 1);
+		createTrackbar("pix match color method", wname, &color_distance, ColorDistance_Size - 1);
+
 		//pre filter
 		createTrackbar("pcap", wname, &preFilterCap, 255);
 
@@ -3112,8 +3199,10 @@ namespace cp
 		int jnr = 2;
 		createTrackbar("ref:jn r", wname, &jnr, 10);
 
-		int boxb = 1;
-		createTrackbar("boxb", wname, &boxb, 10);
+		int wr = 3;
+		createTrackbar("ref:wr", wname, &wr, 10);
+		int ws = 3;
+		createTrackbar("ref:ws", wname, &wr, 10);
 
 		Point mpt = Point(100, 100);
 		createTrackbar("px", wname, &mpt.x, leftim.cols - 1);
@@ -3154,7 +3243,10 @@ namespace cp
 			aggregationGuidedfilterEps = aggeps;
 			aggregationSigmaSpace = aggss;
 			ci.clear();
-			ci(getPixelMatchingMethodName(PixelMatchingMethod) + ": (i-u)");
+			if (PixelMatchingMethod % 2 == 0)
+				ci(getPixelMatchingMethodName(PixelMatchingMethod) + ": (i-u)");
+			else
+				ci(getPixelMatchingMethodName(PixelMatchingMethod) + getColorDistanceName((ColorDistance)color_distance) + ": (i-u)|(j-k)");
 			ci(getAggregationMethodName(AggregationMethod) + ": (@-[)");
 			ci(getSubpixelInterpolationMethodName(subpixelInterpolationMethod) + ":  (p)");
 			ci(getOcclusionMethodName(occlusionMethod) + ": (o)");
@@ -3266,6 +3358,18 @@ namespace cp
 					weightMap.setTo(0.5f, zeromask);
 
 					Timer t("refinement", 0, false);
+
+					Mat bim;
+					GaussianBlur(destDisparity, bim, Size(2 * wr + 1, 2 * wr + 1), wr / 3.0);
+					short* disp = destDisparity.ptr<short>(0);
+					short* dispb = bim.ptr<short>(0);
+					float* s = weightMap.ptr<float>();
+					for (int i = 0; i < weightMap.size().area(); i++)
+					{
+						float diff = (disp[i] - dispb[i]) * (disp[i] - dispb[i]) / (-2.0 * 16 * 16 * ws * ws);
+						s[i] = exp(diff);
+					}
+
 					Mat a, b;
 					multiply(destDisparity, weightMap, a, 1, CV_32F);
 					guidedImageFilter(a, leftim, a, gr, ge, GUIDED_SEP_VHI);
@@ -3506,8 +3610,6 @@ namespace cp
 			else if (isRefinement == 1) ci(CV_RGB(0, 255, 0), "Guided (9): GIF+JNF");
 			else if (isRefinement == 2) ci(CV_RGB(0, 255, 0), "Guided (9): WGIF+JNF");
 
-
-
 			if (isShowGT)
 			{
 				ci(CV_RGB(255, 0, 0), "show ground trueth");
@@ -3567,6 +3669,9 @@ namespace cp
 			if (key == 'c') guiAlphaBlend(dispOutput, leftim);
 			if (key == 'i') { PixelMatchingMethod++; PixelMatchingMethod = (PixelMatchingMethod > Pixel_Matching_Method_Size - 1) ? 0 : PixelMatchingMethod; }
 			if (key == 'u') { PixelMatchingMethod--; PixelMatchingMethod = (PixelMatchingMethod < 0) ? Pixel_Matching_Method_Size - 2 : PixelMatchingMethod; }
+			if (key == 'j') { color_distance++; color_distance = (color_distance > ColorDistance_Size - 1) ? 0 : color_distance; }
+			if (key == 'k') { color_distance--; color_distance = (color_distance < 0) ? ColorDistance_Size - 2 : color_distance; }
+
 			if (key == '@') { AggregationMethod++; AggregationMethod = (AggregationMethod > Aggregation_Method_Size - 1) ? 0 : AggregationMethod; }
 			if (key == '[') { AggregationMethod--; AggregationMethod = (AggregationMethod < 0) ? Aggregation_Method_Size - 2 : AggregationMethod; }
 
@@ -3576,19 +3681,15 @@ namespace cp
 
 			if (key == 'w')dispColor = (dispColor) ? false : true;
 			if (key == 'e')isShowGT = (isShowGT) ? false : true;
-			//if (key == 'b') guiCrossBasedLocalFilter(leftim);
+			if (key == 'b') guiCrossBasedLocalFilter(leftim);
 
 			if (key == 'r')
 			{
 				destDisparity.setTo(0);
 			}
 
-
-			if (key == 'b')maskType++; maskType = maskType > 4 ? 0 : maskType;
-			if (key == 'n')maskType--; maskType = maskType < 0 ? 3 : maskType;
-			if (key == 'm')maskPrec++; maskPrec = maskPrec > 3 ? 0 : maskPrec;
-			if (key == ',')maskPrec--; maskPrec = maskPrec < 0 ? 2 : maskPrec;
-
+			if (key == 'm')maskType++; maskType = maskType > 4 ? 0 : maskType;
+			if (key == 'n')maskPrec++; maskPrec = maskPrec > 3 ? 0 : maskPrec;
 		}
 	}
 

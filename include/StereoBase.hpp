@@ -20,6 +20,7 @@ namespace cp
 		//cv::Ptr<GuidedImageFilter> gif;
 		GuidedImageFilter* gif;
 		const int thread_max;
+		int color_distance = 2;
 	public:
 		StereoBase(int blockSize, int minDisp, int disparityRange);
 		~StereoBase();
@@ -79,6 +80,18 @@ namespace cp
 		int sobelBlendMapParam1;
 		int sobelBlendMapParam2;
 		std::string getPixelMatchingMethodName(int method);
+		enum ColorDistance
+		{
+			ADD,
+			AVG,
+			MIN,
+			MAX,
+			ColorDistance_Size
+		};
+		std::string getColorDistanceName(ColorDistance method);
+		
+		void setPixelColorDistance(const ColorDistance method);
+		
 		void prefilter(cv::Mat& targetImage, cv::Mat& referenceImage);
 
 		void addCostIterativeFeedback(cv::Mat& cost, const int current_disparity, const cv::Mat& disparity, const int functionType, const int clip, float amp);

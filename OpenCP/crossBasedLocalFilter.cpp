@@ -574,6 +574,8 @@ namespace cp
 		minSearch = val;
 	}
 
+	//method 0: CrossBasedLocalFilter::CROSS_BASED_LOCAL_FILTER_ARM_BASIC
+	//method 1: CrossBasedLocalFilter::CROSS_BASED_LOCAL_FILTER_ARM_SAMELENGTH
 	void CrossBasedLocalFilter::makeKernel(Mat& guide, const int r_, const int thresh_, const int method)
 	{
 		r = r_;
