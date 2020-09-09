@@ -232,7 +232,7 @@ namespace cp
 		int refinementR = 9;
 		float refinementSigmaRange = 1.f;
 		float refinementSigmaSpace = 255.f;
-		int refinementTruncateMode = 32;
+		float refinementSigmaHistogram = 32.f;
 		int jointNearestR = 2;
 		int refinementWeightMethod = 0;
 		int refinementWeightR = 5;

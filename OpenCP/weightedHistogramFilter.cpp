@@ -1,4 +1,4 @@
-#include "weightedModeFilter.hpp"
+#include "weightedHistogramFilter.hpp"
 #include "debugcp.hpp"
 #include <inlineSIMDFunctions.hpp>
 using namespace std;
@@ -9,10 +9,10 @@ src：入力画像
 guide:guide画像（srcと同じでもOK）
 dst:出力画像
 r:カーネル半径
-truncate: ヒストグラムを加算するときの半径．±truncate分加算．加算の仕方はmetricで指定
+truncate: ヒストグラムを加算するときの半径．±truncate分加算．加算の仕方はweightFunctionTypeで指定
 sigmaColor：カラーのガウシアンのパラメータ
 sigmaSpace：空間のガウシアンのパラメータ
-metric:
+weightFunctionType:
 L0_NORM:何もしない．今の実装はたぶんこれ
 L1_NORM:L1ノルムでヒストグラムを加算
 L1_NORM:L2ノルムでヒストグラムを加算
@@ -26,6 +26,41 @@ Histogram::NO_WEIGHT　ボックスフィルタで加算
 namespace cp
 {
 #define sqr(a) ((a)*(a))
+
+#pragma region WeightedHistogram
+	class WeightedHistogram
+	{
+	private:
+		float* histbuff;
+		int histbuffsize;
+	public:
+		int histMin;
+		int histMax;
+		int histSize;
+
+		int truncate;
+		float* hist;
+
+		WeightedHistogram(int truncate_val, int mode_ = WeightedHistogram::MAX, const int max_val = 256);
+		~WeightedHistogram();
+
+		void clear();
+		void add(float addval, int bin, const WHF_HISTOGRAM_WEIGHT weightFunctionType);
+		void addWithRange(float addval, int bin, const WHF_HISTOGRAM_WEIGHT weightFunctionType);
+
+		enum
+		{
+			MAX = 0,
+			MEDIAN
+		};
+		int mode;
+		int returnVal();
+
+		int returnMax();
+		int returnMedian();
+		int returnMaxwithRange();
+		int returnMedianwithRange();
+	};
 
 	WeightedHistogram::~WeightedHistogram()
 	{
@@ -65,16 +100,16 @@ namespace cp
 		}
 	}
 
-	void WeightedHistogram::addWithRange(float addval, int bin, int metric)
+	void WeightedHistogram::addWithRange(float addval, int bin, WHF_HISTOGRAM_WEIGHT weightFunctionType)
 	{
 		histMax = max(histMax, bin + truncate);
 		histMin = min(histMin, bin - truncate);
 		hist[bin] += addval;
 
-		if (metric != L0_NORM)
+		if (weightFunctionType != WHF_HISTOGRAM_WEIGHT::IMPULSE)
 		{
 			float val;
-			if (metric == L1_NORM)
+			if (weightFunctionType == WHF_HISTOGRAM_WEIGHT::LINEAR)
 			{
 				for (int i = 1; i < truncate; i++)
 				{
@@ -83,7 +118,7 @@ namespace cp
 					hist[bin - i] += val;
 				}
 			}
-			else if (metric == L2_NORM)
+			else if (weightFunctionType == WHF_HISTOGRAM_WEIGHT::QUADRIC)
 			{
 				float div = 1.f / (float)(sqr(truncate));
 				for (int i = 1; i < truncate; i++)
@@ -93,7 +128,7 @@ namespace cp
 					hist[bin - i] += val;
 				}
 			}
-			else if (metric == EXP)
+			else if (weightFunctionType == WHF_HISTOGRAM_WEIGHT::GAUSSIAN)
 			{
 				for (int i = 1; i < truncate; i++)
 				{
@@ -105,14 +140,14 @@ namespace cp
 		}
 	}
 
-	void WeightedHistogram::add(float addval, int bin, int metric)
+	void WeightedHistogram::add(float addval, int bin, const WHF_HISTOGRAM_WEIGHT weightFunctionType)
 	{
 		hist[bin] += addval;
 
-		if (metric != L0_NORM)
+		if (weightFunctionType != WHF_HISTOGRAM_WEIGHT::IMPULSE)
 		{
 			float val;
-			if (metric == L1_NORM)
+			if (weightFunctionType == WHF_HISTOGRAM_WEIGHT::LINEAR)
 			{
 				for (int i = 1; i < truncate; i++)
 				{
@@ -121,7 +156,7 @@ namespace cp
 					hist[bin - i] += val;
 				}
 			}
-			else if (metric == L2_NORM)
+			else if (weightFunctionType == WHF_HISTOGRAM_WEIGHT::QUADRIC)
 			{
 				float div = 1.f / (float)(sqr(truncate));
 				for (int i = 1; i < truncate; i++)
@@ -131,7 +166,7 @@ namespace cp
 					hist[bin - i] += val;
 				}
 			}
-			else if (metric == EXP)
+			else if (weightFunctionType == WHF_HISTOGRAM_WEIGHT::GAUSSIAN)
 			{
 				for (int i = 1; i < truncate; i++)
 				{
@@ -224,6 +259,8 @@ namespace cp
 		}
 		return maxbin;
 	}
+#pragma endregion
+
 
 	void bgrSplit(Mat& src, Mat& b, Mat& g, Mat& r)
 	{
@@ -258,7 +295,264 @@ namespace cp
 		dst = mixed.clone();
 	}
 
-	void weightedweightedHistogramFilter(Mat& src, Mat& weightMap, Mat& guide, Mat& dst, int r, int truncate, double sig_c1, double sig_c2, double sig_s, int metric, int method)
+	enum class WHF_WEIGHT
+	{
+		NO_WEIGHT,
+		GAUSSIAN,
+		BILATERAL
+	};
+
+	template<typename srcType, typename guideType>
+	void weightedHistogramFilter_(Mat& src, Mat& guide, Mat& dst, const int r, const double sigmaColor, const double sigmaSpace, const double sigmaHistogram, const WHF_HISTOGRAM_WEIGHT weightFunctionType, const WHF_OPERATION method, const int borderType, Mat& mask)
+	{
+		double src_max;
+		minMaxLoc(src, NULL, &src_max);
+		src_max = get_simd_ceil(src_max, 4);
+		int width = src.cols;
+		int height = src.rows;
+
+		Mat srcBorder; copyMakeBorder(src, srcBorder, r, r, r, r, borderType);
+
+		const int mode = (method >= WHF_OPERATION::NO_WEIGHT_MEDIAN) ? WeightedHistogram::MEDIAN: WeightedHistogram::MAX;
+		WHF_WEIGHT weight_method;
+		switch (method)
+		{
+		case NO_WEIGHT_MODE:
+		case NO_WEIGHT_MEDIAN:
+			weight_method = WHF_WEIGHT::NO_WEIGHT; break;
+		case GAUSSIAN_MODE:
+		case GAUSSIAN_MEDIAN:
+			weight_method = WHF_WEIGHT::GAUSSIAN; break;
+		case BILATERAL_MODE:
+		case BILATERAL_MEDIAN:
+			weight_method = WHF_WEIGHT::BILATERAL; break;
+		default:
+			break;
+		}
+
+		if (guide.channels() == 3)
+		{
+			Mat B, G, R;
+			bgrSplit(guide, B, G, R);
+
+			Mat guideB; copyMakeBorder(B, guideB, r, r, r, r, borderType);
+			Mat guideG; copyMakeBorder(G, guideG, r, r, r, r, borderType);
+			Mat guideR; copyMakeBorder(R, guideR, r, r, r, r, borderType);
+
+			float* lutc = new float[443];
+			float* luts = new float[(2 * r + 1) * (2 * r + 1)];
+
+			for (int j = 0, idx = 0; j < 2 * r + 1; j++)
+			{
+				for (int i = 0; i < 2 * r + 1; i++, idx++)
+				{
+					luts[idx] = (float)(exp(-(sqr(i - r) + sqr(j - r)) / (2 * sqr(sigmaSpace))));
+				}
+			}
+			for (int i = 0; i < 443; i++)
+			{
+				lutc[i] = (float)(exp(-sqr(i) / (2.f * sqr(sigmaColor))));
+			}
+
+			if (weight_method == WHF_WEIGHT::BILATERAL)
+			{
+#pragma omp parallel for
+				for (int y = 0; y < height; y++)
+				{
+					WeightedHistogram h(sigmaHistogram, mode, src_max);
+					for (int x = 0; x < width; x++)
+					{
+						h.clear();
+						const guideType bb = B.at<guideType>(y, x);
+						const guideType gg = G.at<guideType>(y, x);
+						const guideType rr = R.at<guideType>(y, x);
+
+						for (int j = 0, idx = 0; j < 2 * r + 1; j++)
+						{
+							srcType* sp = srcBorder.ptr<srcType>(y + j); sp += x;
+							guideType* bp = guideB.ptr<guideType>(y + j); bp += x;
+							guideType* gp = guideG.ptr<guideType>(y + j); gp += x;
+							guideType* rp = guideR.ptr<guideType>(y + j); rp += x;
+
+							for (int i = 0; i < 2 * r + 1; i++, idx++)
+							{
+								float addval = luts[idx];
+
+								int diff = sqrt((bb - *bp) * (bb - *bp) + (gg - *gp) * (gg - *gp) + (rr - *rp) * (rr - *rp));
+								addval *= lutc[diff];
+								h.add(addval, *sp, weightFunctionType);
+
+								sp++;
+								bp++;
+								gp++;
+								rp++;
+							}
+						}
+						dst.at<srcType>(y, x) = h.returnVal();
+					}
+				}
+			}
+			if (weight_method == WHF_WEIGHT::GAUSSIAN)
+			{
+#pragma omp parallel for
+				for (int y = 0; y < height; y++)
+				{
+					WeightedHistogram h(sigmaHistogram, mode);
+					for (int x = 0; x < width; x++)
+					{
+						h.clear();
+						for (int j = 0, idx = 0; j < 2 * r + 1; j++)
+						{
+							srcType* sp = srcBorder.ptr<srcType>(y + j); sp += x;
+							for (int i = 0; i < 2 * r + 1; i++, idx++)
+							{
+								float addval = luts[idx];
+								h.add(addval, *sp, weightFunctionType);
+								sp++;
+							}
+						}
+						dst.at<srcType>(y, x) = h.returnVal();
+					}
+				}
+			}
+			else if (weight_method == WHF_WEIGHT::NO_WEIGHT)
+			{
+#pragma omp parallel for
+				for (int y = 0; y < height; y++)
+				{
+					for (int x = 0; x < width; x++)
+					{
+						WeightedHistogram h(sigmaHistogram, mode);
+
+						for (int j = 0, idx = 0; j < 2 * r + 1; j++)
+						{
+							for (int i = 0; i < 2 * r + 1; i++, idx++)
+							{
+								float addval = 1.f;
+								h.add(addval, srcBorder.at<srcType>(y + j, x + i), weightFunctionType);
+							}
+						}
+						dst.at<srcType>(y, x) = h.returnVal();
+					}
+				}
+			}
+			delete[] lutc;
+			delete[] luts;
+		}
+		else if (guide.channels() == 1)
+		{
+			Mat G; copyMakeBorder(guide, G, r, r, r, r, borderType);
+
+			float* lutc = new float[256];
+			float* luts = new float[(2 * r + 1) * (2 * r + 1)];
+
+
+			for (int j = 0, idx = 0; j < 2 * r + 1; j++)
+			{
+				for (int i = 0; i < 2 * r + 1; i++, idx++)
+				{
+					luts[idx] = (float)(exp(-(sqr(i - r) + sqr(j - r)) / (2 * sqr(sigmaSpace))));
+				}
+			}
+			for (int i = 0; i < 256; i++)
+			{
+				lutc[i] = (float)(exp(-sqr(i) / (2.0 * sqr(sigmaColor))));
+			}
+
+			if (weight_method == WHF_WEIGHT::BILATERAL)
+			{
+#pragma omp parallel for
+				for (int y = 0; y < height; y++)
+				{
+					WeightedHistogram h(sigmaHistogram, mode);
+					for (int x = 0; x < width; x++)
+					{
+						h.clear();
+						const guideType gg = guide.at<guideType>(y, x);
+						for (int j = 0, idx = 0; j < 2 * r + 1; j++)
+						{
+							srcType* sp = srcBorder.ptr<srcType>(y + j); sp += x;
+							guideType* gp = G.ptr<guideType>(y + j); gp += x;
+							for (int i = 0; i < 2 * r + 1; i++, idx++)
+							{
+								float addval = luts[idx];
+								int diff = abs(gg - *gp);
+								addval *= lutc[diff];
+								h.add(addval, *sp, weightFunctionType);
+								sp++;
+								gp++;
+							}
+						}
+						dst.at<srcType>(y, x) = h.returnVal();
+					}
+				}
+			}
+			if (weight_method == WHF_WEIGHT::GAUSSIAN)
+			{
+#pragma omp parallel for
+				for (int y = 0; y < height; y++)
+				{
+					WeightedHistogram h(sigmaHistogram, mode);
+					for (int x = 0; x < width; x++)
+					{
+						h.clear();
+						for (int j = 0, idx = 0; j < 2 * r + 1; j++)
+						{
+							srcType* sp = srcBorder.ptr<srcType>(y + j); sp += x;
+							for (int i = 0; i < 2 * r + 1; i++, idx++)
+							{
+								float addval = luts[idx];
+								h.add(addval, *sp, weightFunctionType);
+								sp++;
+							}
+						}
+						dst.at<srcType>(y, x) = h.returnVal();
+					}
+				}
+			}
+			else if (weight_method == WHF_WEIGHT::NO_WEIGHT)
+			{
+#pragma omp parallel for
+				for (int y = 0; y < height; y++)
+				{
+					for (int x = 0; x < width; x++)
+					{
+						WeightedHistogram h(sigmaHistogram, mode);
+
+						for (int j = 0, idx = 0; j < 2 * r + 1; j++)
+						{
+							for (int i = 0; i < 2 * r + 1; i++, idx++)
+							{
+								float addval = 1.f;
+								h.add(addval, srcBorder.at<srcType >(y + j, x + i), weightFunctionType);
+							}
+						}
+						dst.at<srcType>(y, x) = h.returnVal();
+					}
+				}
+			}
+			delete[] lutc;
+			delete[] luts;
+		}
+	}
+
+	void weightedHistogramFilter(InputArray src_, InputArray guide_, OutputArray dst_, const int r, const double sigmaColor, const double sigmaSpace, const double sigmaHistogram, const WHF_HISTOGRAM_WEIGHT weightFunctionType, const WHF_OPERATION method, const int borderType, InputArray mask_)
+	{
+		dst_.create(src_.size(), src_.type());
+		Mat src = src_.getMat();
+		Mat guide = guide_.getMat();
+		Mat dst = dst_.getMat();
+		Mat mask = mask_.getMat();
+		CV_Assert(guide.depth() == CV_8U);
+
+		if (src.depth() == CV_8U && guide.depth() == CV_8U)weightedHistogramFilter_<uchar, uchar>(src, guide, dst, r,   sigmaColor, sigmaSpace, sigmaHistogram, weightFunctionType, method, borderType, mask);
+		if (src.depth() == CV_16S && guide.depth() == CV_8U)weightedHistogramFilter_<short, uchar>(src, guide, dst, r, sigmaColor, sigmaSpace, sigmaHistogram, weightFunctionType, method, borderType, mask);
+		if (src.depth() == CV_16U && guide.depth() == CV_8U)weightedHistogramFilter_<ushort, uchar>(src, guide, dst, r, sigmaColor, sigmaSpace, sigmaHistogram, weightFunctionType, method, borderType, mask);
+		if (src.depth() == CV_32F && guide.depth() == CV_8U)weightedHistogramFilter_<float, uchar>(src, guide, dst, r, sigmaColor, sigmaSpace, sigmaHistogram, weightFunctionType, method, borderType, mask);
+	}
+
+
+	void weightedweightedHistogramFilter(Mat& src, Mat& weightMap, Mat& guide, Mat& dst, int r, int truncate, double sig_c1, double sig_c2, double sig_s, const WHF_HISTOGRAM_WEIGHT weightFunctionType, int method)
 	{
 		int width = src.cols;
 		int height = src.rows;
@@ -266,10 +560,10 @@ namespace cp
 		Mat src2; copyMakeBorder(src, src2, r, r, r, r, 1);
 
 		int mode = WeightedHistogram::MAX;
-		if (method >= WeightedHistogram::NO_WEIGHT_MEDIAN)
+		if (method >= WHF_OPERATION::NO_WEIGHT_MEDIAN)
 		{
 			mode = WeightedHistogram::MEDIAN;
-			method -= WeightedHistogram::NO_WEIGHT_MEDIAN;
+			method -= WHF_OPERATION::NO_WEIGHT_MEDIAN;
 		}
 
 		int borderType = cv::BORDER_REPLICATE;
@@ -311,7 +605,7 @@ namespace cp
 				lutc2[i] = (float)(exp(-sqr(i) / (2 * sqr(sig_c2))));
 			}
 
-			if (method == WeightedHistogram::BILATERAL_MODE)
+			if (method == WHF_OPERATION::BILATERAL_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
@@ -339,7 +633,7 @@ namespace cp
 								int diff1 = abs(ss - *sp);
 								int diff = abs(bb - *bp) + abs(gg - *gp) + abs(rr - *rp);
 								addval *= lutc1[diff] * lutc2[diff];
-								h.add(addval, *sp, metric);
+								h.add(addval, *sp, weightFunctionType);
 
 								w++;
 								sp++;
@@ -352,7 +646,7 @@ namespace cp
 					}
 				}
 			}
-			else if (method == WeightedHistogram::GAUSSIAN_MODE)
+			else if (method == WHF_OPERATION::GAUSSIAN_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
@@ -368,7 +662,7 @@ namespace cp
 							for (int i = 0; i < 2 * r + 1; i++, idx++)
 							{
 								float addval = luts[idx] * *w;
-								h.add(addval, *sp, metric);
+								h.add(addval, *sp, weightFunctionType);
 
 								w++;
 								sp++;
@@ -378,7 +672,7 @@ namespace cp
 					}
 				}
 			}
-			else if (method == WeightedHistogram::NO_WEIGHT_MODE)
+			else if (method == WHF_OPERATION::NO_WEIGHT_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
@@ -393,7 +687,7 @@ namespace cp
 							for (int i = 0; i < 2 * r + 1; i++, idx++)
 							{
 								float addval = *w;
-								h.add(addval, src2.at<uchar>(y + j, x + i), metric);
+								h.add(addval, src2.at<uchar>(y + j, x + i), weightFunctionType);
 								w++;
 							}
 						}
@@ -427,7 +721,7 @@ namespace cp
 				lutc2[i] = (float)(exp(-sqr(i) / (2.0 * sqr(sig_c2))));
 			}
 
-			if (method == WeightedHistogram::BILATERAL_MODE)
+			if (method == WHF_OPERATION::BILATERAL_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
@@ -450,7 +744,7 @@ namespace cp
 								int diff = abs(gg - *gp);
 								addval *= lutc1[diff1] * lutc2[diff];
 
-								h.add(addval, *sp, metric);
+								h.add(addval, *sp, weightFunctionType);
 
 								w++;
 								sp++;
@@ -461,7 +755,7 @@ namespace cp
 					}
 				}
 			}
-			else if (method == WeightedHistogram::GAUSSIAN_MODE)
+			else if (method == WHF_OPERATION::GAUSSIAN_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
@@ -477,7 +771,7 @@ namespace cp
 							for (int i = 0; i < 2 * r + 1; i++, idx++)
 							{
 								float addval = luts[idx] * *w;
-								h.add(addval, *sp, metric);
+								h.add(addval, *sp, weightFunctionType);
 
 								w++;
 								sp++;
@@ -487,7 +781,7 @@ namespace cp
 					}
 				}
 			}
-			else if (method == WeightedHistogram::NO_WEIGHT_MODE)
+			else if (method == WHF_OPERATION::NO_WEIGHT_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
@@ -502,7 +796,7 @@ namespace cp
 							for (int i = 0; i < 2 * r + 1; i++, idx++)
 							{
 								float addval = *w;
-								h.add(addval, src2.at<uchar>(y + j, x + i), metric);
+								h.add(addval, src2.at<uchar>(y + j, x + i), weightFunctionType);
 
 								w++;
 							}
@@ -517,7 +811,7 @@ namespace cp
 		}
 	}
 
-	void weightedweightedHistogramFilter(Mat& src, Mat& weightMap, Mat& guide, Mat& dst, int r, int truncate, double sig_c, double sig_s, int metric, int method)
+	void weightedweightedHistogramFilter(Mat& src, Mat& weightMap, Mat& guide, Mat& dst, int r, int truncate, double sig_c, double sig_s, const WHF_HISTOGRAM_WEIGHT weightFunctionType, int method)
 	{
 		int width = src.cols;
 		int height = src.rows;
@@ -525,10 +819,10 @@ namespace cp
 		Mat src2; copyMakeBorder(src, src2, r, r, r, r, 1);
 
 		int mode = WeightedHistogram::MAX;
-		if (method >= WeightedHistogram::NO_WEIGHT_MEDIAN)
+		if (method >= WHF_OPERATION::NO_WEIGHT_MEDIAN)
 		{
 			mode = WeightedHistogram::MEDIAN;
-			method -= WeightedHistogram::NO_WEIGHT_MEDIAN;
+			method -= WHF_OPERATION::NO_WEIGHT_MEDIAN;
 		}
 
 		int borderType = cv::BORDER_REPLICATE;
@@ -568,7 +862,7 @@ namespace cp
 				lutc[i] = (float)(exp(-sqr(i) / (2 * sqr(sig_c))));
 			}
 
-			if (method == WeightedHistogram::BILATERAL_MODE)
+			if (method == WHF_OPERATION::BILATERAL_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
@@ -594,7 +888,7 @@ namespace cp
 
 								int diff = abs(bb - *bp) + abs(gg - *gp) + abs(rr - *rp);
 								addval *= lutc[diff];
-								h.add(addval, *sp, metric);
+								h.add(addval, *sp, weightFunctionType);
 
 								w++;
 								sp++;
@@ -607,7 +901,7 @@ namespace cp
 					}
 				}
 			}
-			else if (method == WeightedHistogram::GAUSSIAN_MODE)
+			else if (method == WHF_OPERATION::GAUSSIAN_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
@@ -623,7 +917,7 @@ namespace cp
 							for (int i = 0; i < 2 * r + 1; i++, idx++)
 							{
 								float addval = luts[idx] * *w;
-								h.add(addval, *sp, metric);
+								h.add(addval, *sp, weightFunctionType);
 
 								w++;
 								sp++;
@@ -633,7 +927,7 @@ namespace cp
 					}
 				}
 			}
-			else if (method == WeightedHistogram::NO_WEIGHT_MODE)
+			else if (method == WHF_OPERATION::NO_WEIGHT_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
@@ -648,7 +942,7 @@ namespace cp
 							for (int i = 0; i < 2 * r + 1; i++, idx++)
 							{
 								float addval = *w;
-								h.add(addval, src2.at<uchar>(y + j, x + i), metric);
+								h.add(addval, src2.at<uchar>(y + j, x + i), weightFunctionType);
 								w++;
 							}
 						}
@@ -679,7 +973,7 @@ namespace cp
 				lutc[i] = (float)(exp(-sqr(i) / (2.0 * sqr(sig_c))));
 			}
 
-			if (method == WeightedHistogram::BILATERAL_MODE)
+			if (method == WHF_OPERATION::BILATERAL_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
@@ -699,7 +993,7 @@ namespace cp
 								float addval = luts[idx] * *w;
 								int diff = abs(gg - *gp);
 								addval *= lutc[diff];
-								h.add(addval, *sp, metric);
+								h.add(addval, *sp, weightFunctionType);
 
 								w++;
 								sp++;
@@ -710,7 +1004,7 @@ namespace cp
 					}
 				}
 			}
-			else if (method == WeightedHistogram::GAUSSIAN_MODE)
+			else if (method == WHF_OPERATION::GAUSSIAN_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
@@ -726,7 +1020,7 @@ namespace cp
 							for (int i = 0; i < 2 * r + 1; i++, idx++)
 							{
 								float addval = luts[idx] * *w;
-								h.add(addval, *sp, metric);
+								h.add(addval, *sp, weightFunctionType);
 
 								w++;
 								sp++;
@@ -736,7 +1030,7 @@ namespace cp
 					}
 				}
 			}
-			else if (method == WeightedHistogram::NO_WEIGHT_MODE)
+			else if (method == WHF_OPERATION::NO_WEIGHT_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
@@ -751,7 +1045,7 @@ namespace cp
 							for (int i = 0; i < 2 * r + 1; i++, idx++)
 							{
 								float addval = *w;
-								h.add(addval, src2.at<uchar>(y + j, x + i), metric);
+								h.add(addval, src2.at<uchar>(y + j, x + i), weightFunctionType);
 
 								w++;
 							}
@@ -765,245 +1059,11 @@ namespace cp
 		}
 	}
 
-	template<typename srcType, typename guideType>
-	void weightedHistogramFilter_(Mat& src, Mat& guide, Mat& dst, int r, int truncate, double sig_c, double sig_s, int metric, int method)
-	{
-		double src_max;
-		minMaxLoc(src, NULL, &src_max);
-		src_max = get_simd_ceil(src_max, 4);
-		int width = src.cols;
-		int height = src.rows;
-
-		Mat srcBorder; copyMakeBorder(src, srcBorder, r, r, r, r, 1);
-
-		int mode = WeightedHistogram::MAX;
-		if (method >= WeightedHistogram::NO_WEIGHT_MEDIAN)
-		{
-			mode = WeightedHistogram::MEDIAN;
-			method -= WeightedHistogram::NO_WEIGHT_MEDIAN;
-		}
-
-		int borderType = cv::BORDER_REPLICATE;
-
-		if (guide.channels() == 3)
-		{
-			Mat B, G, R;
-			bgrSplit(guide, B, G, R);
-
-			Mat guideB; copyMakeBorder(B, guideB, r, r, r, r, borderType);
-			Mat guideG; copyMakeBorder(G, guideG, r, r, r, r, borderType);
-			Mat guideR; copyMakeBorder(R, guideR, r, r, r, r, borderType);
-
-			float* lutc = new float[443];
-			float* luts = new float[(2 * r + 1) * (2 * r + 1)];
-
-			for (int j = 0, idx = 0; j < 2 * r + 1; j++)
-			{
-				for (int i = 0; i < 2 * r + 1; i++, idx++)
-				{
-					luts[idx] = (float)(exp(-(sqr(i - r) + sqr(j - r)) / (2 * sqr(sig_s))));
-				}
-			}
-			for (int i = 0; i < 443; i++)
-			{
-				lutc[i] = (float)(exp(-sqr(i) / (2.f * sqr(sig_c))));
-			}
-
-			if (method == WeightedHistogram::BILATERAL_MODE)
-			{
-#pragma omp parallel for
-				for (int y = 0; y < height; y++)
-				{
-					WeightedHistogram h(truncate, mode, src_max);
-					for (int x = 0; x < width; x++)
-					{
-						h.clear();
-						const guideType bb = B.at<guideType>(y, x);
-						const guideType gg = G.at<guideType>(y, x);
-						const guideType rr = R.at<guideType>(y, x);
-
-						for (int j = 0, idx = 0; j < 2 * r + 1; j++)
-						{
-							srcType* sp = srcBorder.ptr<srcType>(y + j); sp += x;
-							guideType* bp = guideB.ptr<guideType>(y + j); bp += x;
-							guideType* gp = guideG.ptr<guideType>(y + j); gp += x;
-							guideType* rp = guideR.ptr<guideType>(y + j); rp += x;
-
-							for (int i = 0; i < 2 * r + 1; i++, idx++)
-							{
-								float addval = luts[idx];
-
-								int diff = sqrt((bb - *bp) * (bb - *bp) + (gg - *gp) * (gg - *gp) + (rr - *rp) * (rr - *rp));
-								addval *= lutc[diff];
-								h.add(addval, *sp, metric);
-
-								sp++;
-								bp++;
-								gp++;
-								rp++;
-							}
-						}
-						dst.at<srcType>(y, x) = h.returnVal();
-					}
-				}
-			}
-			if (method == WeightedHistogram::GAUSSIAN_MODE)
-			{
-#pragma omp parallel for
-				for (int y = 0; y < height; y++)
-				{
-					WeightedHistogram h(truncate, mode);
-					for (int x = 0; x < width; x++)
-					{
-						h.clear();
-						for (int j = 0, idx = 0; j < 2 * r + 1; j++)
-						{
-							srcType* sp = srcBorder.ptr<srcType>(y + j); sp += x;
-							for (int i = 0; i < 2 * r + 1; i++, idx++)
-							{
-								float addval = luts[idx];
-								h.add(addval, *sp, metric);
-								sp++;
-							}
-						}
-						dst.at<srcType>(y, x) = h.returnVal();
-					}
-				}
-			}
-			else if (method == WeightedHistogram::NO_WEIGHT_MODE)
-			{
-#pragma omp parallel for
-				for (int y = 0; y < height; y++)
-				{
-					for (int x = 0; x < width; x++)
-					{
-						WeightedHistogram h(truncate, mode);
-
-						for (int j = 0, idx = 0; j < 2 * r + 1; j++)
-						{
-							for (int i = 0; i < 2 * r + 1; i++, idx++)
-							{
-								float addval = 1.f;
-								h.add(addval, srcBorder.at<srcType>(y + j, x + i), metric);
-							}
-						}
-						dst.at<srcType>(y, x) = h.returnVal();
-					}
-				}
-			}
-			delete[] lutc;
-			delete[] luts;
-		}
-		else if (guide.channels() == 1)
-		{
-
-			Mat G; copyMakeBorder(guide, G, r, r, r, r, borderType);
-
-			float* lutc = new float[256];
-			float* luts = new float[(2 * r + 1) * (2 * r + 1)];
-
-
-			for (int j = 0, idx = 0; j < 2 * r + 1; j++)
-			{
-				for (int i = 0; i < 2 * r + 1; i++, idx++)
-				{
-					luts[idx] = (float)(exp(-(sqr(i - r) + sqr(j - r)) / (2 * sqr(sig_s))));
-				}
-			}
-			for (int i = 0; i < 256; i++)
-			{
-				lutc[i] = (float)(exp(-sqr(i) / (2.0 * sqr(sig_c))));
-			}
-
-			if (method == WeightedHistogram::BILATERAL_MODE)
-			{
-#pragma omp parallel for
-				for (int y = 0; y < height; y++)
-				{
-					WeightedHistogram h(truncate, mode);
-					for (int x = 0; x < width; x++)
-					{
-						h.clear();
-						const guideType gg = guide.at<guideType>(y, x);
-						for (int j = 0, idx = 0; j < 2 * r + 1; j++)
-						{
-							srcType* sp = srcBorder.ptr<srcType>(y + j); sp += x;
-							guideType* gp = G.ptr<guideType>(y + j); gp += x;
-							for (int i = 0; i < 2 * r + 1; i++, idx++)
-							{
-								float addval = luts[idx];
-								int diff = abs(gg - *gp);
-								addval *= lutc[diff];
-								h.add(addval, *sp, metric);
-								sp++;
-								gp++;
-							}
-						}
-						dst.at<srcType>(y, x) = h.returnVal();
-					}
-				}
-			}
-			if (method == WeightedHistogram::GAUSSIAN_MODE)
-			{
-#pragma omp parallel for
-				for (int y = 0; y < height; y++)
-				{
-					WeightedHistogram h(truncate, mode);
-					for (int x = 0; x < width; x++)
-					{
-						h.clear();
-						for (int j = 0, idx = 0; j < 2 * r + 1; j++)
-						{
-							srcType* sp = srcBorder.ptr<srcType>(y + j); sp += x;
-							for (int i = 0; i < 2 * r + 1; i++, idx++)
-							{
-								float addval = luts[idx];
-								h.add(addval, *sp, metric);
-								sp++;
-							}
-						}
-						dst.at<srcType>(y, x) = h.returnVal();
-					}
-				}
-			}
-			else if (method == WeightedHistogram::NO_WEIGHT_MODE)
-			{
-#pragma omp parallel for
-				for (int y = 0; y < height; y++)
-				{
-					for (int x = 0; x < width; x++)
-					{
-						WeightedHistogram h(truncate, mode);
-
-						for (int j = 0, idx = 0; j < 2 * r + 1; j++)
-						{
-							for (int i = 0; i < 2 * r + 1; i++, idx++)
-							{
-								float addval = 1.f;
-								h.add(addval, srcBorder.at<srcType >(y + j, x + i), metric);
-							}
-						}
-						dst.at<srcType>(y, x) = h.returnVal();
-					}
-				}
-			}
-			delete[] lutc;
-			delete[] luts;
-		}
-	}
-
-	void weightedHistogramFilter(Mat& src, Mat& guide, Mat& dst, int r, int truncate, double sig_c, double sig_s, int metric, int method)
-	{
-		CV_Assert(guide.depth() == CV_8U);
-		if (src.depth() == CV_8U && guide.depth() == CV_8U)weightedHistogramFilter_<uchar, uchar>(src, guide, dst, r, truncate, sig_c, sig_s, metric, method);
-		if (src.depth() == CV_16S && guide.depth() == CV_8U)weightedHistogramFilter_<short, uchar>(src, guide, dst, r, truncate, sig_c, sig_s, metric, method);
-		if (src.depth() == CV_16U && guide.depth() == CV_8U)weightedHistogramFilter_<ushort, uchar>(src, guide, dst, r, truncate, sig_c, sig_s, metric, method);
-		if (src.depth() == CV_32F && guide.depth() == CV_8U)weightedHistogramFilter_<float, uchar>(src, guide, dst, r, truncate, sig_c, sig_s, metric, method);
-	}
+	
 
 	//with mask
 #include<omp.h>
-	void weightedweightedHistogramFilter(Mat& src, Mat& weightMap, Mat& guide, Mat& mask, Mat& dst, int r, int truncate, double sig_c1, double sig_c2, double sig_s, int metric, int method)
+	void weightedweightedHistogramFilter(Mat& src, Mat& weightMap, Mat& guide, Mat& mask, Mat& dst, int r, int truncate, double sig_c1, double sig_c2, double sig_s, const WHF_HISTOGRAM_WEIGHT weightFunctionType, int method)
 	{
 		src.copyTo(dst);
 		int width = src.cols;
@@ -1012,10 +1072,10 @@ namespace cp
 		Mat src2; copyMakeBorder(src, src2, r, r, r, r, 1);
 
 		int mode = WeightedHistogram::MAX;
-		if (method >= WeightedHistogram::NO_WEIGHT_MEDIAN)
+		if (method >= WHF_OPERATION::NO_WEIGHT_MEDIAN)
 		{
 			mode = WeightedHistogram::MEDIAN;
-			method -= WeightedHistogram::NO_WEIGHT_MEDIAN;
+			method -= WHF_OPERATION::NO_WEIGHT_MEDIAN;
 		}
 
 		int borderType = cv::BORDER_REPLICATE;
@@ -1057,7 +1117,7 @@ namespace cp
 				lutc2[i] = (float)(exp(-sqr(i) / (2 * sqr(sig_c2))));
 			}
 
-			if (method == WeightedHistogram::BILATERAL_MODE)
+			if (method == WHF_OPERATION::BILATERAL_MODE)
 			{
 #pragma omp parallel for schedule(dynamic,1)
 				for (int y = 0; y < height; y++)
@@ -1087,7 +1147,7 @@ namespace cp
 								int diff1 = abs(ss - *sp);
 								int diff = abs(bb - *bp) + abs(gg - *gp) + abs(rr - *rp);
 								addval *= lutc1[diff] * lutc2[diff];
-								h.add(addval, *sp, metric);
+								h.add(addval, *sp, weightFunctionType);
 
 								w++;
 								sp++;
@@ -1100,7 +1160,7 @@ namespace cp
 					}
 				}
 			}
-			else if (method == WeightedHistogram::GAUSSIAN_MODE)
+			else if (method == WHF_OPERATION::GAUSSIAN_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
@@ -1118,7 +1178,7 @@ namespace cp
 							for (int i = 0; i < 2 * r + 1; i++, idx++)
 							{
 								float addval = luts[idx] * *w;
-								h.add(addval, *sp, metric);
+								h.add(addval, *sp, weightFunctionType);
 
 								w++;
 								sp++;
@@ -1128,7 +1188,7 @@ namespace cp
 					}
 				}
 			}
-			else if (method == WeightedHistogram::NO_WEIGHT_MODE)
+			else if (method == WHF_OPERATION::NO_WEIGHT_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
@@ -1145,7 +1205,7 @@ namespace cp
 							for (int i = 0; i < 2 * r + 1; i++, idx++)
 							{
 								float addval = *w;
-								h.add(addval, src2.at<uchar>(y + j, x + i), metric);
+								h.add(addval, src2.at<uchar>(y + j, x + i), weightFunctionType);
 								w++;
 							}
 						}
@@ -1179,7 +1239,7 @@ namespace cp
 				lutc2[i] = (float)(exp(-sqr(i) / (2.0 * sqr(sig_c2))));
 			}
 
-			if (method == WeightedHistogram::BILATERAL_MODE)
+			if (method == WHF_OPERATION::BILATERAL_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
@@ -1204,7 +1264,7 @@ namespace cp
 								int diff = abs(gg - *gp);
 								addval *= lutc1[diff1] * lutc2[diff];
 
-								h.add(addval, *sp, metric);
+								h.add(addval, *sp, weightFunctionType);
 
 								w++;
 								sp++;
@@ -1215,7 +1275,7 @@ namespace cp
 					}
 				}
 			}
-			else if (method == WeightedHistogram::GAUSSIAN_MODE)
+			else if (method == WHF_OPERATION::GAUSSIAN_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
@@ -1233,7 +1293,7 @@ namespace cp
 							for (int i = 0; i < 2 * r + 1; i++, idx++)
 							{
 								float addval = luts[idx] * *w;
-								h.add(addval, *sp, metric);
+								h.add(addval, *sp, weightFunctionType);
 
 								w++;
 								sp++;
@@ -1243,7 +1303,7 @@ namespace cp
 					}
 				}
 			}
-			else if (method == WeightedHistogram::NO_WEIGHT_MODE)
+			else if (method == WHF_OPERATION::NO_WEIGHT_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
@@ -1260,7 +1320,7 @@ namespace cp
 							for (int i = 0; i < 2 * r + 1; i++, idx++)
 							{
 								float addval = *w;
-								h.add(addval, src2.at<uchar>(y + j, x + i), metric);
+								h.add(addval, src2.at<uchar>(y + j, x + i), weightFunctionType);
 
 								w++;
 							}
@@ -1275,7 +1335,7 @@ namespace cp
 		}
 	}
 
-	void weightedweightedHistogramFilter(Mat& src, Mat& weightMap, Mat& guide, Mat& mask, Mat& dst, int r, int truncate, double sig_c, double sig_s, int metric, int method)
+	void weightedweightedHistogramFilter(Mat& src, Mat& weightMap, Mat& guide, Mat& mask, Mat& dst, int r, int truncate, double sig_c, double sig_s, const WHF_HISTOGRAM_WEIGHT weightFunctionType, int method)
 	{
 		src.copyTo(dst);
 		int width = src.cols;
@@ -1284,10 +1344,10 @@ namespace cp
 		Mat src2; copyMakeBorder(src, src2, r, r, r, r, 1);
 
 		int mode = WeightedHistogram::MAX;
-		if (method >= WeightedHistogram::NO_WEIGHT_MEDIAN)
+		if (method >= WHF_OPERATION::NO_WEIGHT_MEDIAN)
 		{
 			mode = WeightedHistogram::MEDIAN;
-			method -= WeightedHistogram::NO_WEIGHT_MEDIAN;
+			method -= WHF_OPERATION::NO_WEIGHT_MEDIAN;
 		}
 
 		int borderType = cv::BORDER_REPLICATE;
@@ -1327,7 +1387,7 @@ namespace cp
 				lutc[i] = (float)(exp(-sqr(i) / (2 * sqr(sig_c))));
 			}
 
-			if (method == WeightedHistogram::BILATERAL_MODE)
+			if (method == WHF_OPERATION::BILATERAL_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
@@ -1356,7 +1416,7 @@ namespace cp
 
 								int diff = abs(bb - *bp) + abs(gg - *gp) + abs(rr - *rp);
 								addval *= lutc[diff];
-								h.add(addval, *sp, metric);
+								h.add(addval, *sp, weightFunctionType);
 
 								w++;
 								sp++;
@@ -1369,7 +1429,7 @@ namespace cp
 					}
 				}
 			}
-			else if (method == WeightedHistogram::GAUSSIAN_MODE)
+			else if (method == WHF_OPERATION::GAUSSIAN_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
@@ -1387,7 +1447,7 @@ namespace cp
 							for (int i = 0; i < 2 * r + 1; i++, idx++)
 							{
 								float addval = luts[idx] * *w;
-								h.add(addval, *sp, metric);
+								h.add(addval, *sp, weightFunctionType);
 
 								w++;
 								sp++;
@@ -1397,7 +1457,7 @@ namespace cp
 					}
 				}
 			}
-			else if (method == WeightedHistogram::NO_WEIGHT_MODE)
+			else if (method == WHF_OPERATION::NO_WEIGHT_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
@@ -1414,7 +1474,7 @@ namespace cp
 							for (int i = 0; i < 2 * r + 1; i++, idx++)
 							{
 								float addval = *w;
-								h.add(addval, src2.at<uchar>(y + j, x + i), metric);
+								h.add(addval, src2.at<uchar>(y + j, x + i), weightFunctionType);
 								w++;
 							}
 						}
@@ -1445,7 +1505,7 @@ namespace cp
 				lutc[i] = (float)(exp(-sqr(i) / (2.0 * sqr(sig_c))));
 			}
 
-			if (method == WeightedHistogram::BILATERAL_MODE)
+			if (method == WHF_OPERATION::BILATERAL_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
@@ -1467,7 +1527,7 @@ namespace cp
 								float addval = luts[idx] * *w;
 								int diff = abs(gg - *gp);
 								addval *= lutc[diff];
-								h.add(addval, *sp, metric);
+								h.add(addval, *sp, weightFunctionType);
 
 								w++;
 								sp++;
@@ -1478,7 +1538,7 @@ namespace cp
 					}
 				}
 			}
-			else if (method == WeightedHistogram::GAUSSIAN_MODE)
+			else if (method == WHF_OPERATION::GAUSSIAN_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
@@ -1496,7 +1556,7 @@ namespace cp
 							for (int i = 0; i < 2 * r + 1; i++, idx++)
 							{
 								float addval = luts[idx] * *w;
-								h.add(addval, *sp, metric);
+								h.add(addval, *sp, weightFunctionType);
 
 								w++;
 								sp++;
@@ -1506,7 +1566,7 @@ namespace cp
 					}
 				}
 			}
-			else if (method == WeightedHistogram::NO_WEIGHT_MODE)
+			else if (method == WHF_OPERATION::NO_WEIGHT_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
@@ -1523,7 +1583,7 @@ namespace cp
 							for (int i = 0; i < 2 * r + 1; i++, idx++)
 							{
 								float addval = *w;
-								h.add(addval, src2.at<uchar>(y + j, x + i), metric);
+								h.add(addval, src2.at<uchar>(y + j, x + i), weightFunctionType);
 
 								w++;
 							}
@@ -1537,36 +1597,27 @@ namespace cp
 		}
 	}
 
-	void weightedModeFilter(InputArray src, InputArray guide, OutputArray dst, int r, int truncate, double sig_c, double sig_s, int metric, int method)
+
+	
+	void weightedModeFilter(cv::InputArray src, cv::InputArray guide, cv::OutputArray dst, const int r, const double sigmaColor, const double sigmaSpace, const double sigmaHistogram, const int borderType, cv::InputArray mask)
 	{
 		Mat s = src.getMat();
 		Mat g = guide.getMat();
 		if (dst.empty()) dst.create(src.size(), src.type());
 		Mat d = dst.getMat();
-		weightedHistogramFilter(s, g, d, r, truncate, sig_c, sig_s, metric, method);
+		weightedHistogramFilter(s, g, d, r, sigmaColor, sigmaSpace, sigmaHistogram, WHF_HISTOGRAM_WEIGHT::GAUSSIAN, WHF_OPERATION::BILATERAL_MODE, borderType, mask);
 	}
-
-	void weightedMedianFilter(InputArray src, InputArray guide, OutputArray dst, int r, int truncate, double sig_c, double sig_s, int metric, int method)
+	/*
+	void weightedMedianFilter(InputArray src, InputArray guide, OutputArray dst, int r, int truncate, double sig_c, double sig_s, const WHF_HISTOGRAM_WEIGHT weightFunctionType, int method)
 	{
 		Mat s = src.getMat();
 		Mat g = guide.getMat();
 		if (dst.empty()) dst.create(src.size(), src.type());
 		Mat d = dst.getMat();
-		weightedHistogramFilter(s, g, d, r, truncate, sig_c, sig_s, metric, method + WeightedHistogram::NO_WEIGHT_MEDIAN);
+		weightedHistogramFilter(s, g, d, r, truncate, sig_c, sig_s, weightFunctionType, method + WeightedHistogram::NO_WEIGHT_MEDIAN);
 	}
 
-	void weightedweightedModeFilter(InputArray src, InputArray wmap, InputArray guide, OutputArray dst, int r, int truncate, double sig_c1, double sig_c2, double sig_s, int metric, int method)
-	{
-		Mat s = src.getMat();
-		Mat g = guide.getMat();
-		Mat w = wmap.getMat();
-		if (dst.empty()) dst.create(src.size(), src.type());
-		Mat d = dst.getMat();
-
-		weightedweightedHistogramFilter(s, w, g, d, r, truncate, sig_c1, sig_c2, sig_s, metric, method);
-	}
-
-	void weightedweightedMedianFilter(InputArray src, InputArray wmap, InputArray guide, OutputArray dst, int r, int truncate, double sig_c1, double sig_c2, double sig_s, int metric, int method)
+	void weightedweightedModeFilter(InputArray src, InputArray wmap, InputArray guide, OutputArray dst, int r, int truncate, double sig_c1, double sig_c2, double sig_s, const WHF_HISTOGRAM_WEIGHT weightFunctionType, int method)
 	{
 		Mat s = src.getMat();
 		Mat g = guide.getMat();
@@ -1574,10 +1625,10 @@ namespace cp
 		if (dst.empty()) dst.create(src.size(), src.type());
 		Mat d = dst.getMat();
 
-		weightedweightedHistogramFilter(s, w, g, d, r, truncate, sig_c1, sig_c2, sig_s, metric, method + WeightedHistogram::NO_WEIGHT_MEDIAN);
+		weightedweightedHistogramFilter(s, w, g, d, r, truncate, sig_c1, sig_c2, sig_s, weightFunctionType, method);
 	}
 
-	void weightedweightedModeFilter(InputArray src, InputArray wmap, InputArray guide, OutputArray dst, int r, int truncate, double sig_c, double sig_s, int metric, int method)
+	void weightedweightedMedianFilter(InputArray src, InputArray wmap, InputArray guide, OutputArray dst, int r, int truncate, double sig_c1, double sig_c2, double sig_s, const WHF_HISTOGRAM_WEIGHT weightFunctionType, int method)
 	{
 		Mat s = src.getMat();
 		Mat g = guide.getMat();
@@ -1585,10 +1636,10 @@ namespace cp
 		if (dst.empty()) dst.create(src.size(), src.type());
 		Mat d = dst.getMat();
 
-		weightedweightedHistogramFilter(s, w, g, d, r, truncate, sig_c, sig_s, metric, method);
+		weightedweightedHistogramFilter(s, w, g, d, r, truncate, sig_c1, sig_c2, sig_s, weightFunctionType, method + WeightedHistogram::NO_WEIGHT_MEDIAN);
 	}
 
-	void weightedweightedMedianFilter(InputArray src, InputArray wmap, InputArray guide, OutputArray dst, int r, int truncate, double sig_c, double sig_s, int metric, int method)
+	void weightedweightedModeFilter(InputArray src, InputArray wmap, InputArray guide, OutputArray dst, int r, int truncate, double sig_c, double sig_s, const WHF_HISTOGRAM_WEIGHT weightFunctionType, int method)
 	{
 		Mat s = src.getMat();
 		Mat g = guide.getMat();
@@ -1596,22 +1647,21 @@ namespace cp
 		if (dst.empty()) dst.create(src.size(), src.type());
 		Mat d = dst.getMat();
 
-		weightedweightedHistogramFilter(s, w, g, d, r, truncate, sig_c, sig_s, metric, method + WeightedHistogram::NO_WEIGHT_MEDIAN);
+		weightedweightedHistogramFilter(s, w, g, d, r, truncate, sig_c, sig_s, weightFunctionType, method);
 	}
 
-	void weightedweightedModeFilter(InputArray src, InputArray wmap, InputArray guide, InputArray mask, OutputArray dst, int r, int truncate, double sig_c, double sig_s, int metric, int method)
+	void weightedweightedMedianFilter(InputArray src, InputArray wmap, InputArray guide, OutputArray dst, int r, int truncate, double sig_c, double sig_s, const WHF_HISTOGRAM_WEIGHT weightFunctionType, int method)
 	{
 		Mat s = src.getMat();
 		Mat g = guide.getMat();
 		Mat w = wmap.getMat();
-		Mat m = mask.getMat();
 		if (dst.empty()) dst.create(src.size(), src.type());
 		Mat d = dst.getMat();
 
-		weightedweightedHistogramFilter(s, w, g, m, d, r, truncate, sig_c, sig_s, metric, method);
+		weightedweightedHistogramFilter(s, w, g, d, r, truncate, sig_c, sig_s, weightFunctionType, method + WeightedHistogram::NO_WEIGHT_MEDIAN);
 	}
 
-	void weightedweightedMedianFilter(InputArray src, InputArray wmap, InputArray guide, InputArray mask, OutputArray dst, int r, int truncate, double sig_c, double sig_s, int metric, int method)
+	void weightedweightedModeFilter(InputArray src, InputArray wmap, InputArray guide, InputArray mask, OutputArray dst, int r, int truncate, double sig_c, double sig_s, const WHF_HISTOGRAM_WEIGHT weightFunctionType, int method)
 	{
 		Mat s = src.getMat();
 		Mat g = guide.getMat();
@@ -1620,10 +1670,10 @@ namespace cp
 		if (dst.empty()) dst.create(src.size(), src.type());
 		Mat d = dst.getMat();
 
-		weightedweightedHistogramFilter(s, w, g, m, d, r, truncate, sig_c, sig_s, metric, method + WeightedHistogram::NO_WEIGHT_MEDIAN);
+		weightedweightedHistogramFilter(s, w, g, m, d, r, truncate, sig_c, sig_s, weightFunctionType, method);
 	}
 
-	void weightedweightedModeFilter(InputArray src, InputArray wmap, InputArray guide, InputArray mask, OutputArray dst, int r, int truncate, double sig_c1, double sig_c2, double sig_s, int metric, int method)
+	void weightedweightedMedianFilter(InputArray src, InputArray wmap, InputArray guide, InputArray mask, OutputArray dst, int r, int truncate, double sig_c, double sig_s, const WHF_HISTOGRAM_WEIGHT weightFunctionType, int method)
 	{
 		Mat s = src.getMat();
 		Mat g = guide.getMat();
@@ -1632,10 +1682,10 @@ namespace cp
 		if (dst.empty()) dst.create(src.size(), src.type());
 		Mat d = dst.getMat();
 
-		weightedweightedHistogramFilter(s, w, g, m, d, r, truncate, sig_c1, sig_c2, sig_s, metric, method);
+		weightedweightedHistogramFilter(s, w, g, m, d, r, truncate, sig_c, sig_s, weightFunctionType, method + WeightedHistogram::NO_WEIGHT_MEDIAN);
 	}
 
-	void weightedweightedMedianFilter(InputArray src, InputArray wmap, InputArray guide, InputArray mask, OutputArray dst, int r, int truncate, double sig_c1, double sig_c2, double sig_s, int metric, int method)
+	void weightedweightedModeFilter(InputArray src, InputArray wmap, InputArray guide, InputArray mask, OutputArray dst, int r, int truncate, double sig_c1, double sig_c2, double sig_s, const WHF_HISTOGRAM_WEIGHT weightFunctionType, int method)
 	{
 		Mat s = src.getMat();
 		Mat g = guide.getMat();
@@ -1644,6 +1694,19 @@ namespace cp
 		if (dst.empty()) dst.create(src.size(), src.type());
 		Mat d = dst.getMat();
 
-		weightedweightedHistogramFilter(s, w, g, m, d, r, truncate, sig_c1, sig_c2, sig_s, metric, method + WeightedHistogram::NO_WEIGHT_MEDIAN);
+		weightedweightedHistogramFilter(s, w, g, m, d, r, truncate, sig_c1, sig_c2, sig_s, weightFunctionType, method);
 	}
+
+	void weightedweightedMedianFilter(InputArray src, InputArray wmap, InputArray guide, InputArray mask, OutputArray dst, int r, int truncate, double sig_c1, double sig_c2, double sig_s, const WHF_HISTOGRAM_WEIGHT weightFunctionType, int method)
+	{
+		Mat s = src.getMat();
+		Mat g = guide.getMat();
+		Mat w = wmap.getMat();
+		Mat m = mask.getMat();
+		if (dst.empty()) dst.create(src.size(), src.type());
+		Mat d = dst.getMat();
+
+		weightedweightedHistogramFilter(s, w, g, m, d, r, truncate, sig_c1, sig_c2, sig_s, weightFunctionType, method + WeightedHistogram::NO_WEIGHT_MEDIAN);
+	}
+	*/
 }

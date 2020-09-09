@@ -7,7 +7,7 @@
 #include "jointBilateralFilter.hpp"
 #include "binalyWeightedRangeFilter.hpp"
 #include "jointNearestFilter.hpp"
-#include "weightedModeFilter.hpp"
+#include "weightedHistogramFilter.hpp"
 #include "minmaxfilter.hpp"
 #include "plot.hpp"
 #include "timer.hpp"
@@ -689,7 +689,7 @@ namespace cp
 				}
 				if (refinementMethod == (int)REFINEMENT::WMF)
 				{
-					cp::weightedModeFilter(destDisparityMap, leftim, destDisparityMap, refinementR, refinementTruncateMode, refinementSigmaRange, refinementSigmaSpace, 2, WeightedHistogram::BILATERAL_MODE);
+					cp::weightedModeFilter(destDisparityMap, leftim, destDisparityMap, refinementR, refinementSigmaRange, refinementSigmaSpace, refinementSigmaHistogram);
 				}
 			}
 #pragma endregion
@@ -806,7 +806,7 @@ namespace cp
 		int refinementSigmaRangeInt = int(refinementSigmaRange * 10); createTrackbar("ref:joint range*0.1", wname, &refinementSigmaRangeInt, 1000);
 		int refinementSigmaSpaceInt = int(refinementSigmaSpace * 10); createTrackbar("ref:joint space*0.1", wname, &refinementSigmaSpaceInt, 100);
 		createTrackbar("ref:jn r", wname, &jointNearestR, 5);
-		createTrackbar("ref:mode trunc", wname, &refinementTruncateMode, 128);
+		int refinementSigmaHistogramInt = int(refinementSigmaHistogram); createTrackbar("ref:mode histogram*0.1", wname, &refinementSigmaHistogramInt, 2550);
 
 		createTrackbar("ref:wr", wname, &refinementWeightR, 10);
 		int refinementWeightSigmaInt = int(refinementWeightSigma * 10); createTrackbar("ref:ws*0.1", wname, &refinementWeightSigmaInt, 1000);
@@ -846,6 +846,7 @@ namespace cp
 			feedbackAmp = feedbackAmpInt * 0.1f;
 			refinementSigmaRange = refinementSigmaRangeInt * 0.1f;
 			refinementSigmaSpace = refinementSigmaSpaceInt * 0.1f;
+			refinementSigmaHistogram = refinementSigmaHistogramInt * 0.1f;
 			refinementWeightSigma = refinementWeightSigmaInt * 0.1f;
 
 #pragma endregion

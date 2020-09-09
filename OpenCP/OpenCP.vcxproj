@@ -150,7 +150,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>CP_API;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <OpenMPSupport>true</OpenMPSupport>
-      <DisableSpecificWarnings>4251;4309; 4819;4324;4996</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4251;4309;4819;4324;4996</DisableSpecificWarnings>
       <AdditionalOptions>/MP %(AdditionalOptions)</AdditionalOptions>
       <FloatingPointModel>Fast</FloatingPointModel>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
@@ -336,7 +336,7 @@
     <ClCompile Include="updateCheck.cpp" />
     <ClCompile Include="video.cpp" />
     <ClCompile Include="viewsynthesis.cpp" />
-    <ClCompile Include="weightedModeFilter.cpp" />
+    <ClCompile Include="weightedHistogramFilter.cpp" />
     <ClCompile Include="Wiener2.cpp" />
     <ClCompile Include="yuvio.cpp" />
     <ClCompile Include="crop.cpp" />
@@ -436,7 +436,7 @@
     <ClInclude Include="..\include\updateCheck.hpp" />
     <ClInclude Include="..\include\video.hpp" />
     <ClInclude Include="..\include\viewsynthesis.hpp" />
-    <ClInclude Include="..\include\weightedModeFilter.hpp" />
+    <ClInclude Include="..\include\weightedHistogramFilter.hpp" />
     <ClInclude Include="..\include\Wiener2.hpp" />
     <ClInclude Include="..\include\yuvio.hpp" />
     <ClInclude Include="..\include\crop.hpp" />

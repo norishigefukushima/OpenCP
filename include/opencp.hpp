@@ -79,7 +79,7 @@
 #include "realtimeO1BilateralFilter.hpp"
 #include "recursiveBilateralFilter.hpp"
 #include "shockFilter.hpp"
-#include "weightedModeFilter.hpp"
+#include "weightedHistogramFilter.hpp"
 #include "Wiener2.hpp"
 #include "fftFilter.hpp"
 #include "dctFilter.hpp"

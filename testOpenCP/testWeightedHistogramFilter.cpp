@@ -21,11 +21,12 @@ void testWeightedHistogramFilterDisparity()
 	int a = 0; createTrackbar("a", wname, &a, 100);
 	int sw = 0; createTrackbar("switch", wname, &sw, 5);
 
+	int r = 4; createTrackbar("r", wname, &r, 20);
 	int space = 100; createTrackbar("space*0.1", wname, &space, 500);
 	int color = 300; createTrackbar("color*0.1", wname, &color, 5000);
-	int truncate = 10; createTrackbar("tranc", wname, &truncate, 255);
-	int metric = 0; createTrackbar("metric", wname, &metric, 3);
-	int r = 1; createTrackbar("r", wname, &r, 20);
+	int histogram = 10; createTrackbar("histogram*0.1", wname, &histogram, 255);
+	int histogramFunctionType = (int)WHF_HISTOGRAM_WEIGHT::GAUSSIAN; createTrackbar("functionType", wname, &histogramFunctionType, (int)WHF_HISTOGRAM_WEIGHT::SIZE-1);
+	
 
 	int key = 0;
 	Mat show;
@@ -51,14 +52,13 @@ void testWeightedHistogramFilterDisparity()
 			Timer t("", TIME_MSEC, false);
 			if (sw == 0)
 			{
-				weightedModeFilter(src, guide, show, r, truncate, space / 10.0, color / 10.0, metric, 2);
-				//weightedweightedModeFilter(src, guide, weight, show, r, tranc, space / 10.0, color / 10.0, 2, 2);
+				weightedHistogramFilter(src, guide, show, r, color * 0.1, space * 0.1, histogram * 0.1, WHF_HISTOGRAM_WEIGHT(histogramFunctionType), WHF_OPERATION::BILATERAL_MODE);
 			}
 			else if (sw == 1)
 			{
-				//weightedModeFilter(src, guide, show, r, tranc, space / 10.0, color / 10.0, 2, 2);
+				weightedHistogramFilter(src, guide, show, r, color * 0.1, space * 0.1, histogram * 0.1, WHF_HISTOGRAM_WEIGHT(histogramFunctionType), WHF_OPERATION::BILATERAL_MEDIAN);
 				//weightedweightedMedianFilter(src, guide, weight, show, r, tranc, space / 10.0, color / 10.0, 2, 2);
-				weightedMedianFilter(src, guide, show, r, truncate, space / 10.0, color / 10.0, metric, 2);
+				//weightedMedianFilter(src, guide, show, r, truncate, space / 10.0, color / 10.0, metric, 2);
 			}
 			time = t.getTime();
 		}
@@ -159,7 +159,7 @@ void testWeightedHistogramFilter(Mat& src_, Mat& guide_)
 		if (sw == 0)
 		{
 			Timer t;
-			weightedModeFilter(img, guide, show, r, tranc, space / 10.0, color / 10.0, 2, 2);
+			//weightedModeFilter(img, guide, show, r, tranc, space / 10.0, color / 10.0, 2, 2);
 			//weightedweightedModeFilter(src, guide, weight, show, r, tranc, space / 10.0, color / 10.0, 2, 2);
 		}
 		else if (sw == 1)
@@ -167,7 +167,7 @@ void testWeightedHistogramFilter(Mat& src_, Mat& guide_)
 			Timer t;
 			//weightedModeFilter(src, guide, show, r, tranc, space / 10.0, color / 10.0, 2, 2);
 			//weightedweightedMedianFilter(src, guide, weight, show, r, tranc, space / 10.0, color / 10.0, 2, 2);
-			weightedMedianFilter(img, guide, show, r, tranc, space / 10.0, color / 10.0, 2, 2);
+			//weightedMedianFilter(img, guide, show, r, tranc, space / 10.0, color / 10.0, 2, 2);
 		}
 		imshow(wname, show);
 

@@ -543,7 +543,7 @@
     <ClCompile Include="PermutohedralLattice.cpp">
       <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
     </ClCompile>
-    <ClCompile Include="weightedModeFilter.cpp">
+    <ClCompile Include="weightedHistogramFilter.cpp">
       <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
     </ClCompile>
   </ItemGroup>
@@ -636,9 +636,6 @@
       <Filter>ヘッダー ファイル\headers\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\shockFilter.hpp">
-      <Filter>ヘッダー ファイル\headers\filter</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\weightedModeFilter.hpp">
       <Filter>ヘッダー ファイル\headers\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\Wiener2.hpp">
@@ -970,6 +967,9 @@
     </ClInclude>
     <ClInclude Include="..\include\StereoEval.hpp">
       <Filter>ヘッダー ファイル\headers\stereo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\weightedHistogramFilter.hpp">
+      <Filter>ヘッダー ファイル\headers\filter</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

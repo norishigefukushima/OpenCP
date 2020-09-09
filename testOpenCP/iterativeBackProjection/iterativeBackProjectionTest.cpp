@@ -103,7 +103,7 @@ void guiIterativeBackProjectionTest(Mat& src)
 		double color_sigma = cs / 10.0;
 		int r = int((d_sigma / 10.0) * 3.0);
 		int d = 2 * r + 1;
-		double lambda = l / 10.0;
+		float lambda = l / 10.f;
 
 		//Mat test; GaussianFilterDCT32f(srcf, test, d_sigma / 10.0, 0); test.convertTo(blurred, CV_8U);
 		//Mat test; GaussianFilterDCT32f(srcf, blurred, d_sigma / 10.0, 0); 
