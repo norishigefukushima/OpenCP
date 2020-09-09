@@ -44,16 +44,17 @@ void guiCrossBasedLocalFilter(cv::Mat& src);
 void guiBilateralFilterTest(cv::Mat& src);
 void guiSeparableBilateralFilterTest(cv::Mat& src);
 
-void timeBirateralTest(cv::Mat& src);
-void guiDualBilateralFilterTest(cv::Mat& src1, cv::Mat& src2);
+void testWeightedHistogramFilter(cv::Mat& src = cv::Mat(), cv::Mat& guide = cv::Mat());
+void testWeightedHistogramFilterDisparity();
 
 void guiGausianFilterTest(cv::Mat& src_);
-
 void guiRecursiveBilateralFilterTest(cv::Mat& src);
 void guiRealtimeO1BilateralFilterTest(cv::Mat& src);
 void getPSNRRealtimeO1BilateralFilterKodak();
 void guiJointRealtimeO1BilateralFilterTest(cv::Mat& src_, cv::Mat& guide_);
 
+void timeBirateralTest(cv::Mat& src);
+void guiDualBilateralFilterTest(cv::Mat& src1, cv::Mat& src2);
 void guiJointBirateralFilterTest(cv::Mat& src, cv::Mat& guide);
 void guiDomainTransformFilterTest(cv::Mat& src);
 void guiJointDomainTransformFilterTest(cv::Mat& src, cv::Mat& guide);
@@ -80,7 +81,6 @@ void guiHazeRemoveTest(cv::Mat& haze);
 void qualityMetricsTest();
 void guiCoherenceEnhancingShockFilter(cv::Mat& src, cv::Mat& dest);
 void guiUpsampleTest(cv::Mat& src_);
-void guiWeightedHistogramFilterTest(cv::Mat& src = cv::Mat(), cv::Mat& guide = cv::Mat());
 
 void guiAnalysisCompare(cv::Mat& src1, cv::Mat& src2);
 void imshowAnalysisCompare(cv::String winname, cv::Mat& src1, cv::Mat& src2);

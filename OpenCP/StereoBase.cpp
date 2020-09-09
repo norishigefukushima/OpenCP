@@ -460,13 +460,13 @@ namespace cp
 		//cvtDisparityColor(disp,output,minDisparity,numberOfDisparities,option,16);
 		output.create(disp.size(), CV_8UC3);
 		Mat dst = output.getMat();
-		cvtDisparityColor(disp, dst, 0, 64, option, 16);
+		cvtDisparityColor(disp, dst, 0, 64, (DISPARITY_COLOR)option, 16);
 		imshow(wname, output);
 	}
 
 	void StereoBase::imshowDisparity(string wname, Mat& disp, int option, Mat& output, int mindis, int range)
 	{
-		cvtDisparityColor(disp, output, mindis, range, option, 16);
+		cvtDisparityColor(disp, output, mindis, range, (DISPARITY_COLOR)option, 16);
 		imshow(wname, output);
 	}
 
@@ -829,7 +829,7 @@ namespace cp
 		setMouseCallback(wname2, guiStereoMatchingOnMouse, &mpt);
 		//CostVolumeRefinement cbf(minDisparity, numberOfDisparities);
 
-		Mat dispOutput;
+		Mat dispShow;
 		bool isFeedback = false;
 		Mat weightMap = Mat::ones(leftim.size(), CV_32F);
 		destDisparity.setTo(0);
@@ -993,9 +993,16 @@ namespace cp
 				histp.plot("subpixel disparity distribution", false);
 			}
 
-			if (isDispalityColor)cvtDisparityColor(destDisparity, dispOutput, minDisparity, numberOfDisparities - 10, 2, 16);
-			else				 cvtDisparityColor(destDisparity, dispOutput, 0, numberOfDisparities, 0);
-
+			if (eval.isInit)
+			{
+				if (isDispalityColor)cvtDisparityColor(destDisparity, dispShow, minDisparity, numberOfDisparities, DISPARITY_COLOR::COLOR_PSEUDO, 16);
+				else				 cvtDisparityColor(destDisparity, dispShow, 0, 255, DISPARITY_COLOR::GRAY, 16/ eval.amp);
+			}
+			else
+			{
+				if (isDispalityColor)cvtDisparityColor(destDisparity, dispShow, minDisparity, numberOfDisparities, DISPARITY_COLOR::COLOR_PSEUDO, 16);
+				else				 cvtDisparityColor(destDisparity, dispShow, 0, numberOfDisparities, DISPARITY_COLOR::GRAY);
+			}
 			//plot cost function
 			if (isPlotCostFunction)
 			{
@@ -1145,24 +1152,24 @@ namespace cp
 				}
 				if (maskType == 4)
 				{
-					if (isDispalityColor) { Mat a; eval.ground_truth.convertTo(a, CV_16S, 4); cvtDisparityColor(a, dispOutput, minDisparity, numberOfDisparities - 10, 2, 16); }
-					else eval.ground_truth.copyTo(dispOutput);
+					if (isDispalityColor) { Mat a; eval.ground_truth.convertTo(a, CV_16S, 4); cvtDisparityColor(a, dispShow, minDisparity, numberOfDisparities - 10, DISPARITY_COLOR::COLOR_PSEUDO, 16); }
+					else eval.ground_truth.copyTo(dispShow);
 				}
 				else
 				{
-					dispOutput.setTo(Scalar(0, 0, 255), maskbadpixel);
+					dispShow.setTo(Scalar(0, 0, 255), maskbadpixel);
 				}
 			}
 
-			alphaBlend(leftim, dispOutput, display_image_depth_alpha / 100.0, dispOutput);
+			alphaBlend(leftim, dispShow, display_image_depth_alpha / 100.0, dispShow);
 			if (isGrid)
 			{
-				line(dispOutput, Point(0, mpt.y), Point(leftim.cols, mpt.y), CV_RGB(0, 255, 0));
-				line(dispOutput, Point(mpt.x, 0), Point(mpt.x, leftim.rows), CV_RGB(0, 255, 0));
+				line(dispShow, Point(0, mpt.y), Point(leftim.cols, mpt.y), CV_RGB(0, 255, 0));
+				line(dispShow, Point(mpt.x, 0), Point(mpt.x, leftim.rows), CV_RGB(0, 255, 0));
 			}
 
 			showWeightMap("refinement weightmap");
-			imshow(wname2, dispOutput);
+			imshow(wname2, dispShow);
 			imshow("console", ci.image);
 			setTrackbarPos("px", wname, mpt.x);
 			setTrackbarPos("py", wname, mpt.y);
@@ -1196,7 +1203,7 @@ namespace cp
 
 			if (key == 'w')isDispalityColor = (isDispalityColor) ? false : true;
 			if (key == 'b') guiCrossBasedLocalFilter(leftim);
-			if (key == 'c') guiAlphaBlend(dispOutput, leftim);
+			if (key == 'c') guiAlphaBlend(dispShow, leftim);
 			if (key == 'r' || uck.isUpdate(feedbackFunction, feedbackClip, feedbackAmpInt))
 			{
 				destDisparity.setTo(0);

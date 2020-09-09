@@ -1118,46 +1118,44 @@ namespace cp
 	}
 
 
-	void imshowDisparity(string name, Mat& src, int option, int minDisparity, int numDisparities, int amp)
+	void imshowDisparity(const string name, const Mat& src, const DISPARITY_COLOR option, const int minDisparity, const int numDisparities, const int amp)
 	{
-		Mat temp;
+		Mat show;
 		if (minDisparity == numDisparities)
 		{
 			double minv, maxv;
 			minMaxLoc(src, &minv, &maxv);
-			cvtDisparityColor(src, temp, (int)minv, int(maxv - minv), option, 1);
+			cvtDisparityColor(src, show, (int)minv, int(maxv - minv), option, 1);
 		}
 		else
-			cvtDisparityColor(src, temp, minDisparity, numDisparities, option, amp);
+		{
+			cvtDisparityColor(src, show, minDisparity, numDisparities, option, amp);
+		}
 
-		imshow(name, temp);
+		imshow(name, show);
 	}
 
-	void cvtDisparityColor(Mat& src, Mat& dest, int minDisparity, int numDisparities, int option, int amp)
+	void cvtDisparityColor(const Mat& src, Mat& dest, const int minDisparity, const int numDisparities, const DISPARITY_COLOR option, const int amp)
 	{
 		const double a = 255.0 / ((double)numDisparities*(double)amp);
-		if (option == DISPARITY_COLOR_GRAY)
+		Mat gray8U;
+		src.convertTo(gray8U, CV_8U, a, -minDisparity * 255.0 / (double)numDisparities);
+		if (option == DISPARITY_COLOR::GRAY)
 		{
-			Mat temp;
-			src.convertTo(temp, CV_8U, a, -minDisparity*255.0 / (double)numDisparities);
-			cvtColor(temp, dest, COLOR_GRAY2BGR);
+			cvtColor(gray8U, dest, COLOR_GRAY2BGR);
 		}
-		else if (option == DISPARITY_COLOR_GRAY_OCC)
+		else if (option == DISPARITY_COLOR::GRAY_OCC)
 		{
 			Mat mask;
 			cv::compare(src, minDisparity*amp, mask, cv::CMP_LT);
-			Mat temp;
-			src.convertTo(temp, CV_8U, a, -minDisparity*255.0 / (double)numDisparities);
-			cvtColor(temp, dest, COLOR_GRAY2BGR);
+			cvtColor(gray8U, dest, COLOR_GRAY2BGR);
 			dest.setTo(Scalar(0, 0, 255), mask);
 		}
 		else
 		{
-			Mat temp;
-			src.convertTo(temp, CV_8U, a, -minDisparity*255.0 / (double)numDisparities);
-			applyColorMap(temp, dest, 2);
 			Mat mask;
-			cv::compare(src, minDisparity*amp, mask, cv::CMP_LT);
+			cv::compare(src, minDisparity * amp, mask, cv::CMP_LT);
+			applyColorMap(gray8U, dest, 2);
 			dest.setTo(0, mask);
 		}
 	}

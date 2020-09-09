@@ -27,8 +27,14 @@ namespace cp
 	CP_EXPORT void LRCheckDisparity(cv::Mat& left_disp, cv::Mat& right_disp, int disparity_max, const int disp12diff = 0, double invalidvalue = 0, const int amp = 1, const int mode = LR_CHECK_DISPARITY_BOTH);
 	CP_EXPORT void LRCheckDisparityAdd(cv::Mat& left_disp, cv::Mat& right_disp, const int disp12diff = 0, const int amp = 1);
 
-	CP_EXPORT void cvtDisparityColor(cv::Mat& src, cv::Mat& dest, int minDisparity, int numDisparities, int option = DISPARITY_COLOR_GRAY, int amp = 16);
-	CP_EXPORT void imshowDisparity(std::string name, cv::Mat& src, int option = DISPARITY_COLOR_GRAY, int minDisparity = 0, int numDisparities = 0, int amp = 1);
+	enum class DISPARITY_COLOR
+	{
+		GRAY = 0,
+		GRAY_OCC,
+		COLOR_PSEUDO
+	};
+	CP_EXPORT void cvtDisparityColor(const cv::Mat& src, cv::Mat& dest, const int minDisparity, const int numDisparities, const DISPARITY_COLOR option = DISPARITY_COLOR::GRAY, const int amp = 16);
+	CP_EXPORT void imshowDisparity(const std::string name, const cv::Mat& src, const DISPARITY_COLOR option = DISPARITY_COLOR::GRAY, const int minDisparity = 0, const int numDisparities = 0, const int amp = 1);
 
 
 }

@@ -156,17 +156,19 @@ int main(int argc, char** argv)
 	//guiLocalDiffHistogram(img);
 	//guiContrast(img);
 	//guiContrast(guiCropZoom(img));
-	//guiWeightedHistogramFilterTest();
-	//guiWeightedHistogramFilterTest(img,img);
 #pragma endregion
 
 #pragma region stereo
-	testStereoBase(); return 0;
+	//testStereoBase(); return 0;
 	//testCVStereoBM(); return 0;
 	//testCVStereoSGBM(); return 0;
 #pragma endregion
-	
 
+#pragma region filter
+	testWeightedHistogramFilterDisparity(); return 0;
+	//testWeightedHistogramFilter();return 0;
+	//testWeightedHistogramFilter(img,img);return 0;
+#pragma endregion 
 	//guiUpsampleTest(img);return 0;
 	//guiDomainTransformFilterTest(img);
 	//guiMedianFilterTest(img);

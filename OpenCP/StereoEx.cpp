@@ -256,7 +256,7 @@ namespace cp
 		createTrackbar("post med", wname, &medianKernel, 15);
 
 		int alpha = 100; createTrackbar("alpha", wname, &alpha, 100);
-		int isColor = 0; createTrackbar("color", wname, &isColor, 2);
+		int disparityColorMethod = 0; createTrackbar("color", wname, &disparityColorMethod, 2);
 		int noise = 0; createTrackbar("noise", wname, &noise, 1000);
 
 		Mat dshow;
@@ -294,7 +294,7 @@ namespace cp
 			imshow("eval",eval.all_th);
 			}*/
 
-			cvtDisparityColor(disp, dshow, minDisparity, numberOfDisparities, isColor);
+			cvtDisparityColor(disp, dshow, minDisparity, numberOfDisparities, (DISPARITY_COLOR)disparityColorMethod);
 
 			alphaBlend(leftim, dshow, 1.0 - (alpha / 100.0), show);
 			imshow(wname, show);
@@ -578,8 +578,8 @@ namespace cp
 
 		int alpha = 0;
 		createTrackbar("alpha", wname, &alpha, 100);
-		int isColor = 0;
-		createTrackbar("color", wname, &isColor, 2);
+		int disparityColorMethod = 0;
+		createTrackbar("color", wname, &disparityColorMethod, 2);
 
 		int k = 1;
 		createTrackbar("mx", wname, &k, 5);
@@ -678,12 +678,12 @@ namespace cp
 				//imshowAnalysisCompare("comp", synth, ref);
 				//Mat mk;Mat gg;cvtColor(synth,gg,COLOR_BGR2GRAY); cv::compare(gg,0,mk,cv::CMP_NE);cout<<calcPSNR(synth,rightim,0,82,mk)<<endl;
 				//	Mat mk;Mat gg;cvtColor(synth,gg,COLOR_BGR2GRAY); cv::compare(gg,0,mk,cv::CMP_NE);cout<<calcPSNR(synth,ref,0,82,mk)<<endl;
-				imshowDisparity("disp", dispL, 2);
+				imshowDisparity("disp", dispL, DISPARITY_COLOR::COLOR_PSEUDO);
 				//cout<<calcPSNRBB(synth,ref,10,10)<<endl;
 				//cout<<calcPSNRBB(synth,rightim,10,10)<<endl;
 			}
 
-			cvtDisparityColor(dispL, dshow, minDisparity, numberOfDisparities, isColor);
+			cvtDisparityColor(dispL, dshow, minDisparity, numberOfDisparities, (DISPARITY_COLOR)disparityColorMethod);
 
 			alphaBlend(leftim, dshow, alpha / 100.0, show);
 			imshow(wname, show);
@@ -737,8 +737,8 @@ namespace cp
 
 		int alpha = 100;
 		createTrackbar("alpha", wname, &alpha, 100);
-		int isColor = 0;
-		createTrackbar("color", wname, &isColor, 2);
+		int disparityColorMethod = 0;
+		createTrackbar("color", wname, &disparityColorMethod, 2);
 
 		int noise = 0;
 		createTrackbar("noise", wname, &noise, 100);
@@ -841,8 +841,8 @@ namespace cp
 			imshow("eval",eval.nonocc_th);
 			}*/
 
-			if (isColor == 0)
-				cvtDisparityColor(disp, dshow, minDisparity, numberOfDisparities, isColor);
+			if (disparityColorMethod == 0)
+				cvtDisparityColor(disp, dshow, minDisparity, numberOfDisparities, (DISPARITY_COLOR)disparityColorMethod);
 			else
 				disp.convertTo(dshow, CV_8U, eval.amp / 16.0);
 

@@ -78,9 +78,6 @@
     <ClCompile Include="guiUpsampleTest.cpp">
       <Filter>ソース ファイル\test\imgproc</Filter>
     </ClCompile>
-    <ClCompile Include="guiWeightedHistogramFilterTest.cpp">
-      <Filter>ソース ファイル\test\filter</Filter>
-    </ClCompile>
     <ClCompile Include="iterativeBackProjection\iterativeBackProjectionTest.cpp">
       <Filter>ソース ファイル\test\imgproc</Filter>
     </ClCompile>
@@ -139,6 +136,9 @@
       <Filter>ソース ファイル\test\stereo</Filter>
     </ClCompile>
     <ClCompile Include="testGuidedImageFilter.cpp">
+      <Filter>ソース ファイル\test\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="testWeightedHistogramFilter.cpp">
       <Filter>ソース ファイル\test\filter</Filter>
     </ClCompile>
   </ItemGroup>

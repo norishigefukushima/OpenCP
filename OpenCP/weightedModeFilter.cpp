@@ -785,7 +785,6 @@ namespace cp
 
 		int borderType = cv::BORDER_REPLICATE;
 
-		cout << sig_c << "," << sig_s << endl;
 		if (guide.channels() == 3)
 		{
 			Mat B, G, R;
