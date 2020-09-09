@@ -1,17 +1,20 @@
 StereoBase.hpp
 ================
 
-テスト関数
+このクラスのテスト関数は以下にあります．
 ```cpp
 void testStereoBase();
 ```
-OpenCVのステレオマッチング関数を呼び出す類似のテスト関数．
+
+また，OpenCVのステレオマッチング関数を呼び出す類似のテスト関数は以下です．
 ```cpp
 void testCVStereoBM();
 void testCVStereoSGBM();
 ```
-# class StereoBMSimple
-処理の本体はこれ．呼び出す主要な関数は下記．
+
+# class StereoBMBase
+処理の本体は下記メソッドです．  
+呼び出される主要な関数を下記に示します．
 ```cpp
 void StereoBase::matching(Mat& leftim, Mat& rightim, Mat& destDisparityMap)
 {
