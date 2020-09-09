@@ -223,10 +223,6 @@ void testStereoBase()
 	const int disp_max = get_simd_ceil(100, 16);
 	cp::StereoEval eval(dmap_, 2, disp_max);
 
-	//resize(left, left, Size(), 1, 0.25);
-	//resize(right, right, Size(), 1, 0.25);
-
 	StereoBase sbm(5, disp_min, disp_max);
 	sbm.gui(left_, right, disp, eval);
-	//sbm.check(leftg, rightg, disp);
 }

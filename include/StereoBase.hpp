@@ -163,9 +163,9 @@ namespace cp
 		int costAlphaImageSobel;//0-100 alpha*image_err+(1-alpha)*Sobel_err
 		void computePixelMatchingCost(const int d, cv::Mat& dest);
 
-		int feedbackFunction = 0;
+		int feedbackFunction = 2;
 		int feedbackClip = 2;
-		float feedbackAmp = 0.5;
+		float feedbackAmp = 1.0;
 		void addCostIterativeFeedback(cv::Mat& cost, const int current_disparity, const cv::Mat& disparity, const int functionType, const int clip, float amp);
 
 		//under debug pixel matching
@@ -228,7 +228,7 @@ namespace cp
 		void computeValidRatio(const cv::Mat& disparityMap);
 		double valid_ratio = 0.0;
 
-		int refinementMethod = (int)REFINEMENT::GIF_JNF;
+		int refinementMethod = (int)REFINEMENT::WGIF_GAUSS_JNF;
 		int refinementR = 9;
 		float refinementSigmaRange = 1.f;
 		float refinementSigmaSpace = 255.f;
