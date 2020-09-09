@@ -14,7 +14,8 @@ void testCVStereoSGBM();
 
 # class StereoBMBase
 処理の本体は下記メソッドです．  
-呼び出される主要な関数を下記に示します．
+呼び出される主要な関数を下記に示します．  
+詳細が続きます．
 ```cpp
 void StereoBase::matching(Mat& leftim, Mat& rightim, Mat& destDisparityMap)
 {
@@ -171,7 +172,7 @@ std::string getAggregationMethodName(const Aggregation method);
 void setAggregationMethod(const Aggregation method);
 ```
 
-## 4. 最適化・
+## 4. 最適化・視差取得
 `computeWTA(DSI, dest)`でアグリゲーションしたコストの最小値をとることができる．
 なお，SGM関数である`computeOptimizeScanline()`を事前に呼べばSGMになるはずだが，デバッグが不十分．
 
@@ -297,12 +298,12 @@ enum class REFINEMENT
 * [WMF] D. Min, J. Lu, and M. N. Do. "Depth video enhancement based on weighted mode filtering." IEEE Transactions on Image Processing 21(3), pp. 1176-1190, 2011.
 
 
-# StereoBMSimple::gui
+# StereoBMBase:gui
 下記メソッドでGUIによるパラメータ調整が可能．
 `Ctrl+p`でパラメータ調整バーが呼び出せる．
 
 ```cpp
-void StereoBMSimple::gui(Mat& leftim, Mat& rightim, Mat& dest, StereoEval& eval)
+void StereoBMBase::gui(Mat& leftim, Mat& rightim, Mat& dest, StereoEval& eval)
 ```
 
 ## 出力のイメージ．
