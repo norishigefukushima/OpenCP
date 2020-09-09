@@ -91,7 +91,7 @@ void guiLocalDiffHistogram(Mat& src, bool isWait, string wname)
 		line(hist_img, Point(maxv + 255, hist_img.rows - 1), Point(maxv + 255, 0), COLOR_GRAY40);
 		for (int i = 0; i < 512; i++)
 		{
-			int v = (hist_img.rows - 1)*(histmax - min(histmax, hist[i])) / (double)histmax;
+			int v = int((hist_img.rows - 1)*(histmax - min(histmax, hist[i])) / (double)histmax);
 			line(hist_img, Point(i, hist_img.rows - 1), Point(i, v), COLOR_WHITE);
 		}
 
@@ -120,7 +120,6 @@ int main(int argc, char** argv)
 {
 #pragma region setup
 	//cout << cv::getBuildInformation() << endl;
-
 
 	//Mat img = imread("img/lenna.png");
 	Mat img = imread("img/Kodak/kodim07.png");

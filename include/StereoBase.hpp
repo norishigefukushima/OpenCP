@@ -12,98 +12,12 @@ namespace cp
 
 	class CP_EXPORT StereoBase
 	{
-	protected:
-		cv::Mat guideImage;//for aggregation
-		std::vector<cv::Mat> target;//0: image, 1: Sobel
-		std::vector<cv::Mat> reference;//0: image, 1: Sobel
-		cv::Mat specklebuffer;
-
-		CrossBasedLocalFilter clf;//filtering function is thread safe.
-		//cv::Ptr<GuidedImageFilter> gif;
-		GuidedImageFilter* gif;
-		const int thread_max;
-		int color_distance = 2;
-	
-		int border;
-		int numberOfDisparities;
-		int minDisparity;
-		std::vector<cv::Mat> DSI;
-		//pre filter
-		void computeGuideImageForAggregation(cv::Mat& input);
-		void prefilter(cv::Mat& targetImage, cv::Mat& referenceImage);
-		//pixel matching
-		int PixelMatchingMethod = BT;
-
-		int preFilterCap;//cap for prefilter
-		int pixelMatchErrorCap;
-		int costAlphaImageSobel;//0-100 alpha*image_err+(1-alpha)*Sobel_err
-		void getPixelMatchingCost(const int d, cv::Mat& dest);
-
-		int feedbackFunction = 0;
-		int feedbackClip = 2;
-		float feedbackAmp = 0.5;
-		void addCostIterativeFeedback(cv::Mat& cost, const int current_disparity, const cv::Mat& disparity, const int functionType, const int clip, float amp);
-
-		//under debug pixel matching
-		//adhoc parameters for pixel error blending
-		int sobelBlendMapParam_Size;
-		int sobelBlendMapParam1;
-		int sobelBlendMapParam2;
-		void textureAlpha(cv::Mat& src, cv::Mat& dest, const int th1, const int th2, const int r);
-		void getPixelMatchingCostADAlpha(std::vector<cv::Mat>& target, std::vector<cv::Mat>& refference, cv::Mat& alpha, const int d, cv::Mat& dest);
-		void getPixelMatchingCostBTAlpha(std::vector<cv::Mat>& target, std::vector<cv::Mat>& refference, cv::Mat& alpha, const int d, cv::Mat& dest);
-		
-		//aggregation
-		int AggregationMethod = Box;
-		cv::Size aggregationShiftableKernel = cv::Size(3, 3);
-		double aggregationGuidedfilterEps;
-		double aggregationSigmaSpace;
-		int aggregationRadiusH;
-		int aggregationRadiusV;
-		void getCostAggregation(cv::Mat& src, cv::Mat& dest, cv::InputArray joint = cv::noArray());
-
-		//wta and optimization
-		void getWTA(std::vector<cv::Mat>& dsi, cv::Mat& dest, cv::Mat& minimumCostMap);
-		int P1;
-		int P2;
-		void getOptScanline();
-
-		//post filters
-		bool isUniquenessFilter = true;
-		int uniquenessRatio;
-		void uniquenessFilter(cv::Mat& costMap, cv::Mat& dest);
-		void subpixelInterpolation(cv::Mat& dest, const int method);
-		
-		int subpixelInterpolationMethod;
-		bool isRangeFilterSubpix = true;
-		int subpixelRangeFilterCap;
-		int subpixelRangeFilterWindow;
-
-		bool isLRCheck = true;
-		bool isProcessLBorder = false;
-		int disp12diff = 1;
-		void fastLRCheck(cv::Mat& costMap, cv::Mat& dest);
-		void fastLRCheck(cv::Mat& dest);
-
-		bool isSpeckleFilter = true;
-		int speckleWindowSize;
-		int speckleRange;
-
-		bool isMinCostFilter = false;
-		void minCostFilter(cv::Mat& costMap, cv::Mat& dest);
-
-		cv::Mat minCostMap;
-		cv::Mat costMap;
-		cv::Mat weightMap;
-		void refineFromCost(cv::Mat& src, cv::Mat& dest);
-		void getWeightUniqness(cv::Mat& disp);
-
 	public:
 		StereoBase(int blockSize, int minDisp, int disparityRange);
 		~StereoBase();
-		
+
 		//PixelMatchingCost
-		enum PixelMatching
+		enum Cost
 		{
 			SD,
 			SDColor,
@@ -142,7 +56,8 @@ namespace cp
 
 			Pixel_Matching_Method_Size
 		};
-		std::string getPixelMatchingMethodName(int method);
+		std::string getCostMethodName(const Cost method);
+		void setCostMethod(const Cost method);
 
 		enum ColorDistance
 		{
@@ -152,32 +67,65 @@ namespace cp
 			MAX,
 			ColorDistance_Size
 		};
-		std::string getColorDistanceName(ColorDistance method);
-		void setPixelColorDistance(const ColorDistance method);
+		std::string getCostColorDistanceName(ColorDistance method);
+		void setCostColorDistance(const ColorDistance method);
 
 		enum Aggregation
 		{
 			Box,
 			BoxShiftable,
 			Gaussian,
-			GaussShiftable,
+			GaussianShiftable,
 			Guided,
 			CrossBasedBox,
 			Bilateral,
 
 			Aggregation_Method_Size
 		};
-		std::string getAggregationMethodName(int method);
+		std::string getAggregationMethodName(const Aggregation method);
+		void setAggregationMethod(const Aggregation method);
 
-		enum
+		enum class SUBPIXEL
 		{
-			SUBPIXEL_NONE = 0,
-			SUBPIXEL_QUAD,
-			SUBPIXEL_LINEAR,
+			NONE,
+			QUAD,
+			LINEAR,
 
 			SUBPIXEL_METHOD_SIZE
 		};
-		std::string getSubpixelInterpolationMethodName(const int method);
+		std::string getSubpixelInterpolationMethodName(const SUBPIXEL method);
+		void setSubpixelInterpolationMethodName(const SUBPIXEL method);
+		//for internal or external: subpixel refiment using DSI outer postfilterd disparity map.
+		void subpixelInterpolation(cv::Mat& disparity16, const SUBPIXEL method);
+
+		enum HOLE_FILL
+		{
+			NONE,
+			NEAREST_MIN_SCANLINE,
+			METHOD2,
+			METHOD3,
+			METHOD4,
+
+			FILL_OCCLUSION_SIZE
+		};
+		std::string getHollFillingMethodName(const HOLE_FILL method);
+		void setHoleFiillingMethodName(const HOLE_FILL method);
+		double getValidRatio();//get valid pixel ratio before hole filling
+
+		enum class REFINEMENT
+		{
+			NONE,
+			GIF_JNF,
+			WGIF_GAUSS_JNF,
+			JBF_JNF,
+			WJBF_GAUSS_JNF,
+			WMF,
+
+			REFINEMENT_SIZE
+		};
+		std::string getRefinementMethodName(const REFINEMENT method);
+		//param<0: unchange parameter
+		void setRefinementMethod(const REFINEMENT refinementMethod, const int refinementR = -1, const float refinementSigmaRange = -1.f, const float refinementSigmaSpace = -1.f, const int jointNearestR = -1);
 
 		//body
 		void matching(cv::Mat& leftim, cv::Mat& rightim, cv::Mat& dest, const bool isFeedback = false);
@@ -186,5 +134,112 @@ namespace cp
 
 		void imshowDisparity(std::string wname, cv::Mat& disp, int option, cv::Mat& output, int mindis, int range);
 		void imshowDisparity(std::string wname, cv::Mat& disp, int option, cv::OutputArray output = cv::noArray());
+		void showWeightMap(std::string wname);
+	protected:
+		cv::Mat guideImage;//for aggregation
+		std::vector<cv::Mat> target;//0: image, 1: Sobel
+		std::vector<cv::Mat> reference;//0: image, 1: Sobel
+		cv::Mat specklebuffer;
+
+		CrossBasedLocalFilter clf;//filtering function is thread safe.
+		GuidedImageFilter* gif;
+		const int thread_max;
+		int color_distance = 2;
+
+		int border;
+		int numberOfDisparities;
+		int minDisparity;
+		std::vector<cv::Mat> DSI;
+		cv::Mat minCostMap;
+
+		//pre filter
+		int preFilterCap;//cap for prefilter
+		void computeGuideImageForAggregation(cv::Mat& input);
+		void computePrefilter(cv::Mat& targetImage, cv::Mat& referenceImage);
+
+		//pixel matching
+		int pixelMatchingMethod = Cost::SDEdgeBlend;
+		int pixelMatchErrorCap;
+		int costAlphaImageSobel;//0-100 alpha*image_err+(1-alpha)*Sobel_err
+		void computePixelMatchingCost(const int d, cv::Mat& dest);
+
+		int feedbackFunction = 0;
+		int feedbackClip = 2;
+		float feedbackAmp = 0.5;
+		void addCostIterativeFeedback(cv::Mat& cost, const int current_disparity, const cv::Mat& disparity, const int functionType, const int clip, float amp);
+
+		//under debug pixel matching
+		//adhoc parameters for pixel error blending
+		int sobelBlendMapParam_Size;
+		int sobelBlendMapParam1;
+		int sobelBlendMapParam2;
+		void computetextureAlpha(cv::Mat& src, cv::Mat& dest, const int th1, const int th2, const int r);
+		void computePixelMatchingCostADAlpha(std::vector<cv::Mat>& target, std::vector<cv::Mat>& refference, cv::Mat& alpha, const int d, cv::Mat& dest);
+		void computePixelMatchingCostBTAlpha(std::vector<cv::Mat>& target, std::vector<cv::Mat>& refference, cv::Mat& alpha, const int d, cv::Mat& dest);
+
+		//aggregation
+		int aggregationMethod = Aggregation::Guided;
+		cv::Size aggregationShiftableKernel = cv::Size(3, 3);
+		double aggregationGuidedfilterEps;
+		double aggregationSigmaSpace;
+		int aggregationRadiusH;
+		int aggregationRadiusV;
+		void computeCostAggregation(cv::Mat& src, cv::Mat& dest, cv::InputArray joint = cv::noArray());
+
+		//wta and optimization
+		void computeWTA(std::vector<cv::Mat>& dsi, cv::Mat& dest, cv::Mat& minimumCostMap);
+		int P1;
+		int P2;
+		void computeOptimizeScanline();
+
+		//post filters
+		bool isUniquenessFilter = true;
+		int uniquenessRatio;
+		void uniquenessFilter(cv::Mat& costMap, cv::Mat& dest);
+
+		int subpixelInterpolationMethod;
+		bool isRangeFilterSubpix = true;
+		int subpixelRangeFilterCap;
+		int subpixelRangeFilterWindow;
+		enum class LRCHECK
+		{
+			NONE,
+			WITH_MINCOST,
+			WITHOUT_MINCOST,
+
+			LRCHECK_SIZE
+		};
+		std::string getLRCheckMethodName(const LRCHECK method);
+		void setLRCheckMethod(const LRCHECK method);
+		int LRCheckMethod = (int)LRCHECK::WITH_MINCOST;
+		bool isProcessLBorder = false;
+		int disp12diff = 1;
+		void fastLRCheck(cv::Mat& costMap, cv::Mat& dest);
+		void fastLRCheck(cv::Mat& dest);
+
+		bool isSpeckleFilter = true;
+		int speckleWindowSize;
+		int speckleRange;
+
+		bool isMinCostFilter = false;
+		void minCostFilter(cv::Mat& costMap, cv::Mat& dest);
+
+		int holeFillingMethod = 1;
+		void computeValidRatio(const cv::Mat& disparityMap);
+		double valid_ratio = 0.0;
+
+		int refinementMethod = (int)REFINEMENT::GIF_JNF;
+		int refinementR = 9;
+		float refinementSigmaRange = 1.f;
+		float refinementSigmaSpace = 255.f;
+		int refinementTruncateMode = 32;
+		int jointNearestR = 2;
+		int refinementWeightMethod = 0;
+		int refinementWeightR = 5;
+		float refinementWeightSigma = 1.f;
+
+		//under debug
+		cv::Mat weightMap;
+		void getWeightUniqness(cv::Mat& disp);
 	};
 }

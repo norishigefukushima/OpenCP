@@ -667,7 +667,7 @@ void testRGBHistogram()
 	int key = 0;
 	while (key != 'q')
 	{
-		int d = ceil(ss*3.0) * 2 + 1;
+		int d = (int)ceil(ss*3.0) * 2 + 1;
 		bilateralFilter(img, filtered, d, sr, ss);
 		//GaussianBlur(img, filtered, Size(d, d), ss);
 

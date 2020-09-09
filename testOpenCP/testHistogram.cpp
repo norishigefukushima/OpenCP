@@ -57,7 +57,7 @@ void testHistogram()
 		}
 		else
 		{
-			drawHistogramImage(img, hist, COLOR_BLACK, isShowGrid == 1, isShowStat == 1, normalize_value*0.01*img.size().area());
+			drawHistogramImage(img, hist, COLOR_BLACK, isShowGrid == 1, isShowStat == 1, int(normalize_value*0.01*img.size().area()));
 		}
 		//imshow("img", img);
 		imshow(wname, hist);

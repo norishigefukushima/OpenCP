@@ -53,7 +53,7 @@ void guiDisparityPlaneFitSLICTest(Mat& leftim, Mat& rightim, Mat& GT)
 	{
 		{
 			Timer t;
-			disparityFitPlane(disparity, leftim, refine, S, (float)m, (int)(mrs / 100.0f), iter, nransac, (float)transac);
+			disparityFitPlane(disparity, leftim, refine, S, (float)m, (float)(mrs / 100.0f), iter, nransac, (float)transac);
 		}
 
 		//binalyWeightedRangeFilter(disparity, disparity, Size(7, 7), 16);
@@ -135,9 +135,10 @@ void testCVStereoBM()
 		fillOcclusion(disp, invalid);
 		//normalize(disp, dispshow, minDisp, numDisp * 16, NORM_MINMAX, CV_8U);
 		//disp.convertTo(dispshow, CV_8U, 255.0/(16.0*numDisparities));
-		eval(disp, 1, false, 16);
-		ci("th 1.0:" + eval.message);
-		imshowScale(wname, disp, 1.0 / 16);
+		ci("th 0.5:" + eval(disp, 0.5, 16, false));
+		ci("th 1.0:" + eval(disp, 1.0, 16, false));
+		ci("th 2.0:" + eval(disp, 2.0, 16, false));
+		imshowScale(wname, disp, 2.0 / 16);
 		ci.show();
 		key = waitKey(1);
 	}
@@ -201,11 +202,11 @@ void testCVStereoSGBM()
 		Mat(disp(Rect(numDisparities, 0, leftim.cols, leftim.rows))).copyTo(dispshow);
 		//guiAlphaBlend(dispshow, dmap_);
 		
-		imshowScale(wname, dispshow, 1.0 / 16);
+		imshowScale(wname, dispshow, 2.0 / 16);
 		
-		ci("th 0.5:" + eval(dispshow, 0.5, false, 16));
-		ci("th 1.0:" + eval(dispshow, 1.0, false, 16));
-		ci("th 2.0:" + eval(dispshow, 2.0, false, 16));
+		ci("th 0.5:" + eval(dispshow, 0.5, 16, false));
+		ci("th 1.0:" + eval(dispshow, 1.0, 16, false));
+		ci("th 2.0:" + eval(dispshow, 2.0, 16, false));
 		ci.show();
 		key = waitKey(1);
 	}

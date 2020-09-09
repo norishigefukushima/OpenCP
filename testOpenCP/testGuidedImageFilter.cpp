@@ -265,7 +265,7 @@ void testGuidedImageFilter(Mat& img_p, Mat& img_I)
 			for (int i = 0; i < loop; i++)
 			{
 				t.start();
-				gffast.filterFast(srcf, guidef, destf_fast, r, eps, factor, (GuidedTypes)guidedType, (ParallelTypes)parallelType);
+				gffast.filterFast(srcf, guidef, destf_fast, r, eps, (int)factor, (GuidedTypes)guidedType, (ParallelTypes)parallelType);
 				//gffast.upsample(refsrc, guidef, destf_fast, r, eps, GUIDED_NAIVE, parallelType);
 				t.getpushLapTime();
 			}
@@ -285,7 +285,7 @@ void testGuidedImageFilter(Mat& img_p, Mat& img_I)
 			for (int i = 0; i < loop; i++)
 			{
 				t.start();
-				gft.filter(srcf, guidef, destf_tile, r, eps, Size(pow(radix, h), pow(radix, v)), (GuidedTypes)guidedType);
+				gft.filter(srcf, guidef, destf_tile, r, eps, Size((int)pow(radix, h), (int)pow(radix, v)), (GuidedTypes)guidedType);
 				t.getpushLapTime();
 			}
 			stats[idx].push_back(t.getLapTimeMedian());

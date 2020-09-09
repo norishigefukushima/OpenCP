@@ -103,8 +103,13 @@ imshowの拡張
 # stereo
 ## StereoBase.hpp
 ステレオマッチングの関数
-* [class StereoBase（書きかけ）](StereoBase.md)
-
+* [class StereoBase](StereoBase.md)
+## StereoEval.hpp
+ベンチマーク用の評価関数
+* [calcBadPixel](StereoEval.md "calcBadPixel")
+* [createDisparityALLMask](StereoEval.md "createDisparityALLMask")
+* [createDisparityNonOcclusionMask](StereoEval.md "createDisparityNonOcclusionMask")
+* [class calcBadPixel](StereoEval.md "class StereoEval")
 # memo
 Optimization
 * Naive：ほとんど最適化されていない素のC++で書かれたコード．

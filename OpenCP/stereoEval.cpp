@@ -207,15 +207,15 @@ namespace cp
 		if (skip_disc) disc = 0.0;
 		else disc = calcBadPixel(gtf, src, mask_disc, threshold, amp, disc_th);
 
-		message = format("nonocc,all,disc: %2.2f, %2.2f, %2.2f", nonocc, all, disc);
+		message = format("%5.2f, %5.2f, %5.2f", nonocc, all, disc);
 		if (isPrint)
 		{
-			cout << message << endl;
+			cout << "nonocc,all,disc: "+message << endl;
 		}
 		return message;
 	}
 
-	string StereoEval::getMSE(Mat& src, bool isPrint, int disparity_scale)
+	string StereoEval::getMSE(Mat& src, const int disparity_scale, const bool isPrint)
 	{
 		all_th.setTo(0);
 		nonocc_th.setTo(0);
@@ -228,15 +228,15 @@ namespace cp
 		if (skip_disc) discMSE = 0.0;
 		else discMSE = cp::getMSE(gtf, srcf, mask_disc);
 
-		message = format("nonocc,all,disc: %2.2f, %2.2f, %2.2f", nonoccMSE, allMSE, discMSE);
+		message = format("%5.2f, %5.2f, %5.2f", nonoccMSE, allMSE, discMSE);
 		if (isPrint)
 		{
-			cout << message << endl;
+			cout << "nonocc,all,disc: "+message << endl;
 		}
 		return message;
 	}
 
-	string StereoEval::operator() (InputArray src_, double threshold, bool isPrint, int input_disparity_scale)
+	string StereoEval::operator() (InputArray src_, const double threshold, const int input_disparity_scale, const bool isPrint)
 	{
 		Mat src = src_.getMat();
 		Mat cnv;

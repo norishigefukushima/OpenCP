@@ -116,10 +116,10 @@ void guiIterativeBackProjectionTest(Mat& src)
 
 		if (key == 'd')
 		{
-			ibp_demo(raw, dest, Size(d, d), r_sigma / 10.0, bss*0.1, lambda, 100);
+			ibp_demo(raw, dest, Size(d, d), r_sigma / 10.f, bss*0.1f, lambda, 100);
 		}
 
-		float denoiseth = nth * 0.01;
+		float denoiseth = nth * 0.01f;
 		{
 			ci(format("src: %05.2f %0.2f", 0, getPSNR(raw, src)));
 			if (sw == 0) raw.copyTo(show);
@@ -148,7 +148,7 @@ void guiIterativeBackProjectionTest(Mat& src)
 
 			//deblurring(blurred, dest, r_sigma / 10.0, 0, denoiseth, e2, false);
 			//LucyRichardsonGaussTikhonov(dest, dest, Size(d, d), r_sigma / 10.0, lambda*0.0001, iter);
-			iterativeBackProjectionDeblurGaussian(blurred, dest, Size(d, d), r_sigma / 10.0, bss*0.1, lambda, iter);
+			iterativeBackProjectionDeblurGaussian(blurred, dest, Size(d, d), r_sigma / 10.f, bss*0.1f, lambda, iter);
 			//Mat temp;
 			//GaussianBlur(blurred, temp, Size(d, d), r_sigma / 10.0);
 			//dest = blurred + lambda*(blurred- temp);
@@ -168,7 +168,7 @@ void guiIterativeBackProjectionTest(Mat& src)
 			//iterativeBackProjectionDeblurGaussian(blurred, dest, Size(d, d), r_sigma / 10.0, bss*0.1, lambda, iter);
 
 
-			deblurDCTWiener(blurred, dest, r_sigma / 10.0, e2);
+			deblurDCTWiener(blurred, dest, r_sigma / 10.f, (float)e2);
 			//deblurDCTWiener(dest, dest, r_sigma / 10.0, e2);
 			double time = t.getTime();
 			ci(format("IBP: %05.2f %0.2f", time, getPSNR(dest, src)));
@@ -227,7 +227,7 @@ void guiIterativeBackProjectionTest(Mat& src)
 			//iterativeBackProjectionDeblurGaussianTV(blurred, dest, Size(d, d), r_sigma / 10.0, bss*0.1, lambda, th,iter);
 
 //			deblurring(blurred, dest, r_sigma / 10.0, psw, denoiseth, e2);
-			iterativeBackProjectionDeblurBilateral(blurred, dest, Size(d, d), r_sigma / 10.0, bss*0.1, color_sigma, lambda, iter, dest);
+			iterativeBackProjectionDeblurBilateral(blurred, dest, Size(d, d), r_sigma / 10.f, bss*0.1f, (float)color_sigma, lambda, iter, dest);
 			//deblurDCT32f(blurred, dest, r_sigma / 10.f, e2, 1);
 			//deblurdenoiseDCTWiener32f(blurred, dest, r_sigma / 10.f, e2, denoiseth);
 			ci(format("BBP wie: %05.2f %0.2f", t.getTime(), getPSNR(dest, src)));
@@ -320,15 +320,15 @@ static float gaussscale = 0;
 
 static void createGaussianDCTI(Mat& src, const float sigma, const float eps)
 {
-	float temp = sigma * CV_PI / 8;
-	float a = -temp * temp / 2.0;
+	float temp = float(sigma * CV_PI / 8);
+	float a = -temp * temp / 2.f;
 	//int r = min((int)(ks * sigma), src.cols - 1);
 
 	for (int j = 0; j <= 7; j++)
 	{
 		for (int i = 0; i <= 7; i++)
 		{
-			float d = i * i + j * j;
+			float d = float(i * i + j * j);
 			float v = exp(a*d);
 
 			src.at<float>(j, i) = v + eps;
@@ -338,8 +338,8 @@ static void createGaussianDCTI(Mat& src, const float sigma, const float eps)
 
 static void createGaussianDCTIMax(Mat& src, const float sigma, const float eps, const int ks)
 {
-	float temp = sigma * CV_PI / 8;
-	float a = -temp * temp / 2.0;
+	float temp = float(sigma * CV_PI / 8);
+	float a = -temp * temp / 2.f;
 	//int r = min((int)(ks * sigma), src.cols - 1);
 
 	for (int j = 0; j <= 7; j++)

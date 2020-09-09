@@ -44,8 +44,8 @@ namespace cp
 		StereoEval(cv::Mat& groundtruth, const double amp, const int ignoreLeftBoundary = 0);
 
 		std::string getBadPixel(cv::Mat& src, double threshold = 1.0, bool isPrint = true);
-		std::string getMSE(cv::Mat& src, bool isPrint = true, int disparity_scale = 1);
-		std::string operator() (cv::InputArray src, double threshold = 1.0, bool isPrint = true, int disparity_scale = 1);
+		std::string getMSE(cv::Mat& src, const int disparity_scale = 1, const bool isPrint = true);
+		std::string operator() (cv::InputArray src, const double threshold = 1.0, const int disparity_scale = 1, const bool isPrint = true);
 		void compare(cv::Mat& before, cv::Mat& after, double threshold = 1.0, bool isPrint = true);
 	};
 }

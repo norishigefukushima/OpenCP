@@ -101,7 +101,7 @@ static double getPSNRRealtimeO1BilateralFilter(Mat& src, Mat ref, double sigmaSp
 	rbf.setBinDepth(CV_64F);
 
 	Mat dest;
-	rbf.gaussIIR(srcf, dest, sigmaColor, sigmaSpace, bin, RealtimeO1BilateralFilter::IIR_SR, 0);
+	rbf.gaussIIR(srcf, dest, (float)sigmaColor, (float)sigmaSpace, bin, RealtimeO1BilateralFilter::IIR_SR, 0);
 
 	cout << psnrRGBone(dest, ref)<<endl;
 	double ret = psnrRGBone(dest, ref);

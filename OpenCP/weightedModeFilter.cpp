@@ -27,73 +27,24 @@ namespace cp
 {
 #define sqr(a) ((a)*(a))
 
-	class Histogram
-	{
-	private:
-		float* histbuff;
-		int histbuffsize;
-	public:
-		int histMin;
-		int histMax;
-		enum
-		{
-			L0_NORM = 0,
-			L1_NORM,
-			L2_NORM,
-			EXP
-		};
-
-		enum
-		{
-			NO_WEIGHT = 0,
-			GAUSSIAN,
-			BILATERAL,
-			NO_WEIGHT_MEDIAN,
-			GAUSSIAN_MEDIAN,
-			BILATERAL_MEDIAN
-		};
-
-		int truncate;
-		float* hist;
-
-		Histogram(int truncate_val, int mode_ = Histogram::MAX, const int max_val = 256);
-		~Histogram();
-
-		void clear();
-		void add(float addval, int bin, int metric = 0);
-		void addWithRange(float addval, int bin, int metric = 0);
-
-		enum
-		{
-			MAX = 0,
-			MEDIAN
-		};
-		int mode;
-		int returnVal();
-
-		int returnMax();
-		int returnMedian();
-		int returnMaxwithRange();
-		int returnMedianwithRange();
-	};
-
-	Histogram::~Histogram()
+	WeightedHistogram::~WeightedHistogram()
 	{
 		_mm_free(histbuff);
 	}
 
-	Histogram::Histogram(int truncate_val, int mode_, const int max_val)
+	WeightedHistogram::WeightedHistogram(int truncate_val, int mode_, const int max_val)
 	{
-		histbuffsize = max_val + truncate_val * 2;
+		histSize = max_val+1;
+		histbuffsize = get_simd_ceil(max_val+1 + truncate_val * 2, 8);
 		histbuff = (float*)_mm_malloc(sizeof(float) * histbuffsize, 16);
-		hist = histbuff + truncate_val;
+		hist = histbuff + truncate_val;//border +-truncate_val
 		truncate = truncate_val;
 		mode = mode_;
 
 		clear();
 	}
 
-	int Histogram::returnVal()
+	int WeightedHistogram::returnVal()
 	{
 		if (mode == 0)
 			return returnMax();
@@ -101,20 +52,20 @@ namespace cp
 			return returnMedian();
 	}
 
-	void Histogram::clear()
+	void WeightedHistogram::clear()
 	{
 		histMin = 0;
-		histMax = histbuffsize - truncate * 2;
-		int ssecount = histbuffsize / 4;
+		histMax = histSize;
+		const int simd_size = histbuffsize / 8;
 		float* h = histbuff;
-		for (int i = 0; i < ssecount; i++)
+		for (int i = 0; i < simd_size; i++)
 		{
-			_mm_store_ps(h, _mm_setzero_ps());
-			h += 4;
+			_mm256_store_ps(h, _mm256_setzero_ps());
+			h += 8;
 		}
 	}
 
-	void Histogram::addWithRange(float addval, int bin, int metric)
+	void WeightedHistogram::addWithRange(float addval, int bin, int metric)
 	{
 		histMax = max(histMax, bin + truncate);
 		histMin = min(histMin, bin - truncate);
@@ -154,7 +105,7 @@ namespace cp
 		}
 	}
 
-	void Histogram::add(float addval, int bin, int metric)
+	void WeightedHistogram::add(float addval, int bin, int metric)
 	{
 		hist[bin] += addval;
 
@@ -192,7 +143,7 @@ namespace cp
 		}
 	}
 
-	int Histogram::returnMax()
+	int WeightedHistogram::returnMax()
 	{
 		float maxv = 0.f;
 		int maxbin;
@@ -208,7 +159,7 @@ namespace cp
 		return maxbin;
 	}
 
-	int Histogram::returnMedian()
+	int WeightedHistogram::returnMedian()
 	{
 		float maxval = 0.f;
 		for (int i = histMin; i < histMax; i++)
@@ -231,7 +182,7 @@ namespace cp
 		return maxbin;
 	}
 
-	int Histogram::returnMaxwithRange()
+	int WeightedHistogram::returnMaxwithRange()
 	{
 		histMin = max(histMin, 0);
 		histMax = min(histMax, 255);
@@ -249,7 +200,7 @@ namespace cp
 		return maxbin;
 	}
 
-	int Histogram::returnMedianwithRange()
+	int WeightedHistogram::returnMedianwithRange()
 	{
 		histMin = max(histMin, 0);
 		histMax = min(histMax, 255);
@@ -314,11 +265,11 @@ namespace cp
 
 		Mat src2; copyMakeBorder(src, src2, r, r, r, r, 1);
 
-		int mode = Histogram::MAX;
-		if (method >= Histogram::NO_WEIGHT_MEDIAN)
+		int mode = WeightedHistogram::MAX;
+		if (method >= WeightedHistogram::NO_WEIGHT_MEDIAN)
 		{
-			mode = Histogram::MEDIAN;
-			method -= Histogram::NO_WEIGHT_MEDIAN;
+			mode = WeightedHistogram::MEDIAN;
+			method -= WeightedHistogram::NO_WEIGHT_MEDIAN;
 		}
 
 		int borderType = cv::BORDER_REPLICATE;
@@ -360,12 +311,12 @@ namespace cp
 				lutc2[i] = (float)(exp(-sqr(i) / (2 * sqr(sig_c2))));
 			}
 
-			if (method == Histogram::BILATERAL)
+			if (method == WeightedHistogram::BILATERAL_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
-					Histogram h(truncate, mode);
+					WeightedHistogram h(truncate, mode);
 					for (int x = 0; x < width; x++)
 					{
 						h.clear();
@@ -401,12 +352,12 @@ namespace cp
 					}
 				}
 			}
-			else if (method == Histogram::GAUSSIAN)
+			else if (method == WeightedHistogram::GAUSSIAN_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
-					Histogram h(truncate, mode);
+					WeightedHistogram h(truncate, mode);
 					for (int x = 0; x < width; x++)
 					{
 						h.clear();
@@ -427,14 +378,14 @@ namespace cp
 					}
 				}
 			}
-			else if (method == Histogram::NO_WEIGHT)
+			else if (method == WeightedHistogram::NO_WEIGHT_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
 					for (int x = 0; x < width; x++)
 					{
-						Histogram h(truncate, mode);
+						WeightedHistogram h(truncate, mode);
 
 						for (int j = 0, idx = 0; j < 2 * r + 1; j++)
 						{
@@ -476,12 +427,12 @@ namespace cp
 				lutc2[i] = (float)(exp(-sqr(i) / (2.0 * sqr(sig_c2))));
 			}
 
-			if (method == Histogram::BILATERAL)
+			if (method == WeightedHistogram::BILATERAL_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
-					Histogram h(truncate, mode);
+					WeightedHistogram h(truncate, mode);
 					for (int x = 0; x < width; x++)
 					{
 						h.clear();
@@ -510,12 +461,12 @@ namespace cp
 					}
 				}
 			}
-			else if (method == Histogram::GAUSSIAN)
+			else if (method == WeightedHistogram::GAUSSIAN_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
-					Histogram h(truncate, mode);
+					WeightedHistogram h(truncate, mode);
 					for (int x = 0; x < width; x++)
 					{
 						h.clear();
@@ -536,14 +487,14 @@ namespace cp
 					}
 				}
 			}
-			else if (method == Histogram::NO_WEIGHT)
+			else if (method == WeightedHistogram::NO_WEIGHT_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
 					for (int x = 0; x < width; x++)
 					{
-						Histogram h(truncate, mode);
+						WeightedHistogram h(truncate, mode);
 
 						for (int j = 0, idx = 0; j < 2 * r + 1; j++)
 						{
@@ -573,11 +524,11 @@ namespace cp
 
 		Mat src2; copyMakeBorder(src, src2, r, r, r, r, 1);
 
-		int mode = Histogram::MAX;
-		if (method >= Histogram::NO_WEIGHT_MEDIAN)
+		int mode = WeightedHistogram::MAX;
+		if (method >= WeightedHistogram::NO_WEIGHT_MEDIAN)
 		{
-			mode = Histogram::MEDIAN;
-			method -= Histogram::NO_WEIGHT_MEDIAN;
+			mode = WeightedHistogram::MEDIAN;
+			method -= WeightedHistogram::NO_WEIGHT_MEDIAN;
 		}
 
 		int borderType = cv::BORDER_REPLICATE;
@@ -617,12 +568,12 @@ namespace cp
 				lutc[i] = (float)(exp(-sqr(i) / (2 * sqr(sig_c))));
 			}
 
-			if (method == Histogram::BILATERAL)
+			if (method == WeightedHistogram::BILATERAL_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
-					Histogram h(truncate, mode);
+					WeightedHistogram h(truncate, mode);
 					for (int x = 0; x < width; x++)
 					{
 						h.clear();
@@ -656,12 +607,12 @@ namespace cp
 					}
 				}
 			}
-			else if (method == Histogram::GAUSSIAN)
+			else if (method == WeightedHistogram::GAUSSIAN_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
-					Histogram h(truncate, mode);
+					WeightedHistogram h(truncate, mode);
 					for (int x = 0; x < width; x++)
 					{
 						h.clear();
@@ -682,14 +633,14 @@ namespace cp
 					}
 				}
 			}
-			else if (method == Histogram::NO_WEIGHT)
+			else if (method == WeightedHistogram::NO_WEIGHT_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
 					for (int x = 0; x < width; x++)
 					{
-						Histogram h(truncate, mode);
+						WeightedHistogram h(truncate, mode);
 
 						for (int j = 0, idx = 0; j < 2 * r + 1; j++)
 						{
@@ -728,12 +679,12 @@ namespace cp
 				lutc[i] = (float)(exp(-sqr(i) / (2.0 * sqr(sig_c))));
 			}
 
-			if (method == Histogram::BILATERAL)
+			if (method == WeightedHistogram::BILATERAL_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
-					Histogram h(truncate, mode);
+					WeightedHistogram h(truncate, mode);
 					for (int x = 0; x < width; x++)
 					{
 						h.clear();
@@ -759,12 +710,12 @@ namespace cp
 					}
 				}
 			}
-			else if (method == Histogram::GAUSSIAN)
+			else if (method == WeightedHistogram::GAUSSIAN_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
-					Histogram h(truncate, mode);
+					WeightedHistogram h(truncate, mode);
 					for (int x = 0; x < width; x++)
 					{
 						h.clear();
@@ -785,14 +736,14 @@ namespace cp
 					}
 				}
 			}
-			else if (method == Histogram::NO_WEIGHT)
+			else if (method == WeightedHistogram::NO_WEIGHT_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
 					for (int x = 0; x < width; x++)
 					{
-						Histogram h(truncate, mode);
+						WeightedHistogram h(truncate, mode);
 
 						for (int j = 0, idx = 0; j < 2 * r + 1; j++)
 						{
@@ -819,21 +770,22 @@ namespace cp
 	{
 		double src_max;
 		minMaxLoc(src, NULL, &src_max);
-		src_max = get_simd_ceil(src_max,4);
+		src_max = get_simd_ceil(src_max, 4);
 		int width = src.cols;
 		int height = src.rows;
 
 		Mat srcBorder; copyMakeBorder(src, srcBorder, r, r, r, r, 1);
 
-		int mode = Histogram::MAX;
-		if (method >= Histogram::NO_WEIGHT_MEDIAN)
+		int mode = WeightedHistogram::MAX;
+		if (method >= WeightedHistogram::NO_WEIGHT_MEDIAN)
 		{
-			mode = Histogram::MEDIAN;
-			method -= Histogram::NO_WEIGHT_MEDIAN;
+			mode = WeightedHistogram::MEDIAN;
+			method -= WeightedHistogram::NO_WEIGHT_MEDIAN;
 		}
 
 		int borderType = cv::BORDER_REPLICATE;
 
+		cout << sig_c << "," << sig_s << endl;
 		if (guide.channels() == 3)
 		{
 			Mat B, G, R;
@@ -843,9 +795,8 @@ namespace cp
 			Mat guideG; copyMakeBorder(G, guideG, r, r, r, r, borderType);
 			Mat guideR; copyMakeBorder(R, guideR, r, r, r, r, borderType);
 
-			float* lutc = new float[768];
+			float* lutc = new float[443];
 			float* luts = new float[(2 * r + 1) * (2 * r + 1)];
-
 
 			for (int j = 0, idx = 0; j < 2 * r + 1; j++)
 			{
@@ -854,18 +805,17 @@ namespace cp
 					luts[idx] = (float)(exp(-(sqr(i - r) + sqr(j - r)) / (2 * sqr(sig_s))));
 				}
 			}
-			for (int i = 0; i < 256 * 3; i++)
+			for (int i = 0; i < 443; i++)
 			{
-				lutc[i] = (float)(exp(-sqr(i) / (2 * sqr(sig_c))));
+				lutc[i] = (float)(exp(-sqr(i) / (2.f * sqr(sig_c))));
 			}
 
-			if (method == Histogram::BILATERAL)
+			if (method == WeightedHistogram::BILATERAL_MODE)
 			{
-
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
-					Histogram h(truncate, mode, src_max);
+					WeightedHistogram h(truncate, mode, src_max);
 					for (int x = 0; x < width; x++)
 					{
 						h.clear();
@@ -884,7 +834,7 @@ namespace cp
 							{
 								float addval = luts[idx];
 
-								int diff = abs(bb - *bp) + abs(gg - *gp) + abs(rr - *rp);
+								int diff = sqrt((bb - *bp) * (bb - *bp) + (gg - *gp) * (gg - *gp) + (rr - *rp) * (rr - *rp));
 								addval *= lutc[diff];
 								h.add(addval, *sp, metric);
 
@@ -898,12 +848,12 @@ namespace cp
 					}
 				}
 			}
-			if (method == Histogram::GAUSSIAN)
+			if (method == WeightedHistogram::GAUSSIAN_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
-					Histogram h(truncate, mode);
+					WeightedHistogram h(truncate, mode);
 					for (int x = 0; x < width; x++)
 					{
 						h.clear();
@@ -921,14 +871,14 @@ namespace cp
 					}
 				}
 			}
-			else if (method == Histogram::NO_WEIGHT)
+			else if (method == WeightedHistogram::NO_WEIGHT_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
 					for (int x = 0; x < width; x++)
 					{
-						Histogram h(truncate, mode);
+						WeightedHistogram h(truncate, mode);
 
 						for (int j = 0, idx = 0; j < 2 * r + 1; j++)
 						{
@@ -966,12 +916,12 @@ namespace cp
 				lutc[i] = (float)(exp(-sqr(i) / (2.0 * sqr(sig_c))));
 			}
 
-			if (method == Histogram::BILATERAL)
+			if (method == WeightedHistogram::BILATERAL_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
-					Histogram h(truncate, mode);
+					WeightedHistogram h(truncate, mode);
 					for (int x = 0; x < width; x++)
 					{
 						h.clear();
@@ -994,12 +944,12 @@ namespace cp
 					}
 				}
 			}
-			if (method == Histogram::GAUSSIAN)
+			if (method == WeightedHistogram::GAUSSIAN_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
-					Histogram h(truncate, mode);
+					WeightedHistogram h(truncate, mode);
 					for (int x = 0; x < width; x++)
 					{
 						h.clear();
@@ -1017,14 +967,14 @@ namespace cp
 					}
 				}
 			}
-			else if (method == Histogram::NO_WEIGHT)
+			else if (method == WeightedHistogram::NO_WEIGHT_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
 					for (int x = 0; x < width; x++)
 					{
-						Histogram h(truncate, mode);
+						WeightedHistogram h(truncate, mode);
 
 						for (int j = 0, idx = 0; j < 2 * r + 1; j++)
 						{
@@ -1062,11 +1012,11 @@ namespace cp
 
 		Mat src2; copyMakeBorder(src, src2, r, r, r, r, 1);
 
-		int mode = Histogram::MAX;
-		if (method >= Histogram::NO_WEIGHT_MEDIAN)
+		int mode = WeightedHistogram::MAX;
+		if (method >= WeightedHistogram::NO_WEIGHT_MEDIAN)
 		{
-			mode = Histogram::MEDIAN;
-			method -= Histogram::NO_WEIGHT_MEDIAN;
+			mode = WeightedHistogram::MEDIAN;
+			method -= WeightedHistogram::NO_WEIGHT_MEDIAN;
 		}
 
 		int borderType = cv::BORDER_REPLICATE;
@@ -1108,12 +1058,12 @@ namespace cp
 				lutc2[i] = (float)(exp(-sqr(i) / (2 * sqr(sig_c2))));
 			}
 
-			if (method == Histogram::BILATERAL)
+			if (method == WeightedHistogram::BILATERAL_MODE)
 			{
 #pragma omp parallel for schedule(dynamic,1)
 				for (int y = 0; y < height; y++)
 				{
-					Histogram h(truncate, mode);
+					WeightedHistogram h(truncate, mode);
 					uchar* msk = mask.ptr<uchar>(y);
 					for (int x = 0; x < width; x++)
 					{
@@ -1151,12 +1101,12 @@ namespace cp
 					}
 				}
 			}
-			else if (method == Histogram::GAUSSIAN)
+			else if (method == WeightedHistogram::GAUSSIAN_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
-					Histogram h(truncate, mode);
+					WeightedHistogram h(truncate, mode);
 					uchar* msk = mask.ptr<uchar>(y);
 					for (int x = 0; x < width; x++)
 					{
@@ -1179,7 +1129,7 @@ namespace cp
 					}
 				}
 			}
-			else if (method == Histogram::NO_WEIGHT)
+			else if (method == WeightedHistogram::NO_WEIGHT_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
@@ -1188,7 +1138,7 @@ namespace cp
 					for (int x = 0; x < width; x++)
 					{
 						if (msk[x] == 0) continue;
-						Histogram h(truncate, mode);
+						WeightedHistogram h(truncate, mode);
 
 						for (int j = 0, idx = 0; j < 2 * r + 1; j++)
 						{
@@ -1230,12 +1180,12 @@ namespace cp
 				lutc2[i] = (float)(exp(-sqr(i) / (2.0 * sqr(sig_c2))));
 			}
 
-			if (method == Histogram::BILATERAL)
+			if (method == WeightedHistogram::BILATERAL_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
-					Histogram h(truncate, mode);
+					WeightedHistogram h(truncate, mode);
 					uchar* msk = mask.ptr<uchar>(y);
 					for (int x = 0; x < width; x++)
 					{
@@ -1266,12 +1216,12 @@ namespace cp
 					}
 				}
 			}
-			else if (method == Histogram::GAUSSIAN)
+			else if (method == WeightedHistogram::GAUSSIAN_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
-					Histogram h(truncate, mode);
+					WeightedHistogram h(truncate, mode);
 					uchar* msk = mask.ptr<uchar>(y);
 					for (int x = 0; x < width; x++)
 					{
@@ -1294,7 +1244,7 @@ namespace cp
 					}
 				}
 			}
-			else if (method == Histogram::NO_WEIGHT)
+			else if (method == WeightedHistogram::NO_WEIGHT_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
@@ -1303,7 +1253,7 @@ namespace cp
 					for (int x = 0; x < width; x++)
 					{
 						if (msk[x] == 0)continue;
-						Histogram h(truncate, mode);
+						WeightedHistogram h(truncate, mode);
 
 						for (int j = 0, idx = 0; j < 2 * r + 1; j++)
 						{
@@ -1334,11 +1284,11 @@ namespace cp
 
 		Mat src2; copyMakeBorder(src, src2, r, r, r, r, 1);
 
-		int mode = Histogram::MAX;
-		if (method >= Histogram::NO_WEIGHT_MEDIAN)
+		int mode = WeightedHistogram::MAX;
+		if (method >= WeightedHistogram::NO_WEIGHT_MEDIAN)
 		{
-			mode = Histogram::MEDIAN;
-			method -= Histogram::NO_WEIGHT_MEDIAN;
+			mode = WeightedHistogram::MEDIAN;
+			method -= WeightedHistogram::NO_WEIGHT_MEDIAN;
 		}
 
 		int borderType = cv::BORDER_REPLICATE;
@@ -1378,12 +1328,12 @@ namespace cp
 				lutc[i] = (float)(exp(-sqr(i) / (2 * sqr(sig_c))));
 			}
 
-			if (method == Histogram::BILATERAL)
+			if (method == WeightedHistogram::BILATERAL_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
-					Histogram h(truncate, mode);
+					WeightedHistogram h(truncate, mode);
 					uchar* msk = mask.ptr<uchar>(y);
 					for (int x = 0; x < width; x++)
 					{
@@ -1420,12 +1370,12 @@ namespace cp
 					}
 				}
 			}
-			else if (method == Histogram::GAUSSIAN)
+			else if (method == WeightedHistogram::GAUSSIAN_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
-					Histogram h(truncate, mode);
+					WeightedHistogram h(truncate, mode);
 					uchar* msk = mask.ptr<uchar>(y);
 					for (int x = 0; x < width; x++)
 					{
@@ -1448,7 +1398,7 @@ namespace cp
 					}
 				}
 			}
-			else if (method == Histogram::NO_WEIGHT)
+			else if (method == WeightedHistogram::NO_WEIGHT_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
@@ -1457,7 +1407,7 @@ namespace cp
 					for (int x = 0; x < width; x++)
 					{
 						if (msk[x] == 0)continue;
-						Histogram h(truncate, mode);
+						WeightedHistogram h(truncate, mode);
 
 						for (int j = 0, idx = 0; j < 2 * r + 1; j++)
 						{
@@ -1496,12 +1446,12 @@ namespace cp
 				lutc[i] = (float)(exp(-sqr(i) / (2.0 * sqr(sig_c))));
 			}
 
-			if (method == Histogram::BILATERAL)
+			if (method == WeightedHistogram::BILATERAL_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
-					Histogram h(truncate, mode);
+					WeightedHistogram h(truncate, mode);
 					uchar* msk = mask.ptr<uchar>(y);
 					for (int x = 0; x < width; x++)
 					{
@@ -1529,12 +1479,12 @@ namespace cp
 					}
 				}
 			}
-			else if (method == Histogram::GAUSSIAN)
+			else if (method == WeightedHistogram::GAUSSIAN_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
-					Histogram h(truncate, mode);
+					WeightedHistogram h(truncate, mode);
 					uchar* msk = mask.ptr<uchar>(y);
 					for (int x = 0; x < width; x++)
 					{
@@ -1557,7 +1507,7 @@ namespace cp
 					}
 				}
 			}
-			else if (method == Histogram::NO_WEIGHT)
+			else if (method == WeightedHistogram::NO_WEIGHT_MODE)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
@@ -1566,7 +1516,7 @@ namespace cp
 					for (int x = 0; x < width; x++)
 					{
 						if (msk[x] == 0)continue;
-						Histogram h(truncate, mode);
+						WeightedHistogram h(truncate, mode);
 
 						for (int j = 0, idx = 0; j < 2 * r + 1; j++)
 						{
@@ -1603,7 +1553,7 @@ namespace cp
 		Mat g = guide.getMat();
 		if (dst.empty()) dst.create(src.size(), src.type());
 		Mat d = dst.getMat();
-		weightedHistogramFilter(s, g, d, r, truncate, sig_c, sig_s, metric, method + Histogram::NO_WEIGHT_MEDIAN);
+		weightedHistogramFilter(s, g, d, r, truncate, sig_c, sig_s, metric, method + WeightedHistogram::NO_WEIGHT_MEDIAN);
 	}
 
 	void weightedweightedModeFilter(InputArray src, InputArray wmap, InputArray guide, OutputArray dst, int r, int truncate, double sig_c1, double sig_c2, double sig_s, int metric, int method)
@@ -1625,7 +1575,7 @@ namespace cp
 		if (dst.empty()) dst.create(src.size(), src.type());
 		Mat d = dst.getMat();
 
-		weightedweightedHistogramFilter(s, w, g, d, r, truncate, sig_c1, sig_c2, sig_s, metric, method + Histogram::NO_WEIGHT_MEDIAN);
+		weightedweightedHistogramFilter(s, w, g, d, r, truncate, sig_c1, sig_c2, sig_s, metric, method + WeightedHistogram::NO_WEIGHT_MEDIAN);
 	}
 
 	void weightedweightedModeFilter(InputArray src, InputArray wmap, InputArray guide, OutputArray dst, int r, int truncate, double sig_c, double sig_s, int metric, int method)
@@ -1647,7 +1597,7 @@ namespace cp
 		if (dst.empty()) dst.create(src.size(), src.type());
 		Mat d = dst.getMat();
 
-		weightedweightedHistogramFilter(s, w, g, d, r, truncate, sig_c, sig_s, metric, method + Histogram::NO_WEIGHT_MEDIAN);
+		weightedweightedHistogramFilter(s, w, g, d, r, truncate, sig_c, sig_s, metric, method + WeightedHistogram::NO_WEIGHT_MEDIAN);
 	}
 
 	void weightedweightedModeFilter(InputArray src, InputArray wmap, InputArray guide, InputArray mask, OutputArray dst, int r, int truncate, double sig_c, double sig_s, int metric, int method)
@@ -1671,7 +1621,7 @@ namespace cp
 		if (dst.empty()) dst.create(src.size(), src.type());
 		Mat d = dst.getMat();
 
-		weightedweightedHistogramFilter(s, w, g, m, d, r, truncate, sig_c, sig_s, metric, method + Histogram::NO_WEIGHT_MEDIAN);
+		weightedweightedHistogramFilter(s, w, g, m, d, r, truncate, sig_c, sig_s, metric, method + WeightedHistogram::NO_WEIGHT_MEDIAN);
 	}
 
 	void weightedweightedModeFilter(InputArray src, InputArray wmap, InputArray guide, InputArray mask, OutputArray dst, int r, int truncate, double sig_c1, double sig_c2, double sig_s, int metric, int method)
@@ -1695,6 +1645,6 @@ namespace cp
 		if (dst.empty()) dst.create(src.size(), src.type());
 		Mat d = dst.getMat();
 
-		weightedweightedHistogramFilter(s, w, g, m, d, r, truncate, sig_c1, sig_c2, sig_s, metric, method + Histogram::NO_WEIGHT_MEDIAN);
+		weightedweightedHistogramFilter(s, w, g, m, d, r, truncate, sig_c1, sig_c2, sig_s, metric, method + WeightedHistogram::NO_WEIGHT_MEDIAN);
 	}
 }

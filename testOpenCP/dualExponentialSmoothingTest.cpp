@@ -36,7 +36,7 @@ void guiLaplacianSmoothingIIRFilterTest(Mat& src, String wname = "Laplacian")
 		{
 			start = cv::getTickCount();
 			//LaplacianSmoothingIIRFilter(srcf, destf, sigma2LaplacianSmootihngAlpha(sigma, p / 100.0), cp::VECTOR_WITHOUT);
-			LaplacianSmoothingFIRFilter(srcf, destf, sigma*n, sigma, BORDER_REPLICATE, cp::VECTOR_AVX);
+			LaplacianSmoothingFIRFilter(srcf, destf, sigma*n, float(sigma), BORDER_REPLICATE, cp::VECTOR_AVX);
 			end = cv::getTickCount();
 			st1.push_back((end - start) * 1000 / cv::getTickFrequency());
 		}
@@ -47,7 +47,7 @@ void guiLaplacianSmoothingIIRFilterTest(Mat& src, String wname = "Laplacian")
 		for (int i = 0; i < iteration; i++)
 		{
 			start = cv::getTickCount();
-			LaplacianSmoothingIIRFilter(srcf, destf, sigma2LaplacianSmootihngAlpha(sigma, p / 100.0));
+			LaplacianSmoothingIIRFilter(srcf, destf, (double)sigma2LaplacianSmootihngAlpha((float)sigma, p / 100.f));
 			/*
 			Mat srcd; src.convertTo(srcd, CV_64F);
 			Mat destd;

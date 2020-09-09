@@ -26,21 +26,6 @@ using namespace cv;
 
 namespace cp
 {
-	string getOcclusionMethodName(const int method)
-	{
-		string ret;
-		switch (method)
-		{
-		case 0: ret = "NO Filling"; break;
-		case 1: ret = "Method 1 (simplest)"; break;
-		case 2: ret = "Method 2"; break;
-		case 3: ret = "Method 3"; break;
-		case 4: ret = "Method 4"; break;
-		default:
-			break;
-		}
-		return ret;
-	}
 #pragma region correctDisparityBoundary
 	template <class srcType>
 	void correctDisparityBoundaryECV(Mat& src, Mat& refimg, const int r, const int edgeth, Mat& dest)
@@ -433,6 +418,7 @@ namespace cp
 	}
 #pragma endregion
 
+#pragma region public
 	StereoBase::StereoBase(int blockSize, int minDisp, int disparityRange) :thread_max(omp_get_max_threads())
 	{
 		border = 0;
@@ -440,7 +426,7 @@ namespace cp
 		speckleRange = 16;
 		uniquenessRatio = 0;
 
-		subpixelInterpolationMethod = SUBPIXEL_QUAD;
+		subpixelInterpolationMethod = (int)SUBPIXEL::QUAD;
 
 		subpixelRangeFilterWindow = 2;
 		subpixelRangeFilterCap = 16;
@@ -484,8 +470,755 @@ namespace cp
 		imshow(wname, output);
 	}
 
-#pragma region cost computation of pixel matching
+	//main function
+	void StereoBase::matching(Mat& leftim, Mat& rightim, Mat& destDisparityMap, const bool isFeedback)
+	{
+		if (destDisparityMap.empty() || leftim.size() != destDisparityMap.size()) destDisparityMap.create(leftim.size(), CV_16S);
+		minCostMap.create(leftim.size(), CV_8U);
+		minCostMap.setTo(255);
+		if ((int)DSI.size() < numberOfDisparities)DSI.resize(numberOfDisparities);
 
+#pragma region matching:prefilter
+		computeGuideImageForAggregation(leftim);
+
+		{
+#ifdef TIMER_STEREO_BASE
+			Timer t("pre filter");
+#endif
+			computePrefilter(leftim, rightim);
+		}
+#pragma endregion
+
+#pragma region matching:pixelmatch and aggregation
+		{
+#ifdef TIMER_STEREO_BASE
+			Timer t("Cost computation & aggregation");
+#endif
+			if (aggregationMethod == CrossBasedBox) clf.makeKernel(guideImage, aggregationRadiusH, (int)aggregationGuidedfilterEps, 0);
+
+#pragma omp parallel for
+			for (int i = 0; i < numberOfDisparities; i++)
+			{
+				const int d = minDisparity + i;
+				computePixelMatchingCost(d, DSI[i]);
+
+				if (isFeedback)addCostIterativeFeedback(DSI[i], d, destDisparityMap, feedbackFunction, feedbackClip, feedbackAmp);
+				computeCostAggregation(DSI[i], DSI[i], guideImage);
+			}
+		}
+#pragma endregion
+
+#pragma region matching:optimization and WTA
+		{
+#ifdef TIMER_STEREO_BASE
+			Timer t("Cost Optimization");
+#endif
+			if (P1 != 0 && P2 != 0)
+				computeOptimizeScanline();
+		}
+
+		{
+#ifdef TIMER_STEREO_BASE
+			Timer t("DisparityComputation");
+#endif
+			computeWTA(DSI, destDisparityMap, minCostMap);
+		}
+#pragma endregion
+#pragma region matching:postfiltering
+		{
+#ifdef TIMER_STEREO_BASE
+			Timer t("===Post Filterings===");
+#endif
+			{
+#ifdef TIMER_STEREO_BASE
+				Timer t("Post: uniqueness");
+#endif
+				uniquenessFilter(minCostMap, destDisparityMap);
+			}
+			//subpix;
+			{
+#ifdef TIMER_STEREO_BASE
+				Timer t("Post: subpix");
+#endif
+				subpixelInterpolation(destDisparityMap, (SUBPIXEL)subpixelInterpolationMethod);
+				if (isRangeFilterSubpix) binalyWeightedRangeFilter(destDisparityMap, destDisparityMap, subpixelRangeFilterWindow, (float)subpixelRangeFilterCap);
+			}
+			//R depth map;
+
+			{
+#ifdef TIMER_STEREO_BASE
+				Timer t("Post: LR");
+#endif
+				if (LRCheckMethod == (int)LRCHECK::WITH_MINCOST)
+					fastLRCheck(minCostMap, destDisparityMap);
+				else if (LRCheckMethod == (int)LRCHECK::WITHOUT_MINCOST)
+					fastLRCheck(destDisparityMap);
+			}
+			{
+#ifdef TIMER_STEREO_BASE
+				Timer t("Post: mincost");
+#endif
+				if (isMinCostFilter)
+					minCostFilter(minCostMap, destDisparityMap);
+			}
+			{
+#ifdef TIMER_STEREO_BASE
+				Timer t("Post: filterSpeckles");
+#endif
+				if (isSpeckleFilter)
+					filterSpeckles(destDisparityMap, 0, speckleWindowSize, speckleRange, specklebuffer);
+			}
+
+			{
+				computeValidRatio(destDisparityMap);
+
+				int occsearch2 = 4;
+				int occth = 17;
+				int occsearch = 4;
+				int occsearchh = 2;
+				int occiter = 0;
+				if (holeFillingMethod == 1)
+				{
+#ifdef TIMER_STEREO_BASE
+					Timer t("occ");
+#endif
+					//fillOcclusion(destDisparity, (minDisparity - 1) * 16);
+					fillOcclusion(destDisparityMap);
+				}
+				else if (holeFillingMethod == 2)
+				{
+					fillOcclusion(destDisparityMap);
+					{
+						//Timer t("border");
+						correctDisparityBoundaryE<short>(destDisparityMap, leftim, occsearch, occth, destDisparityMap, occsearch2, 32);
+					}
+				}
+				else if (holeFillingMethod == 3)
+				{
+					fillOcclusion(destDisparityMap);
+					correctDisparityBoundaryEC<short>(destDisparityMap, leftim, occsearch, occth, destDisparityMap);
+
+					Mat dt;
+					transpose(destDisparityMap, dt);
+					Mat lt; transpose(leftim, lt);
+
+					correctDisparityBoundaryECV<short>(dt, lt, occsearchh, occth, dt);
+					Mat dest2;
+					transpose(dt, dest2);
+					Mat mask = Mat::zeros(destDisparityMap.size(), CV_8U);
+					cv::rectangle(mask, Rect(40, 40, destDisparityMap.cols - 80, destDisparityMap.rows - 80), 255, FILLED);
+					dest2.copyTo(destDisparityMap, mask);
+				}
+				else if (holeFillingMethod == 4)
+				{
+					fillOcclusion(destDisparityMap);
+
+					correctDisparityBoundaryE<short>(destDisparityMap, leftim, occsearch, 32, destDisparityMap, occsearch2, 30);
+
+					for (int i = 0; i < occiter; i++)
+					{
+						Mat dt;
+						transpose(destDisparityMap, dt);
+						Mat lt; transpose(leftim, lt);
+						correctDisparityBoundaryE<short>(dt, lt, 2, 32, destDisparityMap, occsearch2, 30);
+						transpose(dt, destDisparityMap);
+						correctDisparityBoundaryE<short>(destDisparityMap, leftim, occsearch, 32, destDisparityMap, occsearch2, 30);
+						filterSpeckles(destDisparityMap, 0, speckleWindowSize, speckleRange);
+						fillOcclusion(destDisparityMap);
+					}
+				}
+			}
+#pragma region refinement
+
+			{
+#ifdef TIMER_STEREO_BASE
+				Timer t("Post: refinement");
+#endif
+				if (refinementMethod == (int)REFINEMENT::GIF_JNF)
+				{
+					//crossBasedAdaptiveBoxFilter(destDisparity, leftim, destDisparity, Size(2 * gr + 1, 2 * gr + 1), ge);
+
+					Mat temp;
+					guidedImageFilter(destDisparityMap, leftim, temp, refinementR, (float)refinementSigmaRange, GUIDED_SEP_VHI);
+					jointNearestFilter(temp, destDisparityMap, Size(2 * jointNearestR + 1, 2 * jointNearestR + 1), destDisparityMap);
+				}
+				else if (refinementMethod == (int)REFINEMENT::WGIF_GAUSS_JNF)
+				{
+					weightMap.create(leftim.size(), CV_32F);
+					Mat bim;
+					GaussianBlur(destDisparityMap, bim, Size(2 * refinementWeightR + 1, 2 * refinementWeightR + 1), refinementWeightR / 3.0);
+					short* disp = destDisparityMap.ptr<short>(0);
+					short* dispb = bim.ptr<short>();
+					float* s = weightMap.ptr<float>();
+					for (int i = 0; i < weightMap.size().area(); i++)
+					{
+						float diff = (disp[i] - dispb[i]) * (disp[i] - dispb[i]) / (-2.f * 16 * 16 * refinementWeightSigma * refinementWeightSigma);
+						s[i] = exp(diff);
+					}
+
+					Mat a, b;
+					multiply(destDisparityMap, weightMap, a, 1, CV_32F);
+					guidedImageFilter(a, leftim, a, refinementR, refinementSigmaRange, GUIDED_SEP_VHI);
+					guidedImageFilter(weightMap, leftim, b, refinementR, refinementSigmaRange, GUIDED_SEP_VHI);
+					Mat temp;
+					divide(a, b, temp, 1, CV_16S);
+					jointNearestFilter(temp, destDisparityMap, Size(2 * jointNearestR + 1, 2 * jointNearestR + 1), destDisparityMap);
+				}
+				if (refinementMethod == (int)REFINEMENT::JBF_JNF)
+				{
+					Mat temp;
+					jointBilateralFilter(destDisparityMap, leftim, temp, 2 * refinementR + 1, refinementSigmaRange, refinementSigmaSpace);
+					jointNearestFilter(temp, destDisparityMap, Size(2 * jointNearestR + 1, 2 * jointNearestR + 1), destDisparityMap);
+				}
+				if (refinementMethod == (int)REFINEMENT::WJBF_GAUSS_JNF)
+				{
+					Mat bim;
+					GaussianBlur(destDisparityMap, bim, Size(2 * refinementWeightR + 1, 2 * refinementWeightR + 1), refinementWeightR / 3.0);
+					short* disp = destDisparityMap.ptr<short>(0);
+					short* dispb = bim.ptr<short>(0);
+					float* s = weightMap.ptr<float>();
+					for (int i = 0; i < weightMap.size().area(); i++)
+					{
+						float diff = (disp[i] - dispb[i]) * (disp[i] - dispb[i]) / (-2.f * 16 * 16 * refinementWeightSigma * refinementWeightSigma);
+						s[i] = exp(diff);
+					}
+
+					Mat temp;
+					weightedJointBilateralFilter(destDisparityMap, weightMap, leftim, temp, 2 * refinementR + 1, refinementSigmaRange, refinementSigmaSpace);
+					jointNearestFilter(temp, destDisparityMap, Size(2 * jointNearestR + 1, 2 * jointNearestR + 1), destDisparityMap);
+				}
+				if (refinementMethod == (int)REFINEMENT::WMF)
+				{
+					cp::weightedModeFilter(destDisparityMap, leftim, destDisparityMap, refinementR, refinementTruncateMode, refinementSigmaRange, refinementSigmaSpace, 2, WeightedHistogram::BILATERAL_MODE);
+				}
+			}
+#pragma endregion
+		}
+
+#ifdef TIMER_STEREO_BASE
+		cout << "=====================" << endl;
+#endif
+#pragma endregion
+
+	}
+
+	void StereoBase::operator()(Mat& leftim, Mat& rightim, Mat& dest)
+	{
+		matching(leftim, rightim, dest);
+	}
+
+	static void guiStereoMatchingOnMouse(int events, int x, int y, int flags, void* param)
+	{
+		Point* pt = (Point*)param;
+		//if(events==CV_EVENT_LBUTTONDOWN)
+		if (flags & EVENT_FLAG_LBUTTON)
+		{
+			pt->x = x;
+			pt->y = y;
+		}
+	}
+
+	void StereoBase::gui(Mat& leftim, Mat& rightim, Mat& destDisparity, StereoEval& eval)
+	{
+#pragma region setup
+		ConsoleImage ci(Size(640, 680));
+		//ci.setFontSize(12);
+		string wname = "";
+		string wname2 = "Disparity Map";
+
+		namedWindow(wname2);
+		moveWindow(wname2, 200, 200);
+		int display_image_depth_alpha = 0; createTrackbar("disp-image: alpha", wname, &display_image_depth_alpha, 100);
+		//pre filter
+		createTrackbar("prefilter: cap", wname, &preFilterCap, 255);
+
+		pixelMatchingMethod = SDEdgeBlend;
+		//PixelMatchingMethod = Pixel_Matching_CENSUS5x5;
+		createTrackbar("pix match: method", wname, &pixelMatchingMethod, Pixel_Matching_Method_Size - 1);
+		createTrackbar("pix match: color method", wname, &color_distance, ColorDistance_Size - 1);
+		createTrackbar("pix match: blend a", wname, &costAlphaImageSobel, 100);
+		pixelMatchErrorCap = preFilterCap;
+		createTrackbar("pix match: err cap", wname, &pixelMatchErrorCap, 255);
+
+		createTrackbar("feedback: function", wname, &feedbackFunction, 2);
+		createTrackbar("feedback: cap", wname, &feedbackClip, 10);
+		int feedbackAmpInt = 5; createTrackbar("feedback: amp*0.1", wname, &feedbackAmpInt, 50);
+
+		//cost computation for texture alpha
+		//createTrackbar("Soble alpha p size", wname, &sobelBlendMapParam_Size, 10);
+		//createTrackbar("Soble alpha p 1", wname, &sobelBlendMapParam1, 255);
+		//createTrackbar("Soble alpha p 2", wname, &sobelBlendMapParam2, 255);
+
+		//AggregationMethod = Aggregation_Gauss;
+		aggregationMethod = Guided;
+		createTrackbar("agg: method", wname, &aggregationMethod, Aggregation_Method_Size - 1);
+		createTrackbar("agg: r width", wname, &aggregationRadiusH, 20);
+		createTrackbar("agg: r height", wname, &aggregationRadiusV, 20);
+		int aggeps = 1; createTrackbar("agg: guide color sigma/eps", wname, &aggeps, 255);
+		int aggss = 100; createTrackbar("agg: guide space sigma", wname, &aggss, 255);
+
+		// disable P1, P2 for optimization(under debug)
+		//createTrackbar("P1", wname, &P1, 20);
+		//createTrackbar("P2", wname, &P2, 20);
+
+		uniquenessRatio = 10;
+		createTrackbar("uniq", wname, &uniquenessRatio, 100);
+		createTrackbar("subpixel RF widow size", wname, &subpixelRangeFilterWindow, 10);
+		createTrackbar("subpixel RF cap", wname, &subpixelRangeFilterCap, 64);
+
+		createTrackbar("LR check disp12", wname, &disp12diff, 100);
+		//int E = (int)(10.0*eps);
+		//createTrackbar("eps",wname,&E,1000);
+
+		//int spsize = 300;
+		speckleWindowSize = 20;
+		createTrackbar("speckleSize", wname, &speckleWindowSize, 1000);
+		speckleRange = 16;
+		createTrackbar("speckleDiff", wname, &speckleRange, 100);
+
+		createTrackbar("occlusionMethod", wname, &holeFillingMethod, FILL_OCCLUSION_SIZE - 1);
+		// disable occlution options (under debug, internal in post process)	
+		//createTrackbar("occ:s2", wname, &occsearch2, 15);
+		//createTrackbar("occ:th", wname, &occth, 128);	
+		//createTrackbar("occ:s", wname, &occsearch, 15);	
+		//createTrackbar("occ:sH", wname, &occsearchh, 15);	
+		//createTrackbar("occ:iter", wname, &occiter, 10);
+
+
+		Plot p(Size(640, 240));
+		Plot histp(Size(640, 240));
+		Plot signal(Size(640, 240));
+		int vh = 0;
+		int diffmode = 0;
+		if (eval.isInit)
+		{
+			namedWindow("signal");
+			createTrackbar("vh", "signal", &vh, 1);
+			createTrackbar("mode", "signal", &diffmode, 2);
+		}
+
+		int bx = 3;
+		createTrackbar("post:subboxR", wname, &bx, 10);
+		int bran = 31;
+		createTrackbar("post:subboxrange", wname, &bran, 64);
+
+		createTrackbar("ref:joint r", wname, &refinementR, 15);
+		int refinementSigmaRangeInt = int(refinementSigmaRange * 10); createTrackbar("ref:joint range*0.1", wname, &refinementSigmaRangeInt, 1000);
+		int refinementSigmaSpaceInt = int(refinementSigmaSpace * 10); createTrackbar("ref:joint space*0.1", wname, &refinementSigmaSpaceInt, 100);
+		createTrackbar("ref:jn r", wname, &jointNearestR, 5);
+		createTrackbar("ref:mode trunc", wname, &refinementTruncateMode, 128);
+
+		createTrackbar("ref:wr", wname, &refinementWeightR, 10);
+		int refinementWeightSigmaInt = int(refinementWeightSigma * 10); createTrackbar("ref:ws*0.1", wname, &refinementWeightSigmaInt, 1000);
+
+		Point mpt = Point(100, 100);
+		createTrackbar("px", wname, &mpt.x, leftim.cols - 1);
+		createTrackbar("py", wname, &mpt.y, leftim.rows - 1);
+
+		bool isStreak = false;
+		bool isMedian = false;
+
+		int maskType = 0;
+		int maskPrec = 0;
+		bool isPlotCostFunction = true;
+		bool isPlotSignal = true;
+		bool isGrid = true;
+		bool isDispalityColor = false;
+		const bool isSubpixelDistribution = true;
+
+		setMouseCallback(wname2, guiStereoMatchingOnMouse, &mpt);
+		//CostVolumeRefinement cbf(minDisparity, numberOfDisparities);
+
+		Mat dispOutput;
+		bool isFeedback = false;
+		Mat weightMap = Mat::ones(leftim.size(), CV_32F);
+		destDisparity.setTo(0);
+
+		UpdateCheck uck(feedbackFunction, feedbackClip, feedbackAmpInt);
+		int key = 0;
+#pragma endregion
+		while (key != 'q')
+		{
+#pragma region parameter setup
+			//init
+			aggregationGuidedfilterEps = aggeps;
+			aggregationSigmaSpace = aggss;
+			feedbackAmp = feedbackAmpInt * 0.1f;
+			refinementSigmaRange = refinementSigmaRangeInt * 0.1f;
+			refinementSigmaSpace = refinementSigmaSpaceInt * 0.1f;
+			refinementWeightSigma = refinementWeightSigmaInt * 0.1f;
+
+#pragma endregion
+
+#pragma region console setup
+			ci.clear();
+
+			if (isFeedback) ci(CV_RGB(0, 255, 0), "isFeedback true (f)");
+			else  ci(CV_RGB(255, 0, 0), "isFeedback false (f)");
+
+			if (pixelMatchingMethod % 2 == 0)
+				ci("Cost:" + getCostMethodName((Cost)pixelMatchingMethod) + ": (i-u)");
+			else
+				ci("Cost:" + getCostMethodName((Cost)pixelMatchingMethod) + getCostColorDistanceName((ColorDistance)color_distance) + ": (i-u)|(j-k)");
+			ci("Aggregation:" + getAggregationMethodName((Aggregation)aggregationMethod) + ": (@-[)");
+
+			if (isUniquenessFilter) ci(CV_RGB(0, 255, 0), "uniqueness filter (1)| true");
+			else ci(CV_RGB(255, 0, 0), "uniqueness filter (1)| false");
+
+			if (subpixelInterpolationMethod == 0)ci(CV_RGB(255, 0, 0), "subpixel          (2)| NONE");
+			else ci(CV_RGB(0, 255, 0), "subpixel          (2)| " + getSubpixelInterpolationMethodName((SUBPIXEL)subpixelInterpolationMethod));
+
+			if (isRangeFilterSubpix) ci(CV_RGB(0, 255, 0), "Range filter      (3)| true");
+			else ci(CV_RGB(255, 0, 0), "range filter      (3)| false");
+
+			if (LRCheckMethod) ci(CV_RGB(0, 255, 0), "LR check          (4)| " + getLRCheckMethodName((LRCHECK)LRCheckMethod));
+			else ci(CV_RGB(255, 0, 0), "LR check          (4)| false");
+
+			if (isProcessLBorder) ci(CV_RGB(0, 255, 0), "LBorder           (5)| LR check must be true: true");
+			else ci(CV_RGB(255, 0, 0), "LBorder           (5)| false");
+
+			if (isMinCostFilter) ci(CV_RGB(0, 255, 0), "min cost filter   (6)| true");
+			else ci(CV_RGB(255, 0, 0), "min cost filter   (6)| false");
+
+			if (isSpeckleFilter) ci(CV_RGB(0, 255, 0), "speckle filter    (7)| true");
+			else ci(CV_RGB(255, 0, 0), "speckle filter    (7)| false");
+
+			if (holeFillingMethod == 0) ci(CV_RGB(255, 0, 0), "Occlusion         (8)| NONE");
+			else ci(CV_RGB(0, 255, 0), "Occlusion         (8)| " + getHollFillingMethodName((HOLE_FILL)holeFillingMethod));
+
+			if (refinementMethod == 0) ci(CV_RGB(255, 0, 0), "Refinement        (9)| NONE");
+			else ci(CV_RGB(0, 255, 0), "Refinement        (9)| " + getRefinementMethodName((REFINEMENT)refinementMethod));
+
+
+			ci("==== additional post filter =====");
+			if (isStreak)ci(CV_RGB(0, 255, 0), "Streak            (0)| true");
+			else ci(CV_RGB(255, 0, 0), "Streak            (0)| false");
+
+			if (isMedian)ci(CV_RGB(0, 255, 0), "Median            (-)| true");
+			else ci(CV_RGB(255, 0, 0), "Median            (-)| false");
+
+			ci("=======================");
+			if (maskType != 0)
+			{
+				if (maskType == 4)
+					ci(CV_RGB(255, 0, 0), "mask (m-,): ground trueth");
+
+				if (maskPrec == 2 && maskType == 1)
+					ci(CV_RGB(0, 255, 0), "mask (m-,): nonocc, prec: 2.0");
+				if (maskPrec == 1 && maskType == 1)
+					ci(CV_RGB(0, 255, 0), "mask (m-,): nonocc, prec: 1.0");
+				if (maskPrec == 0 && maskType == 1)
+					ci(CV_RGB(0, 255, 0), "mask (m-,): nonocc, prec: 0.5");
+
+				if (maskPrec == 2 && maskType == 2)
+					ci(CV_RGB(0, 255, 0), "mask (m-,): all, prec: 2.0");
+				if (maskPrec == 1 && maskType == 2)
+					ci(CV_RGB(0, 255, 0), "mask (m-,): all, prec: 1.0");
+				if (maskPrec == 0 && maskType == 2)
+					ci(CV_RGB(0, 255, 0), "mask (m-,): all, prec: 0.5");
+
+				if (maskPrec == 2 && maskType == 3)
+					ci(CV_RGB(0, 255, 0), "mask (m-,): disc, prec: 2.0");
+				if (maskPrec == 1 && maskType == 3)
+					ci(CV_RGB(0, 255, 0), "mask (m-,): disc, prec: 1.0");
+				if (maskPrec == 0 && maskType == 3)
+					ci(CV_RGB(0, 255, 0), "mask (m-,): disc, prec: 0.5");
+			}
+			else
+			{
+				ci(CV_RGB(255, 0, 0), "mask (m-,): none");
+			}
+
+#pragma endregion
+
+#pragma region body
+
+			{
+				Timer t("BM", TIME_MSEC, false);
+				matching(leftim, rightim, destDisparity, isFeedback);
+				ci("Time StereoBase  : %5.2f ms", t.getTime());
+			}
+
+			//additional post process
+			{
+				Mat base = destDisparity.clone();
+#ifdef TIMER_STEREO_BASE
+				Timer t("Post 2");
+#else 
+				Timer t("Post 2", TIME_MSEC, false);
+#endif
+				if (isStreak)
+				{
+					removeStreakingNoise(destDisparity, destDisparity, 16);
+					removeStreakingNoiseV(destDisparity, destDisparity, 16);
+				}
+				if (isMedian)
+				{
+					medianBlur(destDisparity, destDisparity, 3);
+				}
+				ci("Time A-PostFilter: %5.2f ms", t.getTime());//additional post processing time
+			}
+#pragma endregion 
+
+#pragma region show
+
+			ci("valid %5.2f %%", getValidRatio());
+
+			if (isSubpixelDistribution)
+			{
+				histp.clear();
+				histp.setYLabel("number of pixels");
+				histp.setXLabel("subpixel_16");
+				histp.setKey(0);
+				histp.setGrid(0);
+				histp.setIsDrawMousePosition(false);
+
+				short* d = destDisparity.ptr<short>(0);
+				int hist[16];
+				for (int i = 0; i < 16; i++)hist[i] = 0;
+
+				for (int i = 0; i < destDisparity.size().area(); i++)
+				{
+					if (d[i] > minDisparity * 16 && d[i] < (numberOfDisparities + minDisparity - 1) * 16)
+					{
+						hist[d[i] % 16]++;
+					}
+				}
+
+				for (int i = 0; i < 16; i++)
+				{
+					histp.push_back(i, hist[(i + 8) % 16]);
+				}
+
+				histp.plot("subpixel disparity distribution", false);
+			}
+
+			if (isDispalityColor)cvtDisparityColor(destDisparity, dispOutput, minDisparity, numberOfDisparities - 10, 2, 16);
+			else				 cvtDisparityColor(destDisparity, dispOutput, 0, numberOfDisparities, 0);
+
+			//plot cost function
+			if (isPlotCostFunction)
+			{
+				p.clear();
+				p.setYLabel("error");
+				p.setXLabel("disparity");
+				p.setPlotTitle(0, "cost");
+				p.setPlotTitle(1, "answer");
+				p.setPlotTitle(2, "result");
+				p.setGrid(0);
+				p.setIsDrawMousePosition(false);
+				p.setXYRange(0, numberOfDisparities + minDisparity + 1, 0, 64);
+
+				if (eval.isInit)
+				{
+					const int dd = (int)(eval.ground_truth.at<uchar>(mpt.y, mpt.x) / eval.amp + 0.5);
+					const int dd2 = (int)((double)destDisparity.at<short>(mpt.y, mpt.x) / (16.0) + 0.5);
+
+					const double ddd = (eval.ground_truth.at<uchar>(mpt.y, mpt.x) / eval.amp);
+					const double ddd2 = ((double)destDisparity.at<short>(mpt.y, mpt.x) / (16.0));
+					for (int i = 0; i < numberOfDisparities; i++)
+					{
+						p.push_back(i + minDisparity, DSI[i].at<uchar>(mpt.y, mpt.x), 0);
+
+						if (abs(i + minDisparity - dd) <= 1)
+							p.push_back(ddd, 0, 1);
+						else
+							p.push_back(i + minDisparity, 127, 1);
+
+						if (abs(i + minDisparity - dd2) == 0)
+							p.push_back(ddd2, 0, 2);
+						else
+							p.push_back(i + minDisparity, 64, 2);
+					}
+				}
+				else
+				{
+					const int dd2 = (int)((double)destDisparity.at<short>(mpt.y, mpt.x) / (16.0) + 0.5);
+					const double ddd2 = ((double)destDisparity.at<short>(mpt.y, mpt.x) / (16.0));
+					for (int i = 0; i < numberOfDisparities; i++)
+					{
+						p.push_back(i + minDisparity, DSI[i].at<uchar>(mpt.y, mpt.x), 0);
+
+						if (abs(i + minDisparity - dd2) == 0)
+							p.push_back(ddd2, 0, 2);
+						else
+							p.push_back(i + minDisparity, 64, 2);
+					}
+				}
+
+				p.plot("cost function", false);
+
+			}
+
+			//plot signal
+			if (isPlotSignal)
+			{
+				signal.clear();
+				signal.setXLabel("position");
+				signal.setYLabel("disparity");
+				signal.setPlotTitle(0, "estimate");
+				signal.setPlotTitle(1, "ground trouth");
+				signal.setGrid(0);
+				signal.setIsDrawMousePosition(false);
+				const int mindisp = 15;
+				if (vh == 0)
+				{
+					signal.setXYRange(0, destDisparity.cols - 1, mindisp, numberOfDisparities);
+					signal.setPlot(0, CV_RGB(0, 0, 0), 0, 1, 1);
+					signal.setPlot(1, CV_RGB(255, 0, 0), 0, 1, 1);
+					for (int i = 0; i < destDisparity.cols; i++)
+					{
+						double ddd = (eval.ground_truth.at<uchar>(mpt.y, i) / eval.amp);
+						double ddd2 = ((double)destDisparity.at<short>(mpt.y, i) / (16.0));
+
+						if (diffmode == 1)
+						{
+							ddd = abs(ddd - (eval.ground_truth.at<uchar>(mpt.y, i - 1) / eval.amp));
+							ddd2 = abs(ddd2 - (((double)destDisparity.at<short>(mpt.y, i - 1) / (16.0))));
+						}
+						if (diffmode == 2)
+						{
+							ddd = abs((ddd - (eval.ground_truth.at<uchar>(mpt.y, i - 1) / eval.amp)) - (ddd - (eval.ground_truth.at<uchar>(mpt.y, i + 1) / eval.amp)));
+							ddd2 = abs((ddd2 - ((double)destDisparity.at<short>(mpt.y, i - 1) / (16.0))) - (ddd2 - ((double)destDisparity.at<short>(mpt.y, i + 1) / (16.0))));
+						}
+
+						signal.push_back(i, ddd2, 0);
+						signal.push_back(i, ddd, 1);
+					}
+					signal.plot("signal", false);
+				}
+				else
+				{
+					signal.setXYRange(0, destDisparity.rows - 1, mindisp, numberOfDisparities);
+					signal.setPlot(0, CV_RGB(0, 0, 0), 0, 1, 1);
+					signal.setPlot(1, CV_RGB(255, 0, 0), 0, 1, 1);
+					for (int i = 0; i < destDisparity.rows; i++)
+					{
+						double ddd = (eval.ground_truth.at<uchar>(i, mpt.x) / eval.amp);
+						double ddd2 = ((double)destDisparity.at<short>(i, mpt.x) / (16.0));
+
+						if (diffmode == 1)
+						{
+							ddd = abs(ddd - (eval.ground_truth.at<uchar>(i - 1, mpt.x) / eval.amp));
+							ddd2 = abs(ddd2 - (((double)destDisparity.at<short>(i - 1, mpt.x) / (16.0))));
+						}
+						if (diffmode == 2)
+						{
+							ddd = abs(-(ddd - (eval.ground_truth.at<uchar>(i - 1, mpt.x) / eval.amp)) + (-ddd + (eval.ground_truth.at<uchar>(i + 1, mpt.x) / eval.amp)));
+							ddd2 = abs(-(ddd2 - ((double)destDisparity.at<short>(i - 1, mpt.x) / (16.0))) + (-ddd2 + ((double)destDisparity.at<short>(i + 1, mpt.x) / (16.0))));
+						}
+
+						signal.push_back(i, ddd2, 0);
+						signal.push_back(i, ddd, 1);
+					}
+					signal.plotData();
+					Mat show;
+					transpose(signal.render, show);
+					flip(show, show, 1);
+					imshow("signal", show);
+				}
+			}
+
+			//compute StereoEval
+			if (eval.isInit)
+			{
+				Mat maskbadpixel = Mat::zeros(destDisparity.size(), CV_8U);
+				bool isPrintEval = false;
+				ci("Th |noocc,   all,  disc");
+				ci("0.5|" + eval(destDisparity, 0.5, 16, isPrintEval));
+				ci("1.0|" + eval(destDisparity, 1.0, 16, isPrintEval));
+				ci("2.0|" + eval(destDisparity, 2.0, 16, isPrintEval));
+				ci("MSE|" + eval.getMSE(destDisparity, 16, isPrintEval));
+
+				if (maskType != 0)
+				{
+					if (maskPrec == 0)eval(destDisparity, 0.5, 16, isPrintEval);
+					if (maskPrec == 1)eval(destDisparity, 1.0, 16, isPrintEval);
+					if (maskPrec == 2)eval(destDisparity, 2.0, 16, isPrintEval);
+
+					if (maskType == 1)
+						eval.nonocc_th.copyTo(maskbadpixel);
+					else if (maskType == 2)
+						eval.all_th.copyTo(maskbadpixel);
+					else if (maskType == 3)
+						eval.disc_th.copyTo(maskbadpixel);
+				}
+				if (maskType == 4)
+				{
+					if (isDispalityColor) { Mat a; eval.ground_truth.convertTo(a, CV_16S, 4); cvtDisparityColor(a, dispOutput, minDisparity, numberOfDisparities - 10, 2, 16); }
+					else eval.ground_truth.copyTo(dispOutput);
+				}
+				else
+				{
+					dispOutput.setTo(Scalar(0, 0, 255), maskbadpixel);
+				}
+			}
+
+			alphaBlend(leftim, dispOutput, display_image_depth_alpha / 100.0, dispOutput);
+			if (isGrid)
+			{
+				line(dispOutput, Point(0, mpt.y), Point(leftim.cols, mpt.y), CV_RGB(0, 255, 0));
+				line(dispOutput, Point(mpt.x, 0), Point(mpt.x, leftim.rows), CV_RGB(0, 255, 0));
+			}
+
+			showWeightMap("refinement weightmap");
+			imshow(wname2, dispOutput);
+			imshow("console", ci.image);
+			setTrackbarPos("px", wname, mpt.x);
+			setTrackbarPos("py", wname, mpt.y);
+#pragma endregion 
+
+#pragma region key input
+			key = waitKey(1);
+			if (key == '1') isUniquenessFilter = isUniquenessFilter ? false : true;
+			if (key == '2') { subpixelInterpolationMethod++; subpixelInterpolationMethod = (subpixelInterpolationMethod > 2) ? 0 : subpixelInterpolationMethod; }
+			if (key == '3')	isRangeFilterSubpix = (isRangeFilterSubpix) ? false : true;
+			if (key == '4') { LRCheckMethod++;  LRCheckMethod = (LRCheckMethod > (int)LRCHECK::LRCHECK_SIZE - 1) ? 0 : LRCheckMethod; }
+			if (key == '5') isProcessLBorder = (isProcessLBorder) ? false : true;
+			if (key == '6') isMinCostFilter = isMinCostFilter ? false : true;
+			if (key == '7') isSpeckleFilter = isSpeckleFilter ? false : true;
+			if (key == '8') { holeFillingMethod++; if (holeFillingMethod > 4)holeFillingMethod = 0; }
+			if (key == '9') { refinementMethod++; refinementMethod = (refinementMethod > (int)REFINEMENT::REFINEMENT_SIZE - 1) ? 0 : refinementMethod; }
+			if (key == 'o') { refinementMethod--; refinementMethod = (refinementMethod < 0) ? (int)REFINEMENT::REFINEMENT_SIZE - 2 : refinementMethod; }
+			if (key == '0') isStreak = (isStreak) ? false : true;
+			if (key == '-') isMedian = (isMedian) ? false : true;
+
+			if (key == 'f') isFeedback = isFeedback ? false : true;
+			if (key == 'g') isGrid = (isGrid) ? false : true;
+
+			if (key == 'i') { pixelMatchingMethod++; pixelMatchingMethod = (pixelMatchingMethod > Pixel_Matching_Method_Size - 1) ? 0 : pixelMatchingMethod; }
+			if (key == 'u') { pixelMatchingMethod--; pixelMatchingMethod = (pixelMatchingMethod < 0) ? Pixel_Matching_Method_Size - 2 : pixelMatchingMethod; }
+			if (key == 'j') { color_distance++; color_distance = (color_distance > ColorDistance_Size - 1) ? 0 : color_distance; }
+			if (key == 'k') { color_distance--; color_distance = (color_distance < 0) ? ColorDistance_Size - 2 : color_distance; }
+
+			if (key == '@') { aggregationMethod++; aggregationMethod = (aggregationMethod > Aggregation_Method_Size - 1) ? 0 : aggregationMethod; }
+			if (key == '[') { aggregationMethod--; aggregationMethod = (aggregationMethod < 0) ? Aggregation_Method_Size - 2 : aggregationMethod; }
+
+			if (key == 'w')isDispalityColor = (isDispalityColor) ? false : true;
+			if (key == 'b') guiCrossBasedLocalFilter(leftim);
+			if (key == 'c') guiAlphaBlend(dispOutput, leftim);
+			if (key == 'r' || uck.isUpdate(feedbackFunction, feedbackClip, feedbackAmpInt))
+			{
+				destDisparity.setTo(0);
+			}
+
+			if (key == 'm')maskType++; maskType = maskType > 4 ? 0 : maskType;
+			if (key == ',')maskPrec++; maskPrec = maskPrec > 2 ? 0 : maskPrec;
+#pragma endregion
+		}
+	}
+
+	void StereoBase::showWeightMap(std::string wname)
+	{
+		if (!weightMap.empty())
+		{
+			imshow(wname, weightMap);
+		}
+	}
+
+#pragma endregion
+
+#pragma region prefilter
 #define  CV_CAST_8U(t)  (uchar)(!((t) & ~255) ? (t) : (t) > 0 ? 255 : 0)
 	static void prefilterXSobel(Mat& src, Mat& dst, const int preFilterCap)
 	{
@@ -803,9 +1536,9 @@ namespace cp
 	}
 
 	//0: gray image, 1: sobel/CENSUS image
-	void StereoBase::prefilter(Mat& targetImage, Mat& referenceImage)
+	void StereoBase::computePrefilter(Mat& targetImage, Mat& referenceImage)
 	{
-		const bool isColor = (PixelMatchingMethod % 2 == 1);
+		const bool isColor = (pixelMatchingMethod % 2 == 1);
 		if (isColor)
 		{
 			if (targetImage.channels() != 3 || referenceImage.channels() != 3)
@@ -827,7 +1560,7 @@ namespace cp
 			temp[1].copyTo(reference[2]);
 			temp[2].copyTo(reference[4]);
 
-			if (PixelMatchingMethod == CENSUS3x3Color)
+			if (pixelMatchingMethod == CENSUS3x3Color)
 			{
 				censusTrans8U_3x3(target[0], target[1]);
 				censusTrans8U_3x3(reference[0], reference[1]);
@@ -836,7 +1569,7 @@ namespace cp
 				censusTrans8U_3x3(target[4], target[5]);
 				censusTrans8U_3x3(reference[4], reference[5]);
 			}
-			else if (PixelMatchingMethod == CENSUS9x1Color)
+			else if (pixelMatchingMethod == CENSUS9x1Color)
 			{
 				censusTrans8U_9x1(target[0], target[1]);
 				censusTrans8U_9x1(reference[0], reference[1]);
@@ -845,7 +1578,7 @@ namespace cp
 				censusTrans8U_9x1(target[4], target[5]);
 				censusTrans8U_9x1(reference[4], reference[5]);
 			}
-			else if (PixelMatchingMethod == CENSUS5x5Color)
+			else if (pixelMatchingMethod == CENSUS5x5Color)
 			{
 				censusTrans32S_5x5(target[0], target[1]);
 				censusTrans32S_5x5(reference[0], reference[1]);
@@ -854,7 +1587,7 @@ namespace cp
 				censusTrans32S_5x5(target[4], target[5]);
 				censusTrans32S_5x5(reference[4], reference[5]);
 			}
-			else if (PixelMatchingMethod == CENSUS7x5Color)
+			else if (pixelMatchingMethod == CENSUS7x5Color)
 			{
 				censusTrans32S_7x5(target[0], target[1]);
 				censusTrans32S_7x5(reference[0], reference[1]);
@@ -883,22 +1616,22 @@ namespace cp
 			if (referenceImage.channels() == 3) cvtColor(referenceImage, reference[0], COLOR_BGR2GRAY);
 			else referenceImage.copyTo(reference[0]);
 
-			if (PixelMatchingMethod == CENSUS3x3)
+			if (pixelMatchingMethod == CENSUS3x3)
 			{
 				censusTrans8U_3x3(target[0], target[1]);
 				censusTrans8U_3x3(reference[0], reference[1]);
 			}
-			else if (PixelMatchingMethod == CENSUS9x1)
+			else if (pixelMatchingMethod == CENSUS9x1)
 			{
 				censusTrans8U_9x1(target[0], target[1]);
 				censusTrans8U_9x1(reference[0], reference[1]);
 			}
-			else if (PixelMatchingMethod == CENSUS5x5)
+			else if (pixelMatchingMethod == CENSUS5x5)
 			{
 				censusTrans32S_5x5(target[0], target[1]);
 				censusTrans32S_5x5(reference[0], reference[1]);
 			}
-			else if (PixelMatchingMethod == CENSUS7x5)
+			else if (pixelMatchingMethod == CENSUS7x5)
 			{
 				censusTrans32S_7x5(target[0], target[1]);
 				censusTrans32S_7x5(reference[0], reference[1]);
@@ -913,6 +1646,31 @@ namespace cp
 		}
 	}
 
+	void cvtColorBGR2GRAY_AVG(Mat& src, Mat& dest)
+	{
+		CV_Assert(src.channels() == 3);
+		dest.create(src.size(), CV_8U);
+		const int size = src.size().area();
+		uchar* s = src.ptr<uchar>();
+		uchar* d = dest.ptr<uchar>();
+		for (int i = 0; i < size; i++)
+		{
+			d[i] = saturate_cast<uchar>((s[3 * i + 0] + s[3 * i + 1] + s[3 * i + 2]) / 3.f);
+		}
+	}
+
+	void StereoBase::computeGuideImageForAggregation(Mat& input)
+	{
+		cvtColorBGR2GRAY_AVG(input, guideImage);
+		//cvtColor(input, guideImage, COLOR_BGR2BGRA);
+		//Mat temp;
+		//cv::decolor(input, guideImage, temp);
+		//guidedImageFilter(guideImage, guideImage, guideImage, 2, 2);
+		//guidedImageFilter(guideImage, guideImage, guideImage, 2, 2);
+	}
+#pragma endregion
+
+#pragma region cost computation of pixel matching
 
 	inline __m256i _mm256_squared_distance_epu8(__m256i src1, __m256i src2)
 	{
@@ -1545,7 +2303,7 @@ namespace cp
 
 	}
 
-	string StereoBase::getPixelMatchingMethodName(int method)
+	string StereoBase::getCostMethodName(const Cost method)
 	{
 		string mes;
 		switch (method)
@@ -1591,12 +2349,17 @@ namespace cp
 		return mes;
 	}
 
-	void StereoBase::setPixelColorDistance(const ColorDistance method)
+	void  StereoBase::setCostMethod(const Cost method)
+	{
+		pixelMatchingMethod = method;
+	}
+
+	void StereoBase::setCostColorDistance(const ColorDistance method)
 	{
 		color_distance = method;
 	}
 
-	std::string StereoBase::getColorDistanceName(ColorDistance method)
+	std::string StereoBase::getCostColorDistanceName(ColorDistance method)
 	{
 		std::string ret;
 		switch (method)
@@ -1616,68 +2379,68 @@ namespace cp
 		return ret;
 	}
 
-	void StereoBase::getPixelMatchingCost(const int d, Mat& dest)
+	void StereoBase::computePixelMatchingCost(const int d, Mat& dest)
 	{
 		//gray
-		if (PixelMatchingMethod == SD)
+		if (pixelMatchingMethod == SD)
 		{
 			SDTruncate_8UC1(target[0], reference[0], d, pixelMatchErrorCap, dest);
 		}
-		else if (PixelMatchingMethod == SDEdge)
+		else if (pixelMatchingMethod == SDEdge)
 		{
 			SDTruncate_8UC1(target[1], reference[1], d, pixelMatchErrorCap, dest);
 		}
-		else if (PixelMatchingMethod == SDEdgeBlend)
+		else if (pixelMatchingMethod == SDEdgeBlend)
 		{
 			SDTruncateBlend_8UC1(target[0], reference[0], target[1], reference[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
 		}
-		else if (PixelMatchingMethod == AD)
+		else if (pixelMatchingMethod == AD)
 		{
 			ADTruncate_8UC1(target[0], reference[0], d, pixelMatchErrorCap, dest);
 		}
-		else if (PixelMatchingMethod == ADEdge)
+		else if (pixelMatchingMethod == ADEdge)
 		{
 			ADTruncate_8UC1(target[1], reference[1], d, pixelMatchErrorCap, dest);
 		}
-		else if (PixelMatchingMethod == ADEdgeBlend)
+		else if (pixelMatchingMethod == ADEdgeBlend)
 		{
 			ADTruncateBlend_8UC1(target[0], reference[0], target[1], reference[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
 		}
-		else if (PixelMatchingMethod == BT)
+		else if (pixelMatchingMethod == BT)
 		{
 			BTTruncate_8UC1(target[0], reference[0], d, pixelMatchErrorCap, dest);
 		}
-		else if (PixelMatchingMethod == BTEdge)
+		else if (pixelMatchingMethod == BTEdge)
 		{
 			BTTruncate_8UC1(target[1], reference[1], d, pixelMatchErrorCap, dest);
 		}
-		else if (PixelMatchingMethod == BTEdgeBlend)
+		else if (pixelMatchingMethod == BTEdgeBlend)
 		{
 			BTTruncateBlend_8UC1(target[0], reference[0], target[1], reference[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
 		}
-		else if (PixelMatchingMethod == BTFull)
+		else if (pixelMatchingMethod == BTFull)
 		{
 			BTFullTruncate_8UC1(target[0], reference[0], d, pixelMatchErrorCap, dest);
 		}
-		else if (PixelMatchingMethod == BTFullEdge)
+		else if (pixelMatchingMethod == BTFullEdge)
 		{
 			BTFullTruncate_8UC1(target[1], reference[1], d, pixelMatchErrorCap, dest);
 		}
-		else if (PixelMatchingMethod == BTFullEdgeBlend)
+		else if (pixelMatchingMethod == BTFullEdgeBlend)
 		{
 			BTFullTruncateBlend_8UC1(target[0], reference[0], target[1], reference[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
 		}
-		else if (PixelMatchingMethod == CENSUS3x3 || PixelMatchingMethod == CENSUS9x1)
+		else if (pixelMatchingMethod == CENSUS3x3 || pixelMatchingMethod == CENSUS9x1)
 		{
 			HammingDistance32S_8UC1<uchar>(target[1], reference[1], d, dest);
 		}
-		else if (PixelMatchingMethod == CENSUS5x5 || PixelMatchingMethod == CENSUS7x5)
+		else if (pixelMatchingMethod == CENSUS5x5 || pixelMatchingMethod == CENSUS7x5)
 		{
 			HammingDistance32S_8UC1<int>(target[1], reference[1], d, dest);
 		}
 
 		//color
-		else if (PixelMatchingMethod == SDColor)
+		else if (pixelMatchingMethod == SDColor)
 		{
 			Mat temp;
 			SDTruncate_8UC1(target[0], reference[0], d, pixelMatchErrorCap, dest);
@@ -1692,7 +2455,7 @@ namespace cp
 			if (color_distance == AVG)divide(dest, 3, dest);
 
 		}
-		else if (PixelMatchingMethod == SDEdgeColor)
+		else if (pixelMatchingMethod == SDEdgeColor)
 		{
 			Mat temp;
 			SDTruncate_8UC1(target[1], reference[1], d, pixelMatchErrorCap, dest);
@@ -1706,7 +2469,7 @@ namespace cp
 			else if (color_distance == MAX)max(dest, temp, dest);
 			if (color_distance == AVG)divide(dest, 3, dest);
 		}
-		else if (PixelMatchingMethod == SDEdgeBlendColor)
+		else if (pixelMatchingMethod == SDEdgeBlendColor)
 		{
 			Mat temp;
 			SDTruncateBlend_8UC1(target[0], reference[0], target[1], reference[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
@@ -1720,7 +2483,7 @@ namespace cp
 			else if (color_distance == MAX)max(dest, temp, dest);
 			if (color_distance == AVG)divide(dest, 3, dest);
 		}
-		else if (PixelMatchingMethod == ADColor)
+		else if (pixelMatchingMethod == ADColor)
 		{
 			Mat temp;
 			ADTruncate_8UC1(target[0], reference[0], d, pixelMatchErrorCap, dest);
@@ -1734,7 +2497,7 @@ namespace cp
 			else if (color_distance == MAX)max(dest, temp, dest);
 			if (color_distance == AVG)divide(dest, 3, dest);
 		}
-		else if (PixelMatchingMethod == ADEdgeColor)
+		else if (pixelMatchingMethod == ADEdgeColor)
 		{
 			Mat temp;
 			ADTruncate_8UC1(target[1], reference[1], d, pixelMatchErrorCap, dest);
@@ -1748,7 +2511,7 @@ namespace cp
 			else if (color_distance == MAX)max(dest, temp, dest);
 			if (color_distance == AVG)divide(dest, 3, dest);
 		}
-		else if (PixelMatchingMethod == ADEdgeBlendColor)
+		else if (pixelMatchingMethod == ADEdgeBlendColor)
 		{
 			Mat temp;
 			ADTruncateBlend_8UC1(target[0], reference[0], target[1], reference[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
@@ -1762,7 +2525,7 @@ namespace cp
 			else if (color_distance == MAX)max(dest, temp, dest);
 			if (color_distance == AVG)divide(dest, 3, dest);
 		}
-		else if (PixelMatchingMethod == BTColor)
+		else if (pixelMatchingMethod == BTColor)
 		{
 			Mat temp;
 			BTTruncate_8UC1(target[0], reference[0], d, pixelMatchErrorCap, dest);
@@ -1776,7 +2539,7 @@ namespace cp
 			else if (color_distance == MAX)max(dest, temp, dest);
 			if (color_distance == AVG)divide(dest, 3, dest);
 		}
-		else if (PixelMatchingMethod == BTEdgeColor)
+		else if (pixelMatchingMethod == BTEdgeColor)
 		{
 			Mat temp;
 			BTTruncate_8UC1(target[1], reference[1], d, pixelMatchErrorCap, dest);
@@ -1787,7 +2550,7 @@ namespace cp
 			BTTruncate_8UC1(target[5], reference[5], d, pixelMatchErrorCap, temp);
 			add(dest, temp, dest);
 		}
-		else if (PixelMatchingMethod == BTEdgeBlendColor)
+		else if (pixelMatchingMethod == BTEdgeBlendColor)
 		{
 			Mat temp;
 			BTTruncateBlend_8UC1(target[0], reference[0], target[1], reference[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
@@ -1801,7 +2564,7 @@ namespace cp
 			else if (color_distance == MAX)max(dest, temp, dest);
 			if (color_distance == AVG)divide(dest, 3, dest);
 		}
-		else if (PixelMatchingMethod == BTFullColor)
+		else if (pixelMatchingMethod == BTFullColor)
 		{
 			Mat temp;
 			BTFullTruncate_8UC1(target[0], reference[0], d, pixelMatchErrorCap, dest);
@@ -1815,7 +2578,7 @@ namespace cp
 			else if (color_distance == MAX)max(dest, temp, dest);
 			if (color_distance == AVG)divide(dest, 3, dest);
 		}
-		else if (PixelMatchingMethod == BTFullEdgeColor)
+		else if (pixelMatchingMethod == BTFullEdgeColor)
 		{
 			Mat temp;
 			BTFullTruncate_8UC1(target[1], reference[1], d, pixelMatchErrorCap, dest);
@@ -1829,7 +2592,7 @@ namespace cp
 			else if (color_distance == MAX)max(dest, temp, dest);
 			if (color_distance == AVG)divide(dest, 3, dest);
 		}
-		else if (PixelMatchingMethod == BTFullEdgeBlendColor)
+		else if (pixelMatchingMethod == BTFullEdgeBlendColor)
 		{
 			Mat temp;
 			BTFullTruncateBlend_8UC1(target[0], reference[0], target[1], reference[1], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, dest);
@@ -1840,7 +2603,7 @@ namespace cp
 			BTFullTruncateBlend_8UC1(target[4], reference[4], target[5], reference[5], d, pixelMatchErrorCap, costAlphaImageSobel / 100.f, temp);
 			add(dest, temp, dest);
 		}
-		else if (PixelMatchingMethod == CENSUS3x3Color || PixelMatchingMethod == CENSUS9x1Color)
+		else if (pixelMatchingMethod == CENSUS3x3Color || pixelMatchingMethod == CENSUS9x1Color)
 		{
 			Mat temp;
 			HammingDistance32S_8UC1<uchar>(target[1], reference[1], d, dest);
@@ -1854,7 +2617,7 @@ namespace cp
 			else if (color_distance == MAX)max(dest, temp, dest);
 			if (color_distance == AVG)divide(dest, 3, dest);
 		}
-		else if (PixelMatchingMethod == CENSUS5x5Color || PixelMatchingMethod == CENSUS7x5Color)
+		else if (pixelMatchingMethod == CENSUS5x5Color || pixelMatchingMethod == CENSUS7x5Color)
 		{
 			Mat temp;
 			HammingDistance32S_8UC1<int>(target[1], reference[1], d, dest);
@@ -1933,7 +2696,7 @@ namespace cp
 		}
 	}
 
-	void StereoBase::textureAlpha(Mat& src, Mat& dest, const int th1, const int th2, const int r)
+	void StereoBase::computetextureAlpha(Mat& src, Mat& dest, const int th1, const int th2, const int r)
 	{
 		if (dest.empty())dest.create(src.size(), CV_8U);
 		Mat temp;
@@ -1963,12 +2726,12 @@ namespace cp
 		//imshow("texture", dest);
 	}
 
-	void StereoBase::getPixelMatchingCostADAlpha(vector<Mat>& t, vector<Mat>& r, Mat& alpha, const int d, Mat& dest)
+	void StereoBase::computePixelMatchingCostADAlpha(vector<Mat>& t, vector<Mat>& r, Mat& alpha, const int d, Mat& dest)
 	{
 		;
 	}
 
-	void StereoBase::getPixelMatchingCostBTAlpha(vector<Mat>& target, vector<Mat>& refference, Mat& alpha, const int d, Mat& dest)
+	void StereoBase::computePixelMatchingCostBTAlpha(vector<Mat>& target, vector<Mat>& refference, Mat& alpha, const int d, Mat& dest)
 	{
 		;
 	}
@@ -1976,7 +2739,7 @@ namespace cp
 
 #pragma region cost aggregation
 
-	string StereoBase::getAggregationMethodName(int method)
+	string StereoBase::getAggregationMethodName(const Aggregation method)
 	{
 		string mes;
 		switch (method)
@@ -1984,7 +2747,7 @@ namespace cp
 		case Box:				mes = "Box"; break;
 		case BoxShiftable:		mes = "BoxShiftable"; break;
 		case Gaussian:			mes = "Gauss"; break;
-		case GaussShiftable:	mes = "GaussShiftable"; break;
+		case GaussianShiftable:	mes = "GaussShiftable"; break;
 		case Guided:			mes = "Guided"; break;
 		case CrossBasedBox:		mes = "CrossBasedBox"; break;
 		case Bilateral:			mes = "Bilateral"; break;
@@ -1994,7 +2757,12 @@ namespace cp
 		return mes;
 	}
 
-	void StereoBase::getCostAggregation(Mat& src, Mat& dest, cv::InputArray guideImage)
+	void StereoBase::setAggregationMethod(const Aggregation method)
+	{
+		aggregationMethod = method;
+	}
+
+	void StereoBase::computeCostAggregation(Mat& src, Mat& dest, cv::InputArray guideImage)
 	{
 		const float sigma_s_h = (float)aggregationSigmaSpace;
 		const float sigma_s_v = (float)aggregationSigmaSpace;
@@ -2005,36 +2773,36 @@ namespace cp
 			//GaussianBlur(dsi,DSI[i],Size(SADWindowSize,SADWindowSize),3);
 			Size kernelSize = Size(2 * aggregationRadiusH + 1, 2 * aggregationRadiusV + 1);
 
-			if (AggregationMethod == Box)
+			if (aggregationMethod == Box)
 			{
 				boxFilter(src, dest, -1, kernelSize);
 			}
-			else if (AggregationMethod == BoxShiftable)
+			else if (aggregationMethod == BoxShiftable)
 			{
 				boxFilter(src, dest, -1, kernelSize);
 				minFilter(dest, dest, aggregationShiftableKernel);
 			}
-			else if (AggregationMethod == Gaussian)
+			else if (aggregationMethod == Gaussian)
 			{
 				GaussianBlur(src, dest, kernelSize, sigma_s_h, sigma_s_v);
 			}
-			else if (AggregationMethod == GaussShiftable)
+			else if (aggregationMethod == GaussianShiftable)
 			{
 				GaussianBlur(src, dest, kernelSize, sigma_s_h, sigma_s_v);
 				minFilter(dest, dest, aggregationShiftableKernel);
 			}
-			else if (AggregationMethod == Guided)
+			else if (aggregationMethod == Guided)
 			{
 				//guidedImageFilter(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps * aggregationGuidedfilterEps,GuidedTypes::GUIDED_SEP_VHI, BoxTypes::BOX_OPENCV, ParallelTypes::NAIVE);
 				//guidedImageFilter(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps * aggregationGuidedfilterEps, GuidedTypes::GUIDED_SEP_VHI_SHARE, BoxTypes::BOX_OPENCV, ParallelTypes::NAIVE);
 				gif[omp_get_thread_num()].filterGuidePrecomputed(src, guide, dest, min(aggregationRadiusH, aggregationRadiusV), float(aggregationGuidedfilterEps * aggregationGuidedfilterEps), GuidedTypes::GUIDED_SEP_VHI_SHARE, ParallelTypes::NAIVE);
 				//guidedImageFilter(src, guide, dest, max(aggregationRadiusH, aggregationRadiusV), aggregationGuidedfilterEps * aggregationGuidedfilterEps, GuidedTypes::GUIDED_SEP_VHI_SHARE, BoxTypes::BOX_OPENCV, ParallelTypes::OMP);
 			}
-			else if (AggregationMethod == CrossBasedBox)
+			else if (aggregationMethod == CrossBasedBox)
 			{
 				clf(src, dest);
 			}
-			else if (AggregationMethod == Bilateral)
+			else if (aggregationMethod == Bilateral)
 			{
 				jointBilateralFilter(src, guide, dest, min(2 * aggregationRadiusH + 1, 2 * aggregationRadiusV + 1), aggregationGuidedfilterEps, sigma_s_h, FILTER_RECTANGLE);
 			}
@@ -2046,7 +2814,7 @@ namespace cp
 	}
 
 	//WTA and optimization
-	void StereoBase::getOptScanline()
+	void StereoBase::computeOptimizeScanline()
 	{
 		cout << "opt scan\n";
 		Size size = DSI[0].size();
@@ -2131,7 +2899,7 @@ namespace cp
 		//delete[] vd;
 	}
 
-	void StereoBase::getWTA(vector<Mat>& dsi, Mat& dest, Mat& minimumCostMap)
+	void StereoBase::computeWTA(vector<Mat>& dsi, Mat& dest, Mat& minimumCostMap)
 	{
 		const int imsize = dest.size().area();
 		const int simdsize = get_simd_floor(imsize, 32);
@@ -2269,37 +3037,39 @@ namespace cp
 		}
 	}
 
-	string StereoBase::getSubpixelInterpolationMethodName(const int method)
+
+	string StereoBase::getSubpixelInterpolationMethodName(const SUBPIXEL method)
 	{
 		string mes;
 		switch (method)
 		{
-		case SUBPIXEL_NONE:		mes = "Subpixel None"; break;
-		case SUBPIXEL_QUAD:		mes = "Subpixel Quad"; break;
-		case SUBPIXEL_LINEAR:	mes = "Subpixel Linear"; break;
+		case SUBPIXEL::NONE:		mes = "Subpixel None"; break;
+		case SUBPIXEL::QUAD:		mes = "Subpixel Quad"; break;
+		case SUBPIXEL::LINEAR:	mes = "Subpixel Linear"; break;
 
-		default:				mes = "This subpixel interpolation method is not supported"; break;
+		default:		mes = "This subpixel interpolation method is not supported"; break;
 		}
 		return mes;
 	}
 
-	void StereoBase::subpixelInterpolation(Mat& dest, const int method)
+	void StereoBase::setSubpixelInterpolationMethodName(const SUBPIXEL method)
 	{
-		if (method == SUBPIXEL_NONE)return;
+		subpixelInterpolationMethod = (int)method;
+	}
 
-		short* disp = dest.ptr<short>(0);
-		const int imsize = dest.size().area();
-		if (method == SUBPIXEL_QUAD)
+	void StereoBase::subpixelInterpolation(Mat& disparity16, const SUBPIXEL method)
+	{
+		if (method == SUBPIXEL::NONE)return;
+
+		short* disp = disparity16.ptr<short>();
+		const int imsize = disparity16.size().area();
+		if (method == SUBPIXEL::QUAD)
 		{
 			for (int j = 0; j < imsize; j++)
 			{
 				short d = disp[j] >> 4;
 				int l = d - minDisparity;
-				if (l<1 || l>numberOfDisparities - 2)
-				{
-					;
-				}
-				else
+				if (0 < l && l < numberOfDisparities - 1)
 				{
 					int f = DSI[l].data[j];
 					int p = DSI[l + 1].data[j];
@@ -2309,65 +3079,54 @@ namespace cp
 					if (md != 0)
 					{
 						const float dd = (float)d - (float)(p - m) / (float)md;
-						disp[j] = (short)(16.f * dd + 0.5f);
-						//disp[j] = saturate_cast<short>(16.0 * dd);
+
+						disp[j] = saturate_cast<short>(16.f * dd);
 					}
 				}
 			}
 		}
-		else if (method == SUBPIXEL_LINEAR)
+		else if (method == SUBPIXEL::LINEAR)
 		{
 			for (int j = 0; j < imsize; j++)
 			{
 				short d = disp[j] >> 4;
 				int l = d - minDisparity;
-				if (l<1 || l>numberOfDisparities - 2)
+				if (0 < l && l < numberOfDisparities - 1)
 				{
-					;
-				}
-				else
-				{
-					const double m1 = (double)DSI[l].data[j];
-					const double m3 = (double)DSI[l + 1].data[j];
-					const double m2 = (double)DSI[l - 1].data[j];
-					const double m31 = m3 - m1;
-					const double m21 = m2 - m1;
-					double md;
+					const float m1 = (float)DSI[l].data[j];
+					const float m3 = (float)DSI[l + 1].data[j];
+					const float m2 = (float)DSI[l - 1].data[j];
+					const float m31 = m3 - m1;
+					const float m21 = m2 - m1;
+					float md;
 
 					if (m2 > m3)
 					{
-						md = 0.5 - 0.25 * ((m31 * m31) / (m21 * m21) + m31 / m21);
+						md = 0.5f - 0.25f * ((m31 * m31) / (m21 * m21) + m31 / m21);
 					}
 					else
 					{
-						md = -(0.5 - 0.25 * ((m21 * m21) / (m31 * m31) + m21 / m31));
+						md = -(0.5f - 0.25f * ((m21 * m21) / (m31 * m31) + m21 / m31));
 
 					}
 
-					disp[j] = (short)(16.0 * ((double)d + md) + 0.5);
+					disp[j] = saturate_cast<short>(16.f * (float)d + md);
 				}
 			}
 		}
 	}
 
+
 	void StereoBase::fastLRCheck(Mat& dest)
 	{
 		Mat dispR = Mat::zeros(dest.size(), CV_16S);
 		Mat disp8(dest.size(), CV_16S);
-		//dest.convertTo(disp8,CV_16S,1.0/16,0.5);
 		const int imsize = dest.size().area();
 
-		short* dddd = dest.ptr<short>(0);
-		short* d8 = disp8.ptr<short>(0);
-		const double div = 1.0 / 16.0;
-		for (int i = 0; i < dest.size().area(); i++)
-		{
-			d8[i] = (short)(dddd[i] * div + 0.5);
-		}
+		dest.convertTo(disp8, CV_16S, 1.0 / 16.0);
 
 		short* disp = disp8.ptr<short>(0);
 		short* dispr = dispR.ptr<short>(0);
-
 
 		disp += minDisparity + numberOfDisparities;
 		dispr += minDisparity + numberOfDisparities;
@@ -2391,35 +3150,29 @@ namespace cp
 		dest.setTo(0, mask);
 	}
 
-	void StereoBase::fastLRCheck(Mat& costMap, Mat& dest)
+	void StereoBase::fastLRCheck(Mat& costMap, Mat& srcdest)
 	{
-		Mat dispR = Mat::zeros(dest.size(), CV_16S);
-		Mat disp8(dest.size(), CV_16S);
+		Mat dispR = Mat::zeros(srcdest.size(), CV_16S);
+		Mat disp8(srcdest.size(), CV_16S);
 		//dest.convertTo(disp8,CV_16S,1.0/16,0.5);
-		const int imsize = dest.size().area();
+		const int imsize = srcdest.size().area();
 
-		short* dddd = dest.ptr<short>(0);
-		short* d8 = disp8.ptr<short>(0);
-		const double div = 1.0 / 16.0;
-		for (int i = 0; i < dest.size().area(); i++)
-		{
-			d8[i] = (short)(dddd[i] * div + 0.5);
-		}
+		srcdest.convertTo(disp8, CV_16S, 1.0 / 16.0);
 		if (isProcessLBorder)
 		{
-			const int maxval = minDisparity + numberOfDisparities;
+			const int disparity_max = minDisparity + numberOfDisparities;
 			for (int j = 0; j < disp8.rows; j++)
 			{
 				short* dst = disp8.ptr<short>(j);
 				memset(dst, 0, sizeof(short) * minDisparity + 1);
-				for (int i = minDisparity + 1; i < maxval; i++)
+				for (int i = minDisparity + 1; i < disparity_max; i++)
 				{
 					dst[i] = (dst[i] >= i) ? 0 : dst[i];
 				}
 			}
 		}
 
-		Mat costMapR(dest.size(), CV_8U);
+		Mat costMapR(srcdest.size(), CV_8U);
 		costMapR.setTo(255);
 
 		short* disp = disp8.ptr<short>(0);
@@ -2448,11 +3201,11 @@ namespace cp
 
 		if (isProcessLBorder)
 		{
-			const int maxval = minDisparity + numberOfDisparities;
+			const int disparity_max = minDisparity + numberOfDisparities;
 			for (int j = 0; j < disp8.rows; j++)
 			{
 				short* dst = disp8.ptr<short>(j);
-				for (int i = minDisparity + 1; i < maxval; i++)
+				for (int i = minDisparity + 1; i < disparity_max; i++)
 				{
 					short d = dst[i];
 					if (d != 0)
@@ -2467,50 +3220,126 @@ namespace cp
 
 		Mat mask;
 		compare(disp8, 0, mask, cv::CMP_EQ);
-		dest.setTo(0, mask);
+		srcdest.setTo(0, mask);
 	}
+
+	std::string StereoBase::getLRCheckMethodName(const LRCHECK method)
+	{
+		string ret = "no support in LRCheckMethod";
+		switch (method)
+		{
+		case LRCHECK::NONE:				ret = "NONE"; break;
+		case LRCHECK::WITH_MINCOST:		ret = "WITH_MINCOST"; break;
+		case LRCHECK::WITHOUT_MINCOST:	ret = "WITHOUT_MINCOST"; break;
+		default:
+			break;
+		}
+		return ret;
+	}
+
+	void StereoBase::setLRCheckMethod(const LRCHECK method)
+	{
+		LRCheckMethod = (int)method;
+	}
+
 
 	void StereoBase::minCostFilter(Mat& minCostMap, Mat& dest)
 	{
-		if (isMinCostFilter)
+		const int imsize = dest.size().area();
+		Mat disptemp = dest.clone();
+		const int step = dest.cols;
+		short* disptempPtr = disptemp.ptr<short>();
+		short* destPtr = dest.ptr<short>(0);
+		uchar* costPtr = minCostMap.ptr<uchar>();
+		//for(int j=0;j<imsize-step;j++)
+		for (int j = 0; j < imsize; j++)
 		{
-			const int imsize = dest.size().area();
-			Mat disptemp = dest.clone();
-			const int step = dest.cols;
-			short* disptempPtr = disptemp.ptr<short>(0);
-			short* destPtr = dest.ptr<short>(0);
-			uchar* costPtr = minCostMap.ptr<uchar>();
-			//for(int j=0;j<imsize-step;j++)
-			for (int j = 0; j < imsize; j++)
+			/*if( disp[0]!=0 && disp[step]!=0 && abs(disp[step]-disp[0])>=16)
 			{
-				/*if( disp[0]!=0 && disp[step]!=0 && abs(disp[step]-disp[0])>=16)
+			if(cost[step]<cost[0])
+			{
+			disp[0]=disp2[step];
+			}
+			else
+			{
+			disp[step]=disp2[0];
+			}
+			}*/
+			if (destPtr[0] != 0 && destPtr[-1] != 0 && abs(destPtr[-1] - destPtr[0]) >= 16)
+			{
+				if (costPtr[-1] < costPtr[0])
 				{
-				if(cost[step]<cost[0])
-				{
-				disp[0]=disp2[step];
+					destPtr[0] = disptempPtr[-1];
 				}
 				else
 				{
-				disp[step]=disp2[0];
+					destPtr[-1] = disptempPtr[0];
 				}
-				}*/
-				if (destPtr[0] != 0 && destPtr[-1] != 0 && abs(destPtr[-1] - destPtr[0]) >= 16)
-				{
-					if (costPtr[-1] < costPtr[0])
-					{
-						destPtr[0] = disptempPtr[-1];
-					}
-					else
-					{
-						destPtr[-1] = disptempPtr[0];
-					}
-				}
-
-				destPtr++;
-				disptempPtr++;
-				costPtr++;
 			}
+
+			destPtr++;
+			disptempPtr++;
+			costPtr++;
 		}
+	}
+
+	string StereoBase::getHollFillingMethodName(const HOLE_FILL method)
+	{
+		string ret = "not support getHollFillingMethod";
+		switch (method)
+		{
+		case NONE:					ret = "NONE"; break;
+		case NEAREST_MIN_SCANLINE:	ret = "NEAREST_MIN_SCANLINE"; break;
+		case METHOD2:				ret = "Method 2(under debug)"; break;
+		case METHOD3:				ret = "Method 3(under debug)"; break;
+		case METHOD4:				ret = "Method 4(under debug)"; break;
+		default:
+			break;
+		}
+		return ret;
+	}
+
+	void StereoBase::computeValidRatio(const Mat& disparityMap)
+	{
+		valid_ratio = 100.0 * countNonZero(disparityMap) / disparityMap.size().area();
+	}
+
+	void StereoBase::setHoleFiillingMethodName(const HOLE_FILL method)
+	{
+		holeFillingMethod = method;
+	}
+
+	double StereoBase::getValidRatio()
+	{
+		return valid_ratio;
+	}
+
+
+	std::string StereoBase::getRefinementMethodName(const REFINEMENT method)
+	{
+		string ret = "no support RefinementMethod";
+		switch (method)
+		{
+		case REFINEMENT::NONE:				ret = "NONE"; break;
+		case REFINEMENT::GIF_JNF:			ret = "GIF_JNF"; break;
+		case REFINEMENT::WGIF_GAUSS_JNF:	ret = "WGIF_GAUSS_JNF"; break;
+		case REFINEMENT::JBF_JNF:			ret = "JBF_JNF"; break;
+		case REFINEMENT::WJBF_GAUSS_JNF:	ret = "WJBF_GAUSS_JNF"; break;
+		case REFINEMENT::WMF:				ret = "WMF"; break;
+		default:
+			break;
+		}
+		return ret;
+	}
+
+	void StereoBase::setRefinementMethod(const REFINEMENT method, const int refinementR, const float refinementSigmaRange, const float refinementSigmaSpace, const int jointNearestR)
+	{
+		this->refinementMethod = (int)method;
+
+		if (refinementR >= 0) this->refinementR = refinementR;
+		if (refinementSigmaRange >= 0.f)this->refinementSigmaRange = refinementSigmaRange;
+		if (refinementSigmaSpace >= 0.f)this->refinementSigmaSpace = refinementSigmaSpace;
+		if (jointNearestR >= 0)this->jointNearestR = jointNearestR;
 	}
 
 
@@ -2523,7 +3352,7 @@ namespace cp
 			const short d = ((minDisparity + i) << 4);
 			short* dis = disp.ptr<short>(0);
 			uchar* pDSI = DSI[i].data;
-			uchar* cost = costMap.data;
+			uchar* cost = minCostMap.data;
 			uchar* r = rmap.data;
 			for (int j = imsize; j--; pDSI++, cost++, dis++)
 			{
@@ -2543,37 +3372,6 @@ namespace cp
 		}
 		rmap.convertTo(weightMap, CV_32F, 1.0 / 255);
 		Mat rshow;	applyColorMap(rmap, rshow, 2); imshow("rmap", rshow);
-	}
-
-	void StereoBase::refineFromCost(Mat& src, Mat& dest)
-	{
-		short* disp = src.ptr<short>(0);
-		const int imsize = dest.size().area();
-		for (int j = 0; j < imsize; j++)
-		{
-			short d = (short)(disp[j] / 16.0 + 0.5);
-			int l = d - minDisparity;
-			if (l<1 || l>numberOfDisparities - 2)
-			{
-				;
-			}
-			else
-			{
-				int f = DSI[l].data[j];
-				int p = DSI[l + 1].data[j];
-				int m = DSI[l - 1].data[j];
-				if (f > p || f > m)
-				{
-					int md = ((p + m - (f << 1)) << 1);
-					if (md != 0)
-					{
-						double dd = (double)d - (double)(p - m) / (double)md;
-						disp[j] = (short)(16.0 * dd + 0.5);
-					}
-					//	disp[j]=0;
-				}
-			}
-		}
 	}
 
 	template <class srcType>
@@ -2626,14 +3424,12 @@ namespace cp
 
 	void singleDisparityLRCheck(Mat& dest, double amp, int thresh, int minDisparity, int numberOfDisparities)
 	{
-
 		if (dest.type() == CV_8U)
 			singleDisparityLRCheck_<uchar>(dest, amp, thresh, minDisparity, numberOfDisparities);
 		if (dest.type() == CV_16S)
 			singleDisparityLRCheck_<short>(dest, amp, thresh, minDisparity, numberOfDisparities);
 		if (dest.type() == CV_16U)
 			singleDisparityLRCheck_<unsigned short>(dest, amp, thresh, minDisparity, numberOfDisparities);
-
 	}
 
 	template <class srcType>
@@ -3004,760 +3800,4 @@ namespace cp
 	}
 #pragma endregion
 
-	void cvtColorBGR2GRAY_AVG(Mat& src, Mat& dest)
-	{
-		CV_Assert(src.channels() == 3);
-		dest.create(src.size(), CV_8U);
-		const int size = src.size().area();
-		uchar* s = src.ptr<uchar>();
-		uchar* d = dest.ptr<uchar>();
-		for (int i = 0; i < size; i++)
-		{
-			d[i] = saturate_cast<uchar>((s[3 * i + 0] + s[3 * i + 1] + s[3 * i + 2]) / 3.f);
-		}
-	}
-
-	void StereoBase::computeGuideImageForAggregation(Mat& input)
-	{
-		cvtColorBGR2GRAY_AVG(input, guideImage);
-		//cvtColor(input, guideImage, COLOR_BGR2BGRA);
-		//Mat temp;
-		//cv::decolor(input, guideImage, temp);
-		//guidedImageFilter(guideImage, guideImage, guideImage, 2, 2);
-		//guidedImageFilter(guideImage, guideImage, guideImage, 2, 2);
-	}
-
-	//main function
-	void StereoBase::matching(Mat& leftim, Mat& rightim, Mat& destDisparityMap, const bool isFeedback)
-	{
-		if (destDisparityMap.empty() || leftim.size() != destDisparityMap.size()) destDisparityMap.create(leftim.size(), CV_16S);
-		minCostMap.create(leftim.size(), CV_8U);
-		minCostMap.setTo(255);
-		if ((int)DSI.size() < numberOfDisparities)DSI.resize(numberOfDisparities);
-
-#pragma region matching:prefilter
-		computeGuideImageForAggregation(leftim);
-
-		{
-#ifdef TIMER_STEREO_BASE
-			Timer t("pre filter");
-#endif
-			prefilter(leftim, rightim);
-		}
-#pragma endregion
-#pragma region matching:pixelmatch and aggregation
-		{
-#ifdef TIMER_STEREO_BASE
-			Timer t("Cost computation & aggregation");
-#endif
-			if (AggregationMethod == CrossBasedBox) clf.makeKernel(guideImage, aggregationRadiusH, (int)aggregationGuidedfilterEps, 0);
-
-#pragma omp parallel for
-			for (int i = 0; i < numberOfDisparities; i++)
-			{
-				const int d = minDisparity + i;
-				getPixelMatchingCost(d, DSI[i]);
-
-				if (isFeedback)addCostIterativeFeedback(DSI[i], d, destDisparityMap, feedbackFunction, feedbackClip, feedbackAmp);
-				getCostAggregation(DSI[i], DSI[i], guideImage);
-			}
-		}
-#pragma endregion
-#pragma region matching:optimization and WTA
-		{
-#ifdef TIMER_STEREO_BASE
-			Timer t("Cost Optimization");
-#endif
-			if (P1 != 0 && P2 != 0)
-				getOptScanline();
-		}
-
-		{
-#ifdef TIMER_STEREO_BASE
-			Timer t("DisparityComputation");
-#endif
-			getWTA(DSI, destDisparityMap, minCostMap);
-		}
-#pragma endregion
-#pragma region matching:postfiltering
-		{
-#ifdef TIMER_STEREO_BASE
-			Timer t("===Post Filterings===");
-#endif
-			//medianBlur(dest,dest,3);
-			{
-#ifdef TIMER_STEREO_BASE
-				Timer t("Post: uniqueness");
-#endif
-				uniquenessFilter(minCostMap, destDisparityMap);
-			}
-			//subpix;
-			{
-#ifdef TIMER_STEREO_BASE
-				Timer t("Post: subpix");
-#endif
-				subpixelInterpolation(destDisparityMap, subpixelInterpolationMethod);
-				if (isRangeFilterSubpix) binalyWeightedRangeFilter(destDisparityMap, destDisparityMap, subpixelRangeFilterWindow, (float)subpixelRangeFilterCap);
-			}
-			//R depth map;
-
-			{
-#ifdef TIMER_STEREO_BASE
-				Timer t("Post: LR");
-#endif
-				if (isLRCheck)fastLRCheck(minCostMap, destDisparityMap);
-			}
-			{
-#ifdef TIMER_STEREO_BASE
-				Timer t("Post: mincost");
-#endif
-				minCostFilter(minCostMap, destDisparityMap);
-			}
-			{
-#ifdef TIMER_STEREO_BASE
-				Timer t("Post: filterSpeckles");
-#endif
-				if (isSpeckleFilter)
-					filterSpeckles(destDisparityMap, 0, speckleWindowSize, speckleRange, specklebuffer);
-			}
-		}
-#ifdef TIMER_STEREO_BASE
-		cout << "=====================" << endl;
-#endif
-#pragma endregion
-
-	}
-
-	void StereoBase::operator()(Mat& leftim, Mat& rightim, Mat& dest)
-	{
-		matching(leftim, rightim, dest);
-	}
-
-
-	static void guiStereoMatchingOnMouse(int events, int x, int y, int flags, void* param)
-	{
-		Point* pt = (Point*)param;
-		//if(events==CV_EVENT_LBUTTONDOWN)
-		if (flags & EVENT_FLAG_LBUTTON)
-		{
-			pt->x = x;
-			pt->y = y;
-		}
-	}
-
-	void StereoBase::gui(Mat& leftim, Mat& rightim, Mat& destDisparity, StereoEval& eval)
-	{
-#pragma region setup
-		ConsoleImage ci(Size(640, 680));
-		ci.setFontSize(12);
-		string wname = "";
-		string wname2 = "Disparity Map";
-
-		namedWindow(wname2);
-		moveWindow(wname2, 200, 200);
-		int display_image_depth_alpha = 0; createTrackbar("disp-image: alpha", wname, &display_image_depth_alpha, 100);
-		//pre filter
-		createTrackbar("prefilter: cap", wname, &preFilterCap, 255);
-
-		PixelMatchingMethod = SDEdgeBlend;
-		//PixelMatchingMethod = Pixel_Matching_CENSUS5x5;
-		createTrackbar("pix match: method", wname, &PixelMatchingMethod, Pixel_Matching_Method_Size - 1);
-		createTrackbar("pix match: color method", wname, &color_distance, ColorDistance_Size - 1);
-		createTrackbar("pix match: blend a", wname, &costAlphaImageSobel, 100);
-		pixelMatchErrorCap = preFilterCap;
-		createTrackbar("pix match: err cap", wname, &pixelMatchErrorCap, 255);
-
-		createTrackbar("feedback: function", wname, &feedbackFunction, 2);
-		createTrackbar("feedback: cap", wname, &feedbackClip, 10);
-		int feedbackAmpInt = 5; createTrackbar("feedback: amp*0.1", wname, &feedbackAmpInt, 50);
-
-		//cost computation for texture alpha
-		//createTrackbar("Soble alpha p size", wname, &sobelBlendMapParam_Size, 10);
-		//createTrackbar("Soble alpha p 1", wname, &sobelBlendMapParam1, 255);
-		//createTrackbar("Soble alpha p 2", wname, &sobelBlendMapParam2, 255);
-
-		//AggregationMethod = Aggregation_Gauss;
-		AggregationMethod = Guided;
-		createTrackbar("agg: method", wname, &AggregationMethod, Aggregation_Method_Size - 1);
-		createTrackbar("agg: r width", wname, &aggregationRadiusH, 20);
-		createTrackbar("agg: r height", wname, &aggregationRadiusV, 20);
-		int aggeps = 1; createTrackbar("agg: guide color sigma/eps", wname, &aggeps, 255);
-		int aggss = 100; createTrackbar("agg: guide space sigma", wname, &aggss, 255);
-
-		// disable P1, P2 for optimization(under debug)
-		//createTrackbar("P1", wname, &P1, 20);
-		//createTrackbar("P2", wname, &P2, 20);
-
-		uniquenessRatio = 10;
-		createTrackbar("uniq", wname, &uniquenessRatio, 100);
-		createTrackbar("subpixel RF widow size", wname, &subpixelRangeFilterWindow, 10);
-		createTrackbar("subpixel RF cap", wname, &subpixelRangeFilterCap, 64);
-
-		createTrackbar("LR check disp12", wname, &disp12diff, 100);
-		//int E = (int)(10.0*eps);
-		//createTrackbar("eps",wname,&E,1000);
-
-		//int spsize = 300;
-		speckleWindowSize = 20;
-		createTrackbar("speckleSize", wname, &speckleWindowSize, 1000);
-		speckleRange = 16;
-		createTrackbar("speckleDiff", wname, &speckleRange, 100);
-
-		int occlusionMethod = 1;
-		createTrackbar("occlusionMethod", wname, &occlusionMethod, 3);
-		// disable occlution options (under debug)
-		int occsearch2 = 4;
-		//createTrackbar("occ:s2", wname, &occsearch2, 15);
-		int occth = 17;
-		//createTrackbar("occ:th", wname, &occth, 128);
-		int occsearch = 4;
-		//createTrackbar("occ:s", wname, &occsearch, 15);
-		int occsearchh = 2;
-		//createTrackbar("occ:sH", wname, &occsearchh, 15);
-		int occiter = 0;
-		//createTrackbar("occ:iter", wname, &occiter, 10);
-
-
-		Plot p(Size(640, 240));
-		Plot histp(Size(640, 240));
-		Plot signal(Size(640, 240 * 3));
-		int vh = 0;
-		int diffmode = 0;
-		if (eval.isInit)
-		{
-			namedWindow("signal");
-			createTrackbar("vh", "signal", &vh, 1);
-			createTrackbar("mode", "signal", &diffmode, 2);
-		}
-
-		int bx = 3;
-		createTrackbar("post:subboxR", wname, &bx, 10);
-		int bran = 31;
-		createTrackbar("post:subboxrange", wname, &bran, 64);
-
-		int gr = 3;
-		createTrackbar("ref:guide r", wname, &gr, 10);
-		int ge = 1;
-		createTrackbar("ref:guide e", wname, &ge, 1000);
-		int jnr = 2;
-		createTrackbar("ref:jn r", wname, &jnr, 10);
-
-		int wr = 3;
-		createTrackbar("ref:wr", wname, &wr, 10);
-		int ws = 3;
-		createTrackbar("ref:ws", wname, &wr, 10);
-
-		Point mpt = Point(100, 100);
-		createTrackbar("px", wname, &mpt.x, leftim.cols - 1);
-		createTrackbar("py", wname, &mpt.y, leftim.rows - 1);
-
-		bool isPlotCostFunction = true;
-		bool isPlotSignal = true;
-
-		bool isGrid = true;
-		bool isReCost = false;
-
-		bool isStreak = false;
-		int isRefinement = 0;
-		bool isMedian = false;
-
-		bool isShowGT = false;
-		int maskType = 0;
-		int maskPrec = 0;
-		bool dispColor = false;
-
-		setMouseCallback(wname2, guiStereoMatchingOnMouse, &mpt);
-
-		//CostVolumeRefinement cbf(minDisparity, numberOfDisparities);
-
-		const bool isShowSubpixelDisparityDistribution = true;
-		const bool isShowZeroMask = true;
-		bool isShowDiffFillOcclution = false;
-
-		Mat dispOutput;
-		bool isFeedback = false;
-		Mat weightMap = Mat::ones(leftim.size(), CV_32F);
-		destDisparity.setTo(0);
-#pragma endregion
-		UpdateCheck uck(feedbackFunction, feedbackClip, feedbackAmpInt);
-		int key = 0;
-		while (key != 'q')
-		{
-			//init
-			aggregationGuidedfilterEps = aggeps;
-			aggregationSigmaSpace = aggss;
-			feedbackAmp = feedbackAmpInt * 0.1f;
-
-			ci.clear();
-			if (PixelMatchingMethod % 2 == 0)
-				ci(getPixelMatchingMethodName(PixelMatchingMethod) + ": (i-u)");
-			else
-				ci(getPixelMatchingMethodName(PixelMatchingMethod) + getColorDistanceName((ColorDistance)color_distance) + ": (i-u)|(j-k)");
-			ci(getAggregationMethodName(AggregationMethod) + ": (@-[)");
-			ci(getSubpixelInterpolationMethodName(subpixelInterpolationMethod) + ":  (p)");
-			ci(getOcclusionMethodName(occlusionMethod) + ": (o)");
-			if (isFeedback) ci(CV_RGB(0, 255, 0), "feedback true (f)");
-			else  ci(CV_RGB(255, 0, 0), "feedback false (f)");
-			ci("=======================");
-
-			//body
-			{
-				Timer t("BM", 0, false);
-				matching(leftim, rightim, destDisparity, isFeedback);
-				ci("Total time: %f ms", t.getTime());
-			}
-
-			Mat zeromask;
-			compare(destDisparity, 0, zeromask, cv::CMP_EQ);
-			if (isShowZeroMask)imshow("zero mask", zeromask);
-			ci("valid %f %%", 100.0 * countNonZero(destDisparity) / destDisparity.size().area());
-
-			{
-				Mat base = destDisparity.clone();
-#ifdef TIMER_STEREO_BASE
-				Timer t("Post 2");
-#else 
-				Timer t("Post 2", 0, false);
-#endif
-				if (occlusionMethod == 1)
-				{
-#ifdef TIMER_STEREO_BASE
-					Timer t("occ");
-#endif
-					//fillOcclusion(destDisparity, (minDisparity - 1) * 16);
-					fillOcclusion(destDisparity);
-				}
-				else if (occlusionMethod == 2)
-				{
-					fillOcclusion(destDisparity);
-					{
-						Timer t("border");
-						correctDisparityBoundaryE<short>(destDisparity, leftim, occsearch, occth, destDisparity, occsearch2, 32);
-						ci("post Border: %f", t.getTime());
-					}
-				}
-				else if (occlusionMethod == 3)
-				{
-					fillOcclusion(destDisparity);
-					correctDisparityBoundaryEC<short>(destDisparity, leftim, occsearch, occth, destDisparity);
-
-					Mat dt;
-					transpose(destDisparity, dt);
-					Mat lt; transpose(leftim, lt);
-
-					correctDisparityBoundaryECV<short>(dt, lt, occsearchh, occth, dt);
-					Mat dest2;
-					transpose(dt, dest2);
-					Mat mask = Mat::zeros(destDisparity.size(), CV_8U);
-					cv::rectangle(mask, Rect(40, 40, destDisparity.cols - 80, destDisparity.rows - 80), 255, FILLED);
-					dest2.copyTo(destDisparity, mask);
-				}
-				else if (occlusionMethod == 4)
-				{
-					fillOcclusion(destDisparity);
-
-
-					correctDisparityBoundaryE<short>(destDisparity, leftim, occsearch, 32, destDisparity, occsearch2, 30);
-
-					for (int i = 0; i < occiter; i++)
-					{
-						Mat dt;
-						transpose(destDisparity, dt);
-						Mat lt; transpose(leftim, lt);
-						correctDisparityBoundaryE<short>(dt, lt, 2, 32, destDisparity, occsearch2, 30);
-						transpose(dt, destDisparity);
-						correctDisparityBoundaryE<short>(destDisparity, leftim, occsearch, 32, destDisparity, occsearch2, 30);
-						filterSpeckles(destDisparity, 0, speckleWindowSize, speckleRange);
-						fillOcclusion(destDisparity);
-					}
-				}
-
-				if (isShowDiffFillOcclution)
-				{
-					fillOcclusion(base);
-					absdiff(base, destDisparity, base); Mat mask; compare(base, 0, mask, cv::CMP_NE); imshow("occlusion process diff", mask);
-				}
-
-				//medianBlur(dest,dest,3);
-				if (isStreak)
-				{
-					removeStreakingNoise(destDisparity, destDisparity, 16);
-					removeStreakingNoiseV(destDisparity, destDisparity, 16);
-				}
-				if (isMedian)
-				{
-					medianBlur(destDisparity, destDisparity, 3);
-				}
-				if (isRefinement == 1)
-				{
-					Timer t("refinement", 0, false);
-					//crossBasedAdaptiveBoxFilter(destDisparity, leftim, destDisparity, Size(2 * gr + 1, 2 * gr + 1), ge);
-					//cp::weightedModeFilter(destDisparity, leftim, destDisparity, 4, 2, 10, 500, 0, 2);
-					Mat temp;
-					guidedImageFilter(destDisparity, leftim, temp, gr, (float)ge, GUIDED_SEP_VHI);
-					jointNearestFilter(temp, destDisparity, Size(2 * jnr + 1, 2 * jnr + 1), destDisparity);
-					ci("refine: %f ms", t.getTime());
-				}
-				else if (isRefinement == 2)
-				{
-					weightMap.setTo(1.f);
-					weightMap.setTo(0.5f, zeromask);
-
-					Timer t("refinement", 0, false);
-
-					Mat bim;
-					GaussianBlur(destDisparity, bim, Size(2 * wr + 1, 2 * wr + 1), wr / 3.0);
-					short* disp = destDisparity.ptr<short>(0);
-					short* dispb = bim.ptr<short>(0);
-					float* s = weightMap.ptr<float>();
-					for (int i = 0; i < weightMap.size().area(); i++)
-					{
-						float diff = (disp[i] - dispb[i]) * (disp[i] - dispb[i]) / (-2.f * 16 * 16 * ws * ws);
-						s[i] = exp(diff);
-					}
-
-					Mat a, b;
-					multiply(destDisparity, weightMap, a, 1, CV_32F);
-					guidedImageFilter(a, leftim, a, gr, (float)ge, GUIDED_SEP_VHI);
-					guidedImageFilter(weightMap, leftim, b, gr, (float)ge, GUIDED_SEP_VHI);
-					Mat temp;
-					divide(a, b, temp, 1, CV_16S);
-					jointNearestFilter(temp, destDisparity, Size(2 * jnr + 1, 2 * jnr + 1), destDisparity);
-					ci("refine: %f ms", t.getTime());
-				}
-
-				if (isReCost)
-				{
-					//jointBilateralModeFilter(dest,dest,9,50,255,leftim);
-					//refineFromCost(dest,dest);
-				}
-				ci("a-post time: %f ms", t.getTime());//additional post processing time
-			}
-
-			if (isShowSubpixelDisparityDistribution)
-			{
-				histp.clear();
-				histp.setYLabel("number of pixels");
-				histp.setXLabel("subpixel_16");
-				histp.setKey(0);
-				histp.setGrid(0);
-				histp.setIsDrawMousePosition(false);
-
-				short* d = destDisparity.ptr<short>(0);
-				int hist[16];
-				for (int i = 0; i < 16; i++)hist[i] = 0;
-
-				for (int i = 0; i < destDisparity.size().area(); i++)
-				{
-					if (d[i] > minDisparity * 16 && d[i] < (numberOfDisparities + minDisparity - 1) * 16)
-					{
-						hist[d[i] % 16]++;
-					}
-				}
-
-				for (int i = 0; i < 16; i++)
-				{
-					histp.push_back(i, hist[(i + 8) % 16]);
-				}
-
-				histp.plot("subpixel disparity distribution", false);
-			}
-
-			if (dispColor)cvtDisparityColor(destDisparity, dispOutput, minDisparity, numberOfDisparities - 10, 2, 16);
-			else			cvtDisparityColor(destDisparity, dispOutput, 0, numberOfDisparities, 0);
-
-			//plot cost function
-			if (isPlotCostFunction)
-			{
-				p.clear();
-				p.setYLabel("error");
-				p.setXLabel("disparity");
-				p.setPlotTitle(0, "cost");
-				p.setPlotTitle(1, "answer");
-				p.setPlotTitle(2, "result");
-				p.setGrid(0);
-				p.setIsDrawMousePosition(false);
-				p.setXYRange(0, numberOfDisparities + minDisparity + 1, 0, 64);
-
-				if (eval.isInit)
-				{
-					const int dd = (int)(eval.ground_truth.at<uchar>(mpt.y, mpt.x) / eval.amp + 0.5);
-					const int dd2 = (int)((double)destDisparity.at<short>(mpt.y, mpt.x) / (16.0) + 0.5);
-
-					const double ddd = (eval.ground_truth.at<uchar>(mpt.y, mpt.x) / eval.amp);
-					const double ddd2 = ((double)destDisparity.at<short>(mpt.y, mpt.x) / (16.0));
-					for (int i = 0; i < numberOfDisparities; i++)
-					{
-						p.push_back(i + minDisparity, DSI[i].at<uchar>(mpt.y, mpt.x), 0);
-
-						if (abs(i + minDisparity - dd) <= 1)
-							p.push_back(ddd, 0, 1);
-						else
-							p.push_back(i + minDisparity, 127, 1);
-
-						if (abs(i + minDisparity - dd2) == 0)
-							p.push_back(ddd2, 0, 2);
-						else
-							p.push_back(i + minDisparity, 64, 2);
-					}
-				}
-				else
-				{
-					const int dd2 = (int)((double)destDisparity.at<short>(mpt.y, mpt.x) / (16.0) + 0.5);
-					const double ddd2 = ((double)destDisparity.at<short>(mpt.y, mpt.x) / (16.0));
-					for (int i = 0; i < numberOfDisparities; i++)
-					{
-						p.push_back(i + minDisparity, DSI[i].at<uchar>(mpt.y, mpt.x), 0);
-
-						if (abs(i + minDisparity - dd2) == 0)
-							p.push_back(ddd2, 0, 2);
-						else
-							p.push_back(i + minDisparity, 64, 2);
-					}
-				}
-
-				p.plot("cost function", false);
-
-			}
-
-			//plot signal
-			if (isPlotSignal)
-			{
-				signal.clear();
-				const int mindisp = 15;
-				if (vh == 0)
-				{
-					signal.setXYRange(0, destDisparity.cols - 1, mindisp, 64);
-					signal.setPlot(0, CV_RGB(0, 0, 0), 0, 1, 1);
-					signal.setPlot(1, CV_RGB(255, 0, 0), 0, 1, 1);
-					for (int i = 0; i < destDisparity.cols; i++)
-					{
-						double ddd = (eval.ground_truth.at<uchar>(mpt.y, i) / eval.amp);
-						double ddd2 = ((double)destDisparity.at<short>(mpt.y, i) / (16.0));
-
-						if (diffmode == 1)
-						{
-							ddd = abs(ddd - (eval.ground_truth.at<uchar>(mpt.y, i - 1) / eval.amp));
-							ddd2 = abs(ddd2 - (((double)destDisparity.at<short>(mpt.y, i - 1) / (16.0))));
-						}
-						if (diffmode == 2)
-						{
-							ddd = abs((ddd - (eval.ground_truth.at<uchar>(mpt.y, i - 1) / eval.amp)) - (ddd - (eval.ground_truth.at<uchar>(mpt.y, i + 1) / eval.amp)));
-							ddd2 = abs((ddd2 - ((double)destDisparity.at<short>(mpt.y, i - 1) / (16.0))) - (ddd2 - ((double)destDisparity.at<short>(mpt.y, i + 1) / (16.0))));
-						}
-
-						signal.push_back(i, ddd2, 0);
-						signal.push_back(i, ddd, 1);
-					}
-					signal.plotData();
-					imshow("signal", signal.render);
-				}
-				else
-				{
-					signal.setXYRange(0, destDisparity.rows - 1, mindisp, 64);
-					signal.setPlot(0, CV_RGB(0, 0, 0), 0, 1, 1);
-					signal.setPlot(1, CV_RGB(255, 0, 0), 0, 1, 1);
-					for (int i = 0; i < destDisparity.rows; i++)
-					{
-						double ddd = (eval.ground_truth.at<uchar>(i, mpt.x) / eval.amp);
-						double ddd2 = ((double)destDisparity.at<short>(i, mpt.x) / (16.0));
-
-						if (diffmode == 1)
-						{
-							ddd = abs(ddd - (eval.ground_truth.at<uchar>(i - 1, mpt.x) / eval.amp));
-							ddd2 = abs(ddd2 - (((double)destDisparity.at<short>(i - 1, mpt.x) / (16.0))));
-						}
-						if (diffmode == 2)
-						{
-							ddd = abs(-(ddd - (eval.ground_truth.at<uchar>(i - 1, mpt.x) / eval.amp)) + (-ddd + (eval.ground_truth.at<uchar>(i + 1, mpt.x) / eval.amp)));
-							ddd2 = abs(-(ddd2 - ((double)destDisparity.at<short>(i - 1, mpt.x) / (16.0))) + (-ddd2 + ((double)destDisparity.at<short>(i + 1, mpt.x) / (16.0))));
-						}
-
-						signal.push_back(i, ddd2, 0);
-						signal.push_back(i, ddd, 1);
-					}
-					signal.plotData();
-					Mat show;
-					transpose(signal.render, show);
-					flip(show, show, 1);
-					imshow("signal", show);
-				}
-			}
-
-			//compute StereoEval
-			if (eval.isInit)
-			{
-				Mat maskbadpixel = Mat::zeros(destDisparity.size(), CV_8U);
-				bool isPrintEval = false;
-				;
-				ci("th 0.5:" + eval(destDisparity, 0.5, isPrintEval, 16));
-				ci("th 1.0:" + eval(destDisparity, 1.0, isPrintEval, 16));
-				ci("th 2.0:" + eval(destDisparity, 2.0, isPrintEval, 16));
-				ci("MSE   :" + eval.getMSE(destDisparity, false, 16));
-
-
-				if (maskType != 0)
-				{
-					if (maskPrec == 0)eval(destDisparity, 0.5, isPrintEval, 16);
-					if (maskPrec == 1)eval(destDisparity, 1.0, isPrintEval, 16);
-					if (maskPrec == 2)eval(destDisparity, 2.0, isPrintEval, 16);
-
-					if (maskType == 1)
-						eval.nonocc_th.copyTo(maskbadpixel);
-					else if (maskType == 2)
-						eval.all_th.copyTo(maskbadpixel);
-					else if (maskType == 3)
-						eval.disc_th.copyTo(maskbadpixel);
-				}
-				if (isShowGT)
-				{
-					if (dispColor) { Mat a; eval.ground_truth.convertTo(a, CV_16S, 4); cvtDisparityColor(a, dispOutput, minDisparity, numberOfDisparities - 10, 2, 16); }
-					else eval.ground_truth.copyTo(dispOutput);
-				}
-				else
-				{
-					dispOutput.setTo(Scalar(0, 0, 255), maskbadpixel);
-				}
-			}
-
-			alphaBlend(leftim, dispOutput, display_image_depth_alpha / 100.0, dispOutput);
-			if (isGrid)
-			{
-				line(dispOutput, Point(0, mpt.y), Point(leftim.cols, mpt.y), CV_RGB(0, 255, 0));
-				line(dispOutput, Point(mpt.x, 0), Point(mpt.x, leftim.rows), CV_RGB(0, 255, 0));
-			}
-
-			if (isUniquenessFilter) ci(CV_RGB(0, 255, 0), "uniqueness filter (1): true");
-			else ci(CV_RGB(255, 0, 0), "uniqueness filter (1): false");
-
-			if (isLRCheck) ci(CV_RGB(0, 255, 0), "LR check (2): true");
-			else ci(CV_RGB(255, 0, 0), "LR check (2): false");
-
-			if (isProcessLBorder) ci(CV_RGB(0, 255, 0), "LBorder (3) LR check must be true: true");
-			else ci(CV_RGB(255, 0, 0), "LBorder (3): false");
-
-			if (isRangeFilterSubpix) ci(CV_RGB(0, 255, 0), "range filter subpixel (4): true");
-			else ci(CV_RGB(255, 0, 0), "range filter subpixel (4): false");
-
-			if (isMinCostFilter) ci(CV_RGB(0, 255, 0), "min cost filter (5): true");
-			else ci(CV_RGB(255, 0, 0), "min cost filter  (5): false");
-
-			if (isSpeckleFilter) ci(CV_RGB(0, 255, 0), "speckle filter (6): true");
-			else ci(CV_RGB(255, 0, 0), "speckle filter  (6): false");
-
-			ci("==== additional post filter =====");
-			if (isStreak)ci(CV_RGB(0, 255, 0), "Streak (7): true");
-			else ci(CV_RGB(255, 0, 0), "Streak (7): false");
-
-			if (isMedian)ci(CV_RGB(0, 255, 0), "Median (8): true");
-			else ci(CV_RGB(255, 0, 0), "Median (8): false");
-
-			if (isRefinement == 0) ci(CV_RGB(255, 0, 0), "Guided (9): false");
-			else if (isRefinement == 1) ci(CV_RGB(0, 255, 0), "Guided (9): GIF+JNF");
-			else if (isRefinement == 2) ci(CV_RGB(0, 255, 0), "Guided (9): WGIF+JNF");
-
-			if (isShowGT)
-			{
-				ci(CV_RGB(255, 0, 0), "show ground trueth");
-			}
-			else
-			{
-				ci("=======================");
-				if (maskType != 0)
-				{
-					if (maskPrec == 2 && maskType == 1)
-						ci(CV_RGB(0, 255, 0), "mask: nonocc, prec: 2.0");
-					if (maskPrec == 1 && maskType == 1)
-						ci(CV_RGB(0, 255, 0), "mask: nonocc, prec: 1.0");
-					if (maskPrec == 0 && maskType == 1)
-						ci(CV_RGB(0, 255, 0), "mask: nonocc, prec: 0.5");
-
-					if (maskPrec == 2 && maskType == 2)
-						ci(CV_RGB(0, 255, 0), "mask: all, prec: 2.0");
-					if (maskPrec == 1 && maskType == 2)
-						ci(CV_RGB(0, 255, 0), "mask: all, prec: 1.0");
-					if (maskPrec == 0 && maskType == 2)
-						ci(CV_RGB(0, 255, 0), "mask: all, prec: 0.5");
-
-					if (maskPrec == 2 && maskType == 3)
-						ci(CV_RGB(0, 255, 0), "mask: disc, prec: 2.0");
-					if (maskPrec == 1 && maskType == 3)
-						ci(CV_RGB(0, 255, 0), "mask: disc, prec: 1.0");
-					if (maskPrec == 0 && maskType == 3)
-						ci(CV_RGB(0, 255, 0), "mask: disc, prec: 0.5");
-				}
-				else
-				{
-					ci(CV_RGB(255, 0, 0), "mask: none");
-				}
-			}
-
-			imshow(wname2, dispOutput);
-			imshow("console", ci.image);
-			setTrackbarPos("px", wname, mpt.x);
-			setTrackbarPos("py", wname, mpt.y);
-			key = waitKey(1);
-
-			if (key == '1') isUniquenessFilter = isUniquenessFilter ? false : true;
-			if (key == '2') isLRCheck = isLRCheck ? false : true;
-			if (key == '3') isProcessLBorder = (isProcessLBorder) ? false : true;
-			if (key == '4')	isRangeFilterSubpix = (isRangeFilterSubpix) ? false : true;
-			if (key == '5') isMinCostFilter = isMinCostFilter ? false : true;
-			if (key == '6') isSpeckleFilter = isSpeckleFilter ? false : true;
-
-			if (key == '7') isStreak = (isStreak) ? false : true;
-			if (key == '8') isMedian = (isMedian) ? false : true;
-			if (key == '9') { isRefinement++; isRefinement = (isRefinement > 2) ? 0 : isRefinement; }
-
-			if (key == 'a')	isReCost = (isReCost) ? false : true;
-			if (key == 'f') isFeedback = isFeedback ? false : true;
-			if (key == 'g') isGrid = (isGrid) ? false : true;
-			if (key == 'c') guiAlphaBlend(dispOutput, leftim);
-			if (key == 'i') { PixelMatchingMethod++; PixelMatchingMethod = (PixelMatchingMethod > Pixel_Matching_Method_Size - 1) ? 0 : PixelMatchingMethod; }
-			if (key == 'u') { PixelMatchingMethod--; PixelMatchingMethod = (PixelMatchingMethod < 0) ? Pixel_Matching_Method_Size - 2 : PixelMatchingMethod; }
-			if (key == 'j') { color_distance++; color_distance = (color_distance > ColorDistance_Size - 1) ? 0 : color_distance; }
-			if (key == 'k') { color_distance--; color_distance = (color_distance < 0) ? ColorDistance_Size - 2 : color_distance; }
-
-			if (key == '@') { AggregationMethod++; AggregationMethod = (AggregationMethod > Aggregation_Method_Size - 1) ? 0 : AggregationMethod; }
-			if (key == '[') { AggregationMethod--; AggregationMethod = (AggregationMethod < 0) ? Aggregation_Method_Size - 2 : AggregationMethod; }
-
-			if (key == 'o') { occlusionMethod++; if (occlusionMethod > 4)occlusionMethod = 0; }
-			if (key == 'p') { subpixelInterpolationMethod++; subpixelInterpolationMethod = (subpixelInterpolationMethod > 2) ? 0 : subpixelInterpolationMethod; }
-
-
-			if (key == 'w')dispColor = (dispColor) ? false : true;
-			if (key == 'e')isShowGT = (isShowGT) ? false : true;
-			if (key == 'b') guiCrossBasedLocalFilter(leftim);
-
-			if (key == 'r' || uck.isUpdate(feedbackFunction, feedbackClip, feedbackAmpInt))
-			{
-				destDisparity.setTo(0);
-			}
-
-			if (key == 'm')maskType++; maskType = maskType > 3 ? 0 : maskType;
-			if (key == 'n')maskPrec++; maskPrec = maskPrec > 2 ? 0 : maskPrec;
-		}
-	}
-
-	void resizeDown(Mat& src, Mat& dest, int rfact, int method)
-	{
-		int modH = rfact - src.cols % rfact;
-		int modV = rfact - src.rows % rfact;
-		Mat sim; copyMakeBorder(src, sim, 0, modV, 0, modH, cv::BORDER_REPLICATE);
-		resize(sim, dest, Size(sim.cols / rfact, sim.rows / rfact), 0.0, 0.0, method);
-	}
-
-	void resizeUP(Mat& src, Mat& dest, int rfact, int method)
-	{
-		Mat temp;
-		resize(src, temp, Size(src.cols * rfact, src.rows * rfact), 0.0, 0.0, method);
-		if (dest.empty())
-			temp.copyTo(dest);
-		else
-		{
-			cout << rfact << "," << temp.cols << "," << temp.rows << endl;
-			Mat a = temp(Rect(0, 0, dest.cols, dest.rows));
-			a.copyTo(dest);
-		}
-	}
 }
