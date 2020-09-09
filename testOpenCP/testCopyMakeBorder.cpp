@@ -12,7 +12,8 @@ void copyMakeBorderTest(Mat& src)
 	//const int iteration = 10000;
 
 	print_debug2(r, iteration);
-	const int borderType = BORDER_REPLICATE;
+	//const int borderType = BORDER_REPLICATE;
+	const int borderType = BORDER_DEFAULT;
 
 	CV_Assert(src.channels() == 3);
 	Mat gray;
@@ -121,9 +122,9 @@ void copyMakeBorderTest(Mat& src)
 		cout << getPSNR(dstcv8u[0], dstcp8u[0]) << "dB" << endl;
 		cout << getPSNR(dstcv8u[1], dstcp8u[1]) << "dB" << endl;
 		cout << getPSNR(dstcv8u[2], dstcp8u[2]) << "dB" << endl;
-		//guiAlphaBlend(dstcv8u[0], dstcp8u[0]);
+		guiAlphaBlend(dstcv8u[0], dstcp8u[0]);
 
-		{
+		/*{
 			Timer t("cv 32f");
 			for (int i = 0; i < iteration; i++)
 			{
@@ -143,6 +144,7 @@ void copyMakeBorderTest(Mat& src)
 		cout << getPSNR(dstcv32f[0], dstcp32f[0]) << "dB" << endl;
 		cout << getPSNR(dstcv32f[1], dstcp32f[1]) << "dB" << endl;
 		cout << getPSNR(dstcv32f[2], dstcp32f[2]) << "dB" << endl;
+		*/
 		//guiAlphaBlend(dstcv32f[0], dstcp32f[0]);
 	}
 }

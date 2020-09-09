@@ -489,11 +489,75 @@ namespace cp
 		}
 	}
 
+	void splitCopyMakeBorderReflect1018U(Mat& src, vector<Mat>& border, const int top, const int bottom, const int left, const int right)
+	{
+		CV_Assert(!src.empty());
+		CV_Assert(src.channels() == 3);
+
+		const int LEFT = get_simd_ceil(left, 32);
+		const int RIGHT = get_simd_ceil(right, 32);
+		const int END = border[0].cols - RIGHT;
+		const int end = border[0].cols - right;
+		const int end_simd = border[0].cols - (right - get_simd_floor(right, 32));
+		const int SIMDW = get_simd_floor(src.cols, 8);
+
+#pragma omp parallel for
+		for (int j = 0; j < border[0].rows; j++)
+		{
+			uchar* s = src.ptr<uchar>(min(max(j - top, 0), src.rows - 1));
+
+			uchar* b = border[0].ptr<uchar>(j);
+			uchar* g = border[1].ptr<uchar>(j);
+			uchar* r = border[2].ptr<uchar>(j);
+
+			for (int i = 0; i < LEFT; i += 32)
+			{
+				_mm256_storeu_si256((__m256i*)(b + i), _mm256_set1_epi8(s[0]));
+				_mm256_storeu_si256((__m256i*)(g + i), _mm256_set1_epi8(s[1]));
+				_mm256_storeu_si256((__m256i*)(r + i), _mm256_set1_epi8(s[2]));
+			}
+			for (int i = END; i < END + RIGHT; i += 32)
+			{
+				_mm256_storeu_si256((__m256i*)(b + i), _mm256_set1_epi8(s[3 * (src.cols - 1) + 0]));
+				_mm256_storeu_si256((__m256i*)(g + i), _mm256_set1_epi8(s[3 * (src.cols - 1) + 1]));
+				_mm256_storeu_si256((__m256i*)(r + i), _mm256_set1_epi8(s[3 * (src.cols - 1) + 2]));
+			}
+
+			for (int i = 0; i < SIMDW; i += 32)
+			{
+				__m256i mb, mg, mr;
+				_mm256_load_cvtepu8bgr2planar_si256(s + 3 * i, mb, mg, mr);
+				_mm256_storeu_si256((__m256i*)(b + i + left), mb);
+				_mm256_storeu_si256((__m256i*)(g + i + left), mg);
+				_mm256_storeu_si256((__m256i*)(r + i + left), mr);
+			}
+			for (int i = SIMDW; i < src.cols; i++)
+			{
+				b[i + left] = s[3 * i + 0];
+				g[i + left] = s[3 * i + 1];
+				r[i + left] = s[3 * i + 2];
+			}
+
+			/*for (int i = end; i < end_simd; i += 8)
+			{
+				_mm256_storeu_ps(b + i, _mm256_set1_ps(s[3 * (src.cols - 1) + 0]));
+				_mm256_storeu_ps(g + i, _mm256_set1_ps(s[3 * (src.cols - 1) + 1]));
+				_mm256_storeu_ps(r + i, _mm256_set1_ps(s[3 * (src.cols - 1) + 2]));
+			}
+			for (int i = end_simd; i < border[0].cols; i++)
+			{
+				b[i] = s[3 * (src.cols - 1) + 0];
+				g[i] = s[3 * (src.cols - 1) + 1];
+				r[i] = s[3 * (src.cols - 1) + 2];
+			}*/
+		}
+	}
+
 	void splitCopyMakeBorder(cv::InputArray src, cv::OutputArrayOfArrays dest, const int top, const int bottom, const int left, const int right, const int borderType, const cv::Scalar& color)
 	{
 		CV_Assert(!src.empty());
 		CV_Assert(src.depth() == CV_8U || src.depth() == CV_32F);
-		CV_Assert(borderType == cv::BORDER_REPLICATE);
+		CV_Assert(borderType == cv::BORDER_REPLICATE|| borderType == cv::BORDER_REFLECT101);
 
 		Mat s = src.getMat();
 		const Size borderSize = Size(s.cols + left + right, s.rows + top + bottom);
@@ -533,6 +597,11 @@ namespace cp
 		{
 			if (src.depth() == CV_8U)splitCopyMakeBorderReplicate8U(s, dst, top, bottom, left, right);
 			else if (src.depth() == CV_32F)splitCopyMakeBorderReplicate32F(s, dst, top, bottom, left, right);
+		}
+		else if(borderType == cv::BORDER_REFLECT101)
+		{
+			if (src.depth() == CV_8U)splitCopyMakeBorderReflect1018U(s, dst, top, bottom, left, right);
+			//else if (src.depth() == CV_32F)splitCopyMakeBorderReplicate32F(s, dst, top, bottom, left, right);
 		}
 		else
 		{

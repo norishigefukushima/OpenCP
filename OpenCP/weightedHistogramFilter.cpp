@@ -1,4 +1,5 @@
 #include "weightedHistogramFilter.hpp"
+#include "copyMakeBorder.hpp"
 #include "debugcp.hpp"
 #include <inlineSIMDFunctions.hpp>
 using namespace std;
@@ -69,8 +70,8 @@ namespace cp
 
 	WeightedHistogram::WeightedHistogram(int truncate_val, int mode_, const int max_val)
 	{
-		histSize = max_val+1;
-		histbuffsize = get_simd_ceil(max_val+1 + truncate_val * 2, 8);
+		histSize = max_val + 1;
+		histbuffsize = get_simd_ceil(max_val + 1 + truncate_val * 2, 8);
 		histbuff = (float*)_mm_malloc(sizeof(float) * histbuffsize, 16);
 		hist = histbuff + truncate_val;//border +-truncate_val
 		truncate = truncate_val;
@@ -313,7 +314,7 @@ namespace cp
 
 		Mat srcBorder; copyMakeBorder(src, srcBorder, r, r, r, r, borderType);
 
-		const int mode = (method >= WHF_OPERATION::NO_WEIGHT_MEDIAN) ? WeightedHistogram::MEDIAN: WeightedHistogram::MAX;
+		const int mode = (method >= WHF_OPERATION::NO_WEIGHT_MEDIAN) ? WeightedHistogram::MEDIAN : WeightedHistogram::MAX;
 		WHF_WEIGHT weight_method;
 		switch (method)
 		{
@@ -332,15 +333,11 @@ namespace cp
 
 		if (guide.channels() == 3)
 		{
-			Mat B, G, R;
-			bgrSplit(guide, B, G, R);
+			vector<Mat> guideBGR;
+			cp::splitCopyMakeBorder(guide, guideBGR, r, r, r, r, borderType);
 
-			Mat guideB; copyMakeBorder(B, guideB, r, r, r, r, borderType);
-			Mat guideG; copyMakeBorder(G, guideG, r, r, r, r, borderType);
-			Mat guideR; copyMakeBorder(R, guideR, r, r, r, r, borderType);
-
-			float* lutc = new float[443];
-			float* luts = new float[(2 * r + 1) * (2 * r + 1)];
+			float* lutc = (float*)_mm_malloc(443 * sizeof(float), 32);
+			float* luts = (float*)_mm_malloc((2 * r + 1) * (2 * r + 1) * sizeof(float), 32);
 
 			for (int j = 0, idx = 0; j < 2 * r + 1; j++)
 			{
@@ -363,16 +360,16 @@ namespace cp
 					for (int x = 0; x < width; x++)
 					{
 						h.clear();
-						const guideType bb = B.at<guideType>(y, x);
-						const guideType gg = G.at<guideType>(y, x);
-						const guideType rr = R.at<guideType>(y, x);
+						const guideType bb = guideBGR[0].at<guideType>(y + r, x + r);
+						const guideType gg = guideBGR[1].at<guideType>(y + r, x + r);
+						const guideType rr = guideBGR[2].at<guideType>(y + r, x + r);
 
 						for (int j = 0, idx = 0; j < 2 * r + 1; j++)
 						{
 							srcType* sp = srcBorder.ptr<srcType>(y + j); sp += x;
-							guideType* bp = guideB.ptr<guideType>(y + j); bp += x;
-							guideType* gp = guideG.ptr<guideType>(y + j); gp += x;
-							guideType* rp = guideR.ptr<guideType>(y + j); rp += x;
+							guideType* bp = guideBGR[0].ptr<guideType>(y + j); bp += x;
+							guideType* gp = guideBGR[1].ptr<guideType>(y + j); gp += x;
+							guideType* rp = guideBGR[2].ptr<guideType>(y + j); rp += x;
 
 							for (int i = 0; i < 2 * r + 1; i++, idx++)
 							{
@@ -436,8 +433,8 @@ namespace cp
 					}
 				}
 			}
-			delete[] lutc;
-			delete[] luts;
+			_mm_free(lutc);
+			_mm_free(luts);
 		}
 		else if (guide.channels() == 1)
 		{
@@ -545,7 +542,7 @@ namespace cp
 		Mat mask = mask_.getMat();
 		CV_Assert(guide.depth() == CV_8U);
 
-		if (src.depth() == CV_8U && guide.depth() == CV_8U)weightedHistogramFilter_<uchar, uchar>(src, guide, dst, r,   sigmaColor, sigmaSpace, sigmaHistogram, weightFunctionType, method, borderType, mask);
+		if (src.depth() == CV_8U && guide.depth() == CV_8U)weightedHistogramFilter_<uchar, uchar>(src, guide, dst, r, sigmaColor, sigmaSpace, sigmaHistogram, weightFunctionType, method, borderType, mask);
 		if (src.depth() == CV_16S && guide.depth() == CV_8U)weightedHistogramFilter_<short, uchar>(src, guide, dst, r, sigmaColor, sigmaSpace, sigmaHistogram, weightFunctionType, method, borderType, mask);
 		if (src.depth() == CV_16U && guide.depth() == CV_8U)weightedHistogramFilter_<ushort, uchar>(src, guide, dst, r, sigmaColor, sigmaSpace, sigmaHistogram, weightFunctionType, method, borderType, mask);
 		if (src.depth() == CV_32F && guide.depth() == CV_8U)weightedHistogramFilter_<float, uchar>(src, guide, dst, r, sigmaColor, sigmaSpace, sigmaHistogram, weightFunctionType, method, borderType, mask);
@@ -1059,7 +1056,7 @@ namespace cp
 		}
 	}
 
-	
+
 
 	//with mask
 #include<omp.h>
@@ -1598,7 +1595,7 @@ namespace cp
 	}
 
 
-	
+
 	void weightedModeFilter(cv::InputArray src, cv::InputArray guide, cv::OutputArray dst, const int r, const double sigmaColor, const double sigmaSpace, const double sigmaHistogram, const int borderType, cv::InputArray mask)
 	{
 		Mat s = src.getMat();
