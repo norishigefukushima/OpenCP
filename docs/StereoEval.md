@@ -26,7 +26,7 @@ void createDisparityNonOcclusionMask(cv::Mat& src, double amp, double thresh, cv
 ```
 視差画像からNonoccに相当するマスクを生成します．
 
-# class CP_EXPORT StereoEval
+# class StereoEval
 ```cpp
 class CP_EXPORT StereoEval
 {
@@ -87,4 +87,10 @@ cout<<eval.disc
 cout<<eval.allMSE;
 cout<<eval.nonoccMSE;
 cout<<eval.discMSE;
+```
+
+もし，動画像などで正解を再読み込みしたい場合は以下を呼べば良い．
+この関数は，コンストラクタで呼ばれている関数．
+```cpp
+void init(groundtruth, amp, intignoreLeftBoundary)
 ```
