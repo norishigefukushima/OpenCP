@@ -154,6 +154,7 @@
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <FloatingPointModel>Fast</FloatingPointModel>
+      <DisableSpecificWarnings>4251;4309;4819;4324;4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

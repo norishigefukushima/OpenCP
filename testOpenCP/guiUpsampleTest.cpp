@@ -27,8 +27,8 @@ public:
 		show.setTo(255);
 		for (int i = 0; i < src.cols - 1; i++)
 		{
-			line(show, Point(i, src.at<float>(pt.y, i)),
-				Point(i + 1, src.at<float>(pt.y, i + 1)), COLOR_BLACK);
+			line(show, Point(i, (int)src.at<float>(pt.y, i)),
+				Point(i + 1, (int)src.at<float>(pt.y, i + 1)), COLOR_BLACK);
 		}
 		flip(show, show, 0);
 		imshow("plofile", show);
@@ -133,7 +133,7 @@ public:
 						float val0 = jptr[j];
 						for (int k = 0; k < maxk; k++)
 						{
-							int val = jptr[j + space_ofs_src[k]];
+							float val = jptr[j + space_ofs_src[k]];
 							//float w = space_weight[k] * color_weight[cvRound(abs(val - val0))];
 							float w = color_weight[cvRound(abs(val - val0))];
 
@@ -700,7 +700,7 @@ void guiUpsampleTest(Mat& src_)
 				break;
 			}
 		}
-		hblend(dest, dest, mx*0.1);
+		hblend(dest, dest, mx*0.1f);
 		
 		ci(format("Up   : %s", upsampleMethod));
 		ci(format("Down : %s", downsampleMethod));

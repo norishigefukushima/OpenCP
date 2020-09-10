@@ -870,6 +870,16 @@ namespace cp
 			refinementSigmaHistogram = refinementSigmaHistogramInt * 0.1f;
 			refinementWeightSigma = refinementWeightSigmaInt * 0.1f;
 
+			//For refresh GIF precomputing
+			//If guide image is not changed, this calling is not required.
+			//But, calling this, we can simulate video input.
+			const bool isRefreshForGIF = false;
+			//if (isRefreshForGIF)
+			{
+				for (int n = 0; n < thread_max; n++)
+					gif[n].setIsComputeForReuseGuide(true);
+			}
+
 #pragma endregion
 
 #pragma region console setup

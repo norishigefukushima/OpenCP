@@ -156,7 +156,9 @@ namespace cp
 
 	class GuidedFilterBase
 	{
+		bool isDebug = false;
 		cp::CheckSameImage checkimage;//checker for filterGuidePrecomputed
+		bool isComputeForReuseGuide = true;
 	protected:
 		cv::Mat src;
 		cv::Mat guide;
@@ -189,9 +191,10 @@ namespace cp
 			vsrc.resize(3);
 			vdest.resize(3);
 		}
-		void setUpsampleMethod(const int method);
+		void setIsComputeForReuseGuide(const bool flag);
 		void setDownsampleMethod(const int method);
-
+		void setUpsampleMethod(const int method);
+		
 		int getImplementation();
 
 		virtual void filter() = 0;
@@ -237,8 +240,10 @@ namespace cp
 			gf.resize(3);
 		}
 
+		void setIsComputeForReuseGuide(const bool flag);
 		void setDownsampleMethod(const int method);
 		void setUpsampleMethod(const int method);
+
 		void setBoxType(const int type);
 
 		void filter(cv::Mat& src, cv::Mat& guide, cv::OutputArray dest, const int r, const float eps, const int guided_type = GuidedTypes::GUIDED_SEP_VHI_SHARE, const int parallel_type = ParallelTypes::OMP);

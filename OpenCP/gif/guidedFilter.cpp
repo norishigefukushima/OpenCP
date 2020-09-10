@@ -24,8 +24,7 @@
 
 namespace cp
 {
-	//base class
-
+#pragma region GuidedFilterBase
 	cv::Size GuidedFilterBase::size()
 	{
 		return src.size();
@@ -40,6 +39,7 @@ namespace cp
 	{
 		return guide.channels();
 	}
+
 
 	void GuidedFilterBase::setUpsampleMethod(const int method)
 	{
@@ -116,29 +116,33 @@ namespace cp
 		guide.copyTo(dest);
 	}
 
+	void GuidedFilterBase::setIsComputeForReuseGuide(const bool flag)
+	{
+		isComputeForReuseGuide = flag;
+	}
+
 	void GuidedFilterBase::filterGuidePrecomputed(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps)
 	{
-		bool isUpdate = false;
-		if (guide.empty())
-		{
-			checkimage.isSameImage(_guide);
-			isUpdate = true;
-		}
-		else
-		{
-			isUpdate = !checkimage.isSameImage(_guide);
-			if (r != _r || eps != _eps)isUpdate = true;
-		}
+		if (r != _r || eps != _eps)isComputeForReuseGuide = true;
 
 		src = _src;
 		guide = _guide;
 		dest = _dest;
 		r = _r;
 		eps = _eps;
-		if (isUpdate)
+		
+		if (isComputeForReuseGuide)
 		{
+			if(isDebug) std::cout << "computing VarCov in GIF Share" << std::endl;
 			computeVarCov();
+			isComputeForReuseGuide = false;
+			checkimage.isSameImage(guide);
 		}
+		else
+		{
+			isComputeForReuseGuide = !checkimage.isSameImage(guide);
+		}
+
 		filterGuidePrecomputed();
 	}
 
@@ -175,11 +179,7 @@ namespace cp
 
 		upsample();
 	}
-
-	//end class GuideFilterBase
-	//////////////////////////////////////////////////////////////////////
-
-
+#pragma endregion
 
 	void guidedImageFilter(cv::InputArray src_, cv::InputArray guide_, cv::OutputArray dest, const int r, const float eps, const GuidedTypes guidedType, const BoxTypes boxType, const ParallelTypes parallelType)
 	{
@@ -215,6 +215,23 @@ namespace cp
 		}
 	};
 
+#pragma region GuidedImageFilter
+	void GuidedImageFilter::setIsComputeForReuseGuide(const bool flag)
+	{
+		if (!gf[0].empty())
+		{
+			gf[0]->setIsComputeForReuseGuide(flag);
+		}
+		if (!gf[1].empty())
+		{
+			gf[1]->setIsComputeForReuseGuide(flag);
+		}
+		if (!gf[2].empty())
+		{
+			gf[2]->setIsComputeForReuseGuide(flag);
+		}
+	}
+
 	void GuidedImageFilter::setDownsampleMethod(const int method)
 	{
 		downsample_method = method;
@@ -230,7 +247,6 @@ namespace cp
 		{
 			gf[2]->setDownsampleMethod(method);
 		}
-
 	}
 
 	void GuidedImageFilter::setUpsampleMethod(const int method)
@@ -754,6 +770,7 @@ namespace cp
 		std::cout << "guide depth: " << guideImage.depth() << std::endl;
 		std::cout << "dest  depth: " << destImage.depth() << std::endl;
 	}
+#pragma endregion
 }
 
 
@@ -767,7 +784,7 @@ using namespace cv;
 const int BORDER_TYPE = cv::BORDER_REPLICATE;
 //static const int BORDER_TYPE = cv::BORDER_DEFAULT;
 
-
+#pragma region under_debug
 //#define FLOAT_BOX_FILTER_OFF 1
 //#define STATICMAT static Mat
 #define STATICMAT Mat
@@ -1425,6 +1442,8 @@ void boxFilter1x1(InputArray _src, OutputArray _dst, int ddepth,
 
 	src.copyTo(dst);
 }
+
+#pragma endregion
 
 namespace cp
 {

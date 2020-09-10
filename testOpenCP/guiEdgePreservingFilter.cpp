@@ -45,7 +45,7 @@ void guiEdgePresevingFilterOpenCV(Mat& src)
 		else if (sw == 3)
 		{
 			Timer t("epf: domain transform in namespace cv");
-			edgePreservingFilter(src, dest, RECURS_FILTER, sigma_space, sigma_color / 255.0);
+			edgePreservingFilter(src, dest, RECURS_FILTER, sigma_space, sigma_color / 255.f);
 		}
 		else if (sw == 4)
 		{
