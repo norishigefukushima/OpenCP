@@ -363,9 +363,25 @@ namespace cp
 	template<int store_method>
 	void v_store32f(float* dst, __m256 src)
 	{
-		if constexpr (store_method == STOREU) _mm256_storeu_ps(dst, src);
-		else if constexpr (store_method == STORE) _mm256_store_ps(dst, src);
-		else if constexpr (store_method == STREAM) _mm256_stream_ps(dst, src);
+		_mm256_storeu_ps(dst, src);
+	}
+
+	template<>
+	void v_store32f<STOREU>(float* dst, __m256 src)
+	{
+		 _mm256_storeu_ps(dst, src);
+	}
+
+	template<>
+	void v_store32f<STORE>(float* dst, __m256 src)
+	{
+		_mm256_store_ps(dst, src);
+	}
+
+	template<>
+	void v_store32f<STREAM>(float* dst, __m256 src)
+	{
+		 _mm256_stream_ps(dst, src);
 	}
 
 	template<int store_method>

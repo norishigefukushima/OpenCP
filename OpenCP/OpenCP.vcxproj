@@ -163,7 +163,7 @@
       </WholeProgramOptimization>
       <SDLCheck>false</SDLCheck>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp14</LanguageStandard>
       <OmitFramePointers>true</OmitFramePointers>
     </ClCompile>
     <Link>
