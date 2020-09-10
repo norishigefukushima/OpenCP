@@ -120,6 +120,7 @@ namespace cp
 			JBF_JNF,
 			WJBF_GAUSS_JNF,
 			WMF,
+			WWMF_GAUSS,
 
 			REFINEMENT_SIZE
 		};

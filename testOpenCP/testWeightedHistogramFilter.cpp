@@ -6,7 +6,8 @@ using namespace cp;
 
 void testWeightedHistogramFilterDisparity()
 {
-	Mat guide = imread("img/stereo/Dolls/view1.png");
+	Mat guideColor = imread("img/stereo/Dolls/view1.png");
+	Mat guideGray; cvtColor(guideColor, guideGray, cv::COLOR_BGR2GRAY);
 	Mat src = imread("img/stereo/Dolls/disp1_est.png", 0);
 	Mat dmap_ = imread("img/stereo/Dolls/disp1.png", 0);
 	const int disp_max = get_simd_ceil(100, 16);
@@ -19,63 +20,72 @@ void testWeightedHistogramFilterDisparity()
 	ConsoleImage ci;
 
 	int a = 0; createTrackbar("a", wname, &a, 100);
-	int sw = 0; createTrackbar("switch", wname, &sw, 5);
+	int whf_option = 2; createTrackbar("WHF_OPERATION", wname, &whf_option, (int)WHF_OPERATION::SIZE - 1);
+	int sw = 0; createTrackbar("sw", wname, &sw, 1);
 
 	int r = 4; createTrackbar("r", wname, &r, 20);
 	int space = 100; createTrackbar("space*0.1", wname, &space, 500);
 	int color = 300; createTrackbar("color*0.1", wname, &color, 5000);
-	int histogram = 10; createTrackbar("histogram*0.1", wname, &histogram, 255);
-	int histogramFunctionType = (int)WHF_HISTOGRAM_WEIGHT::GAUSSIAN; createTrackbar("functionType", wname, &histogramFunctionType, (int)WHF_HISTOGRAM_WEIGHT::SIZE - 1);
+	int histogram = 100; createTrackbar("histogram*0.1", wname, &histogram, 255);
+	int histogramFunctionType = (int)WHF_HISTOGRAM_WEIGHT_FUNCTION::GAUSSIAN; createTrackbar("functionType", wname, &histogramFunctionType, (int)WHF_HISTOGRAM_WEIGHT_FUNCTION::SIZE - 1);
+	int isColorGuide = 1; createTrackbar("isColorGuide", wname, &isColorGuide, 1);
 
-	int key = 0;
+	int refinementWeightR = 3; createTrackbar("weightR", wname, &refinementWeightR, 20);
+	int refinementWeightSigma = 10; createTrackbar("WeightSigma", wname, &refinementWeightSigma, 255);
 	Mat show;
 	Mat ref;
-	Mat srcf; guide.convertTo(srcf, CV_32F);
-	Mat weight = Mat::ones(guide.size(), CV_8U);
+	Mat weight = Mat::ones(src.size(), CV_8U);
 
-	cp::UpdateCheck uc(sw);
-	cp::UpdateCheck uc2(sw, r, space, color, histogram, histogramFunctionType);
+	cp::UpdateCheck uc(whf_option);
+	cp::UpdateCheck uc2(whf_option, sw, r, space, color, histogram, histogramFunctionType, isColorGuide);
 	Timer t("", TIME_MSEC, false);
 
+	int key = 0;
 	while (key != 'q')
 	{
-		if (uc.isUpdate(sw))
-		{
-			switch (sw)
-			{
-			case 0:
-				displayOverlay(wname, "weighted mode", 5000); break;
-			case 1:
-				displayOverlay(wname, "weighted median", 5000); break;
-			}
-		}
+		Mat guide = (isColorGuide == 1) ? guideColor : guideGray;
+		if (sw == 0)
 		{
 			t.start();
-			if (sw == 0)
+			weightedHistogramFilter(src, guide, show, r, color * 0.1, space * 0.1, histogram * 0.1, WHF_HISTOGRAM_WEIGHT_FUNCTION(histogramFunctionType), WHF_OPERATION(whf_option));
+			t.getpushLapTime();
+		}
+		else
+		{
+			t.start();
+			Mat bim;
+			Mat weight(src.size(), CV_32F);
+			GaussianBlur(src, bim, Size(2 * refinementWeightR + 1, 2 * refinementWeightR + 1), refinementWeightR / 3.0);
+			uchar* disp = src.ptr<uchar>();
+			uchar* dispb = bim.ptr<uchar>();
+			float* s = weight.ptr<float>();
+			for (int i = 0; i < weight.size().area(); i++)
 			{
-				weightedHistogramFilter(src, guide, show, r, color * 0.1, space * 0.1, histogram * 0.1, WHF_HISTOGRAM_WEIGHT(histogramFunctionType), WHF_OPERATION::BILATERAL_MODE);
+				float diff = (disp[i] - dispb[i]) * (disp[i] - dispb[i]) / (-2.f * refinementWeightSigma * refinementWeightSigma);
+				s[i] = exp(diff);
 			}
-			else if (sw == 1)
-			{
-				weightedHistogramFilter(src, guide, show, r, color * 0.1, space * 0.1, histogram * 0.1, WHF_HISTOGRAM_WEIGHT(histogramFunctionType), WHF_OPERATION::BILATERAL_MEDIAN);
-				//weightedweightedMedianFilter(src, guide, weight, show, r, tranc, space / 10.0, color / 10.0, 2, 2);
-				//weightedMedianFilter(src, guide, show, r, truncate, space / 10.0, color / 10.0, metric, 2);
-			}
+			weightedWeightedHistogramFilter(src, weight, guide, show, r, color * 0.1, space * 0.1, histogram * 0.1, WHF_HISTOGRAM_WEIGHT_FUNCTION(histogramFunctionType), WHF_OPERATION(whf_option));
 			t.getpushLapTime();
 		}
 		imshow(wname, show);
+		ci("Num %d", t.getStatSize());
 		ci("Time %5.2f ms", t.getLapTimeMedian());
 		ci("T 0.5|" + eval(show, 0.5, 2, false));
 		ci("T 1.0|" + eval(show, 1.0, 2, false));
 		ci("T 2.0|" + eval(show, 2.0, 2, false));
 		ci.show();
 		key = waitKey(1);
-		if (key == 'r' || uc2.isUpdate(sw, r, space, color, histogram, histogramFunctionType))
+		if (key == 'r' || uc2.isUpdate(whf_option, sw, r, space, color, histogram, histogramFunctionType, isColorGuide))
 		{
 			t.clearStat();
 		}
+		if (uc.isUpdate(whf_option))
+		{
+			displayOverlay(wname, cp::getWHFOperationName(WHF_OPERATION(whf_option)), 5000);
+		}
 	}
-	destroyAllWindows();
+
+	destroyWindow(wname);
 }
 
 void testWeightedHistogramFilter(Mat& src_, Mat& guide_)
@@ -84,26 +94,9 @@ void testWeightedHistogramFilter(Mat& src_, Mat& guide_)
 	const bool isOverwrite = src_.empty() || guide_.empty();
 	if (isOverwrite)
 	{
-		string imgPath_src, imgPath_guide;
-
-		//imgPath_src = "img/lenna.png";
-		//imgPath_guide = imgPath_src;
-		// Flash/no-flash denoising
-	/*{
-		imgPath_p = "fig/pot2_noflash.png";
-		imgPath_I = "fig/pot2_flash.png";
-	}*/
-
-		src_ = imread(imgPath_src, 0);
-		guide_ = imread(imgPath_guide, 0);
-
-		copyMakeBorder(guide_, guide_, 0, 44, 0, 32, BORDER_REFLECT);
-
-		resize(src_, src_, src_.size() / 2);
-		resize(guide_, guide_, guide_.size() / 2);
-		guiAlphaBlend(src_, guide_, true);
+		src_ = imread("img/flash/cave-flash.png", 1);
+		guide_ = imread("img/flash/cave-noflash.png", 0);
 	}
-
 
 	Mat src, guide;
 	if (src_.channels() == 3)
@@ -127,12 +120,14 @@ void testWeightedHistogramFilter(Mat& src_, Mat& guide_)
 	ConsoleImage ci;
 
 	int a = 0; createTrackbar("a", wname, &a, 100);
-	int sw = 0; createTrackbar("switch", wname, &sw, 5);
+	int whf_option = 2; createTrackbar("WHF_OPERATION", wname, &whf_option, (int)WHF_OPERATION::SIZE - 1);
 
 	//int r = 10; createTrackbar("r",wname,&r,200);
 	int space = 100; createTrackbar("space", wname, &space, 500);
 	int color = 300; createTrackbar("color", wname, &color, 5000);
-	int tranc = 10; createTrackbar("tranc", wname, &color, 255);
+	int histogram = 100; createTrackbar("histogram*0.1", wname, &histogram, 255);
+	int histogramFunctionType = (int)WHF_HISTOGRAM_WEIGHT_FUNCTION::GAUSSIAN; createTrackbar("functionType", wname, &histogramFunctionType, (int)WHF_HISTOGRAM_WEIGHT_FUNCTION::SIZE - 1);
+	int isColorGuide = 1; createTrackbar("isColorGuide", wname, &isColorGuide, 1);
 	int r = 1; createTrackbar("r", wname, &r, 20);
 
 	int sp = 0; createTrackbar("sp noise", wname, &sp, 100);
@@ -145,38 +140,22 @@ void testWeightedHistogramFilter(Mat& src_, Mat& guide_)
 	Mat srcf; src.convertTo(srcf, CV_32F);
 	Mat weight = Mat::ones(src.size(), CV_8U);
 
-	cp::UpdateCheck uc(sw);
+	cp::UpdateCheck uc(whf_option);
 	while (key != 'q')
 	{
 		Mat img;
 		cp::addNoise(src, img, 0, sp * 0.01);
-		if (uc.isUpdate(sw))
-		{
-			switch (sw)
-			{
-			case 0:
-				displayOverlay(wname, "weighted mode", 5000); break;
-			case 1:
-				displayOverlay(wname, "weighted median", 5000); break;
-			}
+	
+		Timer t;
+		weightedHistogramFilter(src, guide, show, r, color * 0.1, space * 0.1, histogram * 0.1, WHF_HISTOGRAM_WEIGHT_FUNCTION(histogramFunctionType), WHF_OPERATION(whf_option));
 
-		}
-		if (sw == 0)
-		{
-			Timer t;
-			//weightedModeFilter(img, guide, show, r, tranc, space / 10.0, color / 10.0, 2, 2);
-			//weightedweightedModeFilter(src, guide, weight, show, r, tranc, space / 10.0, color / 10.0, 2, 2);
-		}
-		else if (sw == 1)
-		{
-			Timer t;
-			//weightedModeFilter(src, guide, show, r, tranc, space / 10.0, color / 10.0, 2, 2);
-			//weightedweightedMedianFilter(src, guide, weight, show, r, tranc, space / 10.0, color / 10.0, 2, 2);
-			//weightedMedianFilter(img, guide, show, r, tranc, space / 10.0, color / 10.0, 2, 2);
-		}
 		imshow(wname, show);
 
 		key = waitKey(1);
+		if (uc.isUpdate(whf_option))
+		{
+			displayOverlay(wname, cp::getWHFOperationName(WHF_OPERATION(whf_option)), 5000);
+		}
 	}
-	destroyAllWindows();
+	//destroyWindow(wname);
 }

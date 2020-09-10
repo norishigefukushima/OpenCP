@@ -153,18 +153,21 @@ namespace cp
 		CV_Assert(!ground_truth.empty());
 		this->ground_truth = ground_truth;
 		this->amp = amp;
-
+		mask_all.setTo(0);
+		mask_nonocc.setTo(0);
 		createDisparityALLMask(ground_truth, mask_all);
 		createDisparityNonOcclusionMask(ground_truth, amp, 1, mask_nonocc);
+
 		skip_disc = true;
 		mask_disc = Mat::zeros(ground_truth.size(), ground_truth.type());//under construction
+		this->ignoreLeftBoundary = ignoreLeftBoundary;
 		if (ignoreLeftBoundary > 0)
 		{
-			Mat mask(ground_truth.size(), CV_8U);
-			rectangle(mask, Rect(0, 0, ignoreLeftBoundary, mask.rows), 255, cv::FILLED);
-			mask_all.setTo(0, mask);
-			mask_nonocc.setTo(0, mask);
-			mask_disc.setTo(0, mask);
+			Rect roi = Rect(0, 0, ignoreLeftBoundary, ground_truth.rows);
+			mask_all(roi).setTo(0);
+			mask_nonocc(roi).setTo(0);
+			mask_disc(roi).setTo(0);
+			
 		}
 		threshmap_init();
 	}

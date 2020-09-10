@@ -126,6 +126,8 @@ int main(int argc, char** argv)
 	//Mat img = imread("img/cameraman.png",0);
 	//Mat img = imread("img/barbara.png", 0);
 	//filter2DTest(img); return 0;
+	Mat flash = imread("img/cave-flash.png");
+	Mat noflash = imread("img/cave-noflash.png");
 #pragma endregion
 
 #pragma region core
@@ -159,15 +161,14 @@ int main(int argc, char** argv)
 #pragma endregion
 
 #pragma region stereo
-	//testStereoBase(); return 0;
+	testStereoBase(); return 0;
 	//testCVStereoBM(); return 0;
 	//testCVStereoSGBM(); return 0;
 #pragma endregion
 
 #pragma region filter
-	testWeightedHistogramFilterDisparity(); return 0;
+	//testWeightedHistogramFilterDisparity(); return 0;
 	//testWeightedHistogramFilter();return 0;
-	//testWeightedHistogramFilter(img,img);return 0;
 #pragma endregion 
 	//guiUpsampleTest(img);return 0;
 	//guiDomainTransformFilterTest(img);
@@ -280,9 +281,6 @@ int main(int argc, char** argv)
 	Mat feather = imread("img/feathering/toy-mask.png");
 	//Mat guide = imread("img/feathering/toy.png");
 	//timeBirateralTest(mega);
-
-	Mat flash = imread("img/cave-flash.png");
-	Mat noflash = imread("img/cave-noflash.png");
 	Mat disparity = imread("img/teddy_disp1.png", 0);
 	//guiJointBirateralFilterTest(noflash,flash);
 	//guiBinalyWeightedRangeFilterTest(disparity);

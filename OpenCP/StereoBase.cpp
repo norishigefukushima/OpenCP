@@ -664,13 +664,13 @@ namespace cp
 					divide(a, b, temp, 1, CV_16S);
 					jointNearestFilter(temp, destDisparityMap, Size(2 * jointNearestR + 1, 2 * jointNearestR + 1), destDisparityMap);
 				}
-				if (refinementMethod == (int)REFINEMENT::JBF_JNF)
+				else if (refinementMethod == (int)REFINEMENT::JBF_JNF)
 				{
 					Mat temp;
 					jointBilateralFilter(destDisparityMap, leftim, temp, 2 * refinementR + 1, refinementSigmaRange, refinementSigmaSpace);
 					jointNearestFilter(temp, destDisparityMap, Size(2 * jointNearestR + 1, 2 * jointNearestR + 1), destDisparityMap);
 				}
-				if (refinementMethod == (int)REFINEMENT::WJBF_GAUSS_JNF)
+				else if (refinementMethod == (int)REFINEMENT::WJBF_GAUSS_JNF)
 				{
 					Mat bim;
 					GaussianBlur(destDisparityMap, bim, Size(2 * refinementWeightR + 1, 2 * refinementWeightR + 1), refinementWeightR / 3.0);
@@ -687,8 +687,23 @@ namespace cp
 					weightedJointBilateralFilter(destDisparityMap, weightMap, leftim, temp, 2 * refinementR + 1, refinementSigmaRange, refinementSigmaSpace);
 					jointNearestFilter(temp, destDisparityMap, Size(2 * jointNearestR + 1, 2 * jointNearestR + 1), destDisparityMap);
 				}
-				if (refinementMethod == (int)REFINEMENT::WMF)
+				else if (refinementMethod == (int)REFINEMENT::WMF)
 				{
+					cp::weightedModeFilter(destDisparityMap, leftim, destDisparityMap, refinementR, refinementSigmaRange, refinementSigmaSpace, refinementSigmaHistogram);
+				}
+				else if (refinementMethod == (int)REFINEMENT::WWMF_GAUSS)
+				{
+					Mat bim;
+					GaussianBlur(destDisparityMap, bim, Size(2 * refinementWeightR + 1, 2 * refinementWeightR + 1), refinementWeightR / 3.0);
+					short* disp = destDisparityMap.ptr<short>(0);
+					short* dispb = bim.ptr<short>(0);
+					float* s = weightMap.ptr<float>();
+					for (int i = 0; i < weightMap.size().area(); i++)
+					{
+						float diff = (disp[i] - dispb[i]) * (disp[i] - dispb[i]) / (-2.f * 16 * 16 * refinementWeightSigma * refinementWeightSigma);
+						s[i] = exp(diff);
+					}
+
 					cp::weightedModeFilter(destDisparityMap, leftim, destDisparityMap, refinementR, refinementSigmaRange, refinementSigmaSpace, refinementSigmaHistogram);
 				}
 			}
@@ -836,6 +851,17 @@ namespace cp
 
 		UpdateCheck uck(feedbackFunction, feedbackClip, feedbackAmpInt);
 		int key = 0;
+
+		//for randomness
+		bool isRandomShift = false;
+		Mat L = leftim.clone();
+		Mat R = rightim.clone();
+		Mat GT;
+		Mat gt = eval.ground_truth.clone();
+		int igb = eval.ignoreLeftBoundary;
+		double evalamp = eval.amp;
+		RNG rng;
+
 #pragma endregion
 		while (key != 'q')
 		{
@@ -932,11 +958,20 @@ namespace cp
 
 #pragma endregion
 
+			if (isRandomShift&&eval.isInit)
+			{
+				const int x = rng.uniform(-3, 4);
+				cp::warpShift(leftim, L, x);
+				cp::warpShift(rightim, R, x);
+				cp::warpShift(gt, GT, x);
+				eval.init(GT, evalamp, igb + x);
+			}
+
 #pragma region body
 
 			{
 				Timer t("BM", TIME_MSEC, false);
-				matching(leftim, rightim, destDisparity, isFeedback);
+				matching(L, R, destDisparity, isFeedback);
 				ci("Time StereoBase  : %5.2f ms", t.getTime());
 			}
 
@@ -997,7 +1032,7 @@ namespace cp
 			if (eval.isInit)
 			{
 				if (isDispalityColor)cvtDisparityColor(destDisparity, dispShow, minDisparity, numberOfDisparities, DISPARITY_COLOR::COLOR_PSEUDO, 16);
-				else				 cvtDisparityColor(destDisparity, dispShow, 0, 255, DISPARITY_COLOR::GRAY, 16/ eval.amp);
+				else				 cvtDisparityColor(destDisparity, dispShow, 0, 255, DISPARITY_COLOR::GRAY, int(16/ eval.amp));
 			}
 			else
 			{
@@ -3334,6 +3369,7 @@ namespace cp
 		case REFINEMENT::JBF_JNF:			ret = "JBF_JNF"; break;
 		case REFINEMENT::WJBF_GAUSS_JNF:	ret = "WJBF_GAUSS_JNF"; break;
 		case REFINEMENT::WMF:				ret = "WMF"; break;
+		case REFINEMENT::WWMF_GAUSS:		ret = "WWMF_GAUSS"; break;
 		default:
 			break;
 		}

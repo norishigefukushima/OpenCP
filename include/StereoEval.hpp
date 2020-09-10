@@ -14,6 +14,7 @@ namespace cp
 		void threshmap_init();
 		bool skip_disc = false;
 	public:
+		int ignoreLeftBoundary;
 		bool isInit = false;
 		std::string message;
 		cv::Mat state_all;
