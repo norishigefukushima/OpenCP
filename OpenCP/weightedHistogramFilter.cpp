@@ -155,6 +155,7 @@ namespace cp
 				__m256 mhist = _mm256_loadu_ps(hist + i);
 				__m256 mmask = _mm256_cmp_ps(mhist, mmaxv, _CMP_GT_OQ);
 				mmaxv = _mm256_blendv_ps(mmaxv, mhist, mmask);
+				//integer operation is better
 				mindex = _mm256_blendv_ps(mindex, _mm256_add_ps(step, _mm256_set1_ps(i)), mmask);
 			}
 
