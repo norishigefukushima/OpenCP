@@ -8,7 +8,7 @@ namespace cp
 	//|s-b|<thresh d = b(center)
 	//else b(srgmin)
 	template <class srcType>
-	void jointNearestFilterBF_(const Mat& src, const Mat& before, const Size ksize, Mat& dest, int thresh)
+	static void jointNearestFilterBF_(const Mat& src, const Mat& before, const Size ksize, Mat& dest, int thresh)
 	{
 		if (dest.empty())dest.create(src.size(), src.depth());
 		Mat sim;
@@ -67,12 +67,9 @@ namespace cp
 		}
 	}
 
-
-
 	template <class srcType>
-	void jointNearestFilterBase_(const Mat& src, const Mat& before, const Size ksize, Mat& dest)
+	static void jointNearestFilterBase_(const Mat& src, const Mat& before, const Size ksize, Mat& dest)
 	{
-		if (dest.empty())dest.create(src.size(), src.type());
 		Mat sim;
 		const int radiusw = ksize.width / 2;
 		const int radiush = ksize.height / 2;;
@@ -169,7 +166,7 @@ namespace cp
 		}
 	}
 
-	void jointNearestFilter_32f(const Mat& src, const Mat& before, const Size ksize, Mat& dest)
+	static void jointNearestFilter_32f(const Mat& src, const Mat& before, const Size ksize, Mat& dest)
 	{
 		const int rem = (4 - before.cols % 4) % 4;
 		const int radiusw = ksize.width / 2;
@@ -227,7 +224,7 @@ namespace cp
 		Mat(dstim(Rect(0, 0, src.cols, src.rows))).copyTo(dest);
 	}
 
-	void jointNearestFilter_16s(const Mat& src, const Mat& before, const Size ksize, Mat& dest)
+	static void jointNearestFilter_16s(const Mat& src, const Mat& before, const Size ksize, Mat& dest)
 	{
 		const int rem = (8 - before.cols % 8) % 8;
 		const int radiusw = ksize.width / 2;
@@ -285,9 +282,7 @@ namespace cp
 		Mat(dstim(Rect(0, 0, src.cols, src.rows))).copyTo(dest);
 	}
 
-
-
-	void jointNearestFilter_16u(const Mat& src, const Mat& before, const Size ksize, Mat& dest)
+	static void jointNearestFilter_16u(const Mat& src, const Mat& before, const Size ksize, Mat& dest)
 	{
 		const int rem = (8 - before.cols % 8) % 8;
 		const int radiusw = ksize.width / 2;
@@ -397,9 +392,10 @@ namespace cp
 		Mat(dstim(Rect(0, 0, src.cols, src.rows))).copyTo(dest);
 	}
 
+
 	void jointNearestFilter(InputArray src_, InputArray before_, Size ksize, OutputArray dest_)
 	{
-		if (dest_.empty()) dest_.create(src_.size(), src_.type());
+		dest_.create(src_.size(), src_.type());
 
 		Mat src = src_.getMat();
 		Mat before = before_.getMat();
@@ -457,10 +453,9 @@ namespace cp
 		}*/
 	}
 
-
 	void jointNearestFilterBase(InputArray src_, InputArray before_, Size ksize, OutputArray dest_)
 	{
-		if (dest_.empty()) dest_.create(src_.size(), src_.type());
+		dest_.create(src_.size(), src_.type());
 
 		Mat src = src_.getMat();
 		Mat before = before_.getMat();
