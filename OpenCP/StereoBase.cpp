@@ -736,7 +736,7 @@ namespace cp
 	void StereoBase::gui(Mat& leftim, Mat& rightim, Mat& destDisparity, StereoEval& eval)
 	{
 #pragma region setup
-		ConsoleImage ci(Size(640, 680));
+		ConsoleImage ci(Size(720, 680));
 		//ci.setFontSize(12);
 		string wname = "";
 		string wname2 = "Disparity Map";
@@ -812,11 +812,6 @@ namespace cp
 			createTrackbar("mode", "signal", &diffmode, 2);
 		}
 
-		int bx = 3;
-		createTrackbar("post:subboxR", wname, &bx, 10);
-		int bran = 31;
-		createTrackbar("post:subboxrange", wname, &bran, 64);
-
 		createTrackbar("ref:joint r", wname, &refinementR, 15);
 		int refinementSigmaRangeInt = int(refinementSigmaRange * 10); createTrackbar("ref:joint range*0.1", wname, &refinementSigmaRangeInt, 1000);
 		int refinementSigmaSpaceInt = int(refinementSigmaSpace * 10); createTrackbar("ref:joint space*0.1", wname, &refinementSigmaSpaceInt, 100);
@@ -833,8 +828,8 @@ namespace cp
 		bool isStreak = false;
 		bool isMedian = false;
 
-		int maskType = 0;
-		int maskPrec = 0;
+		int maskType = 1;//0: nomask, 1: nonocc: 2, all: 3, disc, 4: GT
+		int maskPrec = 2;//0: 0.5, 1: 1.0, 2: 2.0
 		bool isPlotCostFunction = true;
 		bool isPlotSignal = true;
 		bool isGrid = true;
@@ -878,8 +873,6 @@ namespace cp
 #pragma endregion
 
 #pragma region console setup
-			ci.clear();
-
 			if (isFeedback) ci(CV_RGB(0, 255, 0), "isFeedback true (f)");
 			else  ci(CV_RGB(255, 0, 0), "isFeedback false (f)");
 
@@ -958,7 +951,7 @@ namespace cp
 
 #pragma endregion
 
-			if (isRandomShift&&eval.isInit)
+			if (isRandomShift && eval.isInit)
 			{
 				const int x = rng.uniform(-3, 4);
 				cp::warpShift(leftim, L, x);
@@ -1000,6 +993,7 @@ namespace cp
 
 			ci("valid %5.2f %%", getValidRatio());
 
+			//plot subpixel distribution
 			if (isSubpixelDistribution)
 			{
 				histp.clear();
@@ -1029,16 +1023,6 @@ namespace cp
 				histp.plot("subpixel disparity distribution", false);
 			}
 
-			if (eval.isInit)
-			{
-				if (isDispalityColor)cvtDisparityColor(destDisparity, dispShow, minDisparity, numberOfDisparities, DISPARITY_COLOR::COLOR_PSEUDO, 16);
-				else				 cvtDisparityColor(destDisparity, dispShow, 0, 255, DISPARITY_COLOR::GRAY, int(16/ eval.amp));
-			}
-			else
-			{
-				if (isDispalityColor)cvtDisparityColor(destDisparity, dispShow, minDisparity, numberOfDisparities, DISPARITY_COLOR::COLOR_PSEUDO, 16);
-				else				 cvtDisparityColor(destDisparity, dispShow, 0, numberOfDisparities, DISPARITY_COLOR::GRAY);
-			}
 			//plot cost function
 			if (isPlotCostFunction)
 			{
@@ -1197,6 +1181,17 @@ namespace cp
 				}
 			}
 
+			// show disparity
+			if (eval.isInit)
+			{
+				if (isDispalityColor)cvtDisparityColor(destDisparity, dispShow, minDisparity, numberOfDisparities, DISPARITY_COLOR::COLOR_PSEUDO, 16);
+				else				 cvtDisparityColor(destDisparity, dispShow, 0, 255, DISPARITY_COLOR::GRAY, int(16 / eval.amp));
+			}
+			else
+			{
+				if (isDispalityColor)cvtDisparityColor(destDisparity, dispShow, minDisparity, numberOfDisparities, DISPARITY_COLOR::COLOR_PSEUDO, 16);
+				else				 cvtDisparityColor(destDisparity, dispShow, 0, numberOfDisparities, DISPARITY_COLOR::GRAY);
+			}
 			alphaBlend(leftim, dispShow, display_image_depth_alpha / 100.0, dispShow);
 			if (isGrid)
 			{
@@ -1206,7 +1201,11 @@ namespace cp
 
 			showWeightMap("refinement weightmap");
 			imshow(wname2, dispShow);
-			imshow("console", ci.image);
+			ci("Other keys");
+			ci("grid (g), dispcolor(w), refresh(r)");
+			ci("check alpha(c), cross(b)");
+			
+			ci.show();
 			setTrackbarPos("px", wname, mpt.x);
 			setTrackbarPos("py", wname, mpt.y);
 #pragma endregion 
@@ -1227,8 +1226,7 @@ namespace cp
 			if (key == '-') isMedian = (isMedian) ? false : true;
 
 			if (key == 'f') isFeedback = isFeedback ? false : true;
-			if (key == 'g') isGrid = (isGrid) ? false : true;
-
+			
 			if (key == 'i') { pixelMatchingMethod++; pixelMatchingMethod = (pixelMatchingMethod > Pixel_Matching_Method_Size - 1) ? 0 : pixelMatchingMethod; }
 			if (key == 'u') { pixelMatchingMethod--; pixelMatchingMethod = (pixelMatchingMethod < 0) ? Pixel_Matching_Method_Size - 2 : pixelMatchingMethod; }
 			if (key == 'j') { color_distance++; color_distance = (color_distance > ColorDistance_Size - 1) ? 0 : color_distance; }
@@ -1237,6 +1235,10 @@ namespace cp
 			if (key == '@') { aggregationMethod++; aggregationMethod = (aggregationMethod > Aggregation_Method_Size - 1) ? 0 : aggregationMethod; }
 			if (key == '[') { aggregationMethod--; aggregationMethod = (aggregationMethod < 0) ? Aggregation_Method_Size - 2 : aggregationMethod; }
 
+			if (key == 'm')maskType++; maskType = maskType > 4 ? 0 : maskType;
+			if (key == ',')maskPrec++; maskPrec = maskPrec > 2 ? 0 : maskPrec;
+
+			if (key == 'g') isGrid = (isGrid) ? false : true;
 			if (key == 'w')isDispalityColor = (isDispalityColor) ? false : true;
 			if (key == 'b') guiCrossBasedLocalFilter(leftim);
 			if (key == 'c') guiAlphaBlend(dispShow, leftim);
@@ -1244,9 +1246,6 @@ namespace cp
 			{
 				destDisparity.setTo(0);
 			}
-
-			if (key == 'm')maskType++; maskType = maskType > 4 ? 0 : maskType;
-			if (key == ',')maskPrec++; maskPrec = maskPrec > 2 ? 0 : maskPrec;
 #pragma endregion
 		}
 	}
@@ -1262,7 +1261,7 @@ namespace cp
 #pragma endregion
 
 #pragma region prefilter
-#define  CV_CAST_8U(t)  (uchar)(!((t) & ~255) ? (t) : (t) > 0 ? 255 : 0)
+
 	static void prefilterXSobel(Mat& src, Mat& dst, const int preFilterCap)
 	{
 		if (dst.empty() || dst.depth() != CV_8U)dst.create(src.size(), CV_8U);
@@ -1271,29 +1270,32 @@ namespace cp
 
 		Size size = src.size();
 		const uchar val0 = preFilterCap;
+		const int preFilterCap2 = saturate_cast<int>(2 * preFilterCap);
 
-		const int step = 2 * src.cols;
+		const int step = 2 * size.width;//2 * size.width
 		uchar* srow1 = src.ptr<uchar>();
 		uchar* dptr0 = dst.ptr<uchar>();
 		uchar* dptr1 = dptr0 + dst.step;
 
 		const int WIDTH = get_simd_floor(size.width - 1, 8);
 		const int e = size.width - 1;
-
+		const int WCS = 2;//center weight of Sobel
 		int y;
 		//unrolling y0 and y1
-		for (y = 0; y < size.height - 1; y += 2)
+		const int HEIGHT = get_simd_floor(size.height, 2);
+		for (y = 0; y < HEIGHT; y += 2)
 		{
 			const uchar* srow0 = y > 0 ? srow1 - src.step : size.height > 1 ? srow1 + src.step : srow1;
 			const uchar* srow2 = y < size.height - 1 ? srow1 + src.step : size.height > 1 ? srow1 - src.step : srow1;
 			const uchar* srow3 = y < size.height - 2 ? srow1 + src.step * 2 : srow1;
 
-			dptr0[0] = saturate_cast<uchar>(min(preFilterCap * 2, (srow0[0] - srow0[1]) + 4 * (srow1[0] - srow1[1]) + (srow2[0] - srow2[1]) + preFilterCap));
-			dptr1[0] = saturate_cast<uchar>(min(preFilterCap * 2, (srow1[0] - srow1[1]) + 4 * (srow2[0] - srow2[1]) + (srow3[0] - srow3[1]) + preFilterCap));
+			dptr0[0] = saturate_cast<uchar>(min(preFilterCap2, (srow0[0] - srow0[1]) + WCS * (srow1[0] - srow1[1]) + (srow2[0] - srow2[1]) + preFilterCap));
+			dptr1[0] = saturate_cast<uchar>(min(preFilterCap2, (srow1[0] - srow1[1]) + WCS * (srow2[0] - srow2[1]) + (srow3[0] - srow3[1]) + preFilterCap));
 
-			__m128i zero = _mm_setzero_si128(), ftz = _mm_set1_epi16((short)preFilterCap),
-				ftz2 = _mm_set1_epi8(CV_CAST_8U(preFilterCap * 2));
-#if 0
+			__m128i zero = _mm_setzero_si128();
+			__m128i ftz = _mm_set1_epi16((short)preFilterCap); //preFilterCap (short)
+			__m128i ftz2 = _mm_set1_epi8(saturate_cast<uchar>(preFilterCap2));//preFilterCap2 (uchar)
+#if 1
 			for (int x = 1; x < WIDTH; x += 8)
 			{
 				__m128i c0 = _mm_unpacklo_epi8(_mm_loadl_epi64((__m128i*)(srow0 + x - 1)), zero);
@@ -1320,30 +1322,36 @@ namespace cp
 				_mm_storel_epi64((__m128i*)(dptr0 + x), v0);
 				_mm_storel_epi64((__m128i*)(dptr1 + x), _mm_unpackhi_epi64(v0, v0));
 			}
-#endif
-			//for (int x = WIDTH; x < size.width - 1; x++)
+			for (int x = WIDTH; x < size.width - 1; x++)
+			{
+				dptr0[x] = saturate_cast<uchar>(min(preFilterCap2, (srow0[x + 1] - srow0[x - 1]) + WCS * (srow1[x + 1] - srow1[x - 1]) + (srow2[x + 1] - srow2[x - 1]) + preFilterCap));
+				dptr1[x] = saturate_cast<uchar>(min(preFilterCap2, (srow1[x + 1] - srow1[x - 1]) + WCS * (srow2[x + 1] - srow2[x - 1]) + (srow3[x + 1] - srow3[x - 1]) + preFilterCap));
+			}
+#else
 			for (int x = 1; x < size.width - 1; x++)
 			{
-				dptr0[x] = saturate_cast<uchar>(min(preFilterCap * 2, (srow0[x - 1] - srow0[x + 1]) + 4 * (srow1[x - 1] - srow1[x + 1]) + (srow2[x - 1] - srow2[x + 1]) + preFilterCap));
-				dptr1[x] = saturate_cast<uchar>(min(preFilterCap * 2, (srow1[x - 1] - srow1[x + 1]) + 4 * (srow2[x - 1] - srow2[x + 1]) + (srow3[x - 1] - srow3[x + 1]) + preFilterCap));
+				dptr0[x] = saturate_cast<uchar>(min(preFilterCap2, (srow0[x + 1] - srow0[x - 1]) + WCS * (srow1[x + 1] - srow1[x - 1]) + (srow2[x + 1] - srow2[x - 1]) + preFilterCap));
+				dptr1[x] = saturate_cast<uchar>(min(preFilterCap2, (srow1[x + 1] - srow1[x - 1]) + WCS * (srow2[x + 1] - srow2[x - 1]) + (srow3[x + 1] - srow3[x - 1]) + preFilterCap));
 			}
-			dptr0[e] = saturate_cast<uchar>(min(preFilterCap * 2, (srow0[e] - srow0[e - 1]) + 4 * (srow1[e] - srow1[e - 1]) + (srow2[e] - srow2[e - 1]) + preFilterCap));
-			dptr1[e] = saturate_cast<uchar>(min(preFilterCap * 2, (srow1[e] - srow1[e - 1]) + 4 * (srow2[e] - srow2[e - 1]) + (srow3[e] - srow3[e - 1]) + preFilterCap));
+#endif
+			dptr0[e] = saturate_cast<uchar>(min(preFilterCap2, (srow0[e] - srow0[e - 1]) + WCS * (srow1[e] - srow1[e - 1]) + (srow2[e] - srow2[e - 1]) + preFilterCap));
+			dptr1[e] = saturate_cast<uchar>(min(preFilterCap2, (srow1[e] - srow1[e - 1]) + WCS * (srow2[e] - srow2[e - 1]) + (srow3[e] - srow3[e - 1]) + preFilterCap));
 			srow1 += step;
 			dptr0 += step;
 			dptr1 += step;
 		}
 		srow1 -= src.cols;
-		for (; y < size.height; y++)
+		
+		for (int y = HEIGHT; y < size.height; y++)
 		{
 			uchar* dptr = dst.ptr<uchar>(y);
-			const uchar* srow0 = y > 0 ? srow1 - src.step : size.height > 1 ? srow1 + src.step : srow1;
-			dptr[0] = saturate_cast<uchar>(min(preFilterCap * 2, 2 * (srow0[0] - srow0[1]) + 3 * (srow1[0] - srow1[1]) + preFilterCap));
+			const uchar* srow0 = srow1 - src.step;
+			dptr[0] = saturate_cast<uchar>(min(preFilterCap2, 2 * (srow0[0] - srow0[1]) + WCS * (srow1[0] - srow1[1]) + preFilterCap));
 			for (int x = 1; x < size.width - 1; x++)
 			{
-				dptr[x] = saturate_cast<uchar>(min(preFilterCap * 2, 2 * (srow0[x - 1] - srow0[x + 1]) + 3 * (srow1[x - 1] - srow1[x + 1]) + preFilterCap));
+				dptr[x] = saturate_cast<uchar>(min(preFilterCap2, 2 * (srow0[x - 1] - srow0[x + 1]) + WCS * (srow1[x - 1] - srow1[x + 1]) + preFilterCap));
 			}
-			dptr[e] = saturate_cast<uchar>(min(preFilterCap * 2, 2 * (srow0[e] - srow0[e - 1]) + 3 * (srow1[e] - srow1[e - 1]) + preFilterCap));
+			dptr[e] = saturate_cast<uchar>(min(preFilterCap2, 2 * (srow0[e - 1] - srow0[e]) + WCS * (srow1[e - 1] - srow1[e]) + preFilterCap));
 		}
 	}
 
