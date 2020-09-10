@@ -6,25 +6,6 @@
 using namespace std;
 using namespace cv;
 
-/*
-src：入力画像
-guide:guide画像（srcと同じでもOK）
-dst:出力画像
-r:カーネル半径
-truncate: ヒストグラムを加算するときの半径．±truncate分加算．加算の仕方はweightFunctionTypeで指定
-sigmaColor：カラーのガウシアンのパラメータ
-sigmaSpace：空間のガウシアンのパラメータ
-weightFunctionType:
-L0_NORM:何もしない．今の実装はたぶんこれ
-L1_NORM:L1ノルムでヒストグラムを加算
-L1_NORM:L2ノルムでヒストグラムを加算
-EXP:ガウシアンでヒストグラムを加算
-
-method:
-Histogram::BILATERAL　バイラテラルの加算：現在の実装はたぶんこれ
-Histogram::GAUSSIAN　ガウシアンフィルタで加算
-Histogram::NO_WEIGHT　ボックスフィルタで加算
-*/
 namespace cp
 {
 
@@ -390,7 +371,7 @@ namespace cp
 
 	enum class WHF_WEIGHT
 	{
-		NO_WEIGHT,
+		BOX,
 		GAUSSIAN,
 		BILATERAL
 	};
@@ -414,10 +395,10 @@ namespace cp
 		string ret = "no support WHF_OPERATION";
 		switch (method)
 		{
-		case NO_WEIGHT_MODE:	ret = "NO_WEIGHT_MODE"; break;
+		case BOX_MODE:			ret = "BOX_MODE"; break;
 		case GAUSSIAN_MODE:		ret = "GAUSSIAN_MODE"; break;
 		case BILATERAL_MODE:	ret = "BILATERAL_MODE"; break;
-		case NO_WEIGHT_MEDIAN:	ret = "NO_WEIGHT_MEDIAN"; break;
+		case BOX_MEDIAN:		ret = "BOX_MEDIAN"; break;
 		case GAUSSIAN_MEDIAN:	ret = "GAUSSIAN_MEDIAN"; break;
 		case BILATERAL_MEDIAN:	ret = "BILATERAL_MEDIAN"; break;
 		default:
@@ -439,13 +420,13 @@ namespace cp
 
 		Mat srcBorder; copyMakeBorder(src, srcBorder, r, r, r, r, borderType);
 
-		const int mode = (method >= WHF_OPERATION::NO_WEIGHT_MEDIAN) ? WeightedHistogram::MEDIAN : WeightedHistogram::MAX;
+		const int mode = (method >= WHF_OPERATION::BOX_MEDIAN) ? WeightedHistogram::MEDIAN : WeightedHistogram::MAX;
 		WHF_WEIGHT weight_method;
 		switch (method)
 		{
-		case NO_WEIGHT_MODE:
-		case NO_WEIGHT_MEDIAN:
-			weight_method = WHF_WEIGHT::NO_WEIGHT; break;
+		case BOX_MODE:
+		case BOX_MEDIAN:
+			weight_method = WHF_WEIGHT::BOX; break;
 		case GAUSSIAN_MODE:
 		case GAUSSIAN_MEDIAN:
 			weight_method = WHF_WEIGHT::GAUSSIAN; break;
@@ -532,7 +513,7 @@ namespace cp
 					}
 				}
 			}
-			else if (weight_method == WHF_WEIGHT::NO_WEIGHT)
+			else if (weight_method == WHF_WEIGHT::BOX)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
@@ -618,7 +599,7 @@ namespace cp
 					}
 				}
 			}
-			else if (weight_method == WHF_WEIGHT::NO_WEIGHT)
+			else if (weight_method == WHF_WEIGHT::BOX)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
@@ -663,13 +644,13 @@ namespace cp
 		Mat srcBorder; copyMakeBorder(src, srcBorder, r, r, r, r, borderType);
 		Mat weightBorder; copyMakeBorder(weight, weightBorder, r, r, r, r, borderType);
 
-		const int mode = (method >= WHF_OPERATION::NO_WEIGHT_MEDIAN) ? WeightedHistogram::MEDIAN : WeightedHistogram::MAX;
+		const int mode = (method >= WHF_OPERATION::BOX_MEDIAN) ? WeightedHistogram::MEDIAN : WeightedHistogram::MAX;
 		WHF_WEIGHT weight_method;
 		switch (method)
 		{
-		case NO_WEIGHT_MODE:
-		case NO_WEIGHT_MEDIAN:
-			weight_method = WHF_WEIGHT::NO_WEIGHT; break;
+		case BOX_MODE:
+		case BOX_MEDIAN:
+			weight_method = WHF_WEIGHT::BOX; break;
 		case GAUSSIAN_MODE:
 		case GAUSSIAN_MEDIAN:
 			weight_method = WHF_WEIGHT::GAUSSIAN; break;
@@ -760,7 +741,7 @@ namespace cp
 					}
 				}
 			}
-			else if (weight_method == WHF_WEIGHT::NO_WEIGHT)
+			else if (weight_method == WHF_WEIGHT::BOX)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
@@ -850,7 +831,7 @@ namespace cp
 					}
 				}
 			}
-			else if (weight_method == WHF_WEIGHT::NO_WEIGHT)
+			else if (weight_method == WHF_WEIGHT::BOX)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
@@ -947,107 +928,23 @@ namespace cp
 		weightedWeightedHistogramFilter(s, w, g, d, r, sigmaColor, sigmaSpace, sigmaHistogram, WHF_HISTOGRAM_WEIGHT_FUNCTION::GAUSSIAN, WHF_OPERATION::BILATERAL_MODE, borderType, mask);
 	}
 
-
-	/*
-	void weightedMedianFilter(InputArray src, InputArray guide, OutputArray dst, int r, int truncate, double sig_c, double sig_s, const WHF_HISTOGRAM_WEIGHT weightFunctionType, int method)
+	void weightedMedianFilter(cv::InputArray src, cv::InputArray guide, cv::OutputArray dst, const int r, const double sigmaColor, const double sigmaSpace, const double sigmaHistogram, const int borderType, cv::InputArray mask)
 	{
 		Mat s = src.getMat();
 		Mat g = guide.getMat();
 		if (dst.empty()) dst.create(src.size(), src.type());
 		Mat d = dst.getMat();
-		weightedHistogramFilter(s, g, d, r, truncate, sig_c, sig_s, weightFunctionType, method + WeightedHistogram::NO_WEIGHT_MEDIAN);
+		weightedHistogramFilter(s, g, d, r, sigmaColor, sigmaSpace, sigmaHistogram, WHF_HISTOGRAM_WEIGHT_FUNCTION::GAUSSIAN, WHF_OPERATION::BILATERAL_MEDIAN, borderType, mask);
 	}
 
-	void weightedweightedModeFilter(InputArray src, InputArray wmap, InputArray guide, OutputArray dst, int r, int truncate, double sig_c1, double sig_c2, double sig_s, const WHF_HISTOGRAM_WEIGHT weightFunctionType, int method)
+	void weightedWeightedMedianFilter(cv::InputArray src, cv::InputArray weight, cv::InputArray guide, cv::OutputArray dst, const int r, const double sigmaColor, const double sigmaSpace, const double sigmaHistogram, const int borderType, cv::InputArray mask)
 	{
 		Mat s = src.getMat();
+		Mat w = weight.getMat();
 		Mat g = guide.getMat();
-		Mat w = wmap.getMat();
 		if (dst.empty()) dst.create(src.size(), src.type());
 		Mat d = dst.getMat();
 
-		weightedweightedHistogramFilter(s, w, g, d, r, truncate, sig_c1, sig_c2, sig_s, weightFunctionType, method);
+		weightedWeightedHistogramFilter(s, w, g, d, r, sigmaColor, sigmaSpace, sigmaHistogram, WHF_HISTOGRAM_WEIGHT_FUNCTION::GAUSSIAN, WHF_OPERATION::BILATERAL_MEDIAN, borderType, mask);
 	}
-
-	void weightedweightedMedianFilter(InputArray src, InputArray wmap, InputArray guide, OutputArray dst, int r, int truncate, double sig_c1, double sig_c2, double sig_s, const WHF_HISTOGRAM_WEIGHT weightFunctionType, int method)
-	{
-		Mat s = src.getMat();
-		Mat g = guide.getMat();
-		Mat w = wmap.getMat();
-		if (dst.empty()) dst.create(src.size(), src.type());
-		Mat d = dst.getMat();
-
-		weightedweightedHistogramFilter(s, w, g, d, r, truncate, sig_c1, sig_c2, sig_s, weightFunctionType, method + WeightedHistogram::NO_WEIGHT_MEDIAN);
-	}
-
-	void weightedweightedModeFilter(InputArray src, InputArray wmap, InputArray guide, OutputArray dst, int r, int truncate, double sig_c, double sig_s, const WHF_HISTOGRAM_WEIGHT weightFunctionType, int method)
-	{
-		Mat s = src.getMat();
-		Mat g = guide.getMat();
-		Mat w = wmap.getMat();
-		if (dst.empty()) dst.create(src.size(), src.type());
-		Mat d = dst.getMat();
-
-		weightedweightedHistogramFilter(s, w, g, d, r, truncate, sig_c, sig_s, weightFunctionType, method);
-	}
-
-	void weightedweightedMedianFilter(InputArray src, InputArray wmap, InputArray guide, OutputArray dst, int r, int truncate, double sig_c, double sig_s, const WHF_HISTOGRAM_WEIGHT weightFunctionType, int method)
-	{
-		Mat s = src.getMat();
-		Mat g = guide.getMat();
-		Mat w = wmap.getMat();
-		if (dst.empty()) dst.create(src.size(), src.type());
-		Mat d = dst.getMat();
-
-		weightedweightedHistogramFilter(s, w, g, d, r, truncate, sig_c, sig_s, weightFunctionType, method + WeightedHistogram::NO_WEIGHT_MEDIAN);
-	}
-
-	void weightedweightedModeFilter(InputArray src, InputArray wmap, InputArray guide, InputArray mask, OutputArray dst, int r, int truncate, double sig_c, double sig_s, const WHF_HISTOGRAM_WEIGHT weightFunctionType, int method)
-	{
-		Mat s = src.getMat();
-		Mat g = guide.getMat();
-		Mat w = wmap.getMat();
-		Mat m = mask.getMat();
-		if (dst.empty()) dst.create(src.size(), src.type());
-		Mat d = dst.getMat();
-
-		weightedweightedHistogramFilter(s, w, g, m, d, r, truncate, sig_c, sig_s, weightFunctionType, method);
-	}
-
-	void weightedweightedMedianFilter(InputArray src, InputArray wmap, InputArray guide, InputArray mask, OutputArray dst, int r, int truncate, double sig_c, double sig_s, const WHF_HISTOGRAM_WEIGHT weightFunctionType, int method)
-	{
-		Mat s = src.getMat();
-		Mat g = guide.getMat();
-		Mat w = wmap.getMat();
-		Mat m = mask.getMat();
-		if (dst.empty()) dst.create(src.size(), src.type());
-		Mat d = dst.getMat();
-
-		weightedweightedHistogramFilter(s, w, g, m, d, r, truncate, sig_c, sig_s, weightFunctionType, method + WeightedHistogram::NO_WEIGHT_MEDIAN);
-	}
-
-	void weightedweightedModeFilter(InputArray src, InputArray wmap, InputArray guide, InputArray mask, OutputArray dst, int r, int truncate, double sig_c1, double sig_c2, double sig_s, const WHF_HISTOGRAM_WEIGHT weightFunctionType, int method)
-	{
-		Mat s = src.getMat();
-		Mat g = guide.getMat();
-		Mat w = wmap.getMat();
-		Mat m = mask.getMat();
-		if (dst.empty()) dst.create(src.size(), src.type());
-		Mat d = dst.getMat();
-
-		weightedweightedHistogramFilter(s, w, g, m, d, r, truncate, sig_c1, sig_c2, sig_s, weightFunctionType, method);
-	}
-
-	void weightedweightedMedianFilter(InputArray src, InputArray wmap, InputArray guide, InputArray mask, OutputArray dst, int r, int truncate, double sig_c1, double sig_c2, double sig_s, const WHF_HISTOGRAM_WEIGHT weightFunctionType, int method)
-	{
-		Mat s = src.getMat();
-		Mat g = guide.getMat();
-		Mat w = wmap.getMat();
-		Mat m = mask.getMat();
-		if (dst.empty()) dst.create(src.size(), src.type());
-		Mat d = dst.getMat();
-
-		weightedweightedHistogramFilter(s, w, g, m, d, r, truncate, sig_c1, sig_c2, sig_s, weightFunctionType, method + WeightedHistogram::NO_WEIGHT_MEDIAN);
-	}
-	*/
 }

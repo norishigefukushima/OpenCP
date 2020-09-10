@@ -100,6 +100,13 @@ imshowの拡張
 * [class GuidedImageFilter](guidedFilter_jp.md "#class GuidedImageFilter")
 * [class GuidedImageFilterTiling](guidedFilter_jp.md "#GuidedImageFilterTiling")
 
+## weightedHistogramFilter.hpp
+weighted histogram filterの関数
+* [weightedHistogramFilter](weightedHistogramFilter_jp.md "weightedHistogramFilter")
+* [weightedWeightedHistogramFilter](weightedHistogramFilter_jp.md "weightedWeightedHistogramFilter")
+* [weightedModeFilter/weightedModeFilter](weightedHistogramFilter_jp.md "weightedModeFilter/weightedMedianFilter")
+* [weightedWeightedModeFilter/weightedWeightedModeFilter](weightedHistogramFilter_jp.md "weightedWeightedModeFilter/weightedWeightedMedianFilter")
+
 # stereo
 ## StereoBase.hpp
 ステレオマッチングの関数
@@ -110,6 +117,7 @@ imshowの拡張
 * [createDisparityALLMask](StereoEval.md "createDisparityALLMask")
 * [createDisparityNonOcclusionMask](StereoEval.md "createDisparityNonOcclusionMask")
 * [class calcBadPixel](StereoEval.md "class StereoEval")
+
 # memo
 Optimization
 * Naive：ほとんど最適化されていない素のC++で書かれたコード．
