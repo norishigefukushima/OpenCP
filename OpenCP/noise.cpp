@@ -7,7 +7,7 @@ namespace cp
 {
 
 	template <class srcType>
-	void addNoiseSoltPepperMono_(Mat& src, Mat& dest, const double per, const int seed)
+	static void addNoiseSoltPepperMono_(Mat& src, Mat& dest, const double per, const uint64 seed)
 	{
 		cv::RNG rng;
 		if (seed != 0) rng.state = seed;
@@ -32,17 +32,18 @@ namespace cp
 		}
 	}
 
-	void addNoiseSoltPepperMono(Mat& src, Mat& dest, double per, int seed = 0)
+	static void addNoiseSoltPepperMono(Mat& src, Mat& dest, double per, const uint64 seed)
 	{
-		if (src.type() == CV_8U) addNoiseSoltPepperMono_<uchar>(src, dest, per, seed);
-		if (src.type() == CV_16U) addNoiseSoltPepperMono_<ushort>(src, dest, per, seed);
-		if (src.type() == CV_16S) addNoiseSoltPepperMono_<short>(src, dest, per, seed);
-		if (src.type() == CV_32S) addNoiseSoltPepperMono_<int>(src, dest, per, seed);
-		if (src.type() == CV_32F) addNoiseSoltPepperMono_<float>(src, dest, per, seed);
-		if (src.type() == CV_64F) addNoiseSoltPepperMono_<double>(src, dest, per, seed);
+		if (src.depth() == CV_8U) addNoiseSoltPepperMono_<uchar>(src, dest, per, seed);
+		if (src.depth() == CV_8S) addNoiseSoltPepperMono_<char>(src, dest, per, seed);
+		if (src.depth() == CV_16U) addNoiseSoltPepperMono_<ushort>(src, dest, per, seed);
+		if (src.depth() == CV_16S) addNoiseSoltPepperMono_<short>(src, dest, per, seed);
+		if (src.depth() == CV_32S) addNoiseSoltPepperMono_<int>(src, dest, per, seed);
+		if (src.depth() == CV_32F) addNoiseSoltPepperMono_<float>(src, dest, per, seed);
+		if (src.depth() == CV_64F) addNoiseSoltPepperMono_<double>(src, dest, per, seed);
 	}
 
-	void addNoiseMono_nf(Mat& src, Mat& dest, double sigma)
+	static void addNoiseMono_int(Mat& src, Mat& dest, double sigma)
 	{
 		Mat s;
 		src.convertTo(s, CV_32S);
@@ -51,33 +52,35 @@ namespace cp
 		add(s, n, dest, noArray(), src.depth());
 	}
 
-	void addNoiseMono_f(Mat& src, Mat& dest, double sigma)
+	static void addNoiseMono_double(Mat& src, Mat& dest, const double sigma)
 	{
-		Mat s;
-		src.convertTo(s, CV_64F);
+		Mat s; src.convertTo(s, CV_64F);
 		Mat n(s.size(), CV_64F);
 		randn(n, 0, sigma);
 		add(s, n, dest, noArray(), src.depth());
 	}
 
-	void addNoiseMono(Mat& src, Mat& dest, double sigma)
+	static void addNoiseMono(Mat& src, Mat& dest, const double sigma)
 	{
-		if (src.type() == CV_32F || src.type() == CV_64F)
+		if (src.depth() == CV_32F || src.depth() == CV_64F)
 		{
-			addNoiseMono_f(src, dest, sigma);
+			addNoiseMono_double(src, dest, sigma);
 		}
 		else
 		{
-			addNoiseMono_nf(src, dest, sigma);
+			addNoiseMono_int(src, dest, sigma);
 		}
 	}
 
-	void addNoise(InputArray src_, OutputArray dest_, const double sigma, const double sprate, const int seed)
+	void addNoise(InputArray src_, OutputArray dest_, const double sigma, const double sprate, const uint64 seed)
 	{
-		if (seed != 0) cv::theRNG().state = seed;
-		if (dest_.empty() || dest_.size() != src_.size() || dest_.type() != src_.type()) dest_.create(src_.size(), src_.type());
+		CV_Assert(!src_.empty());
+		dest_.create(src_.size(), src_.type());
 		Mat src = src_.getMat();
 		Mat dest = dest_.getMat();
+
+		if (seed != 0) cv::theRNG().state = seed;
+		
 		if (src.channels() == 1)
 		{
 			addNoiseMono(src, dest, sigma);
@@ -86,17 +89,12 @@ namespace cp
 		}
 		else
 		{
-			vector<Mat> s(src.channels());
-			vector<Mat> d(src.channels());
-			split(src, s);
-			for (int i = 0; i < src.channels(); i++)
-			{
-				addNoiseMono(s[i], d[i], sigma);
-				if (sprate != 0)addNoiseSoltPepperMono(d[i], d[i], sprate, seed);
-			}
-			cv::merge(d, dest);
+			Mat s = src.reshape(1);
+			dest = dest.reshape(1);
+			addNoiseMono(s, dest, sigma);
+			if (sprate != 0)addNoiseSoltPepperMono(dest, dest, sprate, seed);
+			dest = dest.reshape(3);
 		}
-		if (seed != 0) cv::theRNG().state = cv::getTickCount();
 	}
 
 	void addJPEGNoise(InputArray src, OutputArray dest, const int quality)

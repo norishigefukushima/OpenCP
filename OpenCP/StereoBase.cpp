@@ -14,9 +14,9 @@
 #include "consoleImage.hpp"
 #include "shiftImage.hpp"
 #include "blend.hpp"
-
+#include "noise.hpp"
 #include "inlinesimdfunctions.hpp"
-
+#include "checkSameImage.hpp"
 #include "debugcp.hpp"
 
 using namespace std;
@@ -736,7 +736,7 @@ namespace cp
 	void StereoBase::gui(Mat& leftim, Mat& rightim, Mat& destDisparity, StereoEval& eval)
 	{
 #pragma region setup
-		ConsoleImage ci(Size(720, 680));
+		ConsoleImage ci(Size(720, 800));
 		//ci.setFontSize(12);
 		string wname = "";
 		string wname2 = "Disparity Map";
@@ -848,7 +848,8 @@ namespace cp
 		int key = 0;
 
 		//for randomness
-		bool isRandomShift = false;
+		bool isRandomizedMove = false;
+		bool isNoise = true;
 		Mat L = leftim.clone();
 		Mat R = rightim.clone();
 		Mat GT;
@@ -856,7 +857,8 @@ namespace cp
 		int igb = eval.ignoreLeftBoundary;
 		double evalamp = eval.amp;
 		RNG rng;
-
+		double sigma_noise = 1.0;
+		int noise_state = 0;
 #pragma endregion
 		while (key != 'q')
 		{
@@ -883,14 +885,17 @@ namespace cp
 #pragma endregion
 
 #pragma region console setup
-			if (isFeedback) ci(CV_RGB(0, 255, 0), "isFeedback true (f)");
-			else  ci(CV_RGB(255, 0, 0), "isFeedback false (f)");
+			if (noise_state==0) ci(CV_RGB(255, 0, 0), "noise             (n)| false"); 
+			else if (noise_state == 1) ci(CV_RGB(0, 255, 0), "noise             (n)| true");
+			else if (noise_state == 2) ci(CV_RGB(0, 255, 0), "noise             (n)| true with random move");
+			if (isFeedback) ci(CV_RGB(0, 255, 0), "isFeedback        (f)| true");
+			else  ci(CV_RGB(255, 0, 0), "isFeedback        (f)| false");
 
 			if (pixelMatchingMethod % 2 == 0)
-				ci("Cost:" + getCostMethodName((Cost)pixelMatchingMethod) + ": (i-u)");
+				ci("Cost            (i-u)| " + getCostMethodName((Cost)pixelMatchingMethod) + "");
 			else
-				ci("Cost:" + getCostMethodName((Cost)pixelMatchingMethod) + getCostColorDistanceName((ColorDistance)color_distance) + ": (i-u)|(j-k)");
-			ci("Aggregation:" + getAggregationMethodName((Aggregation)aggregationMethod) + ": (@-[)");
+				ci("Cost      (i-u)|(j-k)| " + getCostMethodName((Cost)pixelMatchingMethod) + getCostColorDistanceName((ColorDistance)color_distance));
+			    ci("Aggregation     (@-[)| " + getAggregationMethodName((Aggregation)aggregationMethod));
 
 			if (isUniquenessFilter) ci(CV_RGB(0, 255, 0), "uniqueness filter (1)| true");
 			else ci(CV_RGB(255, 0, 0), "uniqueness filter (1)| false");
@@ -961,7 +966,28 @@ namespace cp
 
 #pragma endregion
 
-			if (isRandomShift && eval.isInit)
+#pragma region random move and noise
+			switch (noise_state)
+			{
+			case 0:
+				isNoise = false;
+				isRandomizedMove = false;
+				break;
+			case 1:
+				isNoise = true;
+				isRandomizedMove = false;
+				break;
+			case 2:
+				isNoise = true;
+				isRandomizedMove = true;
+				break;
+			default:
+				isNoise = false;
+				isRandomizedMove = false;
+				break;
+			}
+			
+			if (isRandomizedMove && eval.isInit)
 			{
 				const int x = rng.uniform(-3, 4);
 				cp::warpShift(leftim, L, x);
@@ -969,13 +995,28 @@ namespace cp
 				cp::warpShift(gt, GT, x);
 				eval.init(GT, evalamp, igb + x);
 			}
+			else
+			{
+				leftim.copyTo(L);
+				rightim.copyTo(R);
+			
+				if(!cp::checkSameImage(gt, eval.ground_truth))
+					eval.init(gt, evalamp, igb);
+			}
+			if (isNoise)
+			{
+				cp::addNoise(L, L, sigma_noise, 0, cv::getTickCount());
+				cp::addNoise(R, R, sigma_noise, 0, cv::getTickCount());
+			}
+
+#pragma endregion
 
 #pragma region body
 
 			{
 				Timer t("BM", TIME_MSEC, false);
 				matching(L, R, destDisparity, isFeedback);
-				ci("Time StereoBase  : %5.2f ms", t.getTime());
+				ci("Time StereoBase  | %6.2f ms", t.getTime());
 			}
 
 			//additional post process
@@ -995,13 +1036,13 @@ namespace cp
 				{
 					medianBlur(destDisparity, destDisparity, 3);
 				}
-				ci("Time A-PostFilter: %5.2f ms", t.getTime());//additional post processing time
+				ci("Time A-PostFilter| %6.2f ms", t.getTime());//additional post processing time
+				
 			}
 #pragma endregion 
 
 #pragma region show
-
-			ci("valid %5.2f %%", getValidRatio());
+			ci("valid (v)        | %5.2f %%", getValidRatio());
 
 			//plot subpixel distribution
 			if (isSubpixelDistribution)
@@ -1230,11 +1271,13 @@ namespace cp
 			if (key == '6') isMinCostFilter = isMinCostFilter ? false : true;
 			if (key == '7') isSpeckleFilter = isSpeckleFilter ? false : true;
 			if (key == '8') { holeFillingMethod++; if (holeFillingMethod > 4)holeFillingMethod = 0; }
+			if (key == 'v')  holeFillingMethod = (holeFillingMethod!=0) ? 0:1; 
 			if (key == '9') { refinementMethod++; refinementMethod = (refinementMethod > (int)REFINEMENT::REFINEMENT_SIZE - 1) ? 0 : refinementMethod; }
 			if (key == 'o') { refinementMethod--; refinementMethod = (refinementMethod < 0) ? (int)REFINEMENT::REFINEMENT_SIZE - 2 : refinementMethod; }
 			if (key == '0') isStreak = (isStreak) ? false : true;
 			if (key == '-') isMedian = (isMedian) ? false : true;
 
+			if (key == 'n') noise_state++; noise_state = (noise_state > 2) ? 0 : noise_state;
 			if (key == 'f') isFeedback = isFeedback ? false : true;
 			
 			if (key == 'i') { pixelMatchingMethod++; pixelMatchingMethod = (pixelMatchingMethod > Pixel_Matching_Method_Size - 1) ? 0 : pixelMatchingMethod; }

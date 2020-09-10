@@ -17,6 +17,7 @@ void testAddNoise(Mat& src)
 
 	int key = 0;
 	Mat dest;
+	Mat show;
 	cp::UpdateCheck uc(noise_type);
 	while (key != 'q')
 	{
@@ -40,8 +41,11 @@ void testAddNoise(Mat& src)
 		if (noise_type == 0) addNoise(s, dest, (double)sigma_g, (double)spnoise*0.01, seed);
 		if (noise_type == 1) addJPEGNoise(s, dest, quality);
 
-		cout << getPSNR(s, dest) << endl;
-		imshow(wname, dest);
+		if (dest.channels() == 1)cvtColor(dest, show, COLOR_GRAY2BGR);
+		else dest.copyTo(show);
+		cv::addText(show, format("PSNR %5.2f d", getPSNR(s, dest)), Point(36, 36), "Consolas", 36, Scalar::all(0));
+		
+		imshow(wname, show);
 		key = waitKey(1);
 	}
 }
