@@ -159,7 +159,7 @@ namespace cp
 			}
 
 			maxv = mmaxv.m256_f32[0];
-			maxbin = mindex.m256_f32[0];
+			maxbin = (int)mindex.m256_f32[0];
 			for (int i = 1; i < 8; i++)
 			{
 				if (mmaxv.m256_f32[i] > maxv)
@@ -256,7 +256,6 @@ namespace cp
 	class WeightedHistogramLINEAR : public WeightedHistogram
 	{
 		const float div;
-		const __m256 step = _mm256_setr_ps(0, 1, 2, 3, 4, 5, 6, 7);
 	public:
 		WeightedHistogramLINEAR(float sigmaHistogram, int mode, const int max_val) :
 			WeightedHistogram(sigmaHistogram, mode, max_val), div(1.f / float(sigmaHistogram))
@@ -267,11 +266,12 @@ namespace cp
 		void add(const float addval, const int bin)
 		{
 			__m256 mv = _mm256_set1_ps(addval);
+			const __m256 step = _mm256_setr_ps(0, 1, 2, 3, 4, 5, 6, 7);
 			float* hptr = hist + bin - r;
 			//for (int i = 0; i < simd_size; i++)
 			for (int i = 0; i < simd_range; i += 8)
 			{
-				__m256 mvv = _mm256_abs_ps(_mm256_mul_ps(_mm256_set1_ps(div), _mm256_sub_ps(_mm256_add_ps(_mm256_set1_ps(i), step), _mm256_set1_ps(sigmaHistogram))));
+				__m256 mvv = _mm256_abs_ps(_mm256_mul_ps(_mm256_set1_ps(div), _mm256_sub_ps(_mm256_add_ps(_mm256_set1_ps((float)i), step), _mm256_set1_ps(sigmaHistogram))));
 				_mm256_store_ps(hptr + i, _mm256_max_ps(_mm256_setzero_ps(), _mm256_fmadd_ps(mv, _mm256_sub_ps(_mm256_set1_ps(1.f), mvv), _mm256_load_ps(hptr + i))));
 
 				//const float v = abs(i - truncate) * div;
@@ -288,7 +288,6 @@ namespace cp
 	class WeightedHistogramQUADRIC : public WeightedHistogram
 	{
 		const float div;
-		const __m256 step = _mm256_setr_ps(0, 1, 2, 3, 4, 5, 6, 7);
 	public:
 		WeightedHistogramQUADRIC(float sigmaHistogram, int mode, const int max_val) :
 			WeightedHistogram(sigmaHistogram, mode, max_val), div(1.f / float(sigmaHistogram))
@@ -298,12 +297,13 @@ namespace cp
 
 		void add(const float addval, const int bin)
 		{
+			const __m256 step = _mm256_setr_ps(0, 1, 2, 3, 4, 5, 6, 7);
 			__m256 mv = _mm256_set1_ps(addval);
 			float* hptr = hist + bin - r;
 			//for (int i = 0; i < simd_size; i++)
 			for (int i = 0; i < simd_range; i += 8)
 			{
-				__m256 mvv = _mm256_mul_ps(_mm256_set1_ps(div), _mm256_sub_ps(_mm256_add_ps(_mm256_set1_ps(i), step), _mm256_set1_ps(sigmaHistogram)));
+				__m256 mvv = _mm256_mul_ps(_mm256_set1_ps(div), _mm256_sub_ps(_mm256_add_ps(_mm256_set1_ps((float)i), step), _mm256_set1_ps(sigmaHistogram)));
 				_mm256_store_ps(hptr + i, _mm256_max_ps(_mm256_setzero_ps(), _mm256_fmadd_ps(mv, _mm256_fnmadd_ps(mvv, mvv, _mm256_set1_ps(1.f)), _mm256_load_ps(hptr + i))));
 
 				//const float v = (i - truncate) * div;
@@ -412,8 +412,9 @@ namespace cp
 	{
 		const bool isSkipMask = (mask.empty()) ? false : true;
 
-		double src_max;
-		minMaxLoc(src, NULL, &src_max);
+		double src_maxf;
+		minMaxLoc(src, NULL, &src_maxf);
+		int src_max = int(src_maxf);
 		src_max = get_simd_ceil(src_max, 8);
 		int width = src.cols;
 		int height = src.rows;
@@ -437,14 +438,14 @@ namespace cp
 			break;
 		}
 
-		float* luth = (weightFunctionType == WHF_HISTOGRAM_WEIGHT_FUNCTION::GAUSSIAN) ? createLUTHistogram(3.f, sigmaHistogram) : nullptr;
-		float* luts = createLUTSpace(r, sigmaSpace);
+		float* luth = (weightFunctionType == WHF_HISTOGRAM_WEIGHT_FUNCTION::GAUSSIAN) ? createLUTHistogram(3.f, (float)sigmaHistogram) : nullptr;
+		float* luts = createLUTSpace(r, (float)sigmaSpace);
 		if (guide.channels() == 3)
 		{
 			vector<Mat> guideBGR;
 			cp::splitCopyMakeBorder(guide, guideBGR, r, r, r, r, borderType);
 
-			float* lutc = createLUTRange(443, sigmaColor);
+			float* lutc = createLUTRange(443, (float)sigmaColor);
 
 			if (weight_method == WHF_WEIGHT::BILATERAL)
 			{
@@ -453,7 +454,7 @@ namespace cp
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
-					Ptr<WeightedHistogram> h = createWeightedHistogram(weightFunctionType, sigmaHistogram, mode, src_max, luth);
+					Ptr<WeightedHistogram> h = createWeightedHistogram(weightFunctionType, (float)sigmaHistogram, mode, src_max, luth);
 					for (int x = 0; x < width; x++)
 					{
 						if (isSkipMask)
@@ -477,7 +478,7 @@ namespace cp
 
 								int diff = cvRound(sqrt((bb - *bp) * (bb - *bp) + (gg - *gp) * (gg - *gp) + (rr - *rp) * (rr - *rp)));
 								addval *= lutc[diff];
-								h->add(addval, *sp);
+								h->add(addval, (int)*sp);
 
 								sp++;
 								bp++;
@@ -485,7 +486,7 @@ namespace cp
 								rp++;
 							}
 						}
-						dst.at<srcType>(y, x) = h->returnVal();
+						dst.at<srcType>(y, x) = saturate_cast<srcType>(h->returnVal());
 					}
 				}
 			}
@@ -494,7 +495,7 @@ namespace cp
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
-					Ptr<WeightedHistogram> h = createWeightedHistogram(weightFunctionType, sigmaHistogram, mode, src_max, luth);
+					Ptr<WeightedHistogram> h = createWeightedHistogram(weightFunctionType, (float)sigmaHistogram, mode, src_max, luth);
 					for (int x = 0; x < width; x++)
 					{
 						if (isSkipMask)
@@ -505,11 +506,11 @@ namespace cp
 							srcType* sp = srcBorder.ptr<srcType>(y + j, x);
 							for (int i = 0; i < 2 * r + 1; i++, idx++)
 							{
-								h->add(luts[idx], *sp);
+								h->add(luts[idx], (int)*sp);
 								sp++;
 							}
 						}
-						dst.at<srcType>(y, x) = h->returnVal();
+						dst.at<srcType>(y, x) = saturate_cast<srcType>(h->returnVal());
 					}
 				}
 			}
@@ -518,7 +519,7 @@ namespace cp
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
-					Ptr<WeightedHistogram> h = createWeightedHistogram(weightFunctionType, sigmaHistogram, mode, src_max, luth);
+					Ptr<WeightedHistogram> h = createWeightedHistogram(weightFunctionType, (float)sigmaHistogram, mode, src_max, luth);
 					for (int x = 0; x < width; x++)
 					{
 						if (isSkipMask)
@@ -528,10 +529,10 @@ namespace cp
 						{
 							for (int i = 0; i < 2 * r + 1; i++, idx++)
 							{
-								h->add(1.f, srcBorder.at<srcType>(y + j, x + i));
+								h->add(1.f, (int)srcBorder.at<srcType>(y + j, x + i));
 							}
 						}
-						dst.at<srcType>(y, x) = h->returnVal();
+						dst.at<srcType>(y, x) = saturate_cast<srcType>(h->returnVal());
 					}
 				}
 			}
@@ -541,15 +542,15 @@ namespace cp
 		{
 			Mat G; copyMakeBorder(guide, G, r, r, r, r, borderType);
 
-			float* lutc = createLUTRange(256, sigmaColor);
-			float* luts = createLUTSpace(r, sigmaSpace);
+			float* lutc = createLUTRange(256, (float)sigmaColor);
+			float* luts = createLUTSpace(r, (float)sigmaSpace);
 
 			if (weight_method == WHF_WEIGHT::BILATERAL)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
-					Ptr<WeightedHistogram> h = createWeightedHistogram(weightFunctionType, sigmaHistogram, mode, src_max, luth);
+					Ptr<WeightedHistogram> h = createWeightedHistogram(weightFunctionType, (float)sigmaHistogram, mode, src_max, luth);
 					for (int x = 0; x < width; x++)
 					{
 						if (isSkipMask)
@@ -565,12 +566,12 @@ namespace cp
 								float addval = luts[idx];
 								int diff = abs(gg - *gp);
 								addval *= lutc[diff];
-								h->add(addval, *sp);
+								h->add(addval, (int)*sp);
 								sp++;
 								gp++;
 							}
 						}
-						dst.at<srcType>(y, x) = h->returnVal();
+						dst.at<srcType>(y, x) = saturate_cast<srcType>(h->returnVal());
 					}
 				}
 			}
@@ -579,7 +580,7 @@ namespace cp
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
-					Ptr<WeightedHistogram> h = createWeightedHistogram(weightFunctionType, sigmaHistogram, mode, src_max, luth);
+					Ptr<WeightedHistogram> h = createWeightedHistogram(weightFunctionType, (float)sigmaHistogram, mode, src_max, luth);
 					for (int x = 0; x < width; x++)
 					{
 						if (isSkipMask)
@@ -591,11 +592,11 @@ namespace cp
 							for (int i = 0; i < 2 * r + 1; i++, idx++)
 							{
 								float addval = luts[idx];
-								h->add(addval, *sp);
+								h->add(addval, (int)*sp);
 								sp++;
 							}
 						}
-						dst.at<srcType>(y, x) = h->returnVal();
+						dst.at<srcType>(y, x) = saturate_cast<srcType>(h->returnVal());
 					}
 				}
 			}
@@ -604,7 +605,7 @@ namespace cp
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
-					Ptr<WeightedHistogram> h = createWeightedHistogram(weightFunctionType, sigmaHistogram, mode, src_max, luth);
+					Ptr<WeightedHistogram> h = createWeightedHistogram(weightFunctionType, (float)sigmaHistogram, mode, src_max, luth);
 					for (int x = 0; x < width; x++)
 					{
 						if (isSkipMask)
@@ -614,10 +615,10 @@ namespace cp
 						{
 							for (int i = 0; i < 2 * r + 1; i++, idx++)
 							{
-								h->add(1.f, srcBorder.at<srcType>(y + j, x + i));
+								h->add(1.f, (int)srcBorder.at<srcType>(y + j, x + i));
 							}
 						}
-						dst.at<srcType>(y, x) = h->returnVal();
+						dst.at<srcType>(y, x) = saturate_cast<srcType>(h->returnVal());
 					}
 				}
 			}
@@ -635,8 +636,9 @@ namespace cp
 		CV_Assert(src.channels() == 1);
 		const bool isSkipMask = (mask.empty()) ? false : true;
 
-		double src_max;
-		minMaxLoc(src, NULL, &src_max);
+		double src_maxf;
+		minMaxLoc(src, NULL, &src_maxf);
+		int src_max = int(src_maxf);
 		src_max = get_simd_ceil(src_max, 8);
 		int width = src.cols;
 		int height = src.rows;
@@ -661,14 +663,14 @@ namespace cp
 			break;
 		}
 
-		float* luth = (weightFunctionType == WHF_HISTOGRAM_WEIGHT_FUNCTION::GAUSSIAN) ? createLUTHistogram(3.f, sigmaHistogram) : nullptr;
-		float* luts = createLUTSpace(r, sigmaSpace);
+		float* luth = (weightFunctionType == WHF_HISTOGRAM_WEIGHT_FUNCTION::GAUSSIAN) ? createLUTHistogram(3.f, (float)sigmaHistogram) : nullptr;
+		float* luts = createLUTSpace(r, (float)sigmaSpace);
 		if (guide.channels() == 3)
 		{
 			vector<Mat> guideBGR;
 			cp::splitCopyMakeBorder(guide, guideBGR, r, r, r, r, borderType);
 
-			float* lutc = createLUTRange(443, sigmaColor);
+			float* lutc = createLUTRange(443, (float)sigmaColor);
 
 			if (weight_method == WHF_WEIGHT::BILATERAL)
 			{
@@ -677,7 +679,7 @@ namespace cp
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
-					Ptr<WeightedHistogram> h = createWeightedHistogram(weightFunctionType, sigmaHistogram, mode, src_max, luth);
+					Ptr<WeightedHistogram> h = createWeightedHistogram(weightFunctionType, (float)sigmaHistogram, mode, src_max, luth);
 					for (int x = 0; x < width; x++)
 					{
 						if (isSkipMask)
@@ -702,7 +704,7 @@ namespace cp
 
 								int diff = cvRound(sqrt((bb - *bp) * (bb - *bp) + (gg - *gp) * (gg - *gp) + (rr - *rp) * (rr - *rp)));
 								addval *= lutc[diff];
-								h->add(addval, *sp);
+								h->add(addval, (int)*sp);
 
 								sp++;
 								wp++;
@@ -711,7 +713,7 @@ namespace cp
 								rp++;
 							}
 						}
-						dst.at<srcType>(y, x) = h->returnVal();
+						dst.at<srcType>(y, x) = saturate_cast<srcType>(h->returnVal());
 					}
 				}
 			}
@@ -720,7 +722,7 @@ namespace cp
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
-					Ptr<WeightedHistogram> h = createWeightedHistogram(weightFunctionType, sigmaHistogram, mode, src_max, luth);
+					Ptr<WeightedHistogram> h = createWeightedHistogram(weightFunctionType, (float)sigmaHistogram, mode, src_max, luth);
 					for (int x = 0; x < width; x++)
 					{
 						if (isSkipMask)
@@ -732,12 +734,12 @@ namespace cp
 							float* wp = weightBorder.ptr<float>(y + j, x);
 							for (int i = 0; i < 2 * r + 1; i++, idx++)
 							{
-								h->add(luts[idx] * *wp, *sp);
+								h->add(luts[idx] * *wp, (int)*sp);
 								sp++;
 								wp++;
 							}
 						}
-						dst.at<srcType>(y, x) = h->returnVal();
+						dst.at<srcType>(y, x) = saturate_cast<srcType>(h->returnVal());
 					}
 				}
 			}
@@ -746,7 +748,7 @@ namespace cp
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
-					Ptr<WeightedHistogram> h = createWeightedHistogram(weightFunctionType, sigmaHistogram, mode, src_max, luth);
+					Ptr<WeightedHistogram> h = createWeightedHistogram(weightFunctionType, (float)sigmaHistogram, mode, src_max, luth);
 					for (int x = 0; x < width; x++)
 					{
 						if (isSkipMask)
@@ -756,10 +758,10 @@ namespace cp
 						{
 							for (int i = 0; i < 2 * r + 1; i++, idx++)
 							{
-								h->add(weightBorder.at<float>(y + j, x + i), srcBorder.at<srcType>(y + j, x + i));
+								h->add(weightBorder.at<float>(y + j, x + i), (int)srcBorder.at<srcType>(y + j, x + i));
 							}
 						}
-						dst.at<srcType>(y, x) = h->returnVal();
+						dst.at<srcType>(y, x) = saturate_cast<srcType>(h->returnVal());
 					}
 				}
 			}
@@ -769,15 +771,15 @@ namespace cp
 		{
 			Mat G; copyMakeBorder(guide, G, r, r, r, r, borderType);
 
-			float* lutc = createLUTRange(256, sigmaColor);
-			float* luts = createLUTSpace(r, sigmaSpace);
+			float* lutc = createLUTRange(256, (float)sigmaColor);
+			float* luts = createLUTSpace(r, (float)sigmaSpace);
 
 			if (weight_method == WHF_WEIGHT::BILATERAL)
 			{
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
-					Ptr<WeightedHistogram> h = createWeightedHistogram(weightFunctionType, sigmaHistogram, mode, src_max, luth);
+					Ptr<WeightedHistogram> h = createWeightedHistogram(weightFunctionType, (float)sigmaHistogram, mode, src_max, luth);
 					for (int x = 0; x < width; x++)
 					{
 						if (isSkipMask)
@@ -794,13 +796,13 @@ namespace cp
 								float addval = luts[idx] * *wp;
 								int diff = abs(gg - *gp);
 								addval *= lutc[diff];
-								h->add(addval, *sp);
+								h->add(addval, (int)*sp);
 								sp++;
 								wp++;
 								gp++;
 							}
 						}
-						dst.at<srcType>(y, x) = h->returnVal();
+						dst.at<srcType>(y, x) = saturate_cast<srcType>(h->returnVal());
 					}
 				}
 			}
@@ -809,7 +811,7 @@ namespace cp
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
-					Ptr<WeightedHistogram> h = createWeightedHistogram(weightFunctionType, sigmaHistogram, mode, src_max, luth);
+					Ptr<WeightedHistogram> h = createWeightedHistogram(weightFunctionType, (float)sigmaHistogram, mode, src_max, luth);
 					for (int x = 0; x < width; x++)
 					{
 						if (isSkipMask)
@@ -822,12 +824,12 @@ namespace cp
 							for (int i = 0; i < 2 * r + 1; i++, idx++)
 							{
 								float addval = luts[idx] * *wp;
-								h->add(addval, *sp);
+								h->add(addval, (int)*sp);
 								sp++;
 								wp++;
 							}
 						}
-						dst.at<srcType>(y, x) = h->returnVal();
+						dst.at<srcType>(y, x) = saturate_cast<srcType>(h->returnVal());
 					}
 				}
 			}
@@ -836,7 +838,7 @@ namespace cp
 #pragma omp parallel for
 				for (int y = 0; y < height; y++)
 				{
-					Ptr<WeightedHistogram> h = createWeightedHistogram(weightFunctionType, sigmaHistogram, mode, src_max, luth);
+					Ptr<WeightedHistogram> h = createWeightedHistogram(weightFunctionType, (float)sigmaHistogram, mode, src_max, luth);
 					for (int x = 0; x < width; x++)
 					{
 						if (isSkipMask)
@@ -846,10 +848,10 @@ namespace cp
 						{
 							for (int i = 0; i < 2 * r + 1; i++, idx++)
 							{
-								h->add(weightBorder.at<float>(y + j, x + i), srcBorder.at<srcType>(y + j, x + i));
+								h->add(weightBorder.at<float>(y + j, x + i), (int)srcBorder.at<srcType>(y + j, x + i));
 							}
 						}
-						dst.at<srcType>(y, x) = h->returnVal();
+						dst.at<srcType>(y, x) = saturate_cast<srcType>(h->returnVal());
 					}
 				}
 			}
