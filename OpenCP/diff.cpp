@@ -1,5 +1,6 @@
 #include "imagediff.hpp"
 #include "blend.hpp"
+#include "imshowExtension.hpp"
 using namespace cv;
 using namespace std;
 
@@ -25,6 +26,7 @@ namespace cp
 		static int diff_channel = 3; createTrackbar("channel", wname, &diff_channel, 4);
 		static int diff_boost = 10; createTrackbar("boost*0.1", wname, &diff_boost, 1000);
 		static int diff_abs_sw = 1; createTrackbar("diff_abs_sw", wname, &diff_abs_sw, 1);
+		static int diff_res = 0; createTrackbar("resizeshow pow2", wname, &diff_res, 5);
 
 		Mat sf, rf;
 		src.getMat().convertTo(sf, CV_32F);
@@ -58,6 +60,7 @@ namespace cp
 
 		while (key != 'q')
 		{
+			int res = pow(2, diff_res);
 			Mat diff;
 			string text = "";
 			if (diff_abs_sw == 0)
@@ -107,7 +110,7 @@ namespace cp
 			diff.convertTo(show, CV_8U);
 
 			if (isGuiDiffInfo)putText(show, text, Point(30, 30), FONT_HERSHEY_SIMPLEX, 1, COLOR_WHITE, 2);
-			imshow(wname, show);
+			imshowResize(wname, show, Size(), res,res, INTER_NEAREST);
 			
 
 			if (key == 'i')
