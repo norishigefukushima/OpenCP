@@ -161,9 +161,9 @@ int main(int argc, char** argv)
 #pragma endregion
 
 #pragma region stereo
-	testStereoBase(); return 0;
+	//testStereoBase(); return 0;
 	//testCVStereoBM(); return 0;
-	//testCVStereoSGBM(); return 0;
+	testCVStereoSGBM(); return 0;
 #pragma endregion
 
 #pragma region filter

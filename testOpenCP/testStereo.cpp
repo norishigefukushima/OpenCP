@@ -117,6 +117,7 @@ void testCVStereoBM()
 	int key = 0;
 	ConsoleImage ci;
 
+	Timer t;
 	while (key != 'q')
 	{
 		int SADWindowSize = 2 * blockRadius + 1;
@@ -129,16 +130,19 @@ void testCVStereoBM()
 		bm->setSpeckleRange(spRange);
 		bm->setMinDisparity(minDisp);
 		//bm->setNumDisparities(numDisp * 16);
-
+		t.start();
 		bm->compute(leftim, rightim, disp);
+		t.getpushLapTime();
 		const int invalid = (minDisp - 1) * 16;
 		fillOcclusion(disp, invalid);
 		//normalize(disp, dispshow, minDisp, numDisp * 16, NORM_MINMAX, CV_8U);
 		//disp.convertTo(dispshow, CV_8U, 255.0/(16.0*numDisparities));
+		ci("Time %5.2f ms", t.getLapTimeMedian());
 		ci("th 0.5:" + eval(disp, 0.5, 16, false));
 		ci("th 1.0:" + eval(disp, 1.0, 16, false));
 		ci("th 2.0:" + eval(disp, 2.0, 16, false));
 		imshowScale(wname, disp, 2.0 / 16);
+		
 		ci.show();
 		key = waitKey(1);
 	}
@@ -177,6 +181,7 @@ void testCVStereoSGBM()
 	int key = 0;
 	ConsoleImage ci;
 
+	Timer t;
 	while (key != 'q')
 	{
 		int SADWindowSize = 2 * blockRadius + 1;
@@ -195,15 +200,16 @@ void testCVStereoSGBM()
 		bm->setMinDisparity(0);
 		bm->setNumDisparities(numberOfDisparities);
 		*/
+		t.start();
 		bm->compute(lim, rim, disp);
-
+		t.getpushLapTime();
 		const int invalid = (disp_min - 1) * 16;
 		fillOcclusion(disp, invalid);
 		Mat(disp(Rect(numDisparities, 0, leftim.cols, leftim.rows))).copyTo(dispshow);
 		//guiAlphaBlend(dispshow, dmap_);
 		
 		imshowScale(wname, dispshow, 2.0 / 16);
-		
+		ci("Time %5.2f ms", t.getLapTimeMedian());
 		ci("th 0.5:" + eval(dispshow, 0.5, 16, false));
 		ci("th 1.0:" + eval(dispshow, 1.0, 16, false));
 		ci("th 2.0:" + eval(dispshow, 2.0, 16, false));
