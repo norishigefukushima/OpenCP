@@ -50,11 +50,12 @@ alphaBlendのカラーの不一致への対応に加えて，入力画像の一�
 
 **キーボードショートカット**
 
+* `d`: guiDiffのcall
 * `f`: アルファ値のフリップ
 * `i`: showMatInfoのコール
 * `p`: PSNRとMSEの計測
 * `v`: ビデオキャプチャの開始・終了トグル
-* `?`：ヘルプの表示
+* `?`: ヘルプの表示
 * `q`: 終了
 
 # dissolveSlideBlend

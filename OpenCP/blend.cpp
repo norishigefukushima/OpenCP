@@ -1,5 +1,6 @@
 #include "imshowExtension.hpp"
 #include "blend.hpp"
+#include "imagediff.hpp"
 #include "matinfo.hpp"
 #include "metrics.hpp"
 #include "inlineSIMDFunctions.hpp"
@@ -851,6 +852,10 @@ namespace cp
 			if (isVideo)video << show;
 
 			key = waitKey(33);
+			if (key == 'd')
+			{
+				guiDiff(src1, src2);
+			}
 			if (key == 'f')
 			{
 				a = (a > 0) ? 0 : 100;
@@ -890,6 +895,7 @@ namespace cp
 			}
 			if (key == '?')
 			{
+				cout << "d: call guiDiff." << endl;
 				cout << "f: flip blend parameter alpha." << endl;
 				cout << "i: call showMatInfo." << endl;
 				cout << "p: compute PSNR and MSE." << endl;
