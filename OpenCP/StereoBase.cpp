@@ -1050,7 +1050,7 @@ namespace cp
 				histp.clear();
 				histp.setYLabel("number of pixels");
 				histp.setXLabel("subpixel_16");
-				histp.setKey(0);
+				histp.setKey(Plot::NOKEY);
 				histp.setGrid(0);
 				histp.setIsDrawMousePosition(false);
 

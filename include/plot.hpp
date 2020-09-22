@@ -4,15 +4,6 @@
 
 namespace cp
 {
-	class CP_EXPORT gnuplot
-	{
-		FILE* fp;
-	public:
-		gnuplot(std::string gnuplotpath);
-		void cmd(std::string name);
-		~gnuplot();
-	};
-
 	class CP_EXPORT Plot
 	{
 	protected:
@@ -142,14 +133,19 @@ namespace cp
 		void setLogScaleX(const bool flag);
 		void setLogScaleY(const bool flag);
 
+		/*enum KEY
+		{
+			NOKEY,
+			RIGHT_TOP,
+			LEFT_TOP,
+			LEFT_BOTTOM,
+			RIGHT_BOTTOM,
+			FLOATING,
 
-		//NOKEY,
-		//RIGHT_TOP,
-		//LEFT_TOP,
-		//LEFT_BOTTOM,
-		//RIGHT_BOTTOM,
-		//FLOATING,
-		void setKey(int key_method);
+			KEY_METHOD_SIZE
+		};
+		*/
+		void setKey(const KEY key_method);
 		void setXLabel(std::string xlabel);
 		void setYLabel(std::string ylabel);
 		void setGrid(int level = 0);//0: no grid, 1: div 4, 2: div 16
@@ -196,12 +192,12 @@ namespace cp
 
 		void plotData(int gridlevel = 0);
 
-		void plotMat(cv::InputArray src, std::string name = "Plot", bool isWait = true, std::string gnuplotpath = "pgnuplot.exe");
-		void plot(std::string name = "Plot", bool isWait = true, std::string gnuplotpath = "pgnuplot.exe", std::string message = "");
+		void plotMat(cv::InputArray src, const std::string name = "Plot", bool isWait = true, const std::string gnuplotpath = "gnuplot.exe");
+		void plot(const std::string name = "Plot", bool isWait = true, const std::string gnuplotpath = "C:/bin/gnuplot/bin/gnuplot.exe", const std::string message = "");
 
 		void generateKeyImage(int num);
 
-		void save(std::string name);
+		void saveDatFile(const std::string name, const bool isPrint = true);
 
 		void push_back(std::vector<cv::Point> point, int plotIndex = 0);
 		void push_back(std::vector<cv::Point2d> point, int plotIndex = 0);
@@ -215,6 +211,27 @@ namespace cp
 		void clear(int datanum = -1);
 
 		void swapPlot(int plotIndex1, int plotIndex2);
+	};
+
+	class CP_EXPORT GNUPlot
+	{
+		bool isShowCMD;
+		FILE* fp;
+		enum class PlotSize
+		{
+			TEXT_WIDTH,
+			COLUMN_WIDTH,
+			COLUMN_WIDTH_HALF
+		};
+	public:
+		GNUPlot(const std::string gnuplotpath, const bool isShowCommand = true);
+		void setKey(Plot::KEY pos, const bool align_right = false, const double spacing = 1.0, const int width_offset = 0, const int height_offset = 0);
+		void setXLabel(const std::string label);
+		void setYLabel(const std::string label);
+		
+		void plotPDF(std::string plot_command, PlotSize mode = PlotSize::COLUMN_WIDTH, const std::string font = "CMU Serif", const int fontSize = 10, bool isCrop = true);
+		void cmd(const std::string name);
+		~GNUPlot();
 	};
 
 	class CP_EXPORT Plot2D
@@ -303,7 +320,7 @@ namespace cp
 		void setLabelYGreekLetter(std::string greeksymbol, std::string subscript);
 		void setLabelZGreekLetter(std::string greeksymbol, std::string subscript);
 		void setMinMax(double xmin, double xmax, double xstep, double ymin, double ymax, double ystep);
-		
+
 	};
 
 	CP_EXPORT void plotGraph(cv::OutputArray graphImage, std::vector<cv::Point2d>& data, double xmin, double xmax, double ymin, double ymax,

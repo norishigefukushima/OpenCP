@@ -8,6 +8,9 @@ void testPlot()
 	//if (false)
 	{
 		Plot test;
+		test.setPlotTitle(0, "sin(x)");
+		test.setXLabel("x label");
+		test.setYLabel("y label");
 		test.setYRange(-1, 1);
 		test.setXRange(0, 320);
 		const int amp = 100;

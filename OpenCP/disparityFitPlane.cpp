@@ -105,7 +105,7 @@ namespace cp
 		cv::FileStorage pointxml("planePoint.xml", cv::FileStorage::READ);
 		namedWindow("test");
 		
-		gnuplot plot("C:/fukushima/docs/Dropbox/bin/gnuplot/bin/pgnuplot.exe");
+		GNUPlot plot("C:/fukushima/docs/Dropbox/bin/gnuplot/bin/pgnuplot.exe");
 		//gnuplot plot("C:/fukushima/docs/Dropbox/bin/gnuplot/bin/wgnuplot_pipes.exe");
 	
 		int idx = 0;

@@ -13,9 +13,9 @@ using namespace cv;
 namespace cp
 {
 #pragma region gnuplot
-	gnuplot::gnuplot(string gnuplotpath)
+	GNUPlot::GNUPlot(string gnuplotpath, const bool isShowCommand)
 	{
-
+		isShowCMD = isShowCommand;
 		if ((fp = _popen(gnuplotpath.c_str(), "w")) == NULL)
 		{
 			fprintf(stderr, "Cannot open gnuplot @ %s\n", gnuplotpath.c_str());
@@ -23,19 +23,89 @@ namespace cp
 		}
 	}
 
-	void gnuplot::cmd(string name)
+	void GNUPlot::setKey(Plot::KEY pos, const bool align_right, const double spacing, const int width_offset, const int height_offset)
 	{
+		string command = "";
+
+		string set_key = "set key ";
+		string space = " spacing " + to_string(spacing);
+		string align = (align_right) ? " Right " : " Left ";
+		string wh_offset = " width " + to_string(width_offset) + " height " + to_string(height_offset);
+		switch (pos)
+		{
+		case cp::Plot::KEY::NOKEY:
+			command = "unset key";
+			break;
+		case cp::Plot::KEY::RIGHT_TOP:
+			command = set_key + "right top" + align + space + wh_offset;
+			break;
+		case cp::Plot::KEY::LEFT_TOP:
+			command = set_key + "left top" + align + space + wh_offset;
+			break;
+		case cp::Plot::KEY::LEFT_BOTTOM:
+			command = set_key + "left bottom" + align + space + wh_offset;
+			break;
+		case cp::Plot::KEY::RIGHT_BOTTOM:
+			command = set_key + "right bottom" + align + space + wh_offset;
+			break;
+		case cp::Plot::KEY::FLOATING:
+			break;
+		default:
+			break;
+		}
+		cmd(command);
+	}
+
+	void GNUPlot::setXLabel(const string label)
+	{
+		cmd("set xlabel '" + label + "'");
+	}
+
+	void GNUPlot::setYLabel(const string label)
+	{
+		cmd("set ylabel '" + label + "'");
+	}
+
+	void GNUPlot::plotPDF(string plot_command, PlotSize mode, string font, const int fontSize, bool isCrop)
+	{
+		string command = "";
+		string terminal = "set terminal pdf enhanced font '" + font + "' size ";
+
+		switch (mode)
+		{
+		case cp::GNUPlot::PlotSize::TEXT_WIDTH:
+			command = terminal + "1.85,1.3";
+			break;
+		case cp::GNUPlot::PlotSize::COLUMN_WIDTH:
+			command = terminal + "3.6,2.6";
+			break;
+		case cp::GNUPlot::PlotSize::COLUMN_WIDTH_HALF:
+			command = terminal + "1.85,1.3";
+			break;
+		default:
+			break;
+		}
+		cmd(command);
+		cmd("set output 'out.pdf'");
+		cmd(plot_command);
+		cmd("set output");
+		//system()
+	}
+
+	void GNUPlot::cmd(string name)
+	{
+		if (isShowCMD)cout << name << endl;
 		fprintf(fp, name.c_str());
 		fprintf(fp, "\n");
 		fflush(fp);
 	}
 
-	gnuplot::~gnuplot()
+	GNUPlot::~GNUPlot()
 	{
-		//fclose(fp);
 		cmd("exit");
 		_pclose(fp);
 	}
+
 #pragma endregion
 
 	void plotGraph(OutputArray graphImage_, vector<Point2d>& data, double xmin, double xmax, double ymin, double ymax,
@@ -280,6 +350,7 @@ namespace cp
 				xmin_data = min(xmin_data, x);
 			}
 		}
+		//print_debug4(xmin_data, xmax_data, ymin_data, ymax_data);
 	}
 
 	void Plot::computeWindowXRangeMAXMIN(bool isCenter, double margin_rate, int rounding_value)
@@ -290,11 +361,27 @@ namespace cp
 		xmin_plotwindow = xmin_data;
 
 		double xmargin = (xmax_plotwindow - xmin_plotwindow) * (1.0 - margin_rate) * 0.5;
-		xmax_plotwindow += xmargin;
 
-		if (rounding_value != 0) xmax_plotwindow = (double)cp::ceilToMultiple((int)xmax_plotwindow, rounding_value);
+		xmax_plotwindow += xmargin;
+		if (xmax_plotwindow >= 0)
+		{
+			if (rounding_value != 0) xmax_plotwindow = (double)cp::ceilToMultiple((int)xmax_plotwindow, rounding_value);
+		}
+		else
+		{
+			if (rounding_value != 0) xmax_plotwindow = (double)-cp::floorToMultiple((int)(-xmax_plotwindow), rounding_value);
+		}
+
 		xmin_plotwindow -= xmargin;
-		if (rounding_value != 0) xmin_plotwindow = (double)cp::floorToMultiple((int)xmin_plotwindow, rounding_value);
+		if (xmin_plotwindow >= 0)
+		{
+			if (rounding_value != 0) xmin_plotwindow = (double)cp::floorToMultiple((int)xmin_plotwindow, rounding_value);
+		}
+		else
+		{
+			if (rounding_value != 0) xmin_plotwindow = (double)-cp::ceilToMultiple((int)-xmin_plotwindow, rounding_value);
+		}
+
 
 		if (isCenter)
 		{
@@ -314,10 +401,27 @@ namespace cp
 		ymin_plotwindow = ymin_data;
 
 		double ymargin = (ymax_plotwindow - ymin_plotwindow) * (1.0 - margin_rate) * 0.5;
+
 		ymax_plotwindow += ymargin;
-		if (rounding_value != 0) ymax_plotwindow = (double)cp::ceilToMultiple((int)ymax_plotwindow, rounding_value);
+		if (ymax_plotwindow >= 0.0)
+		{
+			if (rounding_value != 0) ymax_plotwindow = (double)cp::ceilToMultiple((int)ymax_plotwindow, rounding_value);
+		}
+		else
+		{
+			if (rounding_value != 0) ymax_plotwindow = (double)-cp::floorToMultiple((int)-ymax_plotwindow, rounding_value);
+		}
+
 		ymin_plotwindow -= ymargin;
-		if (rounding_value != 0) ymin_plotwindow = (double)cp::floorToMultiple((int)ymin_plotwindow, rounding_value);
+		if (ymin_plotwindow >= 0.0)
+		{
+			if (rounding_value != 0) ymin_plotwindow = (double)cp::floorToMultiple((int)ymin_plotwindow, rounding_value);
+		}
+		else
+		{
+			if (rounding_value != 0) ymin_plotwindow = (double)-cp::ceilToMultiple((int)-ymin_plotwindow, rounding_value);
+		}
+
 
 		if (isCenter)
 		{
@@ -408,9 +512,9 @@ namespace cp
 	}
 
 
-	void Plot::setKey(int key)
+	void Plot::setKey(const KEY key)
 	{
-		keyPosition = key;
+		keyPosition = (int)key;
 	}
 
 	void Plot::setXLabel(string xlabel)
@@ -878,7 +982,7 @@ namespace cp
 		addWeighted(render, 0.8, temp, 0.2, 0.0, render);
 	}
 
-	void Plot::save(string name)
+	void Plot::saveDatFile(const string name, const bool isPrint)
 	{
 		FILE* fp = fopen(name.c_str(), "w");
 
@@ -907,12 +1011,12 @@ namespace cp
 			}
 			fprintf(fp, "\n");
 		}
-		cout << "p ";
+		if (isPrint)cout << "p ";
 		for (int i = 0; i < data_max; i++)
 		{
-			cout << "'" << name << "'" << " u " << 2 * i + 1 << ":" << 2 * i + 2 << " w lp" << " t \"" << pinfo[i].title << "\",";
+			if (isPrint) cout << "'" << name << "'" << " u " << 2 * i + 1 << ":" << 2 * i + 2 << " w lp" << " t \"" << pinfo[i].title << "\",";
 		}
-		cout << endl;
+		if (isPrint)cout << endl;
 		fclose(fp);
 	}
 
@@ -973,7 +1077,7 @@ namespace cp
 		}
 	}
 
-	void Plot::plot(string wname, bool isWait, string gnuplotpath, string message)
+	void Plot::plot(const string wname, bool isWait, const string gnuplotpath, const string message)
 	{
 		Point pt = Point(0, 0);
 		namedWindow(wname);
@@ -1095,23 +1199,27 @@ namespace cp
 			}
 			if (keyboard == 'p')
 			{
-				save("plot");
+				saveDatFile("plot", false);
 				std::string a("plot ");
-				//gnuplot gplot(gnuplotpath);
+				GNUPlot gplot(gnuplotpath);
+				gplot.setXLabel(xlabel);
+				gplot.setYLabel(ylabel);
+				gplot.setKey(KEY(keyPosition));
 				for (int i = 0; i < data_max; i++)
 				{
 					char name[64];
 					if (i != data_max - 1)
-						sprintf(name, "'plot' u %d:%d w lp,", 2 * i + 1, 2 * i + 2);
+						sprintf(name, "'plot' u %d:%d w lp ps 0.5 t \"%s\",", 2 * i + 1, 2 * i + 2, pinfo[i].title.c_str());
 					else
-						sprintf(name, "'plot' u %d:%d w lp\n", 2 * i + 1, 2 * i + 2);
+						sprintf(name, "'plot' u %d:%d w lp ps 0.5 t \"%s\"", 2 * i + 1, 2 * i + 2, pinfo[i].title.c_str());
 					a += name;
 				}
+				gplot.plotPDF(a);
 				//gplot.cmd(a.c_str());
 			}
 			if (keyboard == 's')
 			{
-				save("plot");
+				saveDatFile("plot");
 				imwrite("plotim.png", render);
 				//imwrite("plot.png", save);
 			}
@@ -1134,7 +1242,7 @@ namespace cp
 		if (isWait) destroyWindow(wname);
 	}
 
-	void Plot::plotMat(InputArray src_, string wname, bool isWait, string gnuplotpath)
+	void Plot::plotMat(InputArray src_, const string wname, const bool isWait, const string gnuplotpath)
 	{
 		Mat src = src_.getMat();
 		clear();
@@ -1418,7 +1526,7 @@ namespace cp
 					{
 						float v = float(step * i);
 						impos[i] = int(dl * v);
-						tick_val[i] =int( v + minv);
+						tick_val[i] = int(v + minv);
 					}
 				}
 				else
@@ -1555,7 +1663,7 @@ namespace cp
 						float v = float(step * i);
 						{
 							impos[i] = int(dl * v);
-							tick_val32f[i] =float( v + minv);
+							tick_val32f[i] = float(v + minv);
 						}
 					}
 				}

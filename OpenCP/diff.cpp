@@ -60,7 +60,7 @@ namespace cp
 
 		while (key != 'q')
 		{
-			int res = pow(2, diff_res);
+			int res = (int)pow(2, diff_res);
 			Mat diff;
 			string text = "";
 			if (diff_abs_sw == 0)

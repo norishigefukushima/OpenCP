@@ -62,6 +62,18 @@ namespace cp
 		else return 0.f;
 	}
 
+	inline double sign(double x)
+	{
+		if (x >= 0.0)return 1.0;
+		else return 0.0;
+	}
+
+	inline float sign(float x)
+	{
+		if (x >= 0.f)return 1.f;
+		else return 0.f;
+	}
+
 	inline int sign(int x)
 	{
 		if (x >= 0)return 1;
