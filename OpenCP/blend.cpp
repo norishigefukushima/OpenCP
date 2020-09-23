@@ -1023,7 +1023,7 @@ namespace cp
 		{
 			s1 = src1.getMat();
 			s2 = src2.getMat();
-			if (dest.empty())dest.create(src1.size(), src1.type());
+			dest.create(src1.size(), src1.type());
 		}
 		else
 		{
@@ -1031,13 +1031,10 @@ namespace cp
 			else s1 = src1.getMat();
 			if (src2.channels() == 1)cvtColor(src2, s2, COLOR_GRAY2BGR);
 			else s2 = src2.getMat();
-			if (dest.empty())dest.create(src1.size(), CV_MAKETYPE(src1.depth(), 3));
+			dest.create(src1.size(), CV_MAKETYPE(src1.depth(), 3));
 		}
 
-		Mat dst = dest.getMat();
-
-		s2.copyTo(dest);
-
+		Mat dst;
 		if (direction == 0)//vertical split
 		{
 			Mat mask = Mat::zeros(s1.size(), CV_8U);
@@ -1059,6 +1056,7 @@ namespace cp
 			//cvtColor(mask, dst, COLOR_GRAY2BGR);
 			if (line_thickness != 0) line(dst, st, ed, line_color, line_thickness);
 		}
+		dst.copyTo(dest);
 	}
 
 	cv::Mat guiDissolveSlideBlend(InputArray src1, InputArray src2, string wname)
