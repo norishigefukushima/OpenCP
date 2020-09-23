@@ -84,7 +84,7 @@ namespace cp
 		}
 	}
 
-	cv::Mat guiCropZoom(InputArray src, Rect& dest_roi, int& dest_zoom_factor, const Scalar color, const int thickness, const string wname)
+	cv::Mat guiCropZoom(InputArray src, Rect& dest_roi, int& dest_zoom_factor, const Scalar color, const int thickness, const bool isWait, const string wname)
 	{
 		const int zoom_factor_max = 32;
 
@@ -139,6 +139,7 @@ namespace cp
 			}
 
 			imshow(wname, show);
+			if (!isWait) break;
 			key = waitKey(1);
 			if (key == 'i')
 			{
@@ -193,14 +194,14 @@ namespace cp
 			}
 		}
 
-		destroyWindow(wname);
+		if (isWait) destroyWindow(wname);
 		return crop_resize;
 	}
 
-	cv::Mat guiCropZoom(InputArray src, const Scalar color, const int thickness, const string wname)
+	cv::Mat guiCropZoom(InputArray src, const Scalar color, const int thickness, const bool isWait, const string wname)
 	{
 		Rect roi;
 		int zf;
-		return guiCropZoom(src, roi, zf, color, thickness, wname);
+		return guiCropZoom(src, roi, zf, color, thickness, isWait, wname);
 	}
 }

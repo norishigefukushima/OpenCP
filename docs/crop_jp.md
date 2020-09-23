@@ -71,10 +71,10 @@ void cropCenter(InputArray src, OutputArray crop, const int window_size)
 
 # guiCropZoom
 ```cpp
-cv::Mat guiCropZoom(cv::InputArray src, const cv::Scalar color = COLOR_RED, const int thickness = 1, const std::string wname = "crop");
+cv::Mat guiCropZoom(cv::InputArray src, const cv::Scalar color = COLOR_RED, const int thickness = 1, const bool isWait = ture, const std::string wname = "crop");
 ```
 ```cpp
-cv::Mat guiCropZoom(cv::InputArray src, cv::Rect& dest_roi, int& dest_zoom_factor, const cv::Scalar color = COLOR_RED, const int thickness = 1, const std::string wname = "crop");
+cv::Mat guiCropZoom(cv::InputArray src, cv::Rect& dest_roi, int& dest_zoom_factor, const cv::Scalar color = COLOR_RED, const int thickness = 1, const bool isWait = ture, const std::string wname = "crop");
 ```
 ## Usage
 上記の関数を，GUIから操作します．
@@ -86,6 +86,8 @@ cv::Mat guiCropZoom(cv::InputArray src, cv::Rect& dest_roi, int& dest_zoom_facto
 Mat a, b;
 guiAlphaBlend(guiCropZoom(a),guiCropZoom(b));
 ```
+
+また，`isWait`に`false`を入れることで強制的にブレイクできます．
 
 **キーボードショートカット**
 * i,j,k,l：vimライクな移動
