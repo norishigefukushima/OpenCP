@@ -1011,6 +1011,26 @@ __m128 zzzz = _mm_shuffle_ps(first, first, 0xAA); // _MM_SHUFFLE(2, 2, 2, 2)
 __m128 wwww = _mm_shuffle_ps(first, first, 0xFF); // _MM_SHUFFLE(3, 3, 3, 3)
 */
 
+inline void _mm256_storeu_auto_color(float* dest, __m256 b, __m256 g, __m256 r)
+{
+	_mm256_storeu_ps_color(dest, b, g, r);
+}
+
+inline void _mm256_storeu_auto_color(uchar* dest, __m256 b, __m256 g, __m256 r)
+{
+	_mm256_storeu_ps2epu8_color(dest, b, g, r);
+}
+
+inline void _mm256_store_auto_color(float* dest, __m256 b, __m256 g, __m256 r)
+{
+	_mm256_store_ps_color(dest, b, g, r);
+}
+
+inline void _mm256_store_auto_color(uchar* dest, __m256 b, __m256 g, __m256 r)
+{
+	_mm256_store_ps2epu8_color(dest, b, g, r);
+}
+
 inline void _mm256_stream_auto_color(float* dest, __m256 b, __m256 g, __m256 r)
 {
 	_mm256_stream_ps_color(dest, b, g, r);

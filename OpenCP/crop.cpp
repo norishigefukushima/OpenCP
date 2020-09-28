@@ -107,7 +107,7 @@ namespace cp
 		static int zoom_count = 0;
 		static int zoom_window = 40; createTrackbar("zoom_window", wname, &zoom_window, min(width, height) - 1);
 		static int zoom_factor = 8; createTrackbar("zoom_factor", wname, &zoom_factor, zoom_factor_max);
-
+		static int thick = thickness; createTrackbar("thickness", wname, &thick, 10);
 		Mat show;
 		Mat crop_resize;
 		Mat input = src.getMat();
@@ -121,7 +121,7 @@ namespace cp
 
 			if (zoom_show_option == 0)
 			{
-				cropZoomWithSrcMarkAndBoundingBox(input, crop_resize, show, Point(param.pt.x, param.pt.y), zoom_window, zoom_factor, color, thickness);
+				cropZoomWithSrcMarkAndBoundingBox(input, crop_resize, show, Point(param.pt.x, param.pt.y), zoom_window, zoom_factor, color, thick);
 			}
 			else if (zoom_show_option == 1)
 			{
