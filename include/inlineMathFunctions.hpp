@@ -128,6 +128,21 @@ namespace cp
 		return ret;
 	}
 
+	inline std::vector<cv::Point> getCircleIndex(const int r)
+	{
+		std::vector<cv::Point> ret;
+		const int s = 2 * r + 1;
+		for (int j = 0; j < s; j++)
+		{
+			for (int i = 0; i < s; i++)
+			{
+				int d = cvRound(sqrt((j - r) * (j - r) + (i - r) * (i - r)));
+				if (d <= r)ret.push_back(cv::Point(i, j));
+			}
+		}
+		return ret;
+	}
+
 	inline void setCircleMask(cv::Mat& kernel, cv::Size kernelSize, bool isOuterMask = true)
 	{
 		const int r = kernelSize.width / 2;
