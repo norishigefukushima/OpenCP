@@ -1081,11 +1081,21 @@ namespace cp
 	{
 		Point pt = Point(0, 0);
 		namedWindow(wname);
+		
 		setMouseCallback(wname, (MouseCallback)guiPreviewMousePlot, (void*)&pt);
 
 		generateKeyImage(data_max);
 
 		computeDataMaxMin();
+		const int xmin = xmin_data;
+		const int xmax = xmax_data;
+		const int ymin = ymin_data;
+		const int ymax = ymax_data;
+		int xminbar = xmin; createTrackbar("xmin", wname, &xminbar, xmax); setTrackbarMin("xmin", wname, xmin);
+		int xmaxbar = xmax; createTrackbar("xmax", wname, &xmaxbar, xmax); setTrackbarMin("xmax", wname, xmin);
+		int yminbar = ymin; createTrackbar("ymin", wname, &yminbar, ymax); setTrackbarMin("ymin", wname, ymin);
+		int ymaxbar = ymax; createTrackbar("ymax", wname, &ymaxbar, ymax); setTrackbarMin("ymax", wname, ymin);
+		
 		const double margin_ratio = 1.0;//0.9
 		if (!isSetXRange)
 		{
@@ -1118,8 +1128,46 @@ namespace cp
 		}
 
 		int keyboard = 0;
+
+		//xmin_plotwindow, xmax_plotwindow, ymin_plotwindow, ymax_plotwindow
+
 		while (keyboard != 'q')
 		{
+			xmin_data = xminbar;
+			xmax_data = xmaxbar;
+			ymin_data = yminbar;
+			ymax_data = ymaxbar;
+
+			//if (!isSetXRange)
+			{
+				if (isLogScaleX)
+				{
+					xmin_plotwindow = 1;
+					if (xmax_data - xmin_data < 10)xmax_plotwindow = 10;
+					else if (xmax_data - xmin_data < 100)xmax_plotwindow = 100;
+					else if (xmax_data - xmin_data < 1000)xmax_plotwindow = 1000;
+					else if (xmax_data - xmin_data < 10000)xmax_plotwindow = 10000;
+				}
+				else
+				{
+					if (xmax_data - xmin_data > 50)
+						computeWindowXRangeMAXMIN(false, margin_ratio, 10);
+					else if (xmax_data - xmin_data > 10)
+						computeWindowXRangeMAXMIN(false, margin_ratio, 1);
+					else
+						computeWindowXRangeMAXMIN(false, margin_ratio, 0);
+				}
+			}
+			//if (!isSetYRange)
+			{
+				if (ymax_data - ymin_data > 50)
+					computeWindowYRangeMAXMIN(false, margin_ratio, 10);
+				else if (ymax_data - ymin_data > 10)
+					computeWindowYRangeMAXMIN(false, margin_ratio, 1);
+				else
+					computeWindowYRangeMAXMIN(false, margin_ratio, 0);
+			}
+
 			plotData(gridLevel);
 
 			if (isDrawMousePosition)

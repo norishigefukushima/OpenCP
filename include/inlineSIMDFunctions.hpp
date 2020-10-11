@@ -644,6 +644,37 @@ void inline _mm256_store_ps_color_v2(void* dst, const __m256 b, const __m256 g, 
 	_mm256_store_ps((float*)dst + 16, _mm256_permute2f128_ps(rval, gval, pmask3));
 }
 
+
+inline void _mm256_storeu_pd_color(void* dst, const __m256d b, const __m256d g, const __m256d r)
+{
+	const __m256d b0 = _mm256_permute2f128_pd(b, b, 0b00000000);
+	const __m256d b1 = _mm256_permute2f128_pd(b, b, 0b00010001);
+
+	const __m256d g0 = _mm256_shuffle_pd(g, g, 0b0101);
+
+	const __m256d r0 = _mm256_permute2f128_pd(r, r, 0b00000000);
+	const __m256d r1 = _mm256_permute2f128_pd(r, r, 0b00010001);
+
+	_mm256_storeu_pd(static_cast<double*>(dst) + 0, _mm256_blend_pd(_mm256_blend_pd(b0, g0, 0b0010), r0, 0b0100));
+	_mm256_storeu_pd(static_cast<double*>(dst) + 4, _mm256_blend_pd(_mm256_blend_pd(b1, g0, 0b1001), r0, 0b0010));
+	_mm256_storeu_pd(static_cast<double*>(dst) + 8, _mm256_blend_pd(_mm256_blend_pd(b1, g0, 0b0100), r1, 0b1001));
+}
+
+inline void _mm256_store_pd_color(void* dst, const __m256d b, const __m256d g, const __m256d r)
+{
+	const __m256d b0 = _mm256_permute2f128_pd(b, b, 0b00000000);
+	const __m256d b1 = _mm256_permute2f128_pd(b, b, 0b00010001);
+
+	const __m256d g0 = _mm256_shuffle_pd(g, g, 0b0101);
+
+	const __m256d r0 = _mm256_permute2f128_pd(r, r, 0b00000000);
+	const __m256d r1 = _mm256_permute2f128_pd(r, r, 0b00010001);
+
+	_mm256_store_pd(static_cast<double*>(dst) + 0, _mm256_blend_pd(_mm256_blend_pd(b0, g0, 0b0010), r0, 0b0100));
+	_mm256_store_pd(static_cast<double*>(dst) + 4, _mm256_blend_pd(_mm256_blend_pd(b1, g0, 0b1001), r0, 0b0010));
+	_mm256_store_pd(static_cast<double*>(dst) + 8, _mm256_blend_pd(_mm256_blend_pd(b1, g0, 0b0100), r1, 0b1001));
+}
+
 inline void _mm256_stream_pd_color(void* dst, const __m256d b, const __m256d g, const __m256d r)
 {
 	const __m256d b0 = _mm256_permute2f128_pd(b, b, 0b00000000);

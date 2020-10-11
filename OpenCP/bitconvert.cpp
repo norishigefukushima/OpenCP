@@ -93,4 +93,16 @@ namespace cp
 			s++, d++;
 		}
 	}
+
+	void cvt32F16F(cv::Mat& srcdst)
+	{
+		float* s = srcdst.ptr<float>(0);
+		for (int i = 0; i < srcdst.size().area(); i += 8)
+		{
+			__m256 mv = _mm256_load_ps(s + i);
+			__m128i ms = _mm256_cvtps_ph(mv, 0);
+			mv = _mm256_cvtph_ps(ms);
+			_mm256_store_ps(s + i, mv);
+		}
+	}
 }

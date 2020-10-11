@@ -124,7 +124,6 @@ namespace cp
 		void setXOriginZERO();
 		void setYOriginZERO();
 
-
 		void setPlotProfile(bool isXYCenter_, bool isXYMAXMIN_, bool isZeroCross_);
 		void setImageSize(cv::Size s);
 		void setXYRange(double xmin, double xmax, double ymin, double ymax);

@@ -6,7 +6,7 @@ using namespace cp;
 void SLICTestSegment2Vector(Mat& src)
 {
 	Mat seg;
-	SLIC(src, seg, 16, 30, 0.1, 20);
+	SLIC(src, seg, 16, 30, 0.1f, 20);
 
 	vector<vector<Point>> pts;
 	SLICSegment2Vector(seg, pts);

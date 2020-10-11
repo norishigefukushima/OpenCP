@@ -240,6 +240,321 @@ namespace cp
 	}
 }
 
+#include <opencv2/core/cvdef.h>
+#include <cmath>
+
+inline double getHannWindow(const double x)
+{
+	return (x <= 0.5) ? 0.5 + 0.5 * cos(CV_2PI * x) : 0;
+}
+
+inline double getHammingWindow(const double x)
+{
+	return (x <= 0.5) ? 0.54 + 0.46 * cos(CV_2PI * x) : 0;
+}
+
+inline double getBlackmanWindow(const double x)
+{
+	return (x <= 0.5) ? 0.42 + 0.5 * cos(CV_2PI * x) + 0.08 * cos(CV_2PI * 2.0 * x) : 0;
+}
+
+inline double getNuttallWindow(const double x)
+{
+	return (x <= 0.5) ? 0.355768 + 0.487396 * cos(CV_2PI * x) + 0.144232 * cos(CV_2PI * 2.0 * x) + 0.012604 * cos(CV_2PI * 3.0 * x) : 0;
+}
+
+inline double getAkaikeWindow(const double x)
+{
+	return (x <= 0.5) ? 0.625 + 0.5 * cos(CV_2PI * x) - 0.125 * cos(CV_2PI * 2.0 * x) : 0;
+}
+
+inline double getParzenWindow(const double x)
+{
+	double ret = 0.0;
+	if (x <= 1.0)
+	{
+		ret = 1.0 - 1.5 * x * x + 0.75 * x * x * x;
+	}
+	else if (x <= 2.0)
+	{
+		ret = 0.25 * (2.0 - x) * (2.0 - x) * (2.0 - x);
+	}
+	return ret;
+}
+
+inline double getWelchWindow(const double x)
+{
+	return std::max(0.0, 1.0 - x * x);//1-x*x;	
+}
+
+inline double getBartlettWindow(const double x)
+{
+	return std::max(0.0, 1.0 - x);//Hat; 
+}
+
+inline double getFlatTopWindow(const double x)
+{
+	//return (x <= 0.5) ? 1.0 - 1.93*cos(CV_2PI*x + CV_PI) + 1.29*cos(CV_PI*4.0*x + CV_2PI) - 0.388*cos(CV_PI*6.0*x + 3 * CV_PI) + 0.032*cos(CV_PI*8.0*x + 4 * CV_PI) : 0;
+	return (x <= 0.5) ? 0.21557895 - 0.41663158 * cos(CV_2PI * x + CV_PI) + 0.277263158 * cos(CV_PI * 4.0 * x + CV_2PI) - 0.083578947 * cos(CV_PI * 6.0 * x + 3 * CV_PI) + 0.006947368 * cos(CV_PI * 8.0 * x + 4 * CV_PI) : 0;
+}
+
+inline double sinc(const double x)
+{
+	return sin(CV_PI * x) / (CV_PI * x);
+}
+
+inline double getLanczosWindow(const double x, const int n)
+{
+	return (x <= n) ? sinc(x) * sinc(x / n) : 0;
+}
+
+inline double getExpLpWindow(const double x, const int n)
+{
+	return std::exp(-pow(x, n) / n);//Ln-Gaussian
+}
+
+inline double getGaussianWindow(const double x)
+{
+	return std::exp(-0.5 * x * x);
+}
+
+inline double getDivSqrtWindow(const double x, double sub)
+{
+	return 1.0 / pow(x * x + 1.0, 0.5) - sub;
+	//return 1.0 / pow(abs(x) + 1.0, 0.35);
+}
+//https://ja.wikipedia.org/wiki/%E7%AA%93%E9%96%A2%E6%95%B0
+//https://en.wikipedia.org/wiki/Window_function
+
+enum
+{
+	GAUSSIAN_WINDOW,
+	EXP_L1_WINDOW,//dual exponential, Laplacian distribution
+	EXP_L2_WINDOW, //Gaussian window
+	EXP_L3_WINDOW,
+	EXP_L4_WINDOW,
+	EXP_L5_WINDOW,
+	EXP_L6_WINDOW,
+	EXP_L7_WINDOW,
+	EXP_L8_WINDOW,
+	EXP_L9_WINDOW,
+	EXP_L10_WINDOW,
+	EXP_L20_WINDOW,
+	EXP_L40_WINDOW,
+	EXP_L80_WINDOW,
+	EXP_L160_WINDOW,
+
+	BOX_WINDOW,
+	BARTLETT_WINDOW,
+	WELCH_WINDOW,
+	PARZEN_WINDOW,
+	DIVSQRT_WINDOW,
+
+	HANN_WINDOW,
+	HAMMING_WINDOW,
+	BLACKMAN_WINDOW,
+	NUTTALL_WINDOW,
+	AKAIKE_WINDOW,
+	FLATTOP_WINDOW,
+
+	WINDOW_TYPE_SIZE
+};
+
+inline std::string getWindowTypeName(const int window_type)
+{
+	std::string ret;
+	switch (window_type)
+	{
+	case BARTLETT_WINDOW:
+		ret = "BARTLETT_WINDOW";
+		break;
+	case WELCH_WINDOW:
+		ret = "WELCH_WINDOW";
+		break;
+	case PARZEN_WINDOW:
+		ret = "PARZEN_WINDOW";
+		break;
+	case DIVSQRT_WINDOW:
+		ret = "DIVSQRT_WINDOW";
+		break;
+
+	case HANN_WINDOW:
+		ret = "HANN_WINDOW";
+		break;
+	case HAMMING_WINDOW:
+		ret = "HAMMING_WINDOW";
+		break;
+	case BLACKMAN_WINDOW:
+		ret = "BLACKMAN_WINDOW";
+		break;
+	case NUTTALL_WINDOW:
+		ret = "NUTTALL_WINDOW";
+		break;
+	case AKAIKE_WINDOW:
+		ret = "AKAIKE_WINDOW";
+		break;
+	case FLATTOP_WINDOW:
+		ret = "FLATTOP_WINDOW";
+		break;
+
+	case EXP_L1_WINDOW:
+		ret = "EXP_L1_WINDOW";
+		break;
+	case EXP_L3_WINDOW:
+		ret = "EXP_L3_WINDOW";
+		break;
+	case EXP_L4_WINDOW:
+		ret = "EXP_L4_WINDOW";
+		break;
+	case EXP_L5_WINDOW:
+		ret = "EXP_L5_WINDOW";
+		break;
+	case EXP_L6_WINDOW:
+		ret = "EXP_L6_WINDOW";
+		break;
+	case EXP_L7_WINDOW:
+		ret = "EXP_L7_WINDOW";
+		break;
+	case EXP_L8_WINDOW:
+		ret = "EXP_L8_WINDOW";
+		break;
+	case EXP_L9_WINDOW:
+		ret = "EXP_L9_WINDOW";
+		break;
+	case EXP_L10_WINDOW:
+		ret = "EXP_L10_WINDOW";
+		break;
+	case EXP_L20_WINDOW:
+		ret = "EXP_L20_WINDOW";
+		break;
+	case EXP_L40_WINDOW:
+		ret = "EXP_L40_WINDOW";
+		break;
+	case EXP_L80_WINDOW:
+		ret = "EXP_L80_WINDOW";
+		break;
+	case EXP_L160_WINDOW:
+		ret = "EXP_L160_WINDOW";
+		break;
+	case BOX_WINDOW:
+		ret = "BOX_WINDOW";
+		break;
+	case GAUSSIAN_WINDOW:
+	case EXP_L2_WINDOW:
+	default:
+		ret = "GAUSSIAN_WINDOW";
+		break;
+	}
+
+	return ret;
+}
+
+
+inline double getRangeKernelFunction(const double x, const double sigma, const int window_type)
+{
+	const double gaussRangeCoeff = (x / sigma);
+
+	double ret = 0.0;
+	switch (window_type)
+	{
+	case BARTLETT_WINDOW:
+		ret = getBartlettWindow(abs(gaussRangeCoeff));//hat
+		break;
+	case WELCH_WINDOW:
+		ret = getWelchWindow(abs(gaussRangeCoeff));//1-x*x;
+		break;
+	case PARZEN_WINDOW:
+		ret = getParzenWindow(abs(gaussRangeCoeff));
+		break;
+	case DIVSQRT_WINDOW:
+	{
+		double sub = getDivSqrtWindow(127.5 / sigma, 0.0);
+		ret = getDivSqrtWindow(gaussRangeCoeff, sub) / (1.0 - sub);
+		break;
+	}
+
+	case HANN_WINDOW:
+		ret = getHannWindow(abs(gaussRangeCoeff));
+		break;
+	case HAMMING_WINDOW:
+		ret = getHammingWindow(abs(gaussRangeCoeff));
+		break;
+	case BLACKMAN_WINDOW:
+		ret = getBlackmanWindow(abs(gaussRangeCoeff));
+		break;
+	case NUTTALL_WINDOW:
+		ret = getNuttallWindow(abs(gaussRangeCoeff));
+		break;
+	case AKAIKE_WINDOW:
+		ret = getAkaikeWindow(abs(gaussRangeCoeff));
+		break;
+	case FLATTOP_WINDOW:
+		ret = getFlatTopWindow(abs(gaussRangeCoeff));
+		break;
+
+	case EXP_L1_WINDOW:
+		ret = std::exp(-pow(abs(gaussRangeCoeff), 1));//Laplacian kernel
+		break;
+	case EXP_L3_WINDOW:
+		ret = std::exp(-pow(abs(gaussRangeCoeff), 3) / 3.0);
+		break;
+	case EXP_L4_WINDOW:
+		ret = std::exp(-pow(abs(gaussRangeCoeff), 4) / 4.0);
+		break;
+	case EXP_L5_WINDOW:
+		ret = std::exp(-pow(abs(gaussRangeCoeff), 5) / 5.0);
+		break;
+	case EXP_L6_WINDOW:
+		ret = std::exp(-pow(abs(gaussRangeCoeff), 6) / 6.0);
+		break;
+	case EXP_L7_WINDOW:
+		ret = std::exp(-pow(abs(gaussRangeCoeff), 7) / 7.0);
+		break;
+	case EXP_L8_WINDOW:
+		ret = std::exp(-pow(abs(gaussRangeCoeff), 8) / 8.0);
+		break;
+	case EXP_L9_WINDOW:
+		ret = std::exp(-pow(abs(gaussRangeCoeff), 9) / 9.0);
+		break;
+	case EXP_L10_WINDOW:
+		ret = std::exp(-pow(abs(gaussRangeCoeff), 10) / 10.0);
+		break;
+	case EXP_L20_WINDOW:
+		ret = std::exp(-pow(abs(gaussRangeCoeff), 20) / 20.0);
+		break;
+	case EXP_L40_WINDOW:
+		ret = std::exp(-pow(abs(gaussRangeCoeff), 40) / 40.0);
+		break;
+	case EXP_L80_WINDOW:
+		ret = std::exp(-pow(abs(gaussRangeCoeff), 80) / 80.0);
+		break;
+	case EXP_L160_WINDOW:
+		ret = std::exp(-pow(abs(gaussRangeCoeff), 160) / 160.0);
+		break;
+	case BOX_WINDOW:
+		ret = (abs(x) <= sigma) ? 1.0 : 0.0;
+		break;
+	case GAUSSIAN_WINDOW:
+	case EXP_L2_WINDOW:
+	default:
+		ret = getGaussianWindow(abs(gaussRangeCoeff));//Gaussian
+		break;
+	}
+
+	return ret;
+}
+
+inline double getRangeKernelIntegral(const double sigma, const int window_type)
+{
+	double ret = 0.0;
+	for (int i = 0; i < 128; i++)
+	{
+		ret += getRangeKernelFunction(i, sigma, window_type);
+	}
+
+	return ret;
+}
+
 
 #define print_debug(a)              std::cout << #a << ": " << a << std::endl
 #define print_debug2(a, b)          std::cout << #a << ": " << a <<", "<< #b << ": " << b << std::endl
