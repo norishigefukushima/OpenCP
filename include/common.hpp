@@ -67,6 +67,7 @@
 #pragma CV_LIBRARY(optflow)
 #pragma CV_LIBRARY(photo)
 //#pragma CV_LIBRARY(plot)
+//#pragma CV_LIBRARY(quality)
 //#pragma CV_LIBRARY(reg)
 //#pragma CV_LIBRARY(rgbd)
 //#pragma CV_LIBRARY(saliency)
