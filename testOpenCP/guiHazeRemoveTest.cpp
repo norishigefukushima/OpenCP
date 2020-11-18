@@ -8,7 +8,8 @@ void guiHazeRemoveTest()
 {
 	HazeRemove hz;
 	//Mat haze = imread("img/haze/swans.png");
-	Mat haze = imread("img/haze/forest.png");
+	//Mat haze = imread("img/haze/forest.png");
+	Mat haze = imread("img/doumori.jpg");
 
 	hz.gui(haze, "haze");
 }
