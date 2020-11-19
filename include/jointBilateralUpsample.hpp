@@ -12,7 +12,7 @@ namespace cp
 
 		SIZE
 	};
-	CP_EXPORT void jointBilateralUpsampe(cv::InputArray src, cv::InputArray guide, cv::OutputArray dest, const int r, const double sigma_r, const double sigma_s, const JBUSchedule schedule = JBUSchedule::CLASS);
+	CP_EXPORT void jointBilateralUpsample(cv::InputArray src, cv::InputArray guide, cv::OutputArray dest, const int r, const double sigma_r, const double sigma_s, const JBUSchedule schedule = JBUSchedule::CLASS);
 
 	class CP_EXPORT JointBilateralUpsample
 	{

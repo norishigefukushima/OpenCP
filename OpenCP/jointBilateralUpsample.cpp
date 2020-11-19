@@ -633,7 +633,7 @@ namespace cp
 		_mm_free(range_weight);
 	}
 
-	void jointBilateralUpsampe(cv::InputArray src, cv::InputArray guide, cv::OutputArray dest, const int r, const double sigma_r, const double sigma_s, const JBUSchedule schedule)
+	void jointBilateralUpsample(cv::InputArray src, cv::InputArray guide, cv::OutputArray dest, const int r, const double sigma_r, const double sigma_s, const JBUSchedule schedule)
 	{
 		switch (schedule)
 		{
