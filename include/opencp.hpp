@@ -88,6 +88,7 @@
 #include "GaussianBlurIPOL.hpp"
 //resize
 #include "downsample.hpp"
+#include "depthUpsample.hpp"
 #include "jointBilateralUpsample.hpp"
 
 /*************************************************************
