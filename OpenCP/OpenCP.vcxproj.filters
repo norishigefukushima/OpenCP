@@ -555,6 +555,9 @@
     <ClCompile Include="upsample.cpp">
       <Filter>ソース ファイル\filter\resize</Filter>
     </ClCompile>
+    <ClCompile Include="bilateralGuidedUpsample.cpp">
+      <Filter>ソース ファイル\filter\resize</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libGaussian\gaussian_conv.h">
@@ -987,6 +990,9 @@
       <Filter>ヘッダー ファイル\headers\filter\resize</Filter>
     </ClInclude>
     <ClInclude Include="..\include\upsample.hpp">
+      <Filter>ヘッダー ファイル\headers\filter\resize</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bilateralGuidedUpsample.hpp">
       <Filter>ヘッダー ファイル\headers\filter\resize</Filter>
     </ClInclude>
   </ItemGroup>

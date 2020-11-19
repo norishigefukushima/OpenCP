@@ -187,6 +187,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="adaptiveManifold.cpp" />
+    <ClCompile Include="bilateralGuidedUpsample.cpp" />
     <ClCompile Include="blend.cpp" />
     <ClCompile Include="arithmetic.cpp" />
     <ClCompile Include="bilateralFilter.cpp" />
@@ -345,6 +346,7 @@
     <ClCompile Include="crop.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\include\bilateralGuidedUpsample.hpp" />
     <ClInclude Include="..\include\blend.hpp" />
     <ClInclude Include="..\include\arithmetic.hpp" />
     <ClInclude Include="..\include\bilateralFilter.hpp" />

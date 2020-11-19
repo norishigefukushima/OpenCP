@@ -90,6 +90,7 @@
 #include "downsample.hpp"
 #include "depthUpsample.hpp"
 #include "jointBilateralUpsample.hpp"
+#include "bilateralGuidedUpsample.hpp"
 #include "upsample.hpp"
 
 /*************************************************************
