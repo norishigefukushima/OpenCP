@@ -1,10 +1,15 @@
+
 #include "jointBilateralUpsample.hpp"
+#include "downsample.hpp"
+#include "inlineSimdFunctions.hpp"
+#include "fmath/fmath.hpp"
 #include "minmaxfilter.hpp"
 #include "shiftImage.hpp"
 
 using namespace std;
 using namespace cv;
 
+#define USE_SIMD_JBU
 namespace cp
 {
 	template <class srcType>
@@ -108,7 +113,6 @@ namespace cp
 		else if (src.depth() == CV_32F) linearUpsample_<float>(src, dest);
 		else if (src.depth() == CV_64F) linearUpsample_<double>(src, dest);
 	}
-
 
 	inline double cubicfunc(double x, double a = -1.0)
 	{
@@ -410,406 +414,1167 @@ namespace cp
 		else if (src.depth() == CV_64F) noiseAwareFilterDepthUpsample_<double>(src, joint, dest, sigma_c, sigma_d, sigma_s, eps, tau);
 	}
 
-	template<class srcType>
-	static void jointBilateralLinearUpsample_(Mat& src, const Mat& joint, Mat& dest, double sigma_c)
+#pragma region function JointBilateralUpsample
+	static void jointBilateralUpsamplingAllocBorder(Mat& src, Mat& guide, Mat& dest, const int r, const double sigma_r, const double sigma_s)
 	{
-		if (dest.empty())dest.create(joint.size(), src.type());
-		Mat sim, jim, eim;
-		copyMakeBorder(src, sim, 0, 1, 0, 1, cv::BORDER_REPLICATE);
-		const int dw = (joint.cols) / (src.cols);
-		const int dh = (joint.rows) / (src.rows);
+		const int scale = guide.cols / src.cols;
+		int border = BORDER_REPLICATE;
+		Mat simb;  copyMakeBorder(src, simb, r, r, r, r, border);
 
-		copyMakeBorder(joint, jim, 0, 1, 0, 1, cv::BORDER_REPLICATE);
+		const int d = 2 * r + 1;
+		const int ksize = d * d;
+		Mat weightmap(scale * scale, d * d, CV_32F);
 
-		double lut[256 * 3];
-		double gauss_c_coeff = -0.5 / (sigma_c*sigma_c);
-		for (int i = 0; i < 256 * 3; i++)
+		Mat sguide;
+		//resize(guide, sguide, src.size(), 0, 0, INTER_NEAREST);
+		cp::downsample(guide, sguide, scale, cp::Downsample(INTER_NEAREST), 4);
+		Mat gimb; copyMakeBorder(sguide, gimb, r, r, r, r, border);
+
+		float* range_weight = (float*)_mm_malloc(256 * sizeof(float), AVX_ALIGN);
+
+#ifdef LP_NORM
+		//lp norm
+		float n = 2.f;
+		for (int i = 0; i < 256; i++)
 		{
-			lut[i] = (double)std::exp(i*i*gauss_c_coeff);
+			rweight[i] = exp(pow(i, n) / (-n * pow(sigma_r, n)));
 		}
-
-		for (int j = 0; j < src.rows; j++)
+#else
+		const float rcoeff = float(1.0 / (-2.0 * sigma_r * sigma_r));
+		for (int i = 0; i < 256; i++)
 		{
-			int n = j*dh;
+			range_weight[i] = fmath::exp(i * i * rcoeff);
+		}
+#endif
 
-			srcType* s = sim.ptr<srcType>(j);
-			uchar* jnt_ = jim.ptr(n);
-
-			for (int i = 0, m = 0; i < src.cols; i++, m += dw)
+		//compute spatial weight
+		const float spaceCoeff = float(1.0 / (-2.0 * sigma_s * sigma_s * scale * scale));
+		for (int j = 0; j < scale; j++)
+		{
+			for (int i = 0; i < scale; i++)
 			{
-				const uchar ltr = jnt_[3 * m + 0];
-				const uchar ltg = jnt_[3 * m + 1];
-				const uchar ltb = jnt_[3 * m + 2];
-
-				const uchar rtr = jnt_[3 * (m + dw) + 0];
-				const uchar rtg = jnt_[3 * (m + dw) + 1];
-				const uchar rtb = jnt_[3 * (m + dw) + 2];
-
-				const uchar lbr = jnt_[3 * (m + jim.cols*dh) + 0];
-				const uchar lbg = jnt_[3 * (m + jim.cols*dh) + 1];
-				const uchar lbb = jnt_[3 * (m + jim.cols*dh) + 2];
-
-				const uchar rbr = jnt_[3 * (m + dw + jim.cols*dh) + 0];
-				const uchar rbg = jnt_[3 * (m + dw + jim.cols*dh) + 1];
-				const uchar rbb = jnt_[3 * (m + dw + jim.cols*dh) + 2];
-
-				const srcType ltd = s[i];
-				const srcType rtd = s[i + 1];
-				const srcType lbd = s[i + sim.cols];
-				const srcType rbd = s[i + 1 + sim.cols];
-
-				for (int l = 0; l < dh; l++)
+				float* wmap = weightmap.ptr<float>(j * scale + i);
+				int count = 0;
+				float wsum = 0.f;
+				for (int n = 0; n < d; n++)
 				{
-					srcType* d = dest.ptr<srcType>(n + l);
-					uchar* jnt = jim.ptr(n + l);
-					double beta = 1.0 - (double)l / dh;
-
-					for (int k = 0; k < dw; k++)
+					for (int m = 0; m < d; m++)
 					{
-						double alpha = 1.0 - (double)k / dw;
-
-						const uchar r = jnt[3 * (m + k) + 0];
-						const uchar g = jnt[3 * (m + k) + 1];
-						const uchar b = jnt[3 * (m + k) + 2];
-
-						int minE = abs(ltr - r) + abs(ltg - g) + abs(ltb - b);
-						//T mind=ltd;
-						//int minp=0;
-
-						double wlt = lut[minE];
-
-						int e = abs(rtr - r) + abs(rtg - g) + abs(rtb - b);
-						double wrt = lut[e];
-
-						if (minE > e)
-						{
-							minE = e;
-							//mind = rtd;
-							//minp=1;
-						}
-
-						e = abs(lbr - r) + abs(lbg - g) + abs(lbb - b);
-						double wlb = lut[e];
-
-						if (minE > e)
-						{
-							minE = e;
-							//mind = lbd;
-							//minp=2;
-						}
-
-						e = abs(rbr - r) + abs(rbg - g) + abs(rbb - b);
-						double wrb = lut[e];
-
-						if (minE > e)
-						{
-							minE = e;
-							//mind = rbd;
-							//minp=3;
-						}
-
-						/*wlt = (abs(mind-ltd)<dsubth2)?wlt:0.00001;
-						wrt = (abs(mind-rtd)<dsubth2)?wrt:0.00001;
-						wlb = (abs(mind-lbd)<dsubth2)?wlb:0.00001;
-						wrb = (abs(mind-rbd)<dsubth2)?wrb:0.00001;*/
-						//if(wlt==0.0 && wlb==0.0 && wrt==0.0 && wrb==0.0)
-						//	d[m+k] = weiterdlinearinterpolate(ltd,rtd,lbd,rbd,0.5,0.5,0.5,0.5,alpha,beta);
-						///else
-						d[m + k] = weightedlinearinterpolate_<srcType>(ltd, rtd, lbd, rbd, wlt, wrt, wlb, wrb, alpha, beta);
+						float xf = abs(m - r) + (float)i / scale;
+						float yf = abs(n - r) + (float)j / scale;
+						float dist = hypot(xf, yf);
+						float w = fmath::exp(dist * dist * spaceCoeff);
+						wsum += w;
+						wmap[count++] = w;
 					}
+				}
+				for (int n = 0; n < d * d; n++)
+				{
+					wmap[n] /= wsum;
 				}
 			}
 		}
-	}
 
-	void jointBilateralLinearUpsample(InputArray src_, InputArray joint_, OutputArray dst, double sigma_c)
-	{
-		if (dst.empty() || dst.type() != src_.type() || joint_.size() != dst.size()) dst.create(joint_.size(), src_.type());
-		Mat src = src_.getMat();
-		Mat joint = joint_.getMat();
-		Mat dest = dst.getMat();
-
-		if (src.depth() == CV_8U)
-			jointBilateralLinearUpsample_<uchar>(src, joint, dest, sigma_c);
-		else if (src.depth() == CV_16S)
-			jointBilateralLinearUpsample_<short>(src, joint, dest, sigma_c);
-		else if (src.depth() == CV_16U)
-			jointBilateralLinearUpsample_<ushort>(src, joint, dest, sigma_c);
-		else if (src.depth() == CV_32F)
-			jointBilateralLinearUpsample_<float>(src, joint, dest, sigma_c);
-		else if (src.depth() == CV_64F)
-			jointBilateralLinearUpsample_<double>(src, joint, dest, sigma_c);
-	}
-
-
-	template<class srcType>
-	static void jointBilateralUpsample_(Mat& src, Mat& joint, Mat& dest, double sigma_c, double sigma_s)
-	{
-		if (dest.empty())dest.create(joint.size(), src.type());
-		Mat sim, jim, eim;
-		copyMakeBorder(src, sim, 0, 1, 0, 1, cv::BORDER_REPLICATE);
-		const int dw = (joint.cols) / (src.cols);
-		const int dh = (joint.rows) / (src.rows);
-
-		copyMakeBorder(joint, jim, 0, 1, 0, 1, cv::BORDER_REPLICATE);
-
-		double lut[256 * 3];
-		double gauss_c_coeff = -0.5 / (sigma_c*sigma_c);
-		for (int i = 0; i < 256 * 3; i++)
+#pragma omp parallel for schedule(dynamic)
+		for (int y = 0; y < dest.rows; y += scale)
 		{
-			lut[i] = (double)std::exp(i*i*gauss_c_coeff);
-		}
-		vector<double> lut_(dw*dh);
-		double* lut2 = &lut_[0];
-		if (sigma_s <= 0.0)
-		{
-			for (int i = 0; i < dw*dh; i++)
+			const int y0 = (int)(y / scale);
+
+			float* neighbor__b = (float*)_mm_malloc(sizeof(float) * ksize, AVX_ALIGN);
+			float* neighbor__g = (float*)_mm_malloc(sizeof(float) * ksize, AVX_ALIGN);
+			float* neighbor__r = (float*)_mm_malloc(sizeof(float) * ksize, AVX_ALIGN);
+			float* gneighbor_b = (float*)_mm_malloc(sizeof(float) * ksize, AVX_ALIGN);
+			float* gneighbor_g = (float*)_mm_malloc(sizeof(float) * ksize, AVX_ALIGN);
+			float* gneighbor_r = (float*)_mm_malloc(sizeof(float) * ksize, AVX_ALIGN);
+
+			const int CV_DECL_ALIGNED(AVX_ALIGN) v32f_absmask_[] = { 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff,0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff };
+			const __m256 v32f_absmask = _mm256_load_ps((float*)v32f_absmask_);
+
+			for (int x = 0; x < dest.cols; x += scale)
 			{
-				lut2[i] = 1.0;
-			}
-		}
-		else
-		{
-			double gauss_s_coeff = -0.5 / (sigma_s*sigma_s);
-			for (int i = 0; i < dw*dh; i++)
-			{
-				lut2[i] = (double)std::exp(i*i*gauss_s_coeff);
-			}
-		}
-
-		for (int j = 0; j < src.rows; j++)
-		{
-			int n = j*dh;
-
-			srcType* s = sim.ptr<srcType>(j);
-			uchar* jnt_ = jim.ptr(n);
-
-			for (int i = 0, m = 0; i < src.cols; i++, m += dw)
-			{
-				const uchar ltr = jnt_[3 * m + 0];
-				const uchar ltg = jnt_[3 * m + 1];
-				const uchar ltb = jnt_[3 * m + 2];
-
-				const uchar rtr = jnt_[3 * (m + dw) + 0];
-				const uchar rtg = jnt_[3 * (m + dw) + 1];
-				const uchar rtb = jnt_[3 * (m + dw) + 2];
-
-				const uchar lbr = jnt_[3 * (m + jim.cols*dh) + 0];
-				const uchar lbg = jnt_[3 * (m + jim.cols*dh) + 1];
-				const uchar lbb = jnt_[3 * (m + jim.cols*dh) + 2];
-
-				const uchar rbr = jnt_[3 * (m + dw + jim.cols*dh) + 0];
-				const uchar rbg = jnt_[3 * (m + dw + jim.cols*dh) + 1];
-				const uchar rbb = jnt_[3 * (m + dw + jim.cols*dh) + 2];
-
-				const srcType ltd = s[i];
-				const srcType rtd = s[i + 1];
-				const srcType lbd = s[i + sim.cols];
-				const srcType rbd = s[i + 1 + sim.cols];
-
-				for (int l = 0; l < dh; l++)
+				const int x0 = (int)(x / scale);
+				int count = 0;
+				for (int n = 0; n < d; n++)
 				{
-					srcType* d = dest.ptr<srcType>(n + l);
-					uchar* jnt = jim.ptr(n + l);
-					//double beta = 1.0-(double)l/dh;
-
-					for (int k = 0; k < dw; k++)
+					uchar* sb = simb.ptr<uchar>(y0 + n);
+					uchar* gb = gimb.ptr<uchar>(y0 + n);
+					for (int m = 0; m < d; m++)
 					{
-						//double alpha = 1.0-(double)k/dw;
+						const int index = 3 * (x0 + m);
+						neighbor__b[count] = (float)sb[index + 0];
+						gneighbor_b[count] = (float)gb[index + 0];
+						neighbor__g[count] = (float)sb[index + 1];
+						gneighbor_g[count] = (float)gb[index + 1];
+						neighbor__r[count] = (float)sb[index + 2];
+						gneighbor_r[count] = (float)gb[index + 2];
+						count++;
+					}
+				}
 
-						const uchar r = jnt[3 * (m + k) + 0];
-						const uchar g = jnt[3 * (m + k) + 1];
-						const uchar b = jnt[3 * (m + k) + 2];
+				for (int n = 0; n < scale; n++)
+				{
+					uchar* guide_ptr = guide.ptr<uchar>(y + n); // reference
+					uchar* dest_ptr = dest.ptr<uchar>(y + n); // output
+					for (int m = 0; m < scale; m++)
+					{
+						int idx = n * scale + m;
+						float* weightmap_ptr = weightmap.ptr<float>(idx);
 
+						const int index = 3 * (x + m);
+						const uchar gb = guide_ptr[index + 0];
+						const uchar gg = guide_ptr[index + 1];
+						const uchar gr = guide_ptr[index + 2];
 
+						float vb = 0.f;
+						float wb = 0.f;
+						float vg = 0.f;
+						float wg = 0.f;
+						float vr = 0.f;
+						float wr = 0.f;
 
-						double wlt = lut2[k + l] * lut[abs(ltr - r) + abs(ltg - g) + abs(ltb - b)];
-						double wrt = lut2[dw - k + l] * lut[abs(rtr - r) + abs(rtg - g) + abs(rtb - b)];
-						double wlb = lut2[k + dh - l] * lut[abs(lbr - r) + abs(lbg - g) + abs(lbb - b)];
-						double wrb = lut2[dw - k + dh - l] * lut[abs(rbr - r) + abs(rbg - g) + abs(rbb - b)];
+#ifdef USE_SIMD_JBU
+						__m256 mgb = _mm256_set1_ps(gb);
+						__m256 mgg = _mm256_set1_ps(gg);
+						__m256 mgr = _mm256_set1_ps(gr);
 
+						__m256 mvb = _mm256_setzero_ps();
+						__m256 mwb = _mm256_setzero_ps();
+						__m256 mvg = _mm256_setzero_ps();
+						__m256 mwg = _mm256_setzero_ps();
+						__m256 mvr = _mm256_setzero_ps();
+						__m256 mwr = _mm256_setzero_ps();
 
+						const int simdend = ksize / 8 * 8;// nxn kernel(n: odd value) must be 8*m+1
+						for (int k = 0; k < simdend; k += 8)
+						{
+							__m256 mw = _mm256_load_ps(weightmap_ptr + k);
 
-						/*wlt = (abs(mind-ltd)<dsubth2)?wlt:0.00001;
-						wrt = (abs(mind-rtd)<dsubth2)?wrt:0.00001;
-						wlb = (abs(mind-lbd)<dsubth2)?wlb:0.00001;
-						wrb = (abs(mind-rbd)<dsubth2)?wrb:0.00001;*/
-						//if(wlt==0.0 && wlb==0.0 && wrt==0.0 && wrb==0.0)
-						//	d[m+k] = weiterdlinearinterpolate(ltd,rtd,lbd,rbd,0.5,0.5,0.5,0.5,alpha,beta);
-						///else
-						d[m + k] = weightedinterpolation_<srcType>(ltd, rtd, lbd, rbd, wlt, wrt, wlb, wrb);
+							__m256 mg = _mm256_load_ps(gneighbor_b + k);
+							__m256 ms = _mm256_load_ps(neighbor__b + k);
+							__m256i midx = _mm256_cvtps_epi32(_mm256_and_ps(_mm256_sub_ps(mgb, mg), v32f_absmask));
+							__m256 mrw = _mm256_mul_ps(mw, _mm256_i32gather_ps(range_weight, midx, sizeof(float)));
+							mvb = _mm256_fmadd_ps(mrw, ms, mvb);
+							mwb = _mm256_add_ps(mrw, mwb);
+
+							mg = _mm256_load_ps(gneighbor_g + k);
+							ms = _mm256_load_ps(neighbor__g + k);
+							midx = _mm256_cvtps_epi32(_mm256_and_ps(_mm256_sub_ps(mgg, mg), v32f_absmask));
+							mrw = _mm256_mul_ps(mw, _mm256_i32gather_ps(range_weight, midx, sizeof(float)));
+							mvg = _mm256_fmadd_ps(mrw, ms, mvg);
+							mwg = _mm256_add_ps(mrw, mwg);
+
+							mg = _mm256_load_ps(gneighbor_r + k);
+							ms = _mm256_load_ps(neighbor__r + k);
+							midx = _mm256_cvtps_epi32(_mm256_and_ps(_mm256_sub_ps(mgr, mg), v32f_absmask));
+							mrw = _mm256_mul_ps(mw, _mm256_i32gather_ps(range_weight, midx, sizeof(float)));
+							mvr = _mm256_fmadd_ps(mrw, ms, mvr);
+							mwr = _mm256_add_ps(mrw, mwr);
+						}
+						vb = _mm256_reduceadd_ps(mvb);
+						vg = _mm256_reduceadd_ps(mvg);
+						vr = _mm256_reduceadd_ps(mvr);
+						wb = _mm256_reduceadd_ps(mwb);
+						wg = _mm256_reduceadd_ps(mwg);
+						wr = _mm256_reduceadd_ps(mwr);
+
+						int ed = ksize - 1;
+						float cwb = range_weight[abs(gb - (int)gneighbor_b[ed])] * weightmap_ptr[ed];
+						vb += cwb * neighbor__b[ed];
+						wb += cwb;
+
+						float cwg = range_weight[abs(gg - (int)gneighbor_g[ed])] * weightmap_ptr[ed];
+						vg += cwg * neighbor__g[ed];
+						wg += cwg;
+
+						float cwr = range_weight[abs(gr - (int)gneighbor_r[ed])] * weightmap_ptr[ed];
+						vr += cwr * neighbor__r[ed];
+						wr += cwr;
+#else
+						for (int k = 0; k < d * d; k++)
+						{
+							float cwb = rweight[abs(gb - (int)gneighbor_b[k])] * weightmap_ptr[k];
+							vb += cwb * neighbor__b[k];
+							wb += cwb;
+
+							float cwg = rweight[abs(gg - (int)gneighbor_g[k])] * weightmap_ptr[k];
+							vg += cwg * neighbor__g[k];
+							wg += cwg;
+
+							float cwr = rweight[abs(gr - (int)gneighbor_r[k])] * weightmap_ptr[k];
+							vr += cwr * neighbor__r[k];
+							wr += cwr;
+						}
+#endif
+						dest_ptr[index + 0] = saturate_cast<uchar>(vb / wb);
+						dest_ptr[index + 1] = saturate_cast<uchar>(vg / wg);
+						dest_ptr[index + 2] = saturate_cast<uchar>(vr / wr);
 					}
 				}
 			}
+
+			_mm_free(neighbor__b);
+			_mm_free(neighbor__g);
+			_mm_free(neighbor__r);
+			_mm_free(gneighbor_b);
+			_mm_free(gneighbor_g);
+			_mm_free(gneighbor_r);
 		}
+
+		_mm_free(range_weight);
 	}
 
-	void jointBilateralUpsample(InputArray src_, InputArray joint_, OutputArray dst, double sigma_c, double sigma_s)
+	static void jointBilateralUpsamplingComputeBorder(Mat& src, Mat& guide, Mat& dest, const int r, const double sigma_r, const double sigma_s)
 	{
-		if (dst.empty() || dst.type() != src_.type() || joint_.size() != dst.size()) dst.create(joint_.size(), src_.type());
-		Mat src = src_.getMat();
-		Mat joint = joint_.getMat();
-		Mat dest = dst.getMat();
-
-		if (src.depth() == CV_8U)
-			jointBilateralUpsample_<uchar>(src, joint, dest, sigma_c, sigma_s);
-		else if (src.depth() == CV_16S)
-			jointBilateralUpsample_<short>(src, joint, dest, sigma_c, sigma_s);
-		else if (src.depth() == CV_16U)
-			jointBilateralUpsample_<ushort>(src, joint, dest, sigma_c, sigma_s);
-		else if (src.depth() == CV_32F)
-			jointBilateralUpsample_<float>(src, joint, dest, sigma_c, sigma_s);
-		else if (src.depth() == CV_64F)
-			jointBilateralUpsample_<double>(src, joint, dest, sigma_c, sigma_s);
-	}
+		const int scale = guide.cols / src.cols;
+		int border = BORDER_REPLICATE;
 
 
-	template<class srcType>
-	static void jointBilateralNNUpsample_(Mat& src, Mat& joint, Mat& dest, double sigma_c, double sigma_s)
-	{
-		Mat sim, jim, eim;
-		copyMakeBorder(src, sim, 0, 1, 0, 1, cv::BORDER_REPLICATE);
-		const int dw = (joint.cols) / (src.cols);
-		const int dh = (joint.rows) / (src.rows);
+		const int d = 2 * r + 1;
+		const int ksize = d * d;
+		Mat weightmap(scale * scale, ksize, CV_32F);
 
-		copyMakeBorder(joint, jim, 0, 1, 0, 1, cv::BORDER_REPLICATE);
+		Mat sguide;
+		//resize(guide, gim, src.size(), 0, 0, INTER_NEAREST);
+		cp::downsample(guide, sguide, scale, cp::Downsample(INTER_NEAREST), 4);
 
-		double lut[256 * 3];
-		double gauss_c_coeff = -0.5 / (sigma_c*sigma_c);
-		for (int i = 0; i < 256 * 3; i++)
+		float* range_weight = (float*)_mm_malloc(256 * sizeof(float), AVX_ALIGN);
+
+#ifdef LP_NORM
+		//lp norm
+		float n = 2.f;
+		for (int i = 0; i < 256; i++)
 		{
-			lut[i] = (double)std::exp(i*i*gauss_c_coeff);
+			rweight[i] = exp(pow(i, n) / (-n * pow(sigma_r, n)));
 		}
-		vector<double> lut_(dw*dh);
-		double* lut2 = &lut_[0];
-		if (sigma_s <= 0.0)
+#else
+		const float rcoeff = float(1.0 / (-2.0 * sigma_r * sigma_r));
+		for (int i = 0; i < 256; i++)
 		{
-			for (int i = 0; i < dw*dh; i++)
-			{
-				lut2[i] = 1.0;
-			}
+			range_weight[i] = fmath::exp(i * i * rcoeff);
 		}
-		else
+#endif
+
+		const float spaceCoeff = float(1.0 / (-2.0 * sigma_s * sigma_s * scale * scale));
+		for (int j = 0; j < scale; j++)
 		{
-			double gauss_s_coeff = -0.5 / (sigma_s*sigma_s);
-			for (int i = 0; i < dw*dh; i++)
+			for (int i = 0; i < scale; i++)
 			{
-				lut2[i] = (double)std::exp(i*i*gauss_s_coeff);
-			}
-		}
-
-		for (int j = 0; j < src.rows; j++)
-		{
-			int n = j*dh;
-
-			srcType* s = sim.ptr<srcType>(j);
-			uchar* jnt_ = jim.ptr(n);
-
-			for (int i = 0, m = 0; i < src.cols; i++, m += dw)
-			{
-				const uchar ltr = jnt_[3 * m + 0];
-				const uchar ltg = jnt_[3 * m + 1];
-				const uchar ltb = jnt_[3 * m + 2];
-
-				const uchar rtr = jnt_[3 * (m + dw) + 0];
-				const uchar rtg = jnt_[3 * (m + dw) + 1];
-				const uchar rtb = jnt_[3 * (m + dw) + 2];
-
-				const uchar lbr = jnt_[3 * (m + jim.cols*dh) + 0];
-				const uchar lbg = jnt_[3 * (m + jim.cols*dh) + 1];
-				const uchar lbb = jnt_[3 * (m + jim.cols*dh) + 2];
-
-				const uchar rbr = jnt_[3 * (m + dw + jim.cols*dh) + 0];
-				const uchar rbg = jnt_[3 * (m + dw + jim.cols*dh) + 1];
-				const uchar rbb = jnt_[3 * (m + dw + jim.cols*dh) + 2];
-
-				const srcType ltd = s[i];
-				const srcType rtd = s[i + 1];
-				const srcType lbd = s[i + sim.cols];
-				const srcType rbd = s[i + 1 + sim.cols];
-
-				for (int l = 0; l < dh; l++)
+				float* wmap = weightmap.ptr<float>(j * scale + i);
+				int count = 0;
+				float wsum = 0.f;
+				for (int n = 0; n < d; n++)
 				{
-					srcType* d = dest.ptr<srcType>(n + l);
-					uchar* jnt = jim.ptr(n + l);
-					double beta = 1.0 - (double)l / dh;
-
-					for (int k = 0; k < dw; k++)
+					for (int m = 0; m < d; m++)
 					{
-						double alpha = 1.0 - (double)k / dw;
-
-						const uchar r = jnt[3 * (m + k) + 0];
-						const uchar g = jnt[3 * (m + k) + 1];
-						const uchar b = jnt[3 * (m + k) + 2];
-
-						int minE = abs(ltr - r) + abs(ltg - g) + abs(ltb - b);
-						srcType mind = ltd;
-						//int minp=0;
-
-						double wlt = lut2[k + l] * lut[minE];
-						double maxE = wlt;
-
-						int e = abs(rtr - r) + abs(rtg - g) + abs(rtb - b);
-						double wrt = lut2[dw - k + l] * lut[e];
-
-						if (maxE < wrt)
-						{
-							maxE = wrt;
-							mind = rtd;
-							//minp=1;
-						}
-
-						e = abs(lbr - r) + abs(lbg - g) + abs(lbb - b);
-						double wlb = lut2[k + dh - l] * lut[e];
-
-						if (maxE < wlb)
-						{
-							maxE = wlb;
-							mind = lbd;
-							//minp=2;
-						}
-
-						e = abs(rbr - r) + abs(rbg - g) + abs(rbb - b);
-						double wrb = lut2[dw - k + dh - l] * lut[e];
-
-						if (maxE < wrb)
-						{
-							maxE = wrb;
-							mind = rbd;
-							//minp=3;
-						}
-
-						/*wlt = (abs(mind-ltd)<dsubth2)?wlt:0.00001;
-						wrt = (abs(mind-rtd)<dsubth2)?wrt:0.00001;
-						wlb = (abs(mind-lbd)<dsubth2)?wlb:0.00001;
-						wrb = (abs(mind-rbd)<dsubth2)?wrb:0.00001;*/
-						//if(wlt==0.0 && wlb==0.0 && wrt==0.0 && wrb==0.0)
-						//	d[m+k] = weiterdlinearinterpolate(ltd,rtd,lbd,rbd,0.5,0.5,0.5,0.5,alpha,beta);
-						///else
-						d[m + k] = mind;//weightedlinearinterpolate_<T>(ltd,rtd,lbd,rbd,wlt,wrt,wlb,wrb,alpha,beta);
+						float xf = abs(m - r) + (float)i / scale;
+						float yf = abs(n - r) + (float)j / scale;
+						float dist = hypot(xf, yf);
+						float w = fmath::exp(dist * dist * spaceCoeff);
+						wsum += w;
+						wmap[count++] = w;
 					}
+				}
+				for (int n = 0; n < d * d; n++)
+				{
+					wmap[n] /= wsum;
 				}
 			}
 		}
+
+#pragma omp parallel for schedule(dynamic)
+		for (int y = 0; y < dest.rows; y += scale)
+		{
+			const int y0 = (int)(y / scale);
+
+			float* neighbor__b = (float*)_mm_malloc(sizeof(float) * ksize, AVX_ALIGN);
+			float* neighbor__g = (float*)_mm_malloc(sizeof(float) * ksize, AVX_ALIGN);
+			float* neighbor__r = (float*)_mm_malloc(sizeof(float) * ksize, AVX_ALIGN);
+			float* gneighbor_b = (float*)_mm_malloc(sizeof(float) * ksize, AVX_ALIGN);
+			float* gneighbor_g = (float*)_mm_malloc(sizeof(float) * ksize, AVX_ALIGN);
+			float* gneighbor_r = (float*)_mm_malloc(sizeof(float) * ksize, AVX_ALIGN);
+
+			const int CV_DECL_ALIGNED(32) v32f_absmask_[] = { 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff,0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff };
+			const __m256 v32f_absmask = _mm256_load_ps((float*)v32f_absmask_);
+
+			for (int x = 0; x < dest.cols; x += scale)
+			{
+				const int x0 = (int)(x / scale);
+				int count = 0;
+				for (int n = -r; n <= r; n++)
+				{
+					const int Y = max(0, min(src.rows - 1, y0 + n));
+					uchar* sb = src.ptr<uchar>(Y);
+					uchar* gb = sguide.ptr<uchar>(Y);
+					for (int m = -r; m <= r; m++)
+					{
+						const int index = 3 * max(0, min(src.cols - 1, x0 + m));
+
+						neighbor__b[count] = (float)sb[index + 0];
+						gneighbor_b[count] = (float)gb[index + 0];
+						neighbor__g[count] = (float)sb[index + 1];
+						gneighbor_g[count] = (float)gb[index + 1];
+						neighbor__r[count] = (float)sb[index + 2];
+						gneighbor_r[count] = (float)gb[index + 2];
+						count++;
+					}
+				}
+
+				for (int n = 0; n < scale; n++)
+				{
+					uchar* guide_ptr = guide.ptr<uchar>(y + n); // reference
+					uchar* dest_ptr = dest.ptr<uchar>(y + n); // output
+					for (int m = 0; m < scale; m++)
+					{
+						int idx = n * scale + m;
+						float* weightmap_ptr = weightmap.ptr<float>(idx);
+
+						const int index = 3 * (x + m);
+						const uchar gb = guide_ptr[index + 0];
+						const uchar gg = guide_ptr[index + 1];
+						const uchar gr = guide_ptr[index + 2];
+
+						float vb = 0.f;
+						float wb = 0.f;
+						float vg = 0.f;
+						float wg = 0.f;
+						float vr = 0.f;
+						float wr = 0.f;
+
+#ifdef USE_SIMD_JBU
+						__m256 mgb = _mm256_set1_ps(gb);
+						__m256 mgg = _mm256_set1_ps(gg);
+						__m256 mgr = _mm256_set1_ps(gr);
+
+						__m256 mvb = _mm256_setzero_ps();
+						__m256 mwb = _mm256_setzero_ps();
+						__m256 mvg = _mm256_setzero_ps();
+						__m256 mwg = _mm256_setzero_ps();
+						__m256 mvr = _mm256_setzero_ps();
+						__m256 mwr = _mm256_setzero_ps();
+
+						const int simdend = ksize / 8 * 8;// nxn kernel(n: odd value) must be 8*m+1
+						for (int k = 0; k < simdend; k += 8)
+						{
+							__m256 mw = _mm256_load_ps(weightmap_ptr + k);
+
+							__m256 mg = _mm256_load_ps(gneighbor_b + k);
+							__m256 ms = _mm256_load_ps(neighbor__b + k);
+							__m256i midx = _mm256_cvtps_epi32(_mm256_and_ps(_mm256_sub_ps(mgb, mg), v32f_absmask));
+							__m256 mrw = _mm256_mul_ps(mw, _mm256_i32gather_ps(range_weight, midx, sizeof(float)));
+							mvb = _mm256_fmadd_ps(mrw, ms, mvb);
+							mwb = _mm256_add_ps(mrw, mwb);
+
+							mg = _mm256_load_ps(gneighbor_g + k);
+							ms = _mm256_load_ps(neighbor__g + k);
+							midx = _mm256_cvtps_epi32(_mm256_and_ps(_mm256_sub_ps(mgg, mg), v32f_absmask));
+							mrw = _mm256_mul_ps(mw, _mm256_i32gather_ps(range_weight, midx, sizeof(float)));
+							mvg = _mm256_fmadd_ps(mrw, ms, mvg);
+							mwg = _mm256_add_ps(mrw, mwg);
+
+							mg = _mm256_load_ps(gneighbor_r + k);
+							ms = _mm256_load_ps(neighbor__r + k);
+							midx = _mm256_cvtps_epi32(_mm256_and_ps(_mm256_sub_ps(mgr, mg), v32f_absmask));
+							mrw = _mm256_mul_ps(mw, _mm256_i32gather_ps(range_weight, midx, sizeof(float)));
+							mvr = _mm256_fmadd_ps(mrw, ms, mvr);
+							mwr = _mm256_add_ps(mrw, mwr);
+						}
+						vb = _mm256_reduceadd_ps(mvb);
+						vg = _mm256_reduceadd_ps(mvg);
+						vr = _mm256_reduceadd_ps(mvr);
+						wb = _mm256_reduceadd_ps(mwb);
+						wg = _mm256_reduceadd_ps(mwg);
+						wr = _mm256_reduceadd_ps(mwr);
+
+						int ed = ksize - 1;
+						float cwb = range_weight[abs(gb - (int)gneighbor_b[ed])] * weightmap_ptr[ed];
+						vb += cwb * neighbor__b[ed];
+						wb += cwb;
+
+						float cwg = range_weight[abs(gg - (int)gneighbor_g[ed])] * weightmap_ptr[ed];
+						vg += cwg * neighbor__g[ed];
+						wg += cwg;
+
+						float cwr = range_weight[abs(gr - (int)gneighbor_r[ed])] * weightmap_ptr[ed];
+						vr += cwr * neighbor__r[ed];
+						wr += cwr;
+#else
+						for (int k = 0; k < d * d; k++)
+						{
+							float cwb = rweight[abs(gb - (int)gneighbor_b[k])] * weightmap_ptr[k];
+							vb += cwb * neighbor__b[k];
+							wb += cwb;
+
+							float cwg = rweight[abs(gg - (int)gneighbor_g[k])] * weightmap_ptr[k];
+							vg += cwg * neighbor__g[k];
+							wg += cwg;
+
+							float cwr = rweight[abs(gr - (int)gneighbor_r[k])] * weightmap_ptr[k];
+							vr += cwr * neighbor__r[k];
+							wr += cwr;
+						}
+#endif
+						dest_ptr[index + 0] = saturate_cast<uchar>(vb / wb);
+						dest_ptr[index + 1] = saturate_cast<uchar>(vg / wg);
+						dest_ptr[index + 2] = saturate_cast<uchar>(vr / wr);
+					}
+				}
+			}
+
+			_mm_free(neighbor__b);
+			_mm_free(neighbor__g);
+			_mm_free(neighbor__r);
+			_mm_free(gneighbor_b);
+			_mm_free(gneighbor_g);
+			_mm_free(gneighbor_r);
+		}
+
+		_mm_free(range_weight);
 	}
 
-	void jointBilateralNNUpsample(InputArray src_, InputArray joint_, OutputArray dst, double sigma_c, double sigma_s)
+	static void jointBilateralUpsamplingComputeBorderNoGuideDownsample(Mat& src, Mat& guide, Mat& dest, const int r, const double sigma_r, const double sigma_s)
 	{
-		if (dst.empty() || dst.type() != src_.type() || joint_.size() != dst.size()) dst.create(joint_.size(), src_.type());
-		Mat src = src_.getMat();
-		Mat joint = joint_.getMat();
-		Mat dest = dst.getMat();
+		const int scale = guide.cols / src.cols;
+		int border = BORDER_REPLICATE;
+
+
+		const int d = 2 * r + 1;
+		const int ksize = d * d;
+		Mat weightmap(scale * scale, d * d, CV_32F);
+
+		float* range_weight = (float*)_mm_malloc(256 * sizeof(float), AVX_ALIGN);
+
+#ifdef LP_NORM
+		//lp norm
+		float n = 2.f;
+		for (int i = 0; i < 256; i++)
+		{
+			rweight[i] = exp(pow(i, n) / (-n * pow(sigma_r, n)));
+		}
+#else
+		const float rcoeff = float(1.0 / (-2.0 * sigma_r * sigma_r));
+		for (int i = 0; i < 256; i++)
+		{
+			range_weight[i] = fmath::exp(i * i * rcoeff);
+		}
+#endif
+
+		const float spaceCoeff = float(1.0 / (-2.0 * sigma_s * sigma_s * scale * scale));
+		for (int j = 0; j < scale; j++)
+		{
+			for (int i = 0; i < scale; i++)
+			{
+				float* wmap = weightmap.ptr<float>(j * scale + i);
+				int count = 0;
+				float wsum = 0.f;
+				for (int n = 0; n < d; n++)
+				{
+					for (int m = 0; m < d; m++)
+					{
+						float xf = abs(m - r) + (float)i / scale;
+						float yf = abs(n - r) + (float)j / scale;
+						float dist = hypot(xf, yf);
+						float w = fmath::exp(dist * dist * spaceCoeff);
+						wsum += w;
+						wmap[count++] = w;
+					}
+				}
+				for (int n = 0; n < d * d; n++)
+				{
+					wmap[n] /= wsum;
+				}
+			}
+		}
+
+#pragma omp parallel for schedule(dynamic)
+		for (int y = 0; y < dest.rows; y += scale)
+		{
+			const int y0 = (int)(y / scale);
+
+			float* neighbor__b = (float*)_mm_malloc(sizeof(float) * ksize, AVX_ALIGN);
+			float* neighbor__g = (float*)_mm_malloc(sizeof(float) * ksize, AVX_ALIGN);
+			float* neighbor__r = (float*)_mm_malloc(sizeof(float) * ksize, AVX_ALIGN);
+			float* gneighbor_b = (float*)_mm_malloc(sizeof(float) * ksize, AVX_ALIGN);
+			float* gneighbor_g = (float*)_mm_malloc(sizeof(float) * ksize, AVX_ALIGN);
+			float* gneighbor_r = (float*)_mm_malloc(sizeof(float) * ksize, AVX_ALIGN);
+
+			const int CV_DECL_ALIGNED(32) v32f_absmask_[] = { 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff,0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff };
+			const __m256 v32f_absmask = _mm256_load_ps((float*)v32f_absmask_);
+
+			for (int x = 0; x < dest.cols; x += scale)
+			{
+				const int x0 = (int)(x / scale);
+				int count = 0;
+				for (int n = -r; n <= r; n++)
+				{
+					const int Y = max(0, min(src.rows - 1, y0 + n));
+					const int GY = max(0, min(guide.rows - 1, y + n * scale));
+					uchar* sb = src.ptr<uchar>(Y);
+					uchar* gb = guide.ptr<uchar>(GY);
+					for (int m = -r; m <= r; m++)
+					{
+						const int sindex = 3 * max(0, min(src.cols - 1, x0 + m));
+						const int gindex = 3 * max(0, min(guide.cols - 1, x + m * scale));
+
+						neighbor__b[count] = (float)sb[sindex + 0];
+						gneighbor_b[count] = (float)gb[gindex + 0];
+						neighbor__g[count] = (float)sb[sindex + 1];
+						gneighbor_g[count] = (float)gb[gindex + 1];
+						neighbor__r[count] = (float)sb[sindex + 2];
+						gneighbor_r[count] = (float)gb[gindex + 2];
+						count++;
+					}
+				}
+
+				for (int n = 0; n < scale; n++)
+				{
+					uchar* guide_ptr = guide.ptr<uchar>(y + n); // reference
+					uchar* dest_ptr = dest.ptr<uchar>(y + n); // output
+					for (int m = 0; m < scale; m++)
+					{
+						int idx = n * scale + m;
+						float* weightmap_ptr = weightmap.ptr<float>(idx);
+
+						const int index = 3 * (x + m);
+						const uchar gb = guide_ptr[index + 0];
+						const uchar gg = guide_ptr[index + 1];
+						const uchar gr = guide_ptr[index + 2];
+
+						float vb = 0.f;
+						float wb = 0.f;
+						float vg = 0.f;
+						float wg = 0.f;
+						float vr = 0.f;
+						float wr = 0.f;
+
+#ifdef USE_SIMD_JBU
+						__m256 mgb = _mm256_set1_ps(gb);
+						__m256 mgg = _mm256_set1_ps(gg);
+						__m256 mgr = _mm256_set1_ps(gr);
+
+						__m256 mvb = _mm256_setzero_ps();
+						__m256 mwb = _mm256_setzero_ps();
+						__m256 mvg = _mm256_setzero_ps();
+						__m256 mwg = _mm256_setzero_ps();
+						__m256 mvr = _mm256_setzero_ps();
+						__m256 mwr = _mm256_setzero_ps();
+
+						const int simdend = ksize / 8 * 8;// nxn kernel(n: odd value) must be 8*m+1
+						for (int k = 0; k < simdend; k += 8)
+						{
+							__m256 mw = _mm256_load_ps(weightmap_ptr + k);
+
+							__m256 mg = _mm256_load_ps(gneighbor_b + k);
+							__m256 ms = _mm256_load_ps(neighbor__b + k);
+							__m256i midx = _mm256_cvtps_epi32(_mm256_and_ps(_mm256_sub_ps(mgb, mg), v32f_absmask));
+							__m256 mrw = _mm256_mul_ps(mw, _mm256_i32gather_ps(range_weight, midx, sizeof(float)));
+							mvb = _mm256_fmadd_ps(mrw, ms, mvb);
+							mwb = _mm256_add_ps(mrw, mwb);
+
+							mg = _mm256_load_ps(gneighbor_g + k);
+							ms = _mm256_load_ps(neighbor__g + k);
+							midx = _mm256_cvtps_epi32(_mm256_and_ps(_mm256_sub_ps(mgg, mg), v32f_absmask));
+							mrw = _mm256_mul_ps(mw, _mm256_i32gather_ps(range_weight, midx, sizeof(float)));
+							mvg = _mm256_fmadd_ps(mrw, ms, mvg);
+							mwg = _mm256_add_ps(mrw, mwg);
+
+							mg = _mm256_load_ps(gneighbor_r + k);
+							ms = _mm256_load_ps(neighbor__r + k);
+							midx = _mm256_cvtps_epi32(_mm256_and_ps(_mm256_sub_ps(mgr, mg), v32f_absmask));
+							mrw = _mm256_mul_ps(mw, _mm256_i32gather_ps(range_weight, midx, sizeof(float)));
+							mvr = _mm256_fmadd_ps(mrw, ms, mvr);
+							mwr = _mm256_add_ps(mrw, mwr);
+						}
+						vb = _mm256_reduceadd_ps(mvb);
+						vg = _mm256_reduceadd_ps(mvg);
+						vr = _mm256_reduceadd_ps(mvr);
+						wb = _mm256_reduceadd_ps(mwb);
+						wg = _mm256_reduceadd_ps(mwg);
+						wr = _mm256_reduceadd_ps(mwr);
+
+						int ed = ksize - 1;
+						float cwb = range_weight[abs(gb - (int)gneighbor_b[ed])] * weightmap_ptr[ed];
+						vb += cwb * neighbor__b[ed];
+						wb += cwb;
+
+						float cwg = range_weight[abs(gg - (int)gneighbor_g[ed])] * weightmap_ptr[ed];
+						vg += cwg * neighbor__g[ed];
+						wg += cwg;
+
+						float cwr = range_weight[abs(gr - (int)gneighbor_r[ed])] * weightmap_ptr[ed];
+						vr += cwr * neighbor__r[ed];
+						wr += cwr;
+#else
+						for (int k = 0; k < d * d; k++)
+						{
+							float cwb = rweight[abs(gb - (int)gneighbor_b[k])] * weightmap_ptr[k];
+							vb += cwb * neighbor__b[k];
+							wb += cwb;
+
+							float cwg = rweight[abs(gg - (int)gneighbor_g[k])] * weightmap_ptr[k];
+							vg += cwg * neighbor__g[k];
+							wg += cwg;
+
+							float cwr = rweight[abs(gr - (int)gneighbor_r[k])] * weightmap_ptr[k];
+							vr += cwr * neighbor__r[k];
+							wr += cwr;
+						}
+#endif
+						dest_ptr[index + 0] = saturate_cast<uchar>(vb / wb);
+						dest_ptr[index + 1] = saturate_cast<uchar>(vg / wg);
+						dest_ptr[index + 2] = saturate_cast<uchar>(vr / wr);
+					}
+				}
+			}
+
+			_mm_free(neighbor__b);
+			_mm_free(neighbor__g);
+			_mm_free(neighbor__r);
+			_mm_free(gneighbor_b);
+			_mm_free(gneighbor_g);
+			_mm_free(gneighbor_r);
+		}
+
+		_mm_free(range_weight);
+	}
+
+	void jointBilateralUpsampling(cv::InputArray src, cv::InputArray guide, cv::OutputArray dest, const int r, const double sigma_r, const double sigma_s, const JBUSchedule schedule)
+	{
+		switch (schedule)
+		{
+
+		case JBUSchedule::CLASS:
+		default:
+		{
+			JointBilateralUpsample jbu;
+			jbu.upsample(src, guide, dest, r, sigma_r, sigma_s);
+		}
+		break;
+
+		case JBUSchedule::ALLOC_BORDER_OMP:jointBilateralUpsamplingAllocBorder(src.getMat(), guide.getMat(), dest.getMat(), r, sigma_r, sigma_s); break;
+		case JBUSchedule::COMPUTE_BORDER_OMP:jointBilateralUpsamplingComputeBorder(src.getMat(), guide.getMat(), dest.getMat(), r, sigma_r, sigma_s); break;
+		case JBUSchedule::COMPUTE_BORDER_NODOWNSAMPLE_OMP:jointBilateralUpsamplingComputeBorderNoGuideDownsample(src.getMat(), guide.getMat(), dest.getMat(), r, sigma_r, sigma_s); break;
+
+		}
+		return;
+	}
+
+#pragma endregion
+
+#pragma region class JointBilateralUpsample
+	template<typename T>
+	class JointBilateralUpsampe32F_ParallelBody : public cv::ParallelLoopBody
+	{
+	private:
+		const cv::Mat* slow_b;
+		const cv::Mat* glow_b;
+		const cv::Mat* guide;
+		const cv::Mat* weightmap;
+		cv::Mat* dest;
+
+		const int scale;
+		const int r;
+		const float* range_weight;
+	public:
+		JointBilateralUpsampe32F_ParallelBody(const cv::Mat& src, const cv::Mat& guide_low, const cv::Mat& guide_high, const cv::Mat& weightmap, cv::Mat& dst, const int scale, const int r, const float* rweight)
+			: slow_b(&src), glow_b(&guide_low), guide(&guide_high), weightmap(&weightmap), dest(&dst), scale(scale), r(r), range_weight(rweight)
+		{
+		}
+
+		void operator() (const cv::Range& range) const
+		{
+			const int d = 2 * r + 1;
+			const int ksize = d * d;
+
+			float* neighbor__b = (float*)_mm_malloc(sizeof(float) * ksize, AVX_ALIGN);
+			float* neighbor__g = (float*)_mm_malloc(sizeof(float) * ksize, AVX_ALIGN);
+			float* neighbor__r = (float*)_mm_malloc(sizeof(float) * ksize, AVX_ALIGN);
+			float* gneighbor_b = (float*)_mm_malloc(sizeof(float) * ksize, AVX_ALIGN);
+			float* gneighbor_g = (float*)_mm_malloc(sizeof(float) * ksize, AVX_ALIGN);
+			float* gneighbor_r = (float*)_mm_malloc(sizeof(float) * ksize, AVX_ALIGN);
+
+			for (int y = range.start; y < range.end; y += scale)
+			{
+				const int y0 = (int)(y / scale);
+				const int CV_DECL_ALIGNED(AVX_ALIGN) v32f_absmask_[] = { 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff,0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff };
+				const __m256 v32f_absmask = _mm256_load_ps((float*)v32f_absmask_);
+
+				for (int x = 0; x < dest->cols; x += scale)
+				{
+					const int x0 = (int)(x / scale);
+
+					int count = 0;
+					for (int n = 0; n < d; n++)
+					{
+						const T* sb = slow_b->ptr<T>(y0 + n);
+						const T* gb = glow_b->ptr<T>(y0 + n);
+						for (int m = 0; m < d; m++)
+						{
+							const int index = 3 * (x0 + m);
+							neighbor__b[count] = (float)sb[index + 0];
+							gneighbor_b[count] = (float)gb[index + 0];
+							neighbor__g[count] = (float)sb[index + 1];
+							gneighbor_g[count] = (float)gb[index + 1];
+							neighbor__r[count] = (float)sb[index + 2];
+							gneighbor_r[count] = (float)gb[index + 2];
+							count++;
+						}
+					}
+
+					for (int n = 0; n < scale; n++)
+					{
+						const T* guide_ptr = guide->ptr<T>(y + n); // reference
+						T* dest_ptr = dest->ptr<T>(y + n); // output
+						for (int m = 0; m < scale; m++)
+						{
+							int idx = n * scale + m;
+							const float* weightmap_ptr = weightmap->ptr<float>(idx);
+
+							const int index = 3 * (x + m);
+							const T gb = guide_ptr[index + 0];
+							const T gg = guide_ptr[index + 1];
+							const T gr = guide_ptr[index + 2];
+
+							float vb = 0.f;
+							float wb = 0.f;
+							float vg = 0.f;
+							float wg = 0.f;
+							float vr = 0.f;
+							float wr = 0.f;
+#ifdef USE_SIMD_JBU
+							__m256 mgb = _mm256_set1_ps(gb);
+							__m256 mgg = _mm256_set1_ps(gg);
+							__m256 mgr = _mm256_set1_ps(gr);
+
+							__m256 mvb = _mm256_setzero_ps();
+							__m256 mwb = _mm256_setzero_ps();
+							__m256 mvg = _mm256_setzero_ps();
+							__m256 mwg = _mm256_setzero_ps();
+							__m256 mvr = _mm256_setzero_ps();
+							__m256 mwr = _mm256_setzero_ps();
+
+							const int simdend = ksize / 8 * 8;// nxn kernel(n: odd value) must be 8*m+1
+							for (int k = 0; k < simdend; k += 8)
+							{
+								__m256 mw = _mm256_load_ps(weightmap_ptr + k);
+
+								__m256 mg = _mm256_load_ps(gneighbor_b + k);
+								__m256 ms = _mm256_load_ps(neighbor__b + k);
+								__m256i midx = _mm256_cvtps_epi32(_mm256_and_ps(_mm256_sub_ps(mgb, mg), v32f_absmask));
+								__m256 mrw = _mm256_mul_ps(mw, _mm256_i32gather_ps(range_weight, midx, sizeof(float)));
+								mvb = _mm256_fmadd_ps(mrw, ms, mvb);
+								mwb = _mm256_add_ps(mrw, mwb);
+
+								mg = _mm256_load_ps(gneighbor_g + k);
+								ms = _mm256_load_ps(neighbor__g + k);
+								midx = _mm256_cvtps_epi32(_mm256_and_ps(_mm256_sub_ps(mgg, mg), v32f_absmask));
+								mrw = _mm256_mul_ps(mw, _mm256_i32gather_ps(range_weight, midx, sizeof(float)));
+								mvg = _mm256_fmadd_ps(mrw, ms, mvg);
+								mwg = _mm256_add_ps(mrw, mwg);
+
+								mg = _mm256_load_ps(gneighbor_r + k);
+								ms = _mm256_load_ps(neighbor__r + k);
+								midx = _mm256_cvtps_epi32(_mm256_and_ps(_mm256_sub_ps(mgr, mg), v32f_absmask));
+								mrw = _mm256_mul_ps(mw, _mm256_i32gather_ps(range_weight, midx, sizeof(float)));
+								mvr = _mm256_fmadd_ps(mrw, ms, mvr);
+								mwr = _mm256_add_ps(mrw, mwr);
+							}
+							vb = _mm256_reduceadd_ps(mvb);
+							vg = _mm256_reduceadd_ps(mvg);
+							vr = _mm256_reduceadd_ps(mvr);
+							wb = _mm256_reduceadd_ps(mwb);
+							wg = _mm256_reduceadd_ps(mwg);
+							wr = _mm256_reduceadd_ps(mwr);
+
+							int ed = ksize - 1;
+							float cwb = range_weight[(int)abs(gb - gneighbor_b[ed])] * weightmap_ptr[ed];
+							vb += cwb * neighbor__b[ed];
+							wb += cwb;
+
+							float cwg = range_weight[(int)abs(gg - gneighbor_g[ed])] * weightmap_ptr[ed];
+							vg += cwg * neighbor__g[ed];
+							wg += cwg;
+
+							float cwr = range_weight[(int)abs(gr - gneighbor_r[ed])] * weightmap_ptr[ed];
+							vr += cwr * neighbor__r[ed];
+							wr += cwr;
+#else
+							for (int k = 0; k < d * d; k++)
+							{
+								float cwb = rweight[abs(gb - (int)gneighbor_b[k])] * weightmap_ptr[k];
+								vb += cwb * neighbor__b[k];
+								wb += cwb;
+
+								float cwg = rweight[abs(gg - (int)gneighbor_g[k])] * weightmap_ptr[k];
+								vg += cwg * neighbor__g[k];
+								wg += cwg;
+
+								float cwr = rweight[abs(gr - (int)gneighbor_r[k])] * weightmap_ptr[k];
+								vr += cwr * neighbor__r[k];
+								wr += cwr;
+							}
+#endif
+							dest_ptr[index + 0] = saturate_cast<T>(vb / wb);
+							dest_ptr[index + 1] = saturate_cast<T>(vg / wg);
+							dest_ptr[index + 2] = saturate_cast<T>(vr / wr);
+						}
+					}
+				}
+			}
+
+			_mm_free(neighbor__b);
+			_mm_free(neighbor__g);
+			_mm_free(neighbor__r);
+			_mm_free(gneighbor_b);
+			_mm_free(gneighbor_g);
+			_mm_free(gneighbor_r);
+		}
+	};
+
+	template<typename T>
+	class JointBilateralUpsampe64F_ParallelBody : public cv::ParallelLoopBody
+	{
+	private:
+		const cv::Mat* slow_b;
+		const cv::Mat* glow_b;
+		const cv::Mat* guide;
+		const cv::Mat* weightmap;
+		cv::Mat* dest;
+
+		const int scale;
+		const int r;
+		const double* range_weight;
+	public:
+		JointBilateralUpsampe64F_ParallelBody(const cv::Mat& src, const cv::Mat& guide_low, const cv::Mat& guide_high, const cv::Mat& weightmap, cv::Mat& dst, const int scale, const int r, const double* rweight)
+			: slow_b(&src), glow_b(&guide_low), guide(&guide_high), weightmap(&weightmap), dest(&dst), scale(scale), r(r), range_weight(rweight)
+		{
+		}
+
+		void operator() (const cv::Range& range) const
+		{
+			const int d = 2 * r + 1;
+			const int ksize = d * d;
+
+			double* neighbor__b = (double*)_mm_malloc(sizeof(double) * ksize, AVX_ALIGN);
+			double* neighbor__g = (double*)_mm_malloc(sizeof(double) * ksize, AVX_ALIGN);
+			double* neighbor__r = (double*)_mm_malloc(sizeof(double) * ksize, AVX_ALIGN);
+			double* gneighbor_b = (double*)_mm_malloc(sizeof(double) * ksize, AVX_ALIGN);
+			double* gneighbor_g = (double*)_mm_malloc(sizeof(double) * ksize, AVX_ALIGN);
+			double* gneighbor_r = (double*)_mm_malloc(sizeof(double) * ksize, AVX_ALIGN);
+
+			static const long long CV_DECL_ALIGNED(AVX_ALIGN) v64f_absmask_[] = { 0x7fffffffffffffff, 0x7fffffffffffffff,	0x7fffffffffffffff, 0x7fffffffffffffff };
+
+			for (int y = range.start; y < range.end; y += scale)
+			{
+				const int y0 = (int)(y / scale);
+				const __m256d v64f_absmask = _mm256_load_pd((double*)v64f_absmask_);
+
+				for (int x = 0; x < dest->cols; x += scale)
+				{
+					const int x0 = (int)(x / scale);
+
+					int count = 0;
+					for (int n = 0; n < d; n++)
+					{
+						for (int m = 0; m < d; m++)
+						{
+							neighbor__b[count] = (double)slow_b->at<T>(y0 + n, 3 * (x0 + m) + 0);
+							gneighbor_b[count] = (double)glow_b->at<T>(y0 + n, 3 * (x0 + m) + 0);
+							neighbor__g[count] = (double)slow_b->at<T>(y0 + n, 3 * (x0 + m) + 1);
+							gneighbor_g[count] = (double)glow_b->at<T>(y0 + n, 3 * (x0 + m) + 1);
+							neighbor__r[count] = (double)slow_b->at<T>(y0 + n, 3 * (x0 + m) + 2);
+							gneighbor_r[count] = (double)glow_b->at<T>(y0 + n, 3 * (x0 + m) + 2);
+							count++;
+						}
+					}
+
+					for (int n = 0; n < scale; n++)
+					{
+						const T* guide_ptr = guide->ptr<T>(y + n); // reference
+						T* dest_ptr = dest->ptr<T>(y + n); // output
+						for (int m = 0; m < scale; m++)
+						{
+							int idx = n * scale + m;
+							const double* weightmap_ptr = weightmap->ptr<double>(idx);
+
+							const T gb = guide_ptr[3 * (x + m) + 0];
+							const T gg = guide_ptr[3 * (x + m) + 1];
+							const T gr = guide_ptr[3 * (x + m) + 2];
+
+							double vb = 0.0;
+							double wb = 0.0;
+							double vg = 0.0;
+							double wg = 0.0;
+							double vr = 0.0;
+							double wr = 0.0;
+#ifdef USE_SIMD_JBU
+							__m256d mgb = _mm256_set1_pd(gb);
+							__m256d mgg = _mm256_set1_pd(gg);
+							__m256d mgr = _mm256_set1_pd(gr);
+
+							__m256d mvb = _mm256_setzero_pd();
+							__m256d mwb = _mm256_setzero_pd();
+							__m256d mvg = _mm256_setzero_pd();
+							__m256d mwg = _mm256_setzero_pd();
+							__m256d mvr = _mm256_setzero_pd();
+							__m256d mwr = _mm256_setzero_pd();
+
+							const int simdend = ksize / 4 * 4;// nxn kernel(n: odd value) must be 8*m+1
+							for (int k = 0; k < simdend; k += 4)
+							{
+								__m256d mw = _mm256_load_pd(weightmap_ptr + k);
+
+								__m256d mg = _mm256_load_pd(gneighbor_b + k);
+								__m256d ms = _mm256_load_pd(neighbor__b + k);
+								__m128i midx = _mm256_cvtpd_epi32(_mm256_and_pd(_mm256_sub_pd(mgb, mg), v64f_absmask));
+								__m256d mrw = _mm256_mul_pd(mw, _mm256_i32gather_pd(range_weight, midx, sizeof(double)));
+								mvb = _mm256_fmadd_pd(mrw, ms, mvb);
+								mwb = _mm256_add_pd(mrw, mwb);
+
+								mg = _mm256_load_pd(gneighbor_g + k);
+								ms = _mm256_load_pd(neighbor__g + k);
+								midx = _mm256_cvtpd_epi32(_mm256_and_pd(_mm256_sub_pd(mgg, mg), v64f_absmask));
+								mrw = _mm256_mul_pd(mw, _mm256_i32gather_pd(range_weight, midx, sizeof(double)));
+								mvg = _mm256_fmadd_pd(mrw, ms, mvg);
+								mwg = _mm256_add_pd(mrw, mwg);
+
+								mg = _mm256_load_pd(gneighbor_r + k);
+								ms = _mm256_load_pd(neighbor__r + k);
+								midx = _mm256_cvtpd_epi32(_mm256_and_pd(_mm256_sub_pd(mgr, mg), v64f_absmask));
+								mrw = _mm256_mul_pd(mw, _mm256_i32gather_pd(range_weight, midx, sizeof(double)));
+								mvr = _mm256_fmadd_pd(mrw, ms, mvr);
+								mwr = _mm256_add_pd(mrw, mwr);
+							}
+							vb = _mm256_reduceadd_pd(mvb);
+							vg = _mm256_reduceadd_pd(mvg);
+							vr = _mm256_reduceadd_pd(mvr);
+							wb = _mm256_reduceadd_pd(mwb);
+							wg = _mm256_reduceadd_pd(mwg);
+							wr = _mm256_reduceadd_pd(mwr);
+
+							int ed = ksize - 1;
+							double cwb = range_weight[(int)abs(gb - gneighbor_b[ed])] * weightmap_ptr[ed];
+							vb += cwb * neighbor__b[ed];
+							wb += cwb;
+
+							double cwg = range_weight[(int)abs(gg - gneighbor_g[ed])] * weightmap_ptr[ed];
+							vg += cwg * neighbor__g[ed];
+							wg += cwg;
+
+							double cwr = range_weight[(int)abs(gr - gneighbor_r[ed])] * weightmap_ptr[ed];
+							vr += cwr * neighbor__r[ed];
+							wr += cwr;
+#else
+							for (int k = 0; k < d * d; k++)
+							{
+								float cwb = rweight[abs(gb - (int)gneighbor_b[k])] * weightmap_ptr[k];
+								vb += cwb * neighbor__b[k];
+								wb += cwb;
+
+								float cwg = rweight[abs(gg - (int)gneighbor_g[k])] * weightmap_ptr[k];
+								vg += cwg * neighbor__g[k];
+								wg += cwg;
+
+								float cwr = rweight[abs(gr - (int)gneighbor_r[k])] * weightmap_ptr[k];
+								vr += cwr * neighbor__r[k];
+								wr += cwr;
+							}
+#endif
+							dest_ptr[3 * (x + m) + 0] = saturate_cast<T>(vb / wb);
+							dest_ptr[3 * (x + m) + 1] = saturate_cast<T>(vg / wg);
+							dest_ptr[3 * (x + m) + 2] = saturate_cast<T>(vr / wr);
+						}
+					}
+				}
+			}
+
+			_mm_free(neighbor__b);
+			_mm_free(neighbor__g);
+			_mm_free(neighbor__r);
+			_mm_free(gneighbor_b);
+			_mm_free(gneighbor_g);
+			_mm_free(gneighbor_r);
+		}
+	};
+
+	void JointBilateralUpsample::upsample(cv::InputArray src, cv::InputArray guide, cv::OutputArray dest, const int r, const double sigma_r, const double sigma_s)
+	{
+		CV_Assert(src.depth() == CV_8U || src.depth() == CV_32F);
+		CV_Assert(src.channels() == 3);
+		dest.create(guide.size(), src.type());
+
+		const int scale = guide.size().width / src.size().width;
+		int border = BORDER_REPLICATE;
+		copyMakeBorder(src, src_b, r, r, r, r, border);
+
+		cp::downsample(guide.getMat(), guide_low, scale, cp::Downsample(INTER_NEAREST), 0);
+		copyMakeBorder(guide_low, guide_low_b, r, r, r, r, border);
+
+		const int d = 2 * r + 1;
+		weightmap.create(scale * scale, d * d, CV_32F);
+		const float spaceCoeff = float(1.0 / (-2.0 * sigma_s * sigma_s * scale * scale));
+		float space_w_min = FLT_MAX;
+		for (int j = 0; j < scale; j++)
+		{
+			for (int i = 0; i < scale; i++)
+			{
+				float* wmap = weightmap.ptr<float>(j * scale + i);
+				int count = 0;
+				float wsum = 0.f;
+				for (int n = 0; n < d; n++)
+				{
+					for (int m = 0; m < d; m++)
+					{
+						float xf = abs(m - r) + (float)i / scale;
+						float yf = abs(n - r) + (float)j / scale;
+						float dist = hypot(xf, yf);
+						float w = fmath::exp(dist * dist * spaceCoeff);
+						wsum += w;
+						wmap[count++] = w;
+					}
+				}
+				wsum = 1.f / wsum;
+				for (int n = 0; n < d * d; n++)
+				{
+					float v = wmap[n] * wsum;
+					v = (v < FLT_MIN) ? 0.f : v;
+					wmap[n] = v;
+					space_w_min = min(v, space_w_min);
+				}
+			}
+		}
+
+		//float CV_DECL_ALIGNED(AVX_ALIGN) range_weight[256];
+		float* range_weight = (float*)_mm_malloc(256 * sizeof(float), AVX_ALIGN);
+#ifdef LP_NORM
+		//lp norm
+		float n = 2.f;
+		for (int i = 0; i < 256; i++)
+		{
+			rweight[i] = exp(pow(i, n) / (-n * pow(sigma_r, n)));
+		}
+#else
+		for (int i = 0; i < 256; i++)
+		{
+			float v = fmath::exp(i * i / (-2.f * float(sigma_r * sigma_r)));
+			range_weight[i] = float(v * space_w_min < FLT_MIN) ? 0.f : v;
+			//range_weight[i] =  v;
+		}
+
+#endif
+
+		Mat dst = dest.getMat();
+		Mat gid = guide.getMat();
+
+		const double nstripes = (dest.size().height / scale);
+		if (src.depth() == CV_8U)
+		{
+			cv::parallel_for_
+			(
+				cv::Range(0, dest.size().height),
+				JointBilateralUpsampe32F_ParallelBody<uchar>(src_b, guide_low_b, gid, weightmap, dst, scale, r, range_weight),
+				nstripes
+			);
+		}
+		else if (src.depth() == CV_32F)
+		{
+			cv::parallel_for_
+			(
+				cv::Range(0, dest.size().height),
+				JointBilateralUpsampe32F_ParallelBody<float>(src_b, guide_low_b, gid, weightmap, dst, scale, r, range_weight),
+				nstripes
+			);
+		}
+
+		_mm_free(range_weight);
+	}
+
+	void JointBilateralUpsample::upsample64F(cv::InputArray src, cv::InputArray guide, cv::OutputArray dest, const int r, const double sigma_r, const double sigma_s)
+	{
+		CV_Assert(src.depth() == CV_8U || src.depth() == CV_32F);
+		CV_Assert(src.channels() == 3);
+		dest.create(guide.size(), src.type());
+
+		const int scale = guide.size().width / src.size().width;
+		int border = BORDER_REPLICATE;
+		copyMakeBorder(src, src_b, r, r, r, r, border);
+
+		cp::downsample(guide.getMat(), guide_low, scale, cp::Downsample(INTER_NEAREST), 0);
+		copyMakeBorder(guide_low, guide_low_b, r, r, r, r, border);
+
+		const int d = 2 * r + 1;
+		weightmap.create(scale * scale, d * d, CV_64F);
+		const double spaceCoeff = 1.0 / (-2.0 * sigma_s * sigma_s * scale * scale);
+		double space_w_min = DBL_MAX;
+		for (int j = 0; j < scale; j++)
+		{
+			for (int i = 0; i < scale; i++)
+			{
+				double* wmap = weightmap.ptr<double>(j * scale + i);
+				int count = 0;
+				double wsum = 0.0;
+				for (int n = 0; n < d; n++)
+				{
+					for (int m = 0; m < d; m++)
+					{
+						double xf = abs(m - r) + (double)i / scale;
+						double yf = abs(n - r) + (double)j / scale;
+						double dist = hypot(xf, yf);
+						double w = (double)std::exp(dist * dist * spaceCoeff);
+						wsum += w;
+						wmap[count++] = w;
+					}
+				}
+				wsum = 1.0 / wsum;
+				for (int n = 0; n < d * d; n++)
+				{
+					double v = wmap[n] * wsum;
+					v = (v < DBL_MIN) ? 0.f : v;
+					wmap[n] = v;
+					space_w_min = min(v, space_w_min);
+				}
+			}
+		}
+
+		double CV_DECL_ALIGNED(AVX_ALIGN) range_weight[256];
+#ifdef LP_NORM
+		//lp norm
+		float n = 2.f;
+		for (int i = 0; i < 256; i++)
+		{
+			rweight[i] = exp(pow(i, n) / (-n * pow(sigma_r, n)));
+		}
+#else
+
+		for (int i = 0; i < 256; i++)
+		{
+			double v = double(std::exp(i * i / (-2.0 * sigma_r * sigma_r)));
+			range_weight[i] = (v * space_w_min < DBL_MIN) ? 0.0 : v;
+			//range_weight[i] =  v;
+		}
+
+#endif
+
+		Mat dst = dest.getMat();
+		Mat gid = guide.getMat();
 
 		if (src.depth() == CV_8U)
-			jointBilateralNNUpsample_<uchar>(src, joint, dest, sigma_c, sigma_s);
-		else if (src.depth() == CV_16S)
-			jointBilateralNNUpsample_<short>(src, joint, dest, sigma_c, sigma_s);
-		else if (src.depth() == CV_16U)
-			jointBilateralNNUpsample_<ushort>(src, joint, dest, sigma_c, sigma_s);
+		{
+			cv::parallel_for_
+			(
+				cv::Range(0, dest.size().height),
+				JointBilateralUpsampe64F_ParallelBody<uchar>(src_b, guide_low_b, gid, weightmap, dst, scale, r, range_weight),
+				8
+			);
+		}
 		else if (src.depth() == CV_32F)
-			jointBilateralNNUpsample_<float>(src, joint, dest, sigma_c, sigma_s);
-		else if (src.depth() == CV_64F)
-			jointBilateralNNUpsample_<double>(src, joint, dest, sigma_c, sigma_s);
+		{
+			cv::parallel_for_
+			(
+				cv::Range(0, dest.size().height),
+				JointBilateralUpsampe64F_ParallelBody<float>(src_b, guide_low_b, gid, weightmap, dst, scale, r, range_weight),
+				8
+			);
+		}
 	}
-
+#pragma endregion
 }
