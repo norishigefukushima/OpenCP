@@ -226,6 +226,7 @@
     <ClCompile Include="dctFilter.cpp" />
     <ClCompile Include="dct_simd.cpp" />
     <ClCompile Include="depth2disparity.cpp" />
+    <ClCompile Include="downsample.cpp" />
     <ClCompile Include="stereoEval.cpp" />
     <ClCompile Include="depthfilter.cpp" />
     <ClCompile Include="detailEnhancement.cpp" />
@@ -363,6 +364,7 @@
     <ClInclude Include="..\include\csv.hpp" />
     <ClInclude Include="..\include\dctFilter.hpp" />
     <ClInclude Include="..\include\depth2disparity.hpp" />
+    <ClInclude Include="..\include\downsample.hpp" />
     <ClInclude Include="..\include\StereoEval.hpp" />
     <ClInclude Include="..\include\depthfilter.hpp" />
     <ClInclude Include="..\include\detailEnhancement.hpp" />

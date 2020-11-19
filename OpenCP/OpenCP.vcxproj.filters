@@ -37,9 +37,6 @@
     <Filter Include="ソース ファイル\stereo\view synthesis">
       <UniqueIdentifier>{ce01d62b-e8b6-4b78-9dac-dd68648543a5}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ソース ファイル\filter\upsample">
-      <UniqueIdentifier>{d986e41f-5f67-4dd5-92bc-f969aba9445b}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ヘッダー ファイル\headers">
       <UniqueIdentifier>{7fbab38c-1aff-49b4-a6e1-fc267816a201}</UniqueIdentifier>
     </Filter>
@@ -57,9 +54,6 @@
     </Filter>
     <Filter Include="ヘッダー ファイル\headers\filter\GaussianFilter">
       <UniqueIdentifier>{260ef808-550d-4dae-9a11-b8ed7539829b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ヘッダー ファイル\headers\filter\upsample">
-      <UniqueIdentifier>{da54fbf2-e362-4f0d-80b0-5e6d0a9f8db8}</UniqueIdentifier>
     </Filter>
     <Filter Include="ヘッダー ファイル\headers\imgproc\qualitymetrics">
       <UniqueIdentifier>{4d61fadb-90c3-4a04-83c1-095e00152ca6}</UniqueIdentifier>
@@ -87,6 +81,12 @@
     </Filter>
     <Filter Include="ヘッダー ファイル\headers\core">
       <UniqueIdentifier>{255396e4-a361-4ec4-b8b0-837c9c5669e0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\filter\resize">
+      <UniqueIdentifier>{bf46c031-b34c-4575-95b8-dd0602bd6e8c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\headers\filter\resize">
+      <UniqueIdentifier>{da54fbf2-e362-4f0d-80b0-5e6d0a9f8db8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -296,9 +296,6 @@
     </ClCompile>
     <ClCompile Include="StereoSGM2.cpp">
       <Filter>ソース ファイル\stereo</Filter>
-    </ClCompile>
-    <ClCompile Include="jointBilateralUpsample.cpp">
-      <Filter>ソース ファイル\filter\upsample</Filter>
     </ClCompile>
     <ClCompile Include="shiftImage.cpp">
       <Filter>ソース ファイル\imgproc</Filter>
@@ -546,6 +543,12 @@
     <ClCompile Include="weightedHistogramFilter.cpp">
       <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
     </ClCompile>
+    <ClCompile Include="jointBilateralUpsample.cpp">
+      <Filter>ソース ファイル\filter\resize</Filter>
+    </ClCompile>
+    <ClCompile Include="downsample.cpp">
+      <Filter>ソース ファイル\filter\resize</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libGaussian\gaussian_conv.h">
@@ -762,7 +765,7 @@
       <Filter>ヘッダー ファイル\headers\filter\GaussianFilter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\jointBilateralUpsample.hpp">
-      <Filter>ヘッダー ファイル\headers\filter\upsample</Filter>
+      <Filter>ヘッダー ファイル\headers\filter\resize</Filter>
     </ClInclude>
     <ClInclude Include="..\include\imqc.hpp">
       <Filter>ヘッダー ファイル\headers\imgproc\qualitymetrics</Filter>
@@ -970,6 +973,9 @@
     </ClInclude>
     <ClInclude Include="..\include\weightedHistogramFilter.hpp">
       <Filter>ヘッダー ファイル\headers\filter</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\downsample.hpp">
+      <Filter>ヘッダー ファイル\headers\filter\resize</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

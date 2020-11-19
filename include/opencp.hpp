@@ -86,7 +86,8 @@
 
 //GaussianFilter
 #include "GaussianBlurIPOL.hpp"
-//upsapmle
+//resize
+#include "downsample.hpp"
 #include "jointBilateralUpsample.hpp"
 
 /*************************************************************
