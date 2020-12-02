@@ -680,17 +680,17 @@ void guiUpsampleTest(Mat& src_)
 				break;
 
 			case 4:
-				nnUpsample(sub, dest);
+				upsampleNearest(sub, dest, s);
 				upsampleMethod = "myNN";
 				break;
 
 			case 5:
-				linearUpsample(sub, dest);
+				upsampleLinear(sub, dest, s);
 				upsampleMethod = "myLinear";
 				break;
 
 			case 6:
-				cubicUpsample(sub, dest, -acubic / 100.0);
+				upsampleCubic(sub, dest, s , -acubic / 100.0);
 				upsampleMethod = "myCubic";
 				break;
 

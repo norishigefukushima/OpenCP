@@ -844,11 +844,21 @@ inline __m256 _mm256_abs_ps(__m256 src)
 	return _mm256_and_ps(src, _mm256_castsi256_ps(_mm256_set1_epi32(0x7fffffff)));
 }
 
+inline float _mm_reduceadd_ps(__m128 src)
+{
+	src = _mm_hadd_ps(src, src);
+	src = _mm_hadd_ps(src, src);
+	return _mm_cvtss_f32(src);
+}
+
 inline float _mm256_reduceadd_ps(__m256 src)
 {
 	src = _mm256_hadd_ps(src, src);
 	src = _mm256_hadd_ps(src, src);
 	return (src.m256_f32[0] + src.m256_f32[4]);
+	//__m256 rsum = _mm256_permute2f128_ps(src, src, 0 << 4 | 1);
+	//src = _mm256_unpacklo_ps(src, rsum);
+	//return _mm256_hadd_ps(src, src).m256_f32[0];
 }
 
 inline double _mm256_reduceadd_pd(__m256d src)
@@ -1197,6 +1207,49 @@ inline void _mm256_storescalar_auto_color(uchar* dest, __m256 b, __m256 g, __m25
 }
 
 //return 8 uchar elements
+inline __m128i _mm_i32gather_epi32(const uchar* src, __m128i idx)
+{
+	return _mm_srli_epi32(_mm_i32gather_epi32((int*)(src - 3), idx, 1), 24);
+	//return _mm_setr_epi8(src[idx.m256i_i32[0]], src[idx.m256i_i32[1]], src[idx.m256i_i32[2]], src[idx.m256i_i32[3]], src[idx.m256i_i32[4]], src[idx.m256i_i32[5]], src[idx.m256i_i32[6]], src[idx.m256i_i32[7]], 0, 0, 0, 0, 0, 0, 0, 0);
+}
+
+
+//gather bgr interleved uchar data with convert epi32->ps
+inline void _mm256_i32gather_bgr_ps(const uchar* src, __m256i idx, __m256& b, __m256& g, __m256& r)
+{
+	__m256i v = _mm256_i32gather_epi32((int*)(src), idx, 1);
+	
+	b = _mm256_cvtepi32_ps(_mm256_blendv_epi8(v, _mm256_setzero_si256(), _mm256_setr_epi8(0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF)));
+	g = _mm256_cvtepi32_ps(_mm256_srai_epi32(_mm256_blendv_epi8(v, _mm256_setzero_si256(), _mm256_setr_epi8(0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF)), 8));
+	r = _mm256_cvtepi32_ps(_mm256_srai_epi32(_mm256_blendv_epi8(v, _mm256_setzero_si256(), _mm256_setr_epi8(0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF)), 16));
+}
+
+inline void _mm256_i32gather_bgr_epi32(const uchar* src, __m256i idx, __m256i& b, __m256i& g, __m256i& r)
+{
+	__m256i v = _mm256_i32gather_epi32((int*)(src - 3), idx, 1);
+	b = _mm256_srli_epi32(v, 24);
+	g = _mm256_srli_epi32(v, 25);
+	r = _mm256_srli_epi32(v, 26);
+}
+
+inline __m256i _mm256_i32gather_epi32(const uchar* src, __m256i idx)
+{
+	return _mm256_srli_epi32(_mm256_i32gather_epi32((int*)(src - 3), idx, 1), 24);
+	//return _mm_setr_epi8(src[idx.m256i_i32[0]], src[idx.m256i_i32[1]], src[idx.m256i_i32[2]], src[idx.m256i_i32[3]], src[idx.m256i_i32[4]], src[idx.m256i_i32[5]], src[idx.m256i_i32[6]], src[idx.m256i_i32[7]], 0, 0, 0, 0, 0, 0, 0, 0);
+}
+
+inline __m128 _mm_i32gather_ps(const uchar* src, __m128i idx)
+{
+	return _mm_cvtepi32_ps(_mm_srli_epi32(_mm_i32gather_epi32((int*)(src - 3), idx, 1), 24));
+	//return _mm_setr_epi8(src[idx.m256i_i32[0]], src[idx.m256i_i32[1]], src[idx.m256i_i32[2]], src[idx.m256i_i32[3]], src[idx.m256i_i32[4]], src[idx.m256i_i32[5]], src[idx.m256i_i32[6]], src[idx.m256i_i32[7]], 0, 0, 0, 0, 0, 0, 0, 0);
+}
+
+inline __m128i _mm_i32gather_epu8(const uchar* src, __m128i idx)
+{
+	return _mm_cvtepi32_epi8(_mm_srli_epi32(_mm_i32gather_epi32((int*)(src - 3), idx, 1), 24));
+	//return _mm_setr_epi8(src[idx.m256i_i32[0]], src[idx.m256i_i32[1]], src[idx.m256i_i32[2]], src[idx.m256i_i32[3]], src[idx.m256i_i32[4]], src[idx.m256i_i32[5]], src[idx.m256i_i32[6]], src[idx.m256i_i32[7]], 0, 0, 0, 0, 0, 0, 0, 0);
+}
+
 inline __m128i _mm256_i32gather_epu8(const uchar* src, __m256i idx)
 {
 	return _mm256_cvtepi32_epu8(_mm256_srli_epi32(_mm256_i32gather_epi32((int*)(src - 3), idx, 1), 24));
