@@ -142,7 +142,7 @@ void testCVStereoBM()
 		ci("th 1.0:" + eval(disp, 1.0, 16, false));
 		ci("th 2.0:" + eval(disp, 2.0, 16, false));
 		imshowScale(wname, disp, 2.0 / 16);
-		
+
 		ci.show();
 		key = waitKey(1);
 	}
@@ -153,7 +153,7 @@ void testCVStereoSGBM()
 	Mat disp;
 	Mat leftim = imread("img/stereo/Dolls/view1.png");
 	Mat rightim = imread("img/stereo/Dolls/view5.png");
-	Mat dmap_ = imread("img/stereo/Dolls/disp1.png",0);
+	Mat dmap_ = imread("img/stereo/Dolls/disp1.png", 0);
 	//guiShift(left, right, 300);
 	const int disp_min = get_simd_ceil(32, 16);
 	const int disp_max = get_simd_ceil(100, 16);
@@ -207,7 +207,7 @@ void testCVStereoSGBM()
 		fillOcclusion(disp, invalid);
 		Mat(disp(Rect(numDisparities, 0, leftim.cols, leftim.rows))).copyTo(dispshow);
 		//guiAlphaBlend(dispshow, dmap_);
-		
+
 		imshowScale(wname, dispshow, 2.0 / 16);
 		ci("Time %5.2f ms", t.getLapTimeMedian());
 		ci("th 0.5:" + eval(dispshow, 0.5, 16, false));
@@ -222,13 +222,25 @@ void testStereoBase()
 {
 	Mat disp;
 	Mat left_ = imread("img/stereo/Dolls/view1.png");
-	Mat right = imread("img/stereo/Dolls/view5.png");
+	Mat right_ = imread("img/stereo/Dolls/view5.png");
 	Mat dmap_ = imread("img/stereo/Dolls/disp1.png", 0);
+
+	Mat left = left_;
+	Mat right = right_;
+	Mat dmap = dmap_;
+	const bool isPad = false;
+	if (isPad)
+	{
+		int pad = get_simd_ceil(left_.cols, 16) - left_.cols;
+		copyMakeBorder(left_, left, 0, 0, 0, pad, cv::BORDER_DEFAULT);
+		copyMakeBorder(right_, right, 0, 0, 0, pad, cv::BORDER_DEFAULT);
+		copyMakeBorder(dmap_, dmap, 0, 0, 0, pad, cv::BORDER_DEFAULT);
+	}
 	//guiShift(left, right, 300);
 	const int disp_min = get_simd_ceil(32, 16);
 	const int disp_max = get_simd_ceil(100, 16);
-	cp::StereoEval eval(dmap_, 2, disp_max);
+	cp::StereoEval eval(dmap, 2, disp_max);
 
 	StereoBase sbm(5, disp_min, disp_max);
-	sbm.gui(left_, right, disp, eval);
+	sbm.gui(left, right, disp, eval);
 }

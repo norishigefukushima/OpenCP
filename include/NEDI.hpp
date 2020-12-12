@@ -7,7 +7,7 @@
 
 namespace cp
 {
-	class NewEdgeDirectedInterpolation
+	class CP_EXPORT NewEdgeDirectedInterpolation
 	{
 		void upsampleGrayDoubleLUOpt(const cv::Mat& sim, cv::Mat& dim, const float threshold, const int window_size, const float eps);
 		void upsampleGrayDoubleLU(const cv::Mat& sim, cv::Mat& dim, const float threshold, const int window_size, const float eps);

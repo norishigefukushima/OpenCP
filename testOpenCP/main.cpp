@@ -141,7 +141,7 @@ int main(int argc, char** argv)
 	//testPlot(); return 0;
 	//testPlot2D(); return 0;
 	//testGuidedImageFilter(); return 0;
-	guiHazeRemoveTest();
+	//guiHazeRemoveTest();
 
 	//testCropZoom(); return 0;
 	//testAddNoise(img); return 0;
@@ -161,9 +161,9 @@ int main(int argc, char** argv)
 #pragma endregion
 
 #pragma region stereo
-	//testStereoBase(); return 0;
+	testStereoBase(); return 0;
 	//testCVStereoBM(); return 0;
-	testCVStereoSGBM(); return 0;
+	//testCVStereoSGBM(); return 0;
 #pragma endregion
 
 #pragma region filter

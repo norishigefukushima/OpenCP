@@ -861,6 +861,13 @@ inline float _mm256_reduceadd_ps(__m256 src)
 	//return _mm256_hadd_ps(src, src).m256_f32[0];
 }
 
+inline void _mm256_reduceadd_highlow_ps(__m256 src, float& low, float& high)
+{
+	src = _mm256_hadd_ps(src, src);
+	src = _mm256_hadd_ps(src, src);
+	low = src.m256_f32[0];
+	high = src.m256_f32[4];
+}
 inline double _mm256_reduceadd_pd(__m256d src)
 {
 	src = _mm256_hadd_pd(src, src);
@@ -1235,7 +1242,7 @@ inline void _mm256_i32gather_bgr_epi32(const uchar* src, __m256i idx, __m256i& b
 inline __m256i _mm256_i32gather_epi32(const uchar* src, __m256i idx)
 {
 	return _mm256_srli_epi32(_mm256_i32gather_epi32((int*)(src - 3), idx, 1), 24);
-	//return _mm_setr_epi8(src[idx.m256i_i32[0]], src[idx.m256i_i32[1]], src[idx.m256i_i32[2]], src[idx.m256i_i32[3]], src[idx.m256i_i32[4]], src[idx.m256i_i32[5]], src[idx.m256i_i32[6]], src[idx.m256i_i32[7]], 0, 0, 0, 0, 0, 0, 0, 0);
+	//return _mm256_setr_epi32(src[idx.m256i_i32[0]], src[idx.m256i_i32[1]], src[idx.m256i_i32[2]], src[idx.m256i_i32[3]], src[idx.m256i_i32[4]], src[idx.m256i_i32[5]], src[idx.m256i_i32[6]], src[idx.m256i_i32[7]]);
 }
 
 inline __m128 _mm_i32gather_ps(const uchar* src, __m128i idx)

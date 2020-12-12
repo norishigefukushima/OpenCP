@@ -14,7 +14,7 @@ namespace cp
 	{
 	public:
 		StereoBase(int blockSize, int minDisp, int disparityRange);
-		~StereoBase();
+		virtual ~StereoBase();
 
 		//PixelMatchingCost
 		enum Cost
@@ -117,6 +117,9 @@ namespace cp
 			NONE,
 			GIF_JNF,
 			WGIF_GAUSS_JNF,
+			WGIF_BFSUB_JNF,//under debug
+			WGIF_BFW_JNF,//under debug
+			WGIF_DUALBFW_JNF,//under debug
 			JBF_JNF,
 			WJBF_GAUSS_JNF,
 			WMF,
@@ -223,7 +226,7 @@ namespace cp
 		int speckleRange;
 
 		bool isMinCostFilter = false;
-		void minCostFilter(cv::Mat& costMap, cv::Mat& dest);
+		void minCostFilter(const cv::Mat& costMap, cv::Mat& dest);
 
 		int holeFillingMethod = 1;
 		void computeValidRatio(const cv::Mat& disparityMap);

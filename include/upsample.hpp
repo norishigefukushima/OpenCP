@@ -5,7 +5,7 @@ namespace cp
 {
 	CP_EXPORT void upsampleNearest(cv::InputArray src, cv::OutputArray dest, const int scale);
 	CP_EXPORT void upsampleLinear(cv::InputArray src, cv::OutputArray dest, const int scale);
-	
+
 	CP_EXPORT void upsampleCubic(cv::InputArray src, cv::OutputArray dest, const int scale, const double a = -1.5);
 	CP_EXPORT void upsampleCubic_parallel(const cv::Mat& src, cv::Mat& dest, const int scale, const double a = 1.5);
 	CP_EXPORT void upsampleWeightedCubic(cv::InputArray src_, cv::InputArray guide_, cv::OutputArray dest_, const int scale, const double a = -1.5);
@@ -13,6 +13,78 @@ namespace cp
 	CP_EXPORT void setUpsampleMask(cv::InputArray src, cv::OutputArray dst);
 
 	CP_EXPORT void resizeShift(cv::InputArray src, cv::OutputArray dest, const int scale, const int resize_method, const double shiftx, const double shifty);
+
+	inline void setGaussianLnWeight(cv::Mat& weightmap, const float sigma, const int pown)
+	{
+		const int scale = (int)sqrt(weightmap.rows);
+		const int d = (int)sqrt(weightmap.cols);
+		const int r = d / 2;
+		for (int n = 0; n < weightmap.rows; n++)
+		{
+			const int x_ = n % scale;
+			const int y_ = n / scale;
+			float x = float(x_) / (scale);
+			float y = float(y_) / (scale);
+
+			float* w = weightmap.ptr<float>(n);
+			int idx = 0;
+			float wsum = 0.f;
+			for (int j = 0; j < d; j++)
+			{
+				for (int i = 0; i < d; i++)
+				{
+					float dist = hypot(x + r - 1 - i, y + r - 1 - j);
+					//float dist = hypot(x - r + 1 + i, y - r + 1 + j);
+					float w_ = exp(pow(dist, pown) / (-pown * sigma * sigma));
+					//float w_ = exp(dist / (-sigma));//Laplacian
+					wsum += w_;
+					w[idx++] = w_;
+				}
+			}
+			for (int i = 0; i < weightmap.cols; i++)
+			{
+				w[i] /= wsum;
+			}
+		}
+	}
+
+	inline void setGaussianWeight8x8(cv::Mat& weightmap, const float sigma)
+	{
+		const int scale = (int)sqrt(weightmap.rows);
+
+		for (int i = 0; i < scale * scale; i++)
+		{
+			const int x_ = i % scale;
+			const int y_ = i / scale;
+			float x = float(x_) / (scale);
+			float y = float(y_) / (scale);
+
+			float* weight = weightmap.ptr<float>(i);
+
+			for (int n = 0, idx = 0; n < 8; n++)
+			{
+				for (int m = 0; m < 8; m++)
+				{
+					weight[idx++] = hypot(x + 3 - m, y + 3 - n);
+				}
+			}
+
+			float wsum = 0.f;
+			for (int j = 0; j < 64; j++)
+			{
+				const float dist = weight[j];
+				const float w = exp(dist * dist / (-2.f * sigma * sigma));
+				weight[j] = w;
+				wsum += w;
+			}
+
+			wsum = 1.f / wsum;
+			for (int j = 0; j < 64; j++)
+			{
+				weight[j] *= wsum;
+			}
+		}
+	}
 
 	inline void setGaussianWeight4x4(cv::Mat& weightmap, const float sigma)
 	{
@@ -51,7 +123,7 @@ namespace cp
 			for (int j = 0; j < 16; j++)
 			{
 				const float dist = weight[j];
-				const float w = exp(dist * dist / (-0.5f * sigma * sigma));
+				const float w = exp(dist * dist / (-2.f * sigma * sigma));
 				weight[j] = w;
 				wsum += w;
 			}
@@ -63,6 +135,7 @@ namespace cp
 			}
 		}
 	}
+
 
 	inline void setCubicWeight4x4(cv::Mat& weightmap, const float alpha)
 	{

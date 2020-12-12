@@ -744,26 +744,33 @@ namespace cp
 
 		__m128i a, b, c;
 
+		const int simd_end = get_simd_floor(src.cols, 16);
 		for (int j = 0; j < src.rows; j++)
 		{
 			int i = 0;
-			for (; i < src.cols; i += 16)
+			for (; i < simd_end; i += 16)
 			{
 				a = _mm_shuffle_epi8(_mm_load_si128((__m128i*)(s + 3 * i)), mask1);
 				b = _mm_shuffle_epi8(_mm_load_si128((__m128i*)(s + 3 * i + 16)), mask2);
 				c = _mm_shuffle_epi8(_mm_load_si128((__m128i*)(s + 3 * i + 32)), mask2);
-				_mm_stream_si128((__m128i*)(B + i), _mm_blendv_epi8(c, _mm_blendv_epi8(b, a, bmask1), bmask2));
+				_mm_storeu_si128((__m128i*)(B + i), _mm_blendv_epi8(c, _mm_blendv_epi8(b, a, bmask1), bmask2));
 
 				a = _mm_shuffle_epi8(a, smask1);
 				b = _mm_shuffle_epi8(b, smask1);
 				c = _mm_shuffle_epi8(c, ssmask1);
-				_mm_stream_si128((__m128i*)(G + i), _mm_blendv_epi8(c, _mm_blendv_epi8(b, a, bmask3), bmask2));
+				_mm_storeu_si128((__m128i*)(G + i), _mm_blendv_epi8(c, _mm_blendv_epi8(b, a, bmask3), bmask2));
 
 				a = _mm_shuffle_epi8(a, ssmask1);
 				c = _mm_shuffle_epi8(c, ssmask1);
 				b = _mm_shuffle_epi8(b, ssmask2);
 
-				_mm_stream_si128((__m128i*)(R + i), _mm_blendv_epi8(c, _mm_blendv_epi8(b, a, bmask3), bmask4));
+				_mm_storeu_si128((__m128i*)(R + i), _mm_blendv_epi8(c, _mm_blendv_epi8(b, a, bmask3), bmask4));
+			}
+			for (; i < src.cols; i ++)
+			{
+				B[i] = s[3 * i + 0];
+				G[i] = s[3 * i + 1];
+				R[i] = s[3 * i + 2];
 			}
 			R += dstep;
 			G += dstep;
@@ -834,7 +841,6 @@ namespace cp
 		Mat dest = dest_.getMat();
 		if (src.type() == CV_MAKE_TYPE(CV_8U, 3))
 		{
-			CV_Assert(src.cols % 16 == 0);
 			splitBGRLineInterleave_8u(src, dest);
 		}
 		else if (src.type() == CV_MAKE_TYPE(CV_32F, 3))

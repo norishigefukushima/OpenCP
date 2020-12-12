@@ -4,7 +4,9 @@
 #include "costVolumeFilter.hpp"
 #include "crossBasedLocalMultipointFilter.hpp"
 #include "guidedFilter.hpp"
+#include "bilateralFilter.hpp"
 #include "jointBilateralFilter.hpp"
+#include "dualBilateralFilter.hpp"
 #include "binalyWeightedRangeFilter.hpp"
 #include "jointNearestFilter.hpp"
 #include "weightedHistogramFilter.hpp"
@@ -17,6 +19,7 @@
 #include "noise.hpp"
 #include "inlinesimdfunctions.hpp"
 #include "checkSameImage.hpp"
+#include "imshowExtension.hpp"
 #include "debugcp.hpp"
 
 using namespace std;
@@ -634,6 +637,12 @@ namespace cp
 #ifdef TIMER_STEREO_BASE
 				Timer t("Post: refinement");
 #endif
+
+				static int rrad = 5; createTrackbar("rrad", "", &rrad, 100);
+				static int ss = 32; createTrackbar("ss", "", &ss, 10000);
+				static int sr1 = 32; createTrackbar("sr1", "", &sr1, 250);
+				static int sr2 = 32; createTrackbar("sr2", "", &sr2, 250);
+
 				if (refinementMethod == (int)REFINEMENT::GIF_JNF)
 				{
 					//crossBasedAdaptiveBoxFilter(destDisparity, leftim, destDisparity, Size(2 * gr + 1, 2 * gr + 1), ge);
@@ -645,8 +654,10 @@ namespace cp
 				else if (refinementMethod == (int)REFINEMENT::WGIF_GAUSS_JNF)
 				{
 					weightMap.create(leftim.size(), CV_32F);
+					const Size ksize = Size(2 * refinementWeightR + 1, 2 * refinementWeightR + 1);
+
 					Mat bim;
-					GaussianBlur(destDisparityMap, bim, Size(2 * refinementWeightR + 1, 2 * refinementWeightR + 1), refinementWeightR / 3.0);
+					GaussianBlur(destDisparityMap, bim, ksize, refinementWeightR / 3.0);
 					short* disp = destDisparityMap.ptr<short>(0);
 					short* dispb = bim.ptr<short>();
 					float* s = weightMap.ptr<float>();
@@ -655,6 +666,73 @@ namespace cp
 						float diff = (disp[i] - dispb[i]) * (disp[i] - dispb[i]) / (-2.f * 16 * 16 * refinementWeightSigma * refinementWeightSigma);
 						s[i] = exp(diff);
 					}
+
+					Mat a, b;
+					multiply(destDisparityMap, weightMap, a, 1, CV_32F);
+					guidedImageFilter(a, leftim, a, refinementR, refinementSigmaRange, GUIDED_SEP_VHI);
+					guidedImageFilter(weightMap, leftim, b, refinementR, refinementSigmaRange, GUIDED_SEP_VHI);
+					Mat temp;
+					divide(a, b, temp, 1, CV_16S);
+					jointNearestFilter(temp, destDisparityMap, Size(2 * jointNearestR + 1, 2 * jointNearestR + 1), destDisparityMap);
+				}
+				else if (refinementMethod == (int)REFINEMENT::WGIF_BFSUB_JNF)
+				{
+					weightMap.create(leftim.size(), CV_32F);
+					const Size ksize = Size(2 * refinementWeightR + 1, 2 * refinementWeightR + 1);
+
+					Mat bim;
+					
+					Mat sim; destDisparityMap.convertTo(sim, CV_32F);
+					//cp::bilateralFilter(sim, bim, ksize, 100, refinementWeightR / 3.0);
+					cv::bilateralFilter(sim, bim, 2 * refinementWeightR + 1, 100, refinementWeightR / 3.0);
+					float* disp = sim.ptr<float>();
+					float* dispb = bim.ptr<float>();
+					float* s = weightMap.ptr<float>();
+					for (int i = 0; i < weightMap.size().area(); i++)
+					{
+						float diff = (disp[i] - dispb[i]) * (disp[i] - dispb[i]) / (-2.f * 16 * 16 * refinementWeightSigma * refinementWeightSigma);
+						s[i] = exp(diff);
+					}
+							
+					/*
+					 //min cost weight map
+					uchar* minc = minCostMap.ptr<uchar>();
+					float* s = weightMap.ptr<float>();
+					for (int i = 0; i < weightMap.size().area(); i++)
+					{
+						float diff = (minc[i]) / (-2.f * 16 * 16 * refinementWeightSigma * refinementWeightSigma);
+						s[i] = exp(diff);
+					}*/
+
+					Mat a, b;
+					multiply(destDisparityMap, weightMap, a, 1, CV_32F);
+					guidedImageFilter(a, leftim, a, refinementR, refinementSigmaRange, GUIDED_SEP_VHI);
+					guidedImageFilter(weightMap, leftim, b, refinementR, refinementSigmaRange, GUIDED_SEP_VHI);
+					Mat temp;
+					divide(a, b, temp, 1, CV_16S);
+					jointNearestFilter(temp, destDisparityMap, Size(2 * jointNearestR + 1, 2 * jointNearestR + 1), destDisparityMap);
+				}
+				else if (refinementMethod == (int)REFINEMENT::WGIF_BFW_JNF)
+				{
+					weightMap.create(leftim.size(), CV_32F);
+					const Size ksize = Size(4 * refinementWeightR + 1, 4 * refinementWeightR + 1);
+					
+					cp::bilateralWeightMap(destDisparityMap, weightMap, Size(2 * rrad + 1, 2 * rrad + 1), sr1, ss, 0, 1);
+
+					Mat a, b;
+					multiply(destDisparityMap, weightMap, a, 1, CV_32F);
+					guidedImageFilter(a, leftim, a, refinementR, refinementSigmaRange, GUIDED_SEP_VHI);
+					guidedImageFilter(weightMap, leftim, b, refinementR, refinementSigmaRange, GUIDED_SEP_VHI);
+					Mat temp;
+					divide(a, b, temp, 1, CV_16S);
+					jointNearestFilter(temp, destDisparityMap, Size(2 * jointNearestR + 1, 2 * jointNearestR + 1), destDisparityMap);
+				}
+				else if (refinementMethod == (int)REFINEMENT::WGIF_DUALBFW_JNF)
+				{
+					weightMap.create(leftim.size(), CV_32F);
+					const Size ksize = Size(4 * refinementWeightR + 1, 4 * refinementWeightR + 1);
+					
+					cp::dualBilateralWeightMap(destDisparityMap, leftim, weightMap, Size(2 * rrad + 1, 2 * rrad + 1), sr1, sr2, 100000, 0, 1);
 
 					Mat a, b;
 					multiply(destDisparityMap, weightMap, a, 1, CV_32F);
@@ -799,7 +877,6 @@ namespace cp
 		//createTrackbar("occ:sH", wname, &occsearchh, 15);	
 		//createTrackbar("occ:iter", wname, &occiter, 10);
 
-
 		Plot p(Size(640, 240));
 		Plot histp(Size(640, 240));
 		Plot signal(Size(640, 240));
@@ -885,7 +962,7 @@ namespace cp
 #pragma endregion
 
 #pragma region console setup
-			if (noise_state==0) ci(CV_RGB(255, 0, 0), "noise             (n)| false"); 
+			if (noise_state == 0) ci(CV_RGB(255, 0, 0), "noise             (n)| false");
 			else if (noise_state == 1) ci(CV_RGB(0, 255, 0), "noise             (n)| true");
 			else if (noise_state == 2) ci(CV_RGB(0, 255, 0), "noise             (n)| true with random move");
 			if (isFeedback) ci(CV_RGB(0, 255, 0), "isFeedback        (f)| true");
@@ -895,7 +972,7 @@ namespace cp
 				ci("Cost            (i-u)| " + getCostMethodName((Cost)pixelMatchingMethod) + "");
 			else
 				ci("Cost      (i-u)|(j-k)| " + getCostMethodName((Cost)pixelMatchingMethod) + getCostColorDistanceName((ColorDistance)color_distance));
-			    ci("Aggregation     (@-[)| " + getAggregationMethodName((Aggregation)aggregationMethod));
+			ci("Aggregation     (@-[)| " + getAggregationMethodName((Aggregation)aggregationMethod));
 
 			if (isUniquenessFilter) ci(CV_RGB(0, 255, 0), "uniqueness filter (1)| true");
 			else ci(CV_RGB(255, 0, 0), "uniqueness filter (1)| false");
@@ -922,7 +999,7 @@ namespace cp
 			else ci(CV_RGB(0, 255, 0), "Occlusion         (8)| " + getHollFillingMethodName((HOLE_FILL)holeFillingMethod));
 
 			if (refinementMethod == 0) ci(CV_RGB(255, 0, 0), "Refinement        (9)| NONE");
-			else ci(CV_RGB(0, 255, 0), "Refinement        (9)| " + getRefinementMethodName((REFINEMENT)refinementMethod));
+			else ci(CV_RGB(0, 255, 0), "Refinement      (9-o)| " + getRefinementMethodName((REFINEMENT)refinementMethod));
 
 
 			ci("==== additional post filter =====");
@@ -986,7 +1063,7 @@ namespace cp
 				isRandomizedMove = false;
 				break;
 			}
-			
+
 			if (isRandomizedMove && eval.isInit)
 			{
 				const int x = rng.uniform(-3, 4);
@@ -999,8 +1076,8 @@ namespace cp
 			{
 				leftim.copyTo(L);
 				rightim.copyTo(R);
-			
-				if(!cp::checkSameImage(gt, eval.ground_truth))
+
+				if (!cp::checkSameImage(gt, eval.ground_truth))
 					eval.init(gt, evalamp, igb);
 			}
 			if (isNoise)
@@ -1037,7 +1114,7 @@ namespace cp
 					medianBlur(destDisparity, destDisparity, 3);
 				}
 				ci("Time A-PostFilter| %6.2f ms", t.getTime());//additional post processing time
-				
+
 			}
 #pragma endregion 
 
@@ -1255,7 +1332,7 @@ namespace cp
 			ci("Other keys");
 			ci("grid (g), dispcolor(w), refresh(r)");
 			ci("check alpha(c), cross(b)");
-			
+
 			ci.show();
 			setTrackbarPos("px", wname, mpt.x);
 			setTrackbarPos("py", wname, mpt.y);
@@ -1271,7 +1348,7 @@ namespace cp
 			if (key == '6') isMinCostFilter = isMinCostFilter ? false : true;
 			if (key == '7') isSpeckleFilter = isSpeckleFilter ? false : true;
 			if (key == '8') { holeFillingMethod++; if (holeFillingMethod > 4)holeFillingMethod = 0; }
-			if (key == 'v')  holeFillingMethod = (holeFillingMethod!=0) ? 0:1; 
+			if (key == 'v')  holeFillingMethod = (holeFillingMethod != 0) ? 0 : 1;
 			if (key == '9') { refinementMethod++; refinementMethod = (refinementMethod > (int)REFINEMENT::REFINEMENT_SIZE - 1) ? 0 : refinementMethod; }
 			if (key == 'o') { refinementMethod--; refinementMethod = (refinementMethod < 0) ? (int)REFINEMENT::REFINEMENT_SIZE - 2 : refinementMethod; }
 			if (key == '0') isStreak = (isStreak) ? false : true;
@@ -1279,7 +1356,7 @@ namespace cp
 
 			if (key == 'n') noise_state++; noise_state = (noise_state > 2) ? 0 : noise_state;
 			if (key == 'f') isFeedback = isFeedback ? false : true;
-			
+
 			if (key == 'i') { pixelMatchingMethod++; pixelMatchingMethod = (pixelMatchingMethod > Pixel_Matching_Method_Size - 1) ? 0 : pixelMatchingMethod; }
 			if (key == 'u') { pixelMatchingMethod--; pixelMatchingMethod = (pixelMatchingMethod < 0) ? Pixel_Matching_Method_Size - 2 : pixelMatchingMethod; }
 			if (key == 'j') { color_distance++; color_distance = (color_distance > ColorDistance_Size - 1) ? 0 : color_distance; }
@@ -1307,7 +1384,7 @@ namespace cp
 	{
 		if (!weightMap.empty())
 		{
-			imshow(wname, weightMap);
+			cp::imshowNormalize(wname, weightMap);
 		}
 	}
 
@@ -1394,7 +1471,7 @@ namespace cp
 			dptr1 += step;
 		}
 		srow1 -= src.cols;
-		
+
 		for (int y = HEIGHT; y < size.height; y++)
 		{
 			uchar* dptr = dst.ptr<uchar>(y);
@@ -3347,14 +3424,14 @@ namespace cp
 	}
 
 
-	void StereoBase::minCostFilter(Mat& minCostMap, Mat& dest)
+	void StereoBase::minCostFilter(const Mat& minCostMap, Mat& dest)
 	{
 		const int imsize = dest.size().area();
 		Mat disptemp = dest.clone();
 		const int step = dest.cols;
 		short* disptempPtr = disptemp.ptr<short>();
 		short* destPtr = dest.ptr<short>(0);
-		uchar* costPtr = minCostMap.ptr<uchar>();
+		const uchar* costPtr = minCostMap.ptr<uchar>();
 		//for(int j=0;j<imsize-step;j++)
 		for (int j = 0; j < imsize; j++)
 		{
@@ -3427,6 +3504,9 @@ namespace cp
 		case REFINEMENT::NONE:				ret = "NONE"; break;
 		case REFINEMENT::GIF_JNF:			ret = "GIF_JNF"; break;
 		case REFINEMENT::WGIF_GAUSS_JNF:	ret = "WGIF_GAUSS_JNF"; break;
+		case REFINEMENT::WGIF_BFSUB_JNF:	ret = "WGIF_BFSUB_JNF"; break;
+		case REFINEMENT::WGIF_BFW_JNF:		ret = "WGIF_BFW_JNF"; break;
+		case REFINEMENT::WGIF_DUALBFW_JNF:	ret = "WGIF_DUALBFW_JNF"; break;
 		case REFINEMENT::JBF_JNF:			ret = "JBF_JNF"; break;
 		case REFINEMENT::WJBF_GAUSS_JNF:	ret = "WJBF_GAUSS_JNF"; break;
 		case REFINEMENT::WMF:				ret = "WMF"; break;

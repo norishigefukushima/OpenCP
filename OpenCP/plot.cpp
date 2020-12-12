@@ -1091,10 +1091,15 @@ namespace cp
 		const int xmax = xmax_data;
 		const int ymin = ymin_data;
 		const int ymax = ymax_data;
-		int xminbar = xmin; createTrackbar("xmin", wname, &xminbar, xmax); setTrackbarMin("xmin", wname, xmin);
-		int xmaxbar = xmax; createTrackbar("xmax", wname, &xmaxbar, xmax); setTrackbarMin("xmax", wname, xmin);
-		int yminbar = ymin; createTrackbar("ymin", wname, &yminbar, ymax); setTrackbarMin("ymin", wname, ymin);
-		int ymaxbar = ymax; createTrackbar("ymax", wname, &ymaxbar, ymax); setTrackbarMin("ymax", wname, ymin);
+
+		int xminbar = xmin; 
+		if(xmax!=0)createTrackbar("xmin", wname, &xminbar, xmax); setTrackbarMin("xmin", wname, xmin);
+		int xmaxbar = xmax; 
+		if (xmax != 0)createTrackbar("xmax", wname, &xmaxbar, xmax); setTrackbarMin("xmax", wname, xmin);
+		int yminbar = ymin; 
+		if (ymax != 0)createTrackbar("ymin", wname, &yminbar, ymax); setTrackbarMin("ymin", wname, ymin);
+		int ymaxbar = ymax; 
+		if (ymax != 0)createTrackbar("ymax", wname, &ymaxbar, ymax); setTrackbarMin("ymax", wname, ymin);
 		
 		const double margin_ratio = 1.0;//0.9
 		if (!isSetXRange)
@@ -1138,7 +1143,7 @@ namespace cp
 			ymin_data = yminbar;
 			ymax_data = ymaxbar;
 
-			//if (!isSetXRange)
+			if (!isSetXRange)
 			{
 				if (isLogScaleX)
 				{
@@ -1158,7 +1163,7 @@ namespace cp
 						computeWindowXRangeMAXMIN(false, margin_ratio, 0);
 				}
 			}
-			//if (!isSetYRange)
+			if (!isSetYRange)
 			{
 				if (ymax_data - ymin_data > 50)
 					computeWindowYRangeMAXMIN(false, margin_ratio, 10);

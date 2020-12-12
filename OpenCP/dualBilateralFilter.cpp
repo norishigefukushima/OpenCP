@@ -14,7 +14,7 @@ namespace cp
 	void dualBilateralWeightMapBase_32f(const Mat& src, const Mat& guide, Mat& dst, int d,
 		double sigma_color, double sigma_guide_color, double sigma_space, int borderType, bool isLaplace)
 	{
-		if (d == 0){ src.copyTo(dst); return; }
+		if (d == 0) { src.copyTo(dst); return; }
 		Size size = src.size();
 		if (dst.empty())dst = Mat::zeros(src.size(), CV_32F);
 		//CV_Assert( (src.type() == CV_8UC1 || src.type() == CV_8UC3) &&
@@ -27,11 +27,11 @@ namespace cp
 			sigma_space = 1.0;
 
 
-		double gauss_color_coeff = (isLaplace) ? -1.0 / (sigma_color) : -0.5 / (sigma_color*sigma_color);
-		double gauss_guide_color_coeff = (isLaplace) ? -1.0 / (sigma_guide_color) : -0.5 / (sigma_guide_color*sigma_guide_color);//trilateral(1)
+		double gauss_color_coeff = (isLaplace) ? -1.0 / (sigma_color) : -0.5 / (sigma_color * sigma_color);
+		double gauss_guide_color_coeff = (isLaplace) ? -1.0 / (sigma_guide_color) : -0.5 / (sigma_guide_color * sigma_guide_color);//trilateral(1)
 
 		//do not suppert Laplace distribution
-		double gauss_space_coeff = -0.5 / (sigma_space*sigma_space);
+		double gauss_space_coeff = -0.5 / (sigma_space * sigma_space);
 
 		if (guide.empty())src.copyTo(guide);
 		const int cn = src.channels();
@@ -39,7 +39,7 @@ namespace cp
 
 		int radius;
 		if (d <= 0)
-			radius = cvRound(sigma_space*1.5);
+			radius = cvRound(sigma_space * 1.5);
 		else
 			radius = d / 2;
 		radius = MAX(radius, 1);
@@ -52,24 +52,24 @@ namespace cp
 
 		vector<float> _color_weight(cn * 256);//trilateral(2)
 		vector<float> _color_guide_weight(cnj * 256);//trilateral(3)
-		vector<float> _space_weight(d*d);
+		vector<float> _space_weight(d * d);
 		float* color_weight = &_color_weight[0];
 		float* color_guide_weight = &_color_guide_weight[0];//trilateral(4)
 		float* space_weight = &_space_weight[0];
 
-		vector<int> _space_ofs_jnt(d*d);
-		vector<int> _space_ofs_src(d*d);
+		vector<int> _space_ofs_jnt(d * d);
+		vector<int> _space_ofs_src(d * d);
 		int* space_ofs_jnt = &_space_ofs_jnt[0];
 		int* space_ofs_src = &_space_ofs_src[0];
 
 		// initialize color-related bilateral filter coefficients
 		for (int i = 0; i < 256 * cn; i++)//trilateral(5)
 		{
-			color_weight[i] = (isLaplace) ? (float)std::exp(i*gauss_color_coeff) : (float)std::exp(i*i*gauss_color_coeff);
+			color_weight[i] = (isLaplace) ? (float)std::exp(i * gauss_color_coeff) : (float)std::exp(i * i * gauss_color_coeff);
 		}
 		for (int i = 0; i < 256 * cnj; i++)//trilateral(6)
 		{
-			color_guide_weight[i] = (isLaplace) ? (float)std::exp(i*gauss_guide_color_coeff) : (float)std::exp(i*i*gauss_guide_color_coeff);
+			color_guide_weight[i] = (isLaplace) ? (float)std::exp(i * gauss_guide_color_coeff) : (float)std::exp(i * i * gauss_guide_color_coeff);
 		}
 
 		int maxk = 0;
@@ -78,18 +78,18 @@ namespace cp
 		{
 			for (int j = -radius; j <= radius; j++)
 			{
-				double r = std::sqrt((double)i*i + (double)j*j);
+				double r = std::sqrt((double)i * i + (double)j * j);
 				if (r > radius) continue;
-				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-				space_ofs_jnt[maxk] = (int)(i*jim.cols*cnj + j*cnj);
-				space_ofs_src[maxk++] = (int)(i*sim.cols*cn + j*cn);
+				space_weight[maxk] = (float)std::exp(r * r * gauss_space_coeff);
+				space_ofs_jnt[maxk] = (int)(i * jim.cols * cnj + j * cnj);
+				space_ofs_src[maxk++] = (int)(i * sim.cols * cn + j * cn);
 			}
 		}
 
 		for (int i = 0; i < size.height; i++)
 		{
-			const float* jptr = jim.ptr<float>(i + radius) + radius*cnj;
-			const float* sptr = sim.ptr<float>(i + radius) + radius*cn;
+			const float* jptr = jim.ptr<float>(i + radius) + radius * cnj;
+			const float* sptr = sim.ptr<float>(i + radius) + radius * cn;
 			float* dptr = dst.ptr<float>(i);
 
 			if (cn == 1 && cnj == 1)
@@ -210,16 +210,16 @@ namespace cp
 	void dualBilateralFilterBase_32f(const Mat& src, const Mat& guide, Mat& dst, int d,
 		double sigma_color, double sigma_guide_color, double sigma_space, int borderType)
 	{
-		if (d == 0){ src.copyTo(dst); return; }
+		if (d == 0) { src.copyTo(dst); return; }
 		Size size = src.size();
 		if (dst.empty())dst = Mat::zeros(src.size(), src.type());
 		//CV_Assert( (src.type() == CV_8UC1 || src.type() == CV_8UC3) &&
 		//	src.type() == dst.type() && src.size() == dst.size() &&
 		//	src.data != dst.data );
 
-		double gauss_color_coeff = -0.5 / (sigma_color*sigma_color);
-		double gauss_guide_color_coeff = -0.5 / (sigma_guide_color*sigma_guide_color);//trilateral(1)
-		double gauss_space_coeff = -0.5 / (sigma_space*sigma_space);
+		double gauss_color_coeff = -0.5 / (sigma_color * sigma_color);
+		double gauss_guide_color_coeff = -0.5 / (sigma_guide_color * sigma_guide_color);//trilateral(1)
+		double gauss_space_coeff = -0.5 / (sigma_space * sigma_space);
 
 		if (guide.empty())src.copyTo(guide);
 		const int cn = src.channels();
@@ -227,7 +227,7 @@ namespace cp
 
 		int radius;
 		if (d <= 0)
-			radius = cvRound(sigma_space*1.5);
+			radius = cvRound(sigma_space * 1.5);
 		else
 			radius = d / 2;
 		radius = MAX(radius, 1);
@@ -240,23 +240,23 @@ namespace cp
 
 		vector<float> _color_weight(cn * 256);//trilateral(2)
 		vector<float> _color_guide_weight(cnj * 256);//trilateral(3)
-		vector<float> _space_weight(d*d);
+		vector<float> _space_weight(d * d);
 		float* color_weight = &_color_weight[0];
 		float* color_guide_weight = &_color_guide_weight[0];//trilateral(4)
 		float* space_weight = &_space_weight[0];
 
-		vector<int> _space_ofs_jnt(d*d);
-		vector<int> _space_ofs_src(d*d);
+		vector<int> _space_ofs_jnt(d * d);
+		vector<int> _space_ofs_src(d * d);
 		int* space_ofs_jnt = &_space_ofs_jnt[0];
 		int* space_ofs_src = &_space_ofs_src[0];
 
 		// initialize color-related bilateral filter coefficients
 		for (int i = 0; i < 256 * cn; i++)//trilateral(5)
-			color_weight[i] = (float)std::exp(i*i*gauss_color_coeff);
+			color_weight[i] = (float)std::exp(i * i * gauss_color_coeff);
 
 
 		for (int i = 0; i < 256 * cnj; i++)//trilateral(6)
-			color_guide_weight[i] = (float)std::exp(i*i*gauss_guide_color_coeff);
+			color_guide_weight[i] = (float)std::exp(i * i * gauss_guide_color_coeff);
 
 		int maxk = 0;
 		// initialize space-related bilateral filter coefficients
@@ -264,19 +264,19 @@ namespace cp
 		{
 			for (int j = -radius; j <= radius; j++)
 			{
-				double r = std::sqrt((double)i*i + (double)j*j);
+				double r = std::sqrt((double)i * i + (double)j * j);
 				if (r > radius)
 					continue;
-				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-				space_ofs_jnt[maxk] = (int)(i*jim.cols*cnj + j*cnj);
-				space_ofs_src[maxk++] = (int)(i*sim.cols*cn + j*cn);
+				space_weight[maxk] = (float)std::exp(r * r * gauss_space_coeff);
+				space_ofs_jnt[maxk] = (int)(i * jim.cols * cnj + j * cnj);
+				space_ofs_src[maxk++] = (int)(i * sim.cols * cn + j * cn);
 			}
 		}
 
 		for (int i = 0; i < size.height; i++)
 		{
-			const float* jptr = jim.ptr<float>(i + radius) + radius*cnj;
-			const float* sptr = sim.ptr<float>(i + radius) + radius*cn;
+			const float* jptr = jim.ptr<float>(i + radius) + radius * cnj;
+			const float* sptr = sim.ptr<float>(i + radius) + radius * cn;
 			float* dptr = dst.ptr<float>(i);
 
 			if (cn == 1 && cnj == 1)
@@ -296,7 +296,7 @@ namespace cp
 							* color_weight[cvRound(std::abs(vals - vals0))]
 							* color_guide_weight[cvRound(std::abs(val - val0))];//trilateral(8)
 
-						sum += vals*w;
+						sum += vals * w;
 						wsum += w;
 					}
 					dptr[j] = sum / wsum;
@@ -321,7 +321,7 @@ namespace cp
 						float w = space_weight[k]
 							* color_weight[cvRound(std::abs(bs - bs0) + std::abs(gs - gs0) + std::abs(rs - rs0))]
 							* color_guide_weight[cvRound(std::abs(b - b0) + std::abs(g - g0) + std::abs(r - r0))];//trilateral(11)
-						sum_b += bs*w; sum_g += gs*w; sum_r += rs*w;
+						sum_b += bs * w; sum_g += gs * w; sum_r += rs * w;
 						wsum += w;
 					}
 					dptr[j] = (sum_b / wsum);
@@ -347,7 +347,7 @@ namespace cp
 						float w = space_weight[k]
 							* color_weight[cvRound(std::abs(val - vs0))]
 							* color_guide_weight[cvRound(std::abs(b - b0) + std::abs(g - g0) + std::abs(r - r0))];
-						sum_b += val*w;
+						sum_b += val * w;
 						wsum += w;
 					}
 					dptr[l] = sum_b / wsum;
@@ -371,7 +371,7 @@ namespace cp
 						float w = space_weight[k]
 							* color_weight[cvRound(std::abs(b - bs0) + std::abs(g - gs0) + std::abs(r - rs0))]
 							* color_guide_weight[cvRound(std::abs(val - val0))];
-						sum_b += b*w; sum_g += g*w; sum_r += r*w;
+						sum_b += b * w; sum_g += g * w; sum_r += r * w;
 						wsum += w;
 					}
 					dptr[j] = sum_b / wsum;
@@ -385,16 +385,16 @@ namespace cp
 	void dualBilateralFilterBase_8u(const Mat& src, const Mat& guide, Mat& dst, int d,
 		const double sigma_color, const double sigma_guide_color, const double sigma_space, int borderType)
 	{
-		if (d == 0){ src.copyTo(dst); return; }
+		if (d == 0) { src.copyTo(dst); return; }
 		Size size = src.size();
 		if (dst.empty())dst = Mat::zeros(src.size(), src.type());
 		//CV_Assert( (src.type() == CV_8UC1 || src.type() == CV_8UC3) &&
 		//	src.type() == dst.type() && src.size() == dst.size() &&
 		//	src.data != dst.data );
 
-		const double gauss_color_coeff = -0.5 / (sigma_color*sigma_color);
-		const double gauss_guide_color_coeff = -0.5 / (sigma_guide_color*sigma_guide_color);//trilateral(1)
-		const double gauss_space_coeff = -0.5 / (sigma_space*sigma_space);
+		const double gauss_color_coeff = -0.5 / (sigma_color * sigma_color);
+		const double gauss_guide_color_coeff = -0.5 / (sigma_guide_color * sigma_guide_color);//trilateral(1)
+		const double gauss_space_coeff = -0.5 / (sigma_space * sigma_space);
 
 		if (guide.empty())src.copyTo(guide);
 		const int cn = src.channels();
@@ -410,24 +410,24 @@ namespace cp
 
 		vector<float> _color_weight(cn * 256);//trilateral(2)
 		vector<float> _color_guide_weight(cnj * 256);//trilateral(3)
-		vector<float> _space_weight(d*d);
+		vector<float> _space_weight(d * d);
 		float* color_weight = &_color_weight[0];
 		float* color_guide_weight = &_color_guide_weight[0];//trilateral(4)
 		float* space_weight = &_space_weight[0];
 
-		vector<int> _space_ofs_jnt(d*d);
-		vector<int> _space_ofs_src(d*d);
+		vector<int> _space_ofs_jnt(d * d);
+		vector<int> _space_ofs_src(d * d);
 		int* space_ofs_jnt = &_space_ofs_jnt[0];
 		int* space_ofs_src = &_space_ofs_src[0];
 
 		// initialize color-related bilateral filter coefficients
 		for (int i = 0; i < 256 * cn; i++)//trilateral(5)
 		{
-			color_weight[i] = (float)std::exp(i*i*gauss_color_coeff);
+			color_weight[i] = (float)std::exp(i * i * gauss_color_coeff);
 		}
 		for (int i = 0; i < 256 * cnj; i++)//trilateral(6)
 		{
-			color_guide_weight[i] = (float)std::exp(i*i*gauss_guide_color_coeff);
+			color_guide_weight[i] = (float)std::exp(i * i * gauss_guide_color_coeff);
 		}
 
 		int maxk = 0;
@@ -436,22 +436,22 @@ namespace cp
 		{
 			for (int j = -radius; j <= radius; j++)
 			{
-				double r = std::sqrt((double)i*i + (double)j*j);
+				double r = std::sqrt((double)i * i + (double)j * j);
 				if (r > radius)
 					continue;
-				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
+				space_weight[maxk] = (float)std::exp(r * r * gauss_space_coeff);
 
-				space_ofs_jnt[maxk] = (int)(i*jim.step + j*cnj);
-				space_ofs_src[maxk++] = (int)(i*sim.step + j*cn);
+				space_ofs_jnt[maxk] = (int)(i * jim.step + j * cnj);
+				space_ofs_src[maxk++] = (int)(i * sim.step + j * cn);
 			}
 		}
 
 		//#pragma omp parallel for
 		for (int i = 0; i < size.height; i++)
 		{
-			const uchar* jptr = jim.data + (i + radius)*jim.step + radius*cnj;
-			const uchar* sptr = sim.data + (i + radius)*sim.step + radius*cn;
-			uchar* dptr = dst.data + i*dst.step;
+			const uchar* jptr = jim.data + (i + radius) * jim.step + radius * cnj;
+			const uchar* sptr = sim.data + (i + radius) * sim.step + radius * cn;
+			uchar* dptr = dst.data + i * dst.step;
 
 			if (cn == 1 && cnj == 1)
 			{
@@ -469,7 +469,7 @@ namespace cp
 						float w = space_weight[k]
 							* color_weight[std::abs(vals - vals0)]
 							* color_guide_weight[std::abs(val - val0)];//trilateral(7)
-						sum += vals*w;
+						sum += vals * w;
 						wsum += w;
 					}
 					// overflow is not possible here => there is no need to use CV_CAST_8U
@@ -495,7 +495,7 @@ namespace cp
 						w *= color_weight[abs(bs - bs0) + abs(gs - gs0) + abs(rs - rs0)];
 						w *= color_guide_weight[abs(b - bg0) + abs(g - gg0) + abs(r - rg0)];
 
-						sum_b += bs*w; sum_g += gs*w; sum_r += rs*w;
+						sum_b += bs * w; sum_g += gs * w; sum_r += rs * w;
 						wsum += w;
 					}
 					dptr[j] = (uchar)cvRound(sum_b / wsum); gs0 = dptr[j + 1] = (uchar)cvRound(sum_g / wsum); dptr[j + 2] = (uchar)cvRound(sum_r / wsum);
@@ -518,7 +518,7 @@ namespace cp
 						float w = space_weight[k]
 							* color_weight[std::abs(val - sv0)]
 							* color_guide_weight[std::abs(b - jb0) + std::abs(g - jg0) + std::abs(r - jr0)];
-						sum_b += val*w;
+						sum_b += val * w;
 						wsum += w;
 					}
 					dptr[l] = (uchar)cvRound(sum_b / wsum);
@@ -542,9 +542,9 @@ namespace cp
 						w *= color_weight[abs(bs - bs0) + abs(gs - gs0) + abs(rs - rs0)];
 						w *= color_guide_weight[abs(vg - vg0)];
 
-						sum_b += bs*w;
-						sum_g += gs*w;
-						sum_r += rs*w;
+						sum_b += bs * w;
+						sum_g += gs * w;
+						sum_r += rs * w;
 						wsum += w;
 					}
 					// overflow is not possible here => there is no need to use CV_CAST_8U
@@ -583,7 +583,7 @@ namespace cp
 	{
 	public:
 		WeightedTrilateralFilter_32f_InvokerSSE4(Mat& _dest, const Mat& _temp, const Mat& _weightMap, const Mat& _guide, int _radiusH, int _radiusV, int _maxk,
-			int* _space_ofs, int* _space_w_ofs, int* _space_guide_ofs, float *_space_weight, float *_color_weight, float *_guide_color_weight) :
+			int* _space_ofs, int* _space_w_ofs, int* _space_guide_ofs, float* _space_weight, float* _color_weight, float* _guide_color_weight) :
 			temp(&_temp), weightMap(&_weightMap), dest(&_dest), guide(&_guide), radiusH(_radiusH), radiusV(_radiusV),
 			maxk(_maxk), space_ofs(_space_ofs), space_w_ofs(_space_w_ofs), space_guide_ofs(_space_guide_ofs), space_weight(_space_weight), color_weight(_color_weight), guide_color_weight(_guide_color_weight)
 		{
@@ -680,7 +680,7 @@ namespace cp
 							float w = space_weight[k]
 								* color_weight[cvRound(std::abs(vals - val0s))]
 								* guide_color_weight[cvRound(std::abs(valj - val0j))];
-							sum += vals*w;
+							sum += vals * w;
 							wsum += w;
 						}
 						dptr[j] = sum / wsum;
@@ -741,12 +741,12 @@ namespace cp
 
 								_mm_store_si128((__m128i*)gbuf,
 									_mm_cvtps_epi32(
-									_mm_add_ps(
-									_mm_add_ps(
-									_mm_and_ps(_mm_sub_ps(rval0j, rref), *(const __m128*)v32f_absmask),
-									_mm_and_ps(_mm_sub_ps(gval0j, gref), *(const __m128*)v32f_absmask)),
-									_mm_and_ps(_mm_sub_ps(bval0j, bref), *(const __m128*)v32f_absmask)
-									)
+										_mm_add_ps(
+											_mm_add_ps(
+												_mm_and_ps(_mm_sub_ps(rval0j, rref), *(const __m128*)v32f_absmask),
+												_mm_and_ps(_mm_sub_ps(gval0j, gref), *(const __m128*)v32f_absmask)),
+											_mm_and_ps(_mm_sub_ps(bval0j, bref), *(const __m128*)v32f_absmask)
+										)
 									));
 								__m128 vref = _mm_loadu_ps((sptrj + *ofs));
 								_mm_store_si128((__m128i*)buf, _mm_cvtps_epi32(_mm_and_ps(_mm_sub_ps(val0s, vref), *(const __m128*)v32f_absmask)));
@@ -857,12 +857,12 @@ namespace cp
 
 								_mm_store_si128((__m128i*)gbuf,
 									_mm_cvtps_epi32(
-									_mm_add_ps(
-									_mm_add_ps(
-									_mm_and_ps(_mm_sub_ps(rref, rval0j), *(const __m128*)v32f_absmask),
-									_mm_and_ps(_mm_sub_ps(gref, gval0j), *(const __m128*)v32f_absmask)),
-									_mm_and_ps(_mm_sub_ps(bref, bval0j), *(const __m128*)v32f_absmask)
-									)
+										_mm_add_ps(
+											_mm_add_ps(
+												_mm_and_ps(_mm_sub_ps(rref, rval0j), *(const __m128*)v32f_absmask),
+												_mm_and_ps(_mm_sub_ps(gref, gval0j), *(const __m128*)v32f_absmask)),
+											_mm_and_ps(_mm_sub_ps(bref, bval0j), *(const __m128*)v32f_absmask)
+										)
 									));
 
 								bref = _mm_loadu_ps((sptrbj + *ofs));
@@ -871,12 +871,12 @@ namespace cp
 
 								_mm_store_si128((__m128i*)buf,
 									_mm_cvtps_epi32(
-									_mm_add_ps(
-									_mm_add_ps(
-									_mm_and_ps(_mm_sub_ps(rref, rval0s), *(const __m128*)v32f_absmask),
-									_mm_and_ps(_mm_sub_ps(gref, gval0s), *(const __m128*)v32f_absmask)),
-									_mm_and_ps(_mm_sub_ps(bref, bval0s), *(const __m128*)v32f_absmask)
-									)
+										_mm_add_ps(
+											_mm_add_ps(
+												_mm_and_ps(_mm_sub_ps(rref, rval0s), *(const __m128*)v32f_absmask),
+												_mm_and_ps(_mm_sub_ps(gref, gval0s), *(const __m128*)v32f_absmask)),
+											_mm_and_ps(_mm_sub_ps(bref, bval0s), *(const __m128*)v32f_absmask)
+										)
 									));
 
 								__m128 _w = _mm_set1_ps(*spw);//space weight
@@ -939,9 +939,9 @@ namespace cp
 							wsum += w;
 						}
 						wsum = 1.f / wsum;
-						dptr[3 * j] = sum_b*wsum;
-						dptr[3 * j + 1] = sum_g*wsum;
-						dptr[3 * j + 2] = sum_r*wsum;
+						dptr[3 * j] = sum_b * wsum;
+						dptr[3 * j + 1] = sum_g * wsum;
+						dptr[3 * j + 2] = sum_r * wsum;
 					}
 				}
 
@@ -1007,12 +1007,12 @@ namespace cp
 
 								_mm_store_si128((__m128i*)buf,
 									_mm_cvtps_epi32(
-									_mm_add_ps(
-									_mm_add_ps(
-									_mm_and_ps(_mm_sub_ps(rref, rval0s), *(const __m128*)v32f_absmask),
-									_mm_and_ps(_mm_sub_ps(gref, gval0s), *(const __m128*)v32f_absmask)),
-									_mm_and_ps(_mm_sub_ps(bref, bval0s), *(const __m128*)v32f_absmask)
-									)
+										_mm_add_ps(
+											_mm_add_ps(
+												_mm_and_ps(_mm_sub_ps(rref, rval0s), *(const __m128*)v32f_absmask),
+												_mm_and_ps(_mm_sub_ps(gref, gval0s), *(const __m128*)v32f_absmask)),
+											_mm_and_ps(_mm_sub_ps(bref, bval0s), *(const __m128*)v32f_absmask)
+										)
 									));
 
 								const __m128 _sw = _mm_set1_ps(*spw);//space weight
@@ -1068,27 +1068,27 @@ namespace cp
 							wsum += w;
 						}
 						wsum = 1.f / wsum;
-						dptr[3 * j] = sum_b*wsum;
-						dptr[3 * j + 1] = sum_g*wsum;
-						dptr[3 * j + 2] = sum_r*wsum;
+						dptr[3 * j] = sum_b * wsum;
+						dptr[3 * j + 1] = sum_g * wsum;
+						dptr[3 * j + 2] = sum_r * wsum;
 					}
 				}
 			}
 		}
 	private:
-		const Mat *temp;
-		const Mat *weightMap;
-		Mat *dest;
+		const Mat* temp;
+		const Mat* weightMap;
+		Mat* dest;
 		const Mat* guide;
-		int radiusH, radiusV, maxk, *space_ofs, *space_guide_ofs, *space_w_ofs;
-		float *space_weight, *color_weight, *guide_color_weight;
+		int radiusH, radiusV, maxk, * space_ofs, * space_guide_ofs, * space_w_ofs;
+		float* space_weight, * color_weight, * guide_color_weight;
 	};
 
 	class WeightedTrilateralFilter_8u_InvokerSSE4 : public cv::ParallelLoopBody
 	{
 	public:
 		WeightedTrilateralFilter_8u_InvokerSSE4(Mat& _dest, const Mat& _temp, const Mat& _weightMap, const Mat& _guide, int _radiusH, int _radiusV, int _maxk,
-			int* _space_ofs, int* _space_w_ofs, int* _space_guide_ofs, float *_space_weight, float *_color_weight, float * _guide_color_weight) :
+			int* _space_ofs, int* _space_w_ofs, int* _space_guide_ofs, float* _space_weight, float* _color_weight, float* _guide_color_weight) :
 			temp(&_temp), weightMap(&_weightMap), dest(&_dest), guide(&_guide), radiusH(_radiusH), radiusV(_radiusV),
 			maxk(_maxk), space_ofs(_space_ofs), space_w_ofs(_space_w_ofs), space_guide_ofs(_space_guide_ofs), space_weight(_space_weight), color_weight(_color_weight), guide_color_weight(_guide_color_weight)
 		{
@@ -1225,7 +1225,7 @@ namespace cp
 							int gval = gptr[j + space_guide_ofs[k]];
 							int val = sptr[j + space_ofs[k]];
 							float w = wptr[j + space_w_ofs[k]] * space_weight[k] * color_weight[std::abs(gval - val0)];
-							sum += val*w;
+							sum += val * w;
 							wsum += w;
 						}
 						//overflow is not possible here => there is no need to use CV_CAST_8U
@@ -1676,17 +1676,17 @@ namespace cp
 								* color_weight[std::abs(b - b0) + std::abs(g - g0) + std::abs(r - r0)]
 								* guide_color_weight[std::abs(gb - gb0) + std::abs(gg - gg0) + std::abs(gr - gr0)];
 
-							sum_b += r*w;
-							sum_g += g*w;
-							sum_r += b*w;
+							sum_b += r * w;
+							sum_g += g * w;
+							sum_r += b * w;
 							wsum += w;
 						}
 						//overflow is not possible here => there is no need to use CV_CAST_8U
 
 						wsum = 1.f / wsum;
-						dptr[3 * j] = (uchar)cvRound(sum_b*wsum);
-						dptr[3 * j + 1] = (uchar)cvRound(sum_g*wsum);
-						dptr[3 * j + 2] = (uchar)cvRound(sum_r*wsum);
+						dptr[3 * j] = (uchar)cvRound(sum_b * wsum);
+						dptr[3 * j + 1] = (uchar)cvRound(sum_g * wsum);
+						dptr[3 * j + 2] = (uchar)cvRound(sum_r * wsum);
 					}
 				}
 			}
@@ -1902,10 +1902,10 @@ namespace cp
 							const __m128i mask3 = _mm_setr_epi8(10, 5, 0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15);
 
 							const __m128i bmask1 = _mm_setr_epi8
-								(0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0);
+							(0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0);
 
 							const __m128i bmask2 = _mm_setr_epi8
-								(255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255);
+							(255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255);
 
 							a = _mm_shuffle_epi8(a, mask1);
 							b = _mm_shuffle_epi8(b, mask2);
@@ -1940,21 +1940,21 @@ namespace cp
 						//overflow is not possible here => there is no need to use CV_CAST_8U
 
 						wsum = 1.f / wsum;
-						int b0 = cvRound(sum_b*wsum);
-						int g0 = cvRound(sum_g*wsum);
-						r0 = cvRound(sum_r*wsum);
+						int b0 = cvRound(sum_b * wsum);
+						int g0 = cvRound(sum_g * wsum);
+						r0 = cvRound(sum_r * wsum);
 						dptr[3 * j] = (uchar)b0; dptr[3 * j + 1] = (uchar)g0; dptr[3 * j + 2] = (uchar)r0;
 					}
 				}
 			}
 		}
 	private:
-		const Mat *temp;
-		const Mat *weightMap;
-		Mat *dest;
+		const Mat* temp;
+		const Mat* weightMap;
+		Mat* dest;
 		const Mat* guide;
-		int radiusH, radiusV, maxk, *space_ofs, *space_guide_ofs, *space_w_ofs;
-		float *space_weight, *color_weight, *guide_color_weight;
+		int radiusH, radiusV, maxk, * space_ofs, * space_guide_ofs, * space_w_ofs;
+		float* space_weight, * color_weight, * guide_color_weight;
 	};
 
 
@@ -1962,7 +1962,7 @@ namespace cp
 	{
 	public:
 		DualBilateralFilter_32f_InvokerSSE4(Mat& _dest, const Mat& _temp, const Mat& _guide, int _radiusH, int _radiusV, int _maxk,
-			int* _space_ofs, int* _space_guide_ofs, float *_space_weight, float *_color_weight, float *_guide_color_weight) :
+			int* _space_ofs, int* _space_guide_ofs, float* _space_weight, float* _color_weight, float* _guide_color_weight) :
 			temp(&_temp), dest(&_dest), guide(&_guide), radiusH(_radiusH), radiusV(_radiusV),
 			maxk(_maxk), space_ofs(_space_ofs), space_guide_ofs(_space_guide_ofs), space_weight(_space_weight), color_weight(_color_weight), guide_color_weight(_guide_color_weight)
 		{
@@ -2043,7 +2043,7 @@ namespace cp
 							float gval = gptr[j + space_guide_ofs[k]];
 							float val = sptr[j + space_ofs[k]];
 							float w = space_weight[k] * color_weight[cvRound(std::abs(gval - val0))];
-							sum += val*w;
+							sum += val * w;
 							wsum += w;
 						}
 						dptr[j] = sum / wsum;
@@ -2100,12 +2100,12 @@ namespace cp
 
 								_mm_store_si128((__m128i*)gbuf,
 									_mm_cvtps_epi32(
-									_mm_add_ps(
-									_mm_add_ps(
-									_mm_and_ps(_mm_sub_ps(rvalj, rref), *(const __m128*)v32f_absmask),
-									_mm_and_ps(_mm_sub_ps(gvalj, gref), *(const __m128*)v32f_absmask)),
-									_mm_and_ps(_mm_sub_ps(bvalj, bref), *(const __m128*)v32f_absmask)
-									)
+										_mm_add_ps(
+											_mm_add_ps(
+												_mm_and_ps(_mm_sub_ps(rvalj, rref), *(const __m128*)v32f_absmask),
+												_mm_and_ps(_mm_sub_ps(gvalj, gref), *(const __m128*)v32f_absmask)),
+											_mm_and_ps(_mm_sub_ps(bvalj, bref), *(const __m128*)v32f_absmask)
+										)
 									));
 								__m128 vref = _mm_loadu_ps((sptrj + *ofs));
 								_mm_store_si128((__m128i*)buf, _mm_cvtps_epi32(_mm_and_ps(_mm_sub_ps(sval, vref), *(const __m128*)v32f_absmask)));
@@ -2202,12 +2202,12 @@ namespace cp
 
 								_mm_store_si128((__m128i*)gbuf,
 									_mm_cvtps_epi32(
-									_mm_add_ps(
-									_mm_add_ps(
-									_mm_and_ps(_mm_sub_ps(rvalj, rref), *(const __m128*)v32f_absmask),
-									_mm_and_ps(_mm_sub_ps(gvalj, gref), *(const __m128*)v32f_absmask)),
-									_mm_and_ps(_mm_sub_ps(bvalj, bref), *(const __m128*)v32f_absmask)
-									)
+										_mm_add_ps(
+											_mm_add_ps(
+												_mm_and_ps(_mm_sub_ps(rvalj, rref), *(const __m128*)v32f_absmask),
+												_mm_and_ps(_mm_sub_ps(gvalj, gref), *(const __m128*)v32f_absmask)),
+											_mm_and_ps(_mm_sub_ps(bvalj, bref), *(const __m128*)v32f_absmask)
+										)
 									));
 
 								bref = _mm_loadu_ps((sptrbj + *ofs));
@@ -2215,12 +2215,12 @@ namespace cp
 								rref = _mm_loadu_ps((sptrrj + *ofs));
 								_mm_store_si128((__m128i*)buf,
 									_mm_cvtps_epi32(
-									_mm_add_ps(
-									_mm_add_ps(
-									_mm_and_ps(_mm_sub_ps(rvals, rref), *(const __m128*)v32f_absmask),
-									_mm_and_ps(_mm_sub_ps(gvals, gref), *(const __m128*)v32f_absmask)),
-									_mm_and_ps(_mm_sub_ps(bvals, bref), *(const __m128*)v32f_absmask)
-									)
+										_mm_add_ps(
+											_mm_add_ps(
+												_mm_and_ps(_mm_sub_ps(rvals, rref), *(const __m128*)v32f_absmask),
+												_mm_and_ps(_mm_sub_ps(gvals, gref), *(const __m128*)v32f_absmask)),
+											_mm_and_ps(_mm_sub_ps(bvals, bref), *(const __m128*)v32f_absmask)
+										)
 									));
 
 
@@ -2342,12 +2342,12 @@ namespace cp
 
 								_mm_store_si128((__m128i*)buf,
 									_mm_cvtps_epi32(
-									_mm_add_ps(
-									_mm_add_ps(
-									_mm_and_ps(_mm_sub_ps(rval0s, rref), *(const __m128*)v32f_absmask),
-									_mm_and_ps(_mm_sub_ps(gval0s, gref), *(const __m128*)v32f_absmask)),
-									_mm_and_ps(_mm_sub_ps(bval0s, bref), *(const __m128*)v32f_absmask)
-									)
+										_mm_add_ps(
+											_mm_add_ps(
+												_mm_and_ps(_mm_sub_ps(rval0s, rref), *(const __m128*)v32f_absmask),
+												_mm_and_ps(_mm_sub_ps(gval0s, gref), *(const __m128*)v32f_absmask)),
+											_mm_and_ps(_mm_sub_ps(bval0s, bref), *(const __m128*)v32f_absmask)
+										)
 									));
 
 								__m128 _w = _mm_set1_ps(*spw);
@@ -2396,26 +2396,26 @@ namespace cp
 							wsum += w;
 						}
 						wsum = 1.f / wsum;
-						dptr[3 * j] = sum_b*wsum;
-						dptr[3 * j + 1] = sum_g*wsum;
-						dptr[3 * j + 2] = sum_r*wsum;
+						dptr[3 * j] = sum_b * wsum;
+						dptr[3 * j + 1] = sum_g * wsum;
+						dptr[3 * j + 2] = sum_r * wsum;
 					}
 				}
 			}
 		}
 	private:
-		const Mat *temp;
-		Mat *dest;
+		const Mat* temp;
+		Mat* dest;
 		const Mat* guide;
-		int radiusH, radiusV, maxk, *space_ofs, *space_guide_ofs;
-		float *space_weight, *color_weight, *guide_color_weight;
+		int radiusH, radiusV, maxk, * space_ofs, * space_guide_ofs;
+		float* space_weight, * color_weight, * guide_color_weight;
 	};
 
 	class DualBilateralFilter_8u_InvokerSSE4 : public cv::ParallelLoopBody
 	{
 	public:
 		DualBilateralFilter_8u_InvokerSSE4(Mat& _dest, const Mat& _temp, const Mat& _guide, int _radiusH, int _radiusV, int _maxk,
-			int* _space_ofs, int* _space_guide_ofs, float *_space_weight, float *_color_weight, float *_guide_color_weight) :
+			int* _space_ofs, int* _space_guide_ofs, float* _space_weight, float* _color_weight, float* _guide_color_weight) :
 			temp(&_temp), dest(&_dest), guide(&_guide), radiusH(_radiusH), radiusV(_radiusV),
 			maxk(_maxk), space_ofs(_space_ofs), space_guide_ofs(_space_guide_ofs), space_weight(_space_weight), color_weight(_color_weight), guide_color_weight(_guide_color_weight)
 		{
@@ -2544,7 +2544,7 @@ namespace cp
 							float w = space_weight[k]
 								* color_weight[std::abs(sval - sv0)]
 								* guide_color_weight[std::abs(gval - gv0)];
-							sum += sval*w;
+							sum += sval * w;
 							wsum += w;
 						}
 						//overflow is not possible here => there is no need to use CV_CAST_8U
@@ -2984,7 +2984,7 @@ namespace cp
 							wsum += w;
 						}
 
-						wsum = 1.f / wsum; sb0 = cvRound(sum_b*wsum); sg0 = cvRound(sum_g*wsum); sr0 = cvRound(sum_r*wsum);
+						wsum = 1.f / wsum; sb0 = cvRound(sum_b * wsum); sg0 = cvRound(sum_g * wsum); sr0 = cvRound(sum_r * wsum);
 						dptr[3 * j] = (uchar)sr0; dptr[3 * j + 1] = (uchar)sg0; dptr[3 * j + 2] = (uchar)sb0;
 					}
 				}
@@ -3192,10 +3192,10 @@ namespace cp
 							const __m128i mask3 = _mm_setr_epi8(10, 5, 0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15);
 
 							const __m128i bmask1 = _mm_setr_epi8
-								(0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0);
+							(0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0);
 
 							const __m128i bmask2 = _mm_setr_epi8
-								(255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255);
+							(255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255);
 
 							a = _mm_shuffle_epi8(a, mask1);
 							b = _mm_shuffle_epi8(b, mask2);
@@ -3235,26 +3235,26 @@ namespace cp
 							wsum += w;
 						}
 						wsum = 1.f / wsum;
-						dptr[3 * j] = (uchar)cvRound(sum_b*wsum);
-						dptr[3 * j + 1] = (uchar)cvRound(sum_g*wsum);
-						dptr[3 * j + 2] = (uchar)cvRound(sum_r*wsum);
+						dptr[3 * j] = (uchar)cvRound(sum_b * wsum);
+						dptr[3 * j + 1] = (uchar)cvRound(sum_g * wsum);
+						dptr[3 * j + 2] = (uchar)cvRound(sum_r * wsum);
 					}
 				}
 			}
 		}
 	private:
-		const Mat *temp;
-		Mat *dest;
+		const Mat* temp;
+		Mat* dest;
 		const Mat* guide;
-		int radiusH, radiusV, maxk, *space_ofs, *space_guide_ofs;
-		float *space_weight, *color_weight, *guide_color_weight;
+		int radiusH, radiusV, maxk, * space_ofs, * space_guide_ofs;
+		float* space_weight, * color_weight, * guide_color_weight;
 	};
 
 
 
 	void weightedTrilateralFilter_32f(const Mat& src, Mat& weight, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_guide_color, double sigma_space, int borderType)
 	{
-		if (kernelSize.width <= 1 && kernelSize.height <= 1){ src.copyTo(dst); return; }
+		if (kernelSize.width <= 1 && kernelSize.height <= 1) { src.copyTo(dst); return; }
 
 		int cn = src.channels();
 		int cng = guide.channels();
@@ -3272,9 +3272,9 @@ namespace cp
 		if (sigma_space <= 0)
 			sigma_space = 1;
 
-		double gauss_color_coeff = -0.5 / (sigma_color*sigma_color);
-		double gauss_guide_color_coeff = -0.5 / (sigma_guide_color*sigma_guide_color);
-		double gauss_space_coeff = -0.5 / (sigma_space*sigma_space);
+		double gauss_color_coeff = -0.5 / (sigma_color * sigma_color);
+		double gauss_guide_color_coeff = -0.5 / (sigma_guide_color * sigma_guide_color);
+		double gauss_space_coeff = -0.5 / (sigma_space * sigma_space);
 
 		int radiusH = kernelSize.width >> 1;
 		int radiusV = kernelSize.height >> 1;
@@ -3327,17 +3327,17 @@ namespace cp
 		double minv, maxv;
 		minMaxLoc(src, &minv, &maxv);
 		const int color_range = cvRound(maxv - minv);
-		vector<float> _color_weight(cn*color_range);
+		vector<float> _color_weight(cn * color_range);
 		minMaxLoc(guide, &minv, &maxv);
 		const int color_range_guide = cvRound(maxv - minv);
-		vector<float> _color_guide_weight(cng*color_range_guide);
+		vector<float> _color_guide_weight(cng * color_range_guide);
 		float* color_weight = &_color_weight[0];
 		float* color_guide_weight = &_color_guide_weight[0];
 		// initialize color-related bilateral filter coefficients
-		for (i = 0; i < color_range*cn; i++)
-			color_weight[i] = (float)std::exp(i*i*gauss_color_coeff);
-		for (i = 0; i < color_range_guide*cng; i++)
-			color_guide_weight[i] = (float)std::exp(i*i*gauss_guide_color_coeff);
+		for (i = 0; i < color_range * cn; i++)
+			color_weight[i] = (float)std::exp(i * i * gauss_color_coeff);
+		for (i = 0; i < color_range_guide * cng; i++)
+			color_guide_weight[i] = (float)std::exp(i * i * gauss_guide_color_coeff);
 
 		vector<float> _space_weight(kernelSize.area() + 1);
 
@@ -3357,13 +3357,13 @@ namespace cp
 
 			for (; j <= radiusH; j++)
 			{
-				double r = std::sqrt((double)i*i + (double)j*j);
+				double r = std::sqrt((double)i * i + (double)j * j);
 				if (r > max(radiusV, radiusH))
 					continue;
-				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-				space_ofs[maxk] = (int)(i*temp.cols*cn + j);
-				space_w_ofs[maxk] = (int)(i*tempw.cols + j);
-				space_guide_ofs[maxk++] = (int)(i*tempg.cols*cng + j);
+				space_weight[maxk] = (float)std::exp(r * r * gauss_space_coeff);
+				space_ofs[maxk] = (int)(i * temp.cols * cn + j);
+				space_w_ofs[maxk] = (int)(i * tempw.cols + j);
+				space_guide_ofs[maxk++] = (int)(i * tempg.cols * cng + j);
 			}
 		}
 
@@ -3375,7 +3375,7 @@ namespace cp
 
 	void weightedTrilateralFilter_8u(const Mat& src, Mat& weight, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_guide_color, double sigma_space, int borderType)
 	{
-		if (kernelSize.width <= 1 && kernelSize.height <= 1){ src.copyTo(dst); return; }
+		if (kernelSize.width <= 1 && kernelSize.height <= 1) { src.copyTo(dst); return; }
 
 		int cn = src.channels();
 		int cng = guide.channels();
@@ -3393,9 +3393,9 @@ namespace cp
 		if (sigma_space <= 0)
 			sigma_space = 1;
 
-		double gauss_color_coeff = -0.5 / (sigma_color*sigma_color);
-		double gauss_guide_color_coeff = -0.5 / (sigma_guide_color*sigma_guide_color);
-		double gauss_space_coeff = -0.5 / (sigma_space*sigma_space);
+		double gauss_color_coeff = -0.5 / (sigma_color * sigma_color);
+		double gauss_guide_color_coeff = -0.5 / (sigma_guide_color * sigma_guide_color);
+		double gauss_space_coeff = -0.5 / (sigma_space * sigma_space);
 
 
 		int radiusH = kernelSize.width >> 1;
@@ -3463,9 +3463,9 @@ namespace cp
 		// initialize color-related bilateral filter coefficients
 
 		for (i = 0; i < 256 * cn; i++)
-			color_weight[i] = (float)std::exp(i*i*gauss_color_coeff);
+			color_weight[i] = (float)std::exp(i * i * gauss_color_coeff);
 		for (i = 0; i < 256 * cng; i++)
-			color_guide_weight[i] = (float)std::exp(i*i*gauss_guide_color_coeff);
+			color_guide_weight[i] = (float)std::exp(i * i * gauss_guide_color_coeff);
 
 		// initialize space-related bilateral filter coefficients
 		for (i = -radiusV, maxk = 0; i <= radiusV; i++)
@@ -3474,13 +3474,13 @@ namespace cp
 
 			for (; j <= radiusH; j++)
 			{
-				double r = std::sqrt((double)i*i + (double)j*j);
+				double r = std::sqrt((double)i * i + (double)j * j);
 				if (r > max(radiusV, radiusH))
 					continue;
-				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-				space_ofs[maxk] = (int)(i*temp.cols*cn + j);
-				space_w_ofs[maxk] = (int)(i*tempw.cols + j);
-				space_guide_ofs[maxk++] = (int)(i*tempg.cols*cng + j);
+				space_weight[maxk] = (float)std::exp(r * r * gauss_space_coeff);
+				space_ofs[maxk] = (int)(i * temp.cols * cn + j);
+				space_w_ofs[maxk] = (int)(i * tempw.cols + j);
+				space_guide_ofs[maxk++] = (int)(i * tempg.cols * cng + j);
 			}
 		}
 
@@ -3493,7 +3493,7 @@ namespace cp
 
 	void dualBilateralFilter_32f(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, const double sigma_color, const double sigma_guide_color, const double sigma_space, const int borderType, const bool isRectangle)
 	{
-		if (kernelSize.width == 0 || kernelSize.height == 0){ src.copyTo(dst); return; }
+		if (kernelSize.width == 0 || kernelSize.height == 0) { src.copyTo(dst); return; }
 		int cn = src.channels();
 		int cng = guide.channels();
 		int i, j, maxk;
@@ -3503,9 +3503,9 @@ namespace cp
 			(guide.type() == CV_32FC1 || guide.type() == CV_32FC3) &&
 			src.type() == dst.type() && src.size() == dst.size());
 
-		double gauss_color_coeff = -0.5 / (sigma_color*sigma_color);
-		double gauss_guide_color_coeff = -0.5 / (sigma_guide_color*sigma_guide_color);
-		double gauss_space_coeff = -0.5 / (sigma_space*sigma_space);
+		double gauss_color_coeff = -0.5 / (sigma_color * sigma_color);
+		double gauss_guide_color_coeff = -0.5 / (sigma_guide_color * sigma_guide_color);
+		double gauss_space_coeff = -0.5 / (sigma_space * sigma_space);
 
 		int radiusH = kernelSize.width >> 1;
 		int radiusV = kernelSize.height >> 1;
@@ -3553,19 +3553,19 @@ namespace cp
 		minMaxLoc(guide, &minv, &maxv);
 		const int color_range_guide = cvRound(maxv - minv) + 1;
 
-		vector<float> _color_weight(cn*color_range);
-		vector<float> _color_guide_weight(cng*color_range_guide);
+		vector<float> _color_weight(cn * color_range);
+		vector<float> _color_guide_weight(cng * color_range_guide);
 
 		float* color_weight = &_color_weight[0];
 		float* color_guide_weight = &_color_guide_weight[0];
 
-		for (i = 0; i < color_range*cn; i++)
+		for (i = 0; i < color_range * cn; i++)
 		{
-			color_weight[i] = (float)std::exp(i*i*gauss_color_coeff);
+			color_weight[i] = (float)std::exp(i * i * gauss_color_coeff);
 		}
-		for (i = 0; i < color_range_guide*cng; i++)
+		for (i = 0; i < color_range_guide * cng; i++)
 		{
-			color_guide_weight[i] = (float)std::exp(i*i*gauss_guide_color_coeff);
+			color_guide_weight[i] = (float)std::exp(i * i * gauss_guide_color_coeff);
 		}
 
 		vector<float> _space_weight(kernelSize.area() + 1);
@@ -3584,11 +3584,11 @@ namespace cp
 				j = -radiusH;
 				for (; j <= radiusH; j++)
 				{
-					double r = std::sqrt((double)i*i + (double)j*j);
+					double r = std::sqrt((double)i * i + (double)j * j);
 
-					space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-					space_ofs[maxk] = (int)(i*temp.cols*cn + j);
-					space_guide_ofs[maxk++] = (int)(i*tempg.cols*cng + j);
+					space_weight[maxk] = (float)std::exp(r * r * gauss_space_coeff);
+					space_ofs[maxk] = (int)(i * temp.cols * cn + j);
+					space_guide_ofs[maxk++] = (int)(i * tempg.cols * cng + j);
 				}
 			}
 		}
@@ -3599,12 +3599,12 @@ namespace cp
 				j = -radiusH;
 				for (; j <= radiusH; j++)
 				{
-					double r = std::sqrt((double)i*i + (double)j*j);
+					double r = std::sqrt((double)i * i + (double)j * j);
 					if (r > max(radiusV, radiusH)) continue;
 
-					space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-					space_ofs[maxk] = (int)(i*temp.cols*cn + j);
-					space_guide_ofs[maxk++] = (int)(i*tempg.cols*cng + j);
+					space_weight[maxk] = (float)std::exp(r * r * gauss_space_coeff);
+					space_ofs[maxk] = (int)(i * temp.cols * cn + j);
+					space_guide_ofs[maxk++] = (int)(i * tempg.cols * cng + j);
 				}
 			}
 		}
@@ -3618,7 +3618,7 @@ namespace cp
 
 	void dualBilateralFilter_8u(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, const double sigma_color, const double sigma_guide_color, const double sigma_space, const int borderType, bool isRectangle)
 	{
-		if (kernelSize.width == 0 || kernelSize.height == 0){ src.copyTo(dst); return; }
+		if (kernelSize.width == 0 || kernelSize.height == 0) { src.copyTo(dst); return; }
 		int cn = src.channels();
 		int cng = guide.channels();
 		int i, j, maxk;
@@ -3628,9 +3628,9 @@ namespace cp
 			(guide.type() == CV_8UC1 || guide.type() == CV_8UC3) &&
 			src.type() == dst.type() && src.size() == dst.size());
 
-		double gauss_color_coeff = -0.5 / (sigma_color*sigma_color);
-		double gauss_guide_color_coeff = -0.5 / (sigma_guide_color*sigma_guide_color);
-		double gauss_space_coeff = -0.5 / (sigma_space*sigma_space);
+		double gauss_color_coeff = -0.5 / (sigma_color * sigma_color);
+		double gauss_guide_color_coeff = -0.5 / (sigma_guide_color * sigma_guide_color);
+		double gauss_space_coeff = -0.5 / (sigma_space * sigma_space);
 
 
 
@@ -3690,11 +3690,11 @@ namespace cp
 
 		for (i = 0; i < 256 * cn; i++)
 		{
-			color_weight[i] = (float)std::exp(i*i*gauss_color_coeff);
+			color_weight[i] = (float)std::exp(i * i * gauss_color_coeff);
 		}
 		for (i = 0; i < 256 * cng; i++)
 		{
-			color_guide_weight[i] = (float)std::exp(i*i*gauss_guide_color_coeff);
+			color_guide_weight[i] = (float)std::exp(i * i * gauss_guide_color_coeff);
 		}
 
 		// initialize space-related bilateral filter coefficients
@@ -3706,11 +3706,11 @@ namespace cp
 
 				for (; j <= radiusH; j++)
 				{
-					double r = std::sqrt((double)i*i + (double)j*j);
-					space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
+					double r = std::sqrt((double)i * i + (double)j * j);
+					space_weight[maxk] = (float)std::exp(r * r * gauss_space_coeff);
 
-					space_ofs[maxk] = (int)(i*temp.cols*cn + j);
-					space_guide_ofs[maxk++] = (int)(i*tempg.cols*cng + j);
+					space_ofs[maxk] = (int)(i * temp.cols * cn + j);
+					space_guide_ofs[maxk++] = (int)(i * tempg.cols * cng + j);
 				}
 			}
 		}
@@ -3722,13 +3722,13 @@ namespace cp
 
 				for (; j <= radiusH; j++)
 				{
-					double r = std::sqrt((double)i*i + (double)j*j);
+					double r = std::sqrt((double)i * i + (double)j * j);
 					if (r > max(radiusV, radiusH)) continue;
 
-					space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
+					space_weight[maxk] = (float)std::exp(r * r * gauss_space_coeff);
 
-					space_ofs[maxk] = (int)(i*temp.cols*cn + j);
-					space_guide_ofs[maxk++] = (int)(i*tempg.cols*cng + j);
+					space_ofs[maxk] = (int)(i * temp.cols * cn + j);
+					space_guide_ofs[maxk++] = (int)(i * tempg.cols * cng + j);
 				}
 			}
 		}
@@ -3788,7 +3788,7 @@ namespace cp
 	{
 	public:
 		DualBilateralWeightMap_32f_InvokerSSE4(Mat& _dest, const Mat& _temp, const Mat& _guide, int _radiusH, int _radiusV, int _maxk,
-			int* _space_ofs, int* _space_guide_ofs, float *_space_weight, float *_color_weight, float *_guide_color_weight) :
+			int* _space_ofs, int* _space_guide_ofs, float* _space_weight, float* _color_weight, float* _guide_color_weight) :
 			temp(&_temp), dest(&_dest), guide(&_guide), radiusH(_radiusH), radiusV(_radiusV),
 			maxk(_maxk), space_ofs(_space_ofs), space_guide_ofs(_space_guide_ofs), space_weight(_space_weight), color_weight(_color_weight), guide_color_weight(_guide_color_weight)
 		{
@@ -3801,10 +3801,9 @@ namespace cp
 			int cng = (guide->rows - 2 * radiusV) / dest->rows;
 			Size size = dest->size();
 
-#if CV_SSE4_1
 			bool haveSSE4 = checkHardwareSupport(CV_CPU_SSE4_1);
 			const int CV_DECL_ALIGNED(16) v32f_absmask[] = { 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff };
-#endif
+
 			if (cn == 1 && cng == 1)
 			{
 				int CV_DECL_ALIGNED(16) buf[4];
@@ -3823,7 +3822,7 @@ namespace cp
 				for (i = range.start; i != range.end; i++, dptr += dstep, sptr += sstep, gptr += gstep)
 				{
 					j = 0;
-#if CV_SSE4_1
+
 					if (haveSSE4)
 					{
 						for (; j < size.width; j += 4)//4 pixel unit
@@ -3860,7 +3859,7 @@ namespace cp
 							_mm_stream_ps(dptr + j, wval1);
 						}
 					}
-#endif
+
 					for (; j < size.width; j++)
 					{
 						const float val0 = sptr[j];
@@ -3896,7 +3895,7 @@ namespace cp
 				for (i = range.start; i != range.end; i++, sptrr += sstep, sptrg += sstep, sptrb += sstep, gptrr += gstep, gptrg += gstep, gptrb += gstep, dptr += dstep)
 				{
 					j = 0;
-#if CV_SSE4_1
+
 					if (haveSSE4)
 					{
 						for (; j < size.width; j += 4)//4 pixel unit
@@ -3929,12 +3928,12 @@ namespace cp
 
 								_mm_store_si128((__m128i*)buf,
 									_mm_cvtps_epi32(
-									_mm_add_ps(
-									_mm_add_ps(
-									_mm_and_ps(_mm_sub_ps(rval0s, rref), *(const __m128*)v32f_absmask),
-									_mm_and_ps(_mm_sub_ps(gval0s, gref), *(const __m128*)v32f_absmask)),
-									_mm_and_ps(_mm_sub_ps(bval0s, bref), *(const __m128*)v32f_absmask)
-									)
+										_mm_add_ps(
+											_mm_add_ps(
+												_mm_and_ps(_mm_sub_ps(rval0s, rref), *(const __m128*)v32f_absmask),
+												_mm_and_ps(_mm_sub_ps(gval0s, gref), *(const __m128*)v32f_absmask)),
+											_mm_and_ps(_mm_sub_ps(bval0s, bref), *(const __m128*)v32f_absmask)
+										)
 									));
 
 								bref = _mm_loadu_ps((gptrbj + *ofs));
@@ -3943,12 +3942,12 @@ namespace cp
 
 								_mm_store_si128((__m128i*)gbuf,
 									_mm_cvtps_epi32(
-									_mm_add_ps(
-									_mm_add_ps(
-									_mm_and_ps(_mm_sub_ps(rval0j, rref), *(const __m128*)v32f_absmask),
-									_mm_and_ps(_mm_sub_ps(gval0j, gref), *(const __m128*)v32f_absmask)),
-									_mm_and_ps(_mm_sub_ps(bval0j, bref), *(const __m128*)v32f_absmask)
-									)
+										_mm_add_ps(
+											_mm_add_ps(
+												_mm_and_ps(_mm_sub_ps(rval0j, rref), *(const __m128*)v32f_absmask),
+												_mm_and_ps(_mm_sub_ps(gval0j, gref), *(const __m128*)v32f_absmask)),
+											_mm_and_ps(_mm_sub_ps(bval0j, bref), *(const __m128*)v32f_absmask)
+										)
 									));
 
 								__m128 _w = _mm_set1_ps(*spw);//位置のexp重みをレジスタにストア
@@ -3959,7 +3958,7 @@ namespace cp
 							_mm_stream_ps(dptr + j, wval1);
 						}
 					}
-#endif
+
 					for (; j < size.width; j++)
 					{
 						const float* sptrrj = sptrr + j;
@@ -4000,7 +3999,6 @@ namespace cp
 				for (i = range.start; i != range.end; i++, sptr += sstep, gptrr += gstep, gptrg += gstep, gptrb += gstep, dptr += dstep)
 				{
 					j = 0;
-#if CV_SSE4_1
 					if (haveSSE4)
 					{
 						for (; j < size.width; j += 4)//4 pixel unit
@@ -4029,12 +4027,12 @@ namespace cp
 
 								_mm_store_si128((__m128i*)gbuf,
 									_mm_cvtps_epi32(
-									_mm_add_ps(
-									_mm_add_ps(
-									_mm_and_ps(_mm_sub_ps(rval0j, rref), *(const __m128*)v32f_absmask),
-									_mm_and_ps(_mm_sub_ps(gval0j, gref), *(const __m128*)v32f_absmask)),
-									_mm_and_ps(_mm_sub_ps(bval0j, bref), *(const __m128*)v32f_absmask)
-									)
+										_mm_add_ps(
+											_mm_add_ps(
+												_mm_and_ps(_mm_sub_ps(rval0j, rref), *(const __m128*)v32f_absmask),
+												_mm_and_ps(_mm_sub_ps(gval0j, gref), *(const __m128*)v32f_absmask)),
+											_mm_and_ps(_mm_sub_ps(bval0j, bref), *(const __m128*)v32f_absmask)
+										)
 									));
 
 								bref = _mm_loadu_ps((sptrj + *ofs));
@@ -4049,7 +4047,6 @@ namespace cp
 							_mm_stream_ps(dptr + j, wval1);
 						}
 					}
-#endif
 					for (; j < size.width; j++)
 					{
 						/*
@@ -4089,7 +4086,7 @@ namespace cp
 				for (i = range.start; i != range.end; i++, sptrr += sstep, sptrg += sstep, sptrb += sstep, gptr += gstep, dptr += dstep)
 				{
 					j = 0;
-#if CV_SSE4_1
+
 					if (haveSSE4)
 					{
 						for (; j < size.width; j += 4)//4 pixel unit
@@ -4118,12 +4115,12 @@ namespace cp
 
 								_mm_store_si128((__m128i*)buf,
 									_mm_cvtps_epi32(
-									_mm_add_ps(
-									_mm_add_ps(
-									_mm_and_ps(_mm_sub_ps(rval0s, rref), *(const __m128*)v32f_absmask),
-									_mm_and_ps(_mm_sub_ps(gval0s, gref), *(const __m128*)v32f_absmask)),
-									_mm_and_ps(_mm_sub_ps(bval0s, bref), *(const __m128*)v32f_absmask)
-									)
+										_mm_add_ps(
+											_mm_add_ps(
+												_mm_and_ps(_mm_sub_ps(rval0s, rref), *(const __m128*)v32f_absmask),
+												_mm_and_ps(_mm_sub_ps(gval0s, gref), *(const __m128*)v32f_absmask)),
+											_mm_and_ps(_mm_sub_ps(bval0s, bref), *(const __m128*)v32f_absmask)
+										)
 									));
 
 								bref = _mm_loadu_ps((gptrj + *gofs));
@@ -4138,7 +4135,7 @@ namespace cp
 							_mm_stream_ps(dptr + j, wval1);
 						}
 					}
-#endif
+
 					for (; j < size.width; j++)
 					{
 						/*
@@ -4162,11 +4159,11 @@ namespace cp
 		}
 	private:
 		const Mat* guide;
-		const Mat *temp;
+		const Mat* temp;
 
-		Mat *dest;
-		int radiusH, radiusV, maxk, *space_ofs, *space_guide_ofs;
-		float *space_weight, *color_weight, *guide_color_weight;
+		Mat* dest;
+		int radiusH, radiusV, maxk, * space_ofs, * space_guide_ofs;
+		float* space_weight, * color_weight, * guide_color_weight;
 	};
 
 	// s = 1 j=3 support only 
@@ -4174,7 +4171,7 @@ namespace cp
 	{
 	public:
 		TrilateralWeightMapXOR_8u_InvokerSSE4(Mat& _dest, const Mat& _temp, const Mat& _guide, int _radiusH, int _radiusV, int _maxk,
-			int* _space_ofs, int* _space_guide_ofs, float *_space_weight, float *_color_weight, float *_guide_color_weight) :
+			int* _space_ofs, int* _space_guide_ofs, float* _space_weight, float* _color_weight, float* _guide_color_weight) :
 			temp(&_temp), dest(&_dest), guide(&_guide), radiusH(_radiusH), radiusV(_radiusV),
 			maxk(_maxk), space_ofs(_space_ofs), space_guide_ofs(_space_guide_ofs), space_weight(_space_weight), color_weight(_color_weight), guide_color_weight(_guide_color_weight)
 		{
@@ -4737,11 +4734,11 @@ namespace cp
 			}
 		}
 	private:
-		const Mat *temp;
-		Mat *dest;
+		const Mat* temp;
+		Mat* dest;
 		const Mat* guide;
-		int radiusH, radiusV, maxk, *space_ofs, *space_guide_ofs;
-		float *space_weight, *color_weight, *guide_color_weight;
+		int radiusH, radiusV, maxk, * space_ofs, * space_guide_ofs;
+		float* space_weight, * color_weight, * guide_color_weight;
 	};
 
 	// s = 1 j=3 support only 
@@ -4749,7 +4746,7 @@ namespace cp
 	{
 	public:
 		TrilateralWeightMapSGB_8u_InvokerSSE4(Mat& _dest, const Mat& _temp, const Mat& _guide, int _radiusH, int _radiusV, int _maxk,
-			int* _space_ofs, int* _space_guide_ofs, float *_space_weight, float *_color_weight, float *_guide_color_weight) :
+			int* _space_ofs, int* _space_guide_ofs, float* _space_weight, float* _color_weight, float* _guide_color_weight) :
 			temp(&_temp), dest(&_dest), guide(&_guide), radiusH(_radiusH), radiusV(_radiusV),
 			maxk(_maxk), space_ofs(_space_ofs), space_guide_ofs(_space_guide_ofs), space_weight(_space_weight), color_weight(_color_weight), guide_color_weight(_guide_color_weight)
 		{
@@ -5315,18 +5312,18 @@ namespace cp
 			}
 		}
 	private:
-		const Mat *temp;
-		Mat *dest;
+		const Mat* temp;
+		Mat* dest;
 		const Mat* guide;
-		int radiusH, radiusV, maxk, *space_ofs, *space_guide_ofs;
-		float *space_weight, *color_weight, *guide_color_weight;
+		int radiusH, radiusV, maxk, * space_ofs, * space_guide_ofs;
+		float* space_weight, * color_weight, * guide_color_weight;
 	};
 
 	class TrilateralWeightMap_8u_InvokerSSE4 : public cv::ParallelLoopBody
 	{
 	public:
 		TrilateralWeightMap_8u_InvokerSSE4(Mat& _dest, const Mat& _temp, const Mat& _guide, int _radiusH, int _radiusV, int _maxk,
-			int* _space_ofs, int* _space_guide_ofs, float *_space_weight, float *_color_weight, float *_guide_color_weight) :
+			int* _space_ofs, int* _space_guide_ofs, float* _space_weight, float* _color_weight, float* _guide_color_weight) :
 			temp(&_temp), dest(&_dest), guide(&_guide), radiusH(_radiusH), radiusV(_radiusV),
 			maxk(_maxk), space_ofs(_space_ofs), space_guide_ofs(_space_guide_ofs), space_weight(_space_weight), color_weight(_color_weight), guide_color_weight(_guide_color_weight)
 		{
@@ -5829,11 +5826,11 @@ namespace cp
 			}
 		}
 	private:
-		const Mat *temp;
-		Mat *dest;
+		const Mat* temp;
+		Mat* dest;
 		const Mat* guide;
-		int radiusH, radiusV, maxk, *space_ofs, *space_guide_ofs;
-		float *space_weight, *color_weight, *guide_color_weight;
+		int radiusH, radiusV, maxk, * space_ofs, * space_guide_ofs;
+		float* space_weight, * color_weight, * guide_color_weight;
 	};
 
 	void dualBilateralWeightMap_32f(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_guide_color, double sigma_space, int borderType)
@@ -5855,9 +5852,9 @@ namespace cp
 			sigma_space = 1;
 
 
-		double gauss_color_coeff = -0.5 / (sigma_color*sigma_color);
-		double gauss_guide_color_coeff = -0.5 / (sigma_guide_color*sigma_guide_color);
-		double gauss_space_coeff = -0.5 / (sigma_space*sigma_space);
+		double gauss_color_coeff = -0.5 / (sigma_color * sigma_color);
+		double gauss_guide_color_coeff = -0.5 / (sigma_guide_color * sigma_guide_color);
+		double gauss_space_coeff = -0.5 / (sigma_space * sigma_space);
 
 		int radiusH = kernelSize.width >> 1;
 		int radiusV = kernelSize.height >> 1;
@@ -5898,22 +5895,22 @@ namespace cp
 
 			copyMakeBorder(guide, tempg, radiusV, radiusV, radiusH + lpad, radiusH + rpad, borderType);
 		}
-	
+
 		double minv, maxv;
 		minMaxLoc(src, &minv, &maxv);
 		const int color_range = cvRound(maxv - minv);
-		vector<float> _color_weight(cn*color_range);
+		vector<float> _color_weight(cn * color_range);
 		minMaxLoc(guide, &minv, &maxv);
 		const int color_range_guide = cvRound(maxv - minv);
-		vector<float> _color_guide_weight(cng*color_range_guide);
+		vector<float> _color_guide_weight(cng * color_range_guide);
 		float* color_weight = &_color_weight[0];
 		float* color_guide_weight = &_color_guide_weight[0];
 		// initialize color-related bilateral filter coefficients
-		
-		for (i = 0; i < color_range*cn; i++)
-			color_weight[i] = (float)std::exp(i*i*gauss_color_coeff);
-		for (i = 0; i < color_range_guide*cng; i++)
-			color_guide_weight[i] = (float)std::exp(i*i*gauss_guide_color_coeff);
+
+		for (i = 0; i < color_range * cn; i++)
+			color_weight[i] = (float)std::exp(i * i * gauss_color_coeff);
+		for (i = 0; i < color_range_guide * cng; i++)
+			color_guide_weight[i] = (float)std::exp(i * i * gauss_guide_color_coeff);
 
 		vector<float> _space_weight(kernelSize.area() + 1);
 		float* space_weight = &_space_weight[0];
@@ -5922,20 +5919,20 @@ namespace cp
 		vector<int> _space_g_ofs(kernelSize.area() + 1);
 		int* space_ofs = &_space_ofs[0];
 		int* space_g_ofs = &_space_g_ofs[0];
-		
+
 		// initialize space-related bilateral filter coefficients
 		for (i = -radiusV, maxk = 0; i <= radiusV; i++)
 		{
 			for (j = -radiusH; j <= radiusH; j++)
 			{
-				double r = std::sqrt((double)i*i + (double)j*j);
+				double r = std::sqrt((double)i * i + (double)j * j);
 				if (r > max(radiusV, radiusH)) continue;
-				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-				space_g_ofs[maxk] = (int)(i*tempg.cols*cng + j);
-				space_ofs[maxk++] = (int)(i*temp.cols*cn + j);
+				space_weight[maxk] = (float)std::exp(r * r * gauss_space_coeff);
+				space_g_ofs[maxk] = (int)(i * tempg.cols * cng + j);
+				space_ofs[maxk++] = (int)(i * temp.cols * cn + j);
 			}
 		}
-		
+
 		Mat dest = Mat::zeros(Size(src.cols + dpad, src.rows), CV_32F);
 		DualBilateralWeightMap_32f_InvokerSSE4 body(dest, temp, tempg, radiusH, radiusV, maxk, space_ofs, space_g_ofs, space_weight, color_weight, color_guide_weight);
 		parallel_for_(Range(0, size.height), body);
@@ -5960,9 +5957,9 @@ namespace cp
 		if (sigma_space <= 0)
 			sigma_space = 1;
 
-		double gauss_color_coeff = -0.5 / (sigma_color*sigma_color);
-		double gauss_guide_color_coeff = -0.5 / (sigma_guide_color*sigma_guide_color);
-		double gauss_space_coeff = -0.5 / (sigma_space*sigma_space);
+		double gauss_color_coeff = -0.5 / (sigma_color * sigma_color);
+		double gauss_guide_color_coeff = -0.5 / (sigma_guide_color * sigma_guide_color);
+		double gauss_space_coeff = -0.5 / (sigma_space * sigma_space);
 
 		int radiusH = kernelSize.width >> 1;
 		int radiusV = kernelSize.height >> 1;
@@ -6022,13 +6019,13 @@ namespace cp
 		for (i = 0; i < 256 * cn; i++)
 		{
 			int v = (int)max(i - sigma_color, 0.0);
-			color_weight[i] = (float)max(1.0 - 1.0 / (sigma_color*sigma_color)*v*v, 0.0);//1.0- (float)std::exp(i*i*gauss_color_coeff);
+			color_weight[i] = (float)max(1.0 - 1.0 / (sigma_color * sigma_color) * v * v, 0.0);//1.0- (float)std::exp(i*i*gauss_color_coeff);
 		}
 		for (i = 0; i < 256 * cng; i++)
 		{
 			int v = max(i - 2, 0);
 			//color_guide_weight[i] = (float)std::exp(v*v*gauss_guide_color_coeff);
-			color_guide_weight[i] = (float)std::exp(i*i*gauss_guide_color_coeff);
+			color_guide_weight[i] = (float)std::exp(i * i * gauss_guide_color_coeff);
 		}
 
 		// initialize space-related bilateral filter coefficients
@@ -6038,12 +6035,12 @@ namespace cp
 
 			for (; j <= radiusH; j++)
 			{
-				double r = std::sqrt((double)i*i + (double)j*j);
+				double r = std::sqrt((double)i * i + (double)j * j);
 				if (r > max(radiusV, radiusH))
 					continue;
-				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-				space_g_ofs[maxk] = (int)(i*tempg.cols*cng + j);
-				space_ofs[maxk++] = (int)(i*temp.cols*cn + j);
+				space_weight[maxk] = (float)std::exp(r * r * gauss_space_coeff);
+				space_g_ofs[maxk] = (int)(i * tempg.cols * cng + j);
+				space_ofs[maxk++] = (int)(i * temp.cols * cn + j);
 			}
 		}
 
@@ -6071,9 +6068,9 @@ namespace cp
 		if (sigma_space <= 0)
 			sigma_space = 1;
 
-		double gauss_color_coeff = -0.5 / (sigma_color*sigma_color);
-		double gauss_guide_color_coeff = -0.5 / (sigma_guide_color*sigma_guide_color);
-		double gauss_space_coeff = -0.5 / (sigma_space*sigma_space);
+		double gauss_color_coeff = -0.5 / (sigma_color * sigma_color);
+		double gauss_guide_color_coeff = -0.5 / (sigma_guide_color * sigma_guide_color);
+		double gauss_space_coeff = -0.5 / (sigma_space * sigma_space);
 
 		int radiusH = kernelSize.width >> 1;
 		int radiusV = kernelSize.height >> 1;
@@ -6131,12 +6128,12 @@ namespace cp
 		// initialize color-related bilateral filter coefficients
 
 		for (i = 0; i < 256 * cn; i++)
-			color_weight[i] = (float)std::exp(i*i*gauss_color_coeff);
+			color_weight[i] = (float)std::exp(i * i * gauss_color_coeff);
 		for (i = 0; i < 256 * cng; i++)
 		{
 			int v = max(i - 2, 0);
-			color_guide_weight[i] = (float)std::exp(v*v*gauss_guide_color_coeff);
-			color_guide_weight[i] = (float)std::exp(i*i*gauss_guide_color_coeff);
+			color_guide_weight[i] = (float)std::exp(v * v * gauss_guide_color_coeff);
+			color_guide_weight[i] = (float)std::exp(i * i * gauss_guide_color_coeff);
 		}
 
 		// initialize space-related bilateral filter coefficients
@@ -6146,12 +6143,12 @@ namespace cp
 
 			for (; j <= radiusH; j++)
 			{
-				double r = std::sqrt((double)i*i + (double)j*j);
+				double r = std::sqrt((double)i * i + (double)j * j);
 				if (r > max(radiusV, radiusH))
 					continue;
-				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-				space_g_ofs[maxk] = (int)(i*tempg.cols*cng + j);
-				space_ofs[maxk++] = (int)(i*temp.cols*cn + j);
+				space_weight[maxk] = (float)std::exp(r * r * gauss_space_coeff);
+				space_g_ofs[maxk] = (int)(i * tempg.cols * cng + j);
+				space_ofs[maxk++] = (int)(i * temp.cols * cn + j);
 			}
 		}
 
@@ -6179,9 +6176,9 @@ namespace cp
 		if (sigma_space <= 0)
 			sigma_space = 1;
 
-		double gauss_color_coeff = -0.5 / (sigma_color*sigma_color);
-		double gauss_guide_color_coeff = -0.5 / (sigma_guide_color*sigma_guide_color);
-		double gauss_space_coeff = -0.5 / (sigma_space*sigma_space);
+		double gauss_color_coeff = -0.5 / (sigma_color * sigma_color);
+		double gauss_guide_color_coeff = -0.5 / (sigma_guide_color * sigma_guide_color);
+		double gauss_space_coeff = -0.5 / (sigma_space * sigma_space);
 
 		int radiusH = kernelSize.width >> 1;
 		int radiusV = kernelSize.height >> 1;
@@ -6239,12 +6236,12 @@ namespace cp
 		// initialize color-related bilateral filter coefficients
 
 		for (i = 0; i < 256 * cn; i++)
-			color_weight[i] = (float)std::exp(i*i*gauss_color_coeff);
+			color_weight[i] = (float)std::exp(i * i * gauss_color_coeff);
 		for (i = 0; i < 256 * cng; i++)
 		{
 			int v = max(i - 2, 0);
-			color_guide_weight[i] = (float)std::exp(v*v*gauss_guide_color_coeff);
-			color_guide_weight[i] = (float)std::exp(i*i*gauss_guide_color_coeff);
+			color_guide_weight[i] = (float)std::exp(v * v * gauss_guide_color_coeff);
+			color_guide_weight[i] = (float)std::exp(i * i * gauss_guide_color_coeff);
 		}
 
 		// initialize space-related bilateral filter coefficients
@@ -6254,12 +6251,12 @@ namespace cp
 
 			for (; j <= radiusH; j++)
 			{
-				double r = std::sqrt((double)i*i + (double)j*j);
+				double r = std::sqrt((double)i * i + (double)j * j);
 				if (r > max(radiusV, radiusH))
 					continue;
-				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-				space_g_ofs[maxk] = (int)(i*tempg.cols*cng + j);
-				space_ofs[maxk++] = (int)(i*temp.cols*cn + j);
+				space_weight[maxk] = (float)std::exp(r * r * gauss_space_coeff);
+				space_g_ofs[maxk] = (int)(i * tempg.cols * cng + j);
+				space_ofs[maxk++] = (int)(i * temp.cols * cn + j);
 			}
 		}
 
@@ -6283,7 +6280,7 @@ namespace cp
 
 	void dualBilateralWeightMap(InputArray src_, InputArray guide_, OutputArray dest, Size kernelSize, double sigma_color, double sigma_guide_color, double sigma_space, int method, int borderType)
 	{
-		if (dest.empty() || dest.depth() != CV_32F || src_.size() != dest.size()) dest.create(src_.size(), CV_32F);
+		dest.create(src_.size(), CV_32F);
 		Mat src = src_.getMat();
 		Mat guide = guide_.getMat();
 		Mat dst = dest.getMat();
@@ -6292,13 +6289,26 @@ namespace cp
 		{
 			if (src.depth() == CV_8U)
 			{
-				dualBilateralWeightMap_8u(src, guide, dst, kernelSize, sigma_color, sigma_guide_color, sigma_space, borderType);
+				Mat temp = guide;
+				if (guide.depth() != CV_8U)guide.convertTo(temp, CV_8U);
+
+				dualBilateralWeightMap_8u(src, temp, dst, kernelSize, sigma_color, sigma_guide_color, sigma_space, borderType);
 				//	dualBilateralWeightMapBase(src, guide, dst, kernelSize.width, sigma_color, sigma_guide_color, sigma_space, borderType);
 
 			}
 			else if (src.depth() == CV_32F)
 			{
-				dualBilateralWeightMap_32f(src, guide, dst, kernelSize, sigma_color, sigma_guide_color, sigma_space, borderType);
+				Mat temp = guide;
+				if (guide.depth() != CV_32F)guide.convertTo(temp, CV_32F);
+
+				dualBilateralWeightMap_32f(src, temp, dst, kernelSize, sigma_color, sigma_guide_color, sigma_space, borderType);
+			}
+			else
+			{
+				Mat temp, temp2;
+				src.convertTo(temp, CV_32F);
+				guide.convertTo(temp2, CV_32F);
+				dualBilateralWeightMap_32f(temp, temp2, dst, kernelSize, sigma_color, sigma_guide_color, sigma_space, borderType);
 			}
 		}
 		else if (method == FILTER_SEPARABLE)
@@ -6314,7 +6324,7 @@ namespace cp
 		}
 		else
 		{
-			cout << "not suported "<<endl;
+			cout << "not suported " << endl;
 		}
 	}
 
@@ -6452,20 +6462,20 @@ namespace cp
 			dualBilateralFilter(src, guide, dst, Size(ksize.width, 1), sigma_color, sigma_guide_color, sigma_space, FILTER_RECTANGLE, borderType);
 
 			//jointDualBilateralFilter(src, src, guide, dst, ksize, sigma_color*alpha1, sigma_guide_color*alpha2, sigma_space, FILTER_DEFAULT);
-			jointDualBilateralFilter(dst, src, guide, dst, Size(ksize.width, ksize.height), sigma_color*alpha1, sigma_guide_color*alpha2, sigma_space, FILTER_RECTANGLE, borderType);
+			jointDualBilateralFilter(dst, src, guide, dst, Size(ksize.width, ksize.height), sigma_color * alpha1, sigma_guide_color * alpha2, sigma_space, FILTER_RECTANGLE, borderType);
 		}
 		else if (sp_kernel_type == DUAL_KERNEL_VH)
 		{
 			dualBilateralFilter(src, guide, dst, Size(1, ksize.height), sigma_color, sigma_guide_color, sigma_space, FILTER_RECTANGLE, borderType);
-			jointDualBilateralFilter(dst, src, guide, dst, Size(ksize.width, 1), sigma_color*alpha1, sigma_guide_color*alpha2, sigma_space, FILTER_RECTANGLE, borderType);
+			jointDualBilateralFilter(dst, src, guide, dst, Size(ksize.width, 1), sigma_color * alpha1, sigma_guide_color * alpha2, sigma_space, FILTER_RECTANGLE, borderType);
 		}
 		else if (sp_kernel_type == DUAL_KERNEL_HVVH)
 		{
 			dualBilateralFilter(src, guide, dst, Size(ksize.width, 1), sigma_color, sigma_guide_color, sigma_space, FILTER_RECTANGLE, borderType);
-			jointDualBilateralFilter(dst, src, guide, dst, Size(1, ksize.height), sigma_color*alpha1, sigma_guide_color*alpha2, sigma_space, FILTER_RECTANGLE, borderType);
+			jointDualBilateralFilter(dst, src, guide, dst, Size(1, ksize.height), sigma_color * alpha1, sigma_guide_color * alpha2, sigma_space, FILTER_RECTANGLE, borderType);
 			Mat dst2;
 			dualBilateralFilter(src, guide, dst2, Size(1, ksize.height), sigma_color, sigma_guide_color, sigma_space, FILTER_RECTANGLE, borderType);
-			jointDualBilateralFilter(dst2, src, guide, dst2, Size(ksize.width, 1), sigma_color*alpha1, sigma_guide_color*alpha2, sigma_space, FILTER_RECTANGLE, borderType);
+			jointDualBilateralFilter(dst2, src, guide, dst2, Size(ksize.width, 1), sigma_color * alpha1, sigma_guide_color * alpha2, sigma_space, FILTER_RECTANGLE, borderType);
 
 			alphaBlend(dst, dst2, 0.5, dst);
 		}

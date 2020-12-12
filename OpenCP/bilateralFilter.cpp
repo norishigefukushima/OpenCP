@@ -4826,13 +4826,19 @@ namespace cp
 
 		if (method == FILTER_CIRCLE || method == FILTER_DEFAULT)
 		{
-			if (src.type() == CV_MAKE_TYPE(CV_8U, src.channels()))
+			if (src.depth() ==CV_8U)
 			{
 				bilateralWeightMap_8u(src, dst, kernelSize, sigma_color, sigma_space, borderType);
 			}
-			else if (src.type() == CV_MAKE_TYPE(CV_32F, src.channels()))
+			else if (src.depth() == CV_32F)
 			{
 				bilateralWeightMap_32f(src, dst, kernelSize, sigma_color, sigma_space, borderType);
+			}
+			else
+			{
+				Mat temp;
+				src.convertTo(temp, CV_32F);
+				bilateralWeightMap_32f(temp, dst, kernelSize, sigma_color, sigma_space, borderType);
 			}
 		}
 		else if (method == FILTER_SEPARABLE)
