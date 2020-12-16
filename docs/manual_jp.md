@@ -53,14 +53,19 @@ imshowの拡張
 * [imshowResize](imshowExtension_jp.md "imshowResize")
 * [imshowCountDown](imshowExtension_jp.md "imshowCountDown")
 
+## kmeans.hpp
+* [imshowNormalize](kmeans_jp.md "class KMeans")
+* [imshowScale](kmeans.md "kmeans")
+
+
 # imgprog
 ## blend.hpp
 2枚の画像の合成関数群
-* [alphaBlend](blend_jp.md "#alphaBlend")
-* [alphaBlendFixedPoint](blend_jp.md "#alphaBlendFixedPoint")
-* [guiAlphaBlend](blend_jp.md "#guiAlphaBlend")
-* [dissolveSlideBlend](blend_jp.md "#dissolveSlideBlend")
-* [guiDissolveSlideBlend](blend_jp.md "#guiDissolveSlideBlend")
+* [alphaBlend](blend_jp.md "alphaBlend")
+* [alphaBlendFixedPoint](blend_jp.md "alphaBlendFixedPoint")
+* [guiAlphaBlend](blend_jp.md "guiAlphaBlend")
+* [dissolveSlideBlend](blend_jp.md "dissolveSlideBlend")
+* [guiDissolveSlideBlend](blend_jp.md "guiDissolveSlideBlend")
 
 ## contrast.hpp
 トーンカーブによるコントラスト強調の関数群

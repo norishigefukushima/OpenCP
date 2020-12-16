@@ -641,7 +641,7 @@ void testRGBHistogram2()
 	while (key != 'q')
 	{
 		Mat srcf = projImg.reshape(1, projImg.size().area());
-		kmeans(srcf, samples, clusters, cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::MAX_ITER, 100, FLT_EPSILON), 1, cv::KMEANS_PP_CENTERS, sample);
+		cv::kmeans(srcf, samples, clusters, cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::MAX_ITER, 100, FLT_EPSILON), 1, cv::KMEANS_PP_CENTERS, sample);
 		h3d.push_back(sample);
 
 		Mat src; projImg.convertTo(src, CV_8U);

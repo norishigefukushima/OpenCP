@@ -10,11 +10,11 @@ namespace cp
 		cv::Mat labels_internal;
 		cv::AutoBuffer<float> _distance;
 
+		//initialize
 		void generateKmeansRandomInitialCentroid(cv::Mat& data_points, cv::Mat& centroids, const int K, cv::RNG& rng);
 		void generateKmeansPPInitialCentroid_AVX(const cv::Mat& data, cv::Mat& _out_centers, int K, cv::RNG& rng, int trials);
 
-
-		//get most outer samples for centroids
+		//get most outer samples for centroids (not used)
 		void getOuterSample(cv::Mat& src_centroids, cv::Mat& dest_centroids, const cv::Mat& data_points, const cv::Mat& labels);
 
 		//computing centroid
@@ -34,8 +34,5 @@ namespace cp
 		double clustering(cv::InputArray _data, int K, cv::InputOutputArray _bestLabels, cv::TermCriteria criteria, int attempts, int flags, cv::OutputArray _centers, MeanFunction function = MeanFunction::Mean);
 	};
 
-	CP_EXPORT double kmeans(cv::InputArray _data, int K,
-		cv::InputOutputArray _bestLabels,
-		cv::TermCriteria criteria, int attempts,
-		int flags, cv::OutputArray _centers);
+	CP_EXPORT double kmeans(cv::InputArray _data, int K, cv::InputOutputArray _bestLabels, cv::TermCriteria criteria, int attempts, int flags, cv::OutputArray _centers);
 }
