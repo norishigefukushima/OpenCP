@@ -30,7 +30,7 @@ namespace cp
 			GaussInv,
 			Harmonic
 		};
-		void setSigma(const float sigma) { this->sigma = sigma; }
+		void setSigma(const float sigma) { this->sigma = sigma; }//for Gauss means
 		double clustering(cv::InputArray _data, int K, cv::InputOutputArray _bestLabels, cv::TermCriteria criteria, int attempts, int flags, cv::OutputArray _centers, MeanFunction function = MeanFunction::Mean);
 	};
 
