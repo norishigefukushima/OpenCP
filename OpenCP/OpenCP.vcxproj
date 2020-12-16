@@ -163,7 +163,7 @@
       </WholeProgramOptimization>
       <SDLCheck>false</SDLCheck>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
-      <LanguageStandard>stdcpp14</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <OmitFramePointers>true</OmitFramePointers>
     </ClCompile>
     <Link>
@@ -229,6 +229,7 @@
     <ClCompile Include="depth2disparity.cpp" />
     <ClCompile Include="depthUpsample.cpp" />
     <ClCompile Include="downsample.cpp" />
+    <ClCompile Include="kmeans.cpp" />
     <ClCompile Include="NEDI.cpp" />
     <ClCompile Include="stereoEval.cpp" />
     <ClCompile Include="depthfilter.cpp" />
@@ -371,6 +372,7 @@
     <ClInclude Include="..\include\depth2disparity.hpp" />
     <ClInclude Include="..\include\depthUpsample.hpp" />
     <ClInclude Include="..\include\downsample.hpp" />
+    <ClInclude Include="..\include\kmeans.hpp" />
     <ClInclude Include="..\include\NEDI.hpp" />
     <ClInclude Include="..\include\StereoEval.hpp" />
     <ClInclude Include="..\include\depthfilter.hpp" />

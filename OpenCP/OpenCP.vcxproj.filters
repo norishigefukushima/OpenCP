@@ -561,6 +561,9 @@
     <ClCompile Include="NEDI.cpp">
       <Filter>ソース ファイル\filter\resize</Filter>
     </ClCompile>
+    <ClCompile Include="kmeans.cpp">
+      <Filter>ソース ファイル\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libGaussian\gaussian_conv.h">
@@ -1000,6 +1003,9 @@
     </ClInclude>
     <ClInclude Include="..\include\NEDI.hpp">
       <Filter>ヘッダー ファイル\headers\filter\resize</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\kmeans.hpp">
+      <Filter>ヘッダー ファイル\headers\core</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
