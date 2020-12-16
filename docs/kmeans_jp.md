@@ -30,7 +30,7 @@ Kmeansクラスタリングをする関数群です．
 			GaussInv,
 			Harmonic
 		};
-		void setSigma(const float sigma) { this->sigma = sigma; }
+		void setSigma(const float sigma) { this->sigma = sigma; }//for Gauss means
 		double clustering(cv::InputArray _data, int K, cv::InputOutputArray _bestLabels, cv::TermCriteria criteria, int attempts, int flags, cv::OutputArray _centers, MeanFunction function = MeanFunction::Mean);
 	};
 ```
@@ -38,6 +38,7 @@ Kmeansクラスタリングをする関数群です．
 K-meansクラスタリングをします．
 基本OpenCVのK-meansと同じですが，データ構造をAoSからSoAに変えているため場合によっては高速化します．
 また，MeanFunction function = MeanFunction::Meanで平均の仕方を変えられます．
+setSigmaでパラメータを変えられます．
 
 # kmeans
 ```cpp
@@ -45,3 +46,21 @@ CP_EXPORT double kmeans(cv::InputArray _data, int K, cv::InputOutputArray _bestL
 ```
 classのラッパー関数です．
 OpenCVの呼び出しと全く同じです．
+
+# 参考文献
+実装の詳細
+
+* T. Otsuka, N. Fukushima, "Vectorized Implementation of K-means," in Proc. International Workshop on Advanced Image Technology (IWAIT), Jan. 2021.
+
+K-means
+
+* Forgy, E., “Cluster Analysis of Multivariate Data: Efficiency vs. Interpretability of Classification,” Biometrics, 21, 768 (1965).
+* Lloyd, S., “Least Squares Quantization in PCM,” IEEE Transactions on Information Theory, 28, 2, 129–136 (1982).
+
+K-means++
+
+* Arthur, D., and Vassilvitskii, S., "k-means++: The Advantages of Careful Seeding.," Technical Report, Stanford (2006).
+
+
+
+
