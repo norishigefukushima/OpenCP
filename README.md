@@ -4,6 +4,7 @@ library for computational photography
 
 Todo
 ----
+
 ** port various filters from my library.**  
 * bilateral filter approxmations   
   * ~~separable~~
@@ -26,12 +27,12 @@ Todo
 * need stereo matching/cost filter for joint filtering.    
 * need sse implimmentation cvtColorBGRA2BGR,cvtColorBGR2BGRA  
 * need a floating birateral filter without LUT or quantization for back projection.  
-* remove FFTW
-  * C:\Users\fukushima\Documents\GitHub\OpenCP\OpenCP\libGaussian\gaussian_conv.h(2):#include "fftw/fftw3.h"
+* ~~remove FFTW
+  * ~~C:\Users\fukushima\Documents\GitHub\OpenCP\OpenCP\libGaussian\gaussian_conv.h(2):#include "fftw/fftw3.h"
     * can be removed by replacing OpenCV based GF
-  * C:\Users\fukushima\Documents\GitHub\OpenCP\OpenCP\libimq\fourpyrtransf3.cpp(2):#include "fftw/fftw3.h"
+  * ~~C:\Users\fukushima\Documents\GitHub\OpenCP\OpenCP\libimq\fourpyrtransf3.cpp(2):#include "fftw/fftw3.h"
     * can be removed by replacing other our class
-  * C:\Users\fukushima\Documents\GitHub\OpenCP\OpenCP\libimq\imq.h(5):#include "fftw/fftw3.h"
+  * ~~C:\Users\fukushima\Documents\GitHub\OpenCP\OpenCP\libimq\imq.h(5):#include "fftw/fftw3.h"
     * can be removed by replacing other our class
 ~~add joint nearest filter 6/18~~  
 ~~add view synthesis class 6/18~~  
@@ -99,6 +100,7 @@ Filter
 
 **Example of Applications**
 -----------
+
   + denoise   
   + deblur  
   + up-sample/single image super resolution  
