@@ -1,7 +1,7 @@
 #pragma once
 
 #include "common.hpp"
-
+#if 0
 namespace cp
 {
 	class CP_EXPORT RealtimeO1BilateralFilter
@@ -78,5 +78,5 @@ namespace cp
 		void gaussFIR(cv::InputArray src, cv::OutputArray dest, int r, float sigma_color, float sigma_space, int num_bin);
 		void gaussFIR(cv::InputArray src, cv::InputArray joint, cv::OutputArray dest, int r, float sigma_color, float sigma_space, int num_bin);
 	};
-
 }
+#endif

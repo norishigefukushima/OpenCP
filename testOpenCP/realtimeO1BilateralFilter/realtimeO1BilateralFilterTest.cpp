@@ -4,6 +4,7 @@ using namespace std;
 using namespace cv;
 using namespace cp;
 
+
 void guiMaxMinFilter(Mat& src_)
 {
 	Mat src;
