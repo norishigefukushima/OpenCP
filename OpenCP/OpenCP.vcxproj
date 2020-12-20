@@ -315,13 +315,17 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="libimq\delta.cpp" />
-    <ClCompile Include="libimq\fourpyrtransf3.cpp" />
+    <ClCompile Include="libimq\fourpyrtransf3.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="libimq\msad.cpp" />
     <ClCompile Include="libimq\mse.cpp" />
     <ClCompile Include="libimq\mssim.cpp" />
     <ClCompile Include="libimq\psnr.cpp" />
     <ClCompile Include="libimq\ssim.cpp" />
-    <ClCompile Include="libimq\wssim.cpp" />
+    <ClCompile Include="libimq\wssim.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="localLaplacianFilter.cpp" />
     <ClCompile Include="maskoperation.cpp" />
     <ClCompile Include="randomizedQueue.cpp" />
