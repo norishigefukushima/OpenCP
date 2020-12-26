@@ -178,7 +178,9 @@
     <ClCompile Include="fitPlaneTest.cpp" />
     <ClCompile Include="guiConsoleTest.cpp" />
     <ClCompile Include="guiCrossBasedLocalFilterTest.cpp" />
-    <ClCompile Include="GaussianFilter\GaussianFilterTest.cpp" />
+    <ClCompile Include="GaussianFilter\GaussianFilterTest.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="guiDomainTransformTest.cpp" />
     <ClCompile Include="guiEdgePreservingFilter.cpp" />
     <ClCompile Include="guiEPFWeightMapTest.cpp" />
@@ -191,7 +193,9 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="plotTest\testPlot.cpp" />
     <ClCompile Include="qualityMetricsTest\qualityMetricsTest.cpp" />
-    <ClCompile Include="realtimeO1BilateralFilter\realtimeO1BilateralFilterTest.cpp" />
+    <ClCompile Include="realtimeO1BilateralFilter\realtimeO1BilateralFilterTest.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="shockFilterTest\coherenceEnhancingShockFilterTest.cpp" />
     <ClCompile Include="slic\guiSLICTest.cpp" />
     <ClCompile Include="testAddNoise.cpp" />

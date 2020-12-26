@@ -135,7 +135,6 @@ void testWeightedHistogramFilter(Mat& src_, Mat& guide_)
 	int key = 0;
 	Mat show;
 
-	RealtimeO1BilateralFilter rbf;
 	Mat ref;
 	Mat srcf; src.convertTo(srcf, CV_32F);
 	Mat weight = Mat::ones(src.size(), CV_8U);

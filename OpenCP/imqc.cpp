@@ -87,7 +87,7 @@ namespace cp
 			break;
 
 		case IQM_CWSSIM:
-			REZ = DoCW_SSIMY(orig_img, comp_img, PX1, PY1, BPP1, true);
+			//REZ = DoCW_SSIMY(orig_img, comp_img, PX1, PY1, BPP1, true);
 			break;
 
 		case IQM_CWSSIM_FAST:
@@ -99,7 +99,7 @@ namespace cp
 			break;
 
 		case IQM_MSSSIM_FAST:
-			REZ = DoCW_SSIMY(orig_img, comp_img, PX1, PY1, BPP1, false);
+			//REZ = DoCW_SSIMY(orig_img, comp_img, PX1, PY1, BPP1, false);
 			break;
 		}
 

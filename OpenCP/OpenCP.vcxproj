@@ -245,7 +245,9 @@
     <ClCompile Include="fftinfo.cpp" />
     <ClCompile Include="filterCore.cpp" />
     <ClCompile Include="fitPlane.cpp" />
-    <ClCompile Include="GaussianBlurIPOL.cpp" />
+    <ClCompile Include="GaussianBlurIPOL.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="GaussianFilter.cpp" />
     <ClCompile Include="GaussianFilterSpectralRecursive.cpp" />
     <ClCompile Include="gif\guidedFilter.cpp" />
@@ -282,26 +284,48 @@
     <ClCompile Include="jointNearestFilter.cpp" />
     <ClCompile Include="jointNonLocalMeans.cpp" />
     <ClCompile Include="L0Smoothing.cpp" />
-    <ClCompile Include="libGaussian\filter_util.cpp" />
-    <ClCompile Include="libGaussian\gaussian_conv_am.cpp" />
-    <ClCompile Include="libGaussian\gaussian_conv_box.cpp" />
-    <ClCompile Include="libGaussian\gaussian_conv_dct.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    <ClCompile Include="libGaussian\filter_util.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="libGaussian\gaussian_conv_deriche.cpp" />
-    <ClCompile Include="libGaussian\gaussian_conv_ebox.cpp" />
-    <ClCompile Include="libGaussian\gaussian_conv_fir.cpp" />
-    <ClCompile Include="libGaussian\gaussian_conv_sii.cpp" />
-    <ClCompile Include="libGaussian\gaussian_conv_vyv.cpp" />
-    <ClCompile Include="libGaussian\gaussian_short_conv.cpp" />
+    <ClCompile Include="libGaussian\gaussian_conv_am.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="libGaussian\gaussian_conv_box.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="libGaussian\gaussian_conv_dct.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="libGaussian\gaussian_conv_deriche.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="libGaussian\gaussian_conv_ebox.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="libGaussian\gaussian_conv_fir.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="libGaussian\gaussian_conv_sii.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="libGaussian\gaussian_conv_vyv.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="libGaussian\gaussian_short_conv.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="libimq\delta.cpp" />
-    <ClCompile Include="libimq\fourpyrtransf3.cpp" />
+    <ClCompile Include="libimq\fourpyrtransf3.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="libimq\msad.cpp" />
     <ClCompile Include="libimq\mse.cpp" />
     <ClCompile Include="libimq\mssim.cpp" />
     <ClCompile Include="libimq\psnr.cpp" />
     <ClCompile Include="libimq\ssim.cpp" />
-    <ClCompile Include="libimq\wssim.cpp" />
+    <ClCompile Include="libimq\wssim.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="localLaplacianFilter.cpp" />
     <ClCompile Include="maskoperation.cpp" />
     <ClCompile Include="randomizedQueue.cpp" />
@@ -492,8 +516,12 @@
     <ClInclude Include="gif\guidedFilter_Naive_Share.h" />
     <ClInclude Include="gif\guidedFilter_SepVHI.h" />
     <ClInclude Include="gif\guidedFilter_SepVHI_Share.h" />
-    <ClInclude Include="libGaussian\complex_arith.h" />
-    <ClInclude Include="libGaussian\gaussian_conv.h" />
+    <ClInclude Include="libGaussian\complex_arith.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="libGaussian\gaussian_conv.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="libimq\imq.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

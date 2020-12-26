@@ -1,3 +1,4 @@
+#if 0
 #include "realtimeO1BilateralFilter.hpp"
 #include "GaussianBlurIPOL.hpp"
 #define USE_OPENMP 1
@@ -1042,3 +1043,4 @@ namespace cp
 	}
 
 }
+#endif
