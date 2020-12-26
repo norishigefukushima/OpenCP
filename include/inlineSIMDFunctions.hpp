@@ -1,7 +1,6 @@
 #pragma once
-
 #pragma warning(disable:4309)
-
+#include <intrin.h>
 #define SSE_ALIGN 16
 #define AVX_ALIGN 32
 #define AVX512_ALIGN 64
@@ -44,11 +43,15 @@ inline void get_simd_widthend(const int cv_depth, const int channels, const int 
 	}
 }
 
+/*
 inline void _mm_transposel_epi8(__m128i& s0, __m128i& s1, __m128i& s2, __m128i& s3, __m128i& s4, __m128i& s5, __m128i& s6, __m128i& s7)
 {
 	__m128i t[8];
 	for (int i = 0; i < 8; i++)
 	{
+		//_mm_extract_epi8(s0, 0);
+		//_mm_insert_epi8(t[i], )
+		//((uchar*)t[i])[0]= ((uchar*)s0)[i]
 		t[i].m128i_u8[0] = s0.m128i_u8[i];
 		t[i].m128i_u8[1] = s1.m128i_u8[i];
 		t[i].m128i_u8[2] = s2.m128i_u8[i];
@@ -67,7 +70,7 @@ inline void _mm_transposel_epi8(__m128i& s0, __m128i& s1, __m128i& s2, __m128i& 
 	s6 = t[6];
 	s7 = t[7];
 }
-
+*/
 #define _MM256_TRANSPOSE4_PD(in_row0, in_row1, in_row2, in_row3		\
 						, out_row0, out_row1, out_row2, out_row3) {	\
 	__m256d tmp0, tmp1, tmp2, tmp3;									\
@@ -154,8 +157,13 @@ inline __m128i _mm256_cvtepi32_epu8(const __m256i v0)
 	return _mm256_castsi256_si128(_mm256_permutevar8x32_epi32(_mm256_packus_epi16(_mm256_packs_epi32(v0, _mm256_setzero_si256()), _mm256_setzero_si256()), _mm256_setr_epi32(0, 4, 1, 5, 2, 6, 3, 7)));
 }
 
+inline __m128i _mm_cvtepi32_epu8(const __m128i v0)
+{
+	return _mm_packus_epi16(_mm_packs_epi32(v0, _mm_setzero_si128()), _mm_setzero_si128());
+}
+
 //opencp float->uchar
-inline __m128i _mm256_cvtps_epu8(__m256 ms)
+inline __m128i _mm256_cvtps_epu8(const __m256 ms)
 {
 	return _mm256_cvtepi32_epu8(_mm256_cvtps_epi32(ms));
 }
@@ -250,7 +258,7 @@ inline void _mm256_load_cvtpd_bgr2planar_pd(const double* ptr, __m256d& b, __m25
 	__m256d s02_low = _mm256_permute2f128_pd(bgr0, bgr2, _MM_SELECT4(0, 2));
 	__m256d s02_high = _mm256_permute2f128_pd(bgr0, bgr2, _MM_SELECT4(1, 3));
 
-	r = _mm256_blend_pd(_mm256_blend_pd(s02_low, s02_high, 0b1001), bgr1,0b0010);
+	r = _mm256_blend_pd(_mm256_blend_pd(s02_low, s02_high, 0b1001), bgr1, 0b0010);
 	__m256d g0 = _mm256_blend_pd(_mm256_blend_pd(bgr0, bgr2, 0b1100), bgr1, 0b1001);
 	g = _mm256_shuffle_pd(g0, g0, 0b0101);
 	b = _mm256_blend_pd(_mm256_blend_pd(s02_high, s02_low, 0b1001), bgr1, 0b0100);
@@ -855,7 +863,10 @@ inline float _mm256_reduceadd_ps(__m256 src)
 {
 	src = _mm256_hadd_ps(src, src);
 	src = _mm256_hadd_ps(src, src);
-	return (src.m256_f32[0] + src.m256_f32[4]);
+	__m256 high = _mm256_permute2f128_ps(src, src, 1);
+	return _mm256_cvtss_f32(_mm256_add_ps(src, high));
+	//return (src.m256_f32[0] + src.m256_f32[4]);
+
 	//__m256 rsum = _mm256_permute2f128_ps(src, src, 0 << 4 | 1);
 	//src = _mm256_unpacklo_ps(src, rsum);
 	//return _mm256_hadd_ps(src, src).m256_f32[0];
@@ -865,13 +876,16 @@ inline void _mm256_reduceadd_highlow_ps(__m256 src, float& low, float& high)
 {
 	src = _mm256_hadd_ps(src, src);
 	src = _mm256_hadd_ps(src, src);
-	low = src.m256_f32[0];
-	high = src.m256_f32[4];
+	low = _mm256_cvtss_f32(src);
+	high = _mm_cvtss_f32(_mm256_extractf128_ps(src, 1));
+	//low = src.m256_f32[0];
+	//high = src.m256_f32[4];
 }
 inline double _mm256_reduceadd_pd(__m256d src)
 {
 	src = _mm256_hadd_pd(src, src);
-	return (src.m256d_f64[0] + src.m256d_f64[2]);
+	return _mm256_cvtsd_f64(src) + _mm_cvtsd_f64(_mm256_extractf128_pd(src, 1));
+	//return (src.m256d_f64[0] + src.m256d_f64[2]);
 }
 
 inline __m256 _mm256_div_avoidzerodiv_ps(const __m256 src1, const __m256 src2)
@@ -918,34 +932,36 @@ inline __m256i _mm256_cmpgt_epu8(__m256i x, __m256i y)
 #pragma region print
 inline void print(__m128d src)
 {
+
 	printf_s("%5.3f %5.3f\n",
-		src.m128d_f64[0], src.m128d_f64[1]);
+		((double*)&src)[0], ((double*)&src)[1]);
+	//
+	//src.m128d_f64[0], src.m128d_f64[1]);
 }
 
 inline void print(__m256d src)
 {
 	printf_s("%5.3f %5.3f %5.3f %5.3f\n",
-		src.m256d_f64[0], src.m256d_f64[1], src.m256d_f64[2], src.m256d_f64[3]);
+		((double*)&src)[0], ((double*)&src)[1], ((double*)&src)[2], ((double*)&src)[3]);
 }
 
 inline void print(__m128 src)
 {
 	printf_s("%5.3f %5.3f %5.3f %5.3f\n",
-		src.m128_f32[0], src.m128_f32[1],
-		src.m128_f32[2], src.m128_f32[3]);
+		((float*)&src)[0], ((float*)&src)[1], ((float*)&src)[2], ((float*)&src)[3]);
 }
 
 inline void print(__m256 src)
 {
 	printf_s("%5.3f %5.3f %5.3f %5.3f %5.3f %5.3f %5.3f %5.3f\n",
-		src.m256_f32[0], src.m256_f32[1], src.m256_f32[2], src.m256_f32[3], src.m256_f32[4], src.m256_f32[5], src.m256_f32[6], src.m256_f32[7]);
+		((float*)&src)[0], ((float*)&src)[1], ((float*)&src)[2], ((float*)&src)[3], ((float*)&src)[4], ((float*)&src)[5], ((float*)&src)[6], ((float*)&src)[7]);
 }
 
 inline void print_char(__m128i src)
 {
 	for (int i = 0; i < 16; i++)
 	{
-		printf_s("%3d ", src.m128i_i8[i]);
+		printf_s("%3d ", ((uchar*)&src)[i]);
 	}
 	printf_s("\n");
 }
@@ -954,7 +970,7 @@ inline void print_char(__m256i src)
 {
 	for (int i = 0; i < 32; i++)
 	{
-		printf_s("%3d ", src.m256i_i8[i]);
+		printf_s("%3d ", ((char*)&src)[0]);
 	}
 	printf_s("\n");
 }
@@ -963,7 +979,7 @@ inline void print_uchar(__m128i src)
 {
 	for (int i = 0; i < 16; i++)
 	{
-		printf_s("%3d ", src.m128i_u8[i]);
+		printf_s("%3d ", ((uchar*)&src)[0]);
 	}
 	printf_s("\n");
 }
@@ -972,7 +988,7 @@ inline void print_uchar(__m256i src)
 {
 	for (int i = 0; i < 32; i++)
 	{
-		printf_s("%3d ", src.m256i_u8[i]);
+		printf_s("%3d ", ((uchar*)&src)[0]);
 	}
 	printf_s("\n");
 }
@@ -981,7 +997,7 @@ inline void print_short(__m128i src)
 {
 	for (int i = 0; i < 8; i++)
 	{
-		printf_s("%3d ", src.m128i_i16[i]);
+		printf_s("%3d ", ((short*)&src)[0]);
 	}
 	printf_s("\n");
 }
@@ -990,7 +1006,7 @@ inline void print_short(__m256i src)
 {
 	for (int i = 0; i < 16; i++)
 	{
-		printf_s("%3d ", src.m256i_i16[i]);
+		printf_s("%3d ", ((short*)&src)[0]);
 	}
 	printf_s("\n");
 }
@@ -999,7 +1015,7 @@ inline void print_ushort(__m128i src)
 {
 	for (int i = 0; i < 8; i++)
 	{
-		printf_s("%3d ", src.m128i_u16[i]);
+		printf_s("%3d ", ((ushort*)&src)[0]);
 	}
 	printf_s("\n");
 }
@@ -1008,7 +1024,7 @@ inline void print_ushort(__m256i src)
 {
 	for (int i = 0; i < 16; i++)
 	{
-		printf_s("%3d ", src.m256i_u16[i]);
+		printf_s("%3d ", ((ushort*)&src)[0]);
 	}
 	printf_s("\n");
 }
@@ -1017,7 +1033,7 @@ inline void print_int(__m128i src)
 {
 	for (int i = 0; i < 4; i++)
 	{
-		printf_s("%3d ", src.m128i_i32[i]);
+		printf_s("%3d ", ((int*)&src)[0]);
 	}
 	printf_s("\n");
 }
@@ -1026,7 +1042,7 @@ inline void print_int(__m256i src)
 {
 	for (int i = 0; i < 8; i++)
 	{
-		printf_s("%3d ", src.m256i_i32[i]);
+		printf_s("%3d ", ((int*)&src)[0]);
 	}
 	printf_s("\n");
 }
@@ -1035,7 +1051,7 @@ inline void print_uint(__m128i src)
 {
 	for (int i = 0; i < 4; i++)
 	{
-		printf_s("%3d ", src.m128i_u32[i]);
+		printf_s("%3d ", ((unsigned int*)&src)[0]);
 	}
 	printf_s("\n");
 }
@@ -1044,7 +1060,7 @@ inline void print_uint(__m256i src)
 {
 	for (int i = 0; i < 8; i++)
 	{
-		printf_s("%3d ", src.m256i_u32[i]);
+		printf_s("%3d ", ((unsigned int*)&src)[0]);
 	}
 	printf_s("\n");
 }
@@ -1117,26 +1133,26 @@ inline void _mm256_storescalar_ps(float* dst, __m256 src, const int numpixel)
 inline void _mm256_i32scaterscalar_epu8(uchar* dest, __m256i vindex, __m256 src)
 {
 	__m128i v = _mm256_cvtps_epu8(src);
-	dest[vindex.m256i_i32[0]] = v.m128i_u8[0];
-	dest[vindex.m256i_i32[1]] = v.m128i_u8[1];
-	dest[vindex.m256i_i32[2]] = v.m128i_u8[2];
-	dest[vindex.m256i_i32[3]] = v.m128i_u8[3];
-	dest[vindex.m256i_i32[4]] = v.m128i_u8[4];
-	dest[vindex.m256i_i32[5]] = v.m128i_u8[5];
-	dest[vindex.m256i_i32[6]] = v.m128i_u8[6];
-	dest[vindex.m256i_i32[7]] = v.m128i_u8[7];
+	dest[((int*)&vindex)[0]] = ((uchar*)&v)[0];
+	dest[((int*)&vindex)[1]] = ((uchar*)&v)[1];
+	dest[((int*)&vindex)[2]] = ((uchar*)&v)[2];
+	dest[((int*)&vindex)[3]] = ((uchar*)&v)[3];
+	dest[((int*)&vindex)[4]] = ((uchar*)&v)[4];
+	dest[((int*)&vindex)[5]] = ((uchar*)&v)[5];
+	dest[((int*)&vindex)[6]] = ((uchar*)&v)[6];
+	dest[((int*)&vindex)[7]] = ((uchar*)&v)[7];
 }
 
 inline void _mm256_i32scaterscalar_ps(float* dest, __m256i vindex, __m256 src)
 {
-	dest[vindex.m256i_i32[0]] = src.m256_f32[0];
-	dest[vindex.m256i_i32[1]] = src.m256_f32[1];
-	dest[vindex.m256i_i32[2]] = src.m256_f32[2];
-	dest[vindex.m256i_i32[3]] = src.m256_f32[3];
-	dest[vindex.m256i_i32[4]] = src.m256_f32[4];
-	dest[vindex.m256i_i32[5]] = src.m256_f32[5];
-	dest[vindex.m256i_i32[6]] = src.m256_f32[6];
-	dest[vindex.m256i_i32[7]] = src.m256_f32[7];
+	dest[((int*)&vindex)[0]] = ((float*)&src)[0];
+	dest[((int*)&vindex)[1]] = ((float*)&src)[1];
+	dest[((int*)&vindex)[2]] = ((float*)&src)[2];
+	dest[((int*)&vindex)[3]] = ((float*)&src)[3];
+	dest[((int*)&vindex)[4]] = ((float*)&src)[4];
+	dest[((int*)&vindex)[5]] = ((float*)&src)[5];
+	dest[((int*)&vindex)[6]] = ((float*)&src)[6];
+	dest[((int*)&vindex)[7]] = ((float*)&src)[7];
 }
 
 inline void _mm256_i32scaterscalar_epu8_color(uchar* dest, __m256i vindex, __m256 b, __m256 g, __m256 r)
@@ -1144,42 +1160,42 @@ inline void _mm256_i32scaterscalar_epu8_color(uchar* dest, __m256i vindex, __m25
 	__m128i bb = _mm256_cvtps_epu8(b);
 	__m128i gb = _mm256_cvtps_epu8(g);
 	__m128i rb = _mm256_cvtps_epu8(r);
-	int idx = vindex.m256i_i32[0];
-	dest[idx + 0] = bb.m128i_u8[0];	dest[idx + 1] = gb.m128i_u8[0];	dest[idx + 2] = rb.m128i_u8[0];
-	idx = vindex.m256i_i32[1];
-	dest[idx + 0] = bb.m128i_u8[1];	dest[idx + 1] = gb.m128i_u8[1];	dest[idx + 2] = rb.m128i_u8[1];
-	idx = vindex.m256i_i32[2];
-	dest[idx + 0] = bb.m128i_u8[2];	dest[idx + 1] = gb.m128i_u8[2];	dest[idx + 2] = rb.m128i_u8[2];
-	idx = vindex.m256i_i32[3];
-	dest[idx + 0] = bb.m128i_u8[3];	dest[idx + 1] = gb.m128i_u8[3];	dest[idx + 2] = rb.m128i_u8[3];
-	idx = vindex.m256i_i32[4];
-	dest[idx + 0] = bb.m128i_u8[4];	dest[idx + 1] = gb.m128i_u8[4];	dest[idx + 2] = rb.m128i_u8[4];
-	idx = vindex.m256i_i32[5];
-	dest[idx + 0] = bb.m128i_u8[5];	dest[idx + 1] = gb.m128i_u8[5];	dest[idx + 2] = rb.m128i_u8[5];
-	idx = vindex.m256i_i32[6];
-	dest[idx + 0] = bb.m128i_u8[6];	dest[idx + 1] = gb.m128i_u8[6];	dest[idx + 2] = rb.m128i_u8[6];
-	idx = vindex.m256i_i32[7];
-	dest[idx + 0] = bb.m128i_u8[7];	dest[idx + 1] = gb.m128i_u8[7];	dest[idx + 2] = rb.m128i_u8[7];
+	int idx = ((int*)&vindex)[0];
+	dest[idx + 0] = ((uchar*)&bb)[0];	dest[idx + 1] = ((uchar*)&gb)[0];	dest[idx + 2] = ((uchar*)&rb)[0];
+	idx = ((int*)&vindex)[1];
+	dest[idx + 0] = ((uchar*)&bb)[1];	dest[idx + 1] = ((uchar*)&gb)[1];	dest[idx + 2] = ((uchar*)&rb)[1];
+	idx = ((int*)&vindex)[2];
+	dest[idx + 0] = ((uchar*)&bb)[2];	dest[idx + 1] = ((uchar*)&gb)[2];	dest[idx + 2] = ((uchar*)&rb)[2];
+	idx = ((int*)&vindex)[3];
+	dest[idx + 0] = ((uchar*)&bb)[3];	dest[idx + 1] = ((uchar*)&gb)[3];	dest[idx + 2] = ((uchar*)&rb)[3];
+	idx = ((int*)&vindex)[4];
+	dest[idx + 0] = ((uchar*)&bb)[4];	dest[idx + 1] = ((uchar*)&gb)[4];	dest[idx + 2] = ((uchar*)&rb)[4];
+	idx = ((int*)&vindex)[5];
+	dest[idx + 0] = ((uchar*)&bb)[5];	dest[idx + 1] = ((uchar*)&gb)[5];	dest[idx + 2] = ((uchar*)&rb)[5];
+	idx = ((int*)&vindex)[6];
+	dest[idx + 0] = ((uchar*)&bb)[6];	dest[idx + 1] = ((uchar*)&gb)[6];	dest[idx + 2] = ((uchar*)&rb)[6];
+	idx = ((int*)&vindex)[7];
+	dest[idx + 0] = ((uchar*)&bb)[7];	dest[idx + 1] = ((uchar*)&gb)[7];	dest[idx + 2] = ((uchar*)&rb)[7];
 }
 
 inline void _mm256_i32scaterscalar_ps_color(float* dest, __m256i vindex, __m256 b, __m256 g, __m256 r)
 {
-	int idx = vindex.m256i_i32[0];
-	dest[idx + 0] = b.m256_f32[0];	dest[idx + 1] = g.m256_f32[0];	dest[idx + 2] = r.m256_f32[0];
-	idx = vindex.m256i_i32[1];
-	dest[idx + 0] = b.m256_f32[1];	dest[idx + 1] = g.m256_f32[1];	dest[idx + 2] = r.m256_f32[1];
-	idx = vindex.m256i_i32[2];
-	dest[idx + 0] = b.m256_f32[2];	dest[idx + 1] = g.m256_f32[2];	dest[idx + 2] = r.m256_f32[2];
-	idx = vindex.m256i_i32[3];
-	dest[idx + 0] = b.m256_f32[3];	dest[idx + 1] = g.m256_f32[3];	dest[idx + 2] = r.m256_f32[3];
-	idx = vindex.m256i_i32[4];
-	dest[idx + 0] = b.m256_f32[4];	dest[idx + 1] = g.m256_f32[4];	dest[idx + 2] = r.m256_f32[4];
-	idx = vindex.m256i_i32[5];
-	dest[idx + 0] = b.m256_f32[5];	dest[idx + 1] = g.m256_f32[5];	dest[idx + 2] = r.m256_f32[5];
-	idx = vindex.m256i_i32[6];
-	dest[idx + 0] = b.m256_f32[6];	dest[idx + 1] = g.m256_f32[6];	dest[idx + 2] = r.m256_f32[6];
-	idx = vindex.m256i_i32[7];
-	dest[idx + 0] = b.m256_f32[7];	dest[idx + 1] = g.m256_f32[7];	dest[idx + 2] = r.m256_f32[7];
+	int idx = ((int*)&vindex)[0];
+	dest[idx + 0] = ((float*)&b)[0];	dest[idx + 1] = ((float*)&g)[0];	dest[idx + 2] = ((float*)&r)[0];
+	idx = ((int*)&vindex)[1];
+	dest[idx + 0] = ((float*)&b)[1];	dest[idx + 1] = ((float*)&g)[1];	dest[idx + 2] = ((float*)&r)[1];
+	idx = ((int*)&vindex)[2];
+	dest[idx + 0] = ((float*)&b)[2];	dest[idx + 1] = ((float*)&g)[2];	dest[idx + 2] = ((float*)&r)[2];
+	idx = ((int*)&vindex)[3];
+	dest[idx + 0] = ((float*)&b)[3];	dest[idx + 1] = ((float*)&g)[3];	dest[idx + 2] = ((float*)&r)[3];
+	idx = ((int*)&vindex)[4];
+	dest[idx + 0] = ((float*)&b)[4];	dest[idx + 1] = ((float*)&g)[4];	dest[idx + 2] = ((float*)&r)[4];
+	idx = ((int*)&vindex)[5];
+	dest[idx + 0] = ((float*)&b)[5];	dest[idx + 1] = ((float*)&g)[5];	dest[idx + 2] = ((float*)&r)[5];
+	idx = ((int*)&vindex)[6];
+	dest[idx + 0] = ((float*)&b)[6];	dest[idx + 1] = ((float*)&g)[6];	dest[idx + 2] = ((float*)&r)[6];
+	idx = ((int*)&vindex)[7];
+	dest[idx + 0] = ((float*)&b)[7];	dest[idx + 1] = ((float*)&g)[7];	dest[idx + 2] = ((float*)&r)[7];
 }
 #pragma endregion
 
@@ -1213,10 +1229,11 @@ inline void _mm256_storescalar_auto_color(uchar* dest, __m256 b, __m256 g, __m25
 	_mm256_storescalar_ps2epu8_color(dest, b, g, r, numpixel);
 }
 
+
 //return 8 uchar elements
-inline __m128i _mm_i32gather_epi32(const uchar* src, __m128i idx)
+inline __m128i _mm_i8gather_epi32(const uchar* src, __m128i idx)
 {
-	return _mm_srli_epi32(_mm_i32gather_epi32((int*)(src - 3), idx, 1), 24);
+	return _mm_srli_epi32(_mm_i32gather_epi32(reinterpret_cast<const int*>(&src[-3]), idx, 1), 24);
 	//return _mm_setr_epi8(src[idx.m256i_i32[0]], src[idx.m256i_i32[1]], src[idx.m256i_i32[2]], src[idx.m256i_i32[3]], src[idx.m256i_i32[4]], src[idx.m256i_i32[5]], src[idx.m256i_i32[6]], src[idx.m256i_i32[7]], 0, 0, 0, 0, 0, 0, 0, 0);
 }
 
@@ -1225,7 +1242,7 @@ inline __m128i _mm_i32gather_epi32(const uchar* src, __m128i idx)
 inline void _mm256_i32gather_bgr_ps(const uchar* src, __m256i idx, __m256& b, __m256& g, __m256& r)
 {
 	__m256i v = _mm256_i32gather_epi32((int*)(src), idx, 1);
-	
+
 	b = _mm256_cvtepi32_ps(_mm256_blendv_epi8(v, _mm256_setzero_si256(), _mm256_setr_epi8(0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF)));
 	g = _mm256_cvtepi32_ps(_mm256_srai_epi32(_mm256_blendv_epi8(v, _mm256_setzero_si256(), _mm256_setr_epi8(0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF)), 8));
 	r = _mm256_cvtepi32_ps(_mm256_srai_epi32(_mm256_blendv_epi8(v, _mm256_setzero_si256(), _mm256_setr_epi8(0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF)), 16));
@@ -1239,27 +1256,27 @@ inline void _mm256_i32gather_bgr_epi32(const uchar* src, __m256i idx, __m256i& b
 	r = _mm256_srli_epi32(v, 26);
 }
 
-inline __m256i _mm256_i32gather_epi32(const uchar* src, __m256i idx)
+inline __m256i _mm256_i8gather_epi32(const uchar* src, __m256i idx)
 {
-	return _mm256_srli_epi32(_mm256_i32gather_epi32((int*)(src - 3), idx, 1), 24);
+	return _mm256_srli_epi32(_mm256_i32gather_epi32(reinterpret_cast<const int*>(&src[-3]), idx, 1), 24);
 	//return _mm256_setr_epi32(src[idx.m256i_i32[0]], src[idx.m256i_i32[1]], src[idx.m256i_i32[2]], src[idx.m256i_i32[3]], src[idx.m256i_i32[4]], src[idx.m256i_i32[5]], src[idx.m256i_i32[6]], src[idx.m256i_i32[7]]);
 }
 
-inline __m128 _mm_i32gather_ps(const uchar* src, __m128i idx)
+inline __m128 _mm_i8gather_ps(const uchar* src, __m128i idx)
 {
-	return _mm_cvtepi32_ps(_mm_srli_epi32(_mm_i32gather_epi32((int*)(src - 3), idx, 1), 24));
+	return _mm_cvtepi32_ps(_mm_srli_epi32(_mm_i32gather_epi32(reinterpret_cast<const int*>(&src[-3]), idx, 1), 24));
 	//return _mm_setr_epi8(src[idx.m256i_i32[0]], src[idx.m256i_i32[1]], src[idx.m256i_i32[2]], src[idx.m256i_i32[3]], src[idx.m256i_i32[4]], src[idx.m256i_i32[5]], src[idx.m256i_i32[6]], src[idx.m256i_i32[7]], 0, 0, 0, 0, 0, 0, 0, 0);
 }
 
-inline __m128i _mm_i32gather_epu8(const uchar* src, __m128i idx)
+inline __m128i _mm_i8gather_epu8(const uchar* src, __m128i idx)
 {
-	return _mm_cvtepi32_epi8(_mm_srli_epi32(_mm_i32gather_epi32((int*)(src - 3), idx, 1), 24));
+	return _mm_cvtepi32_epu8(_mm_srli_epi32(_mm_i32gather_epi32(reinterpret_cast<const int*>(&src[-3]), idx, 1), 24));
 	//return _mm_setr_epi8(src[idx.m256i_i32[0]], src[idx.m256i_i32[1]], src[idx.m256i_i32[2]], src[idx.m256i_i32[3]], src[idx.m256i_i32[4]], src[idx.m256i_i32[5]], src[idx.m256i_i32[6]], src[idx.m256i_i32[7]], 0, 0, 0, 0, 0, 0, 0, 0);
 }
 
 inline __m128i _mm256_i32gather_epu8(const uchar* src, __m256i idx)
 {
-	return _mm256_cvtepi32_epu8(_mm256_srli_epi32(_mm256_i32gather_epi32((int*)(src - 3), idx, 1), 24));
+	return _mm256_cvtepi32_epu8(_mm256_srli_epi32(_mm256_i32gather_epi32(reinterpret_cast<const int*>(src - 3), idx, 1), 24));
 	//return _mm_setr_epi8(src[idx.m256i_i32[0]], src[idx.m256i_i32[1]], src[idx.m256i_i32[2]], src[idx.m256i_i32[3]], src[idx.m256i_i32[4]], src[idx.m256i_i32[5]], src[idx.m256i_i32[6]], src[idx.m256i_i32[7]], 0, 0, 0, 0, 0, 0, 0, 0);
 }
 
@@ -1270,18 +1287,19 @@ inline __m256 _mm256_i32gather_auto(float* src, __m256i idx)
 
 inline __m256 _mm256_i32gather_auto(uchar* src, __m256i idx)
 {
-	return _mm256_cvtepi32_ps(_mm256_srli_epi32(_mm256_i32gather_epi32((int*)(src - 3), idx, 1), 24));
+	return _mm256_cvtepi32_ps(_mm256_srli_epi32(_mm256_i32gather_epi32(reinterpret_cast<const int*>(&src[-3]), idx, 1), 24));
 }
 
 inline __m256 _mm256_i32gatherset_auto(uchar* src, __m256i idx)
 {
-	return _mm256_cvtepi32_ps(_mm256_setr_epi8(src[idx.m256i_i32[0]], src[idx.m256i_i32[1]], src[idx.m256i_i32[2]], src[idx.m256i_i32[3]], src[idx.m256i_i32[4]], src[idx.m256i_i32[5]], src[idx.m256i_i32[6]], src[idx.m256i_i32[7]],
+
+	return _mm256_cvtepi32_ps(_mm256_setr_epi8(src[((int*)&idx)[0]], src[((int*)&idx)[1]], src[((int*)&idx)[2]], src[((int*)&idx)[3]], src[((int*)&idx)[4]], src[((int*)&idx)[5]], src[((int*)&idx)[6]], src[((int*)&idx)[7]],
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 }
 
 inline __m256 _mm256_i32gatherset_auto(float* src, __m256i idx)
 {
-	return _mm256_setr_ps(src[idx.m256i_i32[0]], src[idx.m256i_i32[1]], src[idx.m256i_i32[2]], src[idx.m256i_i32[3]], src[idx.m256i_i32[4]], src[idx.m256i_i32[5]], src[idx.m256i_i32[6]], src[idx.m256i_i32[7]]);
+	return _mm256_setr_ps(src[((int*)&idx)[0]], src[((int*)&idx)[1]], src[((int*)&idx)[2]], src[((int*)&idx)[3]], src[((int*)&idx)[4]], src[((int*)&idx)[5]], src[((int*)&idx)[6]], src[((int*)&idx)[7]]);
 }
 
 inline void _mm256_i32scaterscalar_auto(uchar* dest, __m256i vindex, __m256 src)

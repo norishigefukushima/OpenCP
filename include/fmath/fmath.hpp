@@ -204,9 +204,10 @@ namespace fmath {
 				const double h = 1 / double(1 << LEN);
 				const size_t n = 1U << LEN;
 				for (size_t i = 0; i < n; i++) {
-					double x = 1 + double(i) / n;
+					double x = 1.0 + double(i) / n;
 					double a = ::log(x);
 					tbl[i].app = (float)a;
+					
 					if (i < n - 1) {
 						double b = ::log(x + h - e);
 						tbl[i].rev = (float)((b - a) / ((h - e) * (1 << 23)));

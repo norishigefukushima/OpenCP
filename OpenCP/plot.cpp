@@ -888,6 +888,8 @@ namespace cp
 		int height = (int)(0.8 * keyImage.rows);
 		for (int i = 0; i < num; i++)
 		{
+			if (pinfo[i].data.size() == 0)continue;
+
 			vector<Point2d> data;
 			data.push_back(Point2d(192.0, keyImage.rows - (i + 1) * step));
 			data.push_back(Point2d(keyImage.cols - step, keyImage.rows - (i + 1) * step));
@@ -1081,7 +1083,7 @@ namespace cp
 	{
 		Point pt = Point(0, 0);
 		namedWindow(wname);
-		
+
 		setMouseCallback(wname, (MouseCallback)guiPreviewMousePlot, (void*)&pt);
 
 		generateKeyImage(data_max);
@@ -1092,15 +1094,15 @@ namespace cp
 		const int ymin = ymin_data;
 		const int ymax = ymax_data;
 
-		int xminbar = xmin; 
-		if(xmax!=0)createTrackbar("xmin", wname, &xminbar, xmax); setTrackbarMin("xmin", wname, xmin);
-		int xmaxbar = xmax; 
+		int xminbar = xmin;
+		if (xmax != 0)createTrackbar("xmin", wname, &xminbar, xmax); setTrackbarMin("xmin", wname, xmin);
+		int xmaxbar = xmax;
 		if (xmax != 0)createTrackbar("xmax", wname, &xmaxbar, xmax); setTrackbarMin("xmax", wname, xmin);
-		int yminbar = ymin; 
+		int yminbar = ymin;
 		if (ymax != 0)createTrackbar("ymin", wname, &yminbar, ymax); setTrackbarMin("ymin", wname, ymin);
-		int ymaxbar = ymax; 
+		int ymaxbar = ymax;
 		if (ymax != 0)createTrackbar("ymax", wname, &ymaxbar, ymax); setTrackbarMin("ymax", wname, ymin);
-		
+
 		const double margin_ratio = 1.0;//0.9
 		if (!isSetXRange)
 		{

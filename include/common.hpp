@@ -1,5 +1,6 @@
 #pragma once
 
+
 #include <opencv2/opencv.hpp>
 #include <opencv2/ximgproc.hpp>
 #include <opencv2/xphoto.hpp>
@@ -9,16 +10,17 @@
 #define CP_EXPORT 
 #endif
 
-#define CV_LIB_PREFIX comment(lib, "opencv_"
+
+#define CV_LIB_PREFIX "opencv_"
 
 #define CV_LIB_VERSION CVAUX_STR(CV_MAJOR_VERSION)\
     CVAUX_STR(CV_MINOR_VERSION)\
     CVAUX_STR(CV_SUBMINOR_VERSION)
 
 #ifdef _DEBUG
-#define CV_LIB_SUFFIX CV_LIB_VERSION "d.lib")
+#define CV_LIB_SUFFIX CV_LIB_VERSION "d.lib"
 #else
-#define CV_LIB_SUFFIX CV_LIB_VERSION ".lib")
+#define CV_LIB_SUFFIX CV_LIB_VERSION ".lib"
 #endif
 
 #define CV_LIBRARY(lib_name) CV_LIB_PREFIX CVAUX_STR(lib_name) CV_LIB_SUFFIX
@@ -28,10 +30,9 @@
 //#pragma CV_LIBRARY(aruco)
 //#pragma CV_LIBRARY(bgsegm)
 //#pragma CV_LIBRARY(bioinspired)
-#pragma CV_LIBRARY(calib3d)
+#pragma comment(lib, CV_LIBRARY(calib3d))
 //#pragma CV_LIBRARY(ccalib)
-#pragma CV_LIBRARY(core)
-
+#pragma comment(lib, CV_LIBRARY(core))
 /*
 #pragma CV_LIBRARY(cudaarithm)
 #pragma CV_LIBRARY(cudabgsegm)
@@ -56,16 +57,16 @@
 //#pragma CV_LIBRARY(flann)
 //#pragma CV_LIBRARY(fuzzy)
 //#pragma CV_LIBRARY(hal)
-#pragma CV_LIBRARY(highgui)
-#pragma CV_LIBRARY(imgcodecs)
-#pragma CV_LIBRARY(imgproc)
+#pragma comment(lib, CV_LIBRARY(highgui))
+#pragma comment(lib, CV_LIBRARY(imgcodecs))
+#pragma comment(lib, CV_LIBRARY(imgproc))
 
 //#pragma CV_LIBRARY(latentsvm)
 //#pragma CV_LIBRARY(line_descriptor)
 //#pragma CV_LIBRARY(ml)
 //#pragma CV_LIBRARY(objdetect)
-#pragma CV_LIBRARY(optflow)
-#pragma CV_LIBRARY(photo)
+#pragma comment(lib, CV_LIBRARY(optflow))
+#pragma comment(lib, CV_LIBRARY(photo))
 //#pragma CV_LIBRARY(plot)
 //#pragma CV_LIBRARY(quality)
 //#pragma CV_LIBRARY(reg)
@@ -80,21 +81,17 @@
 //#pragma CV_LIBRARY(text)
 //#pragma CV_LIBRARY(tracking)
 //#pragma CV_LIBRARY(ts)
-#pragma CV_LIBRARY(video)
-#pragma CV_LIBRARY(videoio)
+#pragma comment(lib, CV_LIBRARY(video))
+#pragma comment(lib, CV_LIBRARY(videoio))
 //#pragma CV_LIBRARY(videostab)
 //#pragma CV_LIBRARY(viz)
 //#pragma CV_LIBRARY(xfeatures2d)
-#pragma CV_LIBRARY(ximgproc)
+#pragma comment(lib, CV_LIBRARY(ximgproc))
 //#pragma CV_LIBRARY(xobjdetect)
-#pragma CV_LIBRARY(xphoto)
+#pragma comment(lib, CV_LIBRARY(xphoto))
 #else
 #pragma CV_LIBRARY(world)
 #endif
-//FFTW
-#pragma comment(lib, "libfftw3-3.lib")
-#pragma comment(lib, "libfftw3f-3.lib")
-#pragma comment(lib, "libfftw3l-3.lib")
 
 namespace cp
 {
