@@ -1,5 +1,6 @@
 #pragma once
-
+#include <opencv2/core/cvdef.h>
+#include <cmath>
 namespace cp
 {
 	inline void indexToXY(const int index, const int imstep, int& x, int& y)
@@ -239,9 +240,6 @@ namespace cp
 		return ret;
 	}
 }
-
-#include <opencv2/core/cvdef.h>
-#include <cmath>
 
 inline double getHannWindow(const double x)
 {
@@ -552,28 +550,5 @@ inline double getRangeKernelIntegral(const double sigma, const int window_type)
 		ret += getRangeKernelFunction(i, sigma, window_type);
 	}
 
-	return ret;
-}
-
-
-#define print_debug(a)              std::cout << #a << ": " << a << std::endl
-#define print_debug2(a, b)          std::cout << #a << ": " << a <<", "<< #b << ": " << b << std::endl
-#define print_debug3(a, b, c)       std::cout << #a << ": " << a <<", "<< #b << ": " << b <<", "<< #c << ": " << c << std::endl;
-#define print_debug4(a, b, c, d)    std::cout << #a << ": " << a <<", "<< #b << ": " << b <<", "<< #c << ": " << c <<", "<< #d << ": " << d << std::endl;
-#define print_debug5(a, b, c, d, e) std::cout << #a << ": " << a <<", "<< #b << ": " << b <<", "<< #c << ": " << c <<", "<< #d << ": " << d <<", "<< #e << ": " << e << std::endl;
-
-inline std::string getInterpolationName(const int method)
-{
-	std::string ret = "no supported";
-	switch (method)
-	{
-	case cv::INTER_NEAREST:		ret = "NEAREST"; break;
-	case cv::INTER_LINEAR:		ret = "LINEAR"; break;
-	case cv::INTER_CUBIC:		ret = "CUBIC"; break;
-	case cv::INTER_AREA:		ret = "AREA"; break;
-	case cv::INTER_LANCZOS4:	ret = "LANCZOS4"; break;
-	default:
-		break;
-	}
 	return ret;
 }

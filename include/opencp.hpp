@@ -44,6 +44,7 @@
 #include "hazeRemove.hpp"
 #include "iterativeBackProjection.hpp"
 #include "metrics.hpp"
+#include "metricsDD.hpp"
 #include "ppmx.hpp"
 #include "shiftImage.hpp"
 #include "slic.hpp"
@@ -133,6 +134,7 @@
  inline functions
 *************************************************************/
 #include "inlineSIMDFunctions.hpp"
+#include "inlineCVFunctions.hpp"
 #include "inlineMathFunctions.hpp"
 
 

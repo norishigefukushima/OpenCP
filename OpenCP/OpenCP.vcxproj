@@ -84,9 +84,10 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)\lib\</OutDir>
-    <IncludePath>$(OPENCV_INCLUDE_DIR);$(FFTW_INCLUDE_DIR);../include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(OPENCP_LIB_DIR);$(OPENCV_LIB_DIR);$(FFTW_LIB_DIR);$(LibraryPath)</LibraryPath>
+    <IncludePath>../include;$(ICC_NEW_INCLUDE);$(OPENCV_INCLUDE_DIR);$(IncludePath)</IncludePath>
+    <LibraryPath>$(ICC_NEW_LIB);$(OPENCP_LIB_DIR);$(OPENCV_LIB_DIR);$(LibraryPath)</LibraryPath>
     <TargetExt>.dll</TargetExt>
+    <ExecutablePath>$(ICInstallDir)bin;$(ICInstallDir)bin\Intel64;$(NativeExecutablePath);$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -145,7 +146,7 @@
       <WarningLevel>Level3</WarningLevel>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <Optimization>Full</Optimization>
+      <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>CP_API;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -165,6 +166,11 @@
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <OmitFramePointers>true</OmitFramePointers>
+      <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <OpenMP>GenerateParallelCode</OpenMP>
+      <OptimizeForWindowsApplication>false</OptimizeForWindowsApplication>
+      <InterproceduralOptimization>MultiFile</InterproceduralOptimization>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -188,6 +194,7 @@
   <ItemGroup>
     <ClCompile Include="adaptiveManifold.cpp" />
     <ClCompile Include="bilateralGuidedUpsample.cpp" />
+    <ClCompile Include="bitconvertDD.cpp" />
     <ClCompile Include="blend.cpp" />
     <ClCompile Include="arithmetic.cpp" />
     <ClCompile Include="bilateralFilter.cpp" />
@@ -230,6 +237,7 @@
     <ClCompile Include="depthUpsample.cpp" />
     <ClCompile Include="downsample.cpp" />
     <ClCompile Include="kmeans.cpp" />
+    <ClCompile Include="metricsDD.cpp" />
     <ClCompile Include="NEDI.cpp" />
     <ClCompile Include="stereoEval.cpp" />
     <ClCompile Include="depthfilter.cpp" />
@@ -373,6 +381,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\bilateralGuidedUpsample.hpp" />
+    <ClInclude Include="..\include\bitconvertDD.hpp" />
     <ClInclude Include="..\include\blend.hpp" />
     <ClInclude Include="..\include\arithmetic.hpp" />
     <ClInclude Include="..\include\bilateralFilter.hpp" />
@@ -396,7 +405,9 @@
     <ClInclude Include="..\include\depth2disparity.hpp" />
     <ClInclude Include="..\include\depthUpsample.hpp" />
     <ClInclude Include="..\include\downsample.hpp" />
+    <ClInclude Include="..\include\inlineCVFunctions.hpp" />
     <ClInclude Include="..\include\kmeans.hpp" />
+    <ClInclude Include="..\include\metricsDD.hpp" />
     <ClInclude Include="..\include\NEDI.hpp" />
     <ClInclude Include="..\include\StereoEval.hpp" />
     <ClInclude Include="..\include\depthfilter.hpp" />

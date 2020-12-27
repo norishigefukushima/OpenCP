@@ -1,4 +1,5 @@
 #include "guidedFilter_Merge_OnePass.h"
+#include <intrin.h>
 
 using namespace std;
 using namespace cv;

@@ -1,66 +1,8 @@
 #include "GaussianFilterSpectralRecursive.hpp"
+#include <inlineSIMDFunctions.hpp>
+#include <intrin.h>
 using namespace std;
 using namespace cv;
-
-#define ___MM256_TRANSPOSE8_PS(in0, in1, in2, in3, in4, in5, in6, in7, out0, out1, out2, out3, out4, out5, out6, out7, __in0, __in1, __in2, __in3, __in4, __in5, __in6, __in7, __out0, __out1, __out2, __out3, __out4, __out5, __out6, __out7, __tmp0, __tmp1, __tmp2, __tmp3, __tmp4, __tmp5, __tmp6, __tmp7, __tmpp0, __tmpp1, __tmpp2, __tmpp3, __tmpp4, __tmpp5, __tmpp6, __tmpp7) \
-  do { \
-    __m256 __in0 = (in0), __in1 = (in1), __in2 = (in2), __in3 = (in3), __in4 = (in4), __in5 = (in5), __in6 = (in6), __in7 = (in7); \
-    __m256 __tmp0, __tmp1, __tmp2, __tmp3, __tmp4, __tmp5, __tmp6, __tmp7; \
-    __m256 __tmpp0, __tmpp1, __tmpp2, __tmpp3, __tmpp4, __tmpp5, __tmpp6, __tmpp7; \
-    __m256 __out0, __out1, __out2, __out3, __out4, __out5, __out6, __out7; \
-    __tmp0  = _mm256_unpacklo_ps(__in0, __in1); \
-    __tmp1  = _mm256_unpackhi_ps(__in0, __in1); \
-    __tmp2  = _mm256_unpacklo_ps(__in2, __in3); \
-    __tmp3  = _mm256_unpackhi_ps(__in2, __in3); \
-    __tmp4  = _mm256_unpacklo_ps(__in4, __in5); \
-    __tmp5  = _mm256_unpackhi_ps(__in4, __in5); \
-    __tmp6  = _mm256_unpacklo_ps(__in6, __in7); \
-    __tmp7  = _mm256_unpackhi_ps(__in6, __in7); \
-    __tmpp0 = _mm256_shuffle_ps(__tmp0, __tmp2, 0x44); \
-    __tmpp1 = _mm256_shuffle_ps(__tmp0, __tmp2, 0xEE); \
-    __tmpp2 = _mm256_shuffle_ps(__tmp1, __tmp3, 0x44); \
-    __tmpp3 = _mm256_shuffle_ps(__tmp1, __tmp3, 0xEE); \
-    __tmpp4 = _mm256_shuffle_ps(__tmp4, __tmp6, 0x44); \
-    __tmpp5 = _mm256_shuffle_ps(__tmp4, __tmp6, 0xEE); \
-    __tmpp6 = _mm256_shuffle_ps(__tmp5, __tmp7, 0x44); \
-    __tmpp7 = _mm256_shuffle_ps(__tmp5, __tmp7, 0xEE); \
-    __out0  = _mm256_permute2f128_ps(__tmpp0, __tmpp4, 0x20); \
-    __out1  = _mm256_permute2f128_ps(__tmpp1, __tmpp5, 0x20); \
-    __out2  = _mm256_permute2f128_ps(__tmpp2, __tmpp6, 0x20); \
-    __out3  = _mm256_permute2f128_ps(__tmpp3, __tmpp7, 0x20); \
-    __out4  = _mm256_permute2f128_ps(__tmpp0, __tmpp4, 0x31); \
-    __out5  = _mm256_permute2f128_ps(__tmpp1, __tmpp5, 0x31); \
-    __out6  = _mm256_permute2f128_ps(__tmpp2, __tmpp6, 0x31); \
-    __out7  = _mm256_permute2f128_ps(__tmpp3, __tmpp7, 0x31); \
-    (out0)  = __out0, (out1) = __out1, (out2) = __out2, (out3) = __out3, (out4) = __out4, (out5) = __out5, (out6) = __out6, (out7) = __out7; \
-          } while (0)
-#define _MM256_TRANSPOSE8_PS(in0, in1, in2, in3, in4, in5, in6, in7) \
-      ___MM256_TRANSPOSE8_PS(in0, in1, in2, in3, in4, in5, in6, in7, in0, in1, in2, in3, in4, in5, in6, in7, \
-          __in0##__LINE__, __in1##__LINE__, __in2##__LINE__, __in3##__LINE__, __in4##__LINE__, __in5##__LINE__, __in6##__LINE__, __in7##__LINE__, \
-          __out0##__LINE__, __out1##__LINE__, __out2##__LINE__, __out3##__LINE__, __out4##__LINE__, __out5##__LINE__, __out6##__LINE__, __out7##__LINE__, \
-          __tmp0##__LINE__, __tmp1##__LINE__, __tmp2##__LINE__, __tmp3##__LINE__, __tmp4##__LINE__, __tmp5##__LINE__, __tmp6##__LINE__, __tmp7##__LINE__, \
-          __tmpp0##__LINE__, __tmpp1##__LINE__, __tmpp2##__LINE__, __tmpp3##__LINE__, __tmpp4##__LINE__, __tmpp5##__LINE__, __tmpp6##__LINE__, __tmpp7##__LINE__)
-
-#define ___MM256_TRANSPOSE4_PD(in0, in1, in2, in3, out0, out1, out2, out3, __in0, __in1, __in2, __in3, __out0, __out1, __out2, __out3, __tmp0, __tmp1, __tmp2, __tmp3) \
-  do { \
-    __m256d __in0 = (in0), __in1 = (in1), __in2 = (in2), __in3 = (in3); \
-    __m256d __tmp0, __tmp1, __tmp2, __tmp3; \
-    __m256d __out0, __out1, __out2, __out3; \
-    __tmp0 = _mm256_shuffle_pd(__in0, __in1, 0x0); \
-    __tmp1 = _mm256_shuffle_pd(__in0, __in1, 0xf); \
-    __tmp2 = _mm256_shuffle_pd(__in2, __in3, 0x0); \
-    __tmp3 = _mm256_shuffle_pd(__in2, __in3, 0xf); \
-    __out0 = _mm256_permute2f128_pd(__tmp0, __tmp2, 0x20); \
-    __out1 = _mm256_permute2f128_pd(__tmp1, __tmp3, 0x20); \
-    __out2 = _mm256_permute2f128_pd(__tmp0, __tmp2, 0x31); \
-    __out3 = _mm256_permute2f128_pd(__tmp1, __tmp3, 0x31); \
-    (out0) = __out0, (out1) = __out1, (out2) = __out2, (out3) = __out3; \
-          } while (0)
-#define _MM256_TRANSPOSE4_PD(in0, in1, in2, in3) \
-      ___MM256_TRANSPOSE4_PD(in0, in1, in2, in3, in0, in1, in2, in3, \
-          __in0##__LINE__, __in1##__LINE__, __in2##__LINE__, __in3##__LINE__, \
-          __out0##__LINE__, __out1##__LINE__, __out2##__LINE__, __out3##__LINE__, \
-          __tmp0##__LINE__, __tmp1##__LINE__, __tmp2##__LINE__, __tmp3##__LINE__)
 
 namespace cp
 {
@@ -121,29 +63,29 @@ namespace cp
 		private:
 			static inline double phase(int r)
 			{
-				return 2.0*CV_PI / (r + 1 + r); //DCT/DST-5
+				return 2.0 * CV_PI / (r + 1 + r); //DCT/DST-5
 			}
 			static inline int estimate_radius(double s)
 			{
 				//return (s<4.0) ? int(3.3333*s-0.3333+0.5) : int(3.4113*s-0.6452+0.5); //K==3
-				return (s < 4.0) ? int(3.0000*s - 0.2000 + 0.5) : int(3.0000*s + 0.5); //K==2
+				return (s < 4.0) ? int(3.0000 * s - 0.2000 + 0.5) : int(3.0000 * s + 0.5); //K==2
 			}
 			static inline std::vector<double> gen_spectrum(double s, int r)
 			{
 				const double phi = phase(r);
 				std::vector<double> spect(K);
 				for (int k = 1; k <= K; k++)
-					spect[k - 1] = 2.0*exp(-0.5*s*s*phi*phi*k*k);
+					spect[k - 1] = 2.0 * exp(-0.5 * s * s * phi * phi * k * k);
 				return spect;
 			}
 			static inline std::vector<double> build_lookup_table(int r, std::vector<double>& spect)
 			{
 				assert(spect.size() == K);
 				const double phi = phase(r);
-				std::vector<double> table(K*(1 + r));
+				std::vector<double> table(K * (1 + r));
 				for (int u = 0; u <= r; ++u)
 					for (int k = 1; k <= K; ++k)
-						table[K*u + k - 1] = cos(k*phi*u)*spect[k - 1];
+						table[K * u + k - 1] = cos(k * phi * u) * spect[k - 1];
 				return table;
 			}
 
@@ -193,7 +135,7 @@ namespace cp
 			template <typename srcType>
 			void filter(int w, int h, srcType* src, srcType* dst)
 			{
-				if (w <= 4.0*sx || h <= 4.0*sy)
+				if (w <= 4.0 * sx || h <= 4.0 * sy)
 					throw std::invalid_argument("\'sx\' and \'sy\' should be less than about w/4 or h/4!");
 
 				//filtering is skipped if s==0.0
@@ -213,7 +155,7 @@ namespace cp
 			template <typename srcType>
 			void filter_sse(int w, int h, srcType* src, srcType* dst)
 			{
-				if (w <= 4.0*sx || h <= 4.0*sy)
+				if (w <= 4.0 * sx || h <= 4.0 * sy)
 					throw std::invalid_argument("\'sx\' and \'sy\' should be less than about w/4 or h/4!");
 
 				//filtering is skipped if s==0.0
@@ -229,11 +171,11 @@ namespace cp
 					filter_sse_h<srcType>(w, h, dst, dst); //only filter_h() allows src==dst.
 				}
 			}
-			
+
 			template <typename srcType>
 			void filter_avx(int w, int h, srcType* src, srcType* dst)
 			{
-				if (w <= 4.0*sx || h <= 4.0*sy)
+				if (w <= 4.0 * sx || h <= 4.0 * sy)
 					throw std::invalid_argument("\'sx\' and \'sy\' should be less than about w/4 or h/4!");
 
 				//filtering is skipped if s==0.0
@@ -253,7 +195,7 @@ namespace cp
 			template <typename srcType>
 			void filter_avxOMP(int w, int h, srcType* src, srcType* dst)
 			{
-				if (w <= 4.0*sx || h <= 4.0*sy)
+				if (w <= 4.0 * sx || h <= 4.0 * sy)
 					throw std::invalid_argument("\'sx\' and \'sy\' should be less than about w/4 or h/4!");
 
 				//filtering is skipped if s==0.0
@@ -308,15 +250,15 @@ namespace cp
 			for (int t = 0; t<int(table.size()); ++t)
 				table[t] = float(tableX[t]);
 
-			const float cf11 = float(table[K * 1 + 0] * 2.0 / spectX[0]), cfR1 = table[K*r + 0];
-			const float cf12 = float(table[K * 1 + 1] * 2.0 / spectX[1]), cfR2 = table[K*r + 1];
+			const float cf11 = float(table[K * 1 + 0] * 2.0 / spectX[0]), cfR1 = table[K * r + 0];
+			const float cf12 = float(table[K * 1 + 1] * 2.0 / spectX[1]), cfR2 = table[K * r + 1];
 
 			float sum, a1, a2, b1, b2;
 			float dA, dB, delta;
 			std::vector<float> buf(w); //to allow for src==dst
 			for (int y = 0; y < h; ++y)
 			{
-				std::copy(&src[w*y], &src[w*y + w], buf.begin());
+				std::copy(&src[w * y], &src[w * y + w], buf.begin());
 
 				sum = buf[0];
 				a1 = buf[0] * table[0]; b1 = buf[1] * table[0];
@@ -326,13 +268,13 @@ namespace cp
 					const float sumA = buf[atW(0 - u)] + buf[0 + u];
 					const float sumB = buf[atW(1 - u)] + buf[1 + u];
 					sum += sumA;
-					a1 += sumA*table[K*u + 0]; b1 += sumB*table[K*u + 0];
-					a2 += sumA*table[K*u + 1]; b2 += sumB*table[K*u + 1];
+					a1 += sumA * table[K * u + 0]; b1 += sumB * table[K * u + 0];
+					a2 += sumA * table[K * u + 1]; b2 += sumB * table[K * u + 1];
 				}
 
 				//the first pixel (x=0)
-				float* q = &dst[w*y];
-				q[0] = norm*(sum + a1 + a2);
+				float* q = &dst[w * y];
+				q[0] = norm * (sum + a1 + a2);
 				dA = buf[atE(0 + r + 1)] - buf[atW(0 - r)];
 				sum += dA;
 
@@ -340,32 +282,32 @@ namespace cp
 				int x = 1;
 				while (true) //four-length ring buffers
 				{
-					q[x] = norm*(sum + b1 + b2);
+					q[x] = norm * (sum + b1 + b2);
 					dB = buf[atE(x + r + 1)] - buf[atW(x - r)]; delta = dA - dB;
 					sum += dB;
-					a1 += -cf11*b1 + cfR1*delta;
-					a2 += -cf12*b2 + cfR2*delta;
+					a1 += -cf11 * b1 + cfR1 * delta;
+					a2 += -cf12 * b2 + cfR2 * delta;
 					x++; if (w <= x) break;
 
-					q[x] = norm*(sum - a1 - a2);
+					q[x] = norm * (sum - a1 - a2);
 					dA = buf[atE(x + r + 1)] - buf[atW(x - r)]; delta = dB - dA;
 					sum += dA;
-					b1 += +cf11*a1 + cfR1*delta;
-					b2 += +cf12*a2 + cfR2*delta;
+					b1 += +cf11 * a1 + cfR1 * delta;
+					b2 += +cf12 * a2 + cfR2 * delta;
 					x++; if (w <= x) break;
 
-					q[x] = norm*(sum - b1 - b2);
+					q[x] = norm * (sum - b1 - b2);
 					dB = buf[atE(x + r + 1)] - buf[atW(x - r)]; delta = dA - dB;
 					sum += dB;
-					a1 += -cf11*b1 - cfR1*delta;
-					a2 += -cf12*b2 - cfR2*delta;
+					a1 += -cf11 * b1 - cfR1 * delta;
+					a2 += -cf12 * b2 - cfR2 * delta;
 					x++; if (w <= x) break;
 
-					q[x] = norm*(sum + a1 + a2);
+					q[x] = norm * (sum + a1 + a2);
 					dA = buf[atE(x + r + 1)] - buf[atW(x - r)]; delta = dB - dA;
 					sum += dA;
-					b1 += +cf11*a1 - cfR1*delta;
-					b2 += +cf12*a2 - cfR2*delta;
+					b1 += +cf11 * a1 - cfR1 * delta;
+					b2 += +cf12 * a2 - cfR2 * delta;
 					x++; if (w <= x) break;
 				}
 			}
@@ -381,12 +323,12 @@ namespace cp
 				table[t] = float(tableY[t]);
 
 			//work space to keep raster scanning
-			std::vector<float> workspace((2 * K + 1)*w);
+			std::vector<float> workspace((2 * K + 1) * w);
 
 			//calculating the first and second terms
 			for (int x = 0; x < w; ++x)
 			{
-				float* ws = &workspace[(2 * K + 1)*x];
+				float* ws = &workspace[(2 * K + 1) * x];
 				ws[0] = src[x];
 				ws[1] = src[x + w] * table[0]; ws[2] = src[x] * table[0];
 				ws[3] = src[x + w] * table[1]; ws[4] = src[x] * table[1];
@@ -395,65 +337,65 @@ namespace cp
 			{
 				for (int x = 0; x < w; ++x)
 				{
-					const float sum0 = src[x + w*atN(0 - v)] + src[x + w*(0 + v)];
-					const float sum1 = src[x + w*atN(1 - v)] + src[x + w*(1 + v)];
-					float* ws = &workspace[(2 * K + 1)*x];
+					const float sum0 = src[x + w * atN(0 - v)] + src[x + w * (0 + v)];
+					const float sum1 = src[x + w * atN(1 - v)] + src[x + w * (1 + v)];
+					float* ws = &workspace[(2 * K + 1) * x];
 					ws[0] += sum0;
-					ws[1] += sum1*table[K*v + 0]; ws[2] += sum0*table[K*v + 0];
-					ws[3] += sum1*table[K*v + 1]; ws[4] += sum0*table[K*v + 1];
+					ws[1] += sum1 * table[K * v + 0]; ws[2] += sum0 * table[K * v + 0];
+					ws[3] += sum1 * table[K * v + 1]; ws[4] += sum0 * table[K * v + 1];
 				}
 			}
 
-			const float cf11 = float(table[K * 1 + 0] * 2.0 / spectY[0]), cfR1 = table[K*r + 0];
-			const float cf12 = float(table[K * 1 + 1] * 2.0 / spectY[1]), cfR2 = table[K*r + 1];
+			const float cf11 = float(table[K * 1 + 0] * 2.0 / spectY[0]), cfR1 = table[K * r + 0];
+			const float cf12 = float(table[K * 1 + 1] * 2.0 / spectY[1]), cfR2 = table[K * r + 1];
 
-			float *q, *p0N, *p0S, *p1N, *p1S;
+			float* q, * p0N, * p0S, * p1N, * p1S;
 			for (int y = 0; y < 1; ++y) //the first line (y=0)
 			{
-				q = &dst[w*y];
-				p1N = &src[w*atN(0 - r)]; p1S = &src[w*atS(0 + r + 1)];
+				q = &dst[w * y];
+				p1N = &src[w * atN(0 - r)]; p1S = &src[w * atS(0 + r + 1)];
 				for (int x = 0; x < w; ++x)
 				{
-					float* ws = &workspace[(2 * K + 1)*x];
-					q[x] = norm*(ws[0] + ws[2] + ws[4]);
+					float* ws = &workspace[(2 * K + 1) * x];
+					q[x] = norm * (ws[0] + ws[2] + ws[4]);
 					ws[0] += p1S[x] - p1N[x];
 				}
 			}
 			for (int y = 1; y < h; ++y) //remaining lines (with two-length ring buffers)
 			{
-				q = &dst[w*y];
-				p0N = &src[w*atN(y - r - 1)]; p0S = &src[w*atS(y + r)];
-				p1N = &src[w*atN(y - r)]; p1S = &src[w*atS(y + r + 1)];
+				q = &dst[w * y];
+				p0N = &src[w * atN(y - r - 1)]; p0S = &src[w * atS(y + r)];
+				p1N = &src[w * atN(y - r)]; p1S = &src[w * atS(y + r + 1)];
 				for (int x = 0; x < w; ++x)
 				{
-					float* ws = &workspace[(2 * K + 1)*x];
-					q[x] = norm*(ws[0] + ws[1] + ws[3]);
+					float* ws = &workspace[(2 * K + 1) * x];
+					q[x] = norm * (ws[0] + ws[1] + ws[3]);
 
 					const float d0 = p0S[x] - p0N[x];
 					const float d1 = p1S[x] - p1N[x];
 					const float delta = d1 - d0;
 
 					ws[0] += d1;
-					ws[2] = cfR1*delta + cf11*ws[1] - ws[2];
-					ws[4] = cfR2*delta + cf12*ws[3] - ws[4];
+					ws[2] = cfR1 * delta + cf11 * ws[1] - ws[2];
+					ws[4] = cfR2 * delta + cf12 * ws[3] - ws[4];
 				}
 				y++; if (h <= y) break; //to the next line
 
-				q = &dst[w*y];
-				p0N = &src[w*atN(y - r - 1)]; p0S = &src[w*atS(y + r)];
-				p1N = &src[w*atN(y - r)]; p1S = &src[w*atS(y + r + 1)];
+				q = &dst[w * y];
+				p0N = &src[w * atN(y - r - 1)]; p0S = &src[w * atS(y + r)];
+				p1N = &src[w * atN(y - r)]; p1S = &src[w * atS(y + r + 1)];
 				for (int x = 0; x < w; ++x)
 				{
-					float* ws = &workspace[(2 * K + 1)*x];
-					q[x] = norm*(ws[0] + ws[2] + ws[4]);
+					float* ws = &workspace[(2 * K + 1) * x];
+					q[x] = norm * (ws[0] + ws[2] + ws[4]);
 
 					const float d0 = p0S[x] - p0N[x];
 					const float d1 = p1S[x] - p1N[x];
 					const float delta = d1 - d0;
 
 					ws[0] += d1;
-					ws[1] = cfR1*delta + cf11*ws[2] - ws[1];
-					ws[3] = cfR2*delta + cf12*ws[4] - ws[3];
+					ws[1] = cfR1 * delta + cf11 * ws[2] - ws[1];
+					ws[3] = cfR2 * delta + cf12 * ws[4] - ws[3];
 				}
 			}
 		}
@@ -468,16 +410,16 @@ namespace cp
 			for (int t = 0; t<int(table.size()); ++t)
 				table[t] = float(tableX[t]);
 
-			const float cf11 = float(table[K * 1 + 0] * 2.0 / spectX[0]), cfR1 = table[K*r + 0];
-			const float cf12 = float(table[K * 1 + 1] * 2.0 / spectX[1]), cfR2 = table[K*r + 1];
+			const float cf11 = float(table[K * 1 + 0] * 2.0 / spectX[0]), cfR1 = table[K * r + 0];
+			const float cf12 = float(table[K * 1 + 1] * 2.0 / spectX[1]), cfR2 = table[K * r + 1];
 
 			//to allow for src==dst
-			std::vector<float> buf(B*w);
+			std::vector<float> buf(B * w);
 
-			assert(h%B == 0);
-			for (int y = 0; y < h / B*B; y += B)
+			assert(h % B == 0);
+			for (int y = 0; y < h / B * B; y += B)
 			{
-				std::copy(&src[w*y], &src[w*(y + B)], buf.begin());
+				std::copy(&src[w * y], &src[w * (y + B)], buf.begin());
 
 				__m128 pv0 = _mm_set_ps(buf[w * 3 + 0], buf[w * 2 + 0], buf[w * 1 + 0], buf[w * 0 + 0]);
 				__m128 pv1 = _mm_set_ps(buf[w * 3 + 1], buf[w * 2 + 1], buf[w * 1 + 1], buf[w * 0 + 1]);
@@ -502,14 +444,14 @@ namespace cp
 					__m128 sumB = _mm_add_ps(pv1M, pv1P);
 
 					sum = _mm_add_ps(sum, sumA);
-					a1 = _mm_add_ps(a1, _mm_mul_ps(_mm_set1_ps(table[K*u + 0]), sumA));
-					b1 = _mm_add_ps(b1, _mm_mul_ps(_mm_set1_ps(table[K*u + 0]), sumB));
-					a2 = _mm_add_ps(a2, _mm_mul_ps(_mm_set1_ps(table[K*u + 1]), sumA));
-					b2 = _mm_add_ps(b2, _mm_mul_ps(_mm_set1_ps(table[K*u + 1]), sumB));
+					a1 = _mm_add_ps(a1, _mm_mul_ps(_mm_set1_ps(table[K * u + 0]), sumA));
+					b1 = _mm_add_ps(b1, _mm_mul_ps(_mm_set1_ps(table[K * u + 0]), sumB));
+					a2 = _mm_add_ps(a2, _mm_mul_ps(_mm_set1_ps(table[K * u + 1]), sumA));
+					b2 = _mm_add_ps(b2, _mm_mul_ps(_mm_set1_ps(table[K * u + 1]), sumB));
 				}
 
 				//sliding convolution
-				float *pA, *pB;
+				float* pA, * pB;
 				__m128 pvA, pvB;
 				__m128 dvA, dvB, delta;
 				__m128 qv[B];
@@ -566,14 +508,14 @@ namespace cp
 
 					//output with transposition
 					_MM_TRANSPOSE4_PS(qv[0], qv[1], qv[2], qv[3]);
-					_mm_storeu_ps(&dst[w*(y + 0)], qv[0]);
-					_mm_storeu_ps(&dst[w*(y + 1)], qv[1]);
-					_mm_storeu_ps(&dst[w*(y + 2)], qv[2]);
-					_mm_storeu_ps(&dst[w*(y + 3)], qv[3]);
+					_mm_storeu_ps(&dst[w * (y + 0)], qv[0]);
+					_mm_storeu_ps(&dst[w * (y + 1)], qv[1]);
+					_mm_storeu_ps(&dst[w * (y + 2)], qv[2]);
+					_mm_storeu_ps(&dst[w * (y + 3)], qv[3]);
 				}
 
 				//the other pixels (B<=x<w)
-				for (int x = B; x < w / B*B; x += B) //four-length ring buffers
+				for (int x = B; x < w / B * B; x += B) //four-length ring buffers
 				{
 					//the first pixel (x=0)
 					qv[0] = _mm_mul_ps(_mm_set1_ps(norm), _mm_add_ps(sum, _mm_add_ps(a1, a2)));
@@ -625,10 +567,10 @@ namespace cp
 
 					//output with transposition
 					_MM_TRANSPOSE4_PS(qv[0], qv[1], qv[2], qv[3]);
-					_mm_storeu_ps(&dst[w*(y + 0) + x], qv[0]);
-					_mm_storeu_ps(&dst[w*(y + 1) + x], qv[1]);
-					_mm_storeu_ps(&dst[w*(y + 2) + x], qv[2]);
-					_mm_storeu_ps(&dst[w*(y + 3) + x], qv[3]);
+					_mm_storeu_ps(&dst[w * (y + 0) + x], qv[0]);
+					_mm_storeu_ps(&dst[w * (y + 1) + x], qv[1]);
+					_mm_storeu_ps(&dst[w * (y + 2) + x], qv[2]);
+					_mm_storeu_ps(&dst[w * (y + 3) + x], qv[3]);
 				}
 			}
 		}
@@ -646,12 +588,12 @@ namespace cp
 				table[t] = float(tableY[t]);
 
 			//work space to keep raster scanning
-			float* workspace = reinterpret_cast<float*>(_mm_malloc(sizeof(float)*(2 * K + 1)*w, sizeof(__m128)));
+			float* workspace = reinterpret_cast<float*>(_mm_malloc(sizeof(float) * (2 * K + 1) * w, sizeof(__m128)));
 
 			//calculating the first and second terms
-			for (int x = 0; x < w / B*B; x += B)
+			for (int x = 0; x < w / B * B; x += B)
 			{
-				float* ws = &workspace[(2 * K + 1)*x];
+				float* ws = &workspace[(2 * K + 1) * x];
 				__m128 p0 = _mm_load_ps(&src[x]);
 				__m128 p1 = _mm_load_ps(&src[x + w]);
 				_mm_store_ps(&ws[B * 0], p0);
@@ -662,31 +604,31 @@ namespace cp
 			}
 			for (int v = 1; v <= r; ++v)
 			{
-				for (int x = 0; x < w / B*B; x += B)
+				for (int x = 0; x < w / B * B; x += B)
 				{
-					float* ws = &workspace[(2 * K + 1)*x];
-					__m128 sum0 = _mm_add_ps(_mm_load_ps(&src[x + w*atN(0 - v)]), _mm_load_ps(&src[x + w*(0 + v)]));
-					__m128 sum1 = _mm_add_ps(_mm_load_ps(&src[x + w*atN(1 - v)]), _mm_load_ps(&src[x + w*(1 + v)]));
+					float* ws = &workspace[(2 * K + 1) * x];
+					__m128 sum0 = _mm_add_ps(_mm_load_ps(&src[x + w * atN(0 - v)]), _mm_load_ps(&src[x + w * (0 + v)]));
+					__m128 sum1 = _mm_add_ps(_mm_load_ps(&src[x + w * atN(1 - v)]), _mm_load_ps(&src[x + w * (1 + v)]));
 					_mm_store_ps(&ws[B * 0], _mm_add_ps(_mm_load_ps(&ws[B * 0]), sum0));
-					_mm_store_ps(&ws[B * 1], _mm_add_ps(_mm_load_ps(&ws[B * 1]), _mm_mul_ps(sum1, _mm_set1_ps(table[K*v + 0]))));
-					_mm_store_ps(&ws[B * 2], _mm_add_ps(_mm_load_ps(&ws[B * 2]), _mm_mul_ps(sum0, _mm_set1_ps(table[K*v + 0]))));
-					_mm_store_ps(&ws[B * 3], _mm_add_ps(_mm_load_ps(&ws[B * 3]), _mm_mul_ps(sum1, _mm_set1_ps(table[K*v + 1]))));
-					_mm_store_ps(&ws[B * 4], _mm_add_ps(_mm_load_ps(&ws[B * 4]), _mm_mul_ps(sum0, _mm_set1_ps(table[K*v + 1]))));
+					_mm_store_ps(&ws[B * 1], _mm_add_ps(_mm_load_ps(&ws[B * 1]), _mm_mul_ps(sum1, _mm_set1_ps(table[K * v + 0]))));
+					_mm_store_ps(&ws[B * 2], _mm_add_ps(_mm_load_ps(&ws[B * 2]), _mm_mul_ps(sum0, _mm_set1_ps(table[K * v + 0]))));
+					_mm_store_ps(&ws[B * 3], _mm_add_ps(_mm_load_ps(&ws[B * 3]), _mm_mul_ps(sum1, _mm_set1_ps(table[K * v + 1]))));
+					_mm_store_ps(&ws[B * 4], _mm_add_ps(_mm_load_ps(&ws[B * 4]), _mm_mul_ps(sum0, _mm_set1_ps(table[K * v + 1]))));
 				}
 			}
 
-			const float cf11 = float(table[K * 1 + 0] * 2.0 / spectY[0]), cfR1 = table[K*r + 0];
-			const float cf12 = float(table[K * 1 + 1] * 2.0 / spectY[1]), cfR2 = table[K*r + 1];
+			const float cf11 = float(table[K * 1 + 0] * 2.0 / spectY[0]), cfR1 = table[K * r + 0];
+			const float cf12 = float(table[K * 1 + 1] * 2.0 / spectY[1]), cfR2 = table[K * r + 1];
 
 			//sliding convolution
 			for (int y = 0; y < 1; ++y) //the first line (y=0)
 			{
-				float* q = &dst[w*y];
-				const float* p1N = &src[w*atN(y - r)];
-				const float* p1S = &src[w*atS(y + r + 1)];
-				for (int x = 0; x < w / B*B; x += B)
+				float* q = &dst[w * y];
+				const float* p1N = &src[w * atN(y - r)];
+				const float* p1S = &src[w * atS(y + r + 1)];
+				for (int x = 0; x < w / B * B; x += B)
 				{
-					float* ws = &workspace[(2 * K + 1)*x];
+					float* ws = &workspace[(2 * K + 1) * x];
 					const __m128 a0 = _mm_load_ps(&ws[B * 0]);
 					const __m128 a2 = _mm_load_ps(&ws[B * 2]);
 					const __m128 a4 = _mm_load_ps(&ws[B * 4]);
@@ -698,14 +640,14 @@ namespace cp
 			}
 			for (int y = 1; y < h; ++y) //the other lines
 			{
-				float* q = &dst[w*y];
-				const float* p0N = &src[w*atN(y - r - 1)];
-				const float* p1N = &src[w*atN(y - r)];
-				const float* p0S = &src[w*atS(y + r)];
-				const float* p1S = &src[w*atS(y + r + 1)];
-				for (int x = 0; x < w / B*B; x += B)
+				float* q = &dst[w * y];
+				const float* p0N = &src[w * atN(y - r - 1)];
+				const float* p1N = &src[w * atN(y - r)];
+				const float* p0S = &src[w * atS(y + r)];
+				const float* p1S = &src[w * atS(y + r + 1)];
+				for (int x = 0; x < w / B * B; x += B)
 				{
-					float* ws = &workspace[(2 * K + 1)*x];
+					float* ws = &workspace[(2 * K + 1) * x];
 					const __m128 a0 = _mm_load_ps(&ws[B * 0]);
 					const __m128 a1 = _mm_load_ps(&ws[B * 1]);
 					const __m128 a3 = _mm_load_ps(&ws[B * 3]);
@@ -735,16 +677,16 @@ namespace cp
 			for (int t = 0; t<int(table.size()); ++t)
 				table[t] = float(tableX[t]);
 
-			const float cf11 = float(table[K * 1 + 0] * 2.0 / spectX[0]), cfR1 = table[K*r + 0];
-			const float cf12 = float(table[K * 1 + 1] * 2.0 / spectX[1]), cfR2 = table[K*r + 1];
+			const float cf11 = float(table[K * 1 + 0] * 2.0 / spectX[0]), cfR1 = table[K * r + 0];
+			const float cf12 = float(table[K * 1 + 1] * 2.0 / spectX[1]), cfR2 = table[K * r + 1];
 
-			assert(h%B == 0);
+			assert(h % B == 0);
 #pragma omp parallel for
-			for (int y = 0; y < h / B*B; y += B)
+			for (int y = 0; y < h / B * B; y += B)
 			{
 				//to allow for src==dst
-				std::vector<float> buf(B*w);
-				std::copy(&src[w*y], &src[w*(y + B)], buf.begin());
+				std::vector<float> buf(B * w);
+				std::copy(&src[w * y], &src[w * (y + B)], buf.begin());
 
 				__m256 pv0 = _mm256_set_ps(buf[w * 7 + 0], buf[w * 6 + 0], buf[w * 5 + 0], buf[w * 4 + 0], buf[w * 3 + 0], buf[w * 2 + 0], buf[w * 1 + 0], buf[w * 0 + 0]);
 				__m256 pv1 = _mm256_set_ps(buf[w * 7 + 1], buf[w * 6 + 1], buf[w * 5 + 1], buf[w * 4 + 1], buf[w * 3 + 1], buf[w * 2 + 1], buf[w * 1 + 1], buf[w * 0 + 1]);
@@ -769,14 +711,14 @@ namespace cp
 					__m256 sumB = _mm256_add_ps(pv1M, pv1P);
 
 					sum = _mm256_add_ps(sum, sumA);
-					a1 = _mm256_add_ps(a1, _mm256_mul_ps(_mm256_set1_ps(table[K*u + 0]), sumA));
-					b1 = _mm256_add_ps(b1, _mm256_mul_ps(_mm256_set1_ps(table[K*u + 0]), sumB));
-					a2 = _mm256_add_ps(a2, _mm256_mul_ps(_mm256_set1_ps(table[K*u + 1]), sumA));
-					b2 = _mm256_add_ps(b2, _mm256_mul_ps(_mm256_set1_ps(table[K*u + 1]), sumB));
+					a1 = _mm256_add_ps(a1, _mm256_mul_ps(_mm256_set1_ps(table[K * u + 0]), sumA));
+					b1 = _mm256_add_ps(b1, _mm256_mul_ps(_mm256_set1_ps(table[K * u + 0]), sumB));
+					a2 = _mm256_add_ps(a2, _mm256_mul_ps(_mm256_set1_ps(table[K * u + 1]), sumA));
+					b2 = _mm256_add_ps(b2, _mm256_mul_ps(_mm256_set1_ps(table[K * u + 1]), sumB));
 				}
 
 				//sliding convolution
-				float *pA, *pB;
+				float* pA, * pB;
 				__m256 pvA, pvB;
 				__m256 dvA, dvB, delta;
 				__m256 qv[B];
@@ -880,19 +822,20 @@ namespace cp
 					a2 = _mm256_sub_ps(_mm256_add_ps(_mm256_mul_ps(_mm256_set1_ps(cfR2), delta), _mm256_mul_ps(_mm256_set1_ps(cf12), b2)), a2);
 
 					//output with transposition
+
 					_MM256_TRANSPOSE8_PS(qv[0], qv[1], qv[2], qv[3], qv[4], qv[5], qv[6], qv[7]);
-					_mm256_storeu_ps(&dst[w*(y + 0)], qv[0]);
-					_mm256_storeu_ps(&dst[w*(y + 1)], qv[1]);
-					_mm256_storeu_ps(&dst[w*(y + 2)], qv[2]);
-					_mm256_storeu_ps(&dst[w*(y + 3)], qv[3]);
-					_mm256_storeu_ps(&dst[w*(y + 4)], qv[4]);
-					_mm256_storeu_ps(&dst[w*(y + 5)], qv[5]);
-					_mm256_storeu_ps(&dst[w*(y + 6)], qv[6]);
-					_mm256_storeu_ps(&dst[w*(y + 7)], qv[7]);
+					_mm256_storeu_ps(&dst[w * (y + 0)], qv[0]);
+					_mm256_storeu_ps(&dst[w * (y + 1)], qv[1]);
+					_mm256_storeu_ps(&dst[w * (y + 2)], qv[2]);
+					_mm256_storeu_ps(&dst[w * (y + 3)], qv[3]);
+					_mm256_storeu_ps(&dst[w * (y + 4)], qv[4]);
+					_mm256_storeu_ps(&dst[w * (y + 5)], qv[5]);
+					_mm256_storeu_ps(&dst[w * (y + 6)], qv[6]);
+					_mm256_storeu_ps(&dst[w * (y + 7)], qv[7]);
 				}
 
 				//the other pixels (B<=x<w)
-				for (int x = B; x < w / B*B; x += B) //eight-length ring buffers
+				for (int x = B; x < w / B * B; x += B) //eight-length ring buffers
 				{
 					//the first pixel (x=0)
 					qv[0] = _mm256_mul_ps(_mm256_set1_ps(norm), _mm256_add_ps(sum, _mm256_add_ps(a1, a2)));
@@ -992,14 +935,14 @@ namespace cp
 
 					//output with transposition
 					_MM256_TRANSPOSE8_PS(qv[0], qv[1], qv[2], qv[3], qv[4], qv[5], qv[6], qv[7]);
-					_mm256_storeu_ps(&dst[w*(y + 0) + x], qv[0]);
-					_mm256_storeu_ps(&dst[w*(y + 1) + x], qv[1]);
-					_mm256_storeu_ps(&dst[w*(y + 2) + x], qv[2]);
-					_mm256_storeu_ps(&dst[w*(y + 3) + x], qv[3]);
-					_mm256_storeu_ps(&dst[w*(y + 4) + x], qv[4]);
-					_mm256_storeu_ps(&dst[w*(y + 5) + x], qv[5]);
-					_mm256_storeu_ps(&dst[w*(y + 6) + x], qv[6]);
-					_mm256_storeu_ps(&dst[w*(y + 7) + x], qv[7]);
+					_mm256_storeu_ps(&dst[w * (y + 0) + x], qv[0]);
+					_mm256_storeu_ps(&dst[w * (y + 1) + x], qv[1]);
+					_mm256_storeu_ps(&dst[w * (y + 2) + x], qv[2]);
+					_mm256_storeu_ps(&dst[w * (y + 3) + x], qv[3]);
+					_mm256_storeu_ps(&dst[w * (y + 4) + x], qv[4]);
+					_mm256_storeu_ps(&dst[w * (y + 5) + x], qv[5]);
+					_mm256_storeu_ps(&dst[w * (y + 6) + x], qv[6]);
+					_mm256_storeu_ps(&dst[w * (y + 7) + x], qv[7]);
 				}
 			}
 		}
@@ -1014,16 +957,16 @@ namespace cp
 			for (int t = 0; t<int(table.size()); ++t)
 				table[t] = float(tableX[t]);
 
-			const float cf11 = float(table[K * 1 + 0] * 2.0 / spectX[0]), cfR1 = table[K*r + 0];
-			const float cf12 = float(table[K * 1 + 1] * 2.0 / spectX[1]), cfR2 = table[K*r + 1];
+			const float cf11 = float(table[K * 1 + 0] * 2.0 / spectX[0]), cfR1 = table[K * r + 0];
+			const float cf12 = float(table[K * 1 + 1] * 2.0 / spectX[1]), cfR2 = table[K * r + 1];
 
 			//to allow for src==dst
-			std::vector<float> buf(B*w);
+			std::vector<float> buf(B * w);
 
-			assert(h%B == 0);
-			for (int y = 0; y < h / B*B; y += B)
+			assert(h % B == 0);
+			for (int y = 0; y < h / B * B; y += B)
 			{
-				std::copy(&src[w*y], &src[w*(y + B)], buf.begin());
+				std::copy(&src[w * y], &src[w * (y + B)], buf.begin());
 
 				__m256 pv0 = _mm256_set_ps(buf[w * 7 + 0], buf[w * 6 + 0], buf[w * 5 + 0], buf[w * 4 + 0], buf[w * 3 + 0], buf[w * 2 + 0], buf[w * 1 + 0], buf[w * 0 + 0]);
 				__m256 pv1 = _mm256_set_ps(buf[w * 7 + 1], buf[w * 6 + 1], buf[w * 5 + 1], buf[w * 4 + 1], buf[w * 3 + 1], buf[w * 2 + 1], buf[w * 1 + 1], buf[w * 0 + 1]);
@@ -1048,14 +991,14 @@ namespace cp
 					__m256 sumB = _mm256_add_ps(pv1M, pv1P);
 
 					sum = _mm256_add_ps(sum, sumA);
-					a1 = _mm256_add_ps(a1, _mm256_mul_ps(_mm256_set1_ps(table[K*u + 0]), sumA));
-					b1 = _mm256_add_ps(b1, _mm256_mul_ps(_mm256_set1_ps(table[K*u + 0]), sumB));
-					a2 = _mm256_add_ps(a2, _mm256_mul_ps(_mm256_set1_ps(table[K*u + 1]), sumA));
-					b2 = _mm256_add_ps(b2, _mm256_mul_ps(_mm256_set1_ps(table[K*u + 1]), sumB));
+					a1 = _mm256_add_ps(a1, _mm256_mul_ps(_mm256_set1_ps(table[K * u + 0]), sumA));
+					b1 = _mm256_add_ps(b1, _mm256_mul_ps(_mm256_set1_ps(table[K * u + 0]), sumB));
+					a2 = _mm256_add_ps(a2, _mm256_mul_ps(_mm256_set1_ps(table[K * u + 1]), sumA));
+					b2 = _mm256_add_ps(b2, _mm256_mul_ps(_mm256_set1_ps(table[K * u + 1]), sumB));
 				}
 
 				//sliding convolution
-				float *pA, *pB;
+				float* pA, * pB;
 				__m256 pvA, pvB;
 				__m256 dvA, dvB, delta;
 				__m256 qv[B];
@@ -1160,18 +1103,18 @@ namespace cp
 
 					//output with transposition
 					_MM256_TRANSPOSE8_PS(qv[0], qv[1], qv[2], qv[3], qv[4], qv[5], qv[6], qv[7]);
-					_mm256_storeu_ps(&dst[w*(y + 0)], qv[0]);
-					_mm256_storeu_ps(&dst[w*(y + 1)], qv[1]);
-					_mm256_storeu_ps(&dst[w*(y + 2)], qv[2]);
-					_mm256_storeu_ps(&dst[w*(y + 3)], qv[3]);
-					_mm256_storeu_ps(&dst[w*(y + 4)], qv[4]);
-					_mm256_storeu_ps(&dst[w*(y + 5)], qv[5]);
-					_mm256_storeu_ps(&dst[w*(y + 6)], qv[6]);
-					_mm256_storeu_ps(&dst[w*(y + 7)], qv[7]);
+					_mm256_storeu_ps(&dst[w * (y + 0)], qv[0]);
+					_mm256_storeu_ps(&dst[w * (y + 1)], qv[1]);
+					_mm256_storeu_ps(&dst[w * (y + 2)], qv[2]);
+					_mm256_storeu_ps(&dst[w * (y + 3)], qv[3]);
+					_mm256_storeu_ps(&dst[w * (y + 4)], qv[4]);
+					_mm256_storeu_ps(&dst[w * (y + 5)], qv[5]);
+					_mm256_storeu_ps(&dst[w * (y + 6)], qv[6]);
+					_mm256_storeu_ps(&dst[w * (y + 7)], qv[7]);
 				}
 
 				//the other pixels (B<=x<w)
-				for (int x = B; x < w / B*B; x += B) //eight-length ring buffers
+				for (int x = B; x < w / B * B; x += B) //eight-length ring buffers
 				{
 					//the first pixel (x=0)
 					qv[0] = _mm256_mul_ps(_mm256_set1_ps(norm), _mm256_add_ps(sum, _mm256_add_ps(a1, a2)));
@@ -1271,14 +1214,14 @@ namespace cp
 
 					//output with transposition
 					_MM256_TRANSPOSE8_PS(qv[0], qv[1], qv[2], qv[3], qv[4], qv[5], qv[6], qv[7]);
-					_mm256_storeu_ps(&dst[w*(y + 0) + x], qv[0]);
-					_mm256_storeu_ps(&dst[w*(y + 1) + x], qv[1]);
-					_mm256_storeu_ps(&dst[w*(y + 2) + x], qv[2]);
-					_mm256_storeu_ps(&dst[w*(y + 3) + x], qv[3]);
-					_mm256_storeu_ps(&dst[w*(y + 4) + x], qv[4]);
-					_mm256_storeu_ps(&dst[w*(y + 5) + x], qv[5]);
-					_mm256_storeu_ps(&dst[w*(y + 6) + x], qv[6]);
-					_mm256_storeu_ps(&dst[w*(y + 7) + x], qv[7]);
+					_mm256_storeu_ps(&dst[w * (y + 0) + x], qv[0]);
+					_mm256_storeu_ps(&dst[w * (y + 1) + x], qv[1]);
+					_mm256_storeu_ps(&dst[w * (y + 2) + x], qv[2]);
+					_mm256_storeu_ps(&dst[w * (y + 3) + x], qv[3]);
+					_mm256_storeu_ps(&dst[w * (y + 4) + x], qv[4]);
+					_mm256_storeu_ps(&dst[w * (y + 5) + x], qv[5]);
+					_mm256_storeu_ps(&dst[w * (y + 6) + x], qv[6]);
+					_mm256_storeu_ps(&dst[w * (y + 7) + x], qv[7]);
 				}
 			}
 		}
@@ -1296,12 +1239,12 @@ namespace cp
 				table[t] = float(tableY[t]);
 
 			//work space to keep raster scanning
-			float* workspace = reinterpret_cast<float*>(_mm_malloc(sizeof(float)*(2 * K + 1)*w, sizeof(__m256)));
+			float* workspace = reinterpret_cast<float*>(_mm_malloc(sizeof(float) * (2 * K + 1) * w, sizeof(__m256)));
 
 			//calculating the first and second terms
-			for (int x = 0; x < w / B*B; x += B)
+			for (int x = 0; x < w / B * B; x += B)
 			{
-				float* ws = &workspace[(2 * K + 1)*x];
+				float* ws = &workspace[(2 * K + 1) * x];
 				__m256 p0 = _mm256_load_ps(&src[x]);
 				__m256 p1 = _mm256_load_ps(&src[x + w]);
 				_mm256_store_ps(&ws[B * 0], p0);
@@ -1312,31 +1255,31 @@ namespace cp
 			}
 			for (int v = 1; v <= r; ++v)
 			{
-				for (int x = 0; x < w / B*B; x += B)
+				for (int x = 0; x < w / B * B; x += B)
 				{
-					float* ws = &workspace[(2 * K + 1)*x];
-					__m256 sum0 = _mm256_add_ps(_mm256_load_ps(&src[x + w*atN(0 - v)]), _mm256_load_ps(&src[x + w*(0 + v)]));
-					__m256 sum1 = _mm256_add_ps(_mm256_load_ps(&src[x + w*atN(1 - v)]), _mm256_load_ps(&src[x + w*(1 + v)]));
+					float* ws = &workspace[(2 * K + 1) * x];
+					__m256 sum0 = _mm256_add_ps(_mm256_load_ps(&src[x + w * atN(0 - v)]), _mm256_load_ps(&src[x + w * (0 + v)]));
+					__m256 sum1 = _mm256_add_ps(_mm256_load_ps(&src[x + w * atN(1 - v)]), _mm256_load_ps(&src[x + w * (1 + v)]));
 					_mm256_store_ps(&ws[B * 0], _mm256_add_ps(_mm256_load_ps(&ws[B * 0]), sum0));
-					_mm256_store_ps(&ws[B * 1], _mm256_add_ps(_mm256_load_ps(&ws[B * 1]), _mm256_mul_ps(sum1, _mm256_set1_ps(table[K*v + 0]))));
-					_mm256_store_ps(&ws[B * 2], _mm256_add_ps(_mm256_load_ps(&ws[B * 2]), _mm256_mul_ps(sum0, _mm256_set1_ps(table[K*v + 0]))));
-					_mm256_store_ps(&ws[B * 3], _mm256_add_ps(_mm256_load_ps(&ws[B * 3]), _mm256_mul_ps(sum1, _mm256_set1_ps(table[K*v + 1]))));
-					_mm256_store_ps(&ws[B * 4], _mm256_add_ps(_mm256_load_ps(&ws[B * 4]), _mm256_mul_ps(sum0, _mm256_set1_ps(table[K*v + 1]))));
+					_mm256_store_ps(&ws[B * 1], _mm256_add_ps(_mm256_load_ps(&ws[B * 1]), _mm256_mul_ps(sum1, _mm256_set1_ps(table[K * v + 0]))));
+					_mm256_store_ps(&ws[B * 2], _mm256_add_ps(_mm256_load_ps(&ws[B * 2]), _mm256_mul_ps(sum0, _mm256_set1_ps(table[K * v + 0]))));
+					_mm256_store_ps(&ws[B * 3], _mm256_add_ps(_mm256_load_ps(&ws[B * 3]), _mm256_mul_ps(sum1, _mm256_set1_ps(table[K * v + 1]))));
+					_mm256_store_ps(&ws[B * 4], _mm256_add_ps(_mm256_load_ps(&ws[B * 4]), _mm256_mul_ps(sum0, _mm256_set1_ps(table[K * v + 1]))));
 				}
 			}
 
-			const float cf11 = float(table[K * 1 + 0] * 2.0 / spectY[0]), cfR1 = table[K*r + 0];
-			const float cf12 = float(table[K * 1 + 1] * 2.0 / spectY[1]), cfR2 = table[K*r + 1];
+			const float cf11 = float(table[K * 1 + 0] * 2.0 / spectY[0]), cfR1 = table[K * r + 0];
+			const float cf12 = float(table[K * 1 + 1] * 2.0 / spectY[1]), cfR2 = table[K * r + 1];
 
 			//sliding convolution
 			for (int y = 0; y < 1; ++y) //the first line (y=0)
 			{
-				float* q = &dst[w*y];
-				const float* p1N = &src[w*atN(y - r)];
-				const float* p1S = &src[w*atS(y + r + 1)];
-				for (int x = 0; x < w / B*B; x += B)
+				float* q = &dst[w * y];
+				const float* p1N = &src[w * atN(y - r)];
+				const float* p1S = &src[w * atS(y + r + 1)];
+				for (int x = 0; x < w / B * B; x += B)
 				{
-					float* ws = &workspace[(2 * K + 1)*x];
+					float* ws = &workspace[(2 * K + 1) * x];
 					const __m256 a0 = _mm256_load_ps(&ws[B * 0]);
 					const __m256 a2 = _mm256_load_ps(&ws[B * 2]);
 					const __m256 a4 = _mm256_load_ps(&ws[B * 4]);
@@ -1348,14 +1291,14 @@ namespace cp
 			}
 			for (int y = 1; y < h; ++y) //the other lines
 			{
-				float* q = &dst[w*y];
-				const float* p0N = &src[w*atN(y - r - 1)];
-				const float* p1N = &src[w*atN(y - r)];
-				const float* p0S = &src[w*atS(y + r)];
-				const float* p1S = &src[w*atS(y + r + 1)];
-				for (int x = 0; x < w / B*B; x += B)
+				float* q = &dst[w * y];
+				const float* p0N = &src[w * atN(y - r - 1)];
+				const float* p1N = &src[w * atN(y - r)];
+				const float* p0S = &src[w * atS(y + r)];
+				const float* p1S = &src[w * atS(y + r + 1)];
+				for (int x = 0; x < w / B * B; x += B)
 				{
-					float* ws = &workspace[(2 * K + 1)*x];
+					float* ws = &workspace[(2 * K + 1) * x];
 					const __m256 a0 = _mm256_load_ps(&ws[B * 0]);
 					const __m256 a1 = _mm256_load_ps(&ws[B * 1]);
 					const __m256 a3 = _mm256_load_ps(&ws[B * 3]);
@@ -1387,12 +1330,12 @@ namespace cp
 				table[t] = float(tableY[t]);
 
 			//work space to keep raster scanning
-			float* workspace = reinterpret_cast<float*>(_mm_malloc(sizeof(float)*(2 * K + 1)*w, sizeof(__m256)));
+			float* workspace = reinterpret_cast<float*>(_mm_malloc(sizeof(float) * (2 * K + 1) * w, sizeof(__m256)));
 
 			//calculating the first and second terms
-			for (int x = 0; x < w / B*B; x += B)
+			for (int x = 0; x < w / B * B; x += B)
 			{
-				float* ws = &workspace[(2 * K + 1)*x];
+				float* ws = &workspace[(2 * K + 1) * x];
 				__m256 p0 = _mm256_load_ps(&src[x]);
 				__m256 p1 = _mm256_load_ps(&src[x + w]);
 				_mm256_store_ps(&ws[B * 0], p0);
@@ -1404,31 +1347,31 @@ namespace cp
 			//#pragma omp parallel for
 			for (int v = 1; v <= r; ++v)
 			{
-				for (int x = 0; x < w / B*B; x += B)
+				for (int x = 0; x < w / B * B; x += B)
 				{
-					float* ws = &workspace[(2 * K + 1)*x];
-					__m256 sum0 = _mm256_add_ps(_mm256_load_ps(&src[x + w*atN(0 - v)]), _mm256_load_ps(&src[x + w*(0 + v)]));
-					__m256 sum1 = _mm256_add_ps(_mm256_load_ps(&src[x + w*atN(1 - v)]), _mm256_load_ps(&src[x + w*(1 + v)]));
+					float* ws = &workspace[(2 * K + 1) * x];
+					__m256 sum0 = _mm256_add_ps(_mm256_load_ps(&src[x + w * atN(0 - v)]), _mm256_load_ps(&src[x + w * (0 + v)]));
+					__m256 sum1 = _mm256_add_ps(_mm256_load_ps(&src[x + w * atN(1 - v)]), _mm256_load_ps(&src[x + w * (1 + v)]));
 					_mm256_store_ps(&ws[B * 0], _mm256_add_ps(_mm256_load_ps(&ws[B * 0]), sum0));
-					_mm256_store_ps(&ws[B * 1], _mm256_add_ps(_mm256_load_ps(&ws[B * 1]), _mm256_mul_ps(sum1, _mm256_set1_ps(table[K*v + 0]))));
-					_mm256_store_ps(&ws[B * 2], _mm256_add_ps(_mm256_load_ps(&ws[B * 2]), _mm256_mul_ps(sum0, _mm256_set1_ps(table[K*v + 0]))));
-					_mm256_store_ps(&ws[B * 3], _mm256_add_ps(_mm256_load_ps(&ws[B * 3]), _mm256_mul_ps(sum1, _mm256_set1_ps(table[K*v + 1]))));
-					_mm256_store_ps(&ws[B * 4], _mm256_add_ps(_mm256_load_ps(&ws[B * 4]), _mm256_mul_ps(sum0, _mm256_set1_ps(table[K*v + 1]))));
+					_mm256_store_ps(&ws[B * 1], _mm256_add_ps(_mm256_load_ps(&ws[B * 1]), _mm256_mul_ps(sum1, _mm256_set1_ps(table[K * v + 0]))));
+					_mm256_store_ps(&ws[B * 2], _mm256_add_ps(_mm256_load_ps(&ws[B * 2]), _mm256_mul_ps(sum0, _mm256_set1_ps(table[K * v + 0]))));
+					_mm256_store_ps(&ws[B * 3], _mm256_add_ps(_mm256_load_ps(&ws[B * 3]), _mm256_mul_ps(sum1, _mm256_set1_ps(table[K * v + 1]))));
+					_mm256_store_ps(&ws[B * 4], _mm256_add_ps(_mm256_load_ps(&ws[B * 4]), _mm256_mul_ps(sum0, _mm256_set1_ps(table[K * v + 1]))));
 				}
 			}
 
-			const float cf11 = float(table[K * 1 + 0] * 2.0 / spectY[0]), cfR1 = table[K*r + 0];
-			const float cf12 = float(table[K * 1 + 1] * 2.0 / spectY[1]), cfR2 = table[K*r + 1];
+			const float cf11 = float(table[K * 1 + 0] * 2.0 / spectY[0]), cfR1 = table[K * r + 0];
+			const float cf12 = float(table[K * 1 + 1] * 2.0 / spectY[1]), cfR2 = table[K * r + 1];
 			//sliding convolution
 			//#pragma omp parallel for
 			for (int y = 0; y < 1; ++y) //the first line (y=0)
 			{
-				float* q = &dst[w*y];
-				const float* p1N = &src[w*atN(y - r)];
-				const float* p1S = &src[w*atS(y + r + 1)];
-				for (int x = 0; x < w / B*B; x += B)
+				float* q = &dst[w * y];
+				const float* p1N = &src[w * atN(y - r)];
+				const float* p1S = &src[w * atS(y + r + 1)];
+				for (int x = 0; x < w / B * B; x += B)
 				{
-					float* ws = &workspace[(2 * K + 1)*x];
+					float* ws = &workspace[(2 * K + 1) * x];
 					const __m256 a0 = _mm256_load_ps(&ws[B * 0]);
 					const __m256 a2 = _mm256_load_ps(&ws[B * 2]);
 					const __m256 a4 = _mm256_load_ps(&ws[B * 4]);
@@ -1442,15 +1385,15 @@ namespace cp
 
 			for (int y = 1; y < h; ++y) //the other lines	
 			{
-				float* q = &dst[w*y];
-				const float* p0N = &src[w*atN(y - r - 1)];
-				const float* p1N = &src[w*atN(y - r)];
-				const float* p0S = &src[w*atS(y + r)];
-				const float* p1S = &src[w*atS(y + r + 1)];
+				float* q = &dst[w * y];
+				const float* p0N = &src[w * atN(y - r - 1)];
+				const float* p1N = &src[w * atN(y - r)];
+				const float* p0S = &src[w * atS(y + r)];
+				const float* p1S = &src[w * atS(y + r + 1)];
 				//#pragma omp parallel for			
-				for (int x = 0; x < w / B*B; x += B)
+				for (int x = 0; x < w / B * B; x += B)
 				{
-					float* ws = &workspace[(2 * K + 1)*x];
+					float* ws = &workspace[(2 * K + 1) * x];
 					const __m256 a0 = _mm256_load_ps(&ws[B * 0]);
 					const __m256 a1 = _mm256_load_ps(&ws[B * 1]);
 					const __m256 a3 = _mm256_load_ps(&ws[B * 3]);
@@ -1478,15 +1421,15 @@ namespace cp
 			for (int t = 0; t<int(table.size()); ++t)
 				table[t] = double(tableX[t]);
 
-			const double cf11 = double(table[K * 1 + 0] * 2.0 / spectX[0]), cfR1 = table[K*r + 0];
-			const double cf12 = double(table[K * 1 + 1] * 2.0 / spectX[1]), cfR2 = table[K*r + 1];
+			const double cf11 = double(table[K * 1 + 0] * 2.0 / spectX[0]), cfR1 = table[K * r + 0];
+			const double cf12 = double(table[K * 1 + 1] * 2.0 / spectX[1]), cfR2 = table[K * r + 1];
 
 			double sum, a1, a2, b1, b2;
 			double dA, dB, delta;
 			std::vector<double> buf(w); //to allow for src==dst
 			for (int y = 0; y < h; ++y)
 			{
-				std::copy(&src[w*y], &src[w*y + w], buf.begin());
+				std::copy(&src[w * y], &src[w * y + w], buf.begin());
 
 				sum = buf[0];
 				a1 = buf[0] * table[0]; b1 = buf[1] * table[0];
@@ -1496,13 +1439,13 @@ namespace cp
 					const double sumA = buf[atW(0 - u)] + buf[0 + u];
 					const double sumB = buf[atW(1 - u)] + buf[1 + u];
 					sum += sumA;
-					a1 += sumA*table[K*u + 0]; b1 += sumB*table[K*u + 0];
-					a2 += sumA*table[K*u + 1]; b2 += sumB*table[K*u + 1];
+					a1 += sumA * table[K * u + 0]; b1 += sumB * table[K * u + 0];
+					a2 += sumA * table[K * u + 1]; b2 += sumB * table[K * u + 1];
 				}
 
 				//the first pixel (x=0)
-				double* q = &dst[w*y];
-				q[0] = norm*(sum + a1 + a2);
+				double* q = &dst[w * y];
+				q[0] = norm * (sum + a1 + a2);
 				dA = buf[atE(0 + r + 1)] - buf[atW(0 - r)];
 				sum += dA;
 
@@ -1510,32 +1453,32 @@ namespace cp
 				int x = 1;
 				while (true) //four-length ring buffers
 				{
-					q[x] = norm*(sum + b1 + b2);
+					q[x] = norm * (sum + b1 + b2);
 					dB = buf[atE(x + r + 1)] - buf[atW(x - r)]; delta = dA - dB;
 					sum += dB;
-					a1 += -cf11*b1 + cfR1*delta;
-					a2 += -cf12*b2 + cfR2*delta;
+					a1 += -cf11 * b1 + cfR1 * delta;
+					a2 += -cf12 * b2 + cfR2 * delta;
 					x++; if (w <= x) break;
 
-					q[x] = norm*(sum - a1 - a2);
+					q[x] = norm * (sum - a1 - a2);
 					dA = buf[atE(x + r + 1)] - buf[atW(x - r)]; delta = dB - dA;
 					sum += dA;
-					b1 += +cf11*a1 + cfR1*delta;
-					b2 += +cf12*a2 + cfR2*delta;
+					b1 += +cf11 * a1 + cfR1 * delta;
+					b2 += +cf12 * a2 + cfR2 * delta;
 					x++; if (w <= x) break;
 
-					q[x] = norm*(sum - b1 - b2);
+					q[x] = norm * (sum - b1 - b2);
 					dB = buf[atE(x + r + 1)] - buf[atW(x - r)]; delta = dA - dB;
 					sum += dB;
-					a1 += -cf11*b1 - cfR1*delta;
-					a2 += -cf12*b2 - cfR2*delta;
+					a1 += -cf11 * b1 - cfR1 * delta;
+					a2 += -cf12 * b2 - cfR2 * delta;
 					x++; if (w <= x) break;
 
-					q[x] = norm*(sum + a1 + a2);
+					q[x] = norm * (sum + a1 + a2);
 					dA = buf[atE(x + r + 1)] - buf[atW(x - r)]; delta = dB - dA;
 					sum += dA;
-					b1 += +cf11*a1 - cfR1*delta;
-					b2 += +cf12*a2 - cfR2*delta;
+					b1 += +cf11 * a1 - cfR1 * delta;
+					b2 += +cf12 * a2 - cfR2 * delta;
 					x++; if (w <= x) break;
 				}
 			}
@@ -1551,12 +1494,12 @@ namespace cp
 				table[t] = double(tableY[t]);
 
 			//work space to keep raster scanning
-			std::vector<double> workspace((2 * K + 1)*w);
+			std::vector<double> workspace((2 * K + 1) * w);
 
 			//calculating the first and second terms
 			for (int x = 0; x < w; ++x)
 			{
-				double* ws = &workspace[(2 * K + 1)*x];
+				double* ws = &workspace[(2 * K + 1) * x];
 				ws[0] = src[x];
 				ws[1] = src[x + w] * table[0]; ws[2] = src[x] * table[0];
 				ws[3] = src[x + w] * table[1]; ws[4] = src[x] * table[1];
@@ -1565,65 +1508,65 @@ namespace cp
 			{
 				for (int x = 0; x < w; ++x)
 				{
-					const double sum0 = src[x + w*atN(0 - v)] + src[x + w*(0 + v)];
-					const double sum1 = src[x + w*atN(1 - v)] + src[x + w*(1 + v)];
-					double* ws = &workspace[(2 * K + 1)*x];
+					const double sum0 = src[x + w * atN(0 - v)] + src[x + w * (0 + v)];
+					const double sum1 = src[x + w * atN(1 - v)] + src[x + w * (1 + v)];
+					double* ws = &workspace[(2 * K + 1) * x];
 					ws[0] += sum0;
-					ws[1] += sum1*table[K*v + 0]; ws[2] += sum0*table[K*v + 0];
-					ws[3] += sum1*table[K*v + 1]; ws[4] += sum0*table[K*v + 1];
+					ws[1] += sum1 * table[K * v + 0]; ws[2] += sum0 * table[K * v + 0];
+					ws[3] += sum1 * table[K * v + 1]; ws[4] += sum0 * table[K * v + 1];
 				}
 			}
 
-			const double cf11 = double(table[K * 1 + 0] * 2.0 / spectY[0]), cfR1 = table[K*r + 0];
-			const double cf12 = double(table[K * 1 + 1] * 2.0 / spectY[1]), cfR2 = table[K*r + 1];
+			const double cf11 = double(table[K * 1 + 0] * 2.0 / spectY[0]), cfR1 = table[K * r + 0];
+			const double cf12 = double(table[K * 1 + 1] * 2.0 / spectY[1]), cfR2 = table[K * r + 1];
 
-			double *q, *p0N, *p0S, *p1N, *p1S;
+			double* q, * p0N, * p0S, * p1N, * p1S;
 			for (int y = 0; y < 1; ++y) //the first line (y=0)
 			{
-				q = &dst[w*y];
-				p1N = &src[w*atN(0 - r)]; p1S = &src[w*atS(0 + r + 1)];
+				q = &dst[w * y];
+				p1N = &src[w * atN(0 - r)]; p1S = &src[w * atS(0 + r + 1)];
 				for (int x = 0; x < w; ++x)
 				{
-					double* ws = &workspace[(2 * K + 1)*x];
-					q[x] = norm*(ws[0] + ws[2] + ws[4]);
+					double* ws = &workspace[(2 * K + 1) * x];
+					q[x] = norm * (ws[0] + ws[2] + ws[4]);
 					ws[0] += p1S[x] - p1N[x];
 				}
 			}
 			for (int y = 1; y < h; ++y) //remaining lines (with two-length ring buffers)
 			{
-				q = &dst[w*y];
-				p0N = &src[w*atN(y - r - 1)]; p0S = &src[w*atS(y + r)];
-				p1N = &src[w*atN(y - r)]; p1S = &src[w*atS(y + r + 1)];
+				q = &dst[w * y];
+				p0N = &src[w * atN(y - r - 1)]; p0S = &src[w * atS(y + r)];
+				p1N = &src[w * atN(y - r)]; p1S = &src[w * atS(y + r + 1)];
 				for (int x = 0; x < w; ++x)
 				{
-					double* ws = &workspace[(2 * K + 1)*x];
-					q[x] = norm*(ws[0] + ws[1] + ws[3]);
+					double* ws = &workspace[(2 * K + 1) * x];
+					q[x] = norm * (ws[0] + ws[1] + ws[3]);
 
 					const double d0 = p0S[x] - p0N[x];
 					const double d1 = p1S[x] - p1N[x];
 					const double delta = d1 - d0;
 
 					ws[0] += d1;
-					ws[2] = cfR1*delta + cf11*ws[1] - ws[2];
-					ws[4] = cfR2*delta + cf12*ws[3] - ws[4];
+					ws[2] = cfR1 * delta + cf11 * ws[1] - ws[2];
+					ws[4] = cfR2 * delta + cf12 * ws[3] - ws[4];
 				}
 				y++; if (h <= y) break; //to the next line
 
-				q = &dst[w*y];
-				p0N = &src[w*atN(y - r - 1)]; p0S = &src[w*atS(y + r)];
-				p1N = &src[w*atN(y - r)]; p1S = &src[w*atS(y + r + 1)];
+				q = &dst[w * y];
+				p0N = &src[w * atN(y - r - 1)]; p0S = &src[w * atS(y + r)];
+				p1N = &src[w * atN(y - r)]; p1S = &src[w * atS(y + r + 1)];
 				for (int x = 0; x < w; ++x)
 				{
-					double* ws = &workspace[(2 * K + 1)*x];
-					q[x] = norm*(ws[0] + ws[2] + ws[4]);
+					double* ws = &workspace[(2 * K + 1) * x];
+					q[x] = norm * (ws[0] + ws[2] + ws[4]);
 
 					const double d0 = p0S[x] - p0N[x];
 					const double d1 = p1S[x] - p1N[x];
 					const double delta = d1 - d0;
 
 					ws[0] += d1;
-					ws[1] = cfR1*delta + cf11*ws[2] - ws[1];
-					ws[3] = cfR2*delta + cf12*ws[4] - ws[3];
+					ws[1] = cfR1 * delta + cf11 * ws[2] - ws[1];
+					ws[3] = cfR2 * delta + cf12 * ws[4] - ws[3];
 				}
 			}
 		}
@@ -1648,16 +1591,16 @@ namespace cp
 			for (int t = 0; t<int(table.size()); ++t)
 				table[t] = double(tableX[t]);
 
-			const double cf11 = double(table[K * 1 + 0] * 2.0 / spectX[0]), cfR1 = table[K*r + 0];
-			const double cf12 = double(table[K * 1 + 1] * 2.0 / spectX[1]), cfR2 = table[K*r + 1];
+			const double cf11 = double(table[K * 1 + 0] * 2.0 / spectX[0]), cfR1 = table[K * r + 0];
+			const double cf12 = double(table[K * 1 + 1] * 2.0 / spectX[1]), cfR2 = table[K * r + 1];
 
 			//to allow for src==dst
-			std::vector<double> buf(B*w);
+			std::vector<double> buf(B * w);
 
-			assert(h%B == 0);
-			for (int y = 0; y < h / B*B; y += B)
+			assert(h % B == 0);
+			for (int y = 0; y < h / B * B; y += B)
 			{
-				std::copy(&src[w*y], &src[w*(y + B)], buf.begin());
+				std::copy(&src[w * y], &src[w * (y + B)], buf.begin());
 
 				__m128d pv0 = _mm_set_pd(buf[w * 1 + 0], buf[w * 0 + 0]);
 				__m128d pv1 = _mm_set_pd(buf[w * 1 + 1], buf[w * 0 + 1]);
@@ -1682,14 +1625,14 @@ namespace cp
 					__m128d sumB = _mm_add_pd(pv1M, pv1P);
 
 					sum = _mm_add_pd(sum, sumA);
-					a1 = _mm_add_pd(a1, _mm_mul_pd(_mm_set1_pd(table[K*u + 0]), sumA));
-					b1 = _mm_add_pd(b1, _mm_mul_pd(_mm_set1_pd(table[K*u + 0]), sumB));
-					a2 = _mm_add_pd(a2, _mm_mul_pd(_mm_set1_pd(table[K*u + 1]), sumA));
-					b2 = _mm_add_pd(b2, _mm_mul_pd(_mm_set1_pd(table[K*u + 1]), sumB));
+					a1 = _mm_add_pd(a1, _mm_mul_pd(_mm_set1_pd(table[K * u + 0]), sumA));
+					b1 = _mm_add_pd(b1, _mm_mul_pd(_mm_set1_pd(table[K * u + 0]), sumB));
+					a2 = _mm_add_pd(a2, _mm_mul_pd(_mm_set1_pd(table[K * u + 1]), sumA));
+					b2 = _mm_add_pd(b2, _mm_mul_pd(_mm_set1_pd(table[K * u + 1]), sumB));
 				}
 
 				//sliding convolution
-				double *pA, *pB;
+				double* pA, * pB;
 				__m128d pvA, pvB;
 				__m128d dvA, dvB, delta;
 				__m128d qv[B];
@@ -1722,12 +1665,12 @@ namespace cp
 
 					//output with transposition
 					_MM_TRANSPOSE2_PD(qv[0], qv[1]);
-					_mm_storeu_pd(&dst[w*(y + 0)], qv[0]);
-					_mm_storeu_pd(&dst[w*(y + 1)], qv[1]);
+					_mm_storeu_pd(&dst[w * (y + 0)], qv[0]);
+					_mm_storeu_pd(&dst[w * (y + 1)], qv[1]);
 				}
 
 				//the other pixels (B<=x<w)
-				for (int x = B; x < w / B*B; x += B) //four-length ring buffers
+				for (int x = B; x < w / B * B; x += B) //four-length ring buffers
 				{
 					//the first pixel (x=0)
 					qv[0] = _mm_mul_pd(_mm_set1_pd(norm), _mm_add_pd(sum, _mm_add_pd(a1, a2)));
@@ -1755,8 +1698,8 @@ namespace cp
 
 					//output with transposition
 					_MM_TRANSPOSE2_PD(qv[0], qv[1]);
-					_mm_storeu_pd(&dst[w*(y + 0) + x], qv[0]);
-					_mm_storeu_pd(&dst[w*(y + 1) + x], qv[1]);
+					_mm_storeu_pd(&dst[w * (y + 0) + x], qv[0]);
+					_mm_storeu_pd(&dst[w * (y + 1) + x], qv[1]);
 				}
 			}
 		}
@@ -1774,12 +1717,12 @@ namespace cp
 				table[t] = double(tableY[t]);
 
 			//work space to keep raster scanning
-			double* workspace = reinterpret_cast<double*>(_mm_malloc(sizeof(double)*(2 * K + 1)*w, sizeof(__m128d)));
+			double* workspace = reinterpret_cast<double*>(_mm_malloc(sizeof(double) * (2 * K + 1) * w, sizeof(__m128d)));
 
 			//calculating the first and second terms
-			for (int x = 0; x < w / B*B; x += B)
+			for (int x = 0; x < w / B * B; x += B)
 			{
-				double* ws = &workspace[(2 * K + 1)*x];
+				double* ws = &workspace[(2 * K + 1) * x];
 				__m128d p0 = _mm_load_pd(&src[x]);
 				__m128d p1 = _mm_load_pd(&src[x + w]);
 				_mm_store_pd(&ws[B * 0], p0);
@@ -1790,31 +1733,31 @@ namespace cp
 			}
 			for (int v = 1; v <= r; ++v)
 			{
-				for (int x = 0; x < w / B*B; x += B)
+				for (int x = 0; x < w / B * B; x += B)
 				{
-					double* ws = &workspace[(2 * K + 1)*x];
-					__m128d sum0 = _mm_add_pd(_mm_load_pd(&src[x + w*atN(0 - v)]), _mm_load_pd(&src[x + w*(0 + v)]));
-					__m128d sum1 = _mm_add_pd(_mm_load_pd(&src[x + w*atN(1 - v)]), _mm_load_pd(&src[x + w*(1 + v)]));
+					double* ws = &workspace[(2 * K + 1) * x];
+					__m128d sum0 = _mm_add_pd(_mm_load_pd(&src[x + w * atN(0 - v)]), _mm_load_pd(&src[x + w * (0 + v)]));
+					__m128d sum1 = _mm_add_pd(_mm_load_pd(&src[x + w * atN(1 - v)]), _mm_load_pd(&src[x + w * (1 + v)]));
 					_mm_store_pd(&ws[B * 0], _mm_add_pd(_mm_load_pd(&ws[B * 0]), sum0));
-					_mm_store_pd(&ws[B * 1], _mm_add_pd(_mm_load_pd(&ws[B * 1]), _mm_mul_pd(sum1, _mm_set1_pd(table[K*v + 0]))));
-					_mm_store_pd(&ws[B * 2], _mm_add_pd(_mm_load_pd(&ws[B * 2]), _mm_mul_pd(sum0, _mm_set1_pd(table[K*v + 0]))));
-					_mm_store_pd(&ws[B * 3], _mm_add_pd(_mm_load_pd(&ws[B * 3]), _mm_mul_pd(sum1, _mm_set1_pd(table[K*v + 1]))));
-					_mm_store_pd(&ws[B * 4], _mm_add_pd(_mm_load_pd(&ws[B * 4]), _mm_mul_pd(sum0, _mm_set1_pd(table[K*v + 1]))));
+					_mm_store_pd(&ws[B * 1], _mm_add_pd(_mm_load_pd(&ws[B * 1]), _mm_mul_pd(sum1, _mm_set1_pd(table[K * v + 0]))));
+					_mm_store_pd(&ws[B * 2], _mm_add_pd(_mm_load_pd(&ws[B * 2]), _mm_mul_pd(sum0, _mm_set1_pd(table[K * v + 0]))));
+					_mm_store_pd(&ws[B * 3], _mm_add_pd(_mm_load_pd(&ws[B * 3]), _mm_mul_pd(sum1, _mm_set1_pd(table[K * v + 1]))));
+					_mm_store_pd(&ws[B * 4], _mm_add_pd(_mm_load_pd(&ws[B * 4]), _mm_mul_pd(sum0, _mm_set1_pd(table[K * v + 1]))));
 				}
 			}
 
-			const double cf11 = double(table[K * 1 + 0] * 2.0 / spectY[0]), cfR1 = table[K*r + 0];
-			const double cf12 = double(table[K * 1 + 1] * 2.0 / spectY[1]), cfR2 = table[K*r + 1];
+			const double cf11 = double(table[K * 1 + 0] * 2.0 / spectY[0]), cfR1 = table[K * r + 0];
+			const double cf12 = double(table[K * 1 + 1] * 2.0 / spectY[1]), cfR2 = table[K * r + 1];
 
 			//sliding convolution
 			for (int y = 0; y < 1; ++y) //the first line (y=0)
 			{
-				double* q = &dst[w*y];
-				const double* p1N = &src[w*atN(y - r)];
-				const double* p1S = &src[w*atS(y + r + 1)];
-				for (int x = 0; x < w / B*B; x += B)
+				double* q = &dst[w * y];
+				const double* p1N = &src[w * atN(y - r)];
+				const double* p1S = &src[w * atS(y + r + 1)];
+				for (int x = 0; x < w / B * B; x += B)
 				{
-					double* ws = &workspace[(2 * K + 1)*x];
+					double* ws = &workspace[(2 * K + 1) * x];
 					const __m128d a0 = _mm_load_pd(&ws[B * 0]);
 					const __m128d a2 = _mm_load_pd(&ws[B * 2]);
 					const __m128d a4 = _mm_load_pd(&ws[B * 4]);
@@ -1826,14 +1769,14 @@ namespace cp
 			}
 			for (int y = 1; y < h; ++y) //the other lines
 			{
-				double* q = &dst[w*y];
-				const double* p0N = &src[w*atN(y - r - 1)];
-				const double* p1N = &src[w*atN(y - r)];
-				const double* p0S = &src[w*atS(y + r)];
-				const double* p1S = &src[w*atS(y + r + 1)];
-				for (int x = 0; x < w / B*B; x += B)
+				double* q = &dst[w * y];
+				const double* p0N = &src[w * atN(y - r - 1)];
+				const double* p1N = &src[w * atN(y - r)];
+				const double* p0S = &src[w * atS(y + r)];
+				const double* p1S = &src[w * atS(y + r + 1)];
+				for (int x = 0; x < w / B * B; x += B)
 				{
-					double* ws = &workspace[(2 * K + 1)*x];
+					double* ws = &workspace[(2 * K + 1) * x];
 					const __m128d a0 = _mm_load_pd(&ws[B * 0]);
 					const __m128d a1 = _mm_load_pd(&ws[B * 1]);
 					const __m128d a3 = _mm_load_pd(&ws[B * 3]);
@@ -1863,16 +1806,16 @@ namespace cp
 			for (int t = 0; t<int(table.size()); ++t)
 				table[t] = double(tableX[t]);
 
-			const double cf11 = double(table[K * 1 + 0] * 2.0 / spectX[0]), cfR1 = table[K*r + 0];
-			const double cf12 = double(table[K * 1 + 1] * 2.0 / spectX[1]), cfR2 = table[K*r + 1];
+			const double cf11 = double(table[K * 1 + 0] * 2.0 / spectX[0]), cfR1 = table[K * r + 0];
+			const double cf12 = double(table[K * 1 + 1] * 2.0 / spectX[1]), cfR2 = table[K * r + 1];
 
 			//to allow for src==dst
-			std::vector<double> buf(B*w);
+			std::vector<double> buf(B * w);
 
-			assert(h%B == 0);
-			for (int y = 0; y < h / B*B; y += B)
+			assert(h % B == 0);
+			for (int y = 0; y < h / B * B; y += B)
 			{
-				std::copy(&src[w*y], &src[w*(y + B)], buf.begin());
+				std::copy(&src[w * y], &src[w * (y + B)], buf.begin());
 
 				__m256d pv0 = _mm256_set_pd(buf[w * 3 + 0], buf[w * 2 + 0], buf[w * 1 + 0], buf[w * 0 + 0]);
 				__m256d pv1 = _mm256_set_pd(buf[w * 3 + 1], buf[w * 2 + 1], buf[w * 1 + 1], buf[w * 0 + 1]);
@@ -1897,14 +1840,14 @@ namespace cp
 					__m256d sumB = _mm256_add_pd(pv1M, pv1P);
 
 					sum = _mm256_add_pd(sum, sumA);
-					a1 = _mm256_add_pd(a1, _mm256_mul_pd(_mm256_set1_pd(table[K*u + 0]), sumA));
-					b1 = _mm256_add_pd(b1, _mm256_mul_pd(_mm256_set1_pd(table[K*u + 0]), sumB));
-					a2 = _mm256_add_pd(a2, _mm256_mul_pd(_mm256_set1_pd(table[K*u + 1]), sumA));
-					b2 = _mm256_add_pd(b2, _mm256_mul_pd(_mm256_set1_pd(table[K*u + 1]), sumB));
+					a1 = _mm256_add_pd(a1, _mm256_mul_pd(_mm256_set1_pd(table[K * u + 0]), sumA));
+					b1 = _mm256_add_pd(b1, _mm256_mul_pd(_mm256_set1_pd(table[K * u + 0]), sumB));
+					a2 = _mm256_add_pd(a2, _mm256_mul_pd(_mm256_set1_pd(table[K * u + 1]), sumA));
+					b2 = _mm256_add_pd(b2, _mm256_mul_pd(_mm256_set1_pd(table[K * u + 1]), sumB));
 				}
 
 				//sliding convolution
-				double *pA, *pB;
+				double* pA, * pB;
 				__m256d pvA, pvB;
 				__m256d dvA, dvB, delta;
 				__m256d qv[B];
@@ -1960,15 +1903,15 @@ namespace cp
 					a2 = _mm256_sub_pd(_mm256_add_pd(_mm256_mul_pd(_mm256_set1_pd(cfR2), delta), _mm256_mul_pd(_mm256_set1_pd(cf12), b2)), a2);
 
 					//output with transposition
-					_MM256_TRANSPOSE4_PD(qv[0], qv[1], qv[2], qv[3]);
-					_mm256_storeu_pd(&dst[w*(y + 0)], qv[0]);
-					_mm256_storeu_pd(&dst[w*(y + 1)], qv[1]);
-					_mm256_storeu_pd(&dst[w*(y + 2)], qv[2]);
-					_mm256_storeu_pd(&dst[w*(y + 3)], qv[3]);
+					_MM256_TRANSPOSE4_PD(qv[0], qv[1], qv[2], qv[3], qv[0], qv[1], qv[2], qv[3]);
+					_mm256_storeu_pd(&dst[w * (y + 0)], qv[0]);
+					_mm256_storeu_pd(&dst[w * (y + 1)], qv[1]);
+					_mm256_storeu_pd(&dst[w * (y + 2)], qv[2]);
+					_mm256_storeu_pd(&dst[w * (y + 3)], qv[3]);
 				}
 
 				//the other pixels (B<=x<w)
-				for (int x = B; x < w / B*B; x += B) //four-length ring buffers
+				for (int x = B; x < w / B * B; x += B) //four-length ring buffers
 				{
 					//the first pixel (x=0)
 					qv[0] = _mm256_mul_pd(_mm256_set1_pd(norm), _mm256_add_pd(sum, _mm256_add_pd(a1, a2)));
@@ -2019,11 +1962,11 @@ namespace cp
 					a2 = _mm256_sub_pd(_mm256_add_pd(_mm256_mul_pd(_mm256_set1_pd(cfR2), delta), _mm256_mul_pd(_mm256_set1_pd(cf12), b2)), a2);
 
 					//output with transposition
-					_MM256_TRANSPOSE4_PD(qv[0], qv[1], qv[2], qv[3]);
-					_mm256_storeu_pd(&dst[w*(y + 0) + x], qv[0]);
-					_mm256_storeu_pd(&dst[w*(y + 1) + x], qv[1]);
-					_mm256_storeu_pd(&dst[w*(y + 2) + x], qv[2]);
-					_mm256_storeu_pd(&dst[w*(y + 3) + x], qv[3]);
+					_MM256_TRANSPOSE4_PD(qv[0], qv[1], qv[2], qv[3], qv[0], qv[1], qv[2], qv[3]);
+					_mm256_storeu_pd(&dst[w * (y + 0) + x], qv[0]);
+					_mm256_storeu_pd(&dst[w * (y + 1) + x], qv[1]);
+					_mm256_storeu_pd(&dst[w * (y + 2) + x], qv[2]);
+					_mm256_storeu_pd(&dst[w * (y + 3) + x], qv[3]);
 				}
 			}
 		}
@@ -2041,12 +1984,12 @@ namespace cp
 				table[t] = double(tableY[t]);
 
 			//work space to keep raster scanning
-			double* workspace = reinterpret_cast<double*>(_mm_malloc(sizeof(double)*(2 * K + 1)*w, sizeof(__m256d)));
+			double* workspace = reinterpret_cast<double*>(_mm_malloc(sizeof(double) * (2 * K + 1) * w, sizeof(__m256d)));
 
 			//calculating the first and second terms
-			for (int x = 0; x < w / B*B; x += B)
+			for (int x = 0; x < w / B * B; x += B)
 			{
-				double* ws = &workspace[(2 * K + 1)*x];
+				double* ws = &workspace[(2 * K + 1) * x];
 				__m256d p0 = _mm256_load_pd(&src[x]);
 				__m256d p1 = _mm256_load_pd(&src[x + w]);
 				_mm256_store_pd(&ws[B * 0], p0);
@@ -2057,31 +2000,31 @@ namespace cp
 			}
 			for (int v = 1; v <= r; ++v)
 			{
-				for (int x = 0; x < w / B*B; x += B)
+				for (int x = 0; x < w / B * B; x += B)
 				{
-					double* ws = &workspace[(2 * K + 1)*x];
-					__m256d sum0 = _mm256_add_pd(_mm256_load_pd(&src[x + w*atN(0 - v)]), _mm256_load_pd(&src[x + w*(0 + v)]));
-					__m256d sum1 = _mm256_add_pd(_mm256_load_pd(&src[x + w*atN(1 - v)]), _mm256_load_pd(&src[x + w*(1 + v)]));
+					double* ws = &workspace[(2 * K + 1) * x];
+					__m256d sum0 = _mm256_add_pd(_mm256_load_pd(&src[x + w * atN(0 - v)]), _mm256_load_pd(&src[x + w * (0 + v)]));
+					__m256d sum1 = _mm256_add_pd(_mm256_load_pd(&src[x + w * atN(1 - v)]), _mm256_load_pd(&src[x + w * (1 + v)]));
 					_mm256_store_pd(&ws[B * 0], _mm256_add_pd(_mm256_load_pd(&ws[B * 0]), sum0));
-					_mm256_store_pd(&ws[B * 1], _mm256_add_pd(_mm256_load_pd(&ws[B * 1]), _mm256_mul_pd(sum1, _mm256_set1_pd(table[K*v + 0]))));
-					_mm256_store_pd(&ws[B * 2], _mm256_add_pd(_mm256_load_pd(&ws[B * 2]), _mm256_mul_pd(sum0, _mm256_set1_pd(table[K*v + 0]))));
-					_mm256_store_pd(&ws[B * 3], _mm256_add_pd(_mm256_load_pd(&ws[B * 3]), _mm256_mul_pd(sum1, _mm256_set1_pd(table[K*v + 1]))));
-					_mm256_store_pd(&ws[B * 4], _mm256_add_pd(_mm256_load_pd(&ws[B * 4]), _mm256_mul_pd(sum0, _mm256_set1_pd(table[K*v + 1]))));
+					_mm256_store_pd(&ws[B * 1], _mm256_add_pd(_mm256_load_pd(&ws[B * 1]), _mm256_mul_pd(sum1, _mm256_set1_pd(table[K * v + 0]))));
+					_mm256_store_pd(&ws[B * 2], _mm256_add_pd(_mm256_load_pd(&ws[B * 2]), _mm256_mul_pd(sum0, _mm256_set1_pd(table[K * v + 0]))));
+					_mm256_store_pd(&ws[B * 3], _mm256_add_pd(_mm256_load_pd(&ws[B * 3]), _mm256_mul_pd(sum1, _mm256_set1_pd(table[K * v + 1]))));
+					_mm256_store_pd(&ws[B * 4], _mm256_add_pd(_mm256_load_pd(&ws[B * 4]), _mm256_mul_pd(sum0, _mm256_set1_pd(table[K * v + 1]))));
 				}
 			}
 
-			const double cf11 = double(table[K * 1 + 0] * 2.0 / spectY[0]), cfR1 = table[K*r + 0];
-			const double cf12 = double(table[K * 1 + 1] * 2.0 / spectY[1]), cfR2 = table[K*r + 1];
+			const double cf11 = double(table[K * 1 + 0] * 2.0 / spectY[0]), cfR1 = table[K * r + 0];
+			const double cf12 = double(table[K * 1 + 1] * 2.0 / spectY[1]), cfR2 = table[K * r + 1];
 
 			//sliding convolution
 			for (int y = 0; y < 1; ++y) //the first line (y=0)
 			{
-				double* q = &dst[w*y];
-				const double* p1N = &src[w*atN(y - r)];
-				const double* p1S = &src[w*atS(y + r + 1)];
-				for (int x = 0; x < w / B*B; x += B)
+				double* q = &dst[w * y];
+				const double* p1N = &src[w * atN(y - r)];
+				const double* p1S = &src[w * atS(y + r + 1)];
+				for (int x = 0; x < w / B * B; x += B)
 				{
-					double* ws = &workspace[(2 * K + 1)*x];
+					double* ws = &workspace[(2 * K + 1) * x];
 					const __m256d a0 = _mm256_load_pd(&ws[B * 0]);
 					const __m256d a2 = _mm256_load_pd(&ws[B * 2]);
 					const __m256d a4 = _mm256_load_pd(&ws[B * 4]);
@@ -2093,14 +2036,14 @@ namespace cp
 			}
 			for (int y = 1; y < h; ++y) //the other lines
 			{
-				double* q = &dst[w*y];
-				const double* p0N = &src[w*atN(y - r - 1)];
-				const double* p1N = &src[w*atN(y - r)];
-				const double* p0S = &src[w*atS(y + r)];
-				const double* p1S = &src[w*atS(y + r + 1)];
-				for (int x = 0; x < w / B*B; x += B)
+				double* q = &dst[w * y];
+				const double* p0N = &src[w * atN(y - r - 1)];
+				const double* p1N = &src[w * atN(y - r)];
+				const double* p0S = &src[w * atS(y + r)];
+				const double* p1S = &src[w * atS(y + r + 1)];
+				for (int x = 0; x < w / B * B; x += B)
 				{
-					double* ws = &workspace[(2 * K + 1)*x];
+					double* ws = &workspace[(2 * K + 1) * x];
 					const __m256d a0 = _mm256_load_pd(&ws[B * 0]);
 					const __m256d a1 = _mm256_load_pd(&ws[B * 1]);
 					const __m256d a3 = _mm256_load_pd(&ws[B * 3]);
@@ -2190,8 +2133,8 @@ namespace cp
 		int SIMDSTEP = 4;
 		if (src.depth() == CV_64F) SIMDSTEP = 2;
 
-		int xpad = src.size().width%SIMDSTEP;
-		int ypad = src.size().height%SIMDSTEP;
+		int xpad = src.size().width % SIMDSTEP;
+		int ypad = src.size().height % SIMDSTEP;
 
 		xpad = (SIMDSTEP - xpad) % SIMDSTEP;
 		ypad = (SIMDSTEP - ypad) % SIMDSTEP;

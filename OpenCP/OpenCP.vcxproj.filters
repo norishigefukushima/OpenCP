@@ -564,6 +564,12 @@
     <ClCompile Include="kmeans.cpp">
       <Filter>ソース ファイル\core</Filter>
     </ClCompile>
+    <ClCompile Include="metricsDD.cpp">
+      <Filter>ソース ファイル\imgproc</Filter>
+    </ClCompile>
+    <ClCompile Include="bitconvertDD.cpp">
+      <Filter>ソース ファイル\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libGaussian\gaussian_conv.h">
@@ -1006,6 +1012,15 @@
     </ClInclude>
     <ClInclude Include="..\include\kmeans.hpp">
       <Filter>ヘッダー ファイル\headers\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\metricsDD.hpp">
+      <Filter>ヘッダー ファイル\headers\imgproc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bitconvertDD.hpp">
+      <Filter>ヘッダー ファイル\headers\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\inlineCVFunctions.hpp">
+      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

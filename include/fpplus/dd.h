@@ -1,17 +1,19 @@
 #pragma once
+#ifndef FPPLUS_DD_H
+#define FPPLUS_DD_H
+
 #include <fpplus/eft.h>
 
 /**
  * @defgroup DD Double-double arithmetic
  */
 
-#pragma region doubledouble
+
  /**
   * @ingroup DD
   * @brief Double-double number.
   */
-typedef struct
-{
+typedef struct {
 	/**
 	 * @brief The high (largest in magnitude) part of the number.
 	 * @note The high part is the best double-precision approximation of the double-double number.
@@ -231,13 +233,10 @@ FPPLUS_STATIC_INLINE doubledouble ddmul(const doubledouble a, const doubledouble
 	product.hi = twosumfast(product.hi, product.lo, &product.lo);
 	return product;
 }
-#pragma endregion
 
 #if defined(__AVX__) && (defined(__FMA__) || defined(__FMA4__) || defined(__AVX2__))
 
-#pragma region m128dd
-typedef struct
-{
+typedef struct {
 	__m128d hi;
 	__m128d lo;
 } __m128dd;
@@ -398,11 +397,8 @@ FPPLUS_STATIC_INLINE doubledouble _mm_reduce_add_pdd(const __m128dd x) {
 	};
 	return _mm_cvtsdd_f64dd(_mm_add_sdd(x, x1));
 }
-#pragma endregion
 
-#pragma region m256dd
-typedef struct 
-{
+typedef struct {
 	__m256d hi;
 	__m256d lo;
 } __m256dd;
@@ -570,7 +566,6 @@ FPPLUS_STATIC_INLINE doubledouble _mm256_reduce_add_pdd(const __m256dd x)
 	};
 	return _mm_reduce_add_pdd(_mm_add_pdd(x01, x23));
 }
-#pragma endregion
 
 #endif /* AVX */
 
@@ -723,3 +718,21 @@ FPPLUS_STATIC_INLINE doubledouble _mm512_reduce_add_pdd(const __m512dd x) {
 }
 
 #endif /* Intel KNC or AVX-512 */
+
+inline void _mm256_addkahan_pdd(const __m256d a, __m256dd& b)
+{
+	__m256d y = _mm256_sub_pd(a, b.lo);
+	__m256d t = _mm256_add_pd(b.hi, y);
+	b.lo = _mm256_sub_pd(_mm256_sub_pd(t, b.hi), y);
+	b.hi = t;
+}
+
+inline void _mm256_fmakahan_pdd(const __m256d a, const __m256d x, __m256dd& b)
+{
+	__m256d y = _mm256_fmsub_pd(a, x, b.lo);
+	__m256d t = _mm256_add_pd(b.hi, y);
+	b.lo = _mm256_sub_pd(_mm256_sub_pd(t, b.hi), y);
+	b.hi = t;
+}
+
+#endif /* FPPLUS_DD_H */

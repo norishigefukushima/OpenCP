@@ -4275,7 +4275,8 @@ namespace cp
 				}
 			}
 
-			cbabf.visualizeKernel(show, Point(mpt.x, mpt.y));
+			Point gpt = Point(mpt.x, mpt.y);
+			cbabf.visualizeKernel(show, gpt);
 			crossBasedAdaptiveBoxFilter(gray, src, dest2, Size(2 * r + 1, 2 * r + 1), thresh);
 			if (!isColor) guiAlphaBlend(dest, dest2);
 			imshow("2", dest2);

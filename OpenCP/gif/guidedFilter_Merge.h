@@ -2,6 +2,7 @@
 
 #include "guidedFilter.hpp"
 #include "guidedFilter_Merge_Base.h"
+#include <intrin.h>
 
 class guidedImageFilter_Merge_Base : public cp::GuidedFilterBase
 {

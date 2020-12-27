@@ -35,7 +35,7 @@ void fitPlaneTest();
 void guiColorCorrectionTest(cv::Mat& src, cv::Mat& ref);
 
 //filter
-void testGuidedImageFilter(cv::Mat& img_p = cv::Mat(), cv::Mat& img_I = cv::Mat());
+void testGuidedImageFilter(cv::Mat& img_p, cv::Mat& img_I);
 void guiHazeRemoveTest();
 
 void guiEdgePresevingFilterOpenCV(cv::Mat& src);
@@ -44,7 +44,7 @@ void guiCrossBasedLocalFilter(cv::Mat& src);
 void guiBilateralFilterTest(cv::Mat& src);
 void guiSeparableBilateralFilterTest(cv::Mat& src);
 
-void testWeightedHistogramFilter(cv::Mat& src = cv::Mat(), cv::Mat& guide = cv::Mat());
+void testWeightedHistogramFilter(cv::Mat& src, cv::Mat& guide);
 void testWeightedHistogramFilterDisparity();
 
 void guiGausianFilterTest(cv::Mat& src_);

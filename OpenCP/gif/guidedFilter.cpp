@@ -1586,10 +1586,10 @@ namespace cp
 
 		if (src.type() == CV_8U)
 		{
-			cvt8u32f(src, temp);
-			cvt8u32f(I[0], If[0]);
-			cvt8u32f(I[1], If[1]);
-			cvt8u32f(I[2], If[2]);
+			cvt8U32F(src, temp);
+			cvt8U32F(I[0], If[0]);
+			cvt8U32F(I[1], If[1]);
+			cvt8U32F(I[2], If[2]);
 		}
 		else
 		{
@@ -2028,10 +2028,10 @@ namespace cp
 
 		if (src.type() == CV_8U)
 		{
-			cvt8u32f(src, temp, 1.f / 255.f);
-			cvt8u32f(I[0], If[0], 1.f / 255.f);
-			cvt8u32f(I[1], If[1], 1.f / 255.f);
-			cvt8u32f(I[2], If[2], 1.f / 255.f);
+			cvt8U32F(src, temp, 1.f / 255.f);
+			cvt8U32F(I[0], If[0], 1.f / 255.f);
+			cvt8U32F(I[1], If[1], 1.f / 255.f);
+			cvt8U32F(I[2], If[2], 1.f / 255.f);
 		}
 		else
 		{
@@ -2230,8 +2230,8 @@ namespace cp
 
 		if (src.type() == CV_8U)
 		{
-			cvt8u32f(src, sf);
-			cvt8u32f(joint, jf);
+			cvt8U32F(src, sf);
+			cvt8U32F(joint, jf);
 		}
 		else
 		{
@@ -2645,7 +2645,7 @@ namespace cp
 
 		Mat sf;
 		if (src.depth() == CV_32F) src.copyTo(sf);
-		else if (src.depth() == CV_8U) cvt8u32f(src, sf);
+		else if (src.depth() == CV_8U) cvt8U32F(src, sf);
 		else src.convertTo(sf, CV_32F);
 
 		Mat mSrc(imsize, CV_32F);//mean_p
@@ -2712,7 +2712,7 @@ namespace cp
 
 		if (src.depth() == CV_8U)
 		{
-			cvt32f8u(x2, dest);
+			cvt32F8U(x2, dest);
 		}
 		else
 		{
@@ -2924,9 +2924,9 @@ namespace cp
 
 		if (src.type() == CV_8U)
 		{
-			cvt8u32f(src, temp, 1.f);
+			cvt8U32F(src, temp, 1.f);
 			for (int i = 0; i < channels; i++)
-				cvt8u32f(I[i], If[i], 1.f);
+				cvt8U32F(I[i], If[i], 1.f);
 		}
 		else
 		{

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "guidedFilter.hpp"
+#include <intrin.h>
 
 inline void copyMakeBorderReplicateForLineBuffers(cv::Mat& buffer, const int R)
 {

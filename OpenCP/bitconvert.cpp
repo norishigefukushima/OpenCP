@@ -1,11 +1,11 @@
 #include "bitconvert.hpp"
-
+#include <intrin.h>
 using namespace cv;
 
 namespace cp
 {
 
-	void cvt32f8u(const Mat& src, Mat& dest)
+	void cvt32F8U(const Mat& src, Mat& dest)
 	{
 		if (dest.empty()) dest.create(src.size(), CV_8U);
 
@@ -41,12 +41,12 @@ namespace cp
 		}
 		for (int i = 0; i < nn; i++)
 		{
-			*d = (uchar)(*s + 0.5f);
+			*d = saturate_cast<uchar>(*s);
 			s++, d++;
 		}
 	}
 
-	void cvt8u32f(const Mat& src, Mat& dest, const float amp)
+	void cvt8U32F(const Mat& src, Mat& dest, const float amp)
 	{
 		const int imsize = src.size().area() / 8;
 		const int nn = src.size().area() - imsize * 8;
@@ -70,7 +70,7 @@ namespace cp
 		}
 	}
 
-	void cvt8u32f(const Mat& src, Mat& dest)
+	void cvt8U32F(const Mat& src, Mat& dest)
 	{
 		if (dest.empty()) dest.create(src.size(), CV_32F);
 		const int imsize = src.size().area() / 8;
@@ -90,6 +90,51 @@ namespace cp
 		for (int i = 0; i < nn; i++)
 		{
 			*d = (float)*s;
+			s++, d++;
+		}
+	}
+
+	void cvt64F8U(const Mat& src, Mat& dest)
+	{
+		if (dest.empty()) dest.create(src.size(), CV_8U);
+
+		const int imsize = src.size().area() / 32;
+		const int nn = src.size().area() - imsize * 32;
+		double* s = (double*)src.ptr<double>(0);
+		uchar* d = dest.ptr<uchar>(0);
+
+		__m256d srcA64F, srcB64F;
+		__m128i srcA32S, srcB32S;
+
+		for (int i = imsize; i--;)
+		{
+			srcA64F = _mm256_load_pd(s + 0);
+			srcB64F = _mm256_load_pd(s + 4);
+			srcA32S = _mm_packs_epi32(_mm256_cvttpd_epi32(srcA64F), _mm256_cvttpd_epi32(srcB64F));
+
+			srcA64F = _mm256_load_pd(s + 8);
+			srcB64F = _mm256_load_pd(s + 12);
+			srcB32S = _mm_packs_epi32(_mm256_cvttpd_epi32(srcA64F), _mm256_cvttpd_epi32(srcB64F));
+
+			_mm_store_si128((__m128i*)(d), _mm_packus_epi16(srcA32S, srcB32S));
+			s += 16;
+			d += 16;
+
+			srcA64F = _mm256_load_pd(s + 0);
+			srcB64F = _mm256_load_pd(s + 4);
+			srcA32S = _mm_packs_epi32(_mm256_cvttpd_epi32(srcA64F), _mm256_cvttpd_epi32(srcB64F));
+
+			srcA64F = _mm256_load_pd(s + 8);
+			srcB64F = _mm256_load_pd(s + 12);
+			srcB32S = _mm_packs_epi32(_mm256_cvttpd_epi32(srcA64F), _mm256_cvttpd_epi32(srcB64F));
+
+			_mm_store_si128((__m128i*)(d), _mm_packus_epi16(srcA32S, srcB32S));
+			s += 16;
+			d += 16;
+		}
+		for (int i = 0; i < nn; i++)
+		{
+			*d = (uchar)(*s + 0.5f);
 			s++, d++;
 		}
 	}

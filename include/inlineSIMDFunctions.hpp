@@ -1143,6 +1143,14 @@ inline void _mm256_i32scaterscalar_epu8(uchar* dest, __m256i vindex, __m256 src)
 	dest[((int*)&vindex)[7]] = ((uchar*)&v)[7];
 }
 
+inline void _mm_i32scaterscalar_ps(float* dest, __m128i vindex, __m128 src)
+{
+	dest[((int*)&vindex)[0]] = ((float*)&src)[0];
+	dest[((int*)&vindex)[1]] = ((float*)&src)[1];
+	dest[((int*)&vindex)[2]] = ((float*)&src)[2];
+	dest[((int*)&vindex)[3]] = ((float*)&src)[3];
+}
+
 inline void _mm256_i32scaterscalar_ps(float* dest, __m256i vindex, __m256 src)
 {
 	dest[((int*)&vindex)[0]] = ((float*)&src)[0];

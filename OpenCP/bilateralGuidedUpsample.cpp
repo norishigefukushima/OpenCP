@@ -47,9 +47,6 @@ namespace cp
 		const float lambda = 1e-6f * l * 0.01;
 		const float epsilon = 1e-6f * e * 0.01;
 
-		int height = low_res_in.rows;
-		int width = low_res_in.cols;
-
 		// The low resolution input
 		Mat low_in;
 		low_res_in.convertTo(low_in, CV_32FC3, 1.f / 255.f);
@@ -859,8 +856,6 @@ namespace cp
 	void BilateralGuidedUpsample::upsample(Mat& low_res_in, Mat& low_res_out, Mat& high_res_in, Mat& high_res_out, const int num_spatial_blocks, const int num_bin, float lambda, float epsilon, const int border)
 	{
 		CV_Assert(low_res_in.channels() == 3);
-
-		const int num_spatial_div = max(num_spatial_blocks, 1);
 
 		low_res_in.convertTo(low_in, CV_32FC3, 1.f / 255.f);
 		low_res_out.convertTo(low_out, CV_32FC3, 1.f / 255.f);

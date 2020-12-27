@@ -1,4 +1,6 @@
 #include "dualExponentialSmoothing.hpp"
+#include <intrin.h>
+
 using namespace std;
 using namespace cv;
 
@@ -269,26 +271,27 @@ namespace cp
 			__m256 t = pv;
 			pv = _mm256_i32gather_ps(im + src.cols - 1, gidx, 4);
 			t = _mm256_mul_ps(half, _mm256_add_ps(t, pv));
-			dt[idx0 + src.cols - 1] = t.m256_f32[7];
-			dt[idx1 + src.cols - 1] = t.m256_f32[6];
-			dt[idx2 + src.cols - 1] = t.m256_f32[5];
-			dt[idx3 + src.cols - 1] = t.m256_f32[4];
-			dt[idx4 + src.cols - 1] = t.m256_f32[3];
-			dt[idx5 + src.cols - 1] = t.m256_f32[2];
-			dt[idx6 + src.cols - 1] = t.m256_f32[1];
-			dt[idx7 + src.cols - 1] = t.m256_f32[0];
+			
+			dt[idx0 + src.cols - 1] = ((float*)&t)[7];
+			dt[idx1 + src.cols - 1] = ((float*)&t)[6];
+			dt[idx2 + src.cols - 1] = ((float*)&t)[5];
+			dt[idx3 + src.cols - 1] = ((float*)&t)[4];
+			dt[idx4 + src.cols - 1] = ((float*)&t)[3];
+			dt[idx5 + src.cols - 1] = ((float*)&t)[2];
+			dt[idx6 + src.cols - 1] = ((float*)&t)[1];
+			dt[idx7 + src.cols - 1] = ((float*)&t)[0];
 			for (int i = src.cols - 2; i >= 0; i--)
 			{
 				pv = _mm256_fmadd_ps(ms, _mm256_i32gather_ps(im + i, gidx, 4), _mm256_mul_ps(mis, pv));
 				__m256 v = _mm256_mul_ps(half, _mm256_add_ps(_mm256_load_ps(b + 8 * i), pv));
-				dt[i + idx0] = v.m256_f32[7];
-				dt[i + idx1] = v.m256_f32[6];
-				dt[i + idx2] = v.m256_f32[5];
-				dt[i + idx3] = v.m256_f32[4];
-				dt[i + idx4] = v.m256_f32[3];
-				dt[i + idx5] = v.m256_f32[2];
-				dt[i + idx6] = v.m256_f32[1];
-				dt[i + idx7] = v.m256_f32[0];
+				dt[i + idx0] = ((float*)&v)[7];
+				dt[i + idx1] = ((float*)&v)[6];
+				dt[i + idx2] = ((float*)&v)[5];
+				dt[i + idx3] = ((float*)&v)[4];
+				dt[i + idx4] = ((float*)&v)[3];
+				dt[i + idx5] = ((float*)&v)[2];
+				dt[i + idx6] = ((float*)&v)[1];
+				dt[i + idx7] = ((float*)&v)[0];
 			}
 		}
 

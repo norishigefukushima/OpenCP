@@ -484,8 +484,8 @@ namespace cp
 
 						const int idx = (x + m);
 
-						__m256 mv = _mm256_mul_ps(mw0, _mm256_cvtepi32_ps(_mm256_i32gather_epi32(srcptr, mlutidx0)));
-						mv = _mm256_fmadd_ps(mw1, _mm256_cvtepi32_ps(_mm256_i32gather_epi32(srcptr, mlutidx1)), mv);
+						__m256 mv = _mm256_mul_ps(mw0, _mm256_cvtepi32_ps(_mm256_i8gather_epi32(srcptr, mlutidx0)));
+						mv = _mm256_fmadd_ps(mw1, _mm256_cvtepi32_ps(_mm256_i8gather_epi32(srcptr, mlutidx1)), mv);
 						destptr[idx] = saturate_cast<uchar>(_mm256_reduceadd_ps(mv));
 					}
 				}

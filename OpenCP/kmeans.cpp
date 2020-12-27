@@ -364,8 +364,8 @@ namespace cp
 			__m256 mwi = _mm256_i32gather_ps(Table, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist)), 4);
 			for (int v = 0; v < 8; v++)
 			{
-				const int arg_k = marg_k.m256i_i32[v];
-				const float wi = mwi.m256_f32[v];
+				const int arg_k = ((int*)&marg_k)[v];
+				const float wi = ((float*)&mwi)[v];
 				centroid_weight[arg_k] += wi;
 				counters[arg_k]++;
 				float* dstCentroidPtr = dest_centroid.ptr<float>(arg_k);

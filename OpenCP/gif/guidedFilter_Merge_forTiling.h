@@ -1,6 +1,7 @@
 #pragma once
 
 #include "guidedFilter_Merge_Base.h"
+#include <intrin.h>
 
 namespace tiling
 {

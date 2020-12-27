@@ -10,7 +10,7 @@ using namespace cv;
 
 namespace cp
 {
-	void alphaBlend_AVX_8U(Mat& src1, Mat& src2, float alpha, Mat& dst)
+	static void alphaBlend_AVX_8U(Mat& src1, Mat& src2, const float alpha, Mat& dst)
 	{
 		int size = src1.size().area() * src1.channels();
 		int simdsize = get_simd_floor(size, 16);
@@ -45,7 +45,7 @@ namespace cp
 		}
 	}
 
-	void alphaBlend_AVX_32F(Mat& src1, Mat& src2, float alpha, Mat& dst)
+	static void alphaBlend_AVX_32F(Mat& src1, Mat& src2, const float alpha, Mat& dst)
 	{
 		int size = src1.size().area() * src1.channels();
 		int simdsize = get_simd_floor(size, 8);
@@ -74,7 +74,7 @@ namespace cp
 		}
 	}
 
-	void alphaBlend_AVX_64F(Mat& src1, Mat& src2, double alpha, Mat& dst)
+	static void alphaBlend_AVX_64F(Mat& src1, Mat& src2, const double alpha, Mat& dst)
 	{
 		int size = src1.size().area() * src1.channels();
 		int simdsize = get_simd_floor(size, 8);
@@ -155,18 +155,19 @@ namespace cp
 		}
 
 		dest.create(src1.size(), CV_MAKETYPE(depth, channel));
+		Mat dst = dest.getMat();
 
 		if (depth == CV_8U)
 		{
-			alphaBlend_AVX_8U(s1, s2, (float)alpha, dest.getMat());
+			alphaBlend_AVX_8U(s1, s2, (float)alpha, dst);
 		}
 		else if (depth == CV_32F)
 		{
-			alphaBlend_AVX_32F(s1, s2, (float)alpha, dest.getMat());
+			alphaBlend_AVX_32F(s1, s2, (float)alpha, dst);
 		}
 		else if (depth == CV_64F)
 		{
-			alphaBlend_AVX_64F(s1, s2, alpha, dest.getMat());
+			alphaBlend_AVX_64F(s1, s2, alpha, dst);
 		}
 		else
 		{
@@ -174,7 +175,8 @@ namespace cp
 		}
 	}
 
-	void alphaBlendFixedPoint_AVX(Mat& src1, Mat& src2, int alpha, Mat& dst)
+
+	static void alphaBlendFixedPoint_AVX(Mat& src1, Mat& src2, int alpha, Mat& dst)
 	{
 		int size = src1.size().area() * src1.channels();
 		int simdsize = get_simd_floor(size, 32);
@@ -234,11 +236,12 @@ namespace cp
 		}
 
 		dest.create(src1.size(), CV_MAKETYPE(CV_8U, channel));
-
-		alphaBlendFixedPoint_AVX(s1, s2, alpha, dest.getMat());
+		Mat dst = dest.getMat();
+		alphaBlendFixedPoint_AVX(s1, s2, alpha, dst);
 	}
 
-	void alphaBlendMask8U_AVX_8U(Mat& src1, Mat& src2, Mat& alpha, Mat& dst)
+
+	static void alphaBlendMask8U_AVX_8U(Mat& src1, Mat& src2, Mat& alpha, Mat& dst)
 	{
 		uchar* s1 = src1.data;
 		uchar* s2 = src2.data;
@@ -343,7 +346,7 @@ namespace cp
 		}
 	}
 
-	void alphaBlendMask32F_AVX_8U(Mat& src1, Mat& src2, Mat& alpha, Mat& dst)
+	static void alphaBlendMask32F_AVX_8U(Mat& src1, Mat& src2, Mat& alpha, Mat& dst)
 	{
 		uchar* s1 = src1.data;
 		uchar* s2 = src2.data;
@@ -444,7 +447,7 @@ namespace cp
 		}
 	}
 
-	void alphaBlendMask8U_AVX_32F(Mat& src1, Mat& src2, Mat& alpha, Mat& dst)
+	static void alphaBlendMask8U_AVX_32F(Mat& src1, Mat& src2, Mat& alpha, Mat& dst)
 	{
 		float* s1 = src1.ptr<float>();
 		float* s2 = src2.ptr<float>();
@@ -521,7 +524,7 @@ namespace cp
 		}
 	}
 
-	void alphaBlendMask32F_AVX_32F(Mat& src1, Mat& src2, Mat& alpha, Mat& dst)
+	static void alphaBlendMask32F_AVX_32F(Mat& src1, Mat& src2, Mat& alpha, Mat& dst)
 	{
 		float* s1 = src1.ptr<float>();
 		float* s2 = src2.ptr<float>();
@@ -647,22 +650,22 @@ namespace cp
 		}
 
 		Mat a = alpha.getMat();
-
+		Mat dst = dest.getMat();
 		if (src1.depth() == CV_8U && alpha.depth() == CV_8U)
 		{
-			alphaBlendMask8U_AVX_8U(s1, s2, a, dest.getMat());
+			alphaBlendMask8U_AVX_8U(s1, s2, a, dst);
 		}
 		else if (src1.depth() == CV_8U && alpha.depth() == CV_32F)
 		{
-			alphaBlendMask32F_AVX_8U(s1, s2, a, dest.getMat());
+			alphaBlendMask32F_AVX_8U(s1, s2, a, dst);
 		}
 		else if (src1.depth() == CV_32F && alpha.depth() == CV_8U)
 		{
-			alphaBlendMask8U_AVX_32F(s1, s2, a, dest.getMat());
+			alphaBlendMask8U_AVX_32F(s1, s2, a, dst);
 		}
 		else if (src1.depth() == CV_32F && alpha.depth() == CV_32F)
 		{
-			alphaBlendMask32F_AVX_32F(s1, s2, a, dest.getMat());
+			alphaBlendMask32F_AVX_32F(s1, s2, a, dst);
 		}
 		else
 		{
@@ -671,7 +674,7 @@ namespace cp
 	}
 
 
-	void alphaBlendFixedPointMask8U_AVX(Mat& src1, Mat& src2, Mat& alpha, Mat& dst)
+	static void alphaBlendFixedPointMask8U_AVX(Mat& src1, Mat& src2, Mat& alpha, Mat& dst)
 	{
 		uchar* s1 = src1.data;
 		uchar* s2 = src2.data;
@@ -781,10 +784,11 @@ namespace cp
 		}
 
 		Mat a = alpha.getMat();
-		alphaBlendFixedPointMask8U_AVX(s1, s2, a, dest.getMat());
+		Mat dst = dest.getMat();
+		alphaBlendFixedPointMask8U_AVX(s1, s2, a, dst);
 	}
 
-	void imageCast(InputArray src, Mat& dest, string mes = "")
+	static void imageCast(InputArray src, Mat& dest, string mes = "")
 	{
 		if (src.depth() == CV_8U)
 		{
@@ -907,7 +911,7 @@ namespace cp
 	}
 
 	template <class srcType>
-	void setTrapezoidMaskH(Mat& src, double ratio, double slant_ratio, Point& start_pt, Point& end_pt)
+	static void setTrapezoidMaskH(Mat& src, double ratio, double slant_ratio, Point& start_pt, Point& end_pt)
 	{
 		const int offset = (int)((0.5 - ratio) * src.cols);
 		const int boundary = int(src.cols * slant_ratio);
@@ -927,7 +931,7 @@ namespace cp
 	}
 
 	template <class srcType>
-	void setTrapezoidMaskV(Mat& src, double ratio, double slant_ratio, Point& start_pt, Point& end_pt)
+	static void setTrapezoidMaskV(Mat& src, double ratio, double slant_ratio, Point& start_pt, Point& end_pt)
 	{
 		const int offset = int((0.5 - ratio) * src.rows);
 

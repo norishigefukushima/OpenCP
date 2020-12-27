@@ -160,9 +160,9 @@ public:
 		for (int j = norm - norm % vecNum; j < norm; j++)
 		{
 			const int jj = j * ch;
-			bSum[0].m256_f32[0] += *(sp + jj + 0);
-			gSum[0].m256_f32[0] += *(sp + jj + 1);
-			rSum[0].m256_f32[0] += *(sp + jj + 2);
+			((float*)&bSum[0])[0] += *(sp + jj + 0);
+			((float*)&gSum[0])[0] += *(sp + jj + 1);
+			((float*)&rSum[0])[0] += *(sp + jj + 2);
 		}
 
 		if (nthreads > 1)
@@ -175,17 +175,9 @@ public:
 			}
 		}
 
-		bSum[0] = _mm256_hadd_ps(bSum[0], bSum[0]);
-		bSum[0] = _mm256_hadd_ps(bSum[0], bSum[0]);
-		(*mu)[0] = (bSum[0].m256_f32[0] + bSum[0].m256_f32[4]) / norm;
-
-		gSum[0] = _mm256_hadd_ps(gSum[0], gSum[0]);
-		gSum[0] = _mm256_hadd_ps(gSum[0], gSum[0]);
-		(*mu)[1] = (gSum[0].m256_f32[0] + gSum[0].m256_f32[4]) / norm;
-
-		rSum[0] = _mm256_hadd_ps(rSum[0], rSum[0]);
-		rSum[0] = _mm256_hadd_ps(rSum[0], rSum[0]);
-		(*mu)[2] = (rSum[0].m256_f32[0] + rSum[0].m256_f32[4]) / norm;
+		(*mu)[0] = _mm256_reduceadd_ps(bSum[0]) / norm;
+		(*mu)[1] = _mm256_reduceadd_ps(gSum[0]) / norm;
+		(*mu)[2] = _mm256_reduceadd_ps(rSum[0]) / norm;
 
 		_mm_free(bSum);
 		_mm_free(gSum);
@@ -257,14 +249,15 @@ public:
 		{
 			const int jj = j * ch;
 			const float tempB = *(sp + jj + 0) - (*mu)[0];
-			mcov0[0].m256_f32[0] += tempB * tempB;
+
+			((float*)&mcov0[0])[0] += tempB * tempB;
 			const float tempG = *(sp + jj + 1) - (*mu)[1];
-			mcov1[0].m256_f32[0] += tempB * tempG;
-			mcov3[0].m256_f32[0] += tempG * tempG;
+			((float*)&mcov1[0])[0] += tempB * tempG;
+			((float*)&mcov3[0])[0] += tempG * tempG;
 			const float tempR = *(sp + jj + 2) - (*mu)[2];
-			mcov2[0].m256_f32[0] += tempB * tempR;
-			mcov4[0].m256_f32[0] += tempG * tempR;
-			mcov5[0].m256_f32[0] += tempR * tempR;
+			((float*)&mcov2[0])[0] += tempB * tempR;
+			((float*)&mcov4[0])[0] += tempG * tempR;
+			((float*)&mcov5[0])[0] += tempR * tempR;
 		}
 
 		if (nthreads > 1)
@@ -280,30 +273,13 @@ public:
 			}
 		}
 
-		mcov0[0] = _mm256_hadd_ps(mcov0[0], mcov0[0]);
-		mcov0[0] = _mm256_hadd_ps(mcov0[0], mcov0[0]);
-		(*cov)[0] = (mcov0[0].m256_f32[0] + mcov0[0].m256_f32[4]) / norm;
-
-		mcov1[0] = _mm256_hadd_ps(mcov1[0], mcov1[0]);
-		mcov1[0] = _mm256_hadd_ps(mcov1[0], mcov1[0]);
-		(*cov)[1] = (mcov1[0].m256_f32[0] + mcov1[0].m256_f32[4]) / norm;
-
-		mcov2[0] = _mm256_hadd_ps(mcov2[0], mcov2[0]);
-		mcov2[0] = _mm256_hadd_ps(mcov2[0], mcov2[0]);
-		(*cov)[2] = (mcov2[0].m256_f32[0] + mcov2[0].m256_f32[4]) / norm;
-
-		mcov3[0] = _mm256_hadd_ps(mcov3[0], mcov3[0]);
-		mcov3[0] = _mm256_hadd_ps(mcov3[0], mcov3[0]);
-		(*cov)[3] = (mcov3[0].m256_f32[0] + mcov3[0].m256_f32[4]) / norm;
-
-		mcov4[0] = _mm256_hadd_ps(mcov4[0], mcov4[0]);
-		mcov4[0] = _mm256_hadd_ps(mcov4[0], mcov4[0]);
-		(*cov)[4] = (mcov4[0].m256_f32[0] + mcov4[0].m256_f32[4]) / norm;
-
-		mcov5[0] = _mm256_hadd_ps(mcov5[0], mcov5[0]);
-		mcov5[0] = _mm256_hadd_ps(mcov5[0], mcov5[0]);
-		(*cov)[5] = (mcov5[0].m256_f32[0] + mcov5[0].m256_f32[4]) / norm;
-
+		(*cov)[0] = _mm256_reduceadd_ps(mcov0[0]) / norm;
+		(*cov)[1] = _mm256_reduceadd_ps(mcov0[1]) / norm;
+		(*cov)[2] = _mm256_reduceadd_ps(mcov0[2]) / norm;
+		(*cov)[3] = _mm256_reduceadd_ps(mcov0[3]) / norm;
+		(*cov)[4] = _mm256_reduceadd_ps(mcov0[4]) / norm;
+		(*cov)[5] = _mm256_reduceadd_ps(mcov0[5]) / norm;
+		
 		_mm_free(mcov0);
 		_mm_free(mcov1);
 		_mm_free(mcov2);
@@ -399,9 +375,9 @@ public:
 		//residual
 		for (int j = norm - norm % vecNum; j < norm; j++)
 		{
-			bSum[0].m256_f32[0] += *(spb + j);
-			gSum[0].m256_f32[0] += *(spg + j);
-			rSum[0].m256_f32[0] += *(spr + j);
+			((float*)&bSum[0])[0] += *(spb + j);
+			((float*)&gSum[0])[0] += *(spg + j);
+			((float*)&rSum[0])[0] += *(spr + j);
 		}
 
 		if (nthreads > 1)
@@ -414,17 +390,9 @@ public:
 			}
 		}
 
-		bSum[0] = _mm256_hadd_ps(bSum[0], bSum[0]);
-		bSum[0] = _mm256_hadd_ps(bSum[0], bSum[0]);
-		(*mu)[0] = (bSum[0].m256_f32[0] + bSum[0].m256_f32[4]) / norm;
-
-		gSum[0] = _mm256_hadd_ps(gSum[0], gSum[0]);
-		gSum[0] = _mm256_hadd_ps(gSum[0], gSum[0]);
-		(*mu)[1] = (gSum[0].m256_f32[0] + gSum[0].m256_f32[4]) / norm;
-
-		rSum[0] = _mm256_hadd_ps(rSum[0], rSum[0]);
-		rSum[0] = _mm256_hadd_ps(rSum[0], rSum[0]);
-		(*mu)[2] = (rSum[0].m256_f32[0] + rSum[0].m256_f32[4]) / norm;
+		(*mu)[0] = _mm256_reduceadd_ps(bSum[0]) / norm;
+		(*mu)[1] = _mm256_reduceadd_ps(gSum[0]) / norm;
+		(*mu)[2] = _mm256_reduceadd_ps(rSum[0]) / norm;
 
 		_mm_free(bSum);
 		_mm_free(gSum);
@@ -499,14 +467,14 @@ public:
 		for (int j = norm - norm % vecNum; j < norm; j++)
 		{
 			const float tempB = *(spb + j) - (*mu)[0];
-			mcov0[0].m256_f32[0] += tempB * tempB;
+			((float*)&mcov0[0])[0] += tempB * tempB;
 			const float tempG = *(spg + j) - (*mu)[1];
-			mcov1[0].m256_f32[0] += tempB * tempG;
-			mcov3[0].m256_f32[0] += tempG * tempG;
+			((float*)&mcov1[0])[0] += tempB * tempG;
+			((float*)&mcov3[0])[0] += tempG * tempG;
 			const float tempR = *(spr + j) - (*mu)[2];
-			mcov2[0].m256_f32[0] += tempB * tempR;
-			mcov4[0].m256_f32[0] += tempG * tempR;
-			mcov5[0].m256_f32[0] += tempR * tempR;
+			((float*)&mcov2[0])[0] += tempB * tempR;
+			((float*)&mcov4[0])[0] += tempG * tempR;
+			((float*)&mcov5[0])[0] += tempR * tempR;
 		}
 
 		if (nthreads > 1)
@@ -522,30 +490,13 @@ public:
 			}
 		}
 
-		mcov0[0] = _mm256_hadd_ps(mcov0[0], mcov0[0]);
-		mcov0[0] = _mm256_hadd_ps(mcov0[0], mcov0[0]);
-		(*cov)[0] = (mcov0[0].m256_f32[0] + mcov0[0].m256_f32[4]) / norm;
-
-		mcov1[0] = _mm256_hadd_ps(mcov1[0], mcov1[0]);
-		mcov1[0] = _mm256_hadd_ps(mcov1[0], mcov1[0]);
-		(*cov)[1] = (mcov1[0].m256_f32[0] + mcov1[0].m256_f32[4]) / norm;
-
-		mcov2[0] = _mm256_hadd_ps(mcov2[0], mcov2[0]);
-		mcov2[0] = _mm256_hadd_ps(mcov2[0], mcov2[0]);
-		(*cov)[2] = (mcov2[0].m256_f32[0] + mcov2[0].m256_f32[4]) / norm;
-
-		mcov3[0] = _mm256_hadd_ps(mcov3[0], mcov3[0]);
-		mcov3[0] = _mm256_hadd_ps(mcov3[0], mcov3[0]);
-		(*cov)[3] = (mcov3[0].m256_f32[0] + mcov3[0].m256_f32[4]) / norm;
-
-		mcov4[0] = _mm256_hadd_ps(mcov4[0], mcov4[0]);
-		mcov4[0] = _mm256_hadd_ps(mcov4[0], mcov4[0]);
-		(*cov)[4] = (mcov4[0].m256_f32[0] + mcov4[0].m256_f32[4]) / norm;
-
-		mcov5[0] = _mm256_hadd_ps(mcov5[0], mcov5[0]);
-		mcov5[0] = _mm256_hadd_ps(mcov5[0], mcov5[0]);
-		(*cov)[5] = (mcov5[0].m256_f32[0] + mcov5[0].m256_f32[4]) / norm;
-
+		(*cov)[0] = _mm256_reduceadd_ps(mcov0[0]) / norm;
+		(*cov)[1] = _mm256_reduceadd_ps(mcov1[0]) / norm;
+		(*cov)[2] = _mm256_reduceadd_ps(mcov2[0]) / norm;
+		(*cov)[3] = _mm256_reduceadd_ps(mcov3[0]) / norm;
+		(*cov)[4] = _mm256_reduceadd_ps(mcov4[0]) / norm;
+		(*cov)[5] = _mm256_reduceadd_ps(mcov5[0]) / norm;
+		
 		_mm_free(mcov0);
 		_mm_free(mcov1);
 		_mm_free(mcov2);

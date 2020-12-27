@@ -38,9 +38,9 @@ namespace cp
 		Mat d; smat.convertTo(d, CV_64F);
 
 		PCA pca(d, Mat(), PCA::DATA_AS_ROW);
-
-		Point3f  normal = pca.eigenvectors.row(2);
-		Point3f mean = pca.mean;
+		Mat a = pca.eigenvectors.row(2);
+		Point3f  normal = Point3f(a);
+		Point3f mean = Point3f(pca.mean);
 		solveABC(normal, mean, dest);
 	}
 

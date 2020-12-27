@@ -51,6 +51,8 @@
 #include <altivec.h>
 #elif defined(__ARM_ARCH_8A__)
 #include <arm_neon.h>
+#else
+#include <intrin.h>
 #endif
 
 #if defined(__STDC__) && defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)

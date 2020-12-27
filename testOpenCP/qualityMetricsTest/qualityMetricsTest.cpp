@@ -49,17 +49,17 @@ namespace cp
 		{
 			cout << str[i] << endl;
 
-			Mat src3 = imread(format("datasets/input/%s/view3.png", str[i]));
-			Mat src4 = imread(format("datasets/input/%s/view4.png", str[i]));
-			Mat src5 = imread(format("datasets/input/%s/view5.png", str[i]));
+			Mat src3 = imread(format("datasets/input/%s/view3.png", str[i].c_str()));
+			Mat src4 = imread(format("datasets/input/%s/view4.png", str[i].c_str()));
+			Mat src5 = imread(format("datasets/input/%s/view5.png", str[i].c_str()));
 
-			Mat prop3 = imread(format("datasets/result/%s/prop3.png", str[i]));
-			Mat prop4 = imread(format("datasets/result/%s/prop4.png", str[i]));
-			Mat prop5 = imread(format("datasets/result/%s/prop5.png", str[i]));
+			Mat prop3 = imread(format("datasets/result/%s/prop3.png", str[i].c_str()));
+			Mat prop4 = imread(format("datasets/result/%s/prop4.png", str[i].c_str()));
+			Mat prop5 = imread(format("datasets/result/%s/prop5.png", str[i].c_str()));
 
-			Mat conv3 = imread(format("datasets/result/%s/conv3.png", str[i]));
-			Mat conv4 = imread(format("datasets/result/%s/conv4.png", str[i]));
-			Mat conv5 = imread(format("datasets/result/%s/conv5.png", str[i]));
+			Mat conv3 = imread(format("datasets/result/%s/conv3.png", str[i].c_str()));
+			Mat conv4 = imread(format("datasets/result/%s/conv4.png", str[i].c_str()));
+			Mat conv5 = imread(format("datasets/result/%s/conv5.png", str[i].c_str()));
 
 
 			{
@@ -104,18 +104,18 @@ namespace cp
 		for (int i = 2; i < n; i++)
 		{
 			cout << str[i] << endl;
+			
+			Mat src3 = imread(format("datasets/input/%s/view2.png", str[i].c_str()));
+			Mat src4 = imread(format("datasets/input/%s/view3.png", str[i].c_str()));
+			Mat src5 = imread(format("datasets/input/%s/view4.png", str[i].c_str()));
 
-			Mat src3 = imread(format("datasets/input/%s/view2.png", str[i]));
-			Mat src4 = imread(format("datasets/input/%s/view3.png", str[i]));
-			Mat src5 = imread(format("datasets/input/%s/view4.png", str[i]));
+			Mat prop3 = imread(format("datasets/result/%s/prop3.png", str[i].c_str()));
+			Mat prop4 = imread(format("datasets/result/%s/prop4.png", str[i].c_str()));
+			Mat prop5 = imread(format("datasets/result/%s/prop5.png", str[i].c_str()));
 
-			Mat prop3 = imread(format("datasets/result/%s/prop3.png", str[i]));
-			Mat prop4 = imread(format("datasets/result/%s/prop4.png", str[i]));
-			Mat prop5 = imread(format("datasets/result/%s/prop5.png", str[i]));
-
-			Mat conv3 = imread(format("datasets/result/%s/conv3.png", str[i]));
-			Mat conv4 = imread(format("datasets/result/%s/conv4.png", str[i]));
-			Mat conv5 = imread(format("datasets/result/%s/conv5.png", str[i]));
+			Mat conv3 = imread(format("datasets/result/%s/conv3.png", str[i].c_str()));
+			Mat conv4 = imread(format("datasets/result/%s/conv4.png", str[i].c_str()));
+			Mat conv5 = imread(format("datasets/result/%s/conv5.png", str[i].c_str()));
 
 
 			{

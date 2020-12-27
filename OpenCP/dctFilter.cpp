@@ -1,4 +1,5 @@
 #include "dctFilter.hpp"
+#include <intrin.h>
 
 using namespace cv;
 
