@@ -2,6 +2,7 @@
 #include "jointNonLocalMeans.hpp"
 #include "color.hpp"
 #include "blend.hpp"
+#include <intrin.h>
 
 using namespace std;
 using namespace cv;

@@ -8,6 +8,8 @@
 
 #include "slic.hpp"
 #include "color.hpp"
+#include <intrin.h>
+
 using namespace cv;
 using namespace std;
 

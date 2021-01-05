@@ -91,7 +91,7 @@ void alphaBlendMask8U_Naive_(Mat& src1, Mat& src2, Mat& alpha, Mat& dst)
 	srcType* s2 = src2.ptr<srcType>();
 	srcType* d = dst.ptr<srcType>();
 	uchar* a = alpha.ptr<uchar>();
-	const float inv = 1.f / 255.0;
+	const float inv = 1.f / 255.f;
 	if (src1.channels() == 1)
 	{
 		for (int i = 0; i < size; i++)

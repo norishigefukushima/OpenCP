@@ -2,6 +2,8 @@
 #include "jointBilateralFilter.hpp"
 #include "guidedFilter.hpp"
 #include "timer.hpp"
+#include<intrin.h>
+
 using namespace cv;
 using namespace std;
 
@@ -289,7 +291,8 @@ namespace cp
 
 	void iterativeBackProjectionDeblurGaussian(const Mat& src, Mat& dest, const Size ksize, const float sigma, const float backprojection_sigma, const float lambda, const int iteration)
 	{
-		iterativeBackProjectionDeblurGaussian(src, dest, ksize, sigma, backprojection_sigma, lambda, iteration, Mat());
+		Mat temp;
+		iterativeBackProjectionDeblurGaussian(src, dest, ksize, sigma, backprojection_sigma, lambda, iteration, temp);
 	}
 
 	void iterativeBackProjectionDeblurBilateral(const cv::Mat& src, cv::Mat& dest, const cv::Size ksize, const float sigma, const float backprojection_sigma_space, const float backprojection_sigma_color, const float lambda, const int iteration, cv::Mat& init)
@@ -319,7 +322,8 @@ namespace cp
 
 	void iterativeBackProjectionDeblurBilateral(const cv::Mat& src, cv::Mat& dest, const cv::Size ksize, const float sigma, const float backprojection_sigma_space, const float backprojection_sigma_color, const float lambda, const int iteration)
 	{
-		iterativeBackProjectionDeblurBilateral(src, dest, ksize, sigma, backprojection_sigma_space, backprojection_sigma_color, lambda, iteration, Mat());
+		Mat temp;
+		iterativeBackProjectionDeblurBilateral(src, dest, ksize, sigma, backprojection_sigma_space, backprojection_sigma_color, lambda, iteration, temp);
 	}
 
 	/*void iterativeBackProjectionDeblurBilateral(const Mat& src, Mat& dest, const Size ksize, const double sigma_space, const double backprojection_sigma_space, const double backprojection_sigma_color, const double lambda, const int iteration, Mat& init)

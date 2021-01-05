@@ -91,7 +91,7 @@ void guiLocalDiffHistogram(Mat& src, bool isWait, string wname)
 		line(hist_img, Point(maxv + 255, hist_img.rows - 1), Point(maxv + 255, 0), COLOR_GRAY40);
 		for (int i = 0; i < 512; i++)
 		{
-			int v = int((hist_img.rows - 1)*(histmax - min(histmax, hist[i])) / (double)histmax);
+			int v = int((hist_img.rows - 1) * (histmax - min(histmax, hist[i])) / (double)histmax);
 			line(hist_img, Point(i, hist_img.rows - 1), Point(i, v), COLOR_WHITE);
 		}
 
@@ -110,7 +110,7 @@ void filter2DTest(Mat& src)
 {
 	Mat dst;
 	Mat kernel = cv::getGaussianKernel(11, 3, CV_32F);
-	filter2D(src, dst, -1, kernel*kernel.t());
+	filter2D(src, dst, -1, kernel * kernel.t());
 
 	imshowNormalize("a", dst);
 	waitKey();
@@ -136,11 +136,11 @@ int main(int argc, char** argv)
 	//testSplitMerge(img); return 0;
 	//testConcat(); return 0;
 	//testsimd(); return 0;
-	
+
 	//testHistogram(); return 0;
 	//testPlot(); return 0;
 	//testPlot2D(); return 0;
-	//testGuidedImageFilter(); return 0;
+	testGuidedImageFilter(Mat(), Mat()); return 0;
 	//guiHazeRemoveTest();
 
 	//testCropZoom(); return 0;
@@ -161,7 +161,7 @@ int main(int argc, char** argv)
 #pragma endregion
 
 #pragma region stereo
-	testStereoBase(); return 0;
+	//testStereoBase(); return 0;
 	//testCVStereoBM(); return 0;
 	//testCVStereoSGBM(); return 0;
 #pragma endregion
@@ -179,7 +179,7 @@ int main(int argc, char** argv)
 	//VizKernel vk;
 	//vk.run(img, 2);
 
-	
+
 	//guiShift(left,right); return 0;
 	//
 	//iirGuidedFilterTest2(img); return 0;
@@ -228,7 +228,7 @@ int main(int argc, char** argv)
 	Mat dest;
 
 	//guiCrossBasedLocalFilter(src); return 0;
-	
+
 
 	//eraseBoundary(src,10);
 	//	resize(src,mega,Size(1024,1024));
@@ -255,7 +255,7 @@ int main(int argc, char** argv)
 
 	//guiEdgePresevingFilterOpenCV(src);
 	//guiSLICTest(src);
-	
+
 
 	//guiJointRealtimeO1BilateralFilterTest(noflashImgGray, flashImgGray); return 0;
 	//guiJointRealtimeO1BilateralFilterTest(noflashImg, flashImgGray); return 0;

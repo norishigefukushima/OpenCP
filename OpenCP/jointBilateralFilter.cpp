@@ -1,6 +1,7 @@
 #include "jointBilateralFilter.hpp"
 #include "color.hpp"
 #include "filterCore.h"
+#include <intrin.h>
 using namespace std;
 using namespace cv;
 

@@ -35,14 +35,14 @@ void testGuidedImageFilter(Mat& img_p, Mat& img_I)
 	int r = 4;
 	int e = 100;
 	//int guidedType = GUIDED_XIMGPROC;
-	int guidedType = GuidedTypes::GUIDED_SEP_VHI_SHARE;
+	int guidedType = GuidedTypes::GUIDED_SEP_VHI;
 	//int guidedType = GuidedTypes::GUIDED_NAIVE;
 
 	int boxType = BoxTypes::BOX_OPENCV;
 	int parallelType = ParallelTypes::OMP;
 	//int parallelType = ParallelTypes::NAIVE;
-	int src_GRAY_RGB = 0;
-	int guide_GRAY_RGB = 0;
+	int src_GRAY_RGB = 1;
+	int guide_GRAY_RGB = 1;
 
 	//#define RANDOM_SHIFT
 
@@ -60,19 +60,19 @@ void testGuidedImageFilter(Mat& img_p, Mat& img_I)
 	moveWindow("param", 100, 100);
 	int loop = 5; createTrackbar("loop", "param", &loop, 100);
 
-	int sw = 0; createTrackbar("sw", "param", &sw, 5);
+	int showIndex = 0; createTrackbar("swowIndex", "param", &showIndex, 5);
 	createTrackbar("r", "param", &r, 100);
 	createTrackbar("eps", "param", &e, 100000);
 	createTrackbar("GuidedType", "param", &guidedType, GuidedTypes::NumGuidedTypes - 1);
 	createTrackbar("BoxType", "param", &boxType, BoxTypes::NumBoxTypes - 1);
 	createTrackbar("parallel", "param", &parallelType, ParallelTypes::NumParallelTypes - 1);
-	createTrackbar("srcType", "param", &src_GRAY_RGB, 1);
-	createTrackbar("guideType", "param", &guide_GRAY_RGB, 1);
+	createTrackbar("src gray:color", "param", &src_GRAY_RGB, 1);
+	createTrackbar("guide gray:color", "param", &guide_GRAY_RGB, 1);
 #ifdef FAST_TEST
 	int fastres = 1;
 	createTrackbar("fast res", "param", &fastres, 8);
-	int downsample = 0;  createTrackbar("up", "param", &downsample, INTER_LANCZOS4);
-	int upsample = INTER_CUBIC;  createTrackbar("down", "param", &upsample, INTER_LANCZOS4);
+	int downsample = 0;  createTrackbar("down_method", "param", &downsample, INTER_LANCZOS4);
+	int upsample = INTER_CUBIC;  createTrackbar("up_method", "param", &upsample, INTER_LANCZOS4);
 
 #endif
 	int h = 2;  createTrackbar("h_div", "param", &h, 6);
@@ -158,7 +158,7 @@ void testGuidedImageFilter(Mat& img_p, Mat& img_I)
 			stats[idx].push_back(t.getTime());
 		}
 		ref64f.convertTo(ref8u, CV_8U);
-		if (sw == idx)ref64f.copyTo(show);
+		if (showIndex == idx)ref64f.copyTo(show);
 		idx++;
 
 #ifdef OPENCV
@@ -174,7 +174,7 @@ void testGuidedImageFilter(Mat& img_p, Mat& img_I)
 			stats[idx].push_back(t.getLapTimeMedian());
 		}
 		destf.convertTo(dest, CV_8U);
-		if (sw == idx)destf.copyTo(show);
+		if (showIndex == idx)destf.copyTo(show);
 		idx++;
 #endif
 
@@ -191,7 +191,7 @@ void testGuidedImageFilter(Mat& img_p, Mat& img_I)
 			stats[idx].push_back(t.getLapTimeMedian());
 		}
 		destf.convertTo(dest, CV_8U);
-		if (sw == idx)destf.copyTo(show);
+		if (showIndex == idx)destf.copyTo(show);
 		idx++;
 #endif
 
@@ -210,7 +210,7 @@ void testGuidedImageFilter(Mat& img_p, Mat& img_I)
 			stats[idx].push_back(t.getLapTimeMedian());
 		}
 		destf_class.convertTo(dest_class, CV_8U);
-		if (sw == idx)destf_class.copyTo(show);
+		if (showIndex == idx)destf_class.copyTo(show);
 		idx++;
 #endif
 
@@ -229,7 +229,7 @@ void testGuidedImageFilter(Mat& img_p, Mat& img_I)
 			stats[idx].push_back(t.getLapTimeMedian());
 		}
 		destf_precomp.convertTo(dest_precomp, CV_8U);
-		if (sw == idx)destf_precomp.copyTo(show);
+		if (showIndex == idx)destf_precomp.copyTo(show);
 		idx++;
 #endif
 
@@ -248,7 +248,7 @@ void testGuidedImageFilter(Mat& img_p, Mat& img_I)
 			stats[idx].push_back(t.getLapTimeMedian());
 		}
 		destf_classcolorpara.convertTo(dest_classcolorpara, CV_8U);
-		if (sw == idx)destf_classcolorpara.copyTo(show);
+		if (showIndex == idx)destf_classcolorpara.copyTo(show);
 		idx++;
 #endif
 
@@ -272,7 +272,7 @@ void testGuidedImageFilter(Mat& img_p, Mat& img_I)
 			stats[idx].push_back(t.getLapTimeMedian());
 		}
 		destf_fast.convertTo(dest_fast, CV_8U);
-		if (sw == idx)destf_fast.copyTo(show);
+		if (showIndex == idx)destf_fast.copyTo(show);
 		idx++;
 #endif
 
@@ -291,13 +291,14 @@ void testGuidedImageFilter(Mat& img_p, Mat& img_I)
 			stats[idx].push_back(t.getLapTimeMedian());
 		}
 		destf_tile.convertTo(dest_tile, CV_8U);
-		if (sw == idx)destf_tile.copyTo(show);
+		if (showIndex == idx)destf_tile.copyTo(show);
 		idx++;
 #endif
 
 		ci("Guided Type(g-f): %s", getGuidedType(guidedType).c_str());
 		ci("Box Type        : " + getBoxType(boxType));
 		ci("Parallel Type   : " + getParallelType(parallelType));
+		ci("Parallel Type   : " + cp::getInterpolationName(downsample)+" Up: "+ cp::getInterpolationName(upsample));
 		ci("NUM             : %d", stats[0].num_data);
 		ci("======Time======");
 		idx = 0;

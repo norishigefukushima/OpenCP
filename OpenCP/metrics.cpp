@@ -70,8 +70,8 @@ namespace cp
 
 		double MSE = 0.0;
 
-		double* ptr1 = src.ptr<double>(0);
-		double* ptr2 = reference.ptr<double>(0);
+		double* ptr1 = src.ptr<double>();
+		double* ptr2 = reference.ptr<double>();
 		const int simdsize = (pixels / 4) * 4;
 		const int rem = pixels - simdsize;
 
@@ -102,11 +102,8 @@ namespace cp
 				mmse = _mm256_fmadd_pd(t, t, mmse);
 			}
 		}
-
-		MSE += mmse.m256d_f64[0];
-		MSE += mmse.m256d_f64[1];
-		MSE += mmse.m256d_f64[2];
-		MSE += mmse.m256d_f64[3];
+		MSE +=_mm256_reduceadd_pd(mmse);
+		
 
 		//for (int i = 0; i < pixels; ++i)
 		for (int i = simdsize; i < pixels; ++i)
@@ -146,10 +143,8 @@ namespace cp
 			mmse = _mm256_fmadd_ps(t, t, mmse);
 		}
 
-		for (int i = 0; i < 8; i++)
-		{
-			MSE += (double)mmse.m256_f32[i];
-		}
+		MSE = (double)_mm256_reduceadd_ps(mmse);
+		
 		//for (int i = 0; i < pixels; ++i)
 		for (int i = simdsize; i < pixels; ++i)
 		{
@@ -187,11 +182,8 @@ namespace cp
 			__m256 t = _mm256_sub_ps(m1, m2);
 			mmse = _mm256_fmadd_ps(t, t, mmse);
 		}
-
-		for (int i = 0; i < 8; i++)
-		{
-			MSE += (double)mmse.m256_f32[i];
-		}
+		MSE = (double)_mm256_reduceadd_ps(mmse);
+		
 		//for (int i = 0; i < pixels; ++i)
 		for (int i = simdsize; i < pixels; ++i)
 		{

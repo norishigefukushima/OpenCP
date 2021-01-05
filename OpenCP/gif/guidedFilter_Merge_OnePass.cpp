@@ -2767,11 +2767,12 @@ void guidedFilter_Merge_OnePass_SIMD::filter_Guide1(int cn)
 		float* b_ptr = b.ptr<float>(0);
 
 #ifndef _MERGE_
-		float varI = mTmp.m128_f32[1] - mTmp.m128_f32[0] * mTmp.m128_f32[0];
-		float covIP = mTmp.m128_f32[2] - mTmp.m128_f32[0] * mTmp.m128_f32[3];
+		
+		float varI = ((float*)&mTmp)[1] - ((float*)&mTmp)[0] * ((float*)&mTmp)[0];
+		float covIP = ((float*)&mTmp)[2] - ((float*)&mTmp)[0] * ((float*)&mTmp)[3];
 
 		*a_ptr = covIP / (varI + eps);
-		*b_ptr = mTmp.m128_f32[3] - *a_ptr * mTmp.m128_f32[0];
+		*b_ptr = ((float*)&mTmp)[3] - *a_ptr * ((float*)&mTmp)[0];
 		a_ptr++;
 		b_ptr++;
 #else
@@ -2799,10 +2800,11 @@ void guidedFilter_Merge_OnePass_SIMD::filter_Guide1(int cn)
 			mTmp = _mm_mul_ps(mSum, mDiv);
 
 #ifndef _MERGE_
-			varI = mTmp.m128_f32[1] - mTmp.m128_f32[0] * mTmp.m128_f32[0];
-			covIP = mTmp.m128_f32[2] - mTmp.m128_f32[0] * mTmp.m128_f32[3];
+			float varI = ((float*)&mTmp)[1] - ((float*)&mTmp)[0] * ((float*)&mTmp)[0];
+			float covIP = ((float*)&mTmp)[2] - ((float*)&mTmp)[0] * ((float*)&mTmp)[3];
+
 			*a_ptr = covIP / (varI + eps);
-			*b_ptr = mTmp.m128_f32[3] - *a_ptr * mTmp.m128_f32[0];
+			*b_ptr = ((float*)&mTmp)[3] - *a_ptr * ((float*)&mTmp)[0];
 			a_ptr++;
 			b_ptr++;
 #else
@@ -2843,12 +2845,14 @@ void guidedFilter_Merge_OnePass_SIMD::filter_Guide1(int cn)
 			mTmp = _mm_mul_ps(mSum, mDiv);
 
 #ifndef _MERGE_
-			varI = mTmp.m128_f32[1] - mTmp.m128_f32[0] * mTmp.m128_f32[0];
-			covIP = mTmp.m128_f32[2] - mTmp.m128_f32[0] * mTmp.m128_f32[3];
+			varI = ((float*)&mTmp)[1] - ((float*)&mTmp)[0] * ((float*)&mTmp)[0];
+			covIP = ((float*)&mTmp)[2] - ((float*)&mTmp)[0] * ((float*)&mTmp)[3];
+
 			*a_ptr = covIP / (varI + eps);
-			*b_ptr = mTmp.m128_f32[3] - *a_ptr * mTmp.m128_f32[0];
+			*b_ptr = ((float*)&mTmp)[3] - *a_ptr * ((float*)&mTmp)[0];
 			a_ptr++;
 			b_ptr++;
+
 #else
 			mVar.m256_f32[index] = mTmp.m128_f32[1] - mTmp.m128_f32[0] * mTmp.m128_f32[0];
 			mCov.m256_f32[index] = mTmp.m128_f32[2] - mTmp.m128_f32[0] * mTmp.m128_f32[3];
@@ -2880,10 +2884,11 @@ void guidedFilter_Merge_OnePass_SIMD::filter_Guide1(int cn)
 			mTmp = _mm_mul_ps(mSum, mDiv);
 
 #ifndef _MERGE_
-			varI = mTmp.m128_f32[1] - mTmp.m128_f32[0] * mTmp.m128_f32[0];
-			covIP = mTmp.m128_f32[2] - mTmp.m128_f32[0] * mTmp.m128_f32[3];
+			varI = ((float*)&mTmp)[1] - ((float*)&mTmp)[0] * ((float*)&mTmp)[0];
+			covIP = ((float*)&mTmp)[2] - ((float*)&mTmp)[0] * ((float*)&mTmp)[3];
+
 			*a_ptr = covIP / (varI + eps);
-			*b_ptr = mTmp.m128_f32[3] - *a_ptr * mTmp.m128_f32[0];
+			*b_ptr = ((float*)&mTmp)[3] - *a_ptr * ((float*)&mTmp)[0];
 			a_ptr++;
 			b_ptr++;
 #else
@@ -2948,10 +2953,11 @@ void guidedFilter_Merge_OnePass_SIMD::filter_Guide1(int cn)
 			mTmp = _mm_mul_ps(mSum, mDiv);
 
 #ifndef _MERGE_
-			varI = mTmp.m128_f32[1] - mTmp.m128_f32[0] * mTmp.m128_f32[0];
-			covIP = mTmp.m128_f32[2] - mTmp.m128_f32[0] * mTmp.m128_f32[3];
+			varI = ((float*)&mTmp)[1] - ((float*)&mTmp)[0] * ((float*)&mTmp)[0];
+			covIP = ((float*)&mTmp)[2] - ((float*)&mTmp)[0] * ((float*)&mTmp)[3];
+
 			*a_ptr = covIP / (varI + eps);
-			*b_ptr = mTmp.m128_f32[3] - *a_ptr * mTmp.m128_f32[0];
+			*b_ptr = ((float*)&mTmp)[3] - *a_ptr * ((float*)&mTmp)[0];
 			a_ptr++;
 			b_ptr++;
 #else
@@ -2994,10 +3000,11 @@ void guidedFilter_Merge_OnePass_SIMD::filter_Guide1(int cn)
 				mTmp = _mm_mul_ps(mSum, mDiv);
 
 #ifndef _MERGE_
-				varI = mTmp.m128_f32[1] - mTmp.m128_f32[0] * mTmp.m128_f32[0];
-				covIP = mTmp.m128_f32[2] - mTmp.m128_f32[0] * mTmp.m128_f32[3];
+				varI = ((float*)&mTmp)[1] - ((float*)&mTmp)[0] * ((float*)&mTmp)[0];
+				covIP = ((float*)&mTmp)[2] - ((float*)&mTmp)[0] * ((float*)&mTmp)[3];
+
 				*a_ptr = covIP / (varI + eps);
-				*b_ptr = mTmp.m128_f32[3] - *a_ptr * mTmp.m128_f32[0];
+				*b_ptr = ((float*)&mTmp)[3] - *a_ptr * ((float*)&mTmp)[0];
 				a_ptr++;
 				b_ptr++;
 #else
@@ -3042,10 +3049,11 @@ void guidedFilter_Merge_OnePass_SIMD::filter_Guide1(int cn)
 				mTmp = _mm_mul_ps(mSum, mDiv);
 
 #ifndef _MERGE_
-				varI = mTmp.m128_f32[1] - mTmp.m128_f32[0] * mTmp.m128_f32[0];
-				covIP = mTmp.m128_f32[2] - mTmp.m128_f32[0] * mTmp.m128_f32[3];
+				varI = ((float*)&mTmp)[1] - ((float*)&mTmp)[0] * ((float*)&mTmp)[0];
+				covIP = ((float*)&mTmp)[2] - ((float*)&mTmp)[0] * ((float*)&mTmp)[3];
+
 				*a_ptr = covIP / (varI + eps);
-				*b_ptr = mTmp.m128_f32[3] - *a_ptr * mTmp.m128_f32[0];
+				*b_ptr = ((float*)&mTmp)[3] - *a_ptr * ((float*)&mTmp)[0];
 				a_ptr++;
 				b_ptr++;
 #else
@@ -3079,10 +3087,11 @@ void guidedFilter_Merge_OnePass_SIMD::filter_Guide1(int cn)
 				mTmp = _mm_mul_ps(mSum, mDiv);
 
 #ifndef _MERGE_
-				varI = mTmp.m128_f32[1] - mTmp.m128_f32[0] * mTmp.m128_f32[0];
-				covIP = mTmp.m128_f32[2] - mTmp.m128_f32[0] * mTmp.m128_f32[3];
+				varI = ((float*)&mTmp)[1] - ((float*)&mTmp)[0] * ((float*)&mTmp)[0];
+				covIP = ((float*)&mTmp)[2] - ((float*)&mTmp)[0] * ((float*)&mTmp)[3];
+
 				*a_ptr = covIP / (varI + eps);
-				*b_ptr = mTmp.m128_f32[3] - *a_ptr * mTmp.m128_f32[0];
+				*b_ptr = ((float*)&mTmp)[3] - *a_ptr * ((float*)&mTmp)[0];
 				a_ptr++;
 				b_ptr++;
 #else
@@ -3148,10 +3157,11 @@ void guidedFilter_Merge_OnePass_SIMD::filter_Guide1(int cn)
 			mTmp = _mm_mul_ps(mSum, mDiv);
 
 #ifndef _MERGE_
-			varI = mTmp.m128_f32[1] - mTmp.m128_f32[0] * mTmp.m128_f32[0];
-			covIP = mTmp.m128_f32[2] - mTmp.m128_f32[0] * mTmp.m128_f32[3];
+			varI = ((float*)&mTmp)[1] - ((float*)&mTmp)[0] * ((float*)&mTmp)[0];
+			covIP = ((float*)&mTmp)[2] - ((float*)&mTmp)[0] * ((float*)&mTmp)[3];
+
 			*a_ptr = covIP / (varI + eps);
-			*b_ptr = mTmp.m128_f32[3] - *a_ptr * mTmp.m128_f32[0];
+			*b_ptr = ((float*)&mTmp)[3] - *a_ptr * ((float*)&mTmp)[0];
 			a_ptr++;
 			b_ptr++;
 #else
@@ -3194,10 +3204,11 @@ void guidedFilter_Merge_OnePass_SIMD::filter_Guide1(int cn)
 				mTmp = _mm_mul_ps(mSum, mDiv);
 
 #ifndef _MERGE_
-				varI = mTmp.m128_f32[1] - mTmp.m128_f32[0] * mTmp.m128_f32[0];
-				covIP = mTmp.m128_f32[2] - mTmp.m128_f32[0] * mTmp.m128_f32[3];
+				varI = ((float*)&mTmp)[1] - ((float*)&mTmp)[0] * ((float*)&mTmp)[0];
+				covIP = ((float*)&mTmp)[2] - ((float*)&mTmp)[0] * ((float*)&mTmp)[3];
+
 				*a_ptr = covIP / (varI + eps);
-				*b_ptr = mTmp.m128_f32[3] - *a_ptr * mTmp.m128_f32[0];
+				*b_ptr = ((float*)&mTmp)[3] - *a_ptr * ((float*)&mTmp)[0];
 				a_ptr++;
 				b_ptr++;
 #else
@@ -3242,10 +3253,11 @@ void guidedFilter_Merge_OnePass_SIMD::filter_Guide1(int cn)
 				mTmp = _mm_mul_ps(mSum, mDiv);
 
 #ifndef _MERGE_
-				varI = mTmp.m128_f32[1] - mTmp.m128_f32[0] * mTmp.m128_f32[0];
-				covIP = mTmp.m128_f32[2] - mTmp.m128_f32[0] * mTmp.m128_f32[3];
+				varI = ((float*)&mTmp)[1] - ((float*)&mTmp)[0] * ((float*)&mTmp)[0];
+				covIP = ((float*)&mTmp)[2] - ((float*)&mTmp)[0] * ((float*)&mTmp)[3];
+
 				*a_ptr = covIP / (varI + eps);
-				*b_ptr = mTmp.m128_f32[3] - *a_ptr * mTmp.m128_f32[0];
+				*b_ptr = ((float*)&mTmp)[3] - *a_ptr * ((float*)&mTmp)[0];
 				a_ptr++;
 				b_ptr++;
 #else
@@ -3279,10 +3291,11 @@ void guidedFilter_Merge_OnePass_SIMD::filter_Guide1(int cn)
 				mTmp = _mm_mul_ps(mSum, mDiv);
 
 #ifndef _MERGE_
-				varI = mTmp.m128_f32[1] - mTmp.m128_f32[0] * mTmp.m128_f32[0];
-				covIP = mTmp.m128_f32[2] - mTmp.m128_f32[0] * mTmp.m128_f32[3];
+				varI = ((float*)&mTmp)[1] - ((float*)&mTmp)[0] * ((float*)&mTmp)[0];
+				covIP = ((float*)&mTmp)[2] - ((float*)&mTmp)[0] * ((float*)&mTmp)[3];
+
 				*a_ptr = covIP / (varI + eps);
-				*b_ptr = mTmp.m128_f32[3] - *a_ptr * mTmp.m128_f32[0];
+				*b_ptr = ((float*)&mTmp)[3] - *a_ptr * ((float*)&mTmp)[0];
 				a_ptr++;
 				b_ptr++;
 #else
@@ -3346,10 +3359,11 @@ void guidedFilter_Merge_OnePass_SIMD::filter_Guide1(int cn)
 			mTmp = _mm_mul_ps(mSum, mDiv);
 
 #ifndef _MERGE_
-			varI = mTmp.m128_f32[1] - mTmp.m128_f32[0] * mTmp.m128_f32[0];
-			covIP = mTmp.m128_f32[2] - mTmp.m128_f32[0] * mTmp.m128_f32[3];
+			varI = ((float*)&mTmp)[1] - ((float*)&mTmp)[0] * ((float*)&mTmp)[0];
+			covIP = ((float*)&mTmp)[2] - ((float*)&mTmp)[0] * ((float*)&mTmp)[3];
+
 			*a_ptr = covIP / (varI + eps);
-			*b_ptr = mTmp.m128_f32[3] - *a_ptr * mTmp.m128_f32[0];
+			*b_ptr = ((float*)&mTmp)[3] - *a_ptr * ((float*)&mTmp)[0];
 			a_ptr++;
 			b_ptr++;
 #else
@@ -3392,10 +3406,11 @@ void guidedFilter_Merge_OnePass_SIMD::filter_Guide1(int cn)
 				mTmp = _mm_mul_ps(mSum, mDiv);
 
 #ifndef _MERGE_
-				varI = mTmp.m128_f32[1] - mTmp.m128_f32[0] * mTmp.m128_f32[0];
-				covIP = mTmp.m128_f32[2] - mTmp.m128_f32[0] * mTmp.m128_f32[3];
+				varI = ((float*)&mTmp)[1] - ((float*)&mTmp)[0] * ((float*)&mTmp)[0];
+				covIP = ((float*)&mTmp)[2] - ((float*)&mTmp)[0] * ((float*)&mTmp)[3];
+
 				*a_ptr = covIP / (varI + eps);
-				*b_ptr = mTmp.m128_f32[3] - *a_ptr * mTmp.m128_f32[0];
+				*b_ptr = ((float*)&mTmp)[3] - *a_ptr * ((float*)&mTmp)[0];
 				a_ptr++;
 				b_ptr++;
 #else
@@ -3440,10 +3455,11 @@ void guidedFilter_Merge_OnePass_SIMD::filter_Guide1(int cn)
 				mTmp = _mm_mul_ps(mSum, mDiv);
 
 #ifndef _MERGE_
-				varI = mTmp.m128_f32[1] - mTmp.m128_f32[0] * mTmp.m128_f32[0];
-				covIP = mTmp.m128_f32[2] - mTmp.m128_f32[0] * mTmp.m128_f32[3];
+				varI = ((float*)&mTmp)[1] - ((float*)&mTmp)[0] * ((float*)&mTmp)[0];
+				covIP = ((float*)&mTmp)[2] - ((float*)&mTmp)[0] * ((float*)&mTmp)[3];
+
 				*a_ptr = covIP / (varI + eps);
-				*b_ptr = mTmp.m128_f32[3] - *a_ptr * mTmp.m128_f32[0];
+				*b_ptr = ((float*)&mTmp)[3] - *a_ptr * ((float*)&mTmp)[0];
 				a_ptr++;
 				b_ptr++;
 #else
@@ -3477,10 +3493,11 @@ void guidedFilter_Merge_OnePass_SIMD::filter_Guide1(int cn)
 				mTmp = _mm_mul_ps(mSum, mDiv);
 
 #ifndef _MERGE_
-				varI = mTmp.m128_f32[1] - mTmp.m128_f32[0] * mTmp.m128_f32[0];
-				covIP = mTmp.m128_f32[2] - mTmp.m128_f32[0] * mTmp.m128_f32[3];
+				varI = ((float*)&mTmp)[1] - ((float*)&mTmp)[0] * ((float*)&mTmp)[0];
+				covIP = ((float*)&mTmp)[2] - ((float*)&mTmp)[0] * ((float*)&mTmp)[3];
+
 				*a_ptr = covIP / (varI + eps);
-				*b_ptr = mTmp.m128_f32[3] - *a_ptr * mTmp.m128_f32[0];
+				*b_ptr = ((float*)&mTmp)[3] - *a_ptr * ((float*)&mTmp)[0];
 				a_ptr++;
 				b_ptr++;
 #else
@@ -3896,15 +3913,15 @@ void guidedFilter_Merge_OnePass_SIMD::filter_Guide1(int cn)
 	mTmp1 = _mm256_mul_ps(mSum1, mDiv);	\
 	mTmp2 = _mm256_mul_ps(mSum2, mDiv);	\
 	\
-	bb = mTmp2.m256_f32[0] - mTmp1.m256_f32[0] * mTmp1.m256_f32[0];	\
-	bg = mTmp2.m256_f32[1] - mTmp1.m256_f32[0] * mTmp1.m256_f32[1];	\
-	br = mTmp2.m256_f32[2] - mTmp1.m256_f32[0] * mTmp1.m256_f32[2];	\
-	gg = mTmp2.m256_f32[3] - mTmp1.m256_f32[1] * mTmp1.m256_f32[1];	\
-	gr = mTmp2.m256_f32[4] - mTmp1.m256_f32[1] * mTmp1.m256_f32[2];	\
-	rr = mTmp2.m256_f32[5] - mTmp1.m256_f32[2] * mTmp1.m256_f32[2];	\
-	covb = mTmp1.m256_f32[4] - mTmp1.m256_f32[0] * mTmp1.m256_f32[3];	\
-	covg = mTmp1.m256_f32[5] - mTmp1.m256_f32[1] * mTmp1.m256_f32[3];	\
-	covr = mTmp1.m256_f32[6] - mTmp1.m256_f32[2] * mTmp1.m256_f32[3];	\
+	bb =   ((float*)&mTmp2)[0] - ((float*)&mTmp1)[0] * ((float*)&mTmp1)[0];	\
+	bg =   ((float*)&mTmp2)[1] - ((float*)&mTmp1)[0] * ((float*)&mTmp1)[1];	\
+	br =   ((float*)&mTmp2)[2] - ((float*)&mTmp1)[0] * ((float*)&mTmp1)[2];	\
+	gg =   ((float*)&mTmp2)[3] - ((float*)&mTmp1)[1] * ((float*)&mTmp1)[1];	\
+	gr =   ((float*)&mTmp2)[4] - ((float*)&mTmp1)[1] * ((float*)&mTmp1)[2];	\
+	rr =   ((float*)&mTmp2)[5] - ((float*)&mTmp1)[2] * ((float*)&mTmp1)[2];	\
+	covb = ((float*)&mTmp1)[4] - ((float*)&mTmp1)[0] * ((float*)&mTmp1)[3];	\
+	covg = ((float*)&mTmp1)[5] - ((float*)&mTmp1)[1] * ((float*)&mTmp1)[3];	\
+	covr = ((float*)&mTmp1)[6] - ((float*)&mTmp1)[2] * ((float*)&mTmp1)[3];	\
 	\
 	bb += eps;	\
 	gg += eps;	\
@@ -3923,7 +3940,7 @@ void guidedFilter_Merge_OnePass_SIMD::filter_Guide1(int cn)
 	*ab_ptr = id * (covb*c0 + covg*c1 + covr*c2);	\
 	*ag_ptr = id * (covb*c1 + covg*c4 + covr*c5);	\
 	*ar_ptr = id * (covb*c2 + covg*c5 + covr*c8);	\
-	*b_ptr = mTmp1.m256_f32[3] - (*ab_ptr * mTmp1.m256_f32[0] + *ag_ptr * mTmp1.m256_f32[1] + *ar_ptr * mTmp1.m256_f32[2]);
+	*b_ptr = ((float*)&mTmp1)[3] - (*ab_ptr * ((float*)&mTmp1)[0] + *ag_ptr * ((float*)&mTmp1)[1] + *ar_ptr * ((float*)&mTmp1)[2]);
 
 
 void guidedFilter_Merge_OnePass_SIMD::filter_Guide3(int cn)

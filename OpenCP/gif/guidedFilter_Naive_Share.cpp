@@ -1,6 +1,7 @@
 #include "boxFilter.hpp"
 #include "guidedFilter_Naive_Share.h"
 #include <arithmetic.hpp>
+#include <intrin.h>
 
 using namespace std;
 using namespace cv;

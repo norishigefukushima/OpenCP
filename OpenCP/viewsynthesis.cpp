@@ -1678,7 +1678,7 @@ namespace cp
 
 	//input mask should be set to 0
 	template <class srcType>
-	void shiftImDisp(Mat& srcim, Mat& srcdisp, Mat& destim, Mat& destdisp, double amp, double sub_gap, const int large_jump = 3, Mat& mask = Mat(), int warpInterpolationMethod = INTER_CUBIC)
+	void shiftImDisp(Mat& srcim, Mat& srcdisp, Mat& destim, Mat& destdisp, double amp, double sub_gap, const int large_jump, Mat& mask, int warpInterpolationMethod = INTER_CUBIC)
 	{
 		Mat mask_ = mask;
 		if (mask_.empty())mask_ = Mat::zeros(srcim.size(), CV_8U);
@@ -1728,7 +1728,7 @@ namespace cp
 		mask_.copyTo(mask);
 	}
 
-	void shiftDisp(const Mat& srcdisp, Mat& destdisp, float amp, float sub_gap, const int large_jump = 3, Mat& mask = Mat())
+	void shiftDisp(const Mat& srcdisp, Mat& destdisp, float amp, float sub_gap, const int large_jump, Mat& mask)
 	{
 		if (srcdisp.depth() == CV_8U)
 		{
@@ -4629,18 +4629,19 @@ namespace cp
 #ifdef VIS_SYNTH_INFO
 			CalcTime t("warp");
 #endif
-			shiftDisp(dispL, temp, (float)(alpha / disp_amp), (float)sub_gap, (int)(large_jump*disp_amp));
-			depthfilter(temp, destdisp, Mat(), cvRound(abs(alpha)), disp_amp);
+			Mat maskdummy;
+			shiftDisp(dispL, temp, (float)(alpha / disp_amp), (float)sub_gap, (int)(large_jump*disp_amp), maskdummy);
+			depthfilter(temp, destdisp, maskdummy, cvRound(abs(alpha)), disp_amp);
 			shiftImInv(srcL, destdisp, dest, (float)(-alpha / disp_amp), 0, warpInterpolationMethod);
 
 
 			{
 				//	CalcTime t("shift");
-				shiftDisp(dispR, temp, (float)((alpha - 1.0) / disp_amp), (float)sub_gap, (int)(large_jump*disp_amp));
+				shiftDisp(dispR, temp, (float)((alpha - 1.0) / disp_amp), (float)sub_gap, (int)(large_jump*disp_amp), maskdummy);
 			}
 		{
 			//	CalcTime t("filter");
-			depthfilter(temp, destdispR, Mat(), cvRound(abs(alpha)), disp_amp);
+			depthfilter(temp, destdispR, maskdummy, cvRound(abs(alpha)), disp_amp);
 		}
 		{
 			//CalcTime t("inter");
@@ -4931,9 +4932,9 @@ namespace cp
 
 
 		Mat zero_ = Mat::zeros(src.size(), CV_8U);
-
-		shiftDisp(disp, temp, (float)(alpha / disp_amp), (float)sub_gap, (int)(large_jump*disp_amp));
-		depthfilter(temp, destdisp, Mat(), cvRound(abs(alpha)), disp_amp);
+		Mat maskdummy;//empty;
+		shiftDisp(disp, temp, (float)(alpha / disp_amp), (float)sub_gap, (int)(large_jump*disp_amp), maskdummy);
+		depthfilter(temp, destdisp, maskdummy, cvRound(abs(alpha)), disp_amp);
 		//shiftImInv_<T>(src,destdisp,dest,(float)(-alpha/disp_amp),0,warpInterpolationMethod); 
 		shiftImInv(src, destdisp, dest, (float)(-alpha / disp_amp), 0, INTER_NEAREST);
 
@@ -4970,11 +4971,11 @@ namespace cp
 		Mat destR(src.size(), CV_8UC3);
 		Mat destdispR(src.size(), disptype);
 		Mat temp(src.size(), disptype);
-
+		Mat maskdummy;
 
 		{
 			//CalcTime t("warp");
-			shiftImDisp<srcType>(src, disp, dest, temp, alpha / disp_amp, disp_amp, large_jump);
+			shiftImDisp<srcType>(src, disp, dest, temp, alpha / disp_amp, disp_amp, large_jump, maskdummy);
 
 			depthfilter(temp, destdisp, mask, cvRound(abs(alpha)), disp_amp);
 
@@ -5257,16 +5258,16 @@ namespace cp
 		Mat wdisp = Mat::zeros(disp.size(), disp.type());
 		if (warp.empty()) warp.create(im.size(), im.type());
 		int interpolation = INTER_NEAREST;
-
+		Mat maskdummy;
 		if (l2r == true)
 		{
-			shiftDisp(disp, wdisp, amp, amp, 0);
+			shiftDisp(disp, wdisp, amp, amp, 0, maskdummy);
 			medianBlur(wdisp, wdisp, 3);
 			shiftImInv(im, wdisp, warp, (float)(-amp), 0, interpolation);
 		}
 		else
 		{
-			shiftDisp(disp, wdisp, -amp, amp, 0);
+			shiftDisp(disp, wdisp, -amp, amp, 0, maskdummy);
 			medianBlur(wdisp, wdisp, 3);
 			shiftImInv(im, wdisp, warp, (float)(amp), 0, interpolation);
 		}
@@ -5275,15 +5276,15 @@ namespace cp
 	void warpingMask(const Mat& disp, Mat& mask, float amp, bool l2r)
 	{
 		Mat wdisp = Mat::zeros(disp.size(), disp.type());
-
+		Mat maskdummy;
 		if (l2r == true)
 		{
-			shiftDisp(disp, wdisp, amp, amp, 0);
+			shiftDisp(disp, wdisp, amp, amp, 0, maskdummy);
 			medianBlur(wdisp, wdisp, 3);
 		}
 		else
 		{
-			shiftDisp(disp, wdisp, -amp, amp, 0);
+			shiftDisp(disp, wdisp, -amp, amp, 0, maskdummy);
 			medianBlur(wdisp, wdisp, 3);
 		}
 		compare(wdisp, 0, mask, CMP_EQ);

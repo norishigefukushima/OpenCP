@@ -635,6 +635,10 @@ namespace cp
 
 	void jointBilateralUpsample(cv::InputArray src, cv::InputArray guide, cv::OutputArray dest, const int r, const double sigma_r, const double sigma_s, const JBUSchedule schedule)
 	{
+		Mat s = src.getMat();
+		Mat g = guide.getMat();
+		Mat d = dest.getMat();
+
 		switch (schedule)
 		{
 
@@ -646,9 +650,9 @@ namespace cp
 		}
 		break;
 
-		case JBUSchedule::ALLOC_BORDER_OMP:jointBilateralUpsamplingAllocBorder(src.getMat(), guide.getMat(), dest.getMat(), r, sigma_r, sigma_s); break;
-		case JBUSchedule::COMPUTE_BORDER_OMP:jointBilateralUpsamplingComputeBorder(src.getMat(), guide.getMat(), dest.getMat(), r, sigma_r, sigma_s); break;
-		case JBUSchedule::COMPUTE_BORDER_NODOWNSAMPLE_OMP:jointBilateralUpsamplingComputeBorderNoGuideDownsample(src.getMat(), guide.getMat(), dest.getMat(), r, sigma_r, sigma_s); break;
+		case JBUSchedule::ALLOC_BORDER_OMP:jointBilateralUpsamplingAllocBorder(s, g, d, r, sigma_r, sigma_s); break;
+		case JBUSchedule::COMPUTE_BORDER_OMP:jointBilateralUpsamplingComputeBorder(s, g, d, r, sigma_r, sigma_s); break;
+		case JBUSchedule::COMPUTE_BORDER_NODOWNSAMPLE_OMP:jointBilateralUpsamplingComputeBorderNoGuideDownsample(s, g, d, r, sigma_r, sigma_s); break;
 
 		}
 		return;

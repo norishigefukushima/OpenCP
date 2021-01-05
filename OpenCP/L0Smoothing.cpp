@@ -7,7 +7,7 @@ namespace cp
 {
 
 
-	void circshift(cv::Mat &A, int shitf_row, int shift_col, Mat& temp = Mat())
+	void circshift(cv::Mat &A, int shitf_row, int shift_col, Mat& temp)
 	{
 		int row = A.rows, col = A.cols;
 		shitf_row = (row + (shitf_row % row)) % row;
@@ -41,7 +41,8 @@ namespace cp
 			}
 		}
 
-		circshift(new_psf, -1 * int(floor(psfSize.height*0.5)), -1 * int(floor(psfSize.width*0.5)));
+		Mat buff;
+		circshift(new_psf, -1 * int(floor(psfSize.height*0.5)), -1 * int(floor(psfSize.width*0.5)), buff);
 
 		cv::Mat otf;
 		cv::dft(new_psf, otf, cv::DFT_COMPLEX_OUTPUT);
@@ -62,8 +63,8 @@ namespace cp
 				new_psf.at<cv::Vec2d>(i, j)[0] = psf.at<double>(i, j);
 			}
 		}
-
-		circshift(new_psf, -1 * int(floor(psfSize.height*0.5)), -1 * int(floor(psfSize.width*0.5)));
+		Mat buff;
+		circshift(new_psf, -1 * int(floor(psfSize.height*0.5)), -1 * int(floor(psfSize.width*0.5)), buff);
 
 		cv::Mat otf;
 		cv::dft(new_psf, otf, cv::DFT_COMPLEX_OUTPUT);
@@ -111,11 +112,12 @@ namespace cp
 			cv::Mat dx[3], dy[3];
 			for (int k = 0; k < 3; k++) {
 				cv::Mat shifted_x = single_channel[k].clone();
-				circshift(shifted_x, 0, -1);
+				Mat buff;
+				circshift(shifted_x, 0, -1, buff);
 				dx[k] = shifted_x - single_channel[k];
 
 				cv::Mat shifted_y = single_channel[k].clone();
-				circshift(shifted_y, -1, 0);
+				circshift(shifted_y, -1, 0, buff);
 				dy[k] = shifted_y - single_channel[k];
 			}
 			for (int i = 0; i < row; i++) {
@@ -135,11 +137,12 @@ namespace cp
 			// S subproblem
 			for (int k = 0; k < 3; k++) {
 				cv::Mat shift_dx = dx[k].clone();
-				circshift(shift_dx, 0, 1);
+				Mat buff;
+				circshift(shift_dx, 0, 1, buff);
 				cv::Mat ddx = shift_dx - dx[k];
 
 				cv::Mat shift_dy = dy[k].clone();
-				circshift(shift_dy, 1, 0);
+				circshift(shift_dy, 1, 0, buff);
 				cv::Mat ddy = shift_dy - dy[k];
 				cv::Mat Normin2 = ddx + ddy;
 				cv::Mat FNormin2;

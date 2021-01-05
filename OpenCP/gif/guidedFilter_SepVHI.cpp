@@ -84,7 +84,7 @@ void Ip2ab_Guide1_sep_VHI_Share_AVX(cv::Mat& I, cv::Mat& p, const int r, float e
 				__m256 mSum_p = _mm256_loadu_ps(tp__p);
 				__m256 mSum_II = _mm256_loadu_ps(tp_II);
 				__m256 mSum_Ip = _mm256_loadu_ps(tp_Ip);
-
+				
 				for (int k = 1; k < d; k++)
 				{
 					mSum_I = _mm256_add_ps(mSum_I, _mm256_loadu_ps(tp__I + k));
@@ -5133,45 +5133,63 @@ void ab_upNN_2q_sep_VHI_omp(Mat& a_b, Mat& a_g, Mat& a_r, Mat& b, Mat& guide_b, 
 				mSum_b = _mm256_mul_ps(mSum_b, mDiv);
 
 				if (scale == 2)
-				{
-					for (int x = 0; x < 8; x += 4)
-					{
-						const int m = 2 * x;
-						__m256 mmb = _mm256_setr_ps(mSum_b.m256_f32[x], mSum_b.m256_f32[x], mSum_b.m256_f32[x + 1], mSum_b.m256_f32[x + 1], mSum_b.m256_f32[x + 2], mSum_b.m256_f32[x + 2], mSum_b.m256_f32[x + 3], mSum_b.m256_f32[x + 3]);
-						__m256 ms = _mm256_setr_ps(mSum_a_b.m256_f32[x], mSum_a_b.m256_f32[x], mSum_a_b.m256_f32[x + 1], mSum_a_b.m256_f32[x + 1], mSum_a_b.m256_f32[x + 2], mSum_a_b.m256_f32[x + 2], mSum_a_b.m256_f32[x + 3], mSum_a_b.m256_f32[x + 3]);
-						__m256 v0 = _mm256_fmadd_ps(ms, _mm256_loadu_ps(gb + m), mmb);
-						__m256 v1 = _mm256_fmadd_ps(ms, _mm256_loadu_ps(gb + m + dest.cols), mmb);
+				{					
+					 __m256i vindex0 = _mm256_setr_epi32(0, 0, 1, 1, 2, 2, 3, 3);
+					__m256i vindex1 = _mm256_setr_epi32(4, 4, 5, 5, 6, 6, 7, 7);
+					
+					__m256 mmb = _mm256_permutevar8x32_ps(mSum_b, vindex0);
+					__m256 ms = _mm256_permutevar8x32_ps(mSum_a_b, vindex0);
+					__m256 v0 = _mm256_fmadd_ps(ms, _mm256_loadu_ps(gb), mmb);
+					__m256 v1 = _mm256_fmadd_ps(ms, _mm256_loadu_ps(gb + dest.cols), mmb);
 
-						ms = _mm256_setr_ps(mSum_a_g.m256_f32[x], mSum_a_g.m256_f32[x], mSum_a_g.m256_f32[x + 1], mSum_a_g.m256_f32[x + 1], mSum_a_g.m256_f32[x + 2], mSum_a_g.m256_f32[x + 2], mSum_a_g.m256_f32[x + 3], mSum_a_g.m256_f32[x + 3]);
-						v0 = _mm256_fmadd_ps(ms, _mm256_loadu_ps(gg + m), v0);
-						v1 = _mm256_fmadd_ps(ms, _mm256_loadu_ps(gg + m + dest.cols), v1);
+					ms = _mm256_permutevar8x32_ps(mSum_a_g, vindex0);
+					v0 = _mm256_fmadd_ps(ms, _mm256_loadu_ps(gg), v0);
+					v1 = _mm256_fmadd_ps(ms, _mm256_loadu_ps(gg + dest.cols), v1);
 
-						ms = _mm256_setr_ps(mSum_a_r.m256_f32[x], mSum_a_r.m256_f32[x], mSum_a_r.m256_f32[x + 1], mSum_a_r.m256_f32[x + 1], mSum_a_r.m256_f32[x + 2], mSum_a_r.m256_f32[x + 2], mSum_a_r.m256_f32[x + 3], mSum_a_r.m256_f32[x + 3]);
-						v0 = _mm256_fmadd_ps(ms, _mm256_loadu_ps(gr + m), v0);
-						v1 = _mm256_fmadd_ps(ms, _mm256_loadu_ps(gr + m + dest.cols), v1);
-						_mm256_store_ps(d + m, v0);
-						_mm256_store_ps(d + m + dest.cols, v1);
-					}
+					ms = _mm256_permutevar8x32_ps(mSum_a_r, vindex0);
+					v0 = _mm256_fmadd_ps(ms, _mm256_loadu_ps(gr), v0);
+					v1 = _mm256_fmadd_ps(ms, _mm256_loadu_ps(gr + dest.cols), v1);
+					_mm256_store_ps(d, v0);
+					_mm256_store_ps(d + dest.cols, v1);
+
+					mmb = _mm256_permutevar8x32_ps(mSum_b, vindex1);
+					ms = _mm256_permutevar8x32_ps(mSum_a_b, vindex1);
+					v0 = _mm256_fmadd_ps(ms, _mm256_loadu_ps(gb + 8), mmb);
+					v1 = _mm256_fmadd_ps(ms, _mm256_loadu_ps(gb + 8 + dest.cols), mmb);
+
+					ms = _mm256_permutevar8x32_ps(mSum_a_g, vindex1);
+					v0 = _mm256_fmadd_ps(ms, _mm256_loadu_ps(gg + 8), v0);
+					v1 = _mm256_fmadd_ps(ms, _mm256_loadu_ps(gg + 8 + dest.cols), v1);
+
+					ms = _mm256_permutevar8x32_ps(mSum_a_r, vindex1);
+					v0 = _mm256_fmadd_ps(ms, _mm256_loadu_ps(gr + 8), v0);
+					v1 = _mm256_fmadd_ps(ms, _mm256_loadu_ps(gr + 8 + dest.cols), v1);
+					_mm256_store_ps(d + 8, v0);
+					_mm256_store_ps(d + 8 + dest.cols, v1);
+					
 				}
 				else if (scale == 4)
 				{
+					__m256i vindex = _mm256_setr_epi32(0, 0, 0, 0, 1, 1, 1, 1);
+
 					for (int i = 0; i < 8; i += 2)
 					{
 						const int m = 4 * i;
-						__m256 mmb = _mm256_setr_ps(mSum_b.m256_f32[i], mSum_b.m256_f32[i], mSum_b.m256_f32[i], mSum_b.m256_f32[i], mSum_b.m256_f32[i + 1], mSum_b.m256_f32[i + 1], mSum_b.m256_f32[i + 1], mSum_b.m256_f32[i + 1]);
-						__m256 ms = _mm256_setr_ps(mSum_a_b.m256_f32[i], mSum_a_b.m256_f32[i], mSum_a_b.m256_f32[i], mSum_a_b.m256_f32[i], mSum_a_b.m256_f32[i + 1], mSum_a_b.m256_f32[i + 1], mSum_a_b.m256_f32[i + 1], mSum_a_b.m256_f32[i + 1]);
+						__m256 mmb = _mm256_permutevar8x32_ps(mSum_b, _mm256_add_epi32(_mm256_set1_epi32(i), vindex));
+
+						__m256 ms = _mm256_permutevar8x32_ps(mSum_a_b, _mm256_add_epi32(_mm256_set1_epi32(i), vindex));
 						__m256 v0 = _mm256_fmadd_ps(ms, _mm256_loadu_ps(gb + m), mmb);
 						__m256 v1 = _mm256_fmadd_ps(ms, _mm256_loadu_ps(gb + m + dest.cols), mmb);
 						__m256 v2 = _mm256_fmadd_ps(ms, _mm256_loadu_ps(gb + m + 2 * dest.cols), mmb);
 						__m256 v3 = _mm256_fmadd_ps(ms, _mm256_loadu_ps(gb + m + 3 * dest.cols), mmb);
 
-						ms = _mm256_setr_ps(mSum_a_g.m256_f32[i], mSum_a_g.m256_f32[i], mSum_a_g.m256_f32[i], mSum_a_g.m256_f32[i], mSum_a_g.m256_f32[i + 1], mSum_a_g.m256_f32[i + 1], mSum_a_g.m256_f32[i + 1], mSum_a_g.m256_f32[i + 1]);
+						ms = _mm256_permutevar8x32_ps(mSum_a_g, _mm256_add_epi32(_mm256_set1_epi32(i), vindex));
 						v0 = _mm256_fmadd_ps(ms, _mm256_load_ps(gg + m), v0);
 						v1 = _mm256_fmadd_ps(ms, _mm256_load_ps(gg + m + dest.cols), v1);
 						v2 = _mm256_fmadd_ps(ms, _mm256_load_ps(gg + m + 2 * dest.cols), v2);
 						v3 = _mm256_fmadd_ps(ms, _mm256_load_ps(gg + m + 3 * dest.cols), v3);
 
-						ms = _mm256_setr_ps(mSum_a_r.m256_f32[i], mSum_a_r.m256_f32[i], mSum_a_r.m256_f32[i], mSum_a_r.m256_f32[i], mSum_a_r.m256_f32[i + 1], mSum_a_r.m256_f32[i + 1], mSum_a_r.m256_f32[i + 1], mSum_a_r.m256_f32[i + 1]);
+						ms = _mm256_permutevar8x32_ps(mSum_a_r, _mm256_add_epi32(_mm256_set1_epi32(i), vindex));
 						v0 = _mm256_fmadd_ps(ms, _mm256_load_ps(gr + m), v0);
 						v1 = _mm256_fmadd_ps(ms, _mm256_load_ps(gr + m + dest.cols), v1);
 						v2 = _mm256_fmadd_ps(ms, _mm256_load_ps(gr + m + 2 * dest.cols), v2);
@@ -5187,8 +5205,8 @@ void ab_upNN_2q_sep_VHI_omp(Mat& a_b, Mat& a_g, Mat& a_r, Mat& b, Mat& guide_b, 
 					for (int i = 0; i < 8; i++)
 					{
 						const int m = 8 * i;
-						__m256 mmb = _mm256_set1_ps(mSum_b.m256_f32[i]);
-						__m256 ms = _mm256_set1_ps(mSum_a_b.m256_f32[i]);
+						__m256 mmb = _mm256_set1_ps(((float*)&mSum_b)[i]);
+						__m256 ms = _mm256_set1_ps(((float*)&mSum_a_b)[i]);
 						__m256 v0 = _mm256_fmadd_ps(ms, _mm256_loadu_ps(gb + m), mmb);
 						__m256 v1 = _mm256_fmadd_ps(ms, _mm256_loadu_ps(gb + m + dest.cols), mmb);
 						__m256 v2 = _mm256_fmadd_ps(ms, _mm256_loadu_ps(gb + m + 2 * dest.cols), mmb);
@@ -5198,7 +5216,7 @@ void ab_upNN_2q_sep_VHI_omp(Mat& a_b, Mat& a_g, Mat& a_r, Mat& b, Mat& guide_b, 
 						__m256 v6 = _mm256_fmadd_ps(ms, _mm256_loadu_ps(gb + m + 6 * dest.cols), mmb);
 						__m256 v7 = _mm256_fmadd_ps(ms, _mm256_loadu_ps(gb + m + 7 * dest.cols), mmb);
 
-						ms = _mm256_set1_ps(mSum_a_g.m256_f32[i]);
+						ms = _mm256_set1_ps(((float*)&mSum_a_g)[i]);
 						v0 = _mm256_fmadd_ps(ms, _mm256_load_ps(gg + m), v0);
 						v1 = _mm256_fmadd_ps(ms, _mm256_load_ps(gg + m + dest.cols), v1);
 						v2 = _mm256_fmadd_ps(ms, _mm256_load_ps(gg + m + 2 * dest.cols), v2);
@@ -5208,7 +5226,7 @@ void ab_upNN_2q_sep_VHI_omp(Mat& a_b, Mat& a_g, Mat& a_r, Mat& b, Mat& guide_b, 
 						v6 = _mm256_fmadd_ps(ms, _mm256_load_ps(gg + m + 6 * dest.cols), v6);
 						v7 = _mm256_fmadd_ps(ms, _mm256_load_ps(gg + m + 7 * dest.cols), v7);
 
-						ms = _mm256_set1_ps(mSum_a_r.m256_f32[i]);
+						ms = _mm256_set1_ps(((float*)&mSum_a_r)[i]);
 						v0 = _mm256_fmadd_ps(ms, _mm256_load_ps(gr + m), v0);
 						v1 = _mm256_fmadd_ps(ms, _mm256_load_ps(gr + m + dest.cols), v1);
 						v2 = _mm256_fmadd_ps(ms, _mm256_load_ps(gr + m + 2 * dest.cols), v2);

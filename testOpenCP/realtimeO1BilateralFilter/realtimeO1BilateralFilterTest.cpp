@@ -4,7 +4,7 @@ using namespace std;
 using namespace cv;
 using namespace cp;
 
-
+#if 0
 void guiMaxMinFilter(Mat& src_)
 {
 	Mat src;
@@ -469,3 +469,5 @@ void guiJointRealtimeO1BilateralFilterTest(Mat& src_, Mat& guide_)
 	}
 	destroyAllWindows();
 }
+
+#endif

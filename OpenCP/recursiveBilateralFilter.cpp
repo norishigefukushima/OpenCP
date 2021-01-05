@@ -3,7 +3,7 @@
 
 #include "recursiveBilateralFilter.hpp"
 #include "color.hpp"
-
+#include <intrin.h>
 using namespace std;
 using namespace cv;
 
@@ -914,7 +914,7 @@ namespace cp
 				a = _mm_hadd_ps(a, a);
 				mtp = mtc;
 
-				float alpha_ = alpha*range_table[(int)(a.m128_f32[0] * 0.3333f + 0.5f)];
+				float alpha_ = alpha*range_table[(int)(((float*)&a)[0] * 0.3333f + 0.5f)];
 
 				__m128 malpha = _mm_set1_ps(alpha_);
 
@@ -935,7 +935,7 @@ namespace cp
 				a = _mm_hadd_ps(a, a);
 				mtp = mtc;
 
-				float alpha_ = alpha*range_table[(int)(a.m128_f32[0] * 0.3333f + 0.5f)];
+				float alpha_ = alpha*range_table[(int)(((float*)&a)[0] * 0.3333f + 0.5f)];
 				__m128 malpha = _mm_set1_ps(alpha_);
 				__m128 myc = _mm_add_ps(_mm_mul_ps(minvalpha, _mm_loadu_ps(in_x + 4 * x)), _mm_mul_ps(malpha, myp));
 
@@ -968,7 +968,7 @@ namespace cp
 				__m128 a = _mm_and_ps(_mm_sub_ps(mtcy, mtpy), *(const __m128*)v32f_absmask);
 				a = _mm_hadd_ps(a, a);
 				a = _mm_hadd_ps(a, a);
-				float alpha_ = alpha*range_table[(int)(a.m128_f32[0] * 0.3333f + 0.5f)];
+				float alpha_ = alpha*range_table[(int)(((float*)&a)[0] * 0.3333f + 0.5f)];
 				__m128 malpha = _mm_set1_ps(alpha_);
 
 				_mm_store_ps(ycy + 4 * x, _mm_add_ps(_mm_mul_ps(minvalpha, _mm_loadu_ps(xcy + 4 * x)), _mm_mul_ps(malpha, _mm_loadu_ps(ypy + 4 * x))));
@@ -1009,7 +1009,7 @@ namespace cp
 				__m128 a = _mm_and_ps(_mm_sub_ps(mtcy, mtpy), *(const __m128*)v32f_absmask);
 				a = _mm_hadd_ps(a, a);
 				a = _mm_hadd_ps(a, a);
-				float alpha_ = alpha*range_table[(int)(a.m128_f32[0] * 0.3333f + 0.5f)];
+				float alpha_ = alpha*range_table[(int)(((float*)&a)[0] * 0.3333f + 0.5f)];
 
 				__m128 malpha = _mm_set1_ps(alpha_);
 
@@ -2059,7 +2059,7 @@ namespace cp
 				a = _mm_hadd_ps(a, a);
 				mtp = mtc;
 
-				float alpha_ = alpha*range_table[(int)(a.m128_f32[0] * 0.3333f + 0.5f)];
+				float alpha_ = alpha*range_table[(int)(((float*)&a)[0] * 0.3333f + 0.5f)];
 
 				__m128 malpha = _mm_set1_ps(alpha_);
 
@@ -2080,7 +2080,7 @@ namespace cp
 				a = _mm_hadd_ps(a, a);
 				mtp = mtc;
 
-				float alpha_ = alpha*range_table[(int)(a.m128_f32[0] * 0.3333f + 0.5f)];
+				float alpha_ = alpha*range_table[(int)(((float*)&a)[0] * 0.3333f + 0.5f)];
 				__m128 malpha = _mm_set1_ps(alpha_);
 				__m128 myc = _mm_add_ps(_mm_mul_ps(minvalpha, _mm_loadu_ps(in_x + 4 * x)), _mm_mul_ps(malpha, myp));
 
@@ -2112,7 +2112,7 @@ namespace cp
 				__m128 a = _mm_and_ps(_mm_sub_ps(mtcy, mtpy), *(const __m128*)v32f_absmask);
 				a = _mm_hadd_ps(a, a);
 				a = _mm_hadd_ps(a, a);
-				float alpha_ = alpha*range_table[(int)(a.m128_f32[0] * 0.3333f + 0.5f)];
+				float alpha_ = alpha*range_table[(int)(((float*)&a)[0] * 0.3333f + 0.5f)];
 				__m128 malpha = _mm_set1_ps(alpha_);
 
 				_mm_store_ps(ycy + 4 * x, _mm_add_ps(_mm_mul_ps(minvalpha, _mm_loadu_ps(xcy + 4 * x)), _mm_mul_ps(malpha, _mm_loadu_ps(ypy + 4 * x))));
@@ -2153,7 +2153,7 @@ namespace cp
 				__m128 a = _mm_and_ps(_mm_sub_ps(mtcy, mtpy), *(const __m128*)v32f_absmask);
 				a = _mm_hadd_ps(a, a);
 				a = _mm_hadd_ps(a, a);
-				float alpha_ = alpha*range_table[(int)(a.m128_f32[0] * 0.3333f + 0.5f)];
+				float alpha_ = alpha*range_table[(int)(((float*)&a)[0] * 0.3333f + 0.5f)];
 
 				__m128 malpha = _mm_set1_ps(alpha_);
 

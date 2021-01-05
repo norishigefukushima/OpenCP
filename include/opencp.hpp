@@ -55,10 +55,10 @@
 /*************************************************************
  filter
 *************************************************************/
-#include "boxFilter.hpp"
 #include "bilateralFilter.hpp"
 #include "binalyWeightedRangeFilter.hpp"
 #include "boundaryReconstructionFilter.hpp"
+#include "boxFilter.hpp"
 #include "costVolumeFilter.hpp"
 #include "crossBasedLocalFilter.hpp"
 #include "crossBasedLocalMultipointFilter.hpp"

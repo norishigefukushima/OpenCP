@@ -1,4 +1,5 @@
 #include "jointNearestFilter.hpp"
+#include <intrin.h>
 
 using namespace std;
 using namespace cv;

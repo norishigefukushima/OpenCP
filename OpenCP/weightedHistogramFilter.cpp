@@ -159,14 +159,14 @@ namespace cp
 				mindex = _mm256_blendv_ps(mindex, _mm256_add_ps(step, _mm256_set1_ps(i)), mmask);
 			}
 
-			maxv = mmaxv.m256_f32[0];
-			maxbin = (int)mindex.m256_f32[0];
+			maxv = ((float*)&mmaxv)[0];
+			maxbin = (int)((float*)&mindex)[0];
 			for (int i = 1; i < 8; i++)
 			{
-				if (mmaxv.m256_f32[i] > maxv)
+				if (((float*)&mmaxv)[i] > maxv)
 				{
-					maxv = mmaxv.m256_f32[i];
-					maxbin = (int)mindex.m256_f32[i];
+					maxv = ((float*)&mmaxv)[i];
+					maxbin = (int)(((float*)&mindex)[i]);
 				}
 			}
 #endif
