@@ -1,10 +1,10 @@
 #pragma once
 
-#include "boxFilter_Base.h"
+#include "boxFilter.hpp"
 
 // SSAT: horizontal->vertical with 4x4 blocks
 
-class boxFilter_SSAT_HV_4x4 : public boxFilter_base
+class boxFilter_SSAT_HV_4x4 : public cp::BoxFilterBase
 {
 private:
 	int padding;

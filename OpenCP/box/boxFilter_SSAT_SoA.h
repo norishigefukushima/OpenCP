@@ -1,6 +1,6 @@
 #pragma once
 
-#include "boxFilter_Base.h"
+#include "boxFilter.hpp"
 
 /*
  * SSAT SoA(SAoS) Space Parallel

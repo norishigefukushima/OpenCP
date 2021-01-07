@@ -38,8 +38,8 @@ void testGuidedImageFilter(Mat& img_p, Mat& img_I)
 	int guidedType = GuidedTypes::GUIDED_SEP_VHI;
 	//int guidedType = GuidedTypes::GUIDED_NAIVE;
 
-	int boxType = BoxTypes::BOX_OPENCV;
-	int parallelType = ParallelTypes::OMP;
+	int boxType = (int)BoxFilterMethod::OPENCV;
+	int parallelType = (int)ParallelTypes::OMP;
 	//int parallelType = ParallelTypes::NAIVE;
 	int src_GRAY_RGB = 1;
 	int guide_GRAY_RGB = 1;
@@ -64,7 +64,7 @@ void testGuidedImageFilter(Mat& img_p, Mat& img_I)
 	createTrackbar("r", "param", &r, 100);
 	createTrackbar("eps", "param", &e, 100000);
 	createTrackbar("GuidedType", "param", &guidedType, GuidedTypes::NumGuidedTypes - 1);
-	createTrackbar("BoxType", "param", &boxType, BoxTypes::NumBoxTypes - 1);
+	createTrackbar("BoxType", "param", &boxType, (int)BoxFilterMethod::SIZE - 1);
 	createTrackbar("parallel", "param", &parallelType, ParallelTypes::NumParallelTypes - 1);
 	createTrackbar("src gray:color", "param", &src_GRAY_RGB, 1);
 	createTrackbar("guide gray:color", "param", &guide_GRAY_RGB, 1);
@@ -153,7 +153,7 @@ void testGuidedImageFilter(Mat& img_p, Mat& img_I)
 		{
 			ref64f.setTo(0);
 			Timer t("", TIME_MSEC, false);
-			gfref.setBoxType(BOX_NAIVE_AVX);
+			gfref.setBoxType(BoxFilterMethod::NAIVE_AVX);
 			gfref.filterColorParallel(src64f, guide64f, ref64f, r, eps, 1, parallelType);
 			stats[idx].push_back(t.getTime());
 		}
@@ -168,7 +168,7 @@ void testGuidedImageFilter(Mat& img_p, Mat& img_I)
 			for (int i = 0; i < loop; i++)
 			{
 				t.start();
-				guidedImageFilter(srcf, guidef, destfocv, r, eps, GUIDED_XIMGPROC, (BoxTypes)boxType, (ParallelTypes)parallelType);
+				guidedImageFilter(srcf, guidef, destfocv, r, eps, GUIDED_XIMGPROC, (BoxFilterMethod)boxType, (ParallelTypes)parallelType);
 				t.getpushLapTime();
 			}
 			stats[idx].push_back(t.getLapTimeMedian());
@@ -185,7 +185,7 @@ void testGuidedImageFilter(Mat& img_p, Mat& img_I)
 			for (int i = 0; i < loop; i++)
 			{
 				t.start();
-				guidedImageFilter(srcf, guidef, destf, r, eps, (GuidedTypes)guidedType, (BoxTypes)boxType, (ParallelTypes)parallelType);
+				guidedImageFilter(srcf, guidef, destf, r, eps, (GuidedTypes)guidedType, (BoxFilterMethod)boxType, (ParallelTypes)parallelType);
 				t.getpushLapTime();
 			}
 			stats[idx].push_back(t.getLapTimeMedian());
@@ -203,7 +203,7 @@ void testGuidedImageFilter(Mat& img_p, Mat& img_I)
 			for (int i = 0; i < loop; i++)
 			{
 				t.start();
-				gf.setBoxType(boxType);
+				gf.setBoxType((BoxFilterMethod)boxType);
 				gf.filter(srcf, guidef, destf_class, r, eps, (GuidedTypes)guidedType, (ParallelTypes)parallelType);
 				t.getpushLapTime();
 			}
@@ -222,7 +222,7 @@ void testGuidedImageFilter(Mat& img_p, Mat& img_I)
 			for (int i = 0; i < loop; i++)
 			{
 				t.start();
-				gf.setBoxType(boxType);
+				gf.setBoxType((BoxFilterMethod)boxType);
 				gf.filterGuidePrecomputed(srcf, guidef, destf_precomp, r, eps, (GuidedTypes)guidedType, (ParallelTypes)parallelType);
 				t.getpushLapTime();
 			}
@@ -241,7 +241,7 @@ void testGuidedImageFilter(Mat& img_p, Mat& img_I)
 			for (int i = 0; i < loop; i++)
 			{
 				t.start();
-				gfcp.setBoxType(boxType);
+				gfcp.setBoxType((BoxFilterMethod)boxType);
 				gfcp.filterColorParallel(srcf, guidef, destf_classcolorpara, r, eps, (GuidedTypes)guidedType, (ParallelTypes)parallelType);
 				t.getpushLapTime();
 			}
@@ -296,7 +296,7 @@ void testGuidedImageFilter(Mat& img_p, Mat& img_I)
 #endif
 
 		ci("Guided Type(g-f): %s", getGuidedType(guidedType).c_str());
-		ci("Box Type        : " + getBoxType(boxType));
+		ci("Box Type        : " + getBoxType((BoxFilterMethod)boxType));
 		ci("Parallel Type   : " + getParallelType(parallelType));
 		ci("Parallel Type   : " + cp::getInterpolationName(downsample)+" Up: "+ cp::getInterpolationName(upsample));
 		ci("NUM             : %d", stats[0].num_data);

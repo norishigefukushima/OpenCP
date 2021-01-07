@@ -4,7 +4,7 @@ using namespace std;
 using namespace cv;
 
 boxFilter_SSAT_HV_8x8::boxFilter_SSAT_HV_8x8(cv::Mat& _src, cv::Mat& _dest, int _r, int _parallelType)
-	: boxFilter_base(_src, _dest, _r, _parallelType)
+	: BoxFilterBase(_src, _dest, _r, _parallelType)
 {
 	padding = (r % 4 == 0) ? 0 : (4 - (r % 4)) * 2;
 	copyMakeBorder(src, copy, r, r, r, r + padding, BORDER_REPLICATE);

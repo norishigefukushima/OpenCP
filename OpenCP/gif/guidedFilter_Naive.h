@@ -5,7 +5,7 @@
 class guidedFilter_Naive : public cp::GuidedFilterBase
 {
 protected:
-	int boxType;
+	cp::BoxFilterMethod boxType;
 	int parallelType;
 
 	cv::Mat mean_I;
@@ -41,7 +41,7 @@ protected:
 	cv::Mat a_b;
 	cv::Mat a_g;
 	cv::Mat a_r;
-	
+
 	cv::Mat temp_high;
 
 	enum
@@ -52,7 +52,7 @@ protected:
 	int average_method = BOX_32F;
 	void average(cv::Mat& src, cv::Mat& dest, const int r);
 
-	
+
 	void Ip2ab_Guide1(cv::Mat& input, cv::Mat& guide);
 	void ab2q_Guide1(cv::Mat& guide, cv::Mat& output);
 	void filter_Guide1(cv::Mat& input, cv::Mat& guide, cv::Mat& output);
@@ -71,11 +71,11 @@ protected:
 
 	virtual void filter_Guide1(cv::Mat& input, cv::Mat& output) {};
 	virtual void filter_Guide3(cv::Mat& input, cv::Mat& output) {};
-	
+
 public:
 
-	guidedFilter_Naive(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps, int _boxType, int _parallelType)
-		: GuidedFilterBase(_src, _guide, _dest, _r, _eps), boxType(_boxType), parallelType(_parallelType) 
+	guidedFilter_Naive(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps, const cp::BoxFilterMethod _boxType, int _parallelType)
+		: GuidedFilterBase(_src, _guide, _dest, _r, _eps), boxType(_boxType), parallelType(_parallelType)
 	{
 		implementation = cp::GUIDED_NAIVE;
 	}
@@ -100,7 +100,7 @@ private:
 	void filter_Guide3(cv::Mat& input, cv::Mat& output);
 public:
 	guidedFilter_Naive_OnePass(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps, int _parallelType)
-		: GuidedFilterBase(_src, _guide, _dest, _r, _eps), parallelType(_parallelType) 
+		: GuidedFilterBase(_src, _guide, _dest, _r, _eps), parallelType(_parallelType)
 	{
 		implementation = cp::GUIDED_NAIVE_ONEPASS;
 	}

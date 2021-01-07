@@ -25,22 +25,22 @@
 
 namespace cp
 {
-	void boxFilter_64f(cv::Mat& src, cv::Mat& dest, const int r, const int boxType, const int parallelType)
+	void boxFilter_64f(cv::Mat& src, cv::Mat& dest, const int r, const BoxFilterMethod boxType, const int parallelType)
 	{
 		cv::boxFilter(src, dest, CV_64F, cv::Size(2 * r + 1, 2 * r + 1), cv::Point(-1, -1), true, BOX_FILTER_BORDER_TYPE);
 	}
 
-	void boxFilter_32f(cv::Mat& src, cv::Mat& dest, int r, int boxType, int parallelType)
+	void boxFilter_32f(cv::Mat& src, cv::Mat& dest, int r, const BoxFilterMethod boxType, int parallelType)
 	{
 		switch (boxType)
 		{
-		case BOX_OPENCV:
+		case BoxFilterMethod::OPENCV:
 		{
 			cv::boxFilter(src, dest, CV_32F, cv::Size(2 * r + 1, 2 * r + 1), cv::Point(-1, -1), true, BOX_FILTER_BORDER_TYPE);
 			break;
 		}
 		/* --- Naive --- */
-		case BOX_NAIVE:
+		case BoxFilterMethod::NAIVE:
 		{
 			if (src.channels() == 1)
 			{
@@ -53,7 +53,7 @@ namespace cp
 			break;
 		}
 
-		case BOX_NAIVE_SSE:
+		case BoxFilterMethod::NAIVE_SSE:
 		{
 			if (src.channels() == 1)
 			{
@@ -66,7 +66,7 @@ namespace cp
 			break;
 		}
 
-		case BOX_NAIVE_AVX:
+		case BoxFilterMethod::NAIVE_AVX:
 		{
 			if (src.channels() == 1)
 			{
@@ -81,43 +81,43 @@ namespace cp
 
 
 		/* --- Separable --- */
-		case BOX_SEPARABLE_HV:
+		case BoxFilterMethod::SEPARABLE_HV:
 		{
 			boxFilter_Separable_HV_nonVec(src, dest, r, parallelType).filter();
 			break;
 		}
 
-		case BOX_SEPARABLE_HV_SSE:
+		case BoxFilterMethod::SEPARABLE_HV_SSE:
 		{
 			boxFilter_Separable_HV_SSE(src, dest, r, parallelType).filter();
 			break;
 		}
 
-		case BOX_SEPARABLE_HV_AVX:
+		case BoxFilterMethod::SEPARABLE_HV_AVX:
 		{
 			boxFilter_Separable_HV_AVX(src, dest, r, parallelType).filter();
 			break;
 		}
 
-		case BOX_SEPARABLE_VH_AVX:
+		case BoxFilterMethod::SEPARABLE_VH_AVX:
 		{
 			boxFilter_Separable_VH_AVX(src, dest, r, parallelType).filter();
 			break;
 		}
 
-		case BOX_SEPARABLE_VHI:
+		case BoxFilterMethod::SEPARABLE_VHI:
 		{
 			boxFilter_Separable_VHI_nonVec(src, dest, r, parallelType).filter();
 			break;
 		}
 
-		case BOX_SEPARABLE_VHI_SSE:
+		case BoxFilterMethod::SEPARABLE_VHI_SSE:
 		{
 			boxFilter_Separable_VHI_SSE(src, dest, r, parallelType).filter();
 			break;
 		}
 
-		case BOX_SEPARABLE_VHI_AVX:
+		case BoxFilterMethod::SEPARABLE_VHI_AVX:
 		{
 			boxFilter_Separable_VHI_AVX(src, dest, r, parallelType).filter();
 			break;
@@ -125,31 +125,31 @@ namespace cp
 
 
 		/* --- Integral --- */
-		case BOX_INTEGRAL:
+		case BoxFilterMethod::INTEGRAL:
 		{
-			boxFilter_Integral_nonVec(src, dest, r, parallelType).filter();
+			boxFilterIntegralScalar(src, dest, r, parallelType).filter();
 			break;
 		}
 
-		case BOX_INTEGRAL_SSE:
+		case BoxFilterMethod::INTEGRAL_SSE:
 		{
-			boxFilter_Integral_SSE(src, dest, r, parallelType).filter();
+			boxFilterIntegralSSE(src, dest, r, parallelType).filter();
 			break;
 		}
 
-		case BOX_INTEGRAL_AVX:
+		case BoxFilterMethod::INTEGRAL_AVX:
 		{
-			boxFilter_Integral_AVX(src, dest, r, parallelType).filter();
+			boxFilterIntegralAVX(src, dest, r, parallelType).filter();
 			break;
 		}
 
-		case BOX_INTEGRAL_ONEPASS:
+		case BoxFilterMethod::INTEGRAL_ONEPASS:
 		{
 			boxFilter_Integral_OnePass(src, dest, r, NAIVE).filter();
 			break;
 		}
 
-		case BOX_INTEGRAL_ONEPASS_AREA:
+		case BoxFilterMethod::INTEGRAL_ONEPASS_AREA:
 		{
 			boxFilter_Integral_OnePass_Area(src, dest, r, NAIVE).filter();
 			break;
@@ -157,127 +157,127 @@ namespace cp
 
 
 		/* --- Separable Summed Area Table --- */
-		case BOX_SSAT_HV:
+		case BoxFilterMethod::SSAT_HV:
 		{
 			boxFilter_SSAT_HV_nonVec(src, dest, r, parallelType).filter();
 			break;
 		}
 
-		case BOX_SSAT_HV_SSE:
+		case BoxFilterMethod::SSAT_HV_SSE:
 		{
 			boxFilter_SSAT_HV_SSE(src, dest, r, parallelType).filter();
 			break;
 		}
 
-		case BOX_SSAT_HV_AVX:
+		case BoxFilterMethod::SSAT_HV_AVX:
 		{
 			boxFilter_SSAT_HV_AVX(src, dest, r, parallelType).filter();
 			break;
 		}
 
-		case BOX_SSAT_HV_BLOCKING:
+		case BoxFilterMethod::SSAT_HV_BLOCKING:
 		{
 			boxFilter_SSAT_HV_CacheBlock_nonVec(src, dest, r, parallelType).filter();
 			break;
 		}
 
-		case BOX_SSAT_HV_BLOCKING_SSE:
+		case BoxFilterMethod::SSAT_HV_BLOCKING_SSE:
 		{
 			boxFilter_SSAT_HV_CacheBlock_SSE(src, dest, r, parallelType).filter();
 			break;
 		}
 
-		case BOX_SSAT_HV_BLOCKING_AVX:
+		case BoxFilterMethod::SSAT_HV_BLOCKING_AVX:
 		{
 			boxFilter_SSAT_HV_CacheBlock_AVX(src, dest, r, parallelType).filter();
 			break;
 		}
 
-		case BOX_SSAT_HtH:
+		case BoxFilterMethod::SSAT_HtH:
 		{
 			boxFilter_SSAT_HtH_nonVec(src, dest, r, parallelType).filter();
 			break;
 		}
 
-		case BOX_SSAT_HtH_SSE:
+		case BoxFilterMethod::SSAT_HtH_SSE:
 		{
 			boxFilter_SSAT_HtH_SSE(src, dest, r, parallelType).filter();
 			break;
 		}
 
-		case BOX_SSAT_HtH_AVX:
+		case BoxFilterMethod::SSAT_HtH_AVX:
 		{
 			boxFilter_SSAT_HtH_AVX(src, dest, r, parallelType).filter();
 			break;
 		}
 
-		case BOX_SSAT_VH:
+		case BoxFilterMethod::SSAT_VH:
 		{
 			boxFilter_SSAT_VH_nonVec(src, dest, r, parallelType).filter();
 			break;
 		}
 
-		case BOX_SSAT_VH_SSE:
+		case BoxFilterMethod::SSAT_VH_SSE:
 		{
 			boxFilter_SSAT_VH_SSE(src, dest, r, parallelType).filter();
 			break;
 		}
 
-		case BOX_SSAT_VH_AVX:
+		case BoxFilterMethod::SSAT_VH_AVX:
 		{
 			boxFilter_SSAT_VH_AVX(src, dest, r, parallelType).filter();
 			break;
 		}
 
-		case BOX_SSAT_HV_4x4:
+		case BoxFilterMethod::SSAT_HV_4x4:
 		{
 			boxFilter_SSAT_HV_4x4(src, dest, r, parallelType).filter();
 			break;
 		}
 
-		case BOX_SSAT_HV_8x8:
+		case BoxFilterMethod::SSAT_HV_8x8:
 		{
 			boxFilter_SSAT_HV_8x8(src, dest, r, parallelType).filter();
 			break;
 		}
 
-		case BOX_SSAT_VtV:
+		case BoxFilterMethod::SSAT_VtV:
 		{
 			boxFilter_SSAT_VtV_nonVec(src, dest, r, parallelType).filter();
 			break;
 		}
 
-		case BOX_SSAT_VtV_SSE:
+		case BoxFilterMethod::SSAT_VtV_SSE:
 		{
 			boxFilter_SSAT_VtV_SSE(src, dest, r, parallelType).filter();
 			break;
 		}
 
-		case BOX_SSAT_VtV_AVX:
+		case BoxFilterMethod::SSAT_VtV_AVX:
 		{
 			boxFilter_SSAT_VtV_AVX(src, dest, r, parallelType).filter();
 			break;
 		}
 
-		case BOX_SSAT_HV_ROWSUM_GATHER_SSE:
+		case BoxFilterMethod::SSAT_HV_ROWSUM_GATHER_SSE:
 		{
 			//boxFilter_SSAT_RowSumSIMD_SSE(src, dest, r, parallelType).filter();
 			break;
 		}
 
-		case BOX_SSAT_HV_ROWSUM_GATHER_AVX:
+		case BoxFilterMethod::SSAT_HV_ROWSUM_GATHER_AVX:
 		{
 			boxFilter_SSAT_HV_RowSumGather_AVX(src, dest, r, parallelType).filter();
 			break;
 		}
 
-		case BOX_SSAT_VH_ROWSUM_GATHER_SSE:
+		case BoxFilterMethod::SSAT_VH_ROWSUM_GATHER_SSE:
 		{
 			boxFilter_SSAT_VH_RowSumGather_SSE(src, dest, r, parallelType).filter();
 			break;
 		}
 
-		case BOX_SSAT_VH_ROWSUM_GATHER_AVX:
+		case BoxFilterMethod::SSAT_VH_ROWSUM_GATHER_AVX:
 		{
 			boxFilter_SSAT_VH_RowSumGather_AVX(src, dest, r, parallelType).filter();
 			break;
@@ -285,7 +285,7 @@ namespace cp
 
 
 		/* --- One Pass Summed Area Table --- */
-		case BOX_OPSAT:
+		case BoxFilterMethod::OPSAT:
 		{
 			boxFilter_OPSAT_AoS(src, dest, r, parallelType).filter();
 			//boxFilter_OPSAT_OnePass_BGR(src, dest, r, parallelType).filter();
@@ -293,13 +293,13 @@ namespace cp
 			break;
 		}
 
-		case BOX_OPSAT_2Div:
+		case BoxFilterMethod::OPSAT_2Div:
 		{
 			boxFilter_OPSAT_AoS_2Div(src, dest, r, parallelType).filter();
 			break;
 		}
 
-		case BOX_OPSAT_nDiv:
+		case BoxFilterMethod::OPSAT_nDiv:
 		{
 			boxFilter_OPSAT_AoS_nDiv(src, dest, r, parallelType, OMP_THREADS_MAX).filter();
 			break;
@@ -308,16 +308,16 @@ namespace cp
 		}
 	}
 
-	void boxFilter_8u(cv::Mat& src, cv::Mat& dest, int r, int boxType, int parallelType)
+	void boxFilter_8u(cv::Mat& src, cv::Mat& dest, int r, const BoxFilterMethod boxType, int parallelType)
 	{
 		switch (boxType)
 		{
-		case BOX_INTEGRAL_ONEPASS:
+		case BoxFilterMethod::INTEGRAL_ONEPASS:
 		{
 			boxFilter_Integral_OnePass_8u(src, dest, r, parallelType).filter();
 			break;
 		}
-		case BOX_SSAT_HV:
+		case BoxFilterMethod::SSAT_HV:
 		{
 			boxFilter_SSAT_8u_nonVec(src, dest, r, parallelType).filter();
 			break;
@@ -327,6 +327,20 @@ namespace cp
 			std::cout << "undefined method for 8u" << std::endl;
 		}
 		}
+	}
+
+	cv::Ptr<BoxFilterBase> createBoxFilter(const BoxFilterMethod method, const cv::Mat& src_, cv::Mat& dest, int r, int parallelType)
+	{
+		cv::Mat src = (cv::Mat)src_;
+		switch (method)
+		{
+		case BoxFilterMethod::NAIVE: return new boxFilter_Naive_nonVec_Gray(src, dest, r, parallelType);
+
+		case BoxFilterMethod::SEPARABLE_VHI_AVX: return new boxFilter_Separable_VHI_AVX(src, dest, r, parallelType);
+		default:
+			break;
+		}
+		return nullptr;
 	}
 
 	void boxFilter_multiChannel(cv::Mat& src, cv::Mat& dest, int r, int boxMultiType, int parallelType)

@@ -501,7 +501,7 @@
     <ClInclude Include="..\include\Wiener2.hpp" />
     <ClInclude Include="..\include\yuvio.hpp" />
     <ClInclude Include="..\include\crop.hpp" />
-    <ClInclude Include="box\boxFilter_Base.h" />
+    <ClInclude Include="box\boxFilterBase.hpp" />
     <ClInclude Include="box\boxFilter_Integral.h" />
     <ClInclude Include="box\boxFilter_Integral_OnePass.h" />
     <ClInclude Include="box\boxFilter_Naive.h" />

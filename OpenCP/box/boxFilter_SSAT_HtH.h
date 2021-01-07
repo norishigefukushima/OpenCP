@@ -1,6 +1,6 @@
 #pragma once
 
-#include "boxFilter_Base.h"
+#include "boxFilter.hpp"
 
 //SSAT:horizontal ->transpose -> horizontal
 
@@ -48,7 +48,7 @@ public:
 
 
 
-class RowSumFilter_HtH_nonVec : public boxFilter_base
+class RowSumFilter_HtH_nonVec : public cp::BoxFilterBase
 {
 private:
 	void filter_naive_impl() override;

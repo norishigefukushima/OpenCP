@@ -6,7 +6,7 @@ using namespace std;
 
 /* --- Naive Gray --- */
 boxFilter_Naive_nonVec_Gray::boxFilter_Naive_nonVec_Gray(cv::Mat& _src, cv::Mat& _dest, int _r, int _parallelType)
-	: boxFilter_base(_src, _dest, _r, _parallelType)
+	: BoxFilterBase(_src, _dest, _r, _parallelType)
 {
 	ksize = 2 * r + 1;
 	copyMakeBorder(src, copy, r, r, r, r, BOX_FILTER_BORDER_TYPE);
@@ -221,7 +221,7 @@ void boxFilter_Naive_AVX_Gray::operator()(const cv::Range& range) const
 
 /* --- Naive Color --- */
 boxFilter_Naive_nonVec_Color::boxFilter_Naive_nonVec_Color(cv::Mat& _src, cv::Mat& _dest, int _r, int _parallelType)
-	: boxFilter_base(_src, _dest, _r, _parallelType)
+	: BoxFilterBase(_src, _dest, _r, _parallelType)
 {
 	ksize = 2 * r + 1;
 	copyMakeBorder(src, copy, r, r, r, r, BOX_FILTER_BORDER_TYPE);

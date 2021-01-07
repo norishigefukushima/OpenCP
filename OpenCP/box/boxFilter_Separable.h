@@ -1,10 +1,10 @@
 #pragma once
 
-#include "boxFilter_Base.h"
+#include "boxFilter.hpp"
 
 //separable box filtering
 
-class boxFilter_Separable_HV_nonVec : public boxFilter_base
+class boxFilter_Separable_HV_nonVec : public cp::BoxFilterBase
 {
 protected:
 	int ksize;
@@ -43,7 +43,7 @@ public:
 	boxFilter_Separable_HV_AVX(cv::Mat& _src, cv::Mat& _dest, int _r, int _parallelType);
 };
 
-class boxFilter_Separable_VH_AVX : public boxFilter_base
+class boxFilter_Separable_VH_AVX : public cp::BoxFilterBase
 {
 private:
 	int padded;

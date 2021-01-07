@@ -4,8 +4,8 @@ using namespace cv;
 using namespace std;
 
 /* --- boxFilter Integral --- */
-boxFilter_Integral_nonVec::boxFilter_Integral_nonVec(cv::Mat& _src, cv::Mat& _dest, int _r, int _parallelType)
-	: boxFilter_base(_src, _dest, _r, _parallelType)
+boxFilterIntegralScalar::boxFilterIntegralScalar(cv::Mat& _src, cv::Mat& _dest, int _r, int _parallelType)
+	: BoxFilterBase(_src, _dest, _r, _parallelType)
 {
 	ksize = 2 * r + 1;
 	cn = src.channels();
@@ -16,7 +16,7 @@ boxFilter_Integral_nonVec::boxFilter_Integral_nonVec(cv::Mat& _src, cv::Mat& _de
 /*
  * nonVec
  */
-void boxFilter_Integral_nonVec::filter_naive_impl()
+void boxFilterIntegralScalar::filter_naive_impl()
 {
 	for (int y = 0; y < row; y++)
 	{
@@ -33,7 +33,7 @@ void boxFilter_Integral_nonVec::filter_naive_impl()
 	}
 }
 
-void boxFilter_Integral_nonVec::filter_omp_impl()
+void boxFilterIntegralScalar::filter_omp_impl()
 {
 #pragma omp parallel for
 	for (int y = 0; y < row; y++)
@@ -51,7 +51,7 @@ void boxFilter_Integral_nonVec::filter_omp_impl()
 	}
 }
 
-void boxFilter_Integral_nonVec::operator()(const cv::Range& range) const
+void boxFilterIntegralScalar::operator()(const cv::Range& range) const
 {
 	for (int y = range.start; y < range.end; y++)
 	{
@@ -74,7 +74,7 @@ void boxFilter_Integral_nonVec::operator()(const cv::Range& range) const
 /*
  * SSE
  */
-void boxFilter_Integral_SSE::filter_naive_impl()
+void boxFilterIntegralSSE::filter_naive_impl()
 {
 	for (int y = 0; y < row; y++)
 	{
@@ -99,7 +99,7 @@ void boxFilter_Integral_SSE::filter_naive_impl()
 	}
 }
 
-void boxFilter_Integral_SSE::filter_omp_impl()
+void boxFilterIntegralSSE::filter_omp_impl()
 {
 #pragma omp parallel for
 	for (int y = 0; y < row; y++)
@@ -125,7 +125,7 @@ void boxFilter_Integral_SSE::filter_omp_impl()
 	}
 }
 
-void boxFilter_Integral_SSE::operator()(const cv::Range& range) const
+void boxFilterIntegralSSE::operator()(const cv::Range& range) const
 {
 	for (int y = range.start; y < range.end; y++)
 	{
@@ -155,7 +155,7 @@ void boxFilter_Integral_SSE::operator()(const cv::Range& range) const
 /*
  * AVX
  */
-void boxFilter_Integral_AVX::filter_naive_impl()
+void boxFilterIntegralAVX::filter_naive_impl()
 {
 	for (int y = 0; y < row; y++)
 	{
@@ -180,7 +180,7 @@ void boxFilter_Integral_AVX::filter_naive_impl()
 	}
 }
 
-void boxFilter_Integral_AVX::filter_omp_impl()
+void boxFilterIntegralAVX::filter_omp_impl()
 {
 #pragma omp parallel for
 	for (int y = 0; y < row; y++)
@@ -206,7 +206,7 @@ void boxFilter_Integral_AVX::filter_omp_impl()
 	}
 }
 
-void boxFilter_Integral_AVX::operator()(const cv::Range& range) const
+void boxFilterIntegralAVX::operator()(const cv::Range& range) const
 {
 	for (int y = range.start; y < range.end; y++)
 	{

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "boxFilter_Base.h"
+#include "boxFilter.hpp"
 
 // SSAT: horizontal -> vertical
 
@@ -44,7 +44,7 @@ public:
 
 
 
-struct RowSumFilter : public boxFilter_base
+struct RowSumFilter : public cp::BoxFilterBase
 {
 protected:
 	int cn;
@@ -54,7 +54,7 @@ protected:
 	void operator()(const cv::Range& range) const override;
 public:
 	RowSumFilter(cv::Mat& _src, cv::Mat& _dest, int _r, int _parallelType)
-		: boxFilter_base(_src, _dest, _r, _parallelType)
+		: BoxFilterBase(_src, _dest, _r, _parallelType)
 	{
 		cn = src.channels();
 	}
@@ -88,7 +88,7 @@ public:
 		: RowSumFilter(_src, _dest, _r, _parallelType) {}
 };
 
-struct ColumnSumFilter_nonVec : public boxFilter_base
+struct ColumnSumFilter_nonVec : public cp::BoxFilterBase
 {
 protected:
 	int cn;
@@ -99,7 +99,7 @@ protected:
 	void operator()(const cv::Range& range) const override;
 public:
 	ColumnSumFilter_nonVec(cv::Mat& _src, cv::Mat& _dest, int _r, int _parallelType)
-		: boxFilter_base(_src, _dest, _r, _parallelType)
+		: BoxFilterBase(_src, _dest, _r, _parallelType)
 	{
 		cn = src.channels();
 		step = col * cn;
@@ -169,7 +169,7 @@ public:
 
 
 
-struct RowSumFilter_CN : public boxFilter_base
+struct RowSumFilter_CN : public cp::BoxFilterBase
 {
 protected:
 	int cn;
@@ -179,7 +179,7 @@ protected:
 	void operator()(const cv::Range& range) const override;
 public:
 	RowSumFilter_CN(cv::Mat& _src, cv::Mat& _dest, int _r, int _parallelType)
-		: boxFilter_base(_src, _dest, _r, _parallelType)
+		: BoxFilterBase(_src, _dest, _r, _parallelType)
 	{
 		cn = src.channels();
 	}

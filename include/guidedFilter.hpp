@@ -194,7 +194,7 @@ namespace cp
 		void setIsComputeForReuseGuide(const bool flag);
 		void setDownsampleMethod(const int method);
 		void setUpsampleMethod(const int method);
-		
+
 		int getImplementation();
 
 		virtual void filter() = 0;
@@ -211,7 +211,7 @@ namespace cp
 	};
 
 
-	void CP_EXPORT guidedImageFilter(cv::InputArray src, cv::InputArray guide, cv::OutputArray dest, const int r, const float eps, const GuidedTypes guidedType = GuidedTypes::GUIDED_SEP_VHI, const BoxTypes boxType = BoxTypes::BOX_OPENCV, const ParallelTypes parallelType = ParallelTypes::OMP);
+	void CP_EXPORT guidedImageFilter(cv::InputArray src, cv::InputArray guide, cv::OutputArray dest, const int r, const float eps, const GuidedTypes guidedType = GuidedTypes::GUIDED_SEP_VHI, const BoxFilterMethod boxType = BoxFilterMethod::OPENCV, const ParallelTypes parallelType = ParallelTypes::OMP);
 
 	class CP_EXPORT GuidedImageFilter
 	{
@@ -224,7 +224,7 @@ namespace cp
 		int downsample_method = cv::INTER_LINEAR;
 		int upsample_method = cv::INTER_CUBIC;
 		int parallel_type = 0;
-		int box_type = 0;
+		BoxFilterMethod box_type = BoxFilterMethod::OPENCV;
 
 		cv::Size size = cv::Size(1, 1);
 
@@ -244,11 +244,11 @@ namespace cp
 		void setDownsampleMethod(const int method);
 		void setUpsampleMethod(const int method);
 
-		void setBoxType(const int type);
+		void setBoxType(const BoxFilterMethod type);
 
 		void filter(cv::Mat& src, cv::Mat& guide, cv::OutputArray dest, const int r, const float eps, const int guided_type = GuidedTypes::GUIDED_SEP_VHI_SHARE, const int parallel_type = ParallelTypes::OMP);
 		void filterGuidePrecomputed(cv::Mat& _src, cv::Mat& _guide, cv::OutputArray _dest, int _r, float _eps, const int guided_type = GuidedTypes::GUIDED_SEP_VHI_SHARE, const int parallel_type = ParallelTypes::OMP);
-		void filterColorParallel   (cv::Mat& src, cv::Mat& guide, cv::OutputArray dest, const int r, const float eps, const int guided_type = GuidedTypes::GUIDED_SEP_VHI_SHARE, const int parallel_type = ParallelTypes::OMP);
+		void filterColorParallel(cv::Mat& src, cv::Mat& guide, cv::OutputArray dest, const int r, const float eps, const int guided_type = GuidedTypes::GUIDED_SEP_VHI_SHARE, const int parallel_type = ParallelTypes::OMP);
 		void filterFast(cv::Mat& src, cv::Mat& guide, cv::OutputArray dest, const int r, const float eps, const int ratio, const int guided_type = GuidedTypes::GUIDED_SEP_VHI_SHARE, const int parallel_type = ParallelTypes::OMP);
 		void upsample(cv::Mat& src, cv::Mat& guide, cv::OutputArray dest, const int r, const float eps, const int guided_type = GuidedTypes::GUIDED_SEP_VHI_SHARE, const int parallel_type = ParallelTypes::OMP);
 		void upsample(cv::Mat& src, cv::Mat& guide_low, cv::Mat& guide, cv::OutputArray dest, const int r, const float eps, const int guided_type = GuidedTypes::GUIDED_SEP_VHI_SHARE, const int parallel_type = ParallelTypes::OMP);

@@ -1,60 +1,62 @@
 #pragma once
 
 #include "common.hpp"
+#include "boxFilter.hpp"
+#include "parallel_type.hpp"
 //#include <opencv2/core.hpp>
 //#include <string>
 namespace cp
 {
-	enum BoxTypes
+	enum class BoxFilterMethod
 	{
-		BOX_OPENCV,
+		OPENCV,
 
-		BOX_NAIVE,
-		BOX_NAIVE_SSE,
-		BOX_NAIVE_AVX,
+		NAIVE,
+		NAIVE_SSE,
+		NAIVE_AVX,
 
-		BOX_SEPARABLE_HV,
-		BOX_SEPARABLE_HV_SSE,
-		BOX_SEPARABLE_HV_AVX,
-		BOX_SEPARABLE_VH_AVX,
-		BOX_SEPARABLE_VHI,
-		BOX_SEPARABLE_VHI_SSE,
-		BOX_SEPARABLE_VHI_AVX,
+		SEPARABLE_HV,
+		SEPARABLE_HV_SSE,
+		SEPARABLE_HV_AVX,
+		SEPARABLE_VH_AVX,
+		SEPARABLE_VHI,
+		SEPARABLE_VHI_SSE,
+		SEPARABLE_VHI_AVX,
 
-		BOX_INTEGRAL,
-		BOX_INTEGRAL_SSE,
-		BOX_INTEGRAL_AVX,
-		BOX_INTEGRAL_ONEPASS,
-		BOX_INTEGRAL_ONEPASS_AREA,
+		INTEGRAL,
+		INTEGRAL_SSE,
+		INTEGRAL_AVX,
+		INTEGRAL_ONEPASS,
+		INTEGRAL_ONEPASS_AREA,
 
-		BOX_SSAT_HV,
-		BOX_SSAT_HV_SSE,
-		BOX_SSAT_HV_AVX,
-		BOX_SSAT_HV_BLOCKING,
-		BOX_SSAT_HV_BLOCKING_SSE,
-		BOX_SSAT_HV_BLOCKING_AVX,
-		BOX_SSAT_HV_4x4,
-		BOX_SSAT_HV_8x8,
-		BOX_SSAT_HV_ROWSUM_GATHER_SSE,
-		BOX_SSAT_HV_ROWSUM_GATHER_AVX,
-		BOX_SSAT_HtH,
-		BOX_SSAT_HtH_SSE,
-		BOX_SSAT_HtH_AVX,
+		SSAT_HV,
+		SSAT_HV_SSE,
+		SSAT_HV_AVX,
+		SSAT_HV_BLOCKING,
+		SSAT_HV_BLOCKING_SSE,
+		SSAT_HV_BLOCKING_AVX,
+		SSAT_HV_4x4,
+		SSAT_HV_8x8,
+		SSAT_HV_ROWSUM_GATHER_SSE,
+		SSAT_HV_ROWSUM_GATHER_AVX,
+		SSAT_HtH,
+		SSAT_HtH_SSE,
+		SSAT_HtH_AVX,
 
-		BOX_SSAT_VH,
-		BOX_SSAT_VH_SSE,
-		BOX_SSAT_VH_AVX,
-		BOX_SSAT_VH_ROWSUM_GATHER_SSE,
-		BOX_SSAT_VH_ROWSUM_GATHER_AVX,
-		BOX_SSAT_VtV,
-		BOX_SSAT_VtV_SSE,
-		BOX_SSAT_VtV_AVX,
+		SSAT_VH,
+		SSAT_VH_SSE,
+		SSAT_VH_AVX,
+		SSAT_VH_ROWSUM_GATHER_SSE,
+		SSAT_VH_ROWSUM_GATHER_AVX,
+		SSAT_VtV,
+		SSAT_VtV_SSE,
+		SSAT_VtV_AVX,
 
-		BOX_OPSAT,
-		BOX_OPSAT_2Div,
-		BOX_OPSAT_nDiv,
+		OPSAT,
+		OPSAT_2Div,
+		OPSAT_nDiv,
 
-		NumBoxTypes	// num of boxtypes. must be last element
+		SIZE	// num of boxtypes. must be last element
 	};
 
 	enum BoxMultiTypes
@@ -84,66 +86,115 @@ namespace cp
 		NumBoxMultiTypes
 	};
 
-	CP_EXPORT void boxFilter_64f(cv::Mat& src, cv::Mat& dest, const int r, const int boxType, const int parallelType);
+#define BOX_FILTER_BORDER_TYPE cv::BORDER_REPLICATE
 
-	CP_EXPORT void boxFilter_32f(cv::Mat& src, cv::Mat& dest, int r, int boxType, int parallelType);
+	class BoxFilterBase : public cv::ParallelLoopBody
+	{
+	protected:
+		cv::Mat& src;
+		cv::Mat& dest;
+		int r;
+		int parallelType;
 
-	CP_EXPORT void boxFilter_8u(cv::Mat& src, cv::Mat& dest, int r, int boxType, int parallelType);
+		float div;
+		int row;
+		int col;
+
+		virtual void filter_naive_impl() = 0;
+		virtual void filter_omp_impl() = 0;
+		void operator()(const cv::Range& range) const override = 0;
+	public:
+		BoxFilterBase(cv::Mat& _src, cv::Mat& _dest, int _r, int _parallelType) : src(_src), dest(_dest), r(_r), parallelType(_parallelType)
+		{
+			div = 1.f / ((2 * r + 1) * (2 * r + 1));
+			row = src.rows;
+			col = src.cols;
+		};
+		virtual void filter();
+	};
+
+	inline void BoxFilterBase::filter()
+	{
+		if (parallelType == ParallelTypes::NAIVE)
+		{
+			filter_naive_impl();
+		}
+		else if (parallelType == ParallelTypes::OMP)
+		{
+			filter_omp_impl();
+		}
+		else if (parallelType == ParallelTypes::PARALLEL_FOR_)
+		{
+			cv::parallel_for_(cv::Range(0, row), *this, cv::getNumThreads() - 1);
+		}
+		else
+		{
+
+		}
+	}
+
+	CP_EXPORT cv::Ptr<BoxFilterBase> createBoxFilter(const BoxFilterMethod method, const cv::Mat& src, cv::Mat& dest, int r, int _parallelType);
+
+	CP_EXPORT void boxFilter_64f(cv::Mat& src, cv::Mat& dest, const int r, const BoxFilterMethod boxType, const int parallelType);
+
+	CP_EXPORT void boxFilter_32f(cv::Mat& src, cv::Mat& dest, int r, const BoxFilterMethod boxType, int parallelType);
+
+	CP_EXPORT void boxFilter_8u(cv::Mat& src, cv::Mat& dest, int r, const BoxFilterMethod boxType, int parallelType);
 
 	CP_EXPORT void boxFilter_multiChannel(cv::Mat& src, cv::Mat& dest, int r, int boxMultiType, int parallelType);
 
-	inline std::string getBoxType(int boxType)
+	inline std::string getBoxType(const BoxFilterMethod boxType)
 	{
 		std::string type;
 		switch (boxType)
 		{
-		case BOX_OPENCV:					type = "BOX_OPENCV"; break;
-		case BOX_NAIVE:						type = "BOX_NAIVE"; break;
-		case BOX_NAIVE_SSE:					type = "BOX_NAIVE_SSE";	break;
-		case BOX_NAIVE_AVX:					type = "BOX_NAIVE_AVX";	break;
+		case BoxFilterMethod::OPENCV:					type = "OPENCV"; break;
+		case BoxFilterMethod::NAIVE:					type = "NAIVE"; break;
+		case BoxFilterMethod::NAIVE_SSE:				type = "NAIVE_SSE";	break;
+		case BoxFilterMethod::NAIVE_AVX:				type = "NAIVE_AVX";	break;
+			 
+		case BoxFilterMethod::SEPARABLE_HV:				type = "SEPARABLE_HV";	break;
+		case BoxFilterMethod::SEPARABLE_HV_SSE:			type = "SEPARABLE_HV_SSE";	break;
+		case BoxFilterMethod::SEPARABLE_HV_AVX:			type = "SEPARABLE_HV_AVX";	break;
+		case BoxFilterMethod::SEPARABLE_VH_AVX:			type = "SEPARABLE_VH_AVX"; break;
+		case BoxFilterMethod::SEPARABLE_VHI:			type = "SEPARABLE_VHI";	break;
+		case BoxFilterMethod::SEPARABLE_VHI_SSE:		type = "SEPARABLE_VHI_SSE";	break;
+		case BoxFilterMethod::SEPARABLE_VHI_AVX:		type = "SEPARABLE_VHI_AVX";	break;
+			 
+		case BoxFilterMethod::INTEGRAL:					type = "INTEGRAL";	break;
+		case BoxFilterMethod::INTEGRAL_SSE:				type = "INTEGRAL_SSE";	break;
+		case BoxFilterMethod::INTEGRAL_AVX:				type = "INTEGRAL_AVX";	break;
+		case BoxFilterMethod::INTEGRAL_ONEPASS:			type = "INTEGRAL_ONEPASS";	break;
+		case BoxFilterMethod::INTEGRAL_ONEPASS_AREA:	type = "INTEGRAL_ONEPASS_AREA";	break;
+			 
+		case BoxFilterMethod::SSAT_HV:					type = "SSAT_HV";	break;
+		case BoxFilterMethod::SSAT_HV_SSE:				type = "SSAT_HV_SSE";	break;
+		case BoxFilterMethod::SSAT_HV_AVX:				type = "SSAT_HV_AVX";	break;
+		case BoxFilterMethod::SSAT_HV_BLOCKING:			type = "SSAT_HV_CACHE_BLOCKING";	break;
+		case BoxFilterMethod::SSAT_HV_BLOCKING_SSE:		type = "SSAT_HV_CACHE_BLOCKING_SSE";	break;
+		case BoxFilterMethod::SSAT_HV_BLOCKING_AVX:		type = "SSAT_HV_CACHE_BLOCKING_AVX";	break;
+		case BoxFilterMethod::SSAT_HtH:					type = "SSAT_HtH";	break;
+		case BoxFilterMethod::SSAT_HtH_SSE:				type = "SSAT_HtH_SSE";	break;
+		case BoxFilterMethod::SSAT_HtH_AVX:				type = "SSAT_HtH_AVX";	break;
+		case BoxFilterMethod::SSAT_VH:					type = "SSAT_VH";	break;
+		case BoxFilterMethod::SSAT_VH_SSE:				type = "SSAT_VH_SSE";	break;
+		case BoxFilterMethod::SSAT_VH_AVX:				type = "SSAT_VH_AVX";	break;
+			 
+		case BoxFilterMethod::SSAT_HV_4x4:				type = "SSAT_4x4";	break;
+		case BoxFilterMethod::SSAT_HV_8x8:				type = "SSAT_8x8";	break;
+		case BoxFilterMethod::SSAT_VtV:					type = "SSAT_VtV";	break;
+		case BoxFilterMethod::SSAT_VtV_SSE:				type = "SSAT_VtV_SSE";	break;
+		case BoxFilterMethod::SSAT_VtV_AVX:				type = "SSAT_VtV_AVX";	break;
+		case BoxFilterMethod::SSAT_HV_ROWSUM_GATHER_SSE:type = "SSAT_HV_ROWSUM_GATHER_SSE";	break;
+		case BoxFilterMethod::SSAT_HV_ROWSUM_GATHER_AVX:type = "SSAT_HV_ROWSUM_GATHER_AVX";	break;
+		case BoxFilterMethod::SSAT_VH_ROWSUM_GATHER_SSE:type = "SSAT_VH_ROWSUM_GATHER_SSE";	break;
+		case BoxFilterMethod::SSAT_VH_ROWSUM_GATHER_AVX:type = "SSAT_VH_ROWSUM_GATHER_AVX";	break;
+			 
+		case BoxFilterMethod::OPSAT:					type = "OPSAT";	break;
+		case BoxFilterMethod::OPSAT_2Div:				type = "OPSAT_2div";	break;
+		case BoxFilterMethod::OPSAT_nDiv:				type = "OPSAT_ndiv";	break;
 
-		case BOX_SEPARABLE_HV:				type = "BOX_SEPARABLE_HV";	break;
-		case BOX_SEPARABLE_HV_SSE:			type = "BOX_SEPARABLE_HV_SSE";	break;
-		case BOX_SEPARABLE_HV_AVX:			type = "BOX_SEPARABLE_HV_AVX";	break;
-		case BOX_SEPARABLE_VH_AVX:			type = "BOX_SEPARABLE_VH_AVX"; break;
-		case BOX_SEPARABLE_VHI:				type = "BOX_SEPARABLE_VHI";	break;
-		case BOX_SEPARABLE_VHI_SSE:			type = "BOX_SEPARABLE_VHI_SSE";	break;
-		case BOX_SEPARABLE_VHI_AVX:			type = "BOX_SEPARABLE_VHI_AVX";	break;
-
-		case BOX_INTEGRAL:					type = "BOX_INTEGRAL";	break;
-		case BOX_INTEGRAL_SSE:				type = "BOX_INTEGRAL_SSE";	break;
-		case BOX_INTEGRAL_AVX:				type = "BOX_INTEGRAL_AVX";	break;
-		case BOX_INTEGRAL_ONEPASS:			type = "BOX_INTEGRAL_ONEPASS";	break;
-		case BOX_INTEGRAL_ONEPASS_AREA:		type = "BOX_INTEGRAL_ONEPASS_AREA";	break;
-
-		case BOX_SSAT_HV:					type = "BOX_SSAT_HV";	break;
-		case BOX_SSAT_HV_SSE:				type = "BOX_SSAT_HV_SSE";	break;
-		case BOX_SSAT_HV_AVX:				type = "BOX_SSAT_HV_AVX";	break;
-		case BOX_SSAT_HV_BLOCKING:			type = "BOX_SSAT_HV_CACHE_BLOCKING";	break;
-		case BOX_SSAT_HV_BLOCKING_SSE:		type = "BOX_SSAT_HV_CACHE_BLOCKING_SSE";	break;
-		case BOX_SSAT_HV_BLOCKING_AVX:		type = "BOX_SSAT_HV_CACHE_BLOCKING_AVX";	break;
-		case BOX_SSAT_HtH:					type = "BOX_SSAT_HtH";	break;
-		case BOX_SSAT_HtH_SSE:				type = "BOX_SSAT_HtH_SSE";	break;
-		case BOX_SSAT_HtH_AVX:				type = "BOX_SSAT_HtH_AVX";	break;
-		case BOX_SSAT_VH:					type = "BOX_SSAT_VH";	break;
-		case BOX_SSAT_VH_SSE:				type = "BOX_SSAT_VH_SSE";	break;
-		case BOX_SSAT_VH_AVX:				type = "BOX_SSAT_VH_AVX";	break;
-
-		case BOX_SSAT_HV_4x4:				type = "BOX_SSAT_4x4";	break;
-		case BOX_SSAT_HV_8x8:				type = "BOX_SSAT_8x8";	break;
-		case BOX_SSAT_VtV:					type = "BOX_SSAT_VtV";	break;
-		case BOX_SSAT_VtV_SSE:				type = "BOX_SSAT_VtV_SSE";	break;
-		case BOX_SSAT_VtV_AVX:				type = "BOX_SSAT_VtV_AVX";	break;
-		case BOX_SSAT_HV_ROWSUM_GATHER_SSE:	type = "BOX_SSAT_HV_ROWSUM_GATHER_SSE";	break;
-		case BOX_SSAT_HV_ROWSUM_GATHER_AVX:	type = "BOX_SSAT_HV_ROWSUM_GATHER_AVX";	break;
-		case BOX_SSAT_VH_ROWSUM_GATHER_SSE:	type = "BOX_SSAT_VH_ROWSUM_GATHER_SSE";	break;
-		case BOX_SSAT_VH_ROWSUM_GATHER_AVX:	type = "BOX_SSAT_VH_ROWSUM_GATHER_AVX";	break;
-
-		case BOX_OPSAT:						type = "BOX_OPSAT";	break;
-		case BOX_OPSAT_2Div:				type = "BOX_OPSAT_2div";	break;
-		case BOX_OPSAT_nDiv:				type = "BOX_OPSAT_ndiv";	break;
-
-		default:							type = "UNDEFINED_METHOD";	break;
+		default:										type = "UNDEFINED_BOX_FILTER_METHOD";	break;
 		}
 		return type;
 	}

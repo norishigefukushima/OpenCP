@@ -1,10 +1,10 @@
 #pragma once
 
-#include "boxFilter_Base.h"
+#include "boxFilter.hpp"
 
 //integral image based filtering
 
-class boxFilter_Integral_nonVec : public boxFilter_base
+class boxFilterIntegralScalar : public cp::BoxFilterBase
 {
 protected:
 	int ksize;
@@ -16,10 +16,10 @@ protected:
 	void filter_omp_impl() override;
 	void operator()(const cv::Range& range) const override;
 public:
-	boxFilter_Integral_nonVec(cv::Mat& _src, cv::Mat& _dest, int _r, int _parallelType);
+	boxFilterIntegralScalar(cv::Mat& src, cv::Mat& dest, int _r, int _parallelType);
 };
 
-class boxFilter_Integral_SSE : public boxFilter_Integral_nonVec
+class boxFilterIntegralSSE : public boxFilterIntegralScalar
 {
 private:
 	const __m128 mDiv = _mm_set1_ps(div);
@@ -28,11 +28,11 @@ private:
 	void filter_omp_impl() override;
 	void operator()(const cv::Range& range) const override;
 public:
-	boxFilter_Integral_SSE(cv::Mat& _src, cv::Mat& _dest, int _r, int _parallelType)
-		: boxFilter_Integral_nonVec(_src, _dest, _r, _parallelType) {}
+	boxFilterIntegralSSE(cv::Mat& src, cv::Mat& dest, int _r, int _parallelType)
+		: boxFilterIntegralScalar(src, dest, _r, _parallelType) {}
 };
 
-class boxFilter_Integral_AVX : public boxFilter_Integral_nonVec
+class boxFilterIntegralAVX : public boxFilterIntegralScalar
 {
 private:
 	const __m256 mDiv = _mm256_set1_ps(div);
@@ -41,6 +41,6 @@ private:
 	void filter_omp_impl() override;
 	void operator()(const cv::Range& range) const override;
 public:
-	boxFilter_Integral_AVX(cv::Mat& _src, cv::Mat& _dest, int _r, int _parallelType)
-		: boxFilter_Integral_nonVec(_src, _dest, _r, _parallelType) {}
+	boxFilterIntegralAVX(cv::Mat& src, cv::Mat& dest, int _r, int _parallelType)
+		: boxFilterIntegralScalar(src, dest, _r, _parallelType) {}
 };

@@ -6,7 +6,7 @@ using namespace cv;
 #define _WITHOUT_COPYMAKE_ 1
 
 boxFilter_Separable_HV_nonVec::boxFilter_Separable_HV_nonVec(cv::Mat& _src, cv::Mat& _dest, int _r, int _parallelType)
-	: boxFilter_base(_src, _dest, _r, _parallelType)
+	: BoxFilterBase(_src, _dest, _r, _parallelType)
 {
 	ksize = 2 * r + 1;
 
@@ -416,7 +416,7 @@ void boxFilter_Separable_HV_AVX::operator()(const cv::Range& range) const
 
 
 boxFilter_Separable_VH_AVX::boxFilter_Separable_VH_AVX(cv::Mat& _src, cv::Mat& _dest, int _r, int _parallelType)
-	: boxFilter_base(_src, _dest, _r, _parallelType)
+	: BoxFilterBase(_src, _dest, _r, _parallelType)
 {
 	padded = 8 % (8 - (col + r + r) % 8);
 	ksize = 2 * r + 1;

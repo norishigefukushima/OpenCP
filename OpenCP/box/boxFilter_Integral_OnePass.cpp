@@ -6,7 +6,7 @@ using namespace cv;
 
 //TODO: Color implement
 boxFilter_Integral_OnePass::boxFilter_Integral_OnePass(cv::Mat& _src, cv::Mat& _dest, int _r, int _parallelType)
-	: boxFilter_base(_src, _dest, _r, _parallelType)
+	: BoxFilterBase(_src, _dest, _r, _parallelType)
 {
 	copyMakeBorder(src, copy, r, r, r, r, BOX_FILTER_BORDER_TYPE);
 	sum.create(copy.rows + 1, copy.cols + 1, CV_32F);
@@ -121,7 +121,7 @@ void boxFilter_Integral_OnePass::operator()(const cv::Range& range) const
 
 //TODO: Color implement
 boxFilter_Integral_OnePass_Area::boxFilter_Integral_OnePass_Area(cv::Mat& _src, cv::Mat& _dest, int _r, int _parallelType)
-	: boxFilter_base(_src, _dest, _r, _parallelType)
+	: BoxFilterBase(_src, _dest, _r, _parallelType)
 {
 	copyMakeBorder(src, copy, r, r, r, r, BOX_FILTER_BORDER_TYPE);
 	ksize = 2 * r + 1;
@@ -172,7 +172,7 @@ void boxFilter_Integral_OnePass_Area::operator()(const cv::Range& range) const
 
 /* --- box filter integral onepath 8u --- */
 boxFilter_Integral_OnePass_8u::boxFilter_Integral_OnePass_8u(cv::Mat& _src, cv::Mat& _dest, int _r, int _parallelType)
-	: boxFilter_base(_src, _dest, _r, _parallelType)
+	: BoxFilterBase(_src, _dest, _r, _parallelType)
 {
 	copyMakeBorder(src, copy, r, r, r, r, BOX_FILTER_BORDER_TYPE);
 	sum.create(copy.rows + 1, copy.cols + 1, CV_32S);

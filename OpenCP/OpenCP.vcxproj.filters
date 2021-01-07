@@ -67,9 +67,6 @@
     <Filter Include="ソース ファイル\filter\edgePreservingFilter">
       <UniqueIdentifier>{d4aaffff-9b56-49d0-b921-13de8f8bacee}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ソース ファイル\filter\dct-fft">
-      <UniqueIdentifier>{58c7015d-a5f2-455d-bd1a-3808a64f3337}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ソース ファイル\filter\guidedImageFilter">
       <UniqueIdentifier>{35adffd9-8c6d-4577-b1e6-1262cb040548}</UniqueIdentifier>
     </Filter>
@@ -87,6 +84,12 @@
     </Filter>
     <Filter Include="ヘッダー ファイル\headers\filter\resize">
       <UniqueIdentifier>{da54fbf2-e362-4f0d-80b0-5e6d0a9f8db8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\filter\boxFilter\hpp">
+      <UniqueIdentifier>{83434b1c-5fc1-4e1c-846a-ec02000dba44}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\filter\dct-fft">
+      <UniqueIdentifier>{58c7015d-a5f2-455d-bd1a-3808a64f3337}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -462,9 +465,6 @@
     <ClCompile Include="box\boxFilter_SSAT_HtH.cpp">
       <Filter>ソース ファイル\filter\boxFilter</Filter>
     </ClCompile>
-    <ClCompile Include="box\boxFilter_SSAT_HV_8x8.cpp">
-      <Filter>ソース ファイル\filter\boxFilter</Filter>
-    </ClCompile>
     <ClCompile Include="box\boxFilter_SSAT_HV_4x4.cpp">
       <Filter>ソース ファイル\filter\boxFilter</Filter>
     </ClCompile>
@@ -569,6 +569,9 @@
     </ClCompile>
     <ClCompile Include="bitconvertDD.cpp">
       <Filter>ソース ファイル\core</Filter>
+    </ClCompile>
+    <ClCompile Include="box\boxFilter_SSAT_HV_8x8.cpp">
+      <Filter>ソース ファイル\filter\boxFilter</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -890,63 +893,6 @@
     <ClInclude Include="gif\guidedFilter_SepVHI_Share.h">
       <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
     </ClInclude>
-    <ClInclude Include="box\boxFilter_OPSAT_AoS_2Div.h">
-      <Filter>ソース ファイル\filter\boxFilter</Filter>
-    </ClInclude>
-    <ClInclude Include="box\boxFilter_Separable.h">
-      <Filter>ソース ファイル\filter\boxFilter</Filter>
-    </ClInclude>
-    <ClInclude Include="box\boxFilter_SSAT_HtH.h">
-      <Filter>ソース ファイル\filter\boxFilter</Filter>
-    </ClInclude>
-    <ClInclude Include="box\boxFilter_Separable_Interleave.h">
-      <Filter>ソース ファイル\filter\boxFilter</Filter>
-    </ClInclude>
-    <ClInclude Include="box\boxFilter_SSAT_HV.h">
-      <Filter>ソース ファイル\filter\boxFilter</Filter>
-    </ClInclude>
-    <ClInclude Include="box\boxFilter_SSAT_VtV.h">
-      <Filter>ソース ファイル\filter\boxFilter</Filter>
-    </ClInclude>
-    <ClInclude Include="box\boxFilter_SSAT_VH.h">
-      <Filter>ソース ファイル\filter\boxFilter</Filter>
-    </ClInclude>
-    <ClInclude Include="box\boxFilter_Integral_OnePass.h">
-      <Filter>ソース ファイル\filter\boxFilter</Filter>
-    </ClInclude>
-    <ClInclude Include="box\boxFilter_SSAT_SoA.h">
-      <Filter>ソース ファイル\filter\boxFilter</Filter>
-    </ClInclude>
-    <ClInclude Include="box\boxFilter_SSAT_HV_CacheBlocking.h">
-      <Filter>ソース ファイル\filter\boxFilter</Filter>
-    </ClInclude>
-    <ClInclude Include="box\boxFilter_SSAT_HV_8x8.h">
-      <Filter>ソース ファイル\filter\boxFilter</Filter>
-    </ClInclude>
-    <ClInclude Include="box\boxFilter_SSAT_HV_4x4.h">
-      <Filter>ソース ファイル\filter\boxFilter</Filter>
-    </ClInclude>
-    <ClInclude Include="box\boxFilter_OPSAT_SoA_2Div.h">
-      <Filter>ソース ファイル\filter\boxFilter</Filter>
-    </ClInclude>
-    <ClInclude Include="box\boxFilter_OPSAT_SoA.h">
-      <Filter>ソース ファイル\filter\boxFilter</Filter>
-    </ClInclude>
-    <ClInclude Include="box\boxFilter_OPSAT_AoS.h">
-      <Filter>ソース ファイル\filter\boxFilter</Filter>
-    </ClInclude>
-    <ClInclude Include="box\boxFilter_Naive.h">
-      <Filter>ソース ファイル\filter\boxFilter</Filter>
-    </ClInclude>
-    <ClInclude Include="box\boxFilter_Integral.h">
-      <Filter>ソース ファイル\filter\boxFilter</Filter>
-    </ClInclude>
-    <ClInclude Include="box\boxFilter_Base.h">
-      <Filter>ソース ファイル\filter\boxFilter</Filter>
-    </ClInclude>
-    <ClInclude Include="box\boxFilter_SSAT_RowSumGather.h">
-      <Filter>ソース ファイル\filter\boxFilter</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\guidedFilter.hpp">
       <Filter>ヘッダー ファイル\headers\filter</Filter>
     </ClInclude>
@@ -1021,6 +967,63 @@
     </ClInclude>
     <ClInclude Include="..\include\inlineCVFunctions.hpp">
       <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_Integral.h">
+      <Filter>ソース ファイル\filter\boxFilter\hpp</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_Integral_OnePass.h">
+      <Filter>ソース ファイル\filter\boxFilter\hpp</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_Naive.h">
+      <Filter>ソース ファイル\filter\boxFilter\hpp</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_OPSAT_AoS.h">
+      <Filter>ソース ファイル\filter\boxFilter\hpp</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_OPSAT_SoA.h">
+      <Filter>ソース ファイル\filter\boxFilter\hpp</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_OPSAT_AoS_2Div.h">
+      <Filter>ソース ファイル\filter\boxFilter\hpp</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_OPSAT_SoA_2Div.h">
+      <Filter>ソース ファイル\filter\boxFilter\hpp</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_SSAT_HtH.h">
+      <Filter>ソース ファイル\filter\boxFilter\hpp</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_SSAT_HV.h">
+      <Filter>ソース ファイル\filter\boxFilter\hpp</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_Separable_Interleave.h">
+      <Filter>ソース ファイル\filter\boxFilter\hpp</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_Separable.h">
+      <Filter>ソース ファイル\filter\boxFilter\hpp</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_SSAT_HV_CacheBlocking.h">
+      <Filter>ソース ファイル\filter\boxFilter\hpp</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_SSAT_HV_8x8.h">
+      <Filter>ソース ファイル\filter\boxFilter\hpp</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_SSAT_HV_4x4.h">
+      <Filter>ソース ファイル\filter\boxFilter\hpp</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_SSAT_VtV.h">
+      <Filter>ソース ファイル\filter\boxFilter\hpp</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_SSAT_RowSumGather.h">
+      <Filter>ソース ファイル\filter\boxFilter\hpp</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_SSAT_VH.h">
+      <Filter>ソース ファイル\filter\boxFilter\hpp</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilter_SSAT_SoA.h">
+      <Filter>ソース ファイル\filter\boxFilter\hpp</Filter>
+    </ClInclude>
+    <ClInclude Include="box\boxFilterBase.hpp">
+      <Filter>ソース ファイル\filter\boxFilter\hpp</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

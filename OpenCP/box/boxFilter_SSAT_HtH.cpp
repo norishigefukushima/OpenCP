@@ -46,7 +46,7 @@ void boxFilter_SSAT_HtH_AVX::filter()
 
 
 RowSumFilter_HtH_nonVec::RowSumFilter_HtH_nonVec(cv::Mat& _src, cv::Mat& _dest, int _r, int _parallelType)
-	: boxFilter_base(_src, _dest, _r, _parallelType)
+	: BoxFilterBase(_src, _dest, _r, _parallelType)
 {
 	
 }

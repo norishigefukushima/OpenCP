@@ -902,7 +902,7 @@ void GuidedImageFilterTiling::filter_func(GuidedTypes guidedType)
 	if (div.area() == 1)
 	{
 		
-		guidedImageFilter(src, guide, dest, r, eps, guidedType, BoxTypes::BOX_OPENCV, ParallelTypes::NAIVE);
+		guidedImageFilter(src, guide, dest, r, eps, guidedType, BoxFilterMethod::OPENCV, ParallelTypes::NAIVE);
 	}
 	else
 	{
@@ -919,7 +919,7 @@ void GuidedImageFilterTiling::filter_func(GuidedTypes guidedType)
 				cropTileAlign(guide, guide_sub_vec[sub_index], div, idx, 2 * r, BORDER_REPLICATE);
 
 				Mat temp(src_sub_vec[sub_index].size(), CV_32FC1);
-				guidedImageFilter(src_sub_vec[sub_index], guide_sub_vec[sub_index], temp, r, eps, guidedType, BoxTypes::BOX_OPENCV, ParallelTypes::NAIVE);
+				guidedImageFilter(src_sub_vec[sub_index], guide_sub_vec[sub_index], temp, r, eps, guidedType, BoxFilterMethod::OPENCV, ParallelTypes::NAIVE);
 
 				pasteTile(temp, dest, div, idx, 2 * r);
 			}
@@ -945,7 +945,7 @@ void GuidedImageFilterTiling::filter_func(GuidedTypes guidedType)
 				merge(guide_sub_temp, guide_sub_vec[sub_index]);
 
 				Mat temp(src_sub_vec[sub_index].size(), CV_32FC1);
-				guidedImageFilter(src_sub_vec[sub_index], guide_sub_vec[sub_index], temp, r, eps, guidedType, BoxTypes::BOX_OPENCV, ParallelTypes::NAIVE);
+				guidedImageFilter(src_sub_vec[sub_index], guide_sub_vec[sub_index], temp, r, eps, guidedType, BoxFilterMethod::OPENCV, ParallelTypes::NAIVE);
 
 				pasteTile(temp, dest, div, idx, 2 * r);
 			}

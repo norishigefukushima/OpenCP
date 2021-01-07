@@ -1,10 +1,10 @@
 #pragma once
 
-#include "boxFilter_Base.h"
+#include "boxFilter.hpp"
 
 //one pass integral image
 
-class boxFilter_Integral_OnePass : public boxFilter_base
+class boxFilter_Integral_OnePass : public cp::BoxFilterBase
 {
 protected:
 	cv::Mat sum;
@@ -19,7 +19,7 @@ public:
 	boxFilter_Integral_OnePass(cv::Mat& _src, cv::Mat& _dest, int _r, int _parallelType);
 };
 
-class boxFilter_Integral_OnePass_8u : public boxFilter_base
+class boxFilter_Integral_OnePass_8u : public cp::BoxFilterBase
 {
 protected:
 	cv::Mat sum;
@@ -35,7 +35,7 @@ public:
 
 
 
-class boxFilter_Integral_OnePass_Area : public boxFilter_base
+class boxFilter_Integral_OnePass_Area : public cp::BoxFilterBase
 {
 protected:
 	cv::Mat copy;

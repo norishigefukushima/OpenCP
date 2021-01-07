@@ -181,7 +181,7 @@ namespace cp
 	}
 #pragma endregion
 
-	void guidedImageFilter(cv::InputArray src_, cv::InputArray guide_, cv::OutputArray dest, const int r, const float eps, const GuidedTypes guidedType, const BoxTypes boxType, const ParallelTypes parallelType)
+	void guidedImageFilter(cv::InputArray src_, cv::InputArray guide_, cv::OutputArray dest, const int r, const float eps, const GuidedTypes guidedType, const BoxFilterMethod boxType, const ParallelTypes parallelType)
 	{
 		cv::Mat src = src_.getMat();
 		cv::Mat guide = guide_.getMat();
@@ -266,7 +266,7 @@ namespace cp
 		}
 	}
 
-	void GuidedImageFilter::setBoxType(const int type)
+	void GuidedImageFilter::setBoxType(const BoxFilterMethod type)
 	{
 		box_type = type;
 	}

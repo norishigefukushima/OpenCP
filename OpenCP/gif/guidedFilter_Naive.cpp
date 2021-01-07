@@ -245,14 +245,14 @@ void guidedFilter_Naive::computeCovariance(const int depth)
 	const int AVX = 2;
 	int implementation = NAIVE;
 
-	if (boxType == BOX_NAIVE_SSE || boxType == BOX_INTEGRAL_SSE || boxType == BOX_SEPARABLE_HV_SSE
-		|| boxType == BOX_SSAT_HV_SSE || boxType == BOX_SSAT_HtH_SSE || boxType == BOX_SSAT_VH_SSE)
+	if (boxType == BoxFilterMethod::NAIVE_SSE || boxType == BoxFilterMethod::INTEGRAL_SSE || boxType == BoxFilterMethod::SEPARABLE_HV_SSE
+		|| boxType == BoxFilterMethod::SSAT_HV_SSE || boxType == BoxFilterMethod::SSAT_HtH_SSE || boxType == BoxFilterMethod::SSAT_VH_SSE)
 	{
 		implementation = 1;
 	}
-	else if (boxType == BOX_OPENCV ||
-		boxType == BOX_NAIVE_AVX || boxType == BOX_INTEGRAL_AVX || boxType == BOX_SEPARABLE_HV_AVX
-		|| boxType == BOX_SSAT_HV_AVX || boxType == BOX_SSAT_HtH_AVX || boxType == BOX_SSAT_VH_AVX)
+	else if (boxType == BoxFilterMethod::OPENCV ||
+		boxType == BoxFilterMethod::NAIVE_AVX || boxType == BoxFilterMethod::INTEGRAL_AVX || boxType == BoxFilterMethod::SEPARABLE_HV_AVX
+		|| boxType == BoxFilterMethod::SSAT_HV_AVX || boxType == BoxFilterMethod::SSAT_HtH_AVX || boxType == BoxFilterMethod::SSAT_VH_AVX)
 	{
 		implementation = 2;
 	}

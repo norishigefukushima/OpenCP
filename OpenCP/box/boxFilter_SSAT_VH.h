@@ -1,6 +1,6 @@
 #pragma once
 
-#include "boxFilter_Base.h"
+#include "boxFilter.hpp"
 
 /*
  * SSATÅiêÇíº -> êÖïΩÅj
@@ -42,7 +42,7 @@ public:
 
 
 
-class RowSumFilter_VH : public boxFilter_base
+class RowSumFilter_VH : public cp::BoxFilterBase
 {
 private:
 	int cn;
@@ -52,13 +52,13 @@ private:
 	void operator()(const cv::Range& range) const override;
 public:
 	RowSumFilter_VH(cv::Mat& _src, cv::Mat& _dest, int _r, int _parallelType)
-		: boxFilter_base(_src, _dest, _r, _parallelType)
+		: BoxFilterBase(_src, _dest, _r, _parallelType)
 	{
 		cn = src.channels();
 	}
 };
 
-class ColumnSumFilter_VH_nonVec : public boxFilter_base
+class ColumnSumFilter_VH_nonVec : public cp::BoxFilterBase
 {
 protected:
 	int cn;
@@ -69,7 +69,7 @@ protected:
 	void operator()(const cv::Range& range) const override;
 public:
 	ColumnSumFilter_VH_nonVec(cv::Mat& _src, cv::Mat& _dest, int _r, int _parallelType)
-		: boxFilter_base(_src, _dest, _r, _parallelType)
+		: BoxFilterBase(_src, _dest, _r, _parallelType)
 	{
 		cn = src.channels();
 		step = col * cn;

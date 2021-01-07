@@ -5,7 +5,7 @@
 class guidedFilter_Naive_Share : public cp::GuidedFilterBase
 {
 protected:
-	int boxType;
+	cp::BoxFilterMethod boxType;
 	int parallelType;
 
 	cv::Mat mean_I;
@@ -79,7 +79,7 @@ protected:
 
 public:
 
-	guidedFilter_Naive_Share(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps, int _boxType, int _parallelType)
+	guidedFilter_Naive_Share(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps, const cp::BoxFilterMethod _boxType, int _parallelType)
 		: cp::GuidedFilterBase(_src, _guide, _dest, _r, _eps), boxType(_boxType), parallelType(_parallelType)
 	{
 		implementation = cp::GUIDED_NAIVE_SHARE;

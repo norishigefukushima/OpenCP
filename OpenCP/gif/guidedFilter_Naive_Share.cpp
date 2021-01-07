@@ -305,8 +305,8 @@ void guidedFilter_Naive_Share::computeCovariance(const int depth)
 	{
 		if (parallelType == ParallelTypes::NAIVE)
 		{
-			if (boxType == BOX_NAIVE_SSE || boxType == BOX_INTEGRAL_SSE || boxType == BOX_SEPARABLE_HV_SSE
-				|| boxType == BOX_SSAT_HV_SSE || boxType == BOX_SSAT_HtH_SSE || boxType == BOX_SSAT_VH_SSE)
+			if (boxType == BoxFilterMethod::NAIVE_SSE || boxType == BoxFilterMethod::INTEGRAL_SSE || boxType == BoxFilterMethod::SEPARABLE_HV_SSE ||
+				boxType == BoxFilterMethod::SSAT_HV_SSE || boxType == BoxFilterMethod::SSAT_HtH_SSE || boxType == BoxFilterMethod::SSAT_VH_SSE)
 			{
 				for (int i = 0; i < height; i++)
 				{
@@ -384,8 +384,8 @@ void guidedFilter_Naive_Share::computeCovariance(const int depth)
 					}
 				}
 			}
-			else if (boxType == BOX_NAIVE_AVX || boxType == BOX_INTEGRAL_AVX || boxType == BOX_SEPARABLE_HV_AVX
-				|| boxType == BOX_SSAT_HV_AVX || boxType == BOX_SSAT_HtH_AVX || boxType == BOX_SSAT_VH_AVX)
+			else if (boxType == BoxFilterMethod::NAIVE_AVX || boxType == BoxFilterMethod::INTEGRAL_AVX || boxType == BoxFilterMethod::SEPARABLE_HV_AVX ||
+				boxType == BoxFilterMethod::SSAT_HV_AVX || boxType == BoxFilterMethod::SSAT_HtH_AVX || boxType == BoxFilterMethod::SSAT_VH_AVX)
 			{
 				for (int i = 0; i < height; i++)
 				{
@@ -504,8 +504,8 @@ void guidedFilter_Naive_Share::computeCovariance(const int depth)
 		}
 		else
 		{
-			if (boxType == BOX_NAIVE_SSE || boxType == BOX_INTEGRAL_SSE || boxType == BOX_SEPARABLE_HV_SSE
-				|| boxType == BOX_SSAT_HV_SSE || boxType == BOX_SSAT_HtH_SSE || boxType == BOX_SSAT_VH_SSE)
+			if (boxType == BoxFilterMethod::NAIVE_SSE || boxType == BoxFilterMethod::INTEGRAL_SSE || boxType == BoxFilterMethod::SEPARABLE_HV_SSE ||
+				boxType == BoxFilterMethod::SSAT_HV_SSE || boxType == BoxFilterMethod::SSAT_HtH_SSE || boxType == BoxFilterMethod::SSAT_VH_SSE)
 			{
 #pragma omp parallel for
 				for (int i = 0; i < height; i++)
@@ -584,8 +584,8 @@ void guidedFilter_Naive_Share::computeCovariance(const int depth)
 					}
 				}
 			}
-			else if (boxType == BOX_NAIVE_AVX || boxType == BOX_INTEGRAL_AVX || boxType == BOX_SEPARABLE_HV_AVX
-				|| boxType == BOX_SSAT_HV_AVX || boxType == BOX_SSAT_HtH_AVX || boxType == BOX_SSAT_VH_AVX)
+			else if (boxType == BoxFilterMethod::NAIVE_AVX || boxType == BoxFilterMethod::INTEGRAL_AVX || boxType == BoxFilterMethod::SEPARABLE_HV_AVX ||
+				boxType == BoxFilterMethod::SSAT_HV_AVX || boxType == BoxFilterMethod::SSAT_HtH_AVX || boxType == BoxFilterMethod::SSAT_VH_AVX)
 			{
 #pragma omp parallel for
 				for (int i = 0; i < height; i++)
@@ -788,9 +788,9 @@ void guidedFilter_Naive_Share::computeCovariance(const int depth)
 					}
 				}
 			}*/
-			if (boxType == BOX_OPENCV ||
-				boxType == BOX_NAIVE_AVX || boxType == BOX_INTEGRAL_AVX || boxType == BOX_SEPARABLE_HV_AVX
-				|| boxType == BOX_SSAT_HV_AVX || boxType == BOX_SSAT_HtH_AVX || boxType == BOX_SSAT_VH_AVX)
+			if (boxType == BoxFilterMethod::OPENCV ||
+				boxType == BoxFilterMethod::NAIVE_AVX || boxType == BoxFilterMethod::INTEGRAL_AVX || boxType == BoxFilterMethod::SEPARABLE_HV_AVX ||
+				boxType == BoxFilterMethod::SSAT_HV_AVX || boxType == BoxFilterMethod::SSAT_HtH_AVX || boxType == BoxFilterMethod::SSAT_VH_AVX)
 			{
 				for (int i = 0; i < height; i++)
 				{
@@ -990,9 +990,9 @@ void guidedFilter_Naive_Share::computeCovariance(const int depth)
 						}
 					}
 				}*/
-			if (boxType == BOX_OPENCV ||
-				boxType == BOX_NAIVE_AVX || boxType == BOX_INTEGRAL_AVX || boxType == BOX_SEPARABLE_HV_AVX
-				|| boxType == BOX_SSAT_HV_AVX || boxType == BOX_SSAT_HtH_AVX || boxType == BOX_SSAT_VH_AVX)
+			if (boxType == BoxFilterMethod::OPENCV ||
+				boxType == BoxFilterMethod::NAIVE_AVX || boxType == BoxFilterMethod::INTEGRAL_AVX || boxType == BoxFilterMethod::SEPARABLE_HV_AVX ||
+				boxType == BoxFilterMethod::SSAT_HV_AVX || boxType == BoxFilterMethod::SSAT_HtH_AVX || boxType == BoxFilterMethod::SSAT_VH_AVX)
 			{
 #pragma omp parallel for
 				for (int i = 0; i < height; i++)

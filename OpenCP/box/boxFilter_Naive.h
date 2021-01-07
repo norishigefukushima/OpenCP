@@ -1,10 +1,10 @@
 #pragma once
 
-#include "boxFilter_Base.h"
+#include "boxFilter.hpp"
 
 //Naive implementation
 
-class boxFilter_Naive_nonVec_Gray : public boxFilter_base
+class boxFilter_Naive_nonVec_Gray : public cp::BoxFilterBase
 {
 protected:
 	int ksize;
@@ -43,7 +43,7 @@ public:
 		:boxFilter_Naive_nonVec_Gray(_src, _dest, _r, _parallelType) {}
 };
 
-class boxFilter_Naive_nonVec_Color : public boxFilter_base
+class boxFilter_Naive_nonVec_Color : public cp::BoxFilterBase
 {
 protected:
 	int ksize;

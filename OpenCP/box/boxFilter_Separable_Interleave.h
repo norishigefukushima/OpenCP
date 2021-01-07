@@ -1,8 +1,8 @@
 #pragma once
 
-#include "boxFilter_Base.h"
+#include "boxFilter.hpp"
 
-class boxFilter_Separable_VHI_nonVec : public boxFilter_base
+class boxFilter_Separable_VHI_nonVec : public cp::BoxFilterBase
 {
 protected:
 	int ksize;
