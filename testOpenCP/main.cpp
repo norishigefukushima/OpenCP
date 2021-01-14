@@ -138,9 +138,9 @@ int main(int argc, char** argv)
 	//testsimd(); return 0;
 
 	//testHistogram(); return 0;
-	//testPlot(); return 0;
+	testPlot(); return 0;
 	//testPlot2D(); return 0;
-	testGuidedImageFilter(Mat(), Mat()); return 0;
+	//testGuidedImageFilter(Mat(), Mat()); return 0;
 	//guiHazeRemoveTest();
 
 	//testCropZoom(); return 0;

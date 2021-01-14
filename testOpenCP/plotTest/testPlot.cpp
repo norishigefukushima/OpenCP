@@ -14,6 +14,24 @@ void testPlot()
 		test.setYRange(-1, 1);
 		test.setXRange(0, 320);
 		const int amp = 100;
+		double scale = 0.95;
+		for (int i = 0; i < int(CV_PI * amp); i++)
+		{
+			test.push_back(i, scale*sin(CV_PI * i * 1.0 / amp));
+		}
+
+		test.plot();
+	}
+
+	if (false)
+	{
+		Plot test;
+		test.setPlotTitle(0, "sin(x)");
+		test.setXLabel("x label");
+		test.setYLabel("y label");
+		test.setYRange(-1, 1);
+		test.setXRange(0, 320);
+		const int amp = 100;
 
 		for (int i = 0; i < int(CV_PI * amp); i++)
 		{

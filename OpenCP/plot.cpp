@@ -800,7 +800,20 @@ namespace cp
 				}
 			}
 			//y coordinate			
-			if (ymax_plotwindow - ymin_plotwindow < 5)
+			if (ymax_plotwindow - ymin_plotwindow < 0.01)
+			{
+				buff = format("%g", ymin_plotwindow);
+				cv::addText(render, buff, Point(origin.x, (int)(origin.y * 1.0 + plotImage.rows)), font, fontSize2, COLOR_BLACK);
+				buff = format("%g", (ymax_plotwindow - ymin_plotwindow) * 0.5 + ymin_plotwindow);
+				cv::addText(render, buff, Point(origin.x, (int)(origin.y * 1.0 + plotImage.rows * 0.5)), font, fontSize2, COLOR_BLACK);
+				buff = format("%g", (ymax_plotwindow - ymin_plotwindow) * 0.25 + ymin_plotwindow);
+				cv::addText(render, buff, Point(origin.x, (int)(origin.y * 1.0 + plotImage.rows * 0.75)), font, fontSize2, COLOR_BLACK);
+				buff = format("%g", (ymax_plotwindow - ymin_plotwindow) * 0.75 + ymin_plotwindow);
+				cv::addText(render, buff, Point(origin.x, (int)(origin.y * 1.0 + plotImage.rows * 0.25)), font, fontSize2, COLOR_BLACK);
+				buff = format("%g", ymax_plotwindow);
+				cv::addText(render, buff, Point(origin.x, origin.y), font, fontSize2, COLOR_BLACK);
+			}
+			else if (ymax_plotwindow - ymin_plotwindow < 5)
 			{
 				buff = format("%.2f", ymin_plotwindow);
 				cv::addText(render, buff, Point(origin.x, (int)(origin.y * 1.0 + plotImage.rows)), font, fontSize2, COLOR_BLACK);
@@ -1089,20 +1102,24 @@ namespace cp
 		generateKeyImage(data_max);
 
 		computeDataMaxMin();
+
+		bool isUseMinmaxBar = (xmax_data > 1 && ymax_data > 1);
 		const int xmin = xmin_data;
 		const int xmax = xmax_data;
 		const int ymin = ymin_data;
 		const int ymax = ymax_data;
 
 		int xminbar = xmin;
-		if (xmax != 0)createTrackbar("xmin", wname, &xminbar, xmax); setTrackbarMin("xmin", wname, xmin);
 		int xmaxbar = xmax;
-		if (xmax != 0)createTrackbar("xmax", wname, &xmaxbar, xmax); setTrackbarMin("xmax", wname, xmin);
 		int yminbar = ymin;
-		if (ymax != 0)createTrackbar("ymin", wname, &yminbar, ymax); setTrackbarMin("ymin", wname, ymin);
 		int ymaxbar = ymax;
-		if (ymax != 0)createTrackbar("ymax", wname, &ymaxbar, ymax); setTrackbarMin("ymax", wname, ymin);
-
+		if (isUseMinmaxBar)
+		{
+			if (xmax != 0)createTrackbar("xmin", wname, &xminbar, xmax); setTrackbarMin("xmin", wname, xmin);
+			if (xmax != 0)createTrackbar("xmax", wname, &xmaxbar, xmax); setTrackbarMin("xmax", wname, xmin);
+			if (ymax != 0)createTrackbar("ymin", wname, &yminbar, ymax); setTrackbarMin("ymin", wname, ymin);
+			if (ymax != 0)createTrackbar("ymax", wname, &ymaxbar, ymax); setTrackbarMin("ymax", wname, ymin);
+		}
 		const double margin_ratio = 1.0;//0.9
 		if (!isSetXRange)
 		{
@@ -1140,10 +1157,13 @@ namespace cp
 
 		while (keyboard != 'q')
 		{
-			xmin_data = xminbar;
-			xmax_data = xmaxbar;
-			ymin_data = yminbar;
-			ymax_data = ymaxbar;
+			if (isUseMinmaxBar)
+			{
+				xmin_data = xminbar;
+				xmax_data = xmaxbar;
+				ymin_data = yminbar;
+				ymax_data = ymaxbar;
+			}
 
 			if (!isSetXRange)
 			{

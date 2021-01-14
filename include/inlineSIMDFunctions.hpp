@@ -43,7 +43,7 @@ inline void get_simd_widthend(const int cv_depth, const int channels, const int 
 	}
 }
 
-/*
+
 inline void _mm_transposel_epi8(__m128i& s0, __m128i& s1, __m128i& s2, __m128i& s3, __m128i& s4, __m128i& s5, __m128i& s6, __m128i& s7)
 {
 	__m128i t[8];
@@ -70,7 +70,7 @@ inline void _mm_transposel_epi8(__m128i& s0, __m128i& s1, __m128i& s2, __m128i& 
 	s6 = t[6];
 	s7 = t[7];
 }
-*/
+
 #define _MM256_TRANSPOSE4_PD(in_row0, in_row1, in_row2, in_row3		\
 						, out_row0, out_row1, out_row2, out_row3) {	\
 	__m256d tmp0, tmp1, tmp2, tmp3;									\

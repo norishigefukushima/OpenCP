@@ -134,14 +134,14 @@ namespace cp
 
 		/*enum KEY
 		{
-			NOKEY,
-			RIGHT_TOP,
-			LEFT_TOP,
-			LEFT_BOTTOM,
-			RIGHT_BOTTOM,
-			FLOATING,
+			cp::Plot::NOKEY,
+			cp::Plot::RIGHT_TOP,
+			cp::Plot::LEFT_TOP,
+			cp::Plot::LEFT_BOTTOM,
+			cp::Plot::RIGHT_BOTTOM,
+			cp::Plot::FLOATING,
 
-			KEY_METHOD_SIZE
+			cp::Plot::KEY_METHOD_SIZE
 		};
 		*/
 		void setKey(const KEY key_method);
