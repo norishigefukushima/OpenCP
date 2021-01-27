@@ -3,11 +3,13 @@
 #include <opencv2/imgproc.hpp>
 #include <string>
 
-#define print_debug(a)              std::cout << #a << ": " << a << std::endl
-#define print_debug2(a, b)          std::cout << #a << ": " << a <<", "<< #b << ": " << b << std::endl
-#define print_debug3(a, b, c)       std::cout << #a << ": " << a <<", "<< #b << ": " << b <<", "<< #c << ": " << c << std::endl;
-#define print_debug4(a, b, c, d)    std::cout << #a << ": " << a <<", "<< #b << ": " << b <<", "<< #c << ": " << c <<", "<< #d << ": " << d << std::endl;
-#define print_debug5(a, b, c, d, e) std::cout << #a << ": " << a <<", "<< #b << ": " << b <<", "<< #c << ": " << c <<", "<< #d << ": " << d <<", "<< #e << ": " << e << std::endl;
+#define print_debug(a)						std::cout << #a << ": " << a << std::endl
+#define print_debug2(a, b)					std::cout << #a << ": " << a <<", "<< #b << ": " << b << std::endl
+#define print_debug3(a, b, c)				std::cout << #a << ": " << a <<", "<< #b << ": " << b <<", "<< #c << ": " << c << std::endl;
+#define print_debug4(a, b, c, d)			std::cout << #a << ": " << a <<", "<< #b << ": " << b <<", "<< #c << ": " << c <<", "<< #d << ": " << d << std::endl;
+#define print_debug5(a, b, c, d, e)			std::cout << #a << ": " << a <<", "<< #b << ": " << b <<", "<< #c << ": " << c <<", "<< #d << ": " << d <<", "<< #e << ": " << e << std::endl;
+#define print_debug6(a, b, c, d, e, f)		std::cout << #a << ": " << a <<", "<< #b << ": " << b <<", "<< #c << ": " << c <<", "<< #d << ": " << d <<", "<< #e << ": " << e <<", "<< #f << ": " << f << std::endl;
+#define print_debug7(a, b, c, d, e, f, g)	std::cout << #a << ": " << a <<", "<< #b << ": " << b <<", "<< #c << ": " << c <<", "<< #d << ": " << d <<", "<< #e << ": " << e <<", "<< #f << ": " << f << ", "<< #g << ": " << g <<std::endl;
 
 namespace cp
 {

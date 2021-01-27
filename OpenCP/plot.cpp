@@ -894,8 +894,11 @@ namespace cp
 
 	void Plot::generateKeyImage(int num)
 	{
-		int step = 24;
-		keyImage.create(Size(256, step * (num + 1) + 3), CV_8UC3);
+		const int step = 24;
+		const int offset = 3;
+
+		keyImage.release();
+		keyImage.create(Size(256, step * (num + 2) + offset), CV_8UC3);
 		keyImage.setTo(background_color);
 
 		int height = (int)(0.8 * keyImage.rows);
@@ -913,16 +916,16 @@ namespace cp
 			{
 				if (foregroundIndex == i + 1)
 				{
-					cv::addText(keyImage, "*" + pinfo[i].title, Point(0, (i + 1) * step + 3), font, fontSize + 2, pinfo[i].color);
+					cv::addText(keyImage, "*" + pinfo[i].title, Point(0, (i + 1) * step + offset), font, fontSize + 2, pinfo[i].color);
 				}
 				else
 				{
-					cv::addText(keyImage, pinfo[i].title, Point(0, (i + 1) * step + 3), font, fontSize, pinfo[i].color);
+					cv::addText(keyImage, pinfo[i].title, Point(0, (i + 1) * step + offset), font, fontSize, pinfo[i].color);
 				}
 			}
 			else
 			{
-				cv::addText(keyImage, pinfo[i].title, Point(0, (i + 1) * step + 3), font, fontSize, pinfo[i].color);
+				cv::addText(keyImage, pinfo[i].title, Point(0, (i + 1) * step + offset), font, fontSize, pinfo[i].color);
 			}
 		}
 	}
@@ -1104,10 +1107,10 @@ namespace cp
 		computeDataMaxMin();
 
 		bool isUseMinmaxBar = (xmax_data > 1 && ymax_data > 1);
-		const int xmin = xmin_data;
-		const int xmax = xmax_data;
-		const int ymin = ymin_data;
-		const int ymax = ymax_data;
+		const int xmin = (int)xmin_data;
+		const int xmax = (int)xmax_data;
+		const int ymin = (int)ymin_data;
+		const int ymax = (int)ymax_data;
 
 		int xminbar = xmin;
 		int xmaxbar = xmax;
