@@ -69,6 +69,7 @@
 #include "GaussianFilter.hpp"
 #include "GaussianFilterSpectralRecursive.hpp"
 #include "guidedFilter.hpp"
+#include "highDimensionalGaussianFilter.hpp"
 #include "jointBilateralFilter.hpp"
 #include "jointDualBilateralFilter.hpp"
 #include "jointNearestFilter.hpp"

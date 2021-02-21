@@ -1108,9 +1108,9 @@ namespace cp
 
 		bool isUseMinmaxBar = (xmax_data > 1 && ymax_data > 1);
 		const int xmin = (int)xmin_data;
-		const int xmax = (int)xmax_data;
+		const int xmax = (int)ceil(xmax_data);
 		const int ymin = (int)ymin_data;
-		const int ymax = (int)ymax_data;
+		const int ymax = (int)ceil(ymax_data);
 
 		int xminbar = xmin;
 		int xmaxbar = xmax;

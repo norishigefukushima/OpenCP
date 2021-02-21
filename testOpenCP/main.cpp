@@ -138,7 +138,7 @@ int main(int argc, char** argv)
 	//testsimd(); return 0;
 
 	//testHistogram(); return 0;
-	testPlot(); return 0;
+	//testPlot(); return 0;
 	//testPlot2D(); return 0;
 	//testGuidedImageFilter(Mat(), Mat()); return 0;
 	//guiHazeRemoveTest();
@@ -167,6 +167,7 @@ int main(int argc, char** argv)
 #pragma endregion
 
 #pragma region filter
+	highDimentionalGaussianFilterTest(img); return 0;
 	//testWeightedHistogramFilterDisparity(); return 0;
 	//testWeightedHistogramFilter();return 0;
 #pragma endregion 

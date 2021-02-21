@@ -47,6 +47,9 @@ void guiSeparableBilateralFilterTest(cv::Mat& src);
 void testWeightedHistogramFilter(cv::Mat& src, cv::Mat& guide);
 void testWeightedHistogramFilterDisparity();
 
+
+void highDimentionalGaussianFilterTest(cv::Mat& src);
+
 void guiGausianFilterTest(cv::Mat& src_);
 void guiRecursiveBilateralFilterTest(cv::Mat& src);
 void guiRealtimeO1BilateralFilterTest(cv::Mat& src);

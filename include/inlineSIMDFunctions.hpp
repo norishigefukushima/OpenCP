@@ -24,21 +24,21 @@ inline int get_simd_floor(const int val, const int simdwidth)
 	return (val / simdwidth) * simdwidth;
 }
 
-inline void get_simd_widthend(const int cv_depth, const int channels, const int image_width, int& dest_endwidth, int& dest_pad_pixels)
+inline void get_simd_width_end(const int cv_depth, const int channels, const int vector_length, const int image_width, int& dest_endwidth, int& dest_pad_pixels)
 {
-	if (cv_depth == CV_32F && image_width % 8 == 0)
+	if (cv_depth == CV_32F && image_width % vector_length == 0)
 	{
 		dest_endwidth = image_width;
 		dest_pad_pixels = 0;
 	}
-	else if (cv_depth == CV_32F && image_width % 8 != 0)
+	else if (cv_depth == CV_32F && image_width % vector_length != 0)
 	{
-		dest_endwidth = get_simd_floor(image_width, 8);
+		dest_endwidth = get_simd_floor(image_width, vector_length);
 		dest_pad_pixels = (image_width - dest_endwidth) * channels;
 	}
 	else if (cv_depth == CV_8U)
 	{
-		dest_endwidth = get_simd_floor(image_width - 8, 8);
+		dest_endwidth = get_simd_floor(image_width - vector_length, vector_length);
 		dest_pad_pixels = (image_width - dest_endwidth) * channels;
 	}
 }
@@ -891,6 +891,7 @@ inline double _mm256_reduceadd_pd(__m256d src)
 inline __m256 _mm256_div_avoidzerodiv_ps(const __m256 src1, const __m256 src2)
 {
 	return _mm256_div_ps(src1, _mm256_blendv_ps(src2, _mm256_set1_ps(FLT_MIN), _mm256_cmp_ps(src2, _mm256_setzero_ps(), 0)));
+	//return _mm256_div_ps(src1, _mm256_max_ps(src2, _mm256_set1_ps(FLT_EPSILON)));
 }
 
 inline __m256 _mm256_div_zerodivzero_ps(const __m256 src1, const __m256 src2)
@@ -1424,3 +1425,5 @@ inline void _mm256_argmin_ps(__m256& src, __m256& minval, __m256& argment, const
 	argment = _mm256_blendv_ps(argment, _mm256_set1_ps(index), mask);
 	minval = _mm256_blendv_ps(minval, src, mask);
 }
+
+

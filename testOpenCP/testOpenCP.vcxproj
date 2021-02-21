@@ -173,6 +173,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="bilateralfilter\bilateralFilterTest.cpp" />
+    <ClCompile Include="highDimentionalGaussianFilterTest.cpp" />
     <ClCompile Include="testColorCorrection.cpp" />
     <ClCompile Include="denoise\denoiseTest.cpp" />
     <ClCompile Include="disparityRefinement\disparityRefinementTest.cpp" />

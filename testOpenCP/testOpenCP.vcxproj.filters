@@ -141,6 +141,9 @@
     <ClCompile Include="testWeightedHistogramFilter.cpp">
       <Filter>ソース ファイル\test\filter</Filter>
     </ClCompile>
+    <ClCompile Include="highDimentionalGaussianFilterTest.cpp">
+      <Filter>ソース ファイル\test\filter</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="test.hpp">

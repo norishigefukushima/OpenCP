@@ -1,5 +1,8 @@
 #include "PermutohedralLattice.hpp"
+#include "inlineSIMDFunctions.hpp"
+#include "tiling.hpp"
 #include "timer.hpp"
+#include <omp.h>
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -10,190 +13,6 @@ using namespace cv;
 
 namespace cp
 {
-
-	class Window {
-	public:
-		Window() {
-			xstride = ystride = tstride = width = height = frames = channels = 0;
-			data = NULL;
-		}
-
-		Window(Window im, int mint_, int minx_, int miny_, int frames_, int width_, int height_) {
-			int mint = max(0, mint_);
-			int maxt = min(im.frames, mint_ + frames_);
-			int minx = max(0, minx_);
-			int maxx = min(im.width, minx_ + width_);
-			int miny = max(0, miny_);
-			int maxy = min(im.height, miny_ + height_);
-
-			xstride = im.xstride;
-			ystride = im.ystride;
-			tstride = im.tstride;
-
-			width = maxx - minx;
-			height = maxy - miny;
-			frames = maxt - mint;
-			channels = im.channels;
-
-			data = im.data + mint * tstride + miny * ystride + minx * xstride;
-		}
-
-		float *operator()(int t, int x, int y) {
-			return data + t * tstride + x * xstride + y * ystride;
-		}
-
-		float *operator()(int x, int y) {
-			return data + x * xstride + y * ystride;
-		}
-
-		float *operator()(int x) {
-			return data + x * xstride;
-		}
-
-
-		int width, height, frames, channels;
-		int xstride, ystride, tstride;
-		float *data;
-
-	};
-
-	class Image : public Window {
-	public:
-		Image() : refCount(NULL)
-		{
-			width = frames = height = channels = 0;
-			xstride = ystride = tstride = 0;
-			data = NULL;
-		}
-
-		Image(int frames_, int width_, int height_, int channels_, const float *data_ = NULL)
-		{
-			frames = frames_;
-			width = width_;
-			height = height_;
-			channels = channels_;
-
-			long long memory = ((long long)frames_ *
-				(long long)height_ *
-				(long long)width_ *
-				(long long)channels_);
-
-			data = new float[memory];
-			if (!data_) memset(data, 0, memory * sizeof(float));
-			else memcpy(data, data_, memory * sizeof(float));
-
-			xstride = channels;
-			ystride = xstride * width;
-			tstride = ystride * height;
-			refCount = new int;
-			*refCount = 1;
-
-			//printf("Making new image "); 
-			//debug();
-		}
-
-		// does not copy data
-
-		Image &operator=(const Image &im) {
-			if (refCount) {
-				refCount[0]--;
-				if (*refCount <= 0) {
-					delete refCount;
-					delete[] data;
-				}
-			}
-
-			width = im.width;
-			height = im.height;
-			channels = im.channels;
-			frames = im.frames;
-
-			data = im.data;
-
-			xstride = channels;
-			ystride = xstride * width;
-			tstride = ystride * height;
-
-			refCount = im.refCount;
-			if (refCount) refCount[0]++;
-
-			return *this;
-		}
-
-		Image(const Image &im) {
-			width = im.width;
-			height = im.height;
-			channels = im.channels;
-			frames = im.frames;
-
-			data = im.data;
-			xstride = channels;
-			ystride = xstride * width;
-			tstride = ystride * height;
-
-			refCount = im.refCount;
-			if (refCount) refCount[0]++;
-		}
-
-		// copies data from the window
-		Image(Window im) {
-			width = im.width;
-			height = im.height;
-			channels = im.channels;
-			frames = im.frames;
-
-			xstride = channels;
-			ystride = xstride * width;
-			tstride = ystride * height;
-
-			refCount = new int;
-			*refCount = 1;
-			long long memory = ((long long)width *
-				(long long)height *
-				(long long)channels *
-				(long long)frames);
-			data = new float[memory];
-
-			for (int t = 0; t < frames; t++) {
-				for (int y = 0; y < height; y++) {
-					for (int x = 0; x < width; x++) {
-						for (int c = 0; c < channels; c++) {
-							(*this)(t, x, y)[c] = im(t, x, y)[c];
-						}
-					}
-				}
-			}
-
-		}
-
-		// makes a new copy of this image
-		Image copy() {
-			return Image(*((Window *)this));
-		}
-
-
-		~Image()
-		{
-			if (!refCount)
-			{
-				return; // the image was a dummy
-			}
-
-			refCount[0]--;
-			if (*refCount <= 0) {
-				delete refCount;
-				delete[] data;
-			}
-		}
-
-		int *refCount;
-
-	protected:
-		Image &operator=(Window im) {
-			return *this;
-		}
-	};
-
 	/***************************************************************/
 	/* Hash table implementation for permutohedral lattice
 	*
@@ -202,29 +21,37 @@ namespace cp
 	* dimensional space.
 	*/
 	/***************************************************************/
-	class HashTablePermutohedral {
+	class HashTablePermutohedral
+	{
 	public:
 		/* Constructor
 		*  kd_: the dimensionality of the position vectors on the hyperplane.
 		*  vd_: the dimensionality of the value vectors
 		*/
-		HashTablePermutohedral(int kd_, int vd_) : kd(kd_), vd(vd_) {
+		HashTablePermutohedral(int kd_, int vd_) : kd(kd_), vd(vd_)
+		{
 			capacity = 1 << 15;
 			filled = 0;
 			entries = new Entry[capacity];
-			keys = new short[kd*capacity / 2];
-			values = new float[vd*capacity / 2];
-			memset(values, 0, sizeof(float)*vd*capacity / 2);
+			keys = new short[kd * capacity / 2];
+			values = new float[vd * capacity / 2];
+			memset(values, 0, sizeof(float) * vd * capacity / 2);
+		}
+		~HashTablePermutohedral()
+		{
+			delete[] entries;
+			delete[] keys;
+			delete[] values;
 		}
 
 		// Returns the number of vectors stored.
 		int size() { return (int)filled; }
 
 		// Returns a pointer to the keys array.
-		short *getKeys() { return keys; }
+		short* getKeys() { return keys; }
 
 		// Returns a pointer to the values array.
-		float *getValues() { return values; }
+		float* getValues() { return values; }
 
 		/* Returns the index into the hash table for a given key.
 		*     key: a pointer to the position vector.
@@ -232,23 +59,26 @@ namespace cp
 		*  create: a flag specifying whether an entry should be created,
 		*          should an entry with the given key not found.
 		*/
-		int lookupOffset(short *key, size_t h, bool create = true) {
+		int lookupOffset(short* key, size_t h, bool create = true)
+		{
 
 			// Double hash table size if necessary
 			if (filled >= (capacity / 2) - 1) { grow(); }
 
 			// Find the entry with the given key
-			while (1) {
+			while (1) 
+			{
 				Entry e = entries[h];
 				// check if the cell is empty
-				if (e.keyIdx == -1) {
+				if (e.keyIdx == -1)
+				{
 					if (!create) return -1; // Return not found.
 					// need to create an entry. Store the given key.
 					for (int i = 0; i < kd; i++)
-						keys[filled*kd + i] = key[i];
+						keys[filled * kd + i] = key[i];
 
-					e.keyIdx = (int)filled*kd;
-					e.valueIdx = (int)filled*vd;
+					e.keyIdx = (int)filled * kd;
+					e.valueIdx = (int)filled * vd;
 					entries[h] = e;
 					filled++;
 					return e.valueIdx;
@@ -271,7 +101,8 @@ namespace cp
 		*        k : pointer to the key vector to be looked up.
 		*   create : true if a non-existing key should be created.
 		*/
-		float *lookup(short *k, bool create = true) {
+		float* lookup(short* k, bool create = true)
+		{
 			size_t h = hash(k) % capacity;
 			int offset = lookupOffset(k, h, create);
 			if (offset < 0) return NULL;
@@ -279,9 +110,11 @@ namespace cp
 		};
 
 		/* Hash function used in this implementation. A simple base conversion. */
-		size_t hash(const short *key) {
+		size_t hash(const short* key)
+		{
 			size_t k = 0;
-			for (int i = 0; i < kd; i++) {
+			for (int i = 0; i < kd; i++)
+			{
 				k += key[i];
 				k *= 2531011;
 			}
@@ -290,32 +123,35 @@ namespace cp
 
 	private:
 		/* Grows the size of the hash table */
-		void grow() {
-			printf("Resizing hash table\n");
+		void grow()
+		{
+			//printf("Resizing hash table\n");
 
 			size_t oldCapacity = capacity;
 			capacity *= 2;
 
 			// Migrate the value vectors.
-			float *newValues = new float[vd*capacity / 2];
-			memset(newValues, 0, sizeof(float)*vd*capacity / 2);
-			memcpy(newValues, values, sizeof(float)*vd*filled);
+			float* newValues = new float[vd * capacity / 2];
+			memset(newValues, 0, sizeof(float) * vd * capacity / 2);
+			memcpy(newValues, values, sizeof(float) * vd * filled);
 			delete[] values;
 			values = newValues;
 
 			// Migrate the key vectors.
-			short *newKeys = new short[kd*capacity / 2];
-			memcpy(newKeys, keys, sizeof(short)*kd*filled);
+			short* newKeys = new short[kd * capacity / 2];
+			memcpy(newKeys, keys, sizeof(short) * kd * filled);
 			delete[] keys;
 			keys = newKeys;
 
-			Entry *newEntries = new Entry[capacity];
+			Entry* newEntries = new Entry[capacity];
 
 			// Migrate the table of indices.
-			for (size_t i = 0; i < oldCapacity; i++) {
+			for (size_t i = 0; i < oldCapacity; i++)
+			{
 				if (entries[i].keyIdx == -1) continue;
 				size_t h = hash(keys + entries[i].keyIdx) % capacity;
-				while (newEntries[h].keyIdx != -1) {
+				while (newEntries[h].keyIdx != -1)
+				{
 					h++;
 					if (h == capacity) h = 0;
 				}
@@ -332,9 +168,9 @@ namespace cp
 			int valueIdx;
 		};
 
-		short *keys;
-		float *values;
-		Entry *entries;
+		short* keys;
+		float* values;
+		Entry* entries;
 		size_t capacity, filled;
 		int kd, vd;
 	};
@@ -346,137 +182,67 @@ namespace cp
 	*
 	*/
 	/***************************************************************/
-	class PermutohedralLattice {
+	class PermutohedralLattice
+	{
 	public:
-
-		static void filter(Mat& im, Mat& ref, Mat& dest)
-		{
-			// Create lattice
-
-			PermutohedralLattice lattice(ref.channels(), im.channels() + 1, im.cols*im.rows);
-
-			// Splat into the lattice
-			printf("Splatting...\n");
-
-
-			float *col = new float[im.channels() + 1];
-			col[im.channels()] = 1.f; // homogeneous coordinate
-
-			float *imPtr = im.ptr<float>(0);
-			float *refPtr = ref.ptr<float>(0);
-
-			{
-				Timer t("Splatting");
-				for (int y = 0; y < im.rows; y++)
-				{
-					for (int x = 0; x < im.cols; x++)
-					{
-						memcpy(col, imPtr, sizeof(float)*im.channels());
-						imPtr += im.channels();
-
-						lattice.splat(refPtr, col);
-						refPtr += ref.channels();
-					}
-				}
-			}
-
-			// Blur the lattice
-		{
-			Timer t("Blurring");
-			lattice.blur();
-		}
-
-
-		// Slice from the lattice
-		{
-			Timer t("Slicing");
-			lattice.beginSlice();
-			float* dst = dest.ptr<float>(0);
-			for (int y = 0; y < im.rows; y++)
-			{
-				for (int x = 0; x < im.cols; x++)
-				{
-					lattice.slice(col);
-					float scale = 1.0f / col[im.channels()];
-
-
-					for (int c = 0; c < im.channels(); c++)
-					{
-						*dst++ = col[c] * scale;
-					}
-				}
-			}
-		}
-		delete[] col;
-		}
-
 		/* Filters given image against a reference image.
-		*   im : image to be bilateral-filtered.
+		*   src : image to be filtered.
 		*  ref : reference image whose edges are to be respected.
 		*/
-		static Image filter(Image im, Image ref) {
+		static void filter(const Mat& src, const Mat& ref, Mat& dest)
+		{
+			const int src_channels = src.channels();
+			const int ref_channels = ref.channels();
 			// Create lattice
 
-			PermutohedralLattice lattice(ref.channels, im.channels + 1, im.width*im.height*im.frames);
+			PermutohedralLattice lattice(ref.channels(), src.channels() + 1, src.cols * src.rows);
 
 			// Splat into the lattice
-			printf("Splatting...\n");
-
-
-			float *col = new float[im.channels + 1];
-			col[im.channels] = 1.f; // homogeneous coordinate
-
-			float *imPtr = im(0, 0, 0);
-			float *refPtr = ref(0, 0, 0);
+			AutoBuffer<float> col(src_channels + 1);
+			col[src_channels] = 1.f; // homogeneous coordinate
 
 			{
-				Timer t("Splatting");
-				for (int t = 0; t < im.frames; t++)
+				//Timer t("Splatting");
+				const float* srcPtr = src.ptr<float>();
+				const float* refPtr = ref.ptr<float>();
+				for (int y = 0; y < src.rows; y++)
 				{
-					for (int y = 0; y < im.height; y++)
+					for (int x = 0; x < src.cols; x++)
 					{
-						for (int x = 0; x < im.width; x++)
-						{
-							memcpy(col, imPtr, sizeof(float)*im.channels);
-							imPtr += im.channels;
-
-							lattice.splat(refPtr, col);
-							refPtr += ref.channels;
-						}
+						memcpy(col, srcPtr, sizeof(float) * src_channels);
+						//lattice.splat_<5>(refPtr, col);
+						lattice.splat(refPtr, col);
+						srcPtr += src_channels;
+						refPtr += ref_channels;
 					}
 				}
 			}
 
 			// Blur the lattice
-		{
-			Timer t("Blurring");
-			lattice.blur();
-		}
-
-		Image out(im.frames, im.width, im.height, im.channels);
-		// Slice from the lattice
-		{
-			Timer t("Slicing");
-			lattice.beginSlice();
-			float *outPtr = out(0, 0, 0);
-			for (int t = 0; t < im.frames; t++)
 			{
-				for (int y = 0; y < im.height; y++)
+				//Timer t("Blurring");
+				lattice.blur();
+			}
+
+
+			// Slice from the lattice
+			{
+				//Timer t("Slicing");
+				lattice.beginSlice();
+				float* dst = dest.ptr<float>();
+				for (int y = 0; y < src.rows; y++)
 				{
-					for (int x = 0; x < im.width; x++)
+					for (int x = 0; x < src.cols; x++)
 					{
 						lattice.slice(col);
-						float scale = 1.0f / col[im.channels];
-						for (int c = 0; c < im.channels; c++)
+						const float scale = 1.0f / col[src_channels];
+						for (int c = 0; c < src_channels; c++)
 						{
-							*outPtr++ = col[c] * scale;
+							*dst++ = col[c] * scale;
 						}
 					}
 				}
 			}
-		}
-		delete[] col;
-		return out;
 		}
 
 		/* Constructor
@@ -485,34 +251,43 @@ namespace cp
 		* nData_ : number of points in the input
 		*/
 		PermutohedralLattice(int d_, int vd_, int nData_) :
-			d(d_), vd(vd_), nData(nData_), hashTable(d_, vd_) {
+			dim(d_), sdim(vd_), nData(nData_), hashTable(d_, vd_)
+		{
 
+			CV_Assert(dim < 127);
+			CV_Assert(sdim < 127);
 			// Allocate storage for various arrays
-			elevated = new float[d + 1];
-			scaleFactor = new float[d];
+			elevated = new float[dim + 1];
+			scaleFactor = new float[dim];
 
-			greedy = new short[d + 1];
-			rank = new char[d + 1];
-			barycentric = new float[d + 2];
-			replay = new ReplayEntry[nData*(d + 1)];
+			greedy = new short[dim + 1];
+			rank = new char[dim + 1];
+			barycentric = new float[dim + 2];
+			replay = new ReplayEntry[nData * (dim + 1)];
 			nReplay = 0;
-			canonical = new short[(d + 1)*(d + 1)];
-			key = new short[d + 1];
+			canonical = new short[(dim + 1) * (dim + 1)];
+			key = new short[dim + 1];
 
 			// compute the coordinates of the canonical simplex, in which
 			// the difference between a contained point and the zero
 			// remainder vertex is always in ascending order. (See pg.4 of paper.)
-			for (int i = 0; i <= d; i++) {
-				for (int j = 0; j <= d - i; j++)
-					canonical[i*(d + 1) + j] = i;
-				for (int j = d - i + 1; j <= d; j++)
-					canonical[i*(d + 1) + j] = i - (d + 1);
+			for (int i = 0; i <= dim; i++)
+			{
+				for (int j = 0; j <= dim - i; j++)
+				{
+					canonical[i * (dim + 1) + j] = i;
+				}
+				for (int j = dim - i + 1; j <= dim; j++)
+				{
+					canonical[i * (dim + 1) + j] = i - (dim + 1);
+				}
 			}
 
 			// Compute parts of the rotation matrix E. (See pg.4-5 of paper.)      
-			for (int i = 0; i < d; i++) {
+			for (int i = 0; i < dim; i++)
+			{
 				// the diagonal entries for normalization
-				scaleFactor[i] = 1.0f / (sqrtf((float)(i + 1)*(i + 2)));
+				scaleFactor[i] = 1.0f / (sqrtf((float)(i + 1) * (i + 2)));
 
 				/* We presume that the user would like to do a Gaussian blur of standard deviation
 				* 1 in each dimension (or a total variance of d, summed over dimensions.)
@@ -526,52 +301,71 @@ namespace cp
 				*
 				* So we need to scale the space by (d+1)sqrt(2/3).
 				*/
-				scaleFactor[i] *= (d + 1)*sqrtf(2.0f / 3.f);
+				scaleFactor[i] *= (dim + 1) * sqrtf(2.0f / 3.f);
 			}
 		}
 
+		~PermutohedralLattice()
+		{
+			delete[] elevated;
+			delete[] scaleFactor;
+			delete[] greedy;
+			delete[] rank;
+			delete[] barycentric;
+			delete[] replay;
+			delete[] canonical;
+			delete[] key;
+		}
 
 		/* Performs splatting with given position and value vectors */
-		void splat(float *position, float *value)
+		void splat(const float* position, const float* value)
 		{
+			const int dim1 = dim + 1;//dim + 1
 			// first rotate position into the (d+1)-dimensional hyperplane
-			elevated[d] = -d*position[d - 1] * scaleFactor[d - 1];
+			elevated[dim] = -dim * position[dim - 1] * scaleFactor[dim - 1];
 
-			for (int i = d - 1; i > 0; i--)
+			for (int i = dim - 1; i > 0; i--)
+			{
 				elevated[i] = (elevated[i + 1] -
-				i*position[i - 1] * scaleFactor[i - 1] +
-				(i + 2)*position[i] * scaleFactor[i]);
-			elevated[0] = elevated[1] + 2 * position[0] * scaleFactor[0];
+					i * position[i - 1] * scaleFactor[i - 1] +
+					(i + 2) * position[i] * scaleFactor[i]);
+			}
+			elevated[0] = elevated[1] + 2.f * position[0] * scaleFactor[0];
 
 			// prepare to find the closest lattice points
-			float scale = 1.0f / (d + 1);
+			const float scale = 1.f / (dim1);
 			char* myrank = rank;
 			short* mygreedy = greedy;
 
 			// greedily search for the closest zero-colored lattice point
 			int sum = 0;
 
-			for (int i = 0; i <= d; i++)
+			for (int i = 0; i <= dim; i++)
 			{
 				float v = elevated[i] * scale;
-				float up = ceilf(v)*(d + 1);
-				float down = floorf(v)*(d + 1);
+				float up = ceilf(v) * (dim1);
+				float down = floorf(v) * (dim1);
 
-				if (up - elevated[i] < elevated[i] - down) mygreedy[i] = (short)up;
-				else mygreedy[i] = (short)down;
-
+				mygreedy[i] = (up - elevated[i] < elevated[i] - down) ? (short)up : (short)down;
 				sum += mygreedy[i];
 			}
-			sum /= d + 1;
+			sum /= dim1;
 
 			// rank differential to find the permutation between this simplex and the canonical one.
 			// (See pg. 3-4 in paper.)
-			memset(myrank, 0, sizeof(char)*(d + 1));
-			for (int i = 0; i < d; i++)
+			memset(myrank, 0, sizeof(char) * (dim1));
+			for (int i = 0; i < dim; i++)
 			{
-				for (int j = i + 1; j <= d; j++)
+				for (int j = i + 1; j <= dim; j++)
 				{
-					if (elevated[i] - mygreedy[i] < elevated[j] - mygreedy[j]) myrank[i]++; else myrank[j]++;
+					if (elevated[i] - mygreedy[i] < elevated[j] - mygreedy[j])
+					{
+						myrank[i]++;
+					}
+					else
+					{
+						myrank[j]++;
+					}
 				}
 			}
 
@@ -579,12 +373,12 @@ namespace cp
 			{
 				// sum too large - the point is off the hyperplane.
 				// need to bring down the ones with the smallest differential
-				for (int i = 0; i <= d; i++)
+				for (int i = 0; i <= dim; i++)
 				{
-					if (myrank[i] >= d + 1 - sum)
+					if (myrank[i] >= dim1 - sum)
 					{
-						mygreedy[i] -= d + 1;
-						myrank[i] += sum - (d + 1);
+						mygreedy[i] -= dim1;
+						myrank[i] += sum - (dim1);
 					}
 					else
 					{
@@ -596,12 +390,12 @@ namespace cp
 			{
 				// sum too small - the point is off the hyperplane
 				// need to bring up the ones with largest differential
-				for (int i = 0; i <= d; i++)
+				for (int i = 0; i <= dim; i++)
 				{
 					if (myrank[i] < -sum)
 					{
-						mygreedy[i] += d + 1;
-						myrank[i] += (d + 1) + sum;
+						mygreedy[i] += dim1;
+						myrank[i] += (dim1) + sum;
 					}
 					else
 					{
@@ -611,33 +405,156 @@ namespace cp
 			}
 
 			// Compute barycentric coordinates (See pg.10 of paper.)
-			memset(barycentric, 0, sizeof(float)*(d + 2));
-			for (int i = 0; i <= d; i++)
+			memset(barycentric, 0, sizeof(float) * (dim + 2));
+			for (int i = 0; i <= dim; i++)
 			{
-				barycentric[d - myrank[i]] += (elevated[i] - mygreedy[i]) * scale;
-				barycentric[d + 1 - myrank[i]] -= (elevated[i] - mygreedy[i]) * scale;
+				barycentric[dim - myrank[i]] += (elevated[i] - mygreedy[i]) * scale;
+				barycentric[dim + 1 - myrank[i]] -= (elevated[i] - mygreedy[i]) * scale;
 			}
-			barycentric[0] += 1.0f + barycentric[d + 1];
+			barycentric[0] += 1.f + barycentric[dim + 1];
 
 			// Splat the value into each vertex of the simplex, with barycentric weights.
-			for (int remainder = 0; remainder <= d; remainder++)
+			for (int remainder = 0; remainder <= dim; remainder++)
 			{
 				// Compute the location of the lattice point explicitly (all but the last coordinate - it's redundant because they sum to zero)
-				for (int i = 0; i < d; i++)
-					key[i] = mygreedy[i] + canonical[remainder*(d + 1) + myrank[i]];
+				for (int i = 0; i < dim; i++)
+				{
+					key[i] = mygreedy[i] + canonical[remainder * (dim1) + myrank[i]];
+				}
 
 				// Retrieve pointer to the value at this vertex.
-				float * val = hashTable.lookup(key, true);
+				float* val = hashTable.lookup(key, true);
 
 				// Accumulate values with barycentric weight.
-				for (int i = 0; i < vd; i++)
+				for (int i = 0; i < sdim; i++)
+				{
 					val[i] += barycentric[remainder] * value[i];
+				}
 
 				// Record this interaction to use later when slicing
 				replay[nReplay].offset = (int)(val - hashTable.getValues());
 				replay[nReplay].weight = barycentric[remainder];
 				nReplay++;
+			}
+		}
 
+		template<int DIM>
+		void splat_(const float* position, const float* value)
+		{
+			// first rotate position into the (d+1)-dimensional hyperplane
+			elevated[DIM] = -DIM * position[DIM - 1] * scaleFactor[DIM - 1];
+
+			for (int i = DIM - 1; i > 0; i--)
+			{
+				elevated[i] = (elevated[i + 1] -
+					i * position[i - 1] * scaleFactor[i - 1] +
+					(i + 2) * position[i] * scaleFactor[i]);
+			}
+			elevated[0] = elevated[1] + 2.f * position[0] * scaleFactor[0];
+
+			// prepare to find the closest lattice points
+			const float scale = 1.f / (DIM + 1);
+			char* myrank = rank;
+			short* mygreedy = greedy;
+
+			// greedily search for the closest zero-colored lattice point
+			int sum = 0;
+
+			for (int i = 0; i <= DIM; i++)
+			{
+				float v = elevated[i] * scale;
+				float up = ceilf(v) * (DIM + 1);
+				float down = floorf(v) * (DIM + 1);
+
+				mygreedy[i] = (up - elevated[i] < elevated[i] - down) ? (short)up : (short)down;
+				sum += mygreedy[i];
+			}
+			sum /= DIM + 1;
+
+			// rank differential to find the permutation between this simplex and the canonical one.
+			// (See pg. 3-4 in paper.)
+			memset(myrank, 0, sizeof(char) * (DIM + 1));
+			for (int i = 0; i < DIM; i++)
+			{
+				for (int j = i + 1; j <= DIM; j++)
+				{
+					if (elevated[i] - mygreedy[i] < elevated[j] - mygreedy[j])
+					{
+						myrank[i]++;
+					}
+					else
+					{
+						myrank[j]++;
+					}
+				}
+			}
+
+			if (sum > 0)
+			{
+				// sum too large - the point is off the hyperplane.
+				// need to bring down the ones with the smallest differential
+				for (int i = 0; i <= DIM; i++)
+				{
+					if (myrank[i] >= DIM + 1 - sum)
+					{
+						mygreedy[i] -= DIM + 1;
+						myrank[i] += sum - (DIM + 1);
+					}
+					else
+					{
+						myrank[i] += sum;
+					}
+				}
+			}
+			else if (sum < 0)
+			{
+				// sum too small - the point is off the hyperplane
+				// need to bring up the ones with largest differential
+				for (int i = 0; i <= DIM; i++)
+				{
+					if (myrank[i] < -sum)
+					{
+						mygreedy[i] += DIM + 1;
+						myrank[i] += (DIM + 1) + sum;
+					}
+					else
+					{
+						myrank[i] += sum;
+					}
+				}
+			}
+
+			// Compute barycentric coordinates (See pg.10 of paper.)
+			memset(barycentric, 0, sizeof(float) * (DIM + 2));
+			for (int i = 0; i <= DIM; i++)
+			{
+				barycentric[DIM - myrank[i]] += (elevated[i] - mygreedy[i]) * scale;
+				barycentric[DIM + 1 - myrank[i]] -= (elevated[i] - mygreedy[i]) * scale;
+			}
+			barycentric[0] += 1.f + barycentric[DIM + 1];
+
+			// Splat the value into each vertex of the simplex, with barycentric weights.
+			for (int remainder = 0; remainder <= DIM; remainder++)
+			{
+				// Compute the location of the lattice point explicitly (all but the last coordinate - it's redundant because they sum to zero)
+				for (int i = 0; i < DIM; i++)
+				{
+					key[i] = mygreedy[i] + canonical[remainder * (DIM + 1) + myrank[i]];
+				}
+
+				// Retrieve pointer to the value at this vertex.
+				float* val = hashTable.lookup(key, true);
+
+				// Accumulate values with barycentric weight.
+				for (int i = 0; i < sdim; i++)
+				{
+					val[i] += barycentric[remainder] * value[i];
+				}
+
+				// Record this interaction to use later when slicing
+				replay[nReplay].offset = (int)(val - hashTable.getValues());
+				replay[nReplay].weight = barycentric[remainder];
+				nReplay++;
 			}
 		}
 
@@ -651,15 +568,17 @@ namespace cp
 		* containing each position vector were calculated and stored in the splatting step.
 		* We may reuse this to accelerate the algorithm. (See pg. 6 in paper.)
 		*/
-		void slice(float *col) {
-			float *base = hashTable.getValues();
-			for (int j = 0; j < vd; j++) col[j] = 0;
-			for (int i = 0; i <= d; i++)
+		void slice(float* col)
+		{
+			float* base = hashTable.getValues();
+			for (int j = 0; j < sdim; j++) col[j] = 0;
+
+			for (int i = 0; i <= dim; i++)
 			{
 				ReplayEntry r = replay[nReplay++];
-				for (int j = 0; j < vd; j++)
+				for (int j = 0; j < sdim; j++)
 				{
-					col[j] += r.weight*base[r.offset + j];
+					col[j] += r.weight * base[r.offset + j];
 				}
 			}
 		}
@@ -668,36 +587,37 @@ namespace cp
 		void blur()
 		{
 			// Prepare arrays
-			short *neighbor1 = new short[d + 1];
-			short *neighbor2 = new short[d + 1];
-			float *newValue = new float[vd*hashTable.size()];
-			float *oldValue = hashTable.getValues();
-			float *hashTableBase = oldValue;
+			AutoBuffer<short> neighbor1(dim + 1);
+			AutoBuffer<short> neighbor2(dim + 1);
+			AutoBuffer<float> zero(sdim);
+			for (int k = 0; k < sdim; k++) zero[k] = 0.f;
 
-			float *zero = new float[vd];
-			for (int k = 0; k < vd; k++) zero[k] = 0;
+			float* newValue = new float[sdim * hashTable.size()];
+			float* oldValue = hashTable.getValues();
+			float* hashTableBase = oldValue;
 
 			// For each of d+1 axes,
-			for (int j = 0; j <= d; j++)
+			for (int j = 0; j <= dim; j++)
 			{
 				//printf(" %d", j);fflush(stdout);
 
 				// For each vertex in the lattice,
 				for (int i = 0; i < hashTable.size(); i++)
-				{ // blur point i in dimension j
-					short *key = hashTable.getKeys() + i*(d); // keys to current vertex
-					for (int k = 0; k < d; k++)
+				{
+					// blur point i in dimension j
+					short* key = hashTable.getKeys() + i * dim; // keys to current vertex
+					for (int k = 0; k < dim; k++)
 					{
 						neighbor1[k] = key[k] + 1;
 						neighbor2[k] = key[k] - 1;
 					}
-					neighbor1[j] = key[j] - d;
-					neighbor2[j] = key[j] + d; // keys to the neighbors along the given axis.
+					neighbor1[j] = key[j] - dim;
+					neighbor2[j] = key[j] + dim; // keys to the neighbors along the given axis.
 
-					float *oldVal = oldValue + i*vd;
-					float *newVal = newValue + i*vd;
+					float* oldVal = oldValue + i * sdim;
+					float* newVal = newValue + i * sdim;
 
-					float *vm1, *vp1;
+					float* vm1, * vp1;
 
 					vm1 = hashTable.lookup(neighbor1, false); // look up first neighbor
 					if (vm1) vm1 = vm1 - hashTableBase + oldValue;
@@ -708,88 +628,187 @@ namespace cp
 					else vp1 = zero;
 
 					// Mix values of the three vertices
-					for (int k = 0; k < vd; k++)
-						newVal[k] = (0.25f*vm1[k] + 0.5f*oldVal[k] + 0.25f*vp1[k]);
+					for (int k = 0; k < sdim; k++)
+					{
+						newVal[k] = (0.25f * vm1[k] + 0.5f * oldVal[k] + 0.25f * vp1[k]);
+					}
 				}
-				float *tmp = newValue;
-				newValue = oldValue;
-				oldValue = tmp;
+				swap(newValue, oldValue);
+				
 				// the freshest data is now in oldValue, and newValue is ready to be written over
 			}
 
 			// depending where we ended up, we may have to copy data
-			if (oldValue != hashTableBase) {
-				memcpy(hashTableBase, oldValue, hashTable.size()*vd*sizeof(float));
+			if (oldValue != hashTableBase)
+			{
+				memcpy(hashTableBase, oldValue, hashTable.size() * sdim * sizeof(float));
 				delete oldValue;
 			}
-			else {
+			else
+			{
 				delete newValue;
 			}
-			printf("\n");
-
-			delete zero;
-			delete neighbor1;
-			delete neighbor2;
+			//printf("\n");
 		}
 
 	private:
-
-		const int d, vd, nData;
-		float *elevated, *scaleFactor, *barycentric;
-		short *canonical;
-		short *key;
+		const int dim;// guide dimention
+		const int sdim;//src dimension homogeneous
+		const int nData;
+		float* elevated, * scaleFactor, * barycentric;
+		short* canonical;
+		short* key;
 
 		// slicing is done by replaying splatting (ie storing the sparse matrix)
-		struct ReplayEntry {
+		struct ReplayEntry
+		{
 			int offset;
 			float weight;
 		} *replay;
 		int nReplay, nReplaySub;
 
 	public:
-		char  *rank;
-		short *greedy;
+		char* rank;
+		short* greedy;
 		HashTablePermutohedral hashTable;
 	};
 
-
-	void bilateralFilterPermutohedralLattice(Mat& src, Mat& dest, float sigma_space, float sigma_color)
+	void highDimensionalGaussianFilterPermutohedralLattice(const Mat& src, const Mat& guide, Mat& dest, const float sigma_color, const float sigma_space)
 	{
-		if (dest.empty()) dest.create(src.size(), src.type());
+		dest.create(src.size(), src.type());
 
-		float invSpatialStdev = 1.0f / sigma_space;
-		float invColorStdev = 1.0f / (sigma_color / 255.f);
-		float ColorStdev = 255.f / invColorStdev;
-		// Construct the position vectors out of x, y, r, g, and b.
+		const float invSpatialStdev = 1.0f / sigma_space;
+		const float invColorStdev = 1.0f / (sigma_color / 255.f);
+		const float ColorStdev = 255.f / invColorStdev;
 
-		Image input(1, src.cols, src.rows, 3);
-		Image positions(1, src.cols, src.rows, 5);
-
-
-		for (int y = 0; y < src.rows; y++)
+		Mat ref(src.size(), CV_MAKETYPE(CV_32F, guide.channels() + 2));
+		if (src.depth() == CV_8U)
 		{
-			for (int x = 0; x < src.cols; x++)
+			for (int y = 0; y < src.rows; y++)
 			{
-				positions(x, y)[0] = invSpatialStdev * x;
-				positions(x, y)[1] = invSpatialStdev * y;
-				input(x, y)[0] = positions(x, y)[2] = invColorStdev * (float)src.at<uchar>(y, 3 * x + 0) / 255.f;
-				input(x, y)[1] = positions(x, y)[3] = invColorStdev * (float)src.at<uchar>(y, 3 * x + 1) / 255.f;
-				input(x, y)[2] = positions(x, y)[4] = invColorStdev * (float)src.at<uchar>(y, 3 * x + 2) / 255.f;
+				for (int x = 0; x < src.cols; x++)
+				{
+					ref.ptr<float>(y, x)[0] = invSpatialStdev * x;
+					ref.ptr<float>(y, x)[1] = invSpatialStdev * y;
+					for (int c = 0; c < guide.channels(); c++)
+					{
+						ref.ptr<float>(y, x)[2 + c] = invColorStdev * (float)guide.at<uchar>(y, guide.channels() * x + c) / 255.f;
+					}
+				}
+			}
+		}
+		else if (src.depth() == CV_32F)
+		{
+			for (int y = 0; y < src.rows; y++)
+			{
+				for (int x = 0; x < src.cols; x++)
+				{
+					ref.ptr<float>(y, x)[0] = invSpatialStdev * x;
+					ref.ptr<float>(y, x)[1] = invSpatialStdev * y;
+					for (int c = 0; c < guide.channels(); c++)
+					{
+						ref.ptr<float>(y, x)[2 + c] = invColorStdev * guide.at<float>(y, guide.channels() * x + c) / 255.f;
+					}
+				}
 			}
 		}
 
-		// Filter the input with respect to the position vectors. (see permutohedral.h)
-		Image out = PermutohedralLattice::filter(input, positions);
+		// Filter the input with respect to the position vectors. 
+		PermutohedralLattice::filter(src, ref, dest);
+	}
 
-		for (int y = 0; y < src.rows; y++)
+	void highDimensionalGaussianFilterPermutohedralLattice(const vector<Mat>& vsrc, const vector<Mat>& vguide, Mat& dest, const float sigma_color, const float sigma_space)
+	{
+		Mat src; merge(vsrc, src);
+		Mat ref; merge(vguide, ref);
+		highDimensionalGaussianFilterPermutohedralLattice(src, ref, dest, sigma_color, sigma_space);
+	}
+
+
+	void highDimensionalGaussianFilterPermutohedralLattice(const Mat& src, Mat& dest, const float sigma_color, const float sigma_space)
+	{
+		highDimensionalGaussianFilterPermutohedralLattice(src, src, dest, sigma_color, sigma_space);
+	}
+
+
+	void highDimensionalGaussianFilterPermutohedralLatticeTile(const Mat& src, const Mat& guide, Mat& dest, const float sigma_color, const float sigma_space, const Size div, const float truncateBoundary)
+	{
+		const int channels = src.channels();
+		const int guide_channels = guide.channels();
+
+		dest.create(src.size(), CV_MAKETYPE(CV_32F, src.channels()));
+
+		const int borderType = cv::BORDER_REFLECT;
+		const int vecsize = sizeof(__m256) / sizeof(float);//8
+
+		if (div.area() == 1)
 		{
-			for (int x = 0; x < src.cols; x++)
+			highDimensionalGaussianFilterPermutohedralLattice(src, guide, dest, sigma_color, sigma_space);
+		}
+		else
+		{
+			int r = (int)ceil(truncateBoundary * sigma_space);
+			const int R = get_simd_ceil(r, 8);
+			Size tileSize = cp::getTileAlignSize(src.size(), div, r, vecsize, vecsize);
+			Size divImageSize = cv::Size(src.cols / div.width, src.rows / div.height);
+
+			vector<Mat> split_dst(channels);
+
+			for (int c = 0; c < channels; c++)
 			{
-				dest.at<uchar>(y, 3 * x + 0) = saturate_cast<uchar>(ColorStdev*out(x, y)[0] + 0.5f);
-				dest.at<uchar>(y, 3 * x + 1) = saturate_cast<uchar>(ColorStdev*out(x, y)[1] + 0.5f);
-				dest.at<uchar>(y, 3 * x + 2) = saturate_cast<uchar>(ColorStdev*out(x, y)[2] + 0.5f);
+				split_dst[c].create(tileSize, CV_32FC1);
+			}
+
+			const int thread_max = omp_get_max_threads();
+			vector<vector<Mat>>	subImageInput(thread_max);
+			vector<vector<Mat>>	subImageGuide(thread_max);
+			vector<Mat>	subImageOutput(thread_max);
+			for (int n = 0; n < thread_max; n++)
+			{
+				subImageInput[n].resize(channels);
+				subImageGuide[n].resize(guide_channels);
+				subImageOutput[n].create(tileSize, CV_MAKETYPE(CV_32F, channels));
+			}
+
+			std::vector<cv::Mat> srcSplit;
+			std::vector<cv::Mat> guideSplit;
+			if (src.channels() != 3)split(src, srcSplit);
+			if (guide.channels() != 3)split(guide, guideSplit);
+
+#pragma omp parallel for schedule(static)
+			for (int n = 0; n < div.area(); n++)
+			{
+				const int thread_num = omp_get_thread_num();
+				const cv::Point idx = cv::Point(n % div.width, n / div.width);
+
+
+				if (src.channels() == 3)
+				{
+					cp::cropSplitTileAlign(src, subImageInput[thread_num], div, idx, r, borderType, vecsize, vecsize, vecsize, vecsize);
+				}
+				else
+				{
+					for (int c = 0; c < srcSplit.size(); c++)
+					{
+						cp::cropTileAlign(srcSplit[c], subImageInput[thread_num][c], div, idx, r, borderType, vecsize, vecsize, vecsize, vecsize);
+					}
+				}
+				if (guide.channels() == 3)
+				{
+					cp::cropSplitTileAlign(guide, subImageGuide[thread_num], div, idx, r, borderType, vecsize, vecsize, vecsize, vecsize);
+				}
+				else
+				{
+					for (int c = 0; c < guideSplit.size(); c++)
+					{
+						cp::cropTileAlign(guideSplit[c], subImageGuide[thread_num][c], div, idx, r, borderType, vecsize, vecsize, vecsize, vecsize);
+					}
+				}
+
+				highDimensionalGaussianFilterPermutohedralLattice(subImageInput[thread_num], subImageGuide[thread_num], subImageOutput[thread_num], sigma_color, sigma_space);
+
+				cp::pasteTileAlign(subImageOutput[thread_num], dest, div, idx, r, 8, 8);
 			}
 		}
-
 	}
 }
