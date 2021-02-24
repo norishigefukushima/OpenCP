@@ -27,6 +27,11 @@ namespace cp
 	//color correction colorcorrection whilebalance
 	CP_EXPORT void findColorMatrixAvgStdDev(cv::InputArray ref_image, cv::InputArray target_image, cv::OutputArray colorMatrix, const double validMin, const double validMax);
 
-	CP_EXPORT void splitConvert(cv::InputArray src, cv::OutputArrayOfArrays dest, const int depth=-1, const double scale=1.0, const double offset=0.0, const bool isCache=true);
-	CP_EXPORT void mergeConvert(cv::InputArrayOfArrays src, cv::OutputArray dest, const int depth=-1, const double scale=1.0, const double offset=0.0, const bool isCache=true);
+	CP_EXPORT void splitConvert(cv::InputArray src, cv::OutputArrayOfArrays dest, const int depth = -1, const double scale = 1.0, const double offset = 0.0, const bool isCache = true);
+	CP_EXPORT void mergeConvert(cv::InputArrayOfArrays src, cv::OutputArray dest, const int depth = -1, const double scale = 1.0, const double offset = 0.0, const bool isCache = true);
+
+	CP_EXPORT void cvtColorPCA(cv::InputArray src, cv::OutputArray dest, const int dest_channels);
+	CP_EXPORT void cvtColorPCA(std::vector<cv::Mat>& src, std::vector<cv::Mat>& dest, const int dest_channels);
+	CP_EXPORT void guiSplit(cv::InputArray src, std::string wname = "split");
+
 }

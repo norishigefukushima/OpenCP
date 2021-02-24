@@ -530,6 +530,14 @@ inline void _mm256_storescalar_ps2epu8_color(void* dst, __m256 b, __m256 g, __m2
 		dest[i] = buffscalarstore[i];
 }
 
+inline void _mm256_store_ps_interleave(void* dst, const __m256 d0, const __m256 d1)
+{
+	__m256 s1 = _mm256_unpacklo_ps(d0, d1);
+	__m256 s2 = _mm256_unpackhi_ps(d0, d1);
+	_mm256_store_ps((float*)dst + 0, _mm256_permute2f128_ps(s1, s2, 0x20));
+	_mm256_store_ps((float*)dst + 8, _mm256_permute2f128_ps(s1, s2, 0x31));
+}
+
 inline void _mm256_store_ps_color(void* dst, const __m256 b, const __m256 g, const __m256 r)
 {
 	__m256 b0 = _mm256_shuffle_ps(b, b, 0x6c);
