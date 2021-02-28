@@ -11,6 +11,22 @@
 #define print_debug6(a, b, c, d, e, f)		std::cout << #a << ": " << a <<", "<< #b << ": " << b <<", "<< #c << ": " << c <<", "<< #d << ": " << d <<", "<< #e << ": " << e <<", "<< #f << ": " << f << std::endl;
 #define print_debug7(a, b, c, d, e, f, g)	std::cout << #a << ": " << a <<", "<< #b << ": " << b <<", "<< #c << ": " << c <<", "<< #d << ": " << d <<", "<< #e << ": " << e <<", "<< #f << ": " << f << ", "<< #g << ": " << g <<std::endl;
 
+inline void print_mat_format(cv::Mat& src, std::string mes = "", std::string format = "%8.2f ")
+{
+	printf("%s:\n", mes.c_str());
+	for (int j = 0; j < src.rows; j++)
+	{
+		for (int i = 0; i < src.cols; i++)
+		{
+			printf(format.c_str(), src.at<double>(j, i));
+		}
+		printf("\n");
+	}
+	printf("\n");
+}
+
+#define print_mat(a) print_mat_format(a, #a)
+
 namespace cp
 {
 	template<typename Type>

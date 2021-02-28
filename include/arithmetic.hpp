@@ -4,9 +4,9 @@
 
 namespace cp
 {
-	CP_EXPORT void pow_fmath(const float a, const cv::Mat&  src, cv::Mat& dest);
+	CP_EXPORT void pow_fmath(const float a, const cv::Mat& src, cv::Mat& dest);
 	CP_EXPORT void pow_fmath(const cv::Mat& src, const float a, cv::Mat& dest);
-	CP_EXPORT void pow_fmath(const cv::Mat& src1, const cv::Mat&  src2, cv::Mat& dest);
+	CP_EXPORT void pow_fmath(const cv::Mat& src1, const cv::Mat& src2, cv::Mat& dest);
 	CP_EXPORT void compareRange(cv::InputArray src, cv::OutputArray destMask, const double validMin, const double validMax);
 	CP_EXPORT void setTypeMaxValue(cv::InputOutputArray src);
 	CP_EXPORT void setTypeMinValue(cv::InputOutputArray src);
@@ -24,4 +24,7 @@ namespace cp
 	CP_EXPORT void bitshiftRight(cv::InputArray src, cv::OutputArray dest, cv::OutputArray lostbit, const int shift);
 	//src>>shift
 	CP_EXPORT void bitshiftRight(cv::InputArray src, cv::OutputArray dest, const int shift);
+
+	CP_EXPORT double average(const cv::Mat& src, const int left = 0, const int right = 0, const int top = 0, const int bottom = 0, const bool isNormalize = true);
+	CP_EXPORT void average_variance(const cv::Mat& src, double& ave, double& var, const int left = 0, const int right = 0, const int top = 0, const int bottom = 0, const bool isNormalize = true);
 }

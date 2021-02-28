@@ -43,7 +43,7 @@ inline void get_simd_width_end(const int cv_depth, const int channels, const int
 	}
 }
 
-
+#pragma region transpose
 inline void _mm_transposel_epi8(__m128i& s0, __m128i& s1, __m128i& s2, __m128i& s3, __m128i& s4, __m128i& s5, __m128i& s6, __m128i& s7)
 {
 	__m128i t[8];
@@ -124,7 +124,7 @@ inline void _mm_transposel_epi8(__m128i& s0, __m128i& s1, __m128i& s2, __m128i& 
           __out0##__LINE__, __out1##__LINE__, __out2##__LINE__, __out3##__LINE__, __out4##__LINE__, __out5##__LINE__, __out6##__LINE__, __out7##__LINE__, \
           __tmp0##__LINE__, __tmp1##__LINE__, __tmp2##__LINE__, __tmp3##__LINE__, __tmp4##__LINE__, __tmp5##__LINE__, __tmp6##__LINE__, __tmp7##__LINE__, \
           __tmpp0##__LINE__, __tmpp1##__LINE__, __tmpp2##__LINE__, __tmpp3##__LINE__, __tmpp4##__LINE__, __tmpp5##__LINE__, __tmpp6##__LINE__, __tmpp7##__LINE__)
-
+#pragma endregion
 
 #pragma region convert
 
@@ -248,6 +248,23 @@ inline void _mm256_load_epu8cvtpsx2(const __m128i* P, __m256& d0, __m256& d1)
 #pragma endregion
 
 #pragma region color_convert
+inline void _mm256_load_deinterleave_ps(const float* src, __m256& d0, __m256& d1)
+{
+	__m256 v1 = _mm256_load_ps(src);
+	__m256 v2 = _mm256_load_ps(src + 8);
+	__m256 s1 = _mm256_shuffle_ps(v1, v2, _MM_SHUFFLE(2, 0, 2, 0));
+	__m256 s2 = _mm256_shuffle_ps(v1, v2, _MM_SHUFFLE(3, 1, 3, 1));
+	d0 = _mm256_permutevar8x32_ps(s1, _mm256_setr_epi32(0, 1, 4, 5, 2, 3, 6, 7));
+	d1 = _mm256_permutevar8x32_ps(s2, _mm256_setr_epi32(0, 1, 4, 5, 2, 3, 6, 7));
+}
+
+inline void _mm256_store_interleave_ps(void* dst, const __m256 d0, const __m256 d1)
+{
+	__m256 s1 = _mm256_unpacklo_ps(d0, d1);
+	__m256 s2 = _mm256_unpackhi_ps(d0, d1);
+	_mm256_store_ps((float*)dst + 0, _mm256_permute2f128_ps(s1, s2, 0x20));
+	_mm256_store_ps((float*)dst + 8, _mm256_permute2f128_ps(s1, s2, 0x31));
+}
 
 inline void _mm256_load_cvtpd_bgr2planar_pd(const double* ptr, __m256d& b, __m256d& g, __m256d& r)
 {
@@ -528,14 +545,6 @@ inline void _mm256_storescalar_ps2epu8_color(void* dst, __m256 b, __m256 g, __m2
 	uchar* dest = (uchar*)dst;
 	for (int i = 0; i < numpixel; i++)
 		dest[i] = buffscalarstore[i];
-}
-
-inline void _mm256_store_ps_interleave(void* dst, const __m256 d0, const __m256 d1)
-{
-	__m256 s1 = _mm256_unpacklo_ps(d0, d1);
-	__m256 s2 = _mm256_unpackhi_ps(d0, d1);
-	_mm256_store_ps((float*)dst + 0, _mm256_permute2f128_ps(s1, s2, 0x20));
-	_mm256_store_ps((float*)dst + 8, _mm256_permute2f128_ps(s1, s2, 0x31));
 }
 
 inline void _mm256_store_ps_color(void* dst, const __m256 b, const __m256 g, const __m256 r)
@@ -865,6 +874,15 @@ inline float _mm_reduceadd_ps(__m128 src)
 	src = _mm_hadd_ps(src, src);
 	src = _mm_hadd_ps(src, src);
 	return _mm_cvtss_f32(src);
+}
+
+inline double _mm256_reduceadd_pspd(__m256 src)
+{
+	double ret = src.m256_f32[0];
+	for (int i = 1; i < 8; i++)
+		ret += src.m256_f32[i];
+
+	return ret;
 }
 
 inline float _mm256_reduceadd_ps(__m256 src)
@@ -1247,13 +1265,17 @@ inline void _mm256_storescalar_auto_color(uchar* dest, __m256 b, __m256 g, __m25
 }
 
 
+
+
+
+
+#pragma region gather-scatter
 //return 8 uchar elements
 inline __m128i _mm_i8gather_epi32(const uchar* src, __m128i idx)
 {
 	return _mm_srli_epi32(_mm_i32gather_epi32(reinterpret_cast<const int*>(&src[-3]), idx, 1), 24);
 	//return _mm_setr_epi8(src[idx.m256i_i32[0]], src[idx.m256i_i32[1]], src[idx.m256i_i32[2]], src[idx.m256i_i32[3]], src[idx.m256i_i32[4]], src[idx.m256i_i32[5]], src[idx.m256i_i32[6]], src[idx.m256i_i32[7]], 0, 0, 0, 0, 0, 0, 0, 0);
 }
-
 
 //gather bgr interleved uchar data with convert epi32->ps
 inline void _mm256_i32gather_bgr_ps(const uchar* src, __m256i idx, __m256& b, __m256& g, __m256& r)
@@ -1338,7 +1360,13 @@ inline void _mm256_i32scaterscalar_auto_color(float* dest, __m256i vindex, __m25
 {
 	_mm256_i32scaterscalar_ps_color(dest, vindex, b, g, r);
 }
+#pragma endregion
 
+//_mm256_setr_ps(v + step, v + 2 * step, v + 3 * step, v + 4 * step, v + 5 * step, v + 6 * step, v + 7 * step);
+inline __m256 _mm256_setstep_ps(float v, float step = 1)
+{
+	return _mm256_setr_ps(v, v + step, v + 2 * step, v + 3 * step, v + 4 * step, v + 5 * step, v + 6 * step, v + 7 * step);
+}
 
 inline __m256 _mm256_load_reverse_ps(const float* src)
 {
@@ -1433,5 +1461,3 @@ inline void _mm256_argmin_ps(__m256& src, __m256& minval, __m256& argment, const
 	argment = _mm256_blendv_ps(argment, _mm256_set1_ps(index), mask);
 	minval = _mm256_blendv_ps(minval, src, mask);
 }
-
-

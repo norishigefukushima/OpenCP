@@ -32,6 +32,7 @@ void testLocalPSNR(cv::Mat& ref);
 void guiSLICTest(cv::Mat& src);
 void guiDisparityPlaneFitSLICTest(cv::Mat& leftim, cv::Mat& rightim, cv::Mat& GT);
 void fitPlaneTest();
+void guiCvtColorPCATest();
 void guiColorCorrectionTest(cv::Mat& src, cv::Mat& ref);
 
 //filter

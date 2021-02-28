@@ -160,6 +160,10 @@ int main(int argc, char** argv)
 	//guiContrast(guiCropZoom(img));
 #pragma endregion
 
+#pragma region imgproc
+	guiCvtColorPCATest(); return 0;
+#pragma endregion
+
 #pragma region stereo
 	//testStereoBase(); return 0;
 	//testCVStereoBM(); return 0;
