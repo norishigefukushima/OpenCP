@@ -22,6 +22,7 @@ namespace cp
 		UpdateCheck(double p0, double p1, double p2, double p3, double p4, double p5, double p6, double p7);
 		UpdateCheck(double p0, double p1, double p2, double p3, double p4, double p5, double p6, double p7, double p8);
 		UpdateCheck(double p0, double p1, double p2, double p3, double p4, double p5, double p6, double p7, double p8, double p9);
+		UpdateCheck(double p0, double p1, double p2, double p3, double p4, double p5, double p6, double p7, double p8, double p9, double p10);
 
 
 		bool isUpdate(double p0);
@@ -34,5 +35,6 @@ namespace cp
 		bool isUpdate(double p0, double p1, double p2, double p3, double p4, double p5, double p6, double p7);
 		bool isUpdate(double p0, double p1, double p2, double p3, double p4, double p5, double p6, double p7, double p8);
 		bool isUpdate(double p0, double p1, double p2, double p3, double p4, double p5, double p6, double p7, double p8, double p9);
+		bool isUpdate(double p0, double p1, double p2, double p3, double p4, double p5, double p6, double p7, double p8, double p9, double p10);
 	};
 }

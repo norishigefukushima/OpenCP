@@ -149,7 +149,7 @@ int main(int argc, char** argv)
 	//testPSNR(img); return 0;
 	//resize(img, a, Size(513, 513));
 	//testHistgram(img);
-	//testRGBHistogram();
+	testRGBHistogram();
 	//testRGBHistogram2();
 	//testTimer(img);
 	//testAlphaBlend(left, right);
@@ -161,7 +161,7 @@ int main(int argc, char** argv)
 #pragma endregion
 
 #pragma region imgproc
-	guiCvtColorPCATest(); return 0;
+	//guiCvtColorPCATest(); return 0;
 #pragma endregion
 
 #pragma region stereo

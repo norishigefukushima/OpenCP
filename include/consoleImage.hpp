@@ -1,7 +1,7 @@
 #pragma once
 
 #include "common.hpp"
-
+#include "imshowExtension.hpp"
 namespace cp
 {
 	class CP_EXPORT ConsoleImage
@@ -9,6 +9,7 @@ namespace cp
 	private:
 		int count;
 		std::string windowName;
+		StackImage si;
 		std::vector<std::string> strings;
 		bool isLineNumber;
 		std::string fontName;
@@ -37,5 +38,6 @@ namespace cp
 		void operator()(cv::Scalar color, const char *format, ...);
 		
 		void show(bool isClear = true);
+		void push();
 	};
 }

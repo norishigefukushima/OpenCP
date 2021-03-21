@@ -1561,6 +1561,41 @@ namespace cp
 	}
 #pragma endregion
 
+#pragma region cvtColorAverageGray
+	static void cvtColorAverageGray_32F(Mat& src, Mat& dest, const float normalize)
+	{
+		CV_Assert(src.type() == CV_32FC3);
+
+		float* sptr = src.ptr<float>();
+		float* dptr = dest.ptr<float>();
+		const int size = src.size().area() / 8;
+		__m256 mnorm = _mm256_set1_ps(normalize);
+		for (int i = 0; i < size; i++)
+		{
+			__m256 b, g, r;
+			_mm256_load_cvtps_bgr2planar_ps(sptr, b, g, r);
+			_mm256_store_ps(dptr, _mm256_mul_ps(mnorm, _mm256_add_ps(r, _mm256_add_ps(b, g))));
+			sptr += 24;
+			dptr += 8;
+		}
+	}
+
+	void cvtColorAverageGray(InputArray src_, OutputArray dest, const bool isKeepDistance)
+	{
+		if (src_.channels() == 1)
+		{
+			src_.copyTo(dest);
+			return;
+		}
+
+		Mat src = src_.getMat();
+		dest.create(src_.size(), src.depth());
+
+		const float normalize = (isKeepDistance) ? 1.f / sqrt(3.f) : 1.f / 3.f;
+		if (src.depth() == CV_32F)cvtColorAverageGray_32F(src, dest.getMat(), normalize);
+		else cout << "do not support this depth (cvtColorAverageGray)" << endl;
+	}
+
 #pragma region PCA
 	static void cvtColorPCAOpenCVPCA(Mat& src, Mat& dest, const int dest_channels)
 	{
@@ -1569,24 +1604,28 @@ namespace cp
 		dest = pca.project(x).reshape(dest_channels, src.rows);
 	}
 
-	static void cvtColorPCAOpenCVCovMat(Mat& src, Mat& dest, const int dest_channels)
+	static void cvtColorPCAOpenCVCovMat(Mat& src, Mat& dest, const int dest_channels, Mat& evec, Mat& eval)
 	{
 		Mat x = src.reshape(1, src.size().area());
 		Mat cov, mean;
 		cv::calcCovarMatrix(x, cov, mean, cv::COVAR_NORMAL | cv::COVAR_SCALE | cv::COVAR_ROWS);
-		Mat eval, evec;
 		eigen(cov, eval, evec);
 		Mat transmat;
 		evec(Rect(0, 0, evec.cols, dest_channels)).convertTo(transmat, CV_32F);
 		cv::transform(src, dest, transmat);
 	}
 
-	static void calcCovarMatrix2_(const Mat& src, Mat& dest)
+	static void calcCovarMatrix2_(const Mat& src, Mat& dest, Mat& average_value)
 	{
 		dest.create(src.channels(), src.channels(), CV_64F);
 		CV_Assert(src.channels() <= 4);
-		Scalar ave;
-		ave = mean(src);
+		
+		Scalar ave = mean(src);
+		average_value.create(1, 4, CV_64F);
+		average_value.at<double>(0) = ave.val[0];
+		average_value.at<double>(1) = ave.val[1];
+		average_value.at<double>(2) = ave.val[2];
+		average_value.at<double>(3) = ave.val[3];
 
 		const int simdsize = get_simd_ceil(src.size().area(), 8);
 		const float* s = src.ptr<float>();
@@ -1615,12 +1654,17 @@ namespace cp
 		dest.at<double>(1, 1) = gg / simdsize;
 	}
 
-	static void calcCovarMatrix3_(const Mat& src, Mat& dest)
+	static void calcCovarMatrix3_(const Mat& src, Mat& dest, Mat& average_value)
 	{
 		dest.create(src.channels(), src.channels(), CV_64F);
 		CV_Assert(src.channels() <= 4);
-		Scalar ave;
-		ave = mean(src);
+		
+		Scalar ave = mean(src);
+		average_value.create(1, 4, CV_64F);
+		average_value.at<double>(0) = ave.val[0];
+		average_value.at<double>(1) = ave.val[1];
+		average_value.at<double>(2) = ave.val[2];
+		average_value.at<double>(3) = ave.val[3];
 
 		const int simdsize = get_simd_ceil(src.size().area(), 8);
 		const float* s = src.ptr<float>();
@@ -2542,7 +2586,7 @@ namespace cp
 
 				__m256 d0 = _mm256_fmadd_ps(m4, mv[4], _mm256_fmadd_ps(m3, mv[3], _mm256_fmadd_ps(m2, mv[2], _mm256_fmadd_ps(m1, mv[1], _mm256_mul_ps(m0, mv[0])))));
 				__m256 d1 = _mm256_fmadd_ps(m4, mv[9], _mm256_fmadd_ps(m3, mv[8], _mm256_fmadd_ps(m2, mv[7], _mm256_fmadd_ps(m1, mv[6], _mm256_mul_ps(m0, mv[5])))));
-				
+
 				_mm256_store_ps(dptr0, d0);
 				_mm256_store_ps(dptr1, d1);
 				sptr0 += 8;
@@ -2620,41 +2664,41 @@ namespace cp
 		}
 		else if (evec.rows == 5)
 		{
-		float* dptr0 = dest[0].ptr<float>();
-		float* dptr1 = dest[1].ptr<float>();
-		float* dptr2 = dest[2].ptr<float>();
-		float* dptr3 = dest[3].ptr<float>();
-		float* dptr4 = dest[4].ptr<float>();
-		for (int i = 0; i < sizesimd; i++)
-		{
-			__m256 m0 = _mm256_load_ps(sptr0);
-			__m256 m1 = _mm256_load_ps(sptr1);
-			__m256 m2 = _mm256_load_ps(sptr2);
-			__m256 m3 = _mm256_load_ps(sptr3);
-			__m256 m4 = _mm256_load_ps(sptr4);
+			float* dptr0 = dest[0].ptr<float>();
+			float* dptr1 = dest[1].ptr<float>();
+			float* dptr2 = dest[2].ptr<float>();
+			float* dptr3 = dest[3].ptr<float>();
+			float* dptr4 = dest[4].ptr<float>();
+			for (int i = 0; i < sizesimd; i++)
+			{
+				__m256 m0 = _mm256_load_ps(sptr0);
+				__m256 m1 = _mm256_load_ps(sptr1);
+				__m256 m2 = _mm256_load_ps(sptr2);
+				__m256 m3 = _mm256_load_ps(sptr3);
+				__m256 m4 = _mm256_load_ps(sptr4);
 
-			__m256 d0 = _mm256_fmadd_ps(m4, mv[4], _mm256_fmadd_ps(m3, mv[3], _mm256_fmadd_ps(m2, mv[2], _mm256_fmadd_ps(m1, mv[1], _mm256_mul_ps(m0, mv[0])))));
-			__m256 d1 = _mm256_fmadd_ps(m4, mv[9], _mm256_fmadd_ps(m3, mv[8], _mm256_fmadd_ps(m2, mv[7], _mm256_fmadd_ps(m1, mv[6], _mm256_mul_ps(m0, mv[5])))));
-			__m256 d2 = _mm256_fmadd_ps(m4, mv[14], _mm256_fmadd_ps(m3, mv[13], _mm256_fmadd_ps(m2, mv[12], _mm256_fmadd_ps(m1, mv[11], _mm256_mul_ps(m0, mv[10])))));
-			__m256 d3 = _mm256_fmadd_ps(m4, mv[19], _mm256_fmadd_ps(m3, mv[18], _mm256_fmadd_ps(m2, mv[17], _mm256_fmadd_ps(m1, mv[16], _mm256_mul_ps(m0, mv[15])))));
-			__m256 d4 = _mm256_fmadd_ps(m4, mv[24], _mm256_fmadd_ps(m3, mv[23], _mm256_fmadd_ps(m2, mv[22], _mm256_fmadd_ps(m1, mv[21], _mm256_mul_ps(m0, mv[20])))));
+				__m256 d0 = _mm256_fmadd_ps(m4, mv[4], _mm256_fmadd_ps(m3, mv[3], _mm256_fmadd_ps(m2, mv[2], _mm256_fmadd_ps(m1, mv[1], _mm256_mul_ps(m0, mv[0])))));
+				__m256 d1 = _mm256_fmadd_ps(m4, mv[9], _mm256_fmadd_ps(m3, mv[8], _mm256_fmadd_ps(m2, mv[7], _mm256_fmadd_ps(m1, mv[6], _mm256_mul_ps(m0, mv[5])))));
+				__m256 d2 = _mm256_fmadd_ps(m4, mv[14], _mm256_fmadd_ps(m3, mv[13], _mm256_fmadd_ps(m2, mv[12], _mm256_fmadd_ps(m1, mv[11], _mm256_mul_ps(m0, mv[10])))));
+				__m256 d3 = _mm256_fmadd_ps(m4, mv[19], _mm256_fmadd_ps(m3, mv[18], _mm256_fmadd_ps(m2, mv[17], _mm256_fmadd_ps(m1, mv[16], _mm256_mul_ps(m0, mv[15])))));
+				__m256 d4 = _mm256_fmadd_ps(m4, mv[24], _mm256_fmadd_ps(m3, mv[23], _mm256_fmadd_ps(m2, mv[22], _mm256_fmadd_ps(m1, mv[21], _mm256_mul_ps(m0, mv[20])))));
 
-			_mm256_store_ps(dptr0, d0);
-			_mm256_store_ps(dptr1, d1);
-			_mm256_store_ps(dptr2, d2);
-			_mm256_store_ps(dptr3, d3);
-			_mm256_store_ps(dptr4, d4);
-			sptr0 += 8;
-			sptr1 += 8;
-			sptr2 += 8;
-			sptr3 += 8;
-			sptr4 += 8;
-			dptr0 += 8;
-			dptr1 += 8;
-			dptr2 += 8;
-			dptr3 += 8;
-			dptr4 += 8;
-		}
+				_mm256_store_ps(dptr0, d0);
+				_mm256_store_ps(dptr1, d1);
+				_mm256_store_ps(dptr2, d2);
+				_mm256_store_ps(dptr3, d3);
+				_mm256_store_ps(dptr4, d4);
+				sptr0 += 8;
+				sptr1 += 8;
+				sptr2 += 8;
+				sptr3 += 8;
+				sptr4 += 8;
+				dptr0 += 8;
+				dptr1 += 8;
+				dptr2 += 8;
+				dptr3 += 8;
+				dptr4 += 8;
+			}
 		}
 	}
 
@@ -2840,47 +2884,47 @@ namespace cp
 		}
 		else if (evec.rows == 6)
 		{
-		float* dptr0 = dest[0].ptr<float>();
-		float* dptr1 = dest[1].ptr<float>();
-		float* dptr2 = dest[2].ptr<float>();
-		float* dptr3 = dest[3].ptr<float>();
-		float* dptr4 = dest[4].ptr<float>();
-		float* dptr5 = dest[5].ptr<float>();
-		for (int i = 0; i < sizesimd; i++)
-		{
-			__m256 m0 = _mm256_load_ps(sptr0);
-			__m256 m1 = _mm256_load_ps(sptr1);
-			__m256 m2 = _mm256_load_ps(sptr2);
-			__m256 m3 = _mm256_load_ps(sptr3);
-			__m256 m4 = _mm256_load_ps(sptr4);
-			__m256 m5 = _mm256_load_ps(sptr5);
+			float* dptr0 = dest[0].ptr<float>();
+			float* dptr1 = dest[1].ptr<float>();
+			float* dptr2 = dest[2].ptr<float>();
+			float* dptr3 = dest[3].ptr<float>();
+			float* dptr4 = dest[4].ptr<float>();
+			float* dptr5 = dest[5].ptr<float>();
+			for (int i = 0; i < sizesimd; i++)
+			{
+				__m256 m0 = _mm256_load_ps(sptr0);
+				__m256 m1 = _mm256_load_ps(sptr1);
+				__m256 m2 = _mm256_load_ps(sptr2);
+				__m256 m3 = _mm256_load_ps(sptr3);
+				__m256 m4 = _mm256_load_ps(sptr4);
+				__m256 m5 = _mm256_load_ps(sptr5);
 
-			__m256 d0 = _mm256_fmadd_ps(m5, mv[5], _mm256_fmadd_ps(m4, mv[4], _mm256_fmadd_ps(m3, mv[3], _mm256_fmadd_ps(m2, mv[2], _mm256_fmadd_ps(m1, mv[1], _mm256_mul_ps(m0, mv[0]))))));
-			__m256 d1 = _mm256_fmadd_ps(m5, mv[11], _mm256_fmadd_ps(m4, mv[10], _mm256_fmadd_ps(m3, mv[9], _mm256_fmadd_ps(m2, mv[8], _mm256_fmadd_ps(m1, mv[7], _mm256_mul_ps(m0, mv[6]))))));
-			__m256 d2 = _mm256_fmadd_ps(m5, mv[17], _mm256_fmadd_ps(m4, mv[16], _mm256_fmadd_ps(m3, mv[15], _mm256_fmadd_ps(m2, mv[14], _mm256_fmadd_ps(m1, mv[13], _mm256_mul_ps(m0, mv[12]))))));
-			__m256 d3 = _mm256_fmadd_ps(m5, mv[23], _mm256_fmadd_ps(m4, mv[22], _mm256_fmadd_ps(m3, mv[21], _mm256_fmadd_ps(m2, mv[20], _mm256_fmadd_ps(m1, mv[19], _mm256_mul_ps(m0, mv[18]))))));
-			__m256 d4 = _mm256_fmadd_ps(m5, mv[29], _mm256_fmadd_ps(m4, mv[28], _mm256_fmadd_ps(m3, mv[27], _mm256_fmadd_ps(m2, mv[26], _mm256_fmadd_ps(m1, mv[25], _mm256_mul_ps(m0, mv[24]))))));
-			__m256 d5 = _mm256_fmadd_ps(m5, mv[35], _mm256_fmadd_ps(m4, mv[34], _mm256_fmadd_ps(m3, mv[33], _mm256_fmadd_ps(m2, mv[32], _mm256_fmadd_ps(m1, mv[31], _mm256_mul_ps(m0, mv[30]))))));
+				__m256 d0 = _mm256_fmadd_ps(m5, mv[5], _mm256_fmadd_ps(m4, mv[4], _mm256_fmadd_ps(m3, mv[3], _mm256_fmadd_ps(m2, mv[2], _mm256_fmadd_ps(m1, mv[1], _mm256_mul_ps(m0, mv[0]))))));
+				__m256 d1 = _mm256_fmadd_ps(m5, mv[11], _mm256_fmadd_ps(m4, mv[10], _mm256_fmadd_ps(m3, mv[9], _mm256_fmadd_ps(m2, mv[8], _mm256_fmadd_ps(m1, mv[7], _mm256_mul_ps(m0, mv[6]))))));
+				__m256 d2 = _mm256_fmadd_ps(m5, mv[17], _mm256_fmadd_ps(m4, mv[16], _mm256_fmadd_ps(m3, mv[15], _mm256_fmadd_ps(m2, mv[14], _mm256_fmadd_ps(m1, mv[13], _mm256_mul_ps(m0, mv[12]))))));
+				__m256 d3 = _mm256_fmadd_ps(m5, mv[23], _mm256_fmadd_ps(m4, mv[22], _mm256_fmadd_ps(m3, mv[21], _mm256_fmadd_ps(m2, mv[20], _mm256_fmadd_ps(m1, mv[19], _mm256_mul_ps(m0, mv[18]))))));
+				__m256 d4 = _mm256_fmadd_ps(m5, mv[29], _mm256_fmadd_ps(m4, mv[28], _mm256_fmadd_ps(m3, mv[27], _mm256_fmadd_ps(m2, mv[26], _mm256_fmadd_ps(m1, mv[25], _mm256_mul_ps(m0, mv[24]))))));
+				__m256 d5 = _mm256_fmadd_ps(m5, mv[35], _mm256_fmadd_ps(m4, mv[34], _mm256_fmadd_ps(m3, mv[33], _mm256_fmadd_ps(m2, mv[32], _mm256_fmadd_ps(m1, mv[31], _mm256_mul_ps(m0, mv[30]))))));
 
-			_mm256_store_ps(dptr0, d0);
-			_mm256_store_ps(dptr1, d1);
-			_mm256_store_ps(dptr2, d2);
-			_mm256_store_ps(dptr3, d3);
-			_mm256_store_ps(dptr4, d4);
-			_mm256_store_ps(dptr5, d5);
-			sptr0 += 8;
-			sptr1 += 8;
-			sptr2 += 8;
-			sptr3 += 8;
-			sptr4 += 8;
-			sptr5 += 8;
-			dptr0 += 8;
-			dptr1 += 8;
-			dptr2 += 8;
-			dptr3 += 8;
-			dptr4 += 8;
-			dptr5 += 8;
-		}
+				_mm256_store_ps(dptr0, d0);
+				_mm256_store_ps(dptr1, d1);
+				_mm256_store_ps(dptr2, d2);
+				_mm256_store_ps(dptr3, d3);
+				_mm256_store_ps(dptr4, d4);
+				_mm256_store_ps(dptr5, d5);
+				sptr0 += 8;
+				sptr1 += 8;
+				sptr2 += 8;
+				sptr3 += 8;
+				sptr4 += 8;
+				sptr5 += 8;
+				dptr0 += 8;
+				dptr1 += 8;
+				dptr2 += 8;
+				dptr3 += 8;
+				dptr4 += 8;
+				dptr5 += 8;
+			}
 		}
 	}
 
@@ -2927,8 +2971,25 @@ namespace cp
 		}
 	}
 
+	static void eigenVecConvert(Mat& evec)
+	{
+		CV_Assert(evec.depth() == CV_64F);
+		for (int j = 0; j < evec.rows; j++)
+		{
+			double sum = 0.0;
+			for (int i = 0; i < evec.cols; i++)
+			{
+				sum += evec.at<double>(j, i);
+			}
+			if (sum < 0)
+				for (int i = 0; i < evec.cols; i++)
+				{
+					evec.at<double>(j, i) *= -1.0;
+				}
+		}
+	}
 
-	void cvtColorPCA(InputArray src_, OutputArray dest_, const int dest_channels)
+	void cvtColorPCA(InputArray src_, OutputArray dest_, const int dest_channels, Mat& evec, Mat& eval, Mat& mean)
 	{
 		CV_Assert(src_.depth() == CV_32F);
 
@@ -2943,17 +3004,17 @@ namespace cp
 
 		Mat src = src_.getMat();
 		Mat dest = dest_.getMat();
-		Mat cov, mean;
+		Mat cov;
 		if (channels <= 3 && src_.channels() <= 3)
 		{
 			{
 				//cp::Timer t("cov");
-				if (src.channels() == 2) calcCovarMatrix2_(src, cov);
-				if (src.channels() == 3) calcCovarMatrix3_(src, cov);
+				if (src.channels() == 2) calcCovarMatrix2_(src, cov, mean);
+				if (src.channels() == 3) calcCovarMatrix3_(src, cov, mean);
 			}
-			Mat eval, evec;
-			eigen(cov, eval, evec);
 
+			eigen(cov, eval, evec);
+			eigenVecConvert(evec);
 			Mat transmat;
 			evec(Rect(0, 0, evec.cols, channels)).convertTo(transmat, CV_32F);
 			{
@@ -2973,9 +3034,17 @@ namespace cp
 			}
 			else
 			{
-				cvtColorPCAOpenCVCovMat(src, dest, channels);
+				cvtColorPCAOpenCVCovMat(src, dest, channels, eval, evec);
 			}
 		}
+	}
+
+	void cvtColorPCA(InputArray src, OutputArray dest, const int dest_channels)
+	{
+		Mat evec;
+		Mat eval;
+		Mat mean;
+		cvtColorPCA(src, dest, dest_channels, evec, eval, mean);
 	}
 
 	void cvtColorPCA(vector<Mat>& src, vector<Mat>& dest, const int dest_channels)
@@ -3023,8 +3092,9 @@ namespace cp
 		else
 		{
 			Mat v, v2;
+			Mat eval, evec;
 			merge(src, v);
-			cvtColorPCAOpenCVCovMat(v, v2, channels);
+			cvtColorPCAOpenCVCovMat(v, v2, channels, evec, eval);
 			split(v2, dest);
 		}
 	}
@@ -3242,13 +3312,13 @@ namespace cp
 		cvReleaseMat(&y);
 		cvReleaseMat(&A);
 		cvReleaseMat(&cmat);
-			}
+	}
 
 	void findColorMatrix(Mat& src_point_crowd1, Mat& src_point_crowd2, Mat& C)
 	{
 		if (C.empty())C.create(3, 4, CV_64F);
 
 		xcvFindColorMatrix(&CvMat(src_point_crowd1), &CvMat(src_point_crowd2), &CvMat(C));
-	}
+}
 #endif
 		}
