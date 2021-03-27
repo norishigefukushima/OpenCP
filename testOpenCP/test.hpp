@@ -9,6 +9,7 @@
 #endif
 
 //core
+void testKMeans(cv::Mat& src);
 void testAlphaBlend(cv::Mat& src1, cv::Mat& src2);
 void testAlphaBlendMask(cv::Mat& src1, cv::Mat& src2);
 void consoleTest();

@@ -45,6 +45,7 @@ cv::copyMakeBorderを高速化した関数群
  * [drawHistogramImageGray](histogram_jp.md "#drawHistogramImageGray")
  * [drawAccumulateHistogramImage](histogram_jp.md "#drawAccumulateHistogramImage")
  * [drawAccumulateHistogramImageGray](histogram_jp.md "#drawAccumulateHistogramImageGray")
+ * [guiLocalDiffHistogram](histogram_jp.md "#guiLocalDiffHistogram")
 
 ## imshowExtension.hpp
 imshowの拡張
@@ -54,8 +55,8 @@ imshowの拡張
 * [imshowCountDown](imshowExtension_jp.md "imshowCountDown")
 
 ## kmeans.hpp
-* [imshowNormalize](kmeans_jp.md "class KMeans")
-* [imshowScale](kmeans.md "kmeans")
+* [class KMeans](kmeans_jp.md "class KMeans")
+* [kmeans](kmeans.md "kmeans")
 
 
 # imgprog
