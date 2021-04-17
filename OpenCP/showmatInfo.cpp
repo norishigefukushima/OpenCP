@@ -18,39 +18,44 @@ namespace cp
 		cout << "channel: " << src.channels() << endl;
 		cout << "depth  : ";
 		if (src.depth() == CV_8U)cout << "8U" << endl;
+		else if (src.depth() == CV_8S)cout << "8S" << endl;
 		else if (src.depth() == CV_16S)cout << "16S" << endl;
 		else if (src.depth() == CV_16U)cout << "16U" << endl;
 		else if (src.depth() == CV_32S)cout << "32S" << endl;
 		else if (src.depth() == CV_32F)cout << "32F" << endl;
 		else if (src.depth() == CV_64F)cout << "64F" << endl;
+		else if (src.depth() == CV_16F)cout << "16F" << endl;
 
-		Scalar v = mean(src);
-		if (v.val[0] == 0)
+		if (src.channels() < 5)
 		{
-			cout << "zero set" << endl;
-		}
-		if (isStatInfo)
-		{
-			if (src.channels() == 1)
+			Scalar v = mean(src);
+			if (v.val[0] == 0)
 			{
-				cout << "mean  : " << v.val[0] << endl;
-				double minv, maxv;
-				minMaxLoc(src, &minv, &maxv);
-				cout << "minmax: " << minv << "," << maxv << endl;
+				cout << "zero set" << endl;
 			}
-			else if (src.channels() == 3)
+			if (isStatInfo)
 			{
-				cout << "mean  : " << v.val[0] << "," << v.val[1] << "," << v.val[2] << endl;
+				if (src.channels() == 1)
+				{
+					cout << "mean  : " << v.val[0] << endl;
+					double minv, maxv;
+					minMaxLoc(src, &minv, &maxv);
+					cout << "minmax: " << minv << "," << maxv << endl;
+				}
+				else if (src.channels() == 3)
+				{
+					cout << "mean  : " << v.val[0] << "," << v.val[1] << "," << v.val[2] << endl;
 
-				vector<Mat> vv;
-				split(src, vv);
-				double minv, maxv;
-				minMaxLoc(vv[0], &minv, &maxv);
-				cout << "minmax0: " << minv << "," << maxv << endl;
-				minMaxLoc(vv[1], &minv, &maxv);
-				cout << "minmax1: " << minv << "," << maxv << endl;
-				minMaxLoc(vv[2], &minv, &maxv);
-				cout << "minmax2: " << minv << "," << maxv << endl;
+					vector<Mat> vv;
+					split(src, vv);
+					double minv, maxv;
+					minMaxLoc(vv[0], &minv, &maxv);
+					cout << "minmax0: " << minv << "," << maxv << endl;
+					minMaxLoc(vv[1], &minv, &maxv);
+					cout << "minmax1: " << minv << "," << maxv << endl;
+					minMaxLoc(vv[2], &minv, &maxv);
+					cout << "minmax2: " << minv << "," << maxv << endl;
+				}
 			}
 		}
 		cout << endl;

@@ -54,4 +54,58 @@ namespace cp
 		imshow(wname, s);
 		waitKey(waitTime);
 	}
+
+	StackImage::StackImage(std::string window_name)
+	{
+		wname = window_name;
+	}
+
+	void StackImage::setWindowName(std::string window_name)
+	{
+		wname = window_name;
+	}
+
+	void StackImage::overwrite(cv::Mat& src)
+	{
+		if (stack.size() == 0)
+		{
+			push(src);
+			return;
+		}
+
+		src.copyTo(stack[stack_max - 1]);
+		if (stack_max > 1)
+		{
+			namedWindow(wname);
+			createTrackbar("num", wname, &num_stack, stack_max);
+			setTrackbarMax("num", wname, stack_max - 1);
+			setTrackbarPos("num", wname, stack_max - 1);
+		}
+	}
+
+	void StackImage::push(cv::Mat& src)
+	{
+		stack.push_back(src.clone());
+		stack_max = (int)stack.size();
+
+		if (stack_max > 0)
+		{
+			namedWindow(wname);
+			createTrackbar("num", wname, &num_stack, stack_max);
+			setTrackbarMax("num", wname, stack_max);
+			setTrackbarPos("num", wname, stack_max);
+		}
+	}
+
+	void StackImage::show(cv::Mat& src)
+	{
+		if (stack_max == 0) imshow(wname, src);
+		else if (stack_max == num_stack) imshow(wname, src);
+		else  imshow(wname, stack[num_stack]);
+	}
+
+	void StackImage::show()
+	{
+		if (stack_max > 0) imshow(wname, stack[min(num_stack, stack_max - 1)]);
+	}
 }

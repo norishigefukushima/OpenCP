@@ -7,7 +7,7 @@ using namespace cv;
 namespace cp
 {
 #pragma region cropTile
-	
+
 	static void cropTile8U_Replicate(const Mat& src, Mat& dest, const Size div_size, const Point idx, const int topb, const int bottomb, const int leftb, const int rightb)
 	{
 		const int tileSizeXInternal = src.cols / div_size.width;
@@ -842,9 +842,10 @@ namespace cp
 		}
 	}
 
-	
+
 	void cropTile(const Mat& src, Mat& dest, const Size div_size, const Point idx, const int topb, const int bottomb, const int leftb, const int rightb, const int borderType)
 	{
+		CV_Assert(src.channels() == 1);
 		CV_Assert(borderType == BORDER_REFLECT101 || borderType == BORDER_REFLECT || borderType == BORDER_REPLICATE);
 		if (!dest.empty() && dest.depth() != src.depth())dest.release();
 
@@ -865,6 +866,10 @@ namespace cp
 			if (borderType == BORDER_REFLECT101 || borderType == BORDER_DEFAULT) cropTile64F_Reflect101(src, dest, div_size, idx, topb, bottomb, leftb, rightb);
 			else if (borderType == BORDER_REFLECT) cropTile64F_Reflect(src, dest, div_size, idx, topb, bottomb, leftb, rightb);
 			else if (borderType == BORDER_REPLICATE) cropTile64F_Replicate(src, dest, div_size, idx, topb, bottomb, leftb, rightb);
+		}
+		else
+		{
+			cout << "cropTile does not support this depth type." << endl;
 		}
 	}
 
@@ -1868,9 +1873,9 @@ namespace cp
 			}
 			for (int i = LEFT; i < left; i++)
 			{
-				db[i] = s[(-top_tilex + left - i-1) * 3 + 0];
-				dg[i] = s[(-top_tilex + left - i-1) * 3 + 1];
-				dr[i] = s[(-top_tilex + left - i-1) * 3 + 2];
+				db[i] = s[(-top_tilex + left - i - 1) * 3 + 0];
+				dg[i] = s[(-top_tilex + left - i - 1) * 3 + 1];
+				dr[i] = s[(-top_tilex + left - i - 1) * 3 + 2];
 			}
 
 			__m256d mb, mg, mr;
@@ -1911,7 +1916,7 @@ namespace cp
 		{
 			for (int j = 0; j < top; j++)
 			{
-				double* s = dest[c].ptr<double>(2 * top - j-1);
+				double* s = dest[c].ptr<double>(2 * top - j - 1);
 				double* d = dest[c].ptr<double>(j);
 				memcpy(d, s, sizeof(double) * (dest_tile_size_x));
 			}
@@ -1930,30 +1935,62 @@ namespace cp
 
 	void cropSplitTile(const Mat& src, vector<Mat>& dest, const Size div_size, const Point idx, const int topb, const int bottomb, const int leftb, const int rightb, const int borderType)
 	{
-		CV_Assert(src.channels() == 3);
 		CV_Assert(borderType == BORDER_REFLECT101 || borderType == BORDER_REFLECT || borderType == BORDER_REPLICATE);
-
-		if (src.depth() == CV_8U)
+		if (src.channels() == 3)
 		{
-			if (borderType == BORDER_REFLECT101 || borderType == BORDER_DEFAULT)cropSplitTile8UC3_Reflect101(src, dest, div_size, idx, topb, bottomb, leftb, rightb);
-			else if (borderType == BORDER_REFLECT) cropSplitTile8UC3_Reflect(src, dest, div_size, idx, topb, bottomb, leftb, rightb);
-			else if (borderType == BORDER_REPLICATE) cropSplitTile8UC3_Replicate(src, dest, div_size, idx, topb, bottomb, leftb, rightb);
-		}
-		else if (src.depth() == CV_32F)
-		{
-			if (borderType == BORDER_REFLECT101 || borderType == BORDER_DEFAULT) cropSplitTile32FC3_Reflect101(src, dest, div_size, idx, topb, bottomb, leftb, rightb);
-			else if (borderType == BORDER_REFLECT) cropSplitTile32FC3_Reflect(src, dest, div_size, idx, topb, bottomb, leftb, rightb);
-			else if (borderType == BORDER_REPLICATE) cropSplitTile32FC3_Replicate(src, dest, div_size, idx, topb, bottomb, leftb, rightb);
-		}
-		else if (src.depth() == CV_64F)
-		{
-			if (borderType == BORDER_REFLECT101 || borderType == BORDER_DEFAULT)cropSplitTile64FC3_Reflect101(src, dest, div_size, idx, topb, bottomb, leftb, rightb); 
-			else if (borderType == BORDER_REFLECT) cropSplitTile64FC3_Reflect(src, dest, div_size, idx, topb, bottomb, leftb, rightb);
-			else if (borderType == BORDER_REPLICATE) cropSplitTile64FC3_Replicate(src, dest, div_size, idx, topb, bottomb, leftb, rightb);
+			if (src.depth() == CV_8U)
+			{
+				if (borderType == BORDER_REFLECT101 || borderType == BORDER_DEFAULT)cropSplitTile8UC3_Reflect101(src, dest, div_size, idx, topb, bottomb, leftb, rightb);
+				else if (borderType == BORDER_REFLECT) cropSplitTile8UC3_Reflect(src, dest, div_size, idx, topb, bottomb, leftb, rightb);
+				else if (borderType == BORDER_REPLICATE) cropSplitTile8UC3_Replicate(src, dest, div_size, idx, topb, bottomb, leftb, rightb);
+			}
+			else if (src.depth() == CV_32F)
+			{
+				if (borderType == BORDER_REFLECT101 || borderType == BORDER_DEFAULT) cropSplitTile32FC3_Reflect101(src, dest, div_size, idx, topb, bottomb, leftb, rightb);
+				else if (borderType == BORDER_REFLECT) cropSplitTile32FC3_Reflect(src, dest, div_size, idx, topb, bottomb, leftb, rightb);
+				else if (borderType == BORDER_REPLICATE) cropSplitTile32FC3_Replicate(src, dest, div_size, idx, topb, bottomb, leftb, rightb);
+			}
+			else if (src.depth() == CV_64F)
+			{
+				if (borderType == BORDER_REFLECT101 || borderType == BORDER_DEFAULT)cropSplitTile64FC3_Reflect101(src, dest, div_size, idx, topb, bottomb, leftb, rightb);
+				else if (borderType == BORDER_REFLECT) cropSplitTile64FC3_Reflect(src, dest, div_size, idx, topb, bottomb, leftb, rightb);
+				else if (borderType == BORDER_REPLICATE) cropSplitTile64FC3_Replicate(src, dest, div_size, idx, topb, bottomb, leftb, rightb);
+			}
+			else
+			{
+				cout << "cropSplitTile does not support this depth type." << endl;
+			}
 		}
 		else
 		{
-			cout << "cropSplitTile does not support this depth type." << endl;
+			vector<Mat> vsrc;
+			split(src, vsrc);
+			dest.resize(vsrc.size());
+			for (int i = 0; i < vsrc.size(); i++)
+			{
+				if (src.depth() == CV_8U)
+				{
+					if (borderType == BORDER_REFLECT101 || borderType == BORDER_DEFAULT) cropTile8U_Reflect101(vsrc[i], dest[i], div_size, idx, topb, bottomb, leftb, rightb);
+					else if (borderType == BORDER_REFLECT) cropTile8U_Reflect(vsrc[i], dest[i], div_size, idx, topb, bottomb, leftb, rightb);
+					else if (borderType == BORDER_REPLICATE) cropTile8U_Replicate(vsrc[i], dest[i], div_size, idx, topb, bottomb, leftb, rightb);
+				}
+				else if (src.depth() == CV_32F)
+				{
+					if (borderType == BORDER_REFLECT101 || borderType == BORDER_DEFAULT) cropTile32F_Reflect101(vsrc[i], dest[i], div_size, idx, topb, bottomb, leftb, rightb);
+					else if (borderType == BORDER_REFLECT) cropTile32F_Reflect(vsrc[i], dest[i], div_size, idx, topb, bottomb, leftb, rightb);
+					else if (borderType == BORDER_REPLICATE) cropTile32F_Replicate(vsrc[i], dest[i], div_size, idx, topb, bottomb, leftb, rightb);
+				}
+				else if (src.depth() == CV_64F)
+				{
+					if (borderType == BORDER_REFLECT101 || borderType == BORDER_DEFAULT) cropTile64F_Reflect101(vsrc[i], dest[i], div_size, idx, topb, bottomb, leftb, rightb);
+					else if (borderType == BORDER_REFLECT) cropTile64F_Reflect(vsrc[i], dest[i], div_size, idx, topb, bottomb, leftb, rightb);
+					else if (borderType == BORDER_REPLICATE) cropTile64F_Replicate(vsrc[i], dest[i], div_size, idx, topb, bottomb, leftb, rightb);
+				}
+				else
+				{
+					cout << "cropSplitTile does not support this depth type." << endl;
+				}
+			}
 		}
 	}
 
@@ -2031,7 +2068,7 @@ namespace cp
 		CV_Assert(src.depth() == dest.depth());
 		CV_Assert(src.channels() == dest.channels());
 		CV_Assert(dest.cols % div_size.width == 0 && dest.rows % div_size.height == 0);
-		
+
 		if (src.depth() == CV_8U)
 		{
 			pasteTile_internal<uchar>(src, dest, div_size, idx, top, left);

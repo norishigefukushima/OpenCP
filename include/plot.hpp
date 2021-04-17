@@ -338,6 +338,10 @@ namespace cp
 		void projectPoint(cv::Point3d& xyz, const cv::Mat& R, const cv::Mat& t, const cv::Mat& K, cv::Point2d& dest);
 
 		void convertRGBto3D(cv::Mat& src, cv::Mat& rgb);
+		cv::Mat additionalStartLines;
+		cv::Mat additionalStartLinesDest;
+		cv::Mat additionalEndLines;
+		cv::Mat additionalEndLinesDest;
 		cv::Mat additionalPoints;
 		cv::Mat additionalPointsDest;
 		cv::Mat center;
@@ -347,7 +351,9 @@ namespace cp
 		void push_back(cv::Mat& src);
 		void push_back(cv::Vec3f src);
 		void push_back(const float b, const float g, const float r);
-
+		void push_back_line(cv::Mat& src, cv::Mat& dest);
+		void push_back_line(cv::Vec3f src, cv::Vec3f dest);
+		void push_back_line(const float b_s, const float g_s, const float r_s, const float b_d, const float g_d, const float r_d);
 
 		void clear();
 		void plot(cv::Mat& src, bool isWait = true, std::string wname = "RGB histogram");

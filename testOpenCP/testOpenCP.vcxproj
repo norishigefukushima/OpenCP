@@ -173,6 +173,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="bilateralfilter\bilateralFilterTest.cpp" />
+    <ClCompile Include="highDimentionalGaussianFilterTest.cpp" />
     <ClCompile Include="testColorCorrection.cpp" />
     <ClCompile Include="denoise\denoiseTest.cpp" />
     <ClCompile Include="disparityRefinement\disparityRefinementTest.cpp" />
@@ -189,6 +190,7 @@
     <ClCompile Include="guiEPFWeightMapTest.cpp" />
     <ClCompile Include="testGuidedImageFilter.cpp" />
     <ClCompile Include="guiHazeRemoveTest.cpp" />
+    <ClCompile Include="testKMeans.cpp" />
     <ClCompile Include="testStereo.cpp" />
     <ClCompile Include="guiUpsampleTest.cpp" />
     <ClCompile Include="testWeightedHistogramFilter.cpp" />

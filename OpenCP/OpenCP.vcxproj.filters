@@ -573,6 +573,9 @@
     <ClCompile Include="box\boxFilter_SSAT_HV_8x8.cpp">
       <Filter>ソース ファイル\filter\boxFilter</Filter>
     </ClCompile>
+    <ClCompile Include="highDimensionalGaussianFilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libGaussian\gaussian_conv.h">
@@ -1024,6 +1027,9 @@
     </ClInclude>
     <ClInclude Include="box\boxFilterBase.hpp">
       <Filter>ソース ファイル\filter\boxFilter\hpp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\highDimensionalGaussianFilter.hpp">
+      <Filter>ヘッダー ファイル\headers\filter</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

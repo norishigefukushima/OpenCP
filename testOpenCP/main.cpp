@@ -2,120 +2,6 @@
 #include "test.hpp"
 using namespace std;
 
-struct MouseLocalDiffHistogramParameter
-{
-	cv::Rect pt;
-	std::string wname;
-	MouseLocalDiffHistogramParameter(int x, int y, int width, int height, std::string name)
-	{
-		pt = cv::Rect(x, y, width, height);
-		wname = name;
-	}
-};
-
-void guiLocalDiffHistogramOnMouse(int event, int x, int y, int flags, void* param)
-{
-	MouseLocalDiffHistogramParameter* retp = (MouseLocalDiffHistogramParameter*)param;
-
-	if (flags == EVENT_FLAG_LBUTTON)
-	{
-		retp->pt.x = max(0, min(retp->pt.width - 1, x));
-		retp->pt.y = max(0, min(retp->pt.height - 1, y));
-
-		setTrackbarPos("x", retp->wname, x);
-		setTrackbarPos("y", retp->wname, y);
-	}
-}
-
-void guiLocalDiffHistogram(Mat& src, bool isWait = true, string wname = "gui");
-void guiLocalDiffHistogram(Mat& src, bool isWait, string wname)
-{
-	Mat img;
-	if (src.channels() == 3)
-	{
-		cvtColor(src, img, COLOR_BGR2GRAY);
-	}
-	else
-	{
-		img = src;
-	}
-
-
-	namedWindow(wname);
-
-	static MouseLocalDiffHistogramParameter param(src.cols / 2, src.rows / 2, src.cols, src.rows, wname);
-
-	setMouseCallback(wname, (MouseCallback)guiLocalDiffHistogramOnMouse, (void*)&param);
-	createTrackbar("x", wname, &param.pt.x, src.cols - 1);
-	createTrackbar("y", wname, &param.pt.y, src.rows - 1);
-	int r = 0;  createTrackbar("r", wname, &r, 50);
-	int histmax = 100; createTrackbar("histmax", wname, &histmax, 255);
-	int key = 0;
-	Mat show;
-
-	int hist[512];
-
-	Plot pt;
-	Mat hist_img(Size(512, 512), CV_8UC3);
-	while (key != 'q')
-	{
-
-		hist_img.setTo(0);
-		img.copyTo(show);
-		Mat crop;
-		Point pt = Point(param.pt.x, param.pt.y);
-
-		const int d = 2 * r + 1;
-		cropZoom(img, crop, pt, d);
-		rectangle(show, Rect(pt.x - r, pt.y - r, d, d), COLOR_WHITE);
-		for (int i = 0; i < 512; i++)hist[i] = 0;
-
-		int b = crop.at<uchar>(r, r);
-
-		int minv = 255;
-		int maxv = -255;
-		for (int j = 0; j < d; j++)
-		{
-			for (int i = 0; i < d; i++)
-			{
-				int val = (int)crop.at<uchar>(j, i) - b + 255;
-				hist[val]++;
-
-				maxv = max(maxv, val - 255);
-				minv = min(minv, val - 255);
-			}
-		}
-
-		line(hist_img, Point(255, hist_img.rows - 1), Point(255, 0), COLOR_GRAY50);
-		line(hist_img, Point(minv + 255, hist_img.rows - 1), Point(minv + 255, 0), COLOR_GRAY40);
-		line(hist_img, Point(maxv + 255, hist_img.rows - 1), Point(maxv + 255, 0), COLOR_GRAY40);
-		for (int i = 0; i < 512; i++)
-		{
-			int v = int((hist_img.rows - 1) * (histmax - min(histmax, hist[i])) / (double)histmax);
-			line(hist_img, Point(i, hist_img.rows - 1), Point(i, v), COLOR_WHITE);
-		}
-
-		displayOverlay(wname, format("%d %d", minv, maxv));
-		imshow("hist", hist_img);
-		imshow(wname, show);
-		key = waitKey(1);
-
-		if (!isWait)break;
-	}
-
-	if (!isWait)destroyWindow(wname);
-}
-
-void filter2DTest(Mat& src)
-{
-	Mat dst;
-	Mat kernel = cv::getGaussianKernel(11, 3, CV_32F);
-	filter2D(src, dst, -1, kernel * kernel.t());
-
-	imshowNormalize("a", dst);
-	waitKey();
-}
-
 int main(int argc, char** argv)
 {
 #pragma region setup
@@ -130,7 +16,9 @@ int main(int argc, char** argv)
 	Mat noflash = imread("img/cave-noflash.png");
 #pragma endregion
 
+
 #pragma region core
+	testKMeans(img); return 0;
 	//testTiling(img); return 0;
 	//copyMakeBorderTest(img); return 0;
 	//testSplitMerge(img); return 0;
@@ -138,7 +26,7 @@ int main(int argc, char** argv)
 	//testsimd(); return 0;
 
 	//testHistogram(); return 0;
-	testPlot(); return 0;
+	//testPlot(); return 0;
 	//testPlot2D(); return 0;
 	//testGuidedImageFilter(Mat(), Mat()); return 0;
 	//guiHazeRemoveTest();
@@ -149,7 +37,7 @@ int main(int argc, char** argv)
 	//testPSNR(img); return 0;
 	//resize(img, a, Size(513, 513));
 	//testHistgram(img);
-	//testRGBHistogram();
+	testRGBHistogram();
 	//testRGBHistogram2();
 	//testTimer(img);
 	//testAlphaBlend(left, right);
@@ -160,6 +48,10 @@ int main(int argc, char** argv)
 	//guiContrast(guiCropZoom(img));
 #pragma endregion
 
+#pragma region imgproc
+	//guiCvtColorPCATest(); return 0;
+#pragma endregion
+
 #pragma region stereo
 	//testStereoBase(); return 0;
 	//testCVStereoBM(); return 0;
@@ -167,6 +59,7 @@ int main(int argc, char** argv)
 #pragma endregion
 
 #pragma region filter
+	highDimentionalGaussianFilterTest(img); return 0;
 	//testWeightedHistogramFilterDisparity(); return 0;
 	//testWeightedHistogramFilter();return 0;
 #pragma endregion 
@@ -291,6 +184,6 @@ int main(int argc, char** argv)
 
 	//application 
 	//guiDetailEnhancement(src);
-	//	guiDomainTransformFilterTest(mega);
+	//guiDomainTransformFilterTest(mega);
 	return 0;
 }

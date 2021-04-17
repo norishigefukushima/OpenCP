@@ -9,6 +9,7 @@
 #endif
 
 //core
+void testKMeans(cv::Mat& src);
 void testAlphaBlend(cv::Mat& src1, cv::Mat& src2);
 void testAlphaBlendMask(cv::Mat& src1, cv::Mat& src2);
 void consoleTest();
@@ -32,6 +33,7 @@ void testLocalPSNR(cv::Mat& ref);
 void guiSLICTest(cv::Mat& src);
 void guiDisparityPlaneFitSLICTest(cv::Mat& leftim, cv::Mat& rightim, cv::Mat& GT);
 void fitPlaneTest();
+void guiCvtColorPCATest();
 void guiColorCorrectionTest(cv::Mat& src, cv::Mat& ref);
 
 //filter
@@ -46,6 +48,9 @@ void guiSeparableBilateralFilterTest(cv::Mat& src);
 
 void testWeightedHistogramFilter(cv::Mat& src, cv::Mat& guide);
 void testWeightedHistogramFilterDisparity();
+
+
+void highDimentionalGaussianFilterTest(cv::Mat& src);
 
 void guiGausianFilterTest(cv::Mat& src_);
 void guiRecursiveBilateralFilterTest(cv::Mat& src);

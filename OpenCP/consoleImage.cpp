@@ -73,10 +73,16 @@ namespace cp
 		strings.clear();
 	}
 
+	void ConsoleImage::push()
+	{
+		si.push(image);
+	}
+
 	void ConsoleImage::show(bool isClear)
 	{
-		namedWindow(windowName);
-		imshow(windowName, image);
+		//namedWindow(windowName);
+		si.setWindowName(windowName);
+		si.show(image);
 		if (isClear)clear();
 	}
 

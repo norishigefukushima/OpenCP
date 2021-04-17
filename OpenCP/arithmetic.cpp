@@ -1,5 +1,6 @@
 #include "arithmetic.hpp"
 #include "fmath/fmath.hpp"
+#include "inlineSIMDFunctions.hpp"
 using namespace std;
 using namespace cv;
 using namespace fmath;
@@ -43,7 +44,7 @@ namespace cp
 	}
 
 
-	void pow_fmath(const float a, const Mat& src, Mat & dest)
+	void pow_fmath(const float a, const Mat& src, Mat& dest)
 	{
 		if (dest.empty())dest.create(src.size(), CV_32F);
 
@@ -63,7 +64,7 @@ namespace cp
 		}
 	}
 
-	void pow_fmath(const Mat& src, const float a, Mat & dest)
+	void pow_fmath(const Mat& src, const float a, Mat& dest)
 	{
 		if (dest.empty())dest.create(src.size(), CV_32F);
 
@@ -83,7 +84,7 @@ namespace cp
 		}
 	}
 
-	void pow_fmath(const Mat& src1, const Mat& src2, Mat & dest)
+	void pow_fmath(const Mat& src1, const Mat& src2, Mat& dest)
 	{
 		if (dest.empty())dest.create(src1.size(), CV_32F);
 
@@ -149,7 +150,7 @@ namespace cp
 		CV_Assert(a.depth() == CV_32F || a.depth() == CV_64F);
 		dest.create(a.size(), a.type());
 
-		const int size = a.size().area()*a.channels();
+		const int size = a.size().area() * a.channels();
 		if (a.depth() == CV_32F)
 		{
 			float* aptr = a.ptr<float>();
@@ -168,7 +169,7 @@ namespace cp
 			}
 			for (int i = rem; i < size; i++)
 			{
-				dest.at<float>(i) = -a.at<float>(i)*x.at<float>(i) - b.at<float>(i);
+				dest.at<float>(i) = -a.at<float>(i) * x.at<float>(i) - b.at<float>(i);
 			}
 		}
 		else if (a.depth() == CV_64F)
@@ -189,7 +190,7 @@ namespace cp
 			}
 			for (int i = rem; i < size; i++)
 			{
-				dest.at<double>(i) = -a.at<double>(i)*x.at<double>(i) - b.at<double>(i);
+				dest.at<double>(i) = -a.at<double>(i) * x.at<double>(i) - b.at<double>(i);
 			}
 		}
 	}
@@ -202,7 +203,7 @@ namespace cp
 		CV_Assert(a.depth() == CV_32F || a.depth() == CV_64F);
 		dest.create(a.size(), a.type());
 
-		const int size = a.size().area()*a.channels();
+		const int size = a.size().area() * a.channels();
 		if (a.depth() == CV_32F)
 		{
 			float* aptr = a.ptr<float>();
@@ -221,7 +222,7 @@ namespace cp
 			}
 			for (int i = rem; i < size; i++)
 			{
-				dest.at<float>(i) = -a.at<float>(i)*x.at<float>(i) + b.at<float>(i);
+				dest.at<float>(i) = -a.at<float>(i) * x.at<float>(i) + b.at<float>(i);
 			}
 		}
 		else if (a.depth() == CV_64F)
@@ -242,7 +243,7 @@ namespace cp
 			}
 			for (int i = rem; i < size; i++)
 			{
-				dest.at<double>(i) = -a.at<double>(i)*x.at<double>(i) + b.at<double>(i);
+				dest.at<double>(i) = -a.at<double>(i) * x.at<double>(i) + b.at<double>(i);
 			}
 		}
 	}
@@ -255,7 +256,7 @@ namespace cp
 		CV_Assert(a.depth() == CV_32F || a.depth() == CV_64F);
 		dest.create(a.size(), a.type());
 
-		const int size = a.size().area()*a.channels();
+		const int size = a.size().area() * a.channels();
 		if (a.depth() == CV_32F)
 		{
 			float* aptr = a.ptr<float>();
@@ -274,7 +275,7 @@ namespace cp
 			}
 			for (int i = rem; i < size; i++)
 			{
-				dest.at<float>(i) = a.at<float>(i)*x.at<float>(i) - b.at<float>(i);
+				dest.at<float>(i) = a.at<float>(i) * x.at<float>(i) - b.at<float>(i);
 			}
 		}
 		else if (a.depth() == CV_64F)
@@ -295,7 +296,7 @@ namespace cp
 			}
 			for (int i = rem; i < size; i++)
 			{
-				dest.at<double>(i) = a.at<double>(i)*x.at<double>(i) - b.at<double>(i);
+				dest.at<double>(i) = a.at<double>(i) * x.at<double>(i) - b.at<double>(i);
 			}
 		}
 	}
@@ -308,7 +309,7 @@ namespace cp
 		CV_Assert(a.depth() == CV_32F || a.depth() == CV_64F);
 		dest.create(a.size(), a.type());
 
-		const int size = a.size().area()*a.channels();
+		const int size = a.size().area() * a.channels();
 		if (a.depth() == CV_32F)
 		{
 			float* aptr = a.ptr<float>();
@@ -327,7 +328,7 @@ namespace cp
 			}
 			for (int i = rem; i < size; i++)
 			{
-				dest.at<float>(i) = a.at<float>(i)*x.at<float>(i) + b.at<float>(i);
+				dest.at<float>(i) = a.at<float>(i) * x.at<float>(i) + b.at<float>(i);
 			}
 		}
 		else if (a.depth() == CV_64F)
@@ -348,7 +349,7 @@ namespace cp
 			}
 			for (int i = rem; i < size; i++)
 			{
-				dest.at<double>(i) = a.at<double>(i)*x.at<double>(i) + b.at<double>(i);
+				dest.at<double>(i) = a.at<double>(i) * x.at<double>(i) + b.at<double>(i);
 			}
 		}
 	}
@@ -359,7 +360,7 @@ namespace cp
 		CV_Assert(src.depth() == CV_8U);
 		if (src.data != dest.data) dest.create(src.size(), src.type());
 
-		const int size = src.size().area()*src.channels();
+		const int size = src.size().area() * src.channels();
 		uchar* s = src.ptr<uchar>();
 		uchar* d = dest.ptr<uchar>();
 
@@ -378,7 +379,7 @@ namespace cp
 		Mat dest = dest_.getMat();
 		//if (src.data != dest.data) dest_.create(src.size(), src.type());
 
-		const int size = src.size().area()*src.channels();
+		const int size = src.size().area() * src.channels();
 		uchar* s = src.ptr<uchar>();
 		uchar* d = dest.ptr<uchar>();
 		const int simdsize = size / 16;
@@ -407,7 +408,7 @@ namespace cp
 		if (src.data != dest.data) dest.create(src.size(), src.type());
 		lostbit.create(src.size(), src.type());
 
-		const int size = src.size().area()*src.channels();
+		const int size = src.size().area() * src.channels();
 		uchar* s = src.ptr<uchar>();
 		uchar* d = dest.ptr<uchar>();
 		uchar* o = lostbit.ptr<uchar>();
@@ -426,11 +427,11 @@ namespace cp
 		Mat src = src_.getMat();
 		if (dest_.empty()) dest_.create(src.size(), src.type());
 		lostbit_.create(src.size(), src.type());
-		
+
 		Mat dest = dest_.getMat();
 		Mat lostbit = lostbit_.getMat();
-	
-		const int size = src.size().area()*src.channels();
+
+		const int size = src.size().area() * src.channels();
 		uchar* s = src.ptr<uchar>();
 		uchar* d = dest.ptr<uchar>();
 		uchar* o = lostbit.ptr<uchar>();
@@ -466,6 +467,236 @@ namespace cp
 		{
 			d[i] = s[i] >> shift;
 			o[i] = s[i] - (d[i] << shift);
+		}
+	}
+
+	double average(const Mat& src, const int left, const int right, const int top, const int bottom, const bool isNormalize)
+	{
+		CV_Assert(src.type() == CV_32FC1);
+		__m256 msum1 = _mm256_setzero_ps();
+		__m256 msum2 = _mm256_setzero_ps();
+		__m256 msum3 = _mm256_setzero_ps();
+		__m256 msum4 = _mm256_setzero_ps();
+
+		const bool isFull = (left == 0 && right == 0 && top == 0 && bottom == 0);
+		const int size = (isFull) ? src.size().area() : (src.cols - (left + right)) * (src.rows - (top + bottom));
+
+		double sum = 0.0;
+		if (isFull)
+		{
+			const float* sptr = src.ptr<float>();
+			const int simdSize = get_simd_floor(size, 32);
+			for (int i = 0; i < simdSize; i += 32)
+			{
+				msum1 = _mm256_add_ps(_mm256_load_ps(sptr + i + 0), msum1);
+				msum2 = _mm256_add_ps(_mm256_load_ps(sptr + i + 8), msum2);
+				msum3 = _mm256_add_ps(_mm256_load_ps(sptr + i + 16), msum3);
+				msum4 = _mm256_add_ps(_mm256_load_ps(sptr + i + 24), msum4);
+			}
+			sum = _mm256_reduceadd_pspd(msum1) + _mm256_reduceadd_pspd(msum2) + _mm256_reduceadd_pspd(msum3) + _mm256_reduceadd_pspd(msum4);
+			float rem = 0.f;
+			for (int i = simdSize; i < size; i++)
+			{
+				rem += sptr[i];
+			}
+			sum += rem;
+		}
+		else
+		{
+			const int simdend = get_simd_floor(src.cols - (left + right), 32) + left;
+			for (int j = top; j < src.rows - bottom; j++)
+			{
+				const float* sptr = src.ptr<float>(j);
+				msum1 = _mm256_setzero_ps();
+				msum2 = _mm256_setzero_ps();
+				msum3 = _mm256_setzero_ps();
+				msum4 = _mm256_setzero_ps();
+				for (int i = left; i < simdend; i += 32)
+				{
+					msum1 = _mm256_add_ps(_mm256_loadu_ps(sptr + i + 0), msum1);
+					msum2 = _mm256_add_ps(_mm256_loadu_ps(sptr + i + 8), msum2);
+					msum3 = _mm256_add_ps(_mm256_loadu_ps(sptr + i + 16), msum3);
+					msum4 = _mm256_add_ps(_mm256_loadu_ps(sptr + i + 24), msum4);
+				}
+				sum += _mm256_reduceadd_pspd(msum1) + _mm256_reduceadd_pspd(msum2) + _mm256_reduceadd_pspd(msum3) + _mm256_reduceadd_pspd(msum4);
+				float rem = 0.f;
+				for (int i = simdend; i < src.cols - right; i++)
+				{
+					rem += sptr[i];
+				}
+				sum += rem;
+			}
+		}
+
+		if (isNormalize)return sum / size;
+		else return sum;
+	}
+
+	void average_variance(const Mat& src, double& ave, double& var, const int left, const int right, const int top, const int bottom, const bool isNormalize)
+	{
+		CV_Assert(src.type() == CV_32FC1);
+		__m256 msum1 = _mm256_setzero_ps();
+		__m256 msum2 = _mm256_setzero_ps();
+		__m256 msum3 = _mm256_setzero_ps();
+		__m256 msum4 = _mm256_setzero_ps();
+		__m256 mvar1 = _mm256_setzero_ps();
+		__m256 mvar2 = _mm256_setzero_ps();
+		__m256 mvar3 = _mm256_setzero_ps();
+		__m256 mvar4 = _mm256_setzero_ps();
+
+		const bool isFull = (left == 0 && right == 0 && top == 0 && bottom == 0);
+		const int size = (isFull) ? src.size().area() : (src.cols - (left + right)) * (src.rows - (top + bottom));
+
+		double sum = 0.0;
+		double mulsum = 0.0;
+		if (isFull)
+		{
+			const float* sptr = src.ptr<float>();
+			const int simdSize = get_simd_floor(size, 32);
+			for (int i = 0; i < simdSize; i += 32)
+			{
+				const __m256 ms1 = _mm256_load_ps(sptr + i + 0);
+				const __m256 ms2 = _mm256_load_ps(sptr + i + 8);
+				const __m256 ms3 = _mm256_load_ps(sptr + i + 16);
+				const __m256 ms4 = _mm256_load_ps(sptr + i + 24);
+				msum1 = _mm256_add_ps(ms1, msum1);
+				msum2 = _mm256_add_ps(ms2, msum2);
+				msum3 = _mm256_add_ps(ms3, msum3);
+				msum4 = _mm256_add_ps(ms4, msum4);
+				mvar1 = _mm256_fmadd_ps(ms1, ms1, mvar1);
+				mvar2 = _mm256_fmadd_ps(ms2, ms2, mvar2);
+				mvar3 = _mm256_fmadd_ps(ms3, ms3, mvar3);
+				mvar4 = _mm256_fmadd_ps(ms4, ms4, mvar4);
+			}
+			sum += _mm256_reduceadd_pspd(msum1) + _mm256_reduceadd_pspd(msum2) + _mm256_reduceadd_pspd(msum3) + _mm256_reduceadd_pspd(msum4);
+			mulsum += _mm256_reduceadd_pspd(mvar1) + _mm256_reduceadd_pspd(mvar2) + _mm256_reduceadd_pspd(mvar3) + _mm256_reduceadd_pspd(mvar4);
+			float remsum = 0.f;
+			float remmulsum = 0.f;
+			for (int i = simdSize; i < size; i++)
+			{
+				remsum += sptr[i];
+				remmulsum += sptr[i] * sptr[i];
+			}
+			sum += remsum;
+			mulsum += remmulsum;
+		}
+		else
+		{
+			const int simdend = get_simd_floor(src.cols - (left + right), 32) + left;
+			for (int j = top; j < src.rows - bottom; j++)
+			{
+				const float* sptr = src.ptr<float>(j);
+				msum1 = _mm256_setzero_ps();
+				msum2 = _mm256_setzero_ps();
+				msum3 = _mm256_setzero_ps();
+				msum4 = _mm256_setzero_ps();
+				mvar1 = _mm256_setzero_ps();
+				mvar2 = _mm256_setzero_ps();
+				mvar3 = _mm256_setzero_ps();
+				mvar4 = _mm256_setzero_ps();
+				for (int i = left; i < simdend; i += 32)
+				{
+					const __m256 ms1 = _mm256_loadu_ps(sptr + i + 0);
+					const __m256 ms2 = _mm256_loadu_ps(sptr + i + 8);
+					const __m256 ms3 = _mm256_loadu_ps(sptr + i + 16);
+					const __m256 ms4 = _mm256_loadu_ps(sptr + i + 24);
+					msum1 = _mm256_add_ps(ms1, msum1);
+					msum2 = _mm256_add_ps(ms2, msum2);
+					msum3 = _mm256_add_ps(ms3, msum3);
+					msum4 = _mm256_add_ps(ms4, msum4);
+					mvar1 = _mm256_fmadd_ps(ms1, ms1, mvar1);
+					mvar2 = _mm256_fmadd_ps(ms2, ms2, mvar2);
+					mvar3 = _mm256_fmadd_ps(ms3, ms3, mvar3);
+					mvar4 = _mm256_fmadd_ps(ms4, ms4, mvar4);
+				}
+				sum += _mm256_reduceadd_pspd(msum1) + _mm256_reduceadd_pspd(msum2) + _mm256_reduceadd_pspd(msum3) + _mm256_reduceadd_pspd(msum4);
+				mulsum += _mm256_reduceadd_pspd(mvar1) + _mm256_reduceadd_pspd(mvar2) + _mm256_reduceadd_pspd(mvar3) + _mm256_reduceadd_pspd(mvar4);
+				float remsum = 0.f;
+				float remmulsum = 0.f;
+				for (int i = simdend; i < src.cols - right; i++)
+				{
+					remsum += sptr[i];
+					remmulsum += sptr[i] * sptr[i];
+				}
+				sum += remsum;
+				mulsum += remmulsum;
+			}
+		}
+		if (isNormalize)
+		{
+			ave = sum / size;
+			var = (mulsum) / size - ave * ave;
+		}
+		else
+		{
+			ave = sum;
+			var = mulsum;
+		}
+	}
+
+	//do not have interface in opencp.hpp
+	void average_var_accurate(const Mat& src, double& ave, double& var, const bool isNormalize = true)
+	{
+		const float* sptr = src.ptr<float>();
+		const int size = src.size().area();
+		const int simdSize = get_simd_floor(size, 32);
+
+		__m256 msum1 = _mm256_setzero_ps();
+		__m256 msum2 = _mm256_setzero_ps();
+		__m256 msum3 = _mm256_setzero_ps();
+		__m256 msum4 = _mm256_setzero_ps();
+		__m256 mvar1 = _mm256_setzero_ps();
+		__m256 mvar2 = _mm256_setzero_ps();
+		__m256 mvar3 = _mm256_setzero_ps();
+		__m256 mvar4 = _mm256_setzero_ps();
+		for (int i = 0; i < simdSize; i += 32)
+		{
+			const __m256 ms1 = _mm256_load_ps(sptr + i + 0);
+			const __m256 ms2 = _mm256_load_ps(sptr + i + 8);
+			const __m256 ms3 = _mm256_load_ps(sptr + i + 16);
+			const __m256 ms4 = _mm256_load_ps(sptr + i + 24);
+			msum1 = _mm256_add_ps(ms1, msum1);
+			msum2 = _mm256_add_ps(ms2, msum2);
+			msum3 = _mm256_add_ps(ms3, msum3);
+			msum4 = _mm256_add_ps(ms4, msum4);
+		}
+		double sum = _mm256_reduceadd_pspd(msum1) + _mm256_reduceadd_pspd(msum2) + _mm256_reduceadd_pspd(msum3) + _mm256_reduceadd_pspd(msum4);
+		float remsum = 0.f;
+		for (int i = simdSize; i < size; i++)
+		{
+			remsum += sptr[i];
+		}
+		sum += remsum;
+		ave = sum / size;
+		const __m256 mave = _mm256_set1_ps((float)ave);
+		for (int i = 0; i < simdSize; i += 32)
+		{
+			const __m256 ms1 = _mm256_sub_ps(_mm256_load_ps(sptr + i + 0), mave);
+			const __m256 ms2 = _mm256_sub_ps(_mm256_load_ps(sptr + i + 8), mave);
+			const __m256 ms3 = _mm256_sub_ps(_mm256_load_ps(sptr + i + 16), mave);
+			const __m256 ms4 = _mm256_sub_ps(_mm256_load_ps(sptr + i + 24), mave);
+
+			mvar1 = _mm256_fmadd_ps(ms1, ms1, mvar1);
+			mvar2 = _mm256_fmadd_ps(ms2, ms2, mvar2);
+			mvar3 = _mm256_fmadd_ps(ms3, ms3, mvar3);
+			mvar4 = _mm256_fmadd_ps(ms4, ms4, mvar4);
+		}
+		float remmulsum = 0.f;
+		for (int i = simdSize; i < size; i++)
+		{
+			remmulsum += (sptr[i] - (float)ave) * (sptr[i] - (float)ave);
+		}
+		double mulsum = _mm256_reduceadd_pspd(mvar1) + _mm256_reduceadd_pspd(mvar2) + _mm256_reduceadd_pspd(mvar3) + _mm256_reduceadd_pspd(mvar4);
+		mulsum += remmulsum;
+
+		if (isNormalize)
+		{
+			var = mulsum / size;
+		}
+		else
+		{
+			ave = sum;
+			var = mulsum;
 		}
 	}
 }

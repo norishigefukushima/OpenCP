@@ -1,4 +1,5 @@
 #include "plot.hpp"
+#include "color.hpp"
 #include "draw.hpp"
 #include "stereo_core.hpp" //for RGB histogram
 #include "pointcloud.hpp" //for RGB histogram
@@ -1108,9 +1109,9 @@ namespace cp
 
 		bool isUseMinmaxBar = (xmax_data > 1 && ymax_data > 1);
 		const int xmin = (int)xmin_data;
-		const int xmax = (int)xmax_data;
+		const int xmax = (int)ceil(xmax_data);
 		const int ymin = (int)ymin_data;
-		const int ymax = (int)ymax_data;
+		const int ymax = (int)ceil(ymax_data);
 
 		int xminbar = xmin;
 		int xmaxbar = xmax;
@@ -2416,9 +2417,32 @@ namespace cp
 		push_back(Vec3f(b, g, r));
 	}
 
+	void RGBHistogram::push_back_line(Mat& src, Mat& dest)
+	{
+		const Vec3f centerv = Vec3f(center.at<float>(0), center.at<float>(1), center.at<float>(2));
+		for (int i = 0; i < src.rows; i++)
+		{
+			additionalStartLines.push_back(Vec3f(src.at<float>(i, 0), src.at<float>(i, 1), src.at<float>(i, 2)) - centerv);
+			additionalEndLines.push_back(Vec3f(dest.at<float>(i, 0), dest.at<float>(i, 1), dest.at<float>(i, 2)) - centerv);
+		}
+	}
+
+	void RGBHistogram::push_back_line(Vec3f src, Vec3f dest)
+	{
+		additionalStartLines.push_back(src - Vec3f(center.at<float>(0), center.at<float>(1), center.at<float>(2)));
+		additionalEndLines.push_back(dest - Vec3f(center.at<float>(0), center.at<float>(1), center.at<float>(2)));
+	}
+
+	void RGBHistogram::push_back_line(const float b_s, const float g_s, const float r_s, const float b_d, const float g_d, const float r_d)
+	{
+		push_back_line(Vec3f(b_s, g_s, r_s), Vec3f(b_d, g_d, r_d));
+	}
+
 	void RGBHistogram::clear()
 	{
 		additionalPoints.release();
+		additionalStartLines.release();
+		additionalEndLines.release();
 	}
 
 	void RGBHistogram::plot(Mat& src, bool isWait, string wname)
@@ -2432,6 +2456,7 @@ namespace cp
 		static int pitch = 90; createTrackbar("pitch", wname, &pitch, 360);
 		static int roll = 0; createTrackbar("roll", wname, &roll, 180);
 		static int yaw = 90; createTrackbar("yaw", wname, &yaw, 360);
+		static int isDrawPCA = 1; createTrackbar("PCA", wname, &isDrawPCA, 1);
 		static Point ptMouse = Point(cvRound((size.width - 1) * 0.75), cvRound((size.height - 1) * 0.25));
 
 		cv::setMouseCallback(wname, (MouseCallback)onMouseHistogram3D, (void*)&ptMouse);
@@ -2439,6 +2464,9 @@ namespace cp
 		//project RGB2XYZ
 		Mat rgb;
 		convertRGBto3D(src, rgb);
+
+		Mat evec, eval, mean, dest;
+		cvtColorPCA(rgb, dest, 1, evec, eval, mean);
 
 		Mat xyz;
 		vector<Point2f> pt(rgb.size().area());
@@ -2454,8 +2482,19 @@ namespace cp
 		guide.push_back(Point3f(127.5, -127.5, 127.5)); //brmax
 		guide.push_back(Point3f(127.5, 127.5, -127.5)); //bgmax
 
+		//guide.push_back(Point3f(0.f, 0.f, 0.f)); //eigen 0
+		Point3f cnt = Point3f(mean.at<double>(0), mean.at<double>(1), mean.at<double>(2));
+		float eveclen = 127.5;
+		guide.push_back(cnt); //eigen 0
+		guide.push_back(cnt + Point3f(evec.at<double>(0, 0), evec.at<double>(0, 1), evec.at<double>(0, 2)) * eveclen); //eigen 0
+		guide.push_back(cnt + Point3f(evec.at<double>(1, 0), evec.at<double>(1, 1), evec.at<double>(1, 2)) * eveclen); //eigen 1
+		guide.push_back(cnt + Point3f(evec.at<double>(2, 0), evec.at<double>(2, 1), evec.at<double>(2, 2)) * eveclen); //eigen 2
+
 		vector<Point2f> guidept(guide.rows);
 		vector<Point2f> additionalpt(additionalPoints.rows);
+		vector<Point2f> additional_start_line(additionalStartLines.rows);
+		vector<Point2f> additional_end_line(additionalEndLines.rows);
+
 		int key = 0;
 		Mat show = Mat::zeros(size, CV_8UC3);
 		while (key != 'q')
@@ -2492,6 +2531,16 @@ namespace cp
 				if (sw_projection == 1) projectPoints(additionalPointsDest, R, t, k, additionalpt, true);
 			}
 
+			if (!additionalStartLines.empty())
+			{
+				cp::moveXYZ(additionalStartLines, additionalStartLinesDest, rot, Mat::zeros(3, 1, CV_64F), true);
+				cp::moveXYZ(additionalEndLines, additionalEndLinesDest, rot, Mat::zeros(3, 1, CV_64F), true);
+				if (sw_projection == 0) projectPointsParallel(additionalStartLinesDest, R, t, k, additional_start_line, true);
+				if (sw_projection == 1) projectPoints(additionalStartLinesDest, R, t, k, additional_start_line, true);
+				if (sw_projection == 0) projectPointsParallel(additionalEndLinesDest, R, t, k, additional_end_line, true);
+				if (sw_projection == 1) projectPoints(additionalEndLinesDest, R, t, k, additional_end_line, true);
+			}
+
 			//draw lines for etc points
 			Point rgbzero = Point(cvRound(guidept[0].x), cvRound(guidept[0].y));
 			Point rmax = Point(cvRound(guidept[1].x), cvRound(guidept[1].y));
@@ -2501,6 +2550,10 @@ namespace cp
 			Point grmax = Point(cvRound(guidept[5].x), cvRound(guidept[5].y));
 			Point brmax = Point(cvRound(guidept[6].x), cvRound(guidept[6].y));
 			Point bgmax = Point(cvRound(guidept[7].x), cvRound(guidept[7].y));
+			Point ezero = Point(cvRound(guidept[8].x), cvRound(guidept[8].y));
+			Point eigenx = Point(cvRound(guidept[9].x), cvRound(guidept[9].y));
+			Point eigeny = Point(cvRound(guidept[10].x), cvRound(guidept[10].y));
+			Point eigenz = Point(cvRound(guidept[11].x), cvRound(guidept[11].y));
 			line(show, bgmax, bgrmax, COLOR_WHITE);
 			line(show, brmax, bgrmax, COLOR_WHITE);
 			line(show, grmax, bgrmax, COLOR_WHITE);
@@ -2514,6 +2567,12 @@ namespace cp
 			arrowedLine(show, rgbzero, rmax, COLOR_RED, 2);
 			arrowedLine(show, rgbzero, gmax, COLOR_GREEN, 2);
 			arrowedLine(show, rgbzero, bmax, COLOR_BLUE, 2);
+			if (isDrawPCA == 1)
+			{
+				arrowedLine(show, ezero, eigenx, COLOR_WHITE, 3);
+				arrowedLine(show, ezero, eigeny, COLOR_GRAY200, 2);
+				arrowedLine(show, ezero, eigenz, COLOR_GRAY100, 2);
+			}
 			//arrowedLine(show, rgbzero, bgrmax, Scalar::all(50), 1);
 
 
@@ -2524,13 +2583,12 @@ namespace cp
 				{
 					const int x = cvRound(pt[i].x);
 					const int y = cvRound(pt[i].y);
-					int inc = 2;
+					int inc = 5;
 					if (x >= 0 && x < show.cols && y >= 0 && y < show.rows)
 					{
 						show.at<Vec3b>(Point(x, y)) += Vec3b(inc, inc, inc);
 					}
 				}
-
 			}
 			else if (sw == 1)
 			{
@@ -2540,7 +2598,7 @@ namespace cp
 					const int y = cvRound(pt[i].y);
 					if (x >= 0 && x < show.cols && y >= 0 && y < show.rows)
 					{
-						Vec3f v = rgb.at<Vec3f>(i);
+						Vec3f v = rgb.at<Vec3f>(i) + Vec3f(center);
 						show.at<Vec3b>(Point(x, y)) = v;
 					}
 				}
@@ -2570,6 +2628,21 @@ namespace cp
 					if (x >= 0 && x < show.cols && y >= 0 && y < show.rows)
 					{
 						circle(show, Point(x, y), 2, COLOR_WHITE);
+					}
+				}
+			}
+
+			if (!additionalStartLines.empty())
+			{
+				for (int i = 0; i < additionalStartLines.size().area(); i++)
+				{
+					const int sx = cvRound(additional_start_line[i].x);
+					const int sy = cvRound(additional_start_line[i].y);
+					const int ex = cvRound(additional_end_line[i].x);
+					const int ey = cvRound(additional_end_line[i].y);
+					//if (sx >= 0 && sx < show.cols && sy >= 0 && sy < show.rows)
+					{
+						line(show, Point(sx, sy), Point(ex, ey), COLOR_WHITE, 2);
 					}
 				}
 			}
@@ -2609,4 +2682,5 @@ namespace cp
 		}
 	}
 #pragma endregion
+
 }
