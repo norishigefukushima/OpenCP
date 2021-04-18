@@ -423,7 +423,6 @@ namespace cp
 			if (rounding_value != 0) ymin_plotwindow = (double)-cp::ceilToMultiple((int)-ymin_plotwindow, rounding_value);
 		}
 
-
 		if (isCenter)
 		{
 			double yyy = abs(ymax_plotwindow);
