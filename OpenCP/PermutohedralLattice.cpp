@@ -66,7 +66,7 @@ namespace cp
 			if (filled >= (capacity / 2) - 1) { grow(); }
 
 			// Find the entry with the given key
-			while (1) 
+			while (1)
 			{
 				Entry e = entries[h];
 				// check if the cell is empty
@@ -326,9 +326,11 @@ namespace cp
 
 			for (int i = dim - 1; i > 0; i--)
 			{
-				elevated[i] = (elevated[i + 1] -
-					i * position[i - 1] * scaleFactor[i - 1] +
-					(i + 2) * position[i] * scaleFactor[i]);
+				elevated[i] = (
+					elevated[i + 1]
+					- i * position[i - 1] * scaleFactor[i - 1]
+					+ (i + 2) * position[i] * scaleFactor[i]
+					);
 			}
 			elevated[0] = elevated[1] + 2.f * position[0] * scaleFactor[0];
 
@@ -395,7 +397,7 @@ namespace cp
 					if (myrank[i] < -sum)
 					{
 						mygreedy[i] += dim1;
-						myrank[i] += (dim1) + sum;
+						myrank[i] += (dim1)+sum;
 					}
 					else
 					{
@@ -419,7 +421,7 @@ namespace cp
 				// Compute the location of the lattice point explicitly (all but the last coordinate - it's redundant because they sum to zero)
 				for (int i = 0; i < dim; i++)
 				{
-					key[i] = mygreedy[i] + canonical[remainder * (dim1) + myrank[i]];
+					key[i] = mygreedy[i] + canonical[remainder * (dim1)+myrank[i]];
 				}
 
 				// Retrieve pointer to the value at this vertex.
@@ -583,7 +585,7 @@ namespace cp
 			}
 		}
 
-		/* Performs a Gaussian blur along each projected axis in the hyperplane. */
+		// Performs a Gaussian blur along each projected axis in the hyperplane.
 		void blur()
 		{
 			// Prepare arrays
@@ -634,7 +636,7 @@ namespace cp
 					}
 				}
 				swap(newValue, oldValue);
-				
+
 				// the freshest data is now in oldValue, and newValue is ready to be written over
 			}
 
@@ -652,8 +654,8 @@ namespace cp
 		}
 
 	private:
-		const int dim;// guide dimention
-		const int sdim;//src dimension homogeneous
+		const int dim;// guide image dimention
+		const int sdim;//src image homogeneous dimension 
 		const int nData;
 		float* elevated, * scaleFactor, * barycentric;
 		short* canonical;
