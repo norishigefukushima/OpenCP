@@ -3,6 +3,7 @@
 using namespace cv;
 using namespace std;
 using namespace cp;
+
 guidedImageFilter_Merge_Base::guidedImageFilter_Merge_Base(cv::Mat& _src, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps, int _parallelType, const bool isInit)
 	: GuidedFilterBase(_src, _guide, _dest, _r, _eps), parallelType(_parallelType)
 {

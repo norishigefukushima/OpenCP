@@ -324,9 +324,6 @@
     <ClCompile Include="filterCore.cpp">
       <Filter>ソース ファイル\filter\filterCore</Filter>
     </ClCompile>
-    <ClCompile Include="fftFilter.cpp">
-      <Filter>ソース ファイル\filter</Filter>
-    </ClCompile>
     <ClCompile Include="adaptiveManifold.cpp">
       <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
     </ClCompile>
@@ -575,6 +572,9 @@
     </ClCompile>
     <ClCompile Include="highDimensionalGaussianFilter.cpp">
       <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="fftFilter.cpp">
+      <Filter>ソース ファイル\filter\dct-fft</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

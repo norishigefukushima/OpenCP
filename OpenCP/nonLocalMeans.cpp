@@ -29,16 +29,16 @@ namespace cp
 		{
 			;
 		}
-		virtual void operator()(const cv::Range &r) const
+		virtual void operator()(const cv::Range& r) const
 		{
 			const int tr_x = templeteWindowSizeX >> 1;
 			const int sr_x = searchWindowSizeX >> 1;
 			const int tr_y = templeteWindowSizeY >> 1;
 			const int sr_y = searchWindowSizeY >> 1;
-			const int cstep = (im->cols - templeteWindowSizeX)*im->channels();
-			const int imstep = im->cols*im->channels();
+			const int cstep = (im->cols - templeteWindowSizeX) * im->channels();
+			const int imstep = im->cols * im->channels();
 
-			const int tD = templeteWindowSizeX*templeteWindowSizeY;
+			const int tD = templeteWindowSizeX * templeteWindowSizeY;
 			const double tdiv = 1.0 / (double)(tD);//templete square div
 
 			if (im->channels() == 3)
@@ -55,11 +55,11 @@ namespace cp
 						float wmax = 0.f;
 						//search loop
 						const srcType* tprt = im->ptr<srcType>(sr_y + j) + 3 * (sr_x + i);
-						const srcType* sptr2 = im->ptr<srcType>(j) +3 * (i);
+						const srcType* sptr2 = im->ptr<srcType>(j) + 3 * (i);
 
 						for (int l = searchWindowSizeY; l--;)
 						{
-							const srcType* sptr = sptr2 + imstep*(l);
+							const srcType* sptr = sptr2 + imstep * (l);
 							for (int k = searchWindowSizeX; k--;)
 							{
 								//templete loop
@@ -73,19 +73,19 @@ namespace cp
 										// computing color L2 norm
 										//e += abs(s[0]-t[0])+abs(s[1]-t[1])+abs(s[2]-t[2]);//L2 norm
 
-										e += (s[0] - t[0])*(s[0] - t[0]) + (s[1] - t[1])*(s[1] - t[1]) + (s[2] - t[2])*(s[2] - t[2]);//L2 norm
+										e += (s[0] - t[0]) * (s[0] - t[0]) + (s[1] - t[1]) * (s[1] - t[1]) + (s[2] - t[2]) * (s[2] - t[2]);//L2 norm
 										s += 3, t += 3;
 									}
 									t += cstep;
 									s += cstep;
 								}
 
-								const int ediv = cvRound(e*tdiv);
+								const int ediv = cvRound(e * tdiv);
 								float www = w[ediv];
 
-								if (k == sr_x&&l == sr_y){ ; }
+								if (k == sr_x && l == sr_y) { ; }
 								else wmax = max(wmax, www);
-								const srcType* ss = sptr2 + imstep*(tr_y + l) + 3 * (tr_x + k);
+								const srcType* ss = sptr2 + imstep * (tr_y + l) + 3 * (tr_x + k);
 								r += ss[0] * www;
 								g += ss[1] * www;
 								b += ss[2] * www;
@@ -94,15 +94,15 @@ namespace cp
 							}
 						}
 
-						const srcType* ss = sptr2 + imstep*(tr_y + sr_y) + 3 * (tr_x + sr_x);
+						const srcType* ss = sptr2 + imstep * (tr_y + sr_y) + 3 * (tr_x + sr_x);
 						r -= ss[0];
 						g -= ss[1];
 						b -= ss[2];
 						tweight -= 1.0;
 
-						r += wmax*ss[0];
-						g += wmax*ss[1];
-						b += wmax*ss[2];
+						r += wmax * ss[0];
+						g += wmax * ss[1];
+						b += wmax * ss[2];
 						tweight += wmax;
 
 						d[0] = saturate_cast<srcType>(r / tweight);
@@ -124,11 +124,11 @@ namespace cp
 						float wmax = 0.f;
 						//search loop
 						srcType* tprt = im->ptr<srcType>(sr_y + j) + (sr_x + i);
-						srcType* sptr2 = im->ptr<srcType>(j) +(i);
+						srcType* sptr2 = im->ptr<srcType>(j) + (i);
 
 						for (int l = searchWindowSizeY; l--;)
 						{
-							srcType* sptr = sptr2 + imstep*(l);
+							srcType* sptr = sptr2 + imstep * (l);
 							for (int k = searchWindowSizeX; k--;)
 							{
 								//templete loop
@@ -141,26 +141,26 @@ namespace cp
 									{
 										// computing color L2 norm
 										//e += abs(*s-*t);
-										e += (*s - *t)*(*s - *t);
+										e += (*s - *t) * (*s - *t);
 										s++, t++;
 									}
 									t += cstep;
 									s += cstep;
 								}
-								const int ediv = cvRound(e*tdiv);
+								const int ediv = cvRound(e * tdiv);
 								float www = w[ediv];
-								if (k == sr_x&&l == sr_y){ ; }
+								if (k == sr_x && l == sr_y) { ; }
 								else wmax = max(wmax, www);
-								value += sptr2[imstep*(tr_y + l) + tr_x + k] * www;
+								value += sptr2[imstep * (tr_y + l) + tr_x + k] * www;
 								//get weighted Euclidean distance
 								tweight += www;
 							}
 						}
-						const srcType* ss = sptr2 + imstep*(tr_y + sr_y) + (tr_x + sr_x);
+						const srcType* ss = sptr2 + imstep * (tr_y + sr_y) + (tr_x + sr_x);
 						value -= ss[0];
 						tweight -= 1.0;
 
-						value += wmax*ss[0];
+						value += wmax * ss[0];
 						tweight += wmax;
 
 						//weight normalization
@@ -190,16 +190,16 @@ namespace cp
 		{
 			;
 		}
-		virtual void operator()(const cv::Range &r) const
+		virtual void operator()(const cv::Range& r) const
 		{
 			const int tr_x = templeteWindowSizeX >> 1;
 			const int sr_x = searchWindowSizeX >> 1;
 			const int tr_y = templeteWindowSizeY >> 1;
 			const int sr_y = searchWindowSizeY >> 1;
-			const int cstep = (im->cols - templeteWindowSizeX)*im->channels();
-			const int imstep = im->cols*im->channels();
+			const int cstep = (im->cols - templeteWindowSizeX) * im->channels();
+			const int imstep = im->cols * im->channels();
 
-			const int tD = templeteWindowSizeX*templeteWindowSizeY;
+			const int tD = templeteWindowSizeX * templeteWindowSizeY;
 			const double tdiv = 1.0 / (double)(tD);//templete square div
 
 
@@ -216,11 +216,11 @@ namespace cp
 						double tweight = 0.0;
 						//search loop
 						const srcType* tprt = im->ptr<srcType>(sr_y + j) + 3 * (sr_x + i);
-						const srcType* sptr2 = im->ptr<srcType>(j) +3 * (i);
+						const srcType* sptr2 = im->ptr<srcType>(j) + 3 * (i);
 
 						for (int l = searchWindowSizeY; l--;)
 						{
-							const srcType* sptr = sptr2 + imstep*(l);
+							const srcType* sptr = sptr2 + imstep * (l);
 							for (int k = searchWindowSizeX; k--;)
 							{
 								//templete loop
@@ -238,10 +238,10 @@ namespace cp
 									t += cstep;
 									s += cstep;
 								}
-								const int ediv = cvRound(e*tdiv);
+								const int ediv = cvRound(e * tdiv);
 								float www = w[ediv];
 
-								const srcType* ss = sptr2 + imstep*(tr_y + l) + 3 * (tr_x + k);
+								const srcType* ss = sptr2 + imstep * (tr_y + l) + 3 * (tr_x + k);
 								r += ss[0] * www;
 								g += ss[1] * www;
 								b += ss[2] * www;
@@ -267,11 +267,11 @@ namespace cp
 						double tweight = 0.0;
 						//search loop
 						srcType* tprt = im->ptr<srcType>(sr_y + j) + (sr_x + i);
-						srcType* sptr2 = im->ptr<srcType>(j) +(i);
+						srcType* sptr2 = im->ptr<srcType>(j) + (i);
 
 						for (int l = searchWindowSizeY; l--;)
 						{
-							srcType* sptr = sptr2 + imstep*(l);
+							srcType* sptr = sptr2 + imstep * (l);
 							for (int k = searchWindowSizeX; k--;)
 							{
 								//templete loop
@@ -289,9 +289,9 @@ namespace cp
 									t += cstep;
 									s += cstep;
 								}
-								const int ediv = cvRound(e*tdiv);
+								const int ediv = cvRound(e * tdiv);
 								float www = w[ediv];
-								value += sptr2[imstep*(tr_y + l) + tr_x + k] * www;
+								value += sptr2[imstep * (tr_y + l) + tr_x + k] * www;
 								//get weighted Euclidean distance
 								tweight += www;
 							}
@@ -322,7 +322,7 @@ namespace cp
 		{
 			;
 		}
-		virtual void operator()(const cv::Range &r) const
+		virtual void operator()(const cv::Range& r) const
 		{
 			const int tr_x = templeteWindowSizeX >> 1;
 			const int sr_x = searchWindowSizeX >> 1;
@@ -331,7 +331,7 @@ namespace cp
 			const int cstep = im->cols - templeteWindowSizeX;
 			const int imstep = im->cols;
 
-			const int tD = templeteWindowSizeX*templeteWindowSizeY;
+			const int tD = templeteWindowSizeX * templeteWindowSizeY;
 			const float tdiv = 1.f / (float)(tD);//templete square div
 			__m128 mtdiv = _mm_set1_ps(tdiv);
 			const int CV_DECL_ALIGNED(16) v32f_absmask_[] = { 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff };
@@ -359,7 +359,7 @@ namespace cp
 						const float* sptr2 = sptr2_ + i;
 						for (int l = searchWindowSizeY; l--;)
 						{
-							const float* sptr = sptr2 + imstep*(l);
+							const float* sptr = sptr2 + imstep * (l);
 							for (int k = searchWindowSizeX; k--;)
 							{
 								//templete loop
@@ -389,7 +389,7 @@ namespace cp
 								_mm_store_si128((__m128i*)buf, _mm_cvtps_epi32(_mm_mul_ps(mtdiv, me)));
 								__m128 www = _mm_set_ps(w[buf[3]], w[buf[2]], w[buf[1]], w[buf[0]]);
 
-								const float* ss = sptr2 + imstep*(tr_y + l) + (tr_x + k);
+								const float* ss = sptr2 + imstep * (tr_y + l) + (tr_x + k);
 								mg = _mm_add_ps(mg, _mm_mul_ps(www, _mm_loadu_ps(ss)));
 								mb = _mm_add_ps(mb, _mm_mul_ps(www, _mm_loadu_ps(ss + colorstep)));
 								mr = _mm_add_ps(mr, _mm_mul_ps(www, _mm_loadu_ps(ss + colorstep2)));
@@ -424,11 +424,11 @@ namespace cp
 						__m128 mtweight = _mm_setzero_ps();
 						//search loop
 						float* tprt = im->ptr<float>(sr_y + j) + (sr_x + i);
-						float* sptr2 = im->ptr<float>(j) +(i);
+						float* sptr2 = im->ptr<float>(j) + (i);
 
 						for (int l = searchWindowSizeY; l--;)
 						{
-							float* sptr = sptr2 + imstep*(l);
+							float* sptr = sptr2 + imstep * (l);
 							for (int k = searchWindowSizeX; k--;)
 							{
 								//templete loop
@@ -452,7 +452,7 @@ namespace cp
 								}
 								_mm_store_si128((__m128i*)buf, _mm_cvtps_epi32(_mm_mul_ps(mtdiv, me)));
 								__m128 www = _mm_set_ps(w[buf[3]], w[buf[2]], w[buf[1]], w[buf[0]]);
-								mvalue = _mm_add_ps(mvalue, _mm_mul_ps(www, _mm_loadu_ps(sptr2 + imstep*(tr_y + l) + tr_x + k)));
+								mvalue = _mm_add_ps(mvalue, _mm_mul_ps(www, _mm_loadu_ps(sptr2 + imstep * (tr_y + l) + tr_x + k)));
 								mtweight = _mm_add_ps(mtweight, www);
 							}
 						}
@@ -483,7 +483,7 @@ namespace cp
 		{
 			;
 		}
-		virtual void operator()(const cv::Range &r) const
+		virtual void operator()(const cv::Range& r) const
 		{
 			const int tr_x = templeteWindowSizeX >> 1;
 			const int sr_x = searchWindowSizeX >> 1;
@@ -492,7 +492,7 @@ namespace cp
 			const int cstep = im->cols - templeteWindowSizeX;
 			const int imstep = im->cols;
 
-			const int tD = templeteWindowSizeX*templeteWindowSizeY;
+			const int tD = templeteWindowSizeX * templeteWindowSizeY;
 			const float tdiv = 1.f / (float)(tD);//templete square div
 			__m128 mtdiv = _mm_set1_ps(tdiv);
 			if (dest->channels() == 3)
@@ -533,7 +533,7 @@ namespace cp
 						const uchar* sptr2 = sptr2_ + i;
 						for (int l = searchWindowSizeY; l--;)
 						{
-							const uchar* sptr = sptr2 + imstep*(l);
+							const uchar* sptr = sptr2 + imstep * (l);
 							for (int k = searchWindowSizeX; k--;)
 							{
 								uchar* t = (uchar*)tprt;
@@ -592,7 +592,7 @@ namespace cp
 								_mm_store_si128((__m128i*)(buf + 8), _mm_cvtps_epi32(_mm_mul_ps(mtdiv, _mm_cvtepi32_ps(mme2))));
 								_mm_store_si128((__m128i*)(buf + 12), _mm_cvtps_epi32(_mm_mul_ps(mtdiv, _mm_cvtepi32_ps(mme3))));
 
-								const uchar* ss = sptr2 + imstep*(tr_y + l) + (tr_x + k);
+								const uchar* ss = sptr2 + imstep * (tr_y + l) + (tr_x + k);
 								const __m128i sc0 = _mm_loadu_si128((__m128i*)(ss));
 								const __m128i sc1 = _mm_loadu_si128((__m128i*)(ss + colorstep));
 								const __m128i sc2 = _mm_loadu_si128((__m128i*)(ss + colorstep2));
@@ -698,10 +698,10 @@ namespace cp
 
 						//search loop
 						uchar* tprt = im->ptr<uchar>(sr_y + j) + (sr_x + i);
-						uchar* sptr2 = im->ptr<uchar>(j) +(i);
+						uchar* sptr2 = im->ptr<uchar>(j) + (i);
 						for (int l = searchWindowSizeY; l--;)
 						{
-							uchar* sptr = sptr2 + imstep*(l);
+							uchar* sptr = sptr2 + imstep * (l);
 							for (int k = searchWindowSizeX; k--;)
 							{
 								//templete loop
@@ -740,7 +740,7 @@ namespace cp
 								_mm_store_si128((__m128i*)(buf + 8), _mm_cvtps_epi32(_mm_mul_ps(mtdiv, _mm_cvtepi32_ps(mme2))));
 								_mm_store_si128((__m128i*)(buf + 12), _mm_cvtps_epi32(_mm_mul_ps(mtdiv, _mm_cvtepi32_ps(mme3))));
 
-								const __m128i sc = _mm_loadu_si128((__m128i*)(sptr2 + imstep*(tr_y + l) + tr_x + k));
+								const __m128i sc = _mm_loadu_si128((__m128i*)(sptr2 + imstep * (tr_y + l) + tr_x + k));
 								__m128i s0 = _mm_unpacklo_epi8(sc, zero);
 								__m128i s1 = _mm_unpackhi_epi16(s0, zero);
 								s0 = _mm_unpacklo_epi16(s0, zero);
@@ -779,7 +779,7 @@ namespace cp
 
 	void nonLocalMeansFilterBase(Mat& src, Mat& dest, Size templeteWindowSize, Size searchWindowSize, double h, double sigma, int borderType)
 	{
-		if (dest.empty())dest = Mat::zeros(src.size(), src.type());
+		dest.create(src.size(), src.type());
 
 		const int bbx = (templeteWindowSize.width >> 1) + (searchWindowSize.width >> 1);
 		const int bby = (templeteWindowSize.height >> 1) + (searchWindowSize.height >> 1);
@@ -791,10 +791,10 @@ namespace cp
 		vector<float> weight(256 * 256 * src.channels());
 		float* w = &weight[0];
 		const double gauss_sd = (sigma == 0.0) ? h : sigma;
-		double gauss_color_coeff = -(1.0 / (double)(src.channels()))*(1.0 / (h*h));
+		double gauss_color_coeff = -(1.0 / (double)(src.channels())) * (1.0 / (h * h));
 		for (int i = 0; i < 256 * 256 * src.channels(); i++)
 		{
-			double v = std::exp(max(i - 2.0*gauss_sd*gauss_sd, 0.0)*gauss_color_coeff);
+			double v = std::exp(max(i - 2.0 * gauss_sd * gauss_sd, 0.0) * gauss_color_coeff);
 			w[i] = (float)v;
 		}
 
@@ -828,7 +828,7 @@ namespace cp
 
 	void nonLocalMeansFilter_SSE(Mat& src, Mat& dest, Size templeteWindowSize, Size searchWindowSize, double h, double sigma, int borderType)
 	{
-		if (dest.empty())dest = Mat::zeros(src.size(), src.type());
+		dest.create(src.size(), src.type());
 
 		const int bbx = (templeteWindowSize.width >> 1) + (searchWindowSize.width >> 1);
 		const int bby = (templeteWindowSize.height >> 1) + (searchWindowSize.height >> 1);
@@ -847,7 +847,7 @@ namespace cp
 			dpad = (4 - src.cols % 4) % 4;
 			spad = (4 - (src.cols + 2 * bbx) % 4) % 4;
 		}
-		Mat dst = Mat::zeros(Size(src.cols + dpad, src.rows), dest.type());
+		Mat dst(Size(src.cols + dpad, src.rows), dest.type());
 
 		Mat im;
 		if (src.channels() == 1)
@@ -866,10 +866,10 @@ namespace cp
 		weight.resize(256);
 		float* w = &weight[0];
 		const double gauss_sd = (sigma == 0.0) ? h : sigma;
-		double gauss_color_coeff = -(1.0 / (double)(src.channels()))*(1.0 / (h*h));
+		double gauss_color_coeff = -(1.0 / (double)(src.channels())) * (1.0 / (h * h));
 		for (int i = 0; i < 256 * src.channels(); i++)
 		{
-			double v = std::exp(max(i*i - 2.0*gauss_sd*gauss_sd, 0.0)*gauss_color_coeff);
+			double v = std::exp(max(i * i - 2.0 * gauss_sd * gauss_sd, 0.0) * gauss_color_coeff);
 			w[i] = (float)v;
 		}
 
@@ -955,20 +955,20 @@ namespace cp
 		if (method == DUAL_KERNEL_HV)
 		{
 			nonLocalMeansFilter(src, dst, templeteSize, Size(kernelSize.width, 1), h, sigma_offset, method, borderType);
-			jointNonLocalMeansFilter(dst, src, dst, templeteSize, Size(1, kernelSize.height), h*alpha, sigma_offset, method, borderType);
+			jointNonLocalMeansFilter(dst, src, dst, templeteSize, Size(1, kernelSize.height), h * alpha, sigma_offset, method, borderType);
 		}
 		else if (method == DUAL_KERNEL_VH)
 		{
 			nonLocalMeansFilter(src, dst, templeteSize, Size(1, kernelSize.height), h, sigma_offset, method, borderType);
-			jointNonLocalMeansFilter(dst, src, dst, templeteSize, Size(kernelSize.width, 1), h*alpha, sigma_offset, method, borderType);
+			jointNonLocalMeansFilter(dst, src, dst, templeteSize, Size(kernelSize.width, 1), h * alpha, sigma_offset, method, borderType);
 		}
 		else if (method == DUAL_KERNEL_HVVH)
 		{
 			nonLocalMeansFilter(src, dst, templeteSize, Size(kernelSize.width, 1), h, sigma_offset, method, borderType);
-			jointNonLocalMeansFilter(dst, src, dst, templeteSize, Size(1, kernelSize.height), h*alpha, sigma_offset, method, borderType);
+			jointNonLocalMeansFilter(dst, src, dst, templeteSize, Size(1, kernelSize.height), h * alpha, sigma_offset, method, borderType);
 			Mat dst2;
 			nonLocalMeansFilter(src, dst2, templeteSize, Size(1, kernelSize.height), h, sigma_offset, method, borderType);
-			jointNonLocalMeansFilter(dst2, src, dst2, templeteSize, Size(kernelSize.width, 1), h*alpha, sigma_offset, method, borderType);
+			jointNonLocalMeansFilter(dst2, src, dst2, templeteSize, Size(kernelSize.width, 1), h * alpha, sigma_offset, method, borderType);
 			alphaBlend(dst, dst2, 0.5, dst);
 		}
 		/*else if (method==DUAL_KERNEL_CROSS)
@@ -990,7 +990,7 @@ namespace cp
 	}
 
 
-	
+
 	void epsillonFilter(Mat& src, Mat& dest, Size templeteWindowSize, Size searchWindowSize, double h, int borderType)
 	{
 		if (dest.empty())dest = Mat::zeros(src.size(), src.type());
@@ -1030,11 +1030,11 @@ namespace cp
 		vector<float> weight(256 * src.channels());
 		weight.resize(256);
 		float* w = &weight[0];
-		
-		double gauss_color_coeff = -(1.0 / (double)(src.channels()))*(1.0 / (h*h));
+
+		double gauss_color_coeff = -(1.0 / (double)(src.channels())) * (1.0 / (h * h));
 		for (int i = 0; i < 256 * src.channels(); i++)
 		{
-			double v = (i<=h) ? 1.0:0.0;
+			double v = (i <= h) ? 1.0 : 0.0;
 			w[i] = (float)v;
 		}
 

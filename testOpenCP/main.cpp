@@ -4,11 +4,12 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-#pragma region setup
-	//cout << cv::getBuildInformation() << endl;
+	cout << cv::getBuildInformation() << endl;
 
+#pragma region setup
 	//Mat img = imread("img/lenna.png");
 	Mat img = imread("img/Kodak/kodim07.png");
+	Mat imgg; cvtColor(img, imgg, COLOR_BGR2GRAY);
 	//Mat img = imread("img/cameraman.png",0);
 	//Mat img = imread("img/barbara.png", 0);
 	//filter2DTest(img); return 0;
@@ -18,7 +19,7 @@ int main(int argc, char** argv)
 
 
 #pragma region core
-	testKMeans(img); return 0;
+	//testKMeans(img); return 0;
 	//testTiling(img); return 0;
 	//copyMakeBorderTest(img); return 0;
 	//testSplitMerge(img); return 0;
@@ -28,7 +29,7 @@ int main(int argc, char** argv)
 	//testHistogram(); return 0;
 	//testPlot(); return 0;
 	//testPlot2D(); return 0;
-	//testGuidedImageFilter(Mat(), Mat()); return 0;
+	
 	//guiHazeRemoveTest();
 
 	//testCropZoom(); return 0;
@@ -37,7 +38,7 @@ int main(int argc, char** argv)
 	//testPSNR(img); return 0;
 	//resize(img, a, Size(513, 513));
 	//testHistgram(img);
-	testRGBHistogram();
+	//testRGBHistogram();
 	//testRGBHistogram2();
 	//testTimer(img);
 	//testAlphaBlend(left, right);
@@ -59,7 +60,8 @@ int main(int argc, char** argv)
 #pragma endregion
 
 #pragma region filter
-	highDimentionalGaussianFilterTest(img); return 0;
+	testGuidedImageFilter(Mat(), Mat()); return 0;
+	highDimentionalGaussianFilterTest(imgg); return 0;
 	//testWeightedHistogramFilterDisparity(); return 0;
 	//testWeightedHistogramFilter();return 0;
 #pragma endregion 
