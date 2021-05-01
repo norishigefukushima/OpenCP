@@ -37,30 +37,6 @@
     <Filter Include="ソース ファイル\stereo\view synthesis">
       <UniqueIdentifier>{ce01d62b-e8b6-4b78-9dac-dd68648543a5}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ヘッダー ファイル\headers">
-      <UniqueIdentifier>{7fbab38c-1aff-49b4-a6e1-fc267816a201}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ヘッダー ファイル\headers\filter">
-      <UniqueIdentifier>{daf9e5ae-5b92-467f-9722-549383c0348a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ヘッダー ファイル\headers\imgproc">
-      <UniqueIdentifier>{b79448de-d14a-4509-b8ce-d9e731d73ddb}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ヘッダー ファイル\headers\stereo">
-      <UniqueIdentifier>{73adcbff-a239-4c69-90ba-21d559c717fb}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ヘッダー ファイル\headers\opticalflow">
-      <UniqueIdentifier>{ffe416bc-bea4-4ae6-a70c-e69ad9c6c001}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ヘッダー ファイル\headers\filter\GaussianFilter">
-      <UniqueIdentifier>{260ef808-550d-4dae-9a11-b8ed7539829b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ヘッダー ファイル\headers\imgproc\qualitymetrics">
-      <UniqueIdentifier>{4d61fadb-90c3-4a04-83c1-095e00152ca6}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ヘッダー ファイル\headers\stereo\view synthesis">
-      <UniqueIdentifier>{9348453f-43e5-4f7d-bc39-466a584b8b56}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ソース ファイル\filter\filterCore">
       <UniqueIdentifier>{133bf247-7cf3-4d5a-94c6-aaa42d83b177}</UniqueIdentifier>
     </Filter>
@@ -76,20 +52,41 @@
     <Filter Include="ソース ファイル\core">
       <UniqueIdentifier>{a8d6d5ad-3a54-49d1-b714-38aaf9b46b00}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ヘッダー ファイル\headers\core">
-      <UniqueIdentifier>{255396e4-a361-4ec4-b8b0-837c9c5669e0}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ソース ファイル\filter\resize">
       <UniqueIdentifier>{bf46c031-b34c-4575-95b8-dd0602bd6e8c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ヘッダー ファイル\headers\filter\resize">
-      <UniqueIdentifier>{da54fbf2-e362-4f0d-80b0-5e6d0a9f8db8}</UniqueIdentifier>
     </Filter>
     <Filter Include="ソース ファイル\filter\boxFilter\hpp">
       <UniqueIdentifier>{83434b1c-5fc1-4e1c-846a-ec02000dba44}</UniqueIdentifier>
     </Filter>
     <Filter Include="ソース ファイル\filter\dct-fft">
       <UniqueIdentifier>{58c7015d-a5f2-455d-bd1a-3808a64f3337}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\core">
+      <UniqueIdentifier>{255396e4-a361-4ec4-b8b0-837c9c5669e0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\filter">
+      <UniqueIdentifier>{daf9e5ae-5b92-467f-9722-549383c0348a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\filter\GaussianFilter">
+      <UniqueIdentifier>{260ef808-550d-4dae-9a11-b8ed7539829b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\filter\resize">
+      <UniqueIdentifier>{da54fbf2-e362-4f0d-80b0-5e6d0a9f8db8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\imgproc">
+      <UniqueIdentifier>{b79448de-d14a-4509-b8ce-d9e731d73ddb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\imgproc\qualitymetrics">
+      <UniqueIdentifier>{4d61fadb-90c3-4a04-83c1-095e00152ca6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\opticalflow">
+      <UniqueIdentifier>{ffe416bc-bea4-4ae6-a70c-e69ad9c6c001}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\stereo">
+      <UniqueIdentifier>{73adcbff-a239-4c69-90ba-21d559c717fb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\stereo\view synthesis">
+      <UniqueIdentifier>{9348453f-43e5-4f7d-bc39-466a584b8b56}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -305,9 +302,6 @@
     </ClCompile>
     <ClCompile Include="metrics.cpp">
       <Filter>ソース ファイル\imgproc</Filter>
-    </ClCompile>
-    <ClCompile Include="fitPlane.cpp">
-      <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="disparityFitPlane.cpp">
       <Filter>ソース ファイル\stereo</Filter>
@@ -576,6 +570,9 @@
     <ClCompile Include="fftFilter.cpp">
       <Filter>ソース ファイル\filter\dct-fft</Filter>
     </ClCompile>
+    <ClCompile Include="fitPlane.cpp">
+      <Filter>ソース ファイル\stereo</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libGaussian\gaussian_conv.h">
@@ -590,242 +587,230 @@
     <ClInclude Include="..\include\opencp.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\common.hpp">
-      <Filter>ヘッダー ファイル\headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\fftinfo.hpp">
-      <Filter>ヘッダー ファイル\headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\fitPlane.hpp">
-      <Filter>ヘッダー ファイル\headers</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\bilateralFilter.hpp">
-      <Filter>ヘッダー ファイル\headers\filter</Filter>
+      <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\binalyWeightedRangeFilter.hpp">
-      <Filter>ヘッダー ファイル\headers\filter</Filter>
+      <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\boundaryReconstructionFilter.hpp">
-      <Filter>ヘッダー ファイル\headers\filter</Filter>
+      <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\costVolumeFilter.hpp">
-      <Filter>ヘッダー ファイル\headers\filter</Filter>
+      <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\crossBasedLocalFilter.hpp">
-      <Filter>ヘッダー ファイル\headers\filter</Filter>
+      <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\crossBasedLocalMultipointFilter.hpp">
-      <Filter>ヘッダー ファイル\headers\filter</Filter>
+      <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\domainTransformFilter.hpp">
-      <Filter>ヘッダー ファイル\headers\filter</Filter>
+      <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\dualBilateralFilter.hpp">
-      <Filter>ヘッダー ファイル\headers\filter</Filter>
+      <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\dxtDenoise.hpp">
-      <Filter>ヘッダー ファイル\headers\filter</Filter>
+      <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\GaussianFilter.hpp">
-      <Filter>ヘッダー ファイル\headers\filter</Filter>
+      <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\GaussianFilterSpectralRecursive.hpp">
-      <Filter>ヘッダー ファイル\headers\filter</Filter>
+      <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\jointBilateralFilter.hpp">
-      <Filter>ヘッダー ファイル\headers\filter</Filter>
+      <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\jointDualBilateralFilter.hpp">
-      <Filter>ヘッダー ファイル\headers\filter</Filter>
+      <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\jointNearestFilter.hpp">
-      <Filter>ヘッダー ファイル\headers\filter</Filter>
+      <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\jointNonLocalMeans.hpp">
-      <Filter>ヘッダー ファイル\headers\filter</Filter>
+      <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\L0Smoothing.hpp">
-      <Filter>ヘッダー ファイル\headers\filter</Filter>
+      <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\minmaxfilter.hpp">
-      <Filter>ヘッダー ファイル\headers\filter</Filter>
+      <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\nonLocalMeans.hpp">
-      <Filter>ヘッダー ファイル\headers\filter</Filter>
+      <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\PermutohedralLattice.hpp">
-      <Filter>ヘッダー ファイル\headers\filter</Filter>
+      <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\postFilterSet.hpp">
-      <Filter>ヘッダー ファイル\headers\filter</Filter>
+      <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\realtimeO1BilateralFilter.hpp">
-      <Filter>ヘッダー ファイル\headers\filter</Filter>
+      <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\recursiveBilateralFilter.hpp">
-      <Filter>ヘッダー ファイル\headers\filter</Filter>
+      <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\shockFilter.hpp">
-      <Filter>ヘッダー ファイル\headers\filter</Filter>
+      <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\Wiener2.hpp">
-      <Filter>ヘッダー ファイル\headers\filter</Filter>
+      <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\color.hpp">
-      <Filter>ヘッダー ファイル\headers\imgproc</Filter>
+      <Filter>ヘッダー ファイル\imgproc</Filter>
     </ClInclude>
     <ClInclude Include="..\include\detailEnhancement.hpp">
-      <Filter>ヘッダー ファイル\headers\imgproc</Filter>
+      <Filter>ヘッダー ファイル\imgproc</Filter>
     </ClInclude>
     <ClInclude Include="..\include\diffPixel.hpp">
-      <Filter>ヘッダー ファイル\headers\imgproc</Filter>
+      <Filter>ヘッダー ファイル\imgproc</Filter>
     </ClInclude>
     <ClInclude Include="..\include\hazeRemove.hpp">
-      <Filter>ヘッダー ファイル\headers\imgproc</Filter>
+      <Filter>ヘッダー ファイル\imgproc</Filter>
     </ClInclude>
     <ClInclude Include="..\include\iterativeBackProjection.hpp">
-      <Filter>ヘッダー ファイル\headers\imgproc</Filter>
+      <Filter>ヘッダー ファイル\imgproc</Filter>
     </ClInclude>
     <ClInclude Include="..\include\metrics.hpp">
-      <Filter>ヘッダー ファイル\headers\imgproc</Filter>
+      <Filter>ヘッダー ファイル\imgproc</Filter>
     </ClInclude>
     <ClInclude Include="..\include\ppmx.hpp">
-      <Filter>ヘッダー ファイル\headers\imgproc</Filter>
+      <Filter>ヘッダー ファイル\imgproc</Filter>
     </ClInclude>
     <ClInclude Include="..\include\slic.hpp">
-      <Filter>ヘッダー ファイル\headers\imgproc</Filter>
+      <Filter>ヘッダー ファイル\imgproc</Filter>
     </ClInclude>
     <ClInclude Include="..\include\speckle.hpp">
-      <Filter>ヘッダー ファイル\headers\imgproc</Filter>
+      <Filter>ヘッダー ファイル\imgproc</Filter>
     </ClInclude>
     <ClInclude Include="..\include\shiftImage.hpp">
-      <Filter>ヘッダー ファイル\headers\imgproc</Filter>
+      <Filter>ヘッダー ファイル\imgproc</Filter>
     </ClInclude>
     <ClInclude Include="..\include\opticalFlow.hpp">
-      <Filter>ヘッダー ファイル\headers\opticalflow</Filter>
+      <Filter>ヘッダー ファイル\opticalflow</Filter>
     </ClInclude>
     <ClInclude Include="..\include\Calibrator.hpp">
-      <Filter>ヘッダー ファイル\headers\stereo</Filter>
+      <Filter>ヘッダー ファイル\stereo</Filter>
     </ClInclude>
     <ClInclude Include="..\include\depth2disparity.hpp">
-      <Filter>ヘッダー ファイル\headers\stereo</Filter>
+      <Filter>ヘッダー ファイル\stereo</Filter>
     </ClInclude>
     <ClInclude Include="..\include\depthfilter.hpp">
-      <Filter>ヘッダー ファイル\headers\stereo</Filter>
+      <Filter>ヘッダー ファイル\stereo</Filter>
     </ClInclude>
     <ClInclude Include="..\include\disparityFitPlane.hpp">
-      <Filter>ヘッダー ファイル\headers\stereo</Filter>
+      <Filter>ヘッダー ファイル\stereo</Filter>
     </ClInclude>
     <ClInclude Include="..\include\MultiCameraCalibrator.hpp">
-      <Filter>ヘッダー ファイル\headers\stereo</Filter>
+      <Filter>ヘッダー ファイル\stereo</Filter>
     </ClInclude>
     <ClInclude Include="..\include\pointcloud.hpp">
-      <Filter>ヘッダー ファイル\headers\stereo</Filter>
+      <Filter>ヘッダー ファイル\stereo</Filter>
     </ClInclude>
     <ClInclude Include="..\include\rectifyMultiCollinear.hpp">
-      <Filter>ヘッダー ファイル\headers\stereo</Filter>
+      <Filter>ヘッダー ファイル\stereo</Filter>
     </ClInclude>
     <ClInclude Include="..\include\stereo_core.hpp">
-      <Filter>ヘッダー ファイル\headers\stereo</Filter>
+      <Filter>ヘッダー ファイル\stereo</Filter>
     </ClInclude>
     <ClInclude Include="..\include\StereoBase.hpp">
-      <Filter>ヘッダー ファイル\headers\stereo</Filter>
+      <Filter>ヘッダー ファイル\stereo</Filter>
     </ClInclude>
     <ClInclude Include="..\include\StereoBM2.hpp">
-      <Filter>ヘッダー ファイル\headers\stereo</Filter>
+      <Filter>ヘッダー ファイル\stereo</Filter>
     </ClInclude>
     <ClInclude Include="..\include\StereoEx.hpp">
-      <Filter>ヘッダー ファイル\headers\stereo</Filter>
+      <Filter>ヘッダー ファイル\stereo</Filter>
     </ClInclude>
     <ClInclude Include="..\include\StereoSGM2.hpp">
-      <Filter>ヘッダー ファイル\headers\stereo</Filter>
+      <Filter>ヘッダー ファイル\stereo</Filter>
     </ClInclude>
     <ClInclude Include="..\include\StereoIterativeBM.hpp">
-      <Filter>ヘッダー ファイル\headers\stereo</Filter>
+      <Filter>ヘッダー ファイル\stereo</Filter>
     </ClInclude>
     <ClInclude Include="..\include\arithmetic.hpp">
-      <Filter>ヘッダー ファイル\headers\core</Filter>
+      <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\bitconvert.hpp">
-      <Filter>ヘッダー ファイル\headers\core</Filter>
+      <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\consoleImage.hpp">
-      <Filter>ヘッダー ファイル\headers\core</Filter>
+      <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\csv.hpp">
-      <Filter>ヘッダー ファイル\headers\core</Filter>
+      <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\draw.hpp">
-      <Filter>ヘッダー ファイル\headers\core</Filter>
+      <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\histogram.hpp">
-      <Filter>ヘッダー ファイル\headers\core</Filter>
+      <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\imagediff.hpp">
-      <Filter>ヘッダー ファイル\headers\core</Filter>
+      <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\matinfo.hpp">
-      <Filter>ヘッダー ファイル\headers\core</Filter>
+      <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\noise.hpp">
-      <Filter>ヘッダー ファイル\headers\core</Filter>
+      <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\plot.hpp">
-      <Filter>ヘッダー ファイル\headers\core</Filter>
+      <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\stat.hpp">
-      <Filter>ヘッダー ファイル\headers\core</Filter>
+      <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\stencil.hpp">
-      <Filter>ヘッダー ファイル\headers\core</Filter>
+      <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\yuvio.hpp">
-      <Filter>ヘッダー ファイル\headers\core</Filter>
+      <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\video.hpp">
-      <Filter>ヘッダー ファイル\headers\core</Filter>
+      <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\timer.hpp">
-      <Filter>ヘッダー ファイル\headers\core</Filter>
+      <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\GaussianBlurIPOL.hpp">
-      <Filter>ヘッダー ファイル\headers\filter\GaussianFilter</Filter>
+      <Filter>ヘッダー ファイル\filter\GaussianFilter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\jointBilateralUpsample.hpp">
-      <Filter>ヘッダー ファイル\headers\filter\resize</Filter>
+      <Filter>ヘッダー ファイル\filter\resize</Filter>
     </ClInclude>
     <ClInclude Include="..\include\imqc.hpp">
-      <Filter>ヘッダー ファイル\headers\imgproc\qualitymetrics</Filter>
+      <Filter>ヘッダー ファイル\imgproc\qualitymetrics</Filter>
     </ClInclude>
     <ClInclude Include="..\include\viewsynthesis.hpp">
-      <Filter>ヘッダー ファイル\headers\stereo\view synthesis</Filter>
+      <Filter>ヘッダー ファイル\stereo\view synthesis</Filter>
     </ClInclude>
     <ClInclude Include="..\include\mattingRendering.hpp">
-      <Filter>ヘッダー ファイル\headers\stereo\view synthesis</Filter>
-    </ClInclude>
-    <ClInclude Include="filterengine.hpp">
-      <Filter>ヘッダー ファイル\headers</Filter>
+      <Filter>ヘッダー ファイル\stereo\view synthesis</Filter>
     </ClInclude>
     <ClInclude Include="..\include\stereoDisplay.hpp">
-      <Filter>ヘッダー ファイル\headers\stereo</Filter>
+      <Filter>ヘッダー ファイル\stereo</Filter>
     </ClInclude>
     <ClInclude Include="..\include\stereoDP.hpp">
-      <Filter>ヘッダー ファイル\headers\stereo</Filter>
+      <Filter>ヘッダー ファイル\stereo</Filter>
     </ClInclude>
     <ClInclude Include="..\include\dualExponentialSmoothing.hpp">
-      <Filter>ヘッダー ファイル\headers\filter</Filter>
+      <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="filterCore.h">
       <Filter>ソース ファイル\filter\filterCore</Filter>
     </ClInclude>
     <ClInclude Include="..\include\fftFilter.hpp">
-      <Filter>ヘッダー ファイル\headers\filter</Filter>
+      <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\dctFilter.hpp">
-      <Filter>ヘッダー ファイル\headers\filter</Filter>
+      <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\updateCheck.hpp">
-      <Filter>ヘッダー ファイル\headers\core</Filter>
+      <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\inlineMathFunctions.hpp">
       <Filter>ヘッダー ファイル</Filter>
@@ -834,10 +819,10 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="..\include\tiling.hpp">
-      <Filter>ヘッダー ファイル\headers\core</Filter>
+      <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\boxFilter.hpp">
-      <Filter>ヘッダー ファイル\headers\filter</Filter>
+      <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\parallel_type.hpp">
       <Filter>ヘッダー ファイル</Filter>
@@ -897,76 +882,76 @@
       <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\guidedFilter.hpp">
-      <Filter>ヘッダー ファイル\headers\filter</Filter>
+      <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\fmath\fmath.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="..\include\maskoperation.hpp">
-      <Filter>ヘッダー ファイル\headers\core</Filter>
+      <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\crop.hpp">
-      <Filter>ヘッダー ファイル\headers\core</Filter>
+      <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\count.hpp">
-      <Filter>ヘッダー ファイル\headers\core</Filter>
+      <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
     <ClInclude Include="debugcp.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="..\include\blend.hpp">
-      <Filter>ヘッダー ファイル\headers\imgproc</Filter>
+      <Filter>ヘッダー ファイル\imgproc</Filter>
     </ClInclude>
     <ClInclude Include="..\include\imshowExtension.hpp">
-      <Filter>ヘッダー ファイル\headers\core</Filter>
+      <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\copyMakeBorder.hpp">
-      <Filter>ヘッダー ファイル\headers\core</Filter>
+      <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\concat.hpp">
-      <Filter>ヘッダー ファイル\headers\core</Filter>
+      <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\randomizedQueue.hpp">
-      <Filter>ヘッダー ファイル\headers\core</Filter>
+      <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\contrast.hpp">
-      <Filter>ヘッダー ファイル\headers\imgproc</Filter>
+      <Filter>ヘッダー ファイル\imgproc</Filter>
     </ClInclude>
     <ClInclude Include="..\include\highguiex.hpp">
-      <Filter>ヘッダー ファイル\headers\core</Filter>
+      <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\checkSameImage.hpp">
-      <Filter>ヘッダー ファイル\headers\core</Filter>
+      <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\StereoEval.hpp">
-      <Filter>ヘッダー ファイル\headers\stereo</Filter>
+      <Filter>ヘッダー ファイル\stereo</Filter>
     </ClInclude>
     <ClInclude Include="..\include\weightedHistogramFilter.hpp">
-      <Filter>ヘッダー ファイル\headers\filter</Filter>
+      <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\downsample.hpp">
-      <Filter>ヘッダー ファイル\headers\filter\resize</Filter>
+      <Filter>ヘッダー ファイル\filter\resize</Filter>
     </ClInclude>
     <ClInclude Include="..\include\depthUpsample.hpp">
-      <Filter>ヘッダー ファイル\headers\filter\resize</Filter>
+      <Filter>ヘッダー ファイル\filter\resize</Filter>
     </ClInclude>
     <ClInclude Include="..\include\upsample.hpp">
-      <Filter>ヘッダー ファイル\headers\filter\resize</Filter>
+      <Filter>ヘッダー ファイル\filter\resize</Filter>
     </ClInclude>
     <ClInclude Include="..\include\bilateralGuidedUpsample.hpp">
-      <Filter>ヘッダー ファイル\headers\filter\resize</Filter>
+      <Filter>ヘッダー ファイル\filter\resize</Filter>
     </ClInclude>
     <ClInclude Include="..\include\NEDI.hpp">
-      <Filter>ヘッダー ファイル\headers\filter\resize</Filter>
+      <Filter>ヘッダー ファイル\filter\resize</Filter>
     </ClInclude>
     <ClInclude Include="..\include\kmeans.hpp">
-      <Filter>ヘッダー ファイル\headers\core</Filter>
+      <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\metricsDD.hpp">
-      <Filter>ヘッダー ファイル\headers\imgproc</Filter>
+      <Filter>ヘッダー ファイル\imgproc</Filter>
     </ClInclude>
     <ClInclude Include="..\include\bitconvertDD.hpp">
-      <Filter>ヘッダー ファイル\headers\core</Filter>
+      <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\inlineCVFunctions.hpp">
       <Filter>ヘッダー ファイル</Filter>
@@ -1029,7 +1014,19 @@
       <Filter>ソース ファイル\filter\boxFilter\hpp</Filter>
     </ClInclude>
     <ClInclude Include="..\include\highDimensionalGaussianFilter.hpp">
-      <Filter>ヘッダー ファイル\headers\filter</Filter>
+      <Filter>ヘッダー ファイル\filter</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\fftinfo.hpp">
+      <Filter>ヘッダー ファイル\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\fitPlane.hpp">
+      <Filter>ヘッダー ファイル\stereo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\common.hpp">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="filterengine.hpp">
+      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
