@@ -70,8 +70,8 @@ CP_EXPORT void cvtDDtoMat(const doubledouble* src, const cv::Size size, cv::Mat&
 * [concatSplit](concat_jp.md "#concatSplit")
 * [concatExtract](concat_jp.md "#")
 
-## [Todo]　consoleImage.hpp
-画像を出力するためのクラス，ConsoleImage．
+## consoleImage.hpp
+printf等のconsole出力を画像として出力するためのクラスConsoleImage．
 
 * [class ConsoleImage](ConsoleImage_jp.md "#class ConsoleImage")
 
@@ -308,7 +308,6 @@ Optimization
 優先すべきドキュメントは下記のデバッグと開発に頻繁に使用する関数群
 
 * Timer
-* ConsoleImage
 * Stat
 * UpdateCheck
 * matInfo

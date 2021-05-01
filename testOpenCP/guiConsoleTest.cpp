@@ -3,11 +3,12 @@ using namespace std;
 using namespace cv;
 using namespace cp;
 
-void consoleTest()
+void consoleImageTest()
 {
-	ConsoleImage ci(Size(640, 480));
-
+	ConsoleImage ci(Size(640, 480), "console");
+	
 	Timer t;
+	bool isLine = false;
 	int count = 0;
 	int key = 0;
 	while (key != 'q')
@@ -45,9 +46,21 @@ void consoleTest()
 			ci("bilateral filter: %f ms", t.getTime());
 		}
 		cout << endl;
+		if (key == 'l')
+		{
+			isLine = (isLine) ? false : true;
+			ci.setIsLineNumber(isLine);
+		}
+		if (key == 'p')
+		{
+			ci.push();
+		}
+
 		ci.show();
 		imshow("out", dest);
 		key = waitKey(1);
+
+		
 		count++;
 	}
 }

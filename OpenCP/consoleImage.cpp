@@ -23,6 +23,7 @@ namespace cp
 
 	void ConsoleImage::init(Size size, string wname)
 	{
+		namedWindow(wname);
 		isLineNumber = false;
 		windowName = wname;
 		image = Mat::zeros(size, CV_8UC3);
