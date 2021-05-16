@@ -14,6 +14,23 @@
 //template for array
 //const int CV_DECL_ALIGNED(AVX_ALIGN) a[10]
 
+inline int get_loop_end(int begin, int end, int step)
+{
+	const int rem = ((end - begin) % step == 0) ? 0 : 1;
+	const int count = (end - begin) / step + rem;
+	const int ret = begin + count * step;
+
+	/*
+	int i = begin;
+	for (; i < end; i += step)
+	{
+		;
+	}
+	cout <<begin<<": "<< i << "," << ret <<","<<end<< endl;
+	*/
+	return ret;
+}
+
 inline int get_simd_ceil(const int val, const int simdwidth)
 {
 	return (val % simdwidth == 0) ? val : (val / simdwidth + 1) * simdwidth;
@@ -47,6 +64,8 @@ inline void get_simd_width_end(const int cv_depth, const int channels, const int
 inline void _mm_transposel_epi8(__m128i& s0, __m128i& s1, __m128i& s2, __m128i& s3, __m128i& s4, __m128i& s5, __m128i& s6, __m128i& s7)
 {
 	__m128i t[8];
+
+	/*
 	for (int i = 0; i < 8; i++)
 	{
 		//_mm_extract_epi8(s0, 0);
@@ -60,6 +79,30 @@ inline void _mm_transposel_epi8(__m128i& s0, __m128i& s1, __m128i& s2, __m128i& 
 		t[i].m128i_u8[5] = s5.m128i_u8[i];
 		t[i].m128i_u8[6] = s6.m128i_u8[i];
 		t[i].m128i_u8[7] = s7.m128i_u8[i];
+	}
+	*/
+	uchar CV_DECL_ALIGNED(32) buff[16 * 8];
+	_mm_store_si128((__m128i*)(buff + 0), s0);
+	_mm_store_si128((__m128i*)(buff + 16), s0);
+	_mm_store_si128((__m128i*)(buff + 32), s0);
+	_mm_store_si128((__m128i*)(buff + 48), s0);
+	_mm_store_si128((__m128i*)(buff + 64), s0);
+	_mm_store_si128((__m128i*)(buff + 80), s0);
+	_mm_store_si128((__m128i*)(buff + 96), s0);
+	_mm_store_si128((__m128i*)(buff + 112), s0);
+	for (int i = 0; i < 8; i++)
+	{
+		//_mm_extract_epi8(s0, 0);
+		//_mm_insert_epi8(t[i], )
+		//((uchar*)t[i])[0]= ((uchar*)s0)[i]
+		((uchar*)&t[i])[0] = buff[i + 0];
+		((uchar*)&t[i])[1] = buff[i + 16];
+		((uchar*)&t[i])[2] = buff[i + 32];
+		((uchar*)&t[i])[3] = buff[i + 48];
+		((uchar*)&t[i])[4] = buff[i + 64];
+		((uchar*)&t[i])[5] = buff[i + 80];
+		((uchar*)&t[i])[6] = buff[i + 96];
+		((uchar*)&t[i])[7] = buff[i + 112];
 	}
 	s0 = t[0];
 	s1 = t[1];
@@ -244,6 +287,22 @@ inline void _mm256_load_epu8cvtpsx2(const __m128i* P, __m256& d0, __m256& d1)
 	__m128i t = _mm_loadu_si128((__m128i*)P);
 	d0 = _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(t));
 	d1 = _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(_mm_shuffle_epi32(t, _MM_SHUFFLE(1, 0, 3, 2))));
+}
+
+inline __m256d _mm256_load_cvtepu8_pd(const uchar* src)
+{
+	//_mm256_cvtepi64_pd(_mm256_cvtepu8_epi64(_mm_loadl_epi64((const __m128i*)src)));AVX512
+	return _mm256_cvtps_pd(_mm_cvtepi32_ps(_mm_cvtepu8_epi32(_mm_loadl_epi64((const __m128i*)src))));
+}
+
+inline __m256d _mm256_load_cvtps_pd(const float* src)
+{
+	return _mm256_cvtps_pd(_mm_load_ps(src));
+}
+
+inline __m256d _mm256_loadu_cvtps_pd(const float* src)
+{
+	return _mm256_cvtps_pd(_mm_loadu_ps(src));
 }
 #pragma endregion
 
@@ -878,10 +937,15 @@ inline float _mm_reduceadd_ps(__m128 src)
 
 inline double _mm256_reduceadd_pspd(__m256 src)
 {
-	double ret = src.m256_f32[0];
+	float CV_DECL_ALIGNED(32) buff[8];
+	_mm256_store_ps(buff, src);
+	double ret = buff[0];
+	for (int i = 1; i < 8; i++)
+		ret += buff[i];
+	/*double ret = src.m256_f32[0];
 	for (int i = 1; i < 8; i++)
 		ret += src.m256_f32[i];
-
+*/
 	return ret;
 }
 
@@ -1149,6 +1213,30 @@ inline void _mm256_storescalar_cvtps_epu8(void* dst, __m256 src, const int numpi
 		dest[i] = buffscalarstore[i];
 }
 
+inline void _mm256_storescalar_pd(uchar* dst, __m256d src, const int numpixel)
+{
+	double CV_DECL_ALIGNED(32) buffscalarstore[4];
+	_mm256_store_pd(buffscalarstore, src);
+	for (int i = 0; i < numpixel; i++)
+		dst[i] = cv::saturate_cast<uchar>(buffscalarstore[i]);
+}
+
+inline void _mm256_storescalar_pd(float* dst, __m256d src, const int numpixel)
+{
+	double CV_DECL_ALIGNED(32) buffscalarstore[4];
+	_mm256_store_pd(buffscalarstore, src);
+	for (int i = 0; i < numpixel; i++)
+		dst[i] = (float)buffscalarstore[i];
+}
+
+inline void _mm256_storescalar_pd(double* dst, __m256d src, const int numpixel)
+{
+	double CV_DECL_ALIGNED(32) buffscalarstore[4];
+	_mm256_store_pd(buffscalarstore, src);
+	for (int i = 0; i < numpixel; i++)
+		dst[i] = buffscalarstore[i];
+}
+
 inline void _mm256_storescalar_ps(float* dst, __m256 src, const int numpixel)
 {
 	float CV_DECL_ALIGNED(32) buffscalarstore[8];
@@ -1252,6 +1340,21 @@ inline void _mm256_storescalar_auto(uchar* dest, __m256 ms, const int numpixel)
 inline void _mm256_storescalar_auto(float* dest, __m256 ms, const int numpixel)
 {
 	_mm256_storescalar_ps(dest, ms, numpixel);
+}
+
+inline void _mm256_storescalar_auto(uchar* dest, __m256d ms, const int numpixel)
+{
+	_mm256_storescalar_pd(dest, ms, numpixel);
+}
+
+inline void _mm256_storescalar_auto(float* dest, __m256d ms, const int numpixel)
+{
+	_mm256_storescalar_pd(dest, ms, numpixel);
+}
+
+inline void _mm256_storescalar_auto(double* dest, __m256d ms, const int numpixel)
+{
+	_mm256_storescalar_pd(dest, ms, numpixel);
 }
 
 inline void _mm256_storescalar_auto_color(float* dest, __m256 b, __m256 g, __m256 r, const int numpixel)
@@ -1363,25 +1466,51 @@ inline void _mm256_i32scaterscalar_auto_color(float* dest, __m256i vindex, __m25
 #pragma endregion
 
 //_mm256_setr_ps(v + step, v + 2 * step, v + 3 * step, v + 4 * step, v + 5 * step, v + 6 * step, v + 7 * step);
-inline __m256 _mm256_setstep_ps(float v, float step = 1)
+inline __m256 _mm256_set_step_ps(float v, float step = 1.f)
 {
-	return _mm256_setr_ps(v, v + step, v + 2 * step, v + 3 * step, v + 4 * step, v + 5 * step, v + 6 * step, v + 7 * step);
+	return _mm256_setr_ps(v, v + step, v + 2.f * step, v + 3.f * step, v + 4.f * step, v + 5.f * step, v + 6.f * step, v + 7.f * step);
+}
+
+//_mm256_setr_pd(v + step, v + 2 * step, v + 3 * step);
+inline __m256d _mm256_set_step_pd(double v, double step = 1.0)
+{
+	return _mm256_setr_pd(v, v + step, v + 2.0 * step, v + 3.0 * step);
+}
+
+inline __m256 _mm256_reverse_ps(__m256 src)
+{
+	__m256 ret = _mm256_shuffle_ps(src, src, _MM_SHUFFLE(0, 1, 2, 3));
+	ret = _mm256_permute2f128_ps(ret, ret, 1);
+	return ret;
 }
 
 inline __m256 _mm256_load_reverse_ps(const float* src)
 {
 	__m256 ret = _mm256_load_ps(src);
-	ret = _mm256_shuffle_ps(ret, ret, _MM_SHUFFLE(0, 1, 2, 3));
-	ret = _mm256_permute2f128_ps(ret, ret, 1);
-	return ret;
+	return _mm256_reverse_ps(ret);
 }
 
 inline __m256 _mm256_loadu_reverse_ps(const float* src)
 {
 	__m256 ret = _mm256_loadu_ps(src);
-	ret = _mm256_shuffle_ps(ret, ret, _MM_SHUFFLE(0, 1, 2, 3));
-	ret = _mm256_permute2f128_ps(ret, ret, 1);
-	return ret;
+	return _mm256_reverse_ps(ret);
+}
+
+inline __m256d _mm256_reverse_pd(__m256d src)
+{
+	return _mm256_permute4x64_pd(src, _MM_SHUFFLE(0, 1, 2, 3));
+}
+
+inline __m256d _mm256_load_reverse_pd(const double* src)
+{
+	__m256d ret = _mm256_load_pd(src);
+	return _mm256_reverse_pd(ret);
+}
+
+inline __m256d _mm256_loadu_reverse_pd(const double* src)
+{
+	__m256d ret = _mm256_loadu_pd(src);
+	return _mm256_reverse_pd(ret);
 }
 
 inline __m256 _mm256_load_auto(const uchar* src)
@@ -1460,4 +1589,104 @@ inline void _mm256_argmin_ps(__m256& src, __m256& minval, __m256& argment, const
 	__m256 mask = _mm256_cmp_ps(src, minval, 2);
 	argment = _mm256_blendv_ps(argment, _mm256_set1_ps(index), mask);
 	minval = _mm256_blendv_ps(minval, src, mask);
+}
+
+inline __m256i _mm256_get_gatherIndex_border(int pad, int borderType)
+{
+	__m256i rem_idx;
+	switch (borderType)
+	{
+	case cv::BORDER_REPLICATE:
+	{
+		switch (pad)
+		{
+		case 7: rem_idx = _mm256_setr_epi32(0, 0, 0, 0, 0, 0, 0, 0); break;
+		case 6: rem_idx = _mm256_setr_epi32(0, 1, 1, 1, 1, 1, 1, 1); break;
+		case 5: rem_idx = _mm256_setr_epi32(0, 1, 2, 2, 2, 2, 2, 2); break;
+		case 4: rem_idx = _mm256_setr_epi32(0, 1, 2, 3, 3, 3, 3, 3); break;
+		case 3: rem_idx = _mm256_setr_epi32(0, 1, 2, 3, 4, 4, 4, 4); break;
+		case 2: rem_idx = _mm256_setr_epi32(0, 1, 2, 3, 4, 5, 5, 5); break;
+		case 1: rem_idx = _mm256_setr_epi32(0, 1, 2, 3, 4, 5, 6, 6); break;
+		default:rem_idx = _mm256_setr_epi32(0, 1, 2, 3, 4, 5, 6, 7); break;
+		}
+	}
+	break;
+
+	case cv::BORDER_REFLECT:
+	{
+		switch (pad)
+		{
+		case 7: rem_idx = _mm256_setr_epi32(0, 0, -1, -2, -3, -4, -5, -6); break;
+		case 6: rem_idx = _mm256_setr_epi32(0, 1, 1, 0, -1, -2, -3, -4); break;
+		case 5: rem_idx = _mm256_setr_epi32(0, 1, 2, 2, 1, 0, -1, -2); break;
+		case 4: rem_idx = _mm256_setr_epi32(0, 1, 2, 3, 3, 2, 1, 0); break;
+		case 3: rem_idx = _mm256_setr_epi32(0, 1, 2, 3, 4, 4, 3, 2); break;
+		case 2: rem_idx = _mm256_setr_epi32(0, 1, 2, 3, 4, 5, 5, 4); break;
+		case 1: rem_idx = _mm256_setr_epi32(0, 1, 2, 3, 4, 5, 6, 6); break;
+		default:rem_idx = _mm256_setr_epi32(0, 1, 2, 3, 4, 5, 6, 7); break;
+		}
+	}
+	break;
+
+	default:
+	case cv::BORDER_REFLECT101:
+	{
+		switch (pad)
+		{
+		case 7: rem_idx = _mm256_setr_epi32(0, -1, -2, -3, -4, -5, -6, -7); break;
+		case 6: rem_idx = _mm256_setr_epi32(0, 1, 0, -1, -2, -3, -4, -5); break;
+		case 5: rem_idx = _mm256_setr_epi32(0, 1, 2, 1, 0, -1, -2, -3); break;
+		case 4: rem_idx = _mm256_setr_epi32(0, 1, 2, 3, 2, 1, 0, -1); break;
+		case 3: rem_idx = _mm256_setr_epi32(0, 1, 2, 3, 4, 3, 2, 1); break;
+		case 2: rem_idx = _mm256_setr_epi32(0, 1, 2, 3, 4, 5, 4, 3); break;
+		case 1: rem_idx = _mm256_setr_epi32(0, 1, 2, 3, 4, 5, 6, 5); break;
+		default:rem_idx = _mm256_setr_epi32(0, 1, 2, 3, 4, 5, 6, 7); break;
+		}
+	}
+	}
+	return rem_idx;
+}
+
+inline __m128i _mm_get_gatherIndex_border(int pad, int borderType)
+{
+	__m128i rem_idx;
+	switch (borderType)
+	{
+	case cv::BORDER_REPLICATE:
+	{
+		switch (pad)
+		{
+		case 3: rem_idx = _mm_setr_epi32(0, 0, 0, 0); break;
+		case 2: rem_idx = _mm_setr_epi32(0, 1, 1, 1); break;
+		case 1: rem_idx = _mm_setr_epi32(0, 1, 2, 2); break;
+		default:rem_idx = _mm_setr_epi32(0, 1, 2, 3); break;
+		}
+	}
+	break;
+
+	case cv::BORDER_REFLECT:
+	{
+		switch (pad)
+		{
+		case 3: rem_idx = _mm_setr_epi32(0, 0, -1, -2); break;
+		case 2: rem_idx = _mm_setr_epi32(0, 1, 1, 0); break;
+		case 1: rem_idx = _mm_setr_epi32(0, 1, 2, 2); break;
+		default:rem_idx = _mm_setr_epi32(0, 1, 2, 3); break;
+		}
+	}
+	break;
+
+	default:
+	case cv::BORDER_REFLECT101:
+	{
+		switch (pad)
+		{
+		case 3: rem_idx = _mm_setr_epi32(0, -1, -2, -3); break;
+		case 2: rem_idx = _mm_setr_epi32(0, 1, 0, -1); break;
+		case 1: rem_idx = _mm_setr_epi32(0, 1, 2, 1); break;
+		default:rem_idx = _mm_setr_epi32(0, 1, 2, 3); break;
+		}
+	}
+	}
+	return rem_idx;
 }

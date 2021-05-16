@@ -205,7 +205,8 @@ imshowの拡張．
 
 ```
 ## [Todo] updateCheck.hpp
-
+パラメータの更新確認クラス．
+* [class UpdateCheck](UpdateCheck_jp.md "#class UpdateCheck")
 
 ```cpp
 
@@ -304,12 +305,12 @@ Optimization
 * parallel：OpenCVのparallel_forを使ったマルチコア実装．
 * openmp：OpenMPのparallel_for．コンパイル時コード生成になるため，最大パフォーマンスのためにはライブラリをコンパイルしなおす必要あり．
 * コメントなし：NaiveかOpenCVのどちらかと思われる．
+
 # Todo
 優先すべきドキュメントは下記のデバッグと開発に頻繁に使用する関数群
 
 * Timer
 * Stat
-* UpdateCheck
 * matInfo
 * diff
 * Plot

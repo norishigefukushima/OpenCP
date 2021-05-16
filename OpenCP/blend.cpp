@@ -867,7 +867,7 @@ namespace cp
 			}
 			if (key == 'p')
 			{
-				cout << "PSNR: " << PSNR(src1, src2) << "dB" << endl;
+				cout << "PSNR: " << getPSNR(src1, src2) << "dB" << endl;
 				cout << "MSE: " << getMSE(src1, src2) << endl;
 			}
 			if (key == 'i')

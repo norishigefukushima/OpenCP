@@ -34,7 +34,7 @@
 	#error "The code must be compiled without -cl-fast-relaxed-math options: the implemented algorithms depend on precise floating-point behaviour"
 #elif defined(__FAST_MATH__) && !defined(__CUDA_ARCH__)
 	/* On CUDA the code uses intrinsics which guarantee floating-point behaviour regardless of optimization mode */
-	#error "The code must be compiled without -ffast-math option: the implemented algorithms depend on precise floating-point behaviour"
+	//#error "The code must be compiled without -ffast-math option: the implemented algorithms depend on precise floating-point behaviour"
 #endif
 
 #ifndef FPPLUS_USE_FPADDRE

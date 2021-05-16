@@ -27,6 +27,150 @@ inline void print_mat_format(cv::Mat& src, std::string mes = "", std::string for
 
 #define print_mat(a) print_mat_format(a, #a)
 
+template<int borderType> int ref_lb(int n);
+template<int borderType> int ref_rb(int n, int width);
+template<int borderType> int ref_tb(int n, int width);
+template<int borderType> int ref_bb(int n, int width, int height);
+
+inline int ref_lborder(int n, int borderType)
+{
+	int ret = 0;
+	switch (borderType)
+	{
+	case cv::BORDER_REPLICATE:
+		ret = std::max(n, 0); break;
+	case cv::BORDER_REFLECT:
+		ret = n < 0 ? -n - 1 : n; break;
+	case cv::BORDER_REFLECT101:
+	default:
+		ret = std::abs(n); break;
+	}
+	return ret;
+}
+
+inline int ref_rborder(int n, int width, int borderType)
+{
+	int ret = 0;
+	switch (borderType)
+	{
+	case cv::BORDER_REPLICATE:
+		ret = std::min(n, width - 1); break;
+	case cv::BORDER_REFLECT:
+		ret = n < width ? n : 2 * width - n - 1; break;
+	case cv::BORDER_REFLECT101:
+	default:
+		ret = width - 1 - std::abs(width - 1 - n); break;
+	}
+	return ret;
+}
+
+inline int ref_tborder(int n, int width, int borderType)
+{
+	int ret = 0;
+	switch (borderType)
+	{
+	case cv::BORDER_REPLICATE:
+		ret = std::max(n, 0) * width; break;
+	case cv::BORDER_REFLECT:
+		ret = (n < 0 ? -n - 1 : n) * width; break;
+	case cv::BORDER_REFLECT101:
+	default:
+		ret = std::abs(n) * width; break;
+	}
+	return ret;
+}
+
+inline int ref_bborder(int n, int width, int height, int borderType)
+{
+	int ret = 0;
+	switch (borderType)
+	{
+	case cv::BORDER_REPLICATE:
+		ret = std::min(n, height - 1) * width; break;
+	case cv::BORDER_REFLECT:
+		ret = (n < height ? n : 2 * height - n - 1) * width; break;
+	case cv::BORDER_REFLECT101:
+	default:
+		ret = (height - 1 - std::abs(height - 1 - n)) * width; break;
+	}
+	return ret;
+}
+
+//cv::BORDER_REPLICATE;
+template<>
+inline int ref_lb<1>(int n)
+{
+	return std::max(n, 0);
+}
+
+template<>
+inline int ref_rb<1>(int n, int width)
+{
+	return std::min(n, width - 1);
+}
+
+template<>
+inline int ref_tb<1>(int n, int width)
+{
+	return std::max(n, 0) * width;
+}
+
+template<>
+inline int ref_bb<1>(int n, int width, int height)
+{
+	return std::min(n, height - 1) * width;
+}
+
+//cv::BORDER_REFLECT;
+template<>
+inline int ref_lb<2>(int n)
+{
+	return n < 0 ? -n - 1 : n;
+}
+
+template<>
+inline int ref_rb<2>(int n, int width)
+{
+	return n < width ? n : 2 * width - n - 1;
+}
+
+template<>
+inline int ref_tb<2>(int n, int width)
+{
+	return (n < 0 ? -n - 1 : n) * width;
+}
+
+template<>
+inline int ref_bb<2>(int n, int width, int height)
+{
+	return (n < height ? n : 2 * height - n - 1) * width;
+}
+
+//cv::BORDER_REFLECT101:
+template<>
+inline int ref_lb<4>(int n)
+{
+	return std::abs(n);
+}
+
+template<>
+inline int ref_rb<4>(int n, int width)
+{
+	return width - 1 - std::abs(width - 1 - n);
+}
+
+template<>
+inline int ref_tb<4>(int n, int width)
+{
+	return std::abs(n) * width;
+}
+
+template<>
+inline int ref_bb<4>(int n, int width, int height)
+{
+	return (height - 1 - std::abs(height - 1 - n)) * width;
+}
+
 namespace cp
 {
 	template<typename Type>

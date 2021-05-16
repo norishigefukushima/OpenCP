@@ -1,6 +1,7 @@
 copyMakeBorder.hpp
 ==================
 `cv::copyMakeBorder`を高速化した関数群です．
+内部で並列化されています．  
 
 # copyMakeBorderReplicate
 ```cpp
@@ -8,7 +9,7 @@ void copyMakeBorderReplicate(cv::InputArray src, cv::OutputArray dest, const int
 ```
 ## Usage
 `cv::copyMakeBorder`の`borderType == cv::BORDER_REPLICATE`時の処理を高速化します．  
-内部で並列化されています．  
+
 cv::の名前とかぶらないように，Replicateが末尾についています．  
 名前空間で区切れますが，`using namespace cv` `using namespace cp`としたときに困らないように．  
 以下のタイプのみサポートします．
