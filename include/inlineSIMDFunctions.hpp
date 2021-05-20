@@ -181,6 +181,13 @@ inline __m128i _mm256_castsi256hi_si128(__m256i src)
 //opencp (same as _mm256_extractf128_si256(src, 1))
 //#define _mm256_castsi256hi_si128(src) *((__m128i*)&(src) + 1)
 
+//opencp uchar->double
+inline __m256d _mm256_cvtepu8_pd(__m128i src)
+{
+	//_mm256_cvtepi64_pd(_mm256_cvtepu8_epi64(src));AVX512
+	return _mm256_cvtps_pd(_mm_cvtepi32_ps(_mm_cvtepu8_epi32(src)));
+}
+
 //opencp uchar->float
 inline __m256 _mm256_cvtepu8_ps(__m128i src)
 {
@@ -291,8 +298,7 @@ inline void _mm256_load_epu8cvtpsx2(const __m128i* P, __m256& d0, __m256& d1)
 
 inline __m256d _mm256_load_cvtepu8_pd(const uchar* src)
 {
-	//_mm256_cvtepi64_pd(_mm256_cvtepu8_epi64(_mm_loadl_epi64((const __m128i*)src)));AVX512
-	return _mm256_cvtps_pd(_mm_cvtepi32_ps(_mm_cvtepu8_epi32(_mm_loadl_epi64((const __m128i*)src))));
+	return _mm256_cvtepu8_pd(_mm_loadl_epi64((const __m128i*)src));
 }
 
 inline __m256d _mm256_load_cvtps_pd(const float* src)
@@ -1410,7 +1416,8 @@ inline __m128 _mm_i8gather_ps(const uchar* src, __m128i idx)
 	//return _mm_setr_epi8(src[idx.m256i_i32[0]], src[idx.m256i_i32[1]], src[idx.m256i_i32[2]], src[idx.m256i_i32[3]], src[idx.m256i_i32[4]], src[idx.m256i_i32[5]], src[idx.m256i_i32[6]], src[idx.m256i_i32[7]], 0, 0, 0, 0, 0, 0, 0, 0);
 }
 
-inline __m128i _mm_i8gather_epu8(const uchar* src, __m128i idx)
+//gather only 8 elements
+inline __m128i _mm_i32gather_epu8(const uchar* src, __m128i idx)
 {
 	return _mm_cvtepi32_epu8(_mm_srli_epi32(_mm_i32gather_epi32(reinterpret_cast<const int*>(&src[-3]), idx, 1), 24));
 	//return _mm_setr_epi8(src[idx.m256i_i32[0]], src[idx.m256i_i32[1]], src[idx.m256i_i32[2]], src[idx.m256i_i32[3]], src[idx.m256i_i32[4]], src[idx.m256i_i32[5]], src[idx.m256i_i32[6]], src[idx.m256i_i32[7]], 0, 0, 0, 0, 0, 0, 0, 0);
