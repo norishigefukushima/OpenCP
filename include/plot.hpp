@@ -22,6 +22,8 @@ namespace cp
 			std::string title;
 		};
 		std::vector<PlotInfo> pinfo;
+		std::vector<cv::Point2d> ymaxpt;
+		std::vector<cv::Point2d> yminpt;
 
 		std::string xlabel = "x";
 		std::string ylabel = "y";
@@ -34,7 +36,6 @@ namespace cp
 
 		cv::Size plotsize;
 		cv::Point origin;
-
 
 		bool isSetXRange = false;
 		bool isSetYRange = false;

@@ -20,10 +20,10 @@ void testPlot()
 			test.push_back(i, scale*sin(CV_PI * i * 1.0 / amp));
 		}
 
-		test.plot();
+		test.plot("test1");
 	}
 
-	if (false)
+	//if (false)
 	{
 		Plot test;
 		test.setPlotTitle(0, "sin(x)");
@@ -38,10 +38,10 @@ void testPlot()
 			test.push_back(i, sin(CV_PI * i * 1.0 / amp));
 		}
 
-		test.plot();
+		test.plot("test2");
 	}
 
-	if (false)
+	//if (false)
 	{
 		Plot test;
 		test.setXLabel("x label");
@@ -55,10 +55,10 @@ void testPlot()
 		test.erase(3, 0);
 		test.insert(3, 10, 3, 0);
 
-		test.plot();
+		test.plot("test3");
 	}
 
-	if (false)
+	//if (false)
 	{
 		Plot test;
 		test.setXLabel("x label");
@@ -72,10 +72,10 @@ void testPlot()
 		test.erase(3, 0);
 		test.insert(3, 10, 3, 0);
 
-		test.plot();
+		test.plot("test4");
 	}
 
-	if (false)
+	//if (false)
 	{
 		Plot test;
 		test.setXLabel("log(x) label");
@@ -86,7 +86,7 @@ void testPlot()
 		{
 			test.push_back(i, i, 0);
 		}
-		test.plot();
+		test.plot("test5");
 	}
 
 	Plot test;
@@ -99,7 +99,7 @@ void testPlot()
 			test.push_back(i, rng.uniform(0, i), 1);
 		}
 
-		test.plot("loop", false);
+		test.plot("test6", false);
 	}
 }
 

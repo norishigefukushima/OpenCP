@@ -19,11 +19,11 @@ namespace cp
 
 	int Timer::autoTimeMode()
 	{
-		if (cTime > 60.0*60.0*24.0)
+		if (cTime > 60.0 * 60.0 * 24.0)
 		{
 			return TIME_DAY;
 		}
-		else if (cTime > 60.0*60.0)
+		else if (cTime > 60.0 * 60.0)
 		{
 			return TIME_HOUR;
 		}
@@ -38,6 +38,10 @@ namespace cp
 		else if (cTime > 1.0 / 1000.0)
 		{
 			return TIME_MSEC;
+		}
+		else if (cTime > 1.0 / 1000000.0)
+		{
+			return TIME_MICROSEC;
 		}
 		else
 		{
@@ -56,9 +60,6 @@ namespace cp
 
 		switch (mode)
 		{
-		case TIME_NSEC:
-			cTime *= 1000000.0;
-			break;
 		case TIME_SEC:
 			cTime *= 1.0;
 			break;
@@ -70,6 +71,12 @@ namespace cp
 			break;
 		case TIME_DAY:
 			cTime /= (60 * 60 * 24);
+			break;
+		case TIME_NSEC:
+			cTime *= 1000000000.0;
+			break;
+		case TIME_MICROSEC:
+			cTime *= 1000000.0;
 			break;
 		case TIME_MSEC:
 		default:
@@ -83,26 +90,22 @@ namespace cp
 			switch (mode)
 			{
 			case TIME_NSEC:
-				cout << message << ": " << cTime << " nsec" << endl;
-				break;
-			case TIME_SEC:
-				cout << message << ": " << cTime << " sec" << endl;
-				break;
-			case TIME_MIN:
-				cout << message << ": " << cTime << " minute" << endl;
-				break;
-			case TIME_HOUR:
-				cout << message << ": " << cTime << " hour" << endl;
-				break;
-			case TIME_DAY:
-				cout << message << ": " << cTime << " day" << endl;
-				break;
+				cout << message << ": " << cTime << " nsec" << endl; break;
+			case TIME_MICROSEC:
+				cout << message << ": " << cTime << " microsec" << endl; break;
 			case TIME_MSEC:
-				cout << message << ": " << cTime << " msec" << endl;
-				break;
+				cout << message << ": " << cTime << " msec" << endl; break;
+			case TIME_SEC:
+				cout << message << ": " << cTime << " sec" << endl; break;
+			case TIME_MIN:
+				cout << message << ": " << cTime << " minute" << endl; break;
+			case TIME_HOUR:
+				cout << message << ": " << cTime << " hour" << endl; break;
+			case TIME_DAY:
+				cout << message << ": " << cTime << " day" << endl; break;
+
 			default:
-				cout << message << ": error" << endl;
-				break;
+				cout << message << ": error" << endl; break;
 			}
 		}
 	}
@@ -253,11 +256,11 @@ namespace cp
 
 	int DestinationTimePrediction::autoTimeMode(double cTime)
 	{
-		if (cTime > 60.0*60.0*24.0)
+		if (cTime > 60.0 * 60.0 * 24.0)
 		{
 			return TIME_DAY;
 		}
-		else if (cTime > 60.0*60.0)
+		else if (cTime > 60.0 * 60.0)
 		{
 			return TIME_HOUR;
 		}
@@ -387,14 +390,14 @@ namespace cp
 	double DestinationTimePrediction::predict(int presentCount, int interval)
 	{
 		double ret = 0.0;
-		if ((presentCount% interval) == 0)
+		if ((presentCount % interval) == 0)
 		{
 			double per = (double)presentCount / destCount;
 			//double ctime = (getTickCount()-preTime)/(getTickFrequency());
 			int64 cstamp = getTickCount();
 			double pret = ((double)destCount / (double)interval) * (cstamp - prestamp_for_prediction);
 
-			pret = (destCount - presentCount) / (double)interval*(cstamp - prestamp_for_prediction);
+			pret = (destCount - presentCount) / (double)interval * (cstamp - prestamp_for_prediction);
 			ret = pret;
 			prestamp_for_prediction = cstamp;
 
@@ -421,7 +424,7 @@ namespace cp
 
 			cout << "\r";
 
-			string mes = format("%.3f %% computed, rest ", 100.0*per);
+			string mes = format("%.3f %% computed, rest ", 100.0 * per);
 
 			switch (timeMode)
 			{

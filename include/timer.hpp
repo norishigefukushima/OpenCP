@@ -9,6 +9,7 @@ namespace cp
 	{
 		TIME_AUTO = 0,
 		TIME_NSEC,
+		TIME_MICROSEC,
 		TIME_MSEC,
 		TIME_SEC,
 		TIME_MIN,

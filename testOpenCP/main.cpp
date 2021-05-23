@@ -23,12 +23,12 @@ int main(int argc, char** argv)
 	//testTiling(img); return 0;
 	//copyMakeBorderTest(img); return 0;
 	//testSplitMerge(img); return 0;
-	consoleImageTest(); return 0;
+	//consoleImageTest(); return 0;
 	//testConcat(); return 0;
 	//testsimd(); return 0;
 
 	//testHistogram(); return 0;
-	//testPlot(); return 0;
+	testPlot(); return 0;
 	//testPlot2D(); return 0;
 	
 	//guiHazeRemoveTest();

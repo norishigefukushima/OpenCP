@@ -237,6 +237,115 @@ namespace cp
 		}
 	}
 
+	void plotLine(OutputArray graphImage_, Point2d data, double xmin, double xmax, double ymin, double ymax,
+		Scalar color, int lt, int isLine, int thickness, int pointSize, bool isLogX, bool isLogY)
+	{
+		CV_Assert(!graphImage_.empty());
+		const int ps = pointSize;
+
+		Mat graph = graphImage_.getMat();
+		if (isLogX)
+		{
+			xmax = log10(max(1.0, xmax));
+			xmin = log10(max(1.0, xmin));
+		}
+		if (isLogY)
+		{
+			ymax = log10(max(1.0, ymax));
+			ymin = log10(max(1.0, ymin));
+		}
+		//cout << xmin << "," << xmax << endl;
+		const double x_step = (double)(graph.cols - 1) / (xmax - xmin);
+		const double y_step = (double)(graph.rows - 1) / (ymax - ymin);
+
+		int H = graph.rows - 1;
+
+		double x = data.x;
+		double y = data.y;
+		if (isLogX) x = log10(max(1.0, x));
+		if (isLogY) y = log10(max(1.0, y));
+		cv::Point p = Point(0, H - cvRound(y_step * (y - ymin)));
+
+		{
+			double xn = x;
+			double yn = y;
+
+			if (isLogX) xn = log10(max(1.0, xn));
+			if (isLogY) yn = log10(max(1.0, yn));
+			if (isLine == Plot::LINEAR)
+			{
+				line(graph, p, Point(graph.cols - 1, H - cvRound(y_step * (yn - ymin))), color, thickness);
+			}
+		}
+
+		if (lt == Plot::NOPOINT)
+		{
+			;
+		}
+		else if (lt == Plot::PLUS)
+		{
+			drawPlus(graph, p, 2 * ps + 1, color, thickness);
+		}
+		else if (lt == Plot::TIMES)
+		{
+			drawTimes(graph, p, 2 * ps + 1, color, thickness);
+		}
+		else if (lt == Plot::ASTERISK)
+		{
+			drawAsterisk(graph, p, 2 * ps + 1, color, thickness);
+		}
+		else if (lt == Plot::CIRCLE)
+		{
+			circle(graph, p, ps, color, thickness);
+		}
+		else if (lt == Plot::RECTANGLE)
+		{
+			rectangle(graph, Point(p.x - ps, p.y - ps), Point(p.x + ps, p.y + ps),
+				color, thickness);
+		}
+		else if (lt == Plot::CIRCLE_FILL)
+		{
+			circle(graph, p, ps, color, FILLED);
+		}
+		else if (lt == Plot::RECTANGLE_FILL)
+		{
+			rectangle(graph, Point(p.x - ps, p.y - ps), Point(p.x + ps, p.y + ps),
+				color, FILLED);
+		}
+		else if (lt == Plot::TRIANGLE)
+		{
+			triangle(graph, p, 2 * ps, color, thickness);
+		}
+		else if (lt == Plot::TRIANGLE_FILL)
+		{
+			triangle(graph, p, 2 * ps, color, FILLED);
+		}
+		else if (lt == Plot::TRIANGLE_INV)
+		{
+			triangleinv(graph, p, 2 * ps, color, thickness);
+		}
+		else if (lt == Plot::TRIANGLE_INV_FILL)
+		{
+			triangleinv(graph, p, 2 * ps, color, FILLED);
+		}
+		else if (lt == Plot::DIAMOND)
+		{
+			diamond(graph, p, 2 * ps, color, thickness);
+		}
+		else if (lt == Plot::DIAMOND_FILL)
+		{
+			diamond(graph, p, 2 * ps, color, FILLED);
+		}
+		else if (lt == Plot::PENTAGON)
+		{
+			pentagon(graph, p, 2 * ps, color, thickness);
+		}
+		else if (lt == Plot::PENTAGON_FILL)
+		{
+			pentagon(graph, p, 2 * ps, color, FILLED);
+		}
+	}
+
 #pragma region Plot
 	Plot::Plot()
 	{
@@ -338,13 +447,27 @@ namespace cp
 		xmax_data = -DBL_MAX;
 		xmin_data = DBL_MAX;
 
+		ymaxpt.resize(data_max);
+		yminpt.resize(data_max);
+		double y_max_val = -DBL_MAX;
+		double y_min_val = DBL_MAX;
 		for (int i = 0; i < data_max; i++)
 		{
 			for (int j = 0; j < pinfo[i].data.size(); j++)
 			{
 				const double y = pinfo[i].data[j].y;
-				ymax_data = max(ymax_data, y);
-				ymin_data = min(ymin_data, y);
+				if (y_max_val <= y)
+				{
+					y_max_val = y;
+					ymax_data = y;
+					ymaxpt[i] = pinfo[i].data[j];
+				}
+				if (y_min_val >= y)
+				{
+					y_min_val = y;
+					ymin_data = y;
+					yminpt[i] = pinfo[i].data[j];
+				}
 
 				const double x = pinfo[i].data[j].x;
 				xmax_data = max(xmax_data, x);
@@ -956,6 +1079,10 @@ namespace cp
 			}
 			plotGraph(plotImage, pinfo[foregroundIndex - 1].data, xmin_plotwindow, xmax_plotwindow, ymin_plotwindow, ymax_plotwindow, pinfo[foregroundIndex - 1].color, pinfo[foregroundIndex - 1].symbolType, pinfo[foregroundIndex - 1].lineType, pinfo[foregroundIndex - 1].lineWidth, symbolSize, isLogScaleX, isLogScaleY);
 		}
+
+		//for (int i = 0; i < data_max; i++)
+			//plotLine(plotImage, ymaxpt[i], xmin_plotwindow, xmax_plotwindow, ymin_plotwindow, ymax_plotwindow, COLOR_RED, pinfo[i].symbolType, pinfo[i].lineType, pinfo[i].lineWidth, symbolSize, isLogScaleX, isLogScaleY);
+
 		renderingOutsideInformation(true);
 
 		Mat temp = render.clone();
@@ -1107,6 +1234,7 @@ namespace cp
 		computeDataMaxMin();
 
 		bool isUseMinmaxBar = (xmax_data > 1 && ymax_data > 1);
+		//bool isUseMinmaxBar = false;
 		const int xmin = (int)xmin_data;
 		const int xmax = (int)ceil(xmax_data);
 		const int ymin = (int)ymin_data;
@@ -1118,10 +1246,10 @@ namespace cp
 		int ymaxbar = ymax;
 		if (isUseMinmaxBar)
 		{
-			if (xmax != 0)createTrackbar("xmin", wname, &xminbar, xmax); setTrackbarMin("xmin", wname, xmin);
-			if (xmax != 0)createTrackbar("xmax", wname, &xmaxbar, xmax); setTrackbarMin("xmax", wname, xmin);
-			if (ymax != 0)createTrackbar("ymin", wname, &yminbar, ymax); setTrackbarMin("ymin", wname, ymin);
-			if (ymax != 0)createTrackbar("ymax", wname, &ymaxbar, ymax); setTrackbarMin("ymax", wname, ymin);
+			if (xmax > 0 && xmax - xmin > 0) { createTrackbar("xmin", wname, &xminbar, xmax); setTrackbarMin("xmin", wname, xmin); }
+			if (xmax > 0 && xmax - xmin > 0) { createTrackbar("xmax", wname, &xmaxbar, xmax); setTrackbarMin("xmax", wname, xmin); }
+			if (ymax > 0 && ymax - ymin > 0) { createTrackbar("ymin", wname, &yminbar, ymax); setTrackbarMin("ymin", wname, ymin); }
+			if (ymax > 0 && ymax - ymin > 0) { createTrackbar("ymax", wname, &ymaxbar, ymax); setTrackbarMin("ymax", wname, ymin); }
 		}
 		const double margin_ratio = 1.0;//0.9
 		if (!isSetXRange)
