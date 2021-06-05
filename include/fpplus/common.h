@@ -27,7 +27,7 @@
 		#error "The code must be compiled for a CUDA device with fused multiply-add (compute capability 2.0+)"
 	#endif
 #elif !defined(__FP_FAST_FMA) && !defined(__FMA__) && !defined(__AVX2__) && !defined(__KNC__)
-	#error "The code must be compiled for a processor with fused multiply-add (FMA)"
+	//#error "The code must be compiled for a processor with fused multiply-add (FMA)"
 #endif
 
 #if defined(__OPENCL_VERSION__) && defined(__FAST_RELAXED_MATH__)

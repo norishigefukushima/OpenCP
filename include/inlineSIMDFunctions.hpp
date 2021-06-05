@@ -313,6 +313,18 @@ inline __m256d _mm256_loadu_cvtps_pd(const float* src)
 #pragma endregion
 
 #pragma region color_convert
+inline __m256 _mm256_unpackeven_ps(__m256 src1, __m256 src2)
+{
+	//__m256i t0 = _mm256_castps_si256(_mm256_shuffle_ps(src1, src2, _MM_SHUFFLE(2, 0, 2, 0)));
+	//return _mm256_castsi256_ps(_mm256_permute4x64_epi64(t0, _MM_SHUFFLE(3, 1, 2, 0)));
+
+	__m256i unpackeven_mask1 = _mm256_setr_epi32(0, 2, 4, 6, 0, 0, 0, 0);
+	__m256i unpackeven_mask2 = _mm256_setr_epi32(0, 0, 0, 0, 0, 2, 4, 6);
+	__m256 t0 = _mm256_permutevar8x32_ps(src1, unpackeven_mask1);
+	__m256 t1 = _mm256_permutevar8x32_ps(src2, unpackeven_mask2);
+	return _mm256_blend_ps(t0, t1, 0b11110000);
+}
+
 inline void _mm256_load_deinterleave_ps(const float* src, __m256& d0, __m256& d1)
 {
 	__m256 v1 = _mm256_load_ps(src);
@@ -329,6 +341,14 @@ inline void _mm256_store_interleave_ps(void* dst, const __m256 d0, const __m256 
 	__m256 s2 = _mm256_unpackhi_ps(d0, d1);
 	_mm256_store_ps((float*)dst + 0, _mm256_permute2f128_ps(s1, s2, 0x20));
 	_mm256_store_ps((float*)dst + 8, _mm256_permute2f128_ps(s1, s2, 0x31));
+}
+
+inline void _mm256_storeu_interleave_ps(void* dst, const __m256 d0, const __m256 d1)
+{
+	__m256 s1 = _mm256_unpacklo_ps(d0, d1);
+	__m256 s2 = _mm256_unpackhi_ps(d0, d1);
+	_mm256_storeu_ps((float*)dst + 0, _mm256_permute2f128_ps(s1, s2, 0x20));
+	_mm256_storeu_ps((float*)dst + 8, _mm256_permute2f128_ps(s1, s2, 0x31));
 }
 
 inline void _mm256_load_cvtpd_bgr2planar_pd(const double* ptr, __m256d& b, __m256d& g, __m256d& r)

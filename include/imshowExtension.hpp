@@ -7,7 +7,7 @@ namespace cp
 	//normalize image and then cast to 8U and imshow. NORM_INF(32) scale 0-max
 	CP_EXPORT void imshowNormalize(std::string wname, cv::InputArray src, const int norm_type = cv::NORM_MINMAX);
 
-	//scaling ax+b and then cast to 8U and imshow
+	//scaling ax+b, cast to 8U, and then imshow
 	CP_EXPORT void imshowScale(std::string name, cv::InputArray src, const double alpha = 1.0, const double beta = 0.0);
 
 	//resize image, cast 8U (optional), and then imshow 
