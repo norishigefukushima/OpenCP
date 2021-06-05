@@ -1147,11 +1147,15 @@ namespace cp
 					double y = pinfo[i].data[n].y;
 					fprintf(fp, "%f %f ", x, y);
 				}
-				else
+				else if (pinfo[i].data.size() != 0)
 				{
 					double x = pinfo[i].data[pinfo[i].data.size() - 1].x;
 					double y = pinfo[i].data[pinfo[i].data.size() - 1].y;
 					fprintf(fp, "%f %f ", x, y);
+				}
+				else
+				{
+					fprintf(fp, "%f %f ", 0.0, 0.0);
 				}
 			}
 			fprintf(fp, "\n");
@@ -1159,7 +1163,7 @@ namespace cp
 		if (isPrint)cout << "p ";
 		for (int i = 0; i < data_max; i++)
 		{
-			if (isPrint) cout << "'" << name << "'" << " u " << 2 * i + 1 << ":" << 2 * i + 2 << " w lp" << " t \"" << pinfo[i].title << "\",";
+			if (isPrint) cout << "'" << name << "'" << " u " << 2 * i + 1 << ":" << 2 * i + 2 << " w lp" << "lt " << i + 1 << " t \"" << pinfo[i].title << "\",";
 		}
 		if (isPrint)cout << endl;
 		fclose(fp);
@@ -1413,11 +1417,11 @@ namespace cp
 				gplot.setKey(KEY(keyPosition));
 				for (int i = 0; i < data_max; i++)
 				{
-					char name[64];
+					char name[128];
 					if (i != data_max - 1)
-						sprintf(name, "'plot' u %d:%d w lp ps 0.5 t \"%s\",", 2 * i + 1, 2 * i + 2, pinfo[i].title.c_str());
+						sprintf(name, "'plot' u %d:%d w lp ps 0.5 lt %d t \"%s\",", 2 * i + 1, 2 * i + 2, i + 1, pinfo[i].title.c_str());
 					else
-						sprintf(name, "'plot' u %d:%d w lp ps 0.5 t \"%s\"", 2 * i + 1, 2 * i + 2, pinfo[i].title.c_str());
+						sprintf(name, "'plot' u %d:%d w lp ps 0.5 lt %d t \"%s\"", 2 * i + 1, 2 * i + 2, i + 1, pinfo[i].title.c_str());
 					a += name;
 				}
 				gplot.plotPDF(a);
