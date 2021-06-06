@@ -169,9 +169,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="guiBlendTest.cpp" />
-    <ClCompile Include="analysisShow.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="bilateralfilter\bilateralFilterTest.cpp" />
     <ClCompile Include="highDimentionalGaussianFilterTest.cpp" />
     <ClCompile Include="testColorCorrection.cpp" />

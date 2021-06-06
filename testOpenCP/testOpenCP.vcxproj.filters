@@ -33,9 +33,6 @@
     <ClCompile Include="main.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="analysisShow.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="bilateralfilter\bilateralFilterTest.cpp">
       <Filter>ソース ファイル\test\filter</Filter>
     </ClCompile>

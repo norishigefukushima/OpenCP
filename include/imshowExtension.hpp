@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common.hpp"
+#include "plot.hpp"
 
 namespace cp
 {
@@ -30,4 +31,24 @@ namespace cp
 		void show();
 		void show(cv::Mat& src);
 	};
+
+	enum DRAW_SIGNAL_CHANNEL
+	{
+		B,
+		G,
+		R,
+		Y
+	};
+	CP_EXPORT void drawSignalX(cv::Mat& src1, cv::Mat& src2, DRAW_SIGNAL_CHANNEL color, cv::Mat& dest, cv::Size outputImageSize, int line_height, int shiftx, int shiftvalue, int rangex, int rangevalue, int linetype = cp::Plot::LINEAR);// color 0:B, 1:G, 2:R, 3:Y
+	CP_EXPORT void drawSignalX(cv::InputArrayOfArrays src, DRAW_SIGNAL_CHANNEL color, cv::Mat& dest, cv::Size outputImageSize, int analysisLineHeight, int shiftx, int shiftvalue, int rangex, int rangevalue, int linetype = cp::Plot::LINEAR);// color 0:B, 1:G, 2:R, 3:Y
+
+	CP_EXPORT void drawSignalY(cv::Mat& src1, cv::Mat& src2, DRAW_SIGNAL_CHANNEL color, cv::Mat& dest, cv::Size size, int line_height, int shiftx, int shiftvalue, int rangex, int rangevalue, int linetype = cp::Plot::LINEAR);// color 0:B, 1:G, 2:R, 3:Y
+	CP_EXPORT void drawSignalY(cv::Mat& src, DRAW_SIGNAL_CHANNEL color, cv::Mat& dest, cv::Size size, int line_height, int shiftx, int shiftvalue, int rangex, int rangevalue, int linetype = cp::Plot::LINEAR);// color 0:B, 1:G, 2:R, 3:Y
+	CP_EXPORT void drawSignalY(std::vector<cv::Mat>& src, DRAW_SIGNAL_CHANNEL color, cv::Mat& dest, cv::Size size, int line_height, int shiftx, int shiftvalue, int rangex, int rangevalue, int linetype = cp::Plot::LINEAR);// color 0:B, 1:G, 2:R, 3:Y
+
+	CP_EXPORT void guiAnalysisImage(cv::InputArray src);
+	CP_EXPORT void guiAnalysisCompare(cv::Mat& src1, cv::Mat& src2);
+	CP_EXPORT void imshowAnalysis(std::string winname, cv::Mat& src);
+	CP_EXPORT void imshowAnalysis(std::string winname, std::vector<cv::Mat>& s);
+	CP_EXPORT void imshowAnalysisCompare(std::string winname, cv::Mat& src1, cv::Mat& src2);
 }
