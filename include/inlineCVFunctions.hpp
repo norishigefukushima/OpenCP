@@ -200,4 +200,13 @@ namespace cp
 		}
 		return ret;
 	}
+
+	inline cv::Mat cvt8UC3(cv::InputArray src)
+	{
+		if (src.type() == CV_8UC3)return src.getMat();
+		cv::Mat ret;
+		src.getMat().convertTo(ret, CV_8U);
+		if(src.channels()==1) cvtColor(ret, ret, cv::COLOR_GRAY2BGR);
+		return ret;
+	}
 }

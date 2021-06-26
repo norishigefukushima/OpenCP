@@ -24,6 +24,13 @@ namespace cp
 		imshow(name, show);
 	}
 
+	void imshowScaleAbs(string name, InputArray src, const double alpha, const double beta)
+	{
+		Mat show;
+		cv::convertScaleAbs(src.getMat(), show, alpha, beta);
+		imshow(name, show);
+	}
+
 	void imshowResize(std::string name, cv::InputArray src, const cv::Size dsize, const double fx, const double fy, const int interpolation, const bool isCast8U)
 	{
 		Mat show;
@@ -130,7 +137,7 @@ namespace cp
 
 		Plot p(outputImageSize);
 		p.setKey(cp::Plot::NOKEY);
-		
+
 		p.setPlotProfile(false, false, false);
 		p.setPlotSymbolALL(Plot::NOPOINT);
 		p.setPlotLineTypeALL(linetype);

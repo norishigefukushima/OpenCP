@@ -11,6 +11,9 @@ namespace cp
 	//scaling ax+b, cast to 8U, and then imshow
 	CP_EXPORT void imshowScale(std::string name, cv::InputArray src, const double alpha = 1.0, const double beta = 0.0);
 
+	//scaling a|x|+b, cast to 8U, and then imshow
+	CP_EXPORT void imshowScaleAbs(std::string name, cv::InputArray src, const double alpha = 1.0, const double beta = 0.0);
+
 	//resize image, cast 8U (optional), and then imshow 
 	CP_EXPORT void imshowResize(std::string name, cv::InputArray src, const cv::Size dsize, const double fx = 0.0, const double fy = 0.0, const int interpolation = cv::INTER_NEAREST, bool isCast8U = true);
 

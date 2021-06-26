@@ -21,9 +21,9 @@ namespace cp
 		lineSpaceSize = size;
 	}
 
-	void ConsoleImage::init(Size size, string wname)
+	void ConsoleImage::init(Size size, string wname, const bool isNamedWindow)
 	{
-		namedWindow(wname);
+		if (isNamedWindow)namedWindow(wname);
 		isLineNumber = false;
 		windowName = wname;
 		image = Mat::zeros(size, CV_8UC3);
@@ -35,12 +35,12 @@ namespace cp
 
 	ConsoleImage::ConsoleImage()
 	{
-		init(Size(640, 480), "console");
+		init(Size(640, 480), "console", true);
 	}
 
-	ConsoleImage::ConsoleImage(Size size, string wname)
+	ConsoleImage::ConsoleImage(Size size, string wname, const bool isNamedWindow)
 	{
-		init(size, wname);
+		init(size, wname, isNamedWindow);
 	}
 
 	ConsoleImage::~ConsoleImage()
@@ -92,7 +92,7 @@ namespace cp
 		this->operator()(Scalar(255, 255, 255), src);
 	}
 
-	void ConsoleImage::operator()(const char *format, ...)
+	void ConsoleImage::operator()(const char* format, ...)
 	{
 		char buff[255];
 		va_list ap;
@@ -104,7 +104,7 @@ namespace cp
 		this->operator()(Scalar(255, 255, 255), a);
 	}
 
-	void ConsoleImage::operator()(cv::Scalar color, const char *format, ...)
+	void ConsoleImage::operator()(cv::Scalar color, const char* format, ...)
 	{
 		char buff[255];
 		va_list ap;
@@ -124,7 +124,7 @@ namespace cp
 		int skip = fontSize + lineSpaceSize;
 		cv::addText(image, strings[count], Point(skip, skip + count * skip), fontName, fontSize, color);
 		//cv::putText(image, strings[count], Point(skip, skip + count * skip), CV_FONT_HERSHEY_COMPLEX_SMALL, 1.0, color, 1);
-		
+
 		count++;
 	}
 }

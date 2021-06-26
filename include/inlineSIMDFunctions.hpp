@@ -1078,7 +1078,7 @@ inline void print_char(__m128i src)
 {
 	for (int i = 0; i < 16; i++)
 	{
-		printf_s("%3d ", ((uchar*)&src)[i]);
+		printf_s("%3d ", ((char*)&src)[i]);
 	}
 	printf_s("\n");
 }

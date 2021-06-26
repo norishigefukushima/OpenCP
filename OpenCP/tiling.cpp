@@ -7,7 +7,7 @@ using namespace cv;
 namespace cp
 {
 #pragma region cropTile
-
+#pragma region cropTile div
 	static void cropTile8U_Replicate(const Mat& src, Mat& dest, const Size div_size, const Point idx, const int topb, const int bottomb, const int leftb, const int rightb)
 	{
 		const int tileSizeXInternal = src.cols / div_size.width;
@@ -269,8 +269,8 @@ namespace cp
 
 	static void cropTile8U_Reflect101(const Mat& src, Mat& dest, const Size div_size, const Point idx, const int topb, const int bottomb, const int leftb, const int rightb)
 	{
-		const int tileSizeXInternal = src.cols / div_size.width;
-		const int tileSizeYInternal = src.rows / div_size.height;
+		const int tileSizeXInternal = src.cols / div_size.width;//src.cols / div_size.width
+		const int tileSizeYInternal = src.rows / div_size.height;//src.rows / div_size.height
 		const int tileSizeXExternal = tileSizeXInternal + leftb + rightb;
 		const int tileSizeYExternal = tileSizeYInternal + topb + bottomb;
 
@@ -842,7 +842,6 @@ namespace cp
 		}
 	}
 
-
 	void cropTile(const Mat& src, Mat& dest, const Size div_size, const Point idx, const int topb, const int bottomb, const int leftb, const int rightb, const int borderType)
 	{
 		CV_Assert(src.channels() == 1);
@@ -896,6 +895,895 @@ namespace cp
 		cropTile(src, dest, div_size, idx, T, B, L, R, borderType);
 		//cout << format("%d %d %d %d\n", L, R, T, B);
 	}
+#pragma endregion
+
+#pragma region cropTile roi
+	static void cropTile8U_Replicate(const Mat& src, Mat& dest, const Rect roi, const int topb, const int bottomb, const int leftb, const int rightb)
+	{
+		const int roi_w = roi.width;
+		const int roi_h = roi.height;
+		const int dest_tile_w = roi_w + leftb + rightb;
+		const int dest_tile_h = roi_h + topb + bottomb;
+		if (dest.size() != Size(dest_tile_w, dest_tile_h)) dest.create(Size(dest_tile_w, dest_tile_h), CV_8U);
+
+		const int roi_x = roi.x;
+		const int left = max(0, leftb - roi_x);
+		const int sleft = leftb - left;
+		const int right = max(0, dest_tile_w + roi_x - src.cols - leftb);
+		const int sright = leftb + rightb - right;
+		const int memcpySizeX = dest_tile_w - left - right;
+
+		const int roi_y = roi.y;
+		const int top = max(0, topb - roi_y);
+		const int stop = topb - top;
+		const int bottom = max(0, dest_tile_h + roi_y - src.rows - topb);
+		const int memcpySizeY = dest_tile_h - top - bottom;
+
+		const int LEFT = get_simd_ceil(left, 16);
+		const int RIGHT = get_simd_floor(right, 16);
+
+		const uchar* s = src.ptr<uchar>(roi_y - stop, roi_x);
+		uchar* d = dest.ptr<uchar>(top);
+
+		const int STORE_OFFSET = roi_w + sright;
+
+		__m128i a;
+		for (int j = 0; j < memcpySizeY - 1; j++)
+		{
+			for (int i = 0; i < LEFT; i += 16)
+			{
+				a = _mm_set1_epi8(s[-roi_x]);
+				_mm_store_si128((__m128i*)(d + i), a);
+			}
+			memcpy(d + left, s - sleft, sizeof(uchar) * (memcpySizeX));
+			for (int i = 0; i < right; i += 16)
+			{
+				a = _mm_set1_epi8(s[-roi_x + src.cols - 1]);
+				_mm_storeu_si128((__m128i*)(d + STORE_OFFSET + i), a);
+			}
+			s += src.cols;
+			d += dest.cols;
+		}
+		//overshoot handling for the last loop
+		{
+			for (int i = 0; i < LEFT; i += 16)
+			{
+				a = _mm_set1_epi8(s[-roi_x]);
+				_mm_store_si128((__m128i*)(d + i), a);
+			}
+			memcpy(d + left, s - sleft, sizeof(uchar) * (memcpySizeX));
+			for (int i = 0; i < RIGHT; i += 16)
+			{
+				a = _mm_set1_epi8(s[-roi_x + src.cols - 1]);
+				_mm_storeu_si128((__m128i*)(d + STORE_OFFSET + i), a);
+			}
+			for (int i = RIGHT; i < right; i++)
+			{
+				d[STORE_OFFSET + i] = s[roi_w - 1];
+			}
+
+			s += src.cols;
+			d += dest.cols;
+		}
+
+		for (int j = 0; j < top; j++)
+		{
+			uchar* s = dest.ptr<uchar>(top);
+			uchar* d = dest.ptr<uchar>(j);
+			memcpy(d, s, sizeof(uchar) * (dest_tile_w));
+		}
+
+		const int sidx = roi_h + topb - 1;
+		const int didx = roi_h + topb;
+		for (int j = 0; j < bottom; j++)
+		{
+			uchar* s = dest.ptr<uchar>(max(0, sidx));
+			uchar* d = dest.ptr<uchar>(didx + j);
+			memcpy(d, s, sizeof(uchar) * dest_tile_w);
+		}
+	}
+
+	static void cropTile32F_Replicate(const Mat& src, Mat& dest, const Rect roi, const int topb, const int bottomb, const int leftb, const int rightb)
+	{
+		const int roi_w = roi.width;
+		const int roi_h = roi.height;
+		const int dest_tile_w = roi_w + leftb + rightb;
+		const int dest_tile_h = roi_h + topb + bottomb;
+		if (dest.size() != Size(dest_tile_w, dest_tile_h)) dest.create(Size(dest_tile_w, dest_tile_h), CV_32F);
+
+		const int roi_x = roi.x;
+		const int left = max(0, leftb - roi_x);
+		const int sleft = leftb - left;
+		const int right = max(0, dest_tile_w + roi_x - src.cols - leftb);
+		const int sright = leftb + rightb - right;
+		const int memcpySizeX = dest_tile_w - left - right;
+
+		const int roi_y = roi.y;
+		const int top = max(0, topb - roi_y);
+		const int stop = topb - top;
+		const int bottom = max(0, dest_tile_h - (src.rows - roi_y + topb));
+		const int memcpySizeY = dest_tile_h - top - bottom;
+
+		const int LEFT = get_simd_ceil(left, 8);
+		const int RIGHT = get_simd_floor(right, 8);
+
+		const float* s = src.ptr<float>(roi_y - stop, roi_x);
+		float* d = dest.ptr<float>(top);
+
+		const int STORE_OFFSET = roi_w + sright;
+
+		__m256 a;
+		for (int j = 0; j < memcpySizeY - 1; j++)
+		{
+			for (int i = 0; i < LEFT; i += 8)
+			{
+				a = _mm256_set1_ps(s[-roi_x]);
+				_mm256_store_ps(d + i, a);
+			}
+			memcpy(d + left, s - sleft, sizeof(float) * (memcpySizeX));
+			for (int i = 0; i < right; i += 8)
+			{
+				a = _mm256_set1_ps(s[-roi_x + src.cols - 1]);
+				_mm256_storeu_ps(d + STORE_OFFSET + i, a);
+			}
+			s += src.cols;
+			d += dest.cols;
+		}
+		//overshoot handling for the last loop
+		{
+			for (int i = 0; i < LEFT; i += 8)
+			{
+				a = _mm256_set1_ps(s[0]);
+				_mm256_store_ps(d + i, a);
+			}
+			memcpy(d + left, s - sleft, sizeof(float) * (memcpySizeX));
+			for (int i = 0; i < RIGHT; i += 8)
+			{
+				a = _mm256_set1_ps(s[roi_w - 1]);
+				_mm256_storeu_ps(d + STORE_OFFSET + i, a);
+			}
+			for (int i = RIGHT; i < right; i++)
+			{
+				d[STORE_OFFSET + i] = s[roi_w - 1];
+			}
+
+			s += src.cols;
+			d += dest.cols;
+		}
+
+		for (int j = 0; j < top; j++)
+		{
+			float* s = dest.ptr<float>(top);
+			float* d = dest.ptr<float>(j);
+			memcpy(d, s, sizeof(float) * (dest_tile_w));
+		}
+
+		const int sidx = roi_h + topb - 1;
+		const int didx = roi_h + topb;
+		for (int j = 0; j < bottom; j++)
+		{
+			float* s = dest.ptr<float>(max(0, sidx));
+			float* d = dest.ptr<float>(didx + j);
+			memcpy(d, s, sizeof(float) * dest_tile_w);
+		}
+	}
+
+	static void cropTile64F_Replicate(const Mat& src, Mat& dest, const Rect roi, const int topb, const int bottomb, const int leftb, const int rightb)
+	{
+		const int roi_w = roi.width;
+		const int roi_h = roi.height;
+		const int dest_tilex = roi_w + leftb + rightb;
+		const int dest_tiley = roi_h + topb + bottomb;
+		if (dest.size() != Size(dest_tilex, dest_tiley)) dest.create(Size(dest_tilex, dest_tiley), CV_64F);
+
+		const int roi_x = roi.x;
+		const int left = max(0, leftb - roi_x);
+		const int sleft = leftb - left;
+		const int right = max(0, dest_tilex + roi_x - src.cols - leftb);
+		const int sright = leftb + rightb - right;
+		const int memcpySizeX = dest_tilex - left - right;
+
+		const int roi_y = roi.y;
+		const int top = max(0, topb - roi_y);
+		const int stop = topb - top;
+		const int bottom = max(0, dest_tiley - (src.rows - roi_y + topb));
+		const int memcpySizeY = dest_tiley - top - bottom;
+
+		const int LEFT = get_simd_ceil(left, 4);
+		const int RIGHT = get_simd_floor(right, 4);
+
+		const double* s = src.ptr<double>(roi_y - stop, roi_x);
+		double* d = dest.ptr<double>(top);
+
+		const int STORE_OFFSET = roi_w + sright;
+
+		__m256d a;
+		for (int j = 0; j < memcpySizeY - 1; j++)
+		{
+			for (int i = 0; i < LEFT; i += 4)
+			{
+				a = _mm256_set1_pd(s[-roi_x]);
+				_mm256_store_pd(d + i, a);
+			}
+			memcpy(d + left, s - sleft, sizeof(double) * (memcpySizeX));
+			for (int i = 0; i < right; i += 4)
+			{
+				a = _mm256_set1_pd(s[-roi_x + src.cols - 1]);
+				_mm256_storeu_pd(d + STORE_OFFSET + i, a);
+			}
+			s += src.cols;
+			d += dest.cols;
+		}
+		//overshoot handling for the last loop
+		{
+			for (int i = 0; i < LEFT; i += 4)
+			{
+				a = _mm256_set1_pd(s[0]);
+				_mm256_store_pd(d + i, a);
+			}
+			memcpy(d + left, s - sleft, sizeof(double) * (memcpySizeX));
+			for (int i = 0; i < RIGHT; i += 4)
+			{
+				a = _mm256_set1_pd(s[roi_w - 1]);
+				_mm256_storeu_pd(d + STORE_OFFSET + i, a);
+			}
+			for (int i = RIGHT; i < right; i++)
+			{
+				d[STORE_OFFSET + i] = s[roi_w - 1];
+			}
+
+			s += src.cols;
+			d += dest.cols;
+		}
+
+		for (int j = 0; j < top; j++)
+		{
+			double* s = dest.ptr<double>(top);
+			double* d = dest.ptr<double>(j);
+			memcpy(d, s, sizeof(double) * (dest_tilex));
+		}
+
+		const int sidx = roi_h + topb - 1;
+		const int didx = roi_h + topb;
+		for (int j = 0; j < bottom; j++)
+		{
+			double* s = dest.ptr<double>(max(0, sidx));
+			double* d = dest.ptr<double>(didx + j);
+			memcpy(d, s, sizeof(double) * dest_tilex);
+		}
+	}
+
+
+	static void cropTile8U_Reflect101(const Mat& src, Mat& dest, const Rect roi, const int topb, const int bottomb, const int leftb, const int rightb)
+	{
+		const int roi_w = roi.width;
+		const int roi_h = roi.height;
+		const int tileSizeXExternal = roi_w + leftb + rightb;
+		const int tileSizeYExternal = roi_h + topb + bottomb;
+
+		if (dest.size() != Size(tileSizeXExternal, tileSizeYExternal)) dest.create(Size(tileSizeXExternal, tileSizeYExternal), CV_8U);
+
+		const int firstXInternalGrid = roi.x;
+		const int left = max(0, leftb - firstXInternalGrid);
+		const int sleft = leftb - left;
+		const int right = max(0, tileSizeXExternal - (src.cols - firstXInternalGrid + leftb));
+		const int sright = leftb + rightb - right;
+		const int copysizex = tileSizeXExternal - left - right;
+
+		const int firstYInternalGrid = roi.y;
+		const int top = max(0, topb - firstYInternalGrid);
+		const int stop = topb - top;
+		const int bottom = max(0, tileSizeYExternal - (src.rows - firstYInternalGrid + topb));
+
+		const int copysizey = tileSizeYExternal - top - bottom;
+
+		const int LEFT = get_simd_ceil(left, 16);
+		const int RIGHT = get_simd_floor(right, 16);
+
+		const uchar* s = src.ptr<uchar>(firstYInternalGrid - stop, firstXInternalGrid);
+		uchar* d = dest.ptr<uchar>(top);
+
+		const int LOAD_OFFSET1 = left - 16 - firstXInternalGrid;
+		const int LOAD_OFFSET2 = src.cols - 16 - firstXInternalGrid;
+		const int LOAD_OFFSET3 = src.cols - 1 - firstXInternalGrid;
+		const int STORE_OFFSET = roi_w + sright;
+
+		const __m128i vm = _mm_setr_epi8(15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0);
+		__m128i a;
+		for (int j = 0; j < copysizey - 1; j++)
+		{
+			for (int i = 0; i < LEFT; i += 16)
+			{
+				a = _mm_load_si128((__m128i*)(s + LOAD_OFFSET1 - i + 1));
+				a = _mm_shuffle_epi8(a, vm);
+				_mm_store_si128((__m128i*)(d + i), a);
+			}
+			memcpy(d + left, s - sleft, sizeof(uchar) * (copysizex));
+			for (int i = 0; i < right; i += 16)
+			{
+				a = _mm_load_si128((__m128i*)(s + LOAD_OFFSET2 - i - 1));
+				a = _mm_shuffle_epi8(a, vm);
+				_mm_storeu_si128((__m128i*)(d + STORE_OFFSET + i), a);
+			}
+			s += src.cols;
+			d += dest.cols;
+		}
+		//overshoot handling for the last loop
+		{
+			for (int i = 0; i < LEFT; i += 16)
+			{
+				a = _mm_load_si128((__m128i*)(s + LOAD_OFFSET1 - i + 1));
+				a = _mm_shuffle_epi8(a, vm);
+				_mm_store_si128((__m128i*)(d + i), a);
+			}
+			memcpy(d + left, s - sleft, sizeof(uchar) * (copysizex));
+			for (int i = 0; i < RIGHT; i += 16)
+			{
+				a = _mm_load_si128((__m128i*)(s + LOAD_OFFSET2 - i - 1));
+				a = _mm_shuffle_epi8(a, vm);
+				_mm_storeu_si128((__m128i*)(d + STORE_OFFSET + i), a);
+			}
+			for (int i = RIGHT; i < right; i++)
+			{
+				d[STORE_OFFSET + i] = s[LOAD_OFFSET3 - i - 1];
+			}
+			s += src.cols;
+			d += dest.cols;
+		}
+
+		for (int j = 0; j < top; j++)
+		{
+			uchar* s = dest.ptr<uchar>(2 * top - j);
+			uchar* d = dest.ptr<uchar>(j);
+			memcpy(d, s, sizeof(uchar) * (tileSizeXExternal));
+		}
+
+		const int sidx = roi_h + topb - 2;
+		const int didx = roi_h + topb;
+		for (int j = 0; j < bottom; j++)
+		{
+			uchar* s = dest.ptr<uchar>(max(0, sidx - j));
+			uchar* d = dest.ptr<uchar>(didx + j);
+			memcpy(d, s, sizeof(uchar) * tileSizeXExternal);
+		}
+	}
+
+	static void cropTile32F_Reflect101(const Mat& src, Mat& dest, const Rect roi, const int topb, const int bottomb, const int leftb, const int rightb)
+	{
+		const int roi_w = roi.width;
+		const int roi_h = roi.height;
+		const int dest_tilex = roi_w + leftb + rightb;
+		const int dest_tiley = roi_h + topb + bottomb;
+		if (dest.size() != Size(dest_tilex, dest_tiley)) dest.create(Size(dest_tilex, dest_tiley), CV_32F);
+
+		const int roi_x = roi.x;
+		const int left = max(0, leftb - roi_x);
+		const int sleft = leftb - left;
+		const int right = max(0, dest_tilex + roi_x - src.cols - leftb);
+		const int sright = leftb + rightb - right;
+		const int copysizex = dest_tilex - left - right;
+
+		const int roi_y = roi.y;
+		const int top = max(0, topb - roi_y);
+		const int stop = topb - top;
+		const int bottom = max(0, dest_tiley - (src.rows - roi_y + topb));
+
+		const int copysizey = dest_tiley - top - bottom;
+
+		const int LEFT = get_simd_ceil(left, 8);
+		const int RIGHT = get_simd_floor(right, 8);
+
+		const float* s = src.ptr<float>(roi_y - stop) + roi_x;
+		float* d = dest.ptr<float>(top);
+
+		const int LOAD_OFFSET1 = left - 8 - roi_x;
+		const int LOAD_OFFSET2 = src.cols - 8 - roi_x;
+		const int LOAD_OFFSET3 = src.cols - 1 - roi_x;
+		const int STORE_OFFSET = roi_w + sright;
+
+		__m256 a;
+		for (int j = 0; j < copysizey - 1; j++)
+		{
+			for (int i = 0; i < LEFT; i += 8)
+			{
+				a = _mm256_loadu_reverse_ps(s + LOAD_OFFSET1 - i + 1);
+				_mm256_store_ps(d + i, a);
+			}
+			memcpy(d + left, s - sleft, sizeof(float) * (copysizex));
+			for (int i = 0; i < right; i += 8)
+			{
+				a = _mm256_loadu_ps(s + LOAD_OFFSET2 - i - 1);
+				a = _mm256_shuffle_ps(a, a, _MM_SHUFFLE(0, 1, 2, 3));
+				a = _mm256_permute2f128_ps(a, a, 1);
+				_mm256_storeu_ps(d + STORE_OFFSET + i, a);
+			}
+			s += src.cols;
+			d += dest.cols;
+		}
+		{
+			for (int i = 0; i < LEFT; i += 8)
+			{
+				a = _mm256_loadu_ps(s + LOAD_OFFSET1 - i + 1);
+				a = _mm256_shuffle_ps(a, a, _MM_SHUFFLE(0, 1, 2, 3));
+				a = _mm256_permute2f128_ps(a, a, 1);
+				_mm256_store_ps(d + i, a);
+			}
+			memcpy(d + left, s - sleft, sizeof(float) * (copysizex));
+			for (int i = 0; i < RIGHT; i += 8)
+			{
+				a = _mm256_loadu_ps(s + LOAD_OFFSET2 - i - 1);
+				a = _mm256_shuffle_ps(a, a, _MM_SHUFFLE(0, 1, 2, 3));
+				a = _mm256_permute2f128_ps(a, a, 1);
+				_mm256_storeu_ps(d + STORE_OFFSET + i, a);
+			}
+			for (int i = RIGHT; i < right; i++)
+			{
+				d[STORE_OFFSET + i] = s[LOAD_OFFSET3 - i - 1];
+			}
+			s += src.cols;
+			d += dest.cols;
+		}
+
+		for (int j = 0; j < top; j++)
+		{
+			float* s = dest.ptr<float>(2 * top - j);
+			float* d = dest.ptr<float>(j);
+			memcpy(d, s, sizeof(float) * (dest_tilex));
+		}
+
+		const int sidx = roi_h + topb - 2;
+		const int didx = roi_h + topb;
+		for (int j = 0; j < bottom; j++)
+		{
+			float* s = dest.ptr<float>(max(0, sidx - j));
+			float* d = dest.ptr<float>(didx + j);
+			memcpy(d, s, sizeof(float) * dest_tilex);
+		}
+	}
+
+	static void cropTile64F_Reflect101(const Mat& src, Mat& dest, const Rect roi, const int topb, const int bottomb, const int leftb, const int rightb)
+	{
+		const int roi_w = roi.width;
+		const int roi_h = roi.height;
+		const int dest_tilex = roi_w + leftb + rightb;
+		const int dest_tiley = roi_h + topb + bottomb;
+		if (dest.size() != Size(dest_tilex, dest_tiley)) dest.create(Size(dest_tilex, dest_tiley), CV_64F);
+
+		const int roi_x = roi.x;
+		const int left = max(0, leftb - roi_x);
+		const int sleft = leftb - left;
+		const int right = max(0, dest_tilex + roi_x - src.cols - leftb);
+		const int sright = leftb + rightb - right;
+		const int copysizex = dest_tilex - left - right;
+
+		const int roi_y = roi.y;
+		const int top = max(0, topb - roi_y);
+		const int stop = topb - top;
+		const int bottom = max(0, dest_tiley - (src.rows - roi_y + topb));
+
+		const int copysizey = dest_tiley - top - bottom;
+
+		const int LEFT = get_simd_ceil(left, 4);
+		const int RIGHT = get_simd_floor(right, 4);
+
+		const double* s = src.ptr<double>(roi_y - stop) + roi_x;
+		double* d = dest.ptr<double>(top);
+
+		const int LOAD_OFFSET1 = left - 4 - roi_x;
+		const int LOAD_OFFSET2 = src.cols - 4 - roi_x;
+		const int LOAD_OFFSET3 = src.cols - 1 - roi_x;
+		const int STORE_OFFSET = roi_w + sright;
+
+		__m256d a;
+		for (int j = 0; j < copysizey - 1; j++)
+		{
+			for (int i = 0; i < LEFT; i += 4)
+			{
+				a = _mm256_loadu_pd(s + LOAD_OFFSET1 - i + 1);
+				a = _mm256_shuffle_pd(a, a, 0b0101);
+				a = _mm256_permute2f128_pd(a, a, 1);
+				_mm256_store_pd(d + i, a);
+			}
+			memcpy(d + left, s - sleft, sizeof(double) * (copysizex));
+			for (int i = 0; i < right; i += 4)
+			{
+				a = _mm256_loadu_pd(s + LOAD_OFFSET2 - i - 1);
+				a = _mm256_shuffle_pd(a, a, 0b0101);
+				a = _mm256_permute2f128_pd(a, a, 1);
+				_mm256_storeu_pd(d + STORE_OFFSET + i, a);
+			}
+			s += src.cols;
+			d += dest.cols;
+		}
+		//overshoot handling for the last loop
+		{
+			for (int i = 0; i < LEFT; i += 4)
+			{
+				a = _mm256_loadu_pd(s + LOAD_OFFSET1 - i + 1);
+				a = _mm256_shuffle_pd(a, a, 0b0101);
+				a = _mm256_permute2f128_pd(a, a, 1);
+				_mm256_store_pd(d + i, a);
+			}
+			memcpy(d + left, s - sleft, sizeof(double) * (copysizex));
+			for (int i = 0; i < RIGHT; i += 4)
+			{
+				a = _mm256_loadu_pd(s + LOAD_OFFSET2 - i - 1);
+				a = _mm256_shuffle_pd(a, a, 0b0101);
+				a = _mm256_permute2f128_pd(a, a, 1);
+				_mm256_storeu_pd(d + STORE_OFFSET + i, a);
+			}
+			for (int i = RIGHT; i < right; i++)
+			{
+				d[STORE_OFFSET + i] = s[LOAD_OFFSET3 - i - 1];
+			}
+			s += src.cols;
+			d += dest.cols;
+		}
+
+		for (int j = 0; j < top; j++)
+		{
+			double* s = dest.ptr<double>(2 * top - j);
+			double* d = dest.ptr<double>(j);
+
+			memcpy(d, s, sizeof(double) * (dest_tilex));
+		}
+
+		const int sidx = roi_h + topb - 2;
+		const int didx = roi_h + topb;
+		for (int j = 0; j < bottom; j++)
+		{
+			double* s = dest.ptr<double>(max(0, sidx - j));
+			double* d = dest.ptr<double>(didx + j);
+
+			memcpy(d, s, sizeof(double) * dest_tilex);
+		}
+	}
+
+
+	static void cropTile8U_Reflect(const Mat& src, Mat& dest, const Rect roi, const int topb, const int bottomb, const int leftb, const int rightb)
+	{
+		const int roi_w = roi.width;
+		const int roi_h = roi.height;
+		const int tileSizeXExternal = roi_w + leftb + rightb;
+		const int tileSizeYExternal = roi_h + topb + bottomb;
+
+		if (dest.size() != Size(tileSizeXExternal, tileSizeYExternal)) dest.create(Size(tileSizeXExternal, tileSizeYExternal), CV_8U);
+
+		const int firstXInternalGrid = roi.x;
+		const int left = max(0, leftb - firstXInternalGrid);
+		const int sleft = leftb - left;
+		const int right = max(0, tileSizeXExternal - (src.cols - firstXInternalGrid + leftb));
+		const int sright = leftb + rightb - right;
+		const int copysizex = tileSizeXExternal - left - right;
+
+		const int firstYInternalGrid = roi.y;
+		const int top = max(0, topb - firstYInternalGrid);
+		const int stop = topb - top;
+		const int bottom = max(0, tileSizeYExternal - (src.rows - firstYInternalGrid + topb));
+
+		const int copysizey = tileSizeYExternal - top - bottom;
+
+		const int LEFT = get_simd_ceil(left, 16);
+		const int RIGHT = get_simd_floor(right, 16);
+
+		const uchar* s = src.ptr<uchar>(firstYInternalGrid - stop, firstXInternalGrid);
+		uchar* d = dest.ptr<uchar>(top);
+
+		const int LOAD_OFFSET1 = left - 16 - firstXInternalGrid;
+		const int LOAD_OFFSET2 = src.cols - 16 - firstXInternalGrid;
+		const int LOAD_OFFSET3 = src.cols - 1 - firstXInternalGrid;
+		const int STORE_OFFSET = roi_w + sright;
+
+		const __m128i vm = _mm_setr_epi8(15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0);
+		__m128i a;
+		for (int j = 0; j < copysizey - 1; j++)
+		{
+			for (int i = 0; i < LEFT; i += 16)
+			{
+				a = _mm_load_si128((__m128i*)(s + LOAD_OFFSET1 - i));
+				a = _mm_shuffle_epi8(a, vm);
+				_mm_store_si128((__m128i*)(d + i), a);
+			}
+			memcpy(d + left, s - sleft, sizeof(uchar) * (copysizex));
+			for (int i = 0; i < right; i += 16)
+			{
+				a = _mm_load_si128((__m128i*)(s + LOAD_OFFSET2 - i));
+				a = _mm_shuffle_epi8(a, vm);
+				_mm_storeu_si128((__m128i*)(d + STORE_OFFSET + i), a);
+			}
+			s += src.cols;
+			d += dest.cols;
+		}
+		//overshoot handling for the last loop
+		{
+			for (int i = 0; i < LEFT; i += 16)
+			{
+				a = _mm_load_si128((__m128i*)(s + LOAD_OFFSET1 - i));
+				a = _mm_shuffle_epi8(a, vm);
+				_mm_store_si128((__m128i*)(d + i), a);
+			}
+			memcpy(d + left, s - sleft, sizeof(uchar) * (copysizex));
+			for (int i = 0; i < RIGHT; i += 16)
+			{
+				a = _mm_load_si128((__m128i*)(s + LOAD_OFFSET2 - i));
+				a = _mm_shuffle_epi8(a, vm);
+				_mm_storeu_si128((__m128i*)(d + STORE_OFFSET + i), a);
+			}
+			for (int i = RIGHT; i < right; i++)
+			{
+				d[STORE_OFFSET + i] = s[LOAD_OFFSET3 - i];
+			}
+			s += src.cols;
+			d += dest.cols;
+		}
+
+		for (int j = 0; j < top; j++)
+		{
+			uchar* s = dest.ptr<uchar>(max(0, 2 * top - j - 1));
+			uchar* d = dest.ptr<uchar>(j);
+			memcpy(d, s, sizeof(uchar) * (tileSizeXExternal));
+		}
+
+		const int sidx = roi_h + topb - 1;
+		const int didx = roi_h + topb;
+		for (int j = 0; j < bottom; j++)
+		{
+			uchar* s = dest.ptr<uchar>(max(0, sidx - j));
+			uchar* d = dest.ptr<uchar>(didx + j);
+			memcpy(d, s, sizeof(uchar) * tileSizeXExternal);
+		}
+	}
+
+	static void cropTile32F_Reflect(const Mat& src, Mat& dest, const Rect roi, const int topb, const int bottomb, const int leftb, const int rightb)
+	{
+		const int roi_w = roi.width;
+		const int roi_h = roi.height;
+		const int dest_tilex = roi_w + leftb + rightb;
+		const int dest_tiley = roi_h + topb + bottomb;
+		if (dest.size() != Size(dest_tilex, dest_tiley)) dest.create(Size(dest_tilex, dest_tiley), CV_32F);
+
+		const int roi_x = roi.x;
+		const int left = max(0, leftb - roi_x);
+		const int sleft = leftb - left;
+		const int right = max(0, dest_tilex + roi_x - src.cols - leftb);
+		const int sright = leftb + rightb - right;
+		const int copysizex = dest_tilex - left - right;
+
+		const int roi_y = roi.y;
+		const int top = max(0, topb - roi_y);
+		const int stop = topb - top;
+		const int bottom = max(0, dest_tiley + roi_y - src.rows - topb);
+
+		const int copysizey = dest_tiley - top - bottom;
+
+		const int LEFT = get_simd_ceil(left, 8);
+		const int RIGHT = get_simd_floor(right, 8);
+
+		const float* s = src.ptr<float>(roi_y - stop, roi_x);
+		float* d = dest.ptr<float>(top);
+
+		const int LOAD_OFFSET1 = left - 8 - roi_x;
+		const int LOAD_OFFSET2 = src.cols - 8 - roi_x;
+		const int LOAD_OFFSET3 = src.cols - 1 - roi_x;
+		const int STORE_OFFSET = roi_w + sright;
+
+		__m256 a;
+		for (int j = 0; j < copysizey - 1; j++)
+		{
+			for (int i = 0; i < LEFT; i += 8)
+			{
+				a = _mm256_load_ps(s + LOAD_OFFSET1 - i);
+				a = _mm256_shuffle_ps(a, a, _MM_SHUFFLE(0, 1, 2, 3));
+				a = _mm256_permute2f128_ps(a, a, 1);
+				_mm256_store_ps(d + i, a);
+			}
+			memcpy(d + left, s - sleft, sizeof(float) * (copysizex));
+			for (int i = 0; i < right; i += 8)
+			{
+				a = _mm256_load_ps(s + LOAD_OFFSET2 - i);
+				a = _mm256_shuffle_ps(a, a, _MM_SHUFFLE(0, 1, 2, 3));
+				a = _mm256_permute2f128_ps(a, a, 1);
+				_mm256_storeu_ps(d + STORE_OFFSET + i, a);
+			}
+			s += src.cols;
+			d += dest.cols;
+		}
+		//overshoot handling for the last loop
+		{
+			for (int i = 0; i < LEFT; i += 8)
+			{
+				a = _mm256_load_ps(s + LOAD_OFFSET1 - i);
+				a = _mm256_shuffle_ps(a, a, _MM_SHUFFLE(0, 1, 2, 3));
+				a = _mm256_permute2f128_ps(a, a, 1);
+				_mm256_store_ps(d + i, a);
+			}
+			memcpy(d + left, s - sleft, sizeof(float) * (copysizex));
+			for (int i = 0; i < RIGHT; i += 8)
+			{
+				a = _mm256_load_ps(s + LOAD_OFFSET2 - i);
+				a = _mm256_shuffle_ps(a, a, _MM_SHUFFLE(0, 1, 2, 3));
+				a = _mm256_permute2f128_ps(a, a, 1);
+				_mm256_storeu_ps(d + STORE_OFFSET + i, a);
+			}
+			for (int i = RIGHT; i < right; i++)
+			{
+				d[STORE_OFFSET + i] = s[LOAD_OFFSET3 - i];
+			}
+			s += src.cols;
+			d += dest.cols;
+		}
+
+		for (int j = 0; j < top; j++)
+		{
+			float* s = dest.ptr<float>(max(0, 2 * top - j - 1));
+			float* d = dest.ptr<float>(j);
+			memcpy(d, s, sizeof(float) * (dest_tilex));
+		}
+
+		const int sidx = roi_h + topb - 1;
+		const int didx = roi_h + topb;
+		for (int j = 0; j < bottom; j++)
+		{
+			float* s = dest.ptr<float>(max(0, sidx - j));
+			float* d = dest.ptr<float>(didx + j);
+
+			memcpy(d, s, sizeof(float) * dest_tilex);
+		}
+	}
+
+	static void cropTile64F_Reflect(const Mat& src, Mat& dest, const Rect roi, const int topb, const int bottomb, const int leftb, const int rightb)
+	{
+		const int roi_w = roi.width;
+		const int roi_h = roi.height;
+		const int dest_tilex = roi_w + leftb + rightb;
+		const int dest_tiley = roi_h + topb + bottomb;
+		if (dest.size() != Size(dest_tilex, dest_tiley)) dest.create(Size(dest_tilex, dest_tiley), CV_64F);
+
+		const int roi_x = roi.x;
+		const int left = max(0, leftb - roi_x);
+		const int sleft = leftb - left;
+		const int right = max(0, dest_tilex + roi_x - src.cols - leftb);
+		const int sright = leftb + rightb - right;
+		const int copysizex = dest_tilex - left - right;
+
+		const int roi_y = roi.y;
+		const int top = max(0, topb - roi_y);
+		const int stop = topb - top;
+		const int bottom = max(0, dest_tiley + roi_y - src.rows - topb);
+
+		const int copysizey = dest_tiley - top - bottom;
+
+		const int LEFT = get_simd_ceil(left, 4);
+		const int RIGHT = get_simd_floor(right, 4);
+
+		const double* s = src.ptr<double>(roi_y - stop) + roi_x;
+		double* d = dest.ptr<double>(top);
+
+		const int LOAD_OFFSET1 = left - 4 - roi_x;
+		const int LOAD_OFFSET2 = src.cols - 4 - roi_x;
+		const int LOAD_OFFSET3 = src.cols - 1 - roi_x;
+		const int STORE_OFFSET = roi_w + sright;
+
+		__m256d a;
+		for (int j = 0; j < copysizey - 1; j++)
+		{
+			for (int i = 0; i < LEFT; i += 4)
+			{
+				a = _mm256_load_pd(s + LOAD_OFFSET1 - i);
+				a = _mm256_shuffle_pd(a, a, 0b0101);
+				a = _mm256_permute2f128_pd(a, a, 1);
+				_mm256_storeu_pd(d + i, a);
+			}
+			memcpy(d + left, s - sleft, sizeof(double) * (copysizex));
+			for (int i = 0; i < right; i += 4)
+			{
+				a = _mm256_load_pd(s + LOAD_OFFSET2 - i);
+				a = _mm256_shuffle_pd(a, a, 0b0101);
+				a = _mm256_permute2f128_pd(a, a, 1);
+				_mm256_storeu_pd(d + STORE_OFFSET + i, a);
+			}
+			s += src.cols;
+			d += dest.cols;
+		}
+		//overshoot handling for the last loop
+		{
+			for (int i = 0; i < LEFT; i += 4)
+			{
+				a = _mm256_load_pd(s + LOAD_OFFSET1 - i);
+				a = _mm256_shuffle_pd(a, a, 0b0101);
+				a = _mm256_permute2f128_pd(a, a, 1);
+				_mm256_storeu_pd(d + i, a);
+			}
+			memcpy(d + left, s - sleft, sizeof(double) * (copysizex));
+			for (int i = 0; i < RIGHT; i += 4)
+			{
+				a = _mm256_load_pd(s + LOAD_OFFSET2 - i);
+				a = _mm256_shuffle_pd(a, a, 0b0101);
+				a = _mm256_permute2f128_pd(a, a, 1);
+				_mm256_storeu_pd(d + STORE_OFFSET + i, a);
+			}
+			for (int i = RIGHT; i < right; i++)
+			{
+				d[STORE_OFFSET + i] = s[LOAD_OFFSET3 - i];
+			}
+			s += src.cols;
+			d += dest.cols;
+		}
+
+		for (int j = 0; j < top; j++)
+		{
+			double* s = dest.ptr<double>(max(0, 2 * top - j - 1));
+			double* d = dest.ptr<double>(j);
+
+			memcpy(d, s, sizeof(double) * (dest_tilex));
+		}
+
+		const int sidx = roi_h + topb - 1;
+		const int didx = roi_h + topb;
+		for (int j = 0; j < bottom; j++)
+		{
+			double* s = dest.ptr<double>(max(0, sidx - j));
+			double* d = dest.ptr<double>(didx + j);
+
+			memcpy(d, s, sizeof(double) * dest_tilex);
+		}
+	}
+
+
+	void cropTile(const Mat& src, Mat& dest, const Rect roi, const int topb, const int bottomb, const int leftb, const int rightb, const int borderType)
+	{
+		CV_Assert(src.channels() == 1);
+		CV_Assert(borderType == BORDER_REFLECT101 || borderType == BORDER_REFLECT || borderType == BORDER_REPLICATE);
+		if (!dest.empty() && dest.depth() != src.depth())dest.release();
+
+		if (src.depth() == CV_8U)
+		{
+			if (borderType == BORDER_REFLECT101 || borderType == BORDER_DEFAULT) cropTile8U_Reflect101(src, dest, roi, topb, bottomb, leftb, rightb);
+			else if (borderType == BORDER_REFLECT) cropTile8U_Reflect(src, dest, roi, topb, bottomb, leftb, rightb);
+			else if (borderType == BORDER_REPLICATE) cropTile8U_Replicate(src, dest, roi, topb, bottomb, leftb, rightb);
+		}
+		else if (src.depth() == CV_32F)
+		{
+			if (borderType == BORDER_REFLECT101 || borderType == BORDER_DEFAULT) cropTile32F_Reflect101(src, dest, roi, topb, bottomb, leftb, rightb);
+			else if (borderType == BORDER_REFLECT) cropTile32F_Reflect(src, dest, roi, topb, bottomb, leftb, rightb);
+			else if (borderType == BORDER_REPLICATE) cropTile32F_Replicate(src, dest, roi, topb, bottomb, leftb, rightb);
+		}
+		else if (src.depth() == CV_64F)
+		{
+			/*if (borderType == BORDER_REFLECT101 || borderType == BORDER_DEFAULT) cropTile64F_Reflect101(src, dest, roi, topb, bottomb, leftb, rightb);
+			else if (borderType == BORDER_REFLECT) cropTile64F_Reflect(src, dest, roi, topb, bottomb, leftb, rightb);
+			else if (borderType == BORDER_REPLICATE) cropTile64F_Replicate(src, dest, roi, topb, bottomb, leftb, rightb);*/
+		}
+		else
+		{
+			cout << "cropTile does not support this depth type." << endl;
+		}
+	}
+
+	void cropTile(const Mat& src, Mat& dest, const Rect roi, const int r, const int borderType)
+	{
+		cropTile(src, dest, roi, r, r, r, r, borderType);
+	}
+
+	void cropTileAlign(const cv::Mat& src, cv::Mat& dest, const Rect roi, const int r, const int borderType, const int align_x, const int align_y, const int left_multiple, const int top_multiple)
+	{
+		const int tilex = roi.width;
+		const int tiley = roi.height;
+
+		const int L = get_simd_ceil(r, left_multiple);
+		const int T = get_simd_ceil(r, top_multiple);
+
+		const int align_width = get_simd_ceil(tilex + L + r, align_x);
+		const int padx = align_width - (tilex + L + r);
+		const int align_height = get_simd_ceil(tiley + T + r, align_y);
+		const int pady = align_height - (tiley + T + r);
+		const int R = r + padx;
+		const int B = r + pady;
+		//printf("xpad%d,ypad%d\n",padx,pady);
+		cropTile(src, dest, roi, T, B, L, R, borderType);
+		//cout << format("%d %d %d %d\n", L, R, T, B);
+	}
+#pragma endregion
 
 	Size getTileSize(const Size src, const Size div_size, const int r)
 	{
@@ -2016,6 +2904,86 @@ namespace cp
 
 #pragma region pasteTile
 	template<typename srcType>
+	void pasteTile_internal(const Mat& src, Mat& dest, Rect roi, const int top, const int left)
+	{
+		const int tilex = roi.width;
+		const int tiley = roi.height;
+
+		int align = 0;
+		if (typeid(srcType) == typeid(uchar))align = 8;
+		if (typeid(srcType) == typeid(float))align = 8;
+		if (typeid(srcType) == typeid(double))align = 4;
+		const int simd_tile_width = get_simd_floor(tilex, align) * src.channels();
+		const int rem = tilex * src.channels() - simd_tile_width;
+
+		if (src.channels() == 1)
+		{
+			for (int j = 0; j < tiley; j++)
+			{
+				srcType* d = dest.ptr<srcType>(roi.y + j, roi.x);
+				const srcType* s = src.ptr<srcType>(top + j, left);
+				for (int i = 0; i < simd_tile_width; i += align)
+				{
+					_mm256_storeu_auto(d + i, _mm256_loadu_auto(s + i));
+				}
+				for (int i = 0; i < rem; i++)
+				{
+					d[simd_tile_width + i] = s[simd_tile_width + i];
+				}
+			}
+		}
+		else if (src.channels() == 3)
+		{
+			for (int j = 0; j < tiley; j++)
+			{
+				srcType* d = dest.ptr<srcType>(roi.y + j, roi.x);
+				const srcType* s = src.ptr<srcType>(top + j, left);
+				for (int i = 0; i < simd_tile_width; i += align)
+				{
+					_mm256_storeu_auto(d + i, _mm256_loadu_auto(s + i));
+				}
+				for (int i = 0; i < rem; i++)
+				{
+					d[simd_tile_width + i] = s[simd_tile_width + i];
+				}
+			}
+		}
+	}
+
+	void pasteTile(const Mat& src, Mat& dest, const Rect roi, const int top, const int left)
+	{
+		CV_Assert(!dest.empty());
+		CV_Assert(src.depth() == dest.depth());
+		CV_Assert(src.channels() == dest.channels());
+		//CV_Assert(dest.cols % div_size.width == 0 && dest.rows % div_size.height == 0);
+
+		if (src.depth() == CV_8U)
+		{
+			pasteTile_internal<uchar>(src, dest, roi, top, left);
+		}
+		else if (src.depth() == CV_32F)
+		{
+			pasteTile_internal<float>(src, dest, roi, top, left);
+		}
+		else if (src.depth() == CV_64F)
+		{
+			pasteTile_internal<double>(src, dest, roi, top, left);
+		}
+	}
+
+	void pasteTile(const Mat& src, Mat& dest, const Rect roi, const int r)
+	{
+		pasteTile(src, dest, roi, r, r);
+	}
+
+	void pasteTileAlign(const Mat& src, Mat& dest, Rect roi, const int r, const int left_multiple, const int top_multiple)
+	{
+		const int L = get_simd_ceil(r, left_multiple);
+		const int T = get_simd_ceil(r, top_multiple);
+		pasteTile(src, dest, roi, L, T);
+	}
+
+	template<typename srcType>
 	void pasteTile_internal(const Mat& src, Mat& dest, const Size div_size, const Point idx, const int top, const int left)
 	{
 		const int tilex = dest.cols / div_size.width;
@@ -2067,7 +3035,7 @@ namespace cp
 		CV_Assert(!dest.empty());
 		CV_Assert(src.depth() == dest.depth());
 		CV_Assert(src.channels() == dest.channels());
-		CV_Assert(dest.cols % div_size.width == 0 && dest.rows % div_size.height == 0);
+		//CV_Assert(dest.cols % div_size.width == 0 && dest.rows % div_size.height == 0);
 
 		if (src.depth() == CV_8U)
 		{

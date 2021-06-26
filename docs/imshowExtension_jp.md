@@ -23,6 +23,14 @@ imshowをする前にスケーリング（ax+b）をして8Uにキャストし�
 floatだと画素値が見えないときに困るときによく使います．  
 Normalizeと違って，デフォルトでは値を変更しないため，ただ`CV_32F`を`CV_8U`で表示したいだけの場合はこちらを使います．  
 
+# imshowScaleAbs
+```cpp
+void imshowScale(std::string name, cv::InputArray src, const double alpha = 1.0, const double beta = 0.0);
+```
+## Usage
+imshowScaleと違って引数srcをabsしてからimshowします．
+
+
 # imshowResize
 ```cpp
 void imshowResize(std::string name, cv::InputArray src, const cv::Size dsize, const double fx = 0.0, const double fy = 0.0, const int interpolation = cv::INTER_NEAREST, bool isCast8U = true);
