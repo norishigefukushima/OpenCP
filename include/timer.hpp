@@ -81,7 +81,7 @@ namespace cp
 		void setMode(int mode);
 		void setMessage(std::string& src);
 
-		void start();
+		void start();//call getTickCount();
 		void clearStat();
 
 		void setCountMax(const int value);
