@@ -1032,6 +1032,11 @@ inline __m256 _mm256_ssd_ps(__m256 src0, __m256 src1, __m256 src2, __m256 ref0, 
 	return difft;
 }
 
+__m256i _mm256_absdiff_epu8(__m256i src1, __m256i src2)
+{
+	return _mm256_max_epu8(_mm256_subs_epu8(src1, src2), _mm256_subs_epu8(src2, src1));
+}
+
 #pragma endregion
 
 #pragma region compare
@@ -1040,11 +1045,21 @@ inline __m128i _mm_cmpgt_epu8(__m128i x, __m128i y)
 	return _mm_andnot_si128(_mm_cmpeq_epi8(x, y), _mm_cmpeq_epi8(_mm_max_epu8(x, y), x));
 }
 
+
 inline __m256i _mm256_cmpgt_epu8(__m256i x, __m256i y)
 {
-	return _mm256_andnot_si256(_mm256_cmpeq_epi8(x, y), _mm256_cmpeq_epi8(_mm256_max_epu8(x, y), x));
+	//return _mm256_andnot_si256(_mm256_cmpeq_epi8(x, y), _mm256_cmpeq_epi8(_mm256_max_epu8(x, y), x));
+	const __m256i highBit = _mm256_set1_epi8(0x80);
+	return _mm256_cmpgt_epi8(_mm256_xor_si256(x, highBit), _mm256_xor_si256(y, highBit));
 }
+
 #pragma endregion
+
+#pragma region bit manipulation
+__m256i _mm256_not_si256(__m256i src)
+{
+	return _mm256_xor_si256(src, _mm256_cmpeq_epi8(src, src));
+}
 
 #pragma region print
 inline void print(__m128d src)
@@ -1076,108 +1091,107 @@ inline void print(__m256 src)
 
 inline void print_char(__m128i src)
 {
+	char* data = (char*)&src;
 	for (int i = 0; i < 16; i++)
 	{
-		printf_s("%3d ", ((char*)&src)[i]);
+		printf_s("%3d ", data[i]);
 	}
 	printf_s("\n");
 }
 
 inline void print_char(__m256i src)
 {
+	char* data = (char*)&src;
 	for (int i = 0; i < 32; i++)
 	{
-		printf_s("%3d ", ((char*)&src)[0]);
+		printf_s("%3d ", data[i]);
 	}
 	printf_s("\n");
 }
 
 inline void print_uchar(__m128i src)
 {
+	uchar* data = (uchar*)&src;
 	for (int i = 0; i < 16; i++)
 	{
-		printf_s("%3d ", ((uchar*)&src)[0]);
+		printf_s("%3d ", data[i]);
 	}
 	printf_s("\n");
 }
 
-inline void print_uchar(__m256i src)
-{
-	for (int i = 0; i < 32; i++)
-	{
-		printf_s("%3d ", ((uchar*)&src)[0]);
-	}
-	printf_s("\n");
-}
+#define print_uchar(src) std::cout << #src << ": ";\
+for (int i = 0; i < 32; i++){if(i%8==0)printf_s("|%3d ", ((uchar*)&src)[i]);else printf_s("%3d ", ((uchar*)&src)[i]);}printf_s("|\n");
+
 
 inline void print_short(__m128i src)
 {
+	short* data = (short*)&src;
 	for (int i = 0; i < 8; i++)
 	{
-		printf_s("%3d ", ((short*)&src)[0]);
+		printf_s("%3d ", data[i]);
 	}
 	printf_s("\n");
 }
 
-inline void print_short(__m256i src)
-{
-	for (int i = 0; i < 16; i++)
-	{
-		printf_s("%3d ", ((short*)&src)[0]);
-	}
-	printf_s("\n");
-}
+#define print_short(src) std::cout << #src << ": ";\
+for (int i = 0; i < 16; i++){if(i%8==0)printf_s("|%4d ", ((short*)&src)[i]);else printf_s("%4d ", ((short*)&src)[i]);}printf_s("|\n");
 
 inline void print_ushort(__m128i src)
 {
+	ushort* data = (ushort*)&src;
 	for (int i = 0; i < 8; i++)
 	{
-		printf_s("%3d ", ((ushort*)&src)[0]);
+		printf_s("%3d ", data[i]);
 	}
 	printf_s("\n");
 }
 
 inline void print_ushort(__m256i src)
 {
+	ushort* data = (ushort*)&src;
 	for (int i = 0; i < 16; i++)
 	{
-		printf_s("%3d ", ((ushort*)&src)[0]);
+		printf_s("%3d ", data[i]);
 	}
 	printf_s("\n");
 }
 
 inline void print_int(__m128i src)
 {
+	int* data = (int*)&src;
 	for (int i = 0; i < 4; i++)
 	{
-		printf_s("%3d ", ((int*)&src)[0]);
+		printf_s("%3d ", data[i]);
 	}
 	printf_s("\n");
 }
 
 inline void print_int(__m256i src)
 {
+	int* data = (int*)&src;
 	for (int i = 0; i < 8; i++)
 	{
-		printf_s("%3d ", ((int*)&src)[0]);
+		printf_s("%3d ", data[i]);
 	}
 	printf_s("\n");
 }
 
 inline void print_uint(__m128i src)
 {
+	unsigned int* data = (unsigned int*)&src;
 	for (int i = 0; i < 4; i++)
 	{
-		printf_s("%3d ", ((unsigned int*)&src)[0]);
+		printf_s("%3d ", data[i]);
 	}
 	printf_s("\n");
 }
 
 inline void print_uint(__m256i src)
 {
+	unsigned int* data = (unsigned int*)&src;
 	for (int i = 0; i < 8; i++)
 	{
-		printf_s("%3d ", ((unsigned int*)&src)[0]);
+		printf_s("%3d ", data[i]);
 	}
 	printf_s("\n");
 }
@@ -1496,6 +1510,32 @@ inline void _mm256_i32scaterscalar_auto_color(float* dest, __m256i vindex, __m25
 inline __m256 _mm256_set_step_ps(float v, float step = 1.f)
 {
 	return _mm256_setr_ps(v, v + step, v + 2.f * step, v + 3.f * step, v + 4.f * step, v + 5.f * step, v + 6.f * step, v + 7.f * step);
+}
+
+inline __m256i _mm256_set_step_epi8(char v, char step = 1)
+{
+	return _mm256_setr_epi8(
+		v + 0 * step, v + 1 * step, v + 2 * step, v + 3 * step, v + 4 * step, v + 5 * step, v + 6 * step, v + 7 * step,
+		v + 8 * step, v + 9 * step, v + 10 * step, v + 11 * step, v + 12 * step, v + 13 * step, v + 14 * step, v + 15 * step,
+		v + 16 * step, v + 17 * step, v + 18 * step, v + 19 * step, v + 20 * step, v + 21 * step, v + 22 * step, v + 23 * step,
+		v + 24 * step, v + 25 * step, v + 26 * step, v + 27 * step, v + 28 * step, v + 29 * step, v + 30 * step, v + 31 * step);
+}
+
+inline __m256i _mm256_set_step_epi16(short v, short step = 1)
+{
+	return _mm256_setr_epi16(
+		v + 0 * step, v + 1 * step, v + 2 * step, v + 3 * step, v + 4 * step, v + 5 * step, v + 6 * step, v + 7 * step,
+		v + 8 * step, v + 9 * step, v + 10 * step, v + 11 * step, v + 12 * step, v + 13 * step, v + 14 * step, v + 15 * step);
+}
+
+inline __m256i _mm256_set_step_epi32(int v, int step = 1)
+{
+	return _mm256_setr_epi32(v + 0 * step, v + 1 * step, v + 2 * step, v + 3 * step, v + 4 * step, v + 5 * step, v + 6 * step, v + 7 * step);
+}
+
+inline __m256i _mm256_set_step_epi64(long v, long step = 1L)
+{
+	return _mm256_setr_epi64x(v + 0 * step, v + 1 * step, v + 2 * step, v + 3 * step);
 }
 
 //_mm256_setr_pd(v + step, v + 2 * step, v + 3 * step);
