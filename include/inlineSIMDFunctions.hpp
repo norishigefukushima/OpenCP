@@ -13,7 +13,7 @@
 
 //template for array
 //const int CV_DECL_ALIGNED(AVX_ALIGN) a[10]
-
+#pragma region loop manipulation
 inline int get_loop_end(int begin, int end, int step)
 {
 	const int rem = ((end - begin) % step == 0) ? 0 : 1;
@@ -59,6 +59,7 @@ inline void get_simd_width_end(const int cv_depth, const int channels, const int
 		dest_pad_pixels = (image_width - dest_endwidth) * channels;
 	}
 }
+#pragma endregion
 
 #pragma region transpose
 inline void _mm_transposel_epi8(__m128i& s0, __m128i& s1, __m128i& s2, __m128i& s3, __m128i& s4, __m128i& s5, __m128i& s6, __m128i& s7)
@@ -1032,7 +1033,7 @@ inline __m256 _mm256_ssd_ps(__m256 src0, __m256 src1, __m256 src2, __m256 ref0, 
 	return difft;
 }
 
-__m256i _mm256_absdiff_epu8(__m256i src1, __m256i src2)
+inline __m256i _mm256_absdiff_epu8(__m256i src1, __m256i src2)
 {
 	return _mm256_max_epu8(_mm256_subs_epu8(src1, src2), _mm256_subs_epu8(src2, src1));
 }
@@ -1056,10 +1057,12 @@ inline __m256i _mm256_cmpgt_epu8(__m256i x, __m256i y)
 #pragma endregion
 
 #pragma region bit manipulation
-__m256i _mm256_not_si256(__m256i src)
+inline __m256i _mm256_not_si256(__m256i src)
 {
 	return _mm256_xor_si256(src, _mm256_cmpeq_epi8(src, src));
+	//return _mm256_xor_si256(src, _mm256_cmpeq_epi8(_mm256_setzero_si256(), _mm256_setzero_si256()));
 }
+#pragma endregion
 
 #pragma region print
 inline void print(__m128d src)

@@ -573,6 +573,9 @@
     <ClCompile Include="fitPlane.cpp">
       <Filter>ソース ファイル\stereo</Filter>
     </ClCompile>
+    <ClCompile Include="VideoSubtitle.cpp">
+      <Filter>ソース ファイル\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libGaussian\gaussian_conv.h">
@@ -1027,6 +1030,9 @@
     </ClInclude>
     <ClInclude Include="filterengine.hpp">
       <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\VideoSubtitle.hpp">
+      <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

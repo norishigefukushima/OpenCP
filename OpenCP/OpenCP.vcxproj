@@ -393,6 +393,7 @@
     <ClCompile Include="Wiener2.cpp" />
     <ClCompile Include="yuvio.cpp" />
     <ClCompile Include="crop.cpp" />
+    <ClCompile Include="VideoSubtitle.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\bilateralGuidedUpsample.hpp" />
@@ -498,6 +499,7 @@
     <ClInclude Include="..\include\updateCheck.hpp" />
     <ClInclude Include="..\include\upsample.hpp" />
     <ClInclude Include="..\include\video.hpp" />
+    <ClInclude Include="..\include\VideoSubtitle.hpp" />
     <ClInclude Include="..\include\viewsynthesis.hpp" />
     <ClInclude Include="..\include\weightedHistogramFilter.hpp" />
     <ClInclude Include="..\include\Wiener2.hpp" />

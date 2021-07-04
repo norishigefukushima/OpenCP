@@ -31,6 +31,7 @@
 #include "tiling.hpp"
 #include "updateCheck.hpp"
 #include "video.hpp"
+#include "VideoSubtitle.hpp"
 #include "yuvio.hpp"
 
 /*************************************************************
