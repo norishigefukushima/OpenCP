@@ -190,6 +190,7 @@
     <ClCompile Include="testKMeans.cpp" />
     <ClCompile Include="testStereo.cpp" />
     <ClCompile Include="guiUpsampleTest.cpp" />
+    <ClCompile Include="testVideoSubtitle.cpp" />
     <ClCompile Include="testWeightedHistogramFilter.cpp" />
     <ClCompile Include="iterativeBackProjection\iterativeBackProjectionTest.cpp" />
     <ClCompile Include="main.cpp" />

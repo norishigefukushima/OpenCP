@@ -147,6 +147,11 @@ namespace cp
 		dest.copyTo(src);
 	}
 
+	void drawGridCenter(InputOutputArray src, Scalar color, int thickness, int line_type, int shift)
+	{
+		drawGrid(src, Point(src.size().width / 2, src.size().height / 2), color, thickness, line_type, shift);
+	}
+
 	void drawAsterisk(InputOutputArray src, Point crossCenter, int length, Scalar color, int thickness, int line_type, int shift)
 	{
 		Mat dest = src.getMat();

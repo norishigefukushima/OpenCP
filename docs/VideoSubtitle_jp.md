@@ -1,11 +1,11 @@
-#pragma once
+VideoSubtitle.hpp
+===================
+画像に字幕をつけて，一定時間後に消すクラスです．
+論文などのデモンストレーション動画用に使います．
 
-#include "common.hpp"
-#include "Timer.hpp"
-
-namespace cp
-{
-	class CP_EXPORT VideoSubtitle
+# class VideoSubtitle
+```cpp
+class CP_EXPORT VideoSubtitle
 	{
 	private:
 		cp::Timer tscript;
@@ -53,4 +53,59 @@ namespace cp
 		//setTitle and then imshow (single-line)
 		void showTitle(std::string wname, const cv::Size size, std::string text, const int fontSize, const cv::Scalar textcolor, const cv::Scalar backgroundcolor = cv::Scalar::all(0));
 	};
+```
+## Usage
+* インスタンスを作ります（コンストラクタで自動的にタイマーが起動）
+* setTitleで字幕をセットします．
+* 必要に応じて`restart()`でタイマーを初期化します．
+* 無限ループ内で，showTitleDissolveかshowScriptDissolveを呼ぶと字幕と画像を合成します．
+
+メソッド：
+```cpp
+void setDisolveTime(const double start_msec, const double end_msec);
+```
+ブレンド開始までの経過時間をミリ秒指定します．
+`start_msec`までは１００％で表示します．
+`end_msec`までに０％になるようにディゾルブ表示します．
+
+## サンプル
+
+```cpp
+void testVideoSubtitle()
+{
+	Mat src = imread("img/lenna.png");
+
+	string wname = "testVideoSubtitle";
+	namedWindow(wname);
+	int sw = 0; createTrackbar("sw", wname, &sw, 1);//subtitle rendering mode
+	int pos = 1; createTrackbar("pow", wname, &pos, 2);//subtitle position
+
+	VideoSubtitle vs;
+	vector<string> vstring = { "testVideoSubtitle", "press r key to restart" };
+	vector<int> vfsize = { 30,20 };
+	vs.setFontType("Times New Roman");
+	vs.setVSpace(10);
+
+	vs.setDisolveTime(1000, 2000);
+
+	cp::UpdateCheck uc(sw, pos);
+	int key = 0;
+	while (key != 'q')
+	{
+		cp::drawGridCenter(src, COLOR_RED);
+			
+		if (sw == 0)vs.showScriptDissolve(wname, src);
+		if (sw == 1)vs.showTitleDissolve(wname, src);
+
+		if (key == 'r' || uc.isUpdate(sw, pos))
+		{
+			vs.restart();
+			vs.setTitle(src.size(), vstring, vfsize, Scalar(255, 255, 255), Scalar::all(0), VideoSubtitle::POSITION(pos));
+		}
+
+		key = waitKey(1);
+	}
 }
+```
+
+

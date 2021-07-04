@@ -144,6 +144,9 @@
     <ClCompile Include="testKMeans.cpp">
       <Filter>ソース ファイル\test\core</Filter>
     </ClCompile>
+    <ClCompile Include="testVideoSubtitle.cpp">
+      <Filter>ソース ファイル\test\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="test.hpp">

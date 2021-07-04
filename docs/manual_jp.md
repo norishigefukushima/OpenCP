@@ -204,7 +204,7 @@ imshowの拡張．
 ```cpp
 
 ```
-## [Todo] updateCheck.hpp
+## updateCheck.hpp
 パラメータの更新確認クラス．
 * [class UpdateCheck](UpdateCheck_jp.md "#class UpdateCheck")
 
@@ -218,6 +218,9 @@ imshowの拡張．
 ```cpp
 
 ```
+
+## VideoSubtitle.hpp
+* [class VideoSubtitle](VideoSubtitle_jp.md "#class VideoSubtitle")
 
 ## [Todo] yuvio.hpp
 

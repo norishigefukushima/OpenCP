@@ -28,6 +28,7 @@ void testSplitMerge(cv::Mat& src);
 void testTimer(cv::Mat& src);
 void testTiling(cv::Mat& src);
 void testLocalPSNR(cv::Mat& ref);
+void testVideoSubtitle();
 
 //imgproc
 void guiSLICTest(cv::Mat& src);

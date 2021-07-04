@@ -84,9 +84,10 @@ namespace cp
 			time_dissolve_end = end;
 		}
 		time_dissolve = time_dissolve_end - time_dissolve_start;
+		restart();
 	}
 
-	void VideoSubtitle::setFont(std::string font)
+	void VideoSubtitle::setFontType(std::string font)
 	{
 		this->font = font;
 	}
@@ -96,7 +97,14 @@ namespace cp
 		this->vspace = vspace;
 	}
 
-	void VideoSubtitle::setTitle(const cv::Size size, std::vector<std::string>& text, std::vector<int>& fontSize, const cv::Scalar textcolor, const cv::Scalar backgroundcolor)
+	void VideoSubtitle::setTitle(const cv::Size size, std::string text, int fontSize, const cv::Scalar textcolor, const cv::Scalar backgroundcolor, POSITION pos)
+	{
+		vector<string> vtext = { text };
+		vector<int> vfontSize = { fontSize };
+		setTitle(size, vtext, vfontSize, textcolor, backgroundcolor, pos);
+	}
+
+	void VideoSubtitle::setTitle(const cv::Size size, std::vector<std::string>& text, std::vector<int>& fontSize, const cv::Scalar textcolor, const cv::Scalar backgroundcolor, POSITION pos)
 	{
 		this->text.resize(0);
 		this->fontSize.resize(0);
@@ -106,24 +114,29 @@ namespace cp
 		title.create(size, CV_8UC3);
 		title.setTo(backgroundcolor);
 		textROI = getRectText(text, fontSize);
-		textPoint = Point(title.cols / 2 - textROI.width / 2, title.rows / 2);
+
+		if (pos == POSITION::TOP) textPoint = Point(title.cols / 2 - textROI.width / 2, vspace);
+		if (pos == POSITION::CENTER) textPoint = Point(title.cols / 2 - textROI.width / 2, title.rows / 2- textROI.height / 2);
+		if (pos == POSITION::BOTTOM) textPoint = Point(title.cols / 2 - textROI.width / 2, title.rows-textROI.height-vspace);
+
 		addVText(title, text, textPoint, fontSize, textcolor);
 	}
 
 	void VideoSubtitle::showTitleDissolve(std::string wname, const cv::Mat& image)
 	{
 		int text_alpha = getAlpha();
-		if (text_alpha != 255)addWeighted(image, text_alpha / 255.0, title, 1.0 - text_alpha / 255.0, 0.0, image);
+		if (text_alpha != 255)addWeighted(image, text_alpha / 255.0, title, 1.0 - text_alpha / 255.0, 0.0, show);
 
-		imshow(wname, image);
+		imshow(wname, show);
 	}
 
-	void VideoSubtitle::showScriptDissolve(std::string wname, cv::Mat& image, const cv::Scalar textColor)
+	void VideoSubtitle::showScriptDissolve(std::string wname, const cv::Mat& image, const cv::Scalar textColor)
 	{
 		int text_alpha = getAlpha();
-		if (text_alpha != 255) addVText(image, text, textPoint, fontSize, Scalar(textColor.val[0], textColor.val[1], textColor.val[2], text_alpha));
+		image.copyTo(show);
+		if (text_alpha != 255) addVText(show, text, textPoint, fontSize, Scalar(textColor.val[0], textColor.val[1], textColor.val[2], text_alpha));
 
-		imshow(wname, image);
+		imshow(wname, show);
 	}
 
 	void VideoSubtitle::showTitle(std::string wname, const cv::Size size, std::vector<std::string>& text, std::vector<int>& fontSize, const cv::Scalar textcolor, const cv::Scalar backgroundcolor)
