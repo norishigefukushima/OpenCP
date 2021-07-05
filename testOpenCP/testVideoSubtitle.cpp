@@ -25,7 +25,7 @@ void testVideoSubtitle()
 	int key = 0;
 	while (key != 'q')
 	{
-		cp::drawGridCenter(src, COLOR_RED);
+		cp::drawGridMulti(src, Size(4,4), COLOR_RED);
 			
 		if (sw == 0)vs.showScriptDissolve(wname, src);
 		if (sw == 1)vs.showTitleDissolve(wname, src);

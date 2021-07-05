@@ -126,6 +126,7 @@ namespace cp
 	{
 		int text_alpha = getAlpha();
 		if (text_alpha != 255)addWeighted(image, text_alpha / 255.0, title, 1.0 - text_alpha / 255.0, 0.0, show);
+		else image.copyTo(show);
 
 		imshow(wname, show);
 	}
