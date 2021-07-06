@@ -147,9 +147,21 @@ namespace cp
 		dest.copyTo(src);
 	}
 
-	void drawGridCenter(InputOutputArray src, Scalar color, int thickness, int line_type, int shift)
+	void drawGridMulti(InputOutputArray src, Size division, Scalar color, int thickness, int line_type, int shift)
 	{
-		drawGrid(src, Point(src.size().width / 2, src.size().height / 2), color, thickness, line_type, shift);
+		const int w = src.size().width;
+		const int h = src.size().height;
+		for (int j = 0; j < division.height - 1; j++)
+		{
+			int py = (j + 1) * (w / division.height);
+			line(src, Point(py, 0), Point(py, h), color, thickness, line_type, shift);
+		}
+
+		for (int i = 0; i < division.width - 1; i++)
+		{
+			int px = (i + 1) * (h / division.height);
+			line(src, Point(0, px), Point(w, px), color, thickness, line_type, shift);
+		}
 	}
 
 	void drawAsterisk(InputOutputArray src, Point crossCenter, int length, Scalar color, int thickness, int line_type, int shift)
@@ -172,12 +184,12 @@ namespace cp
 		dest.copyTo(src);
 	}
 
-	void eraseBoundary(const Mat& src, Mat& dest, int step, int border)
+	void eraseBoundary(const Mat& src, Mat& dest, const int step, const int borderType)
 	{
 		Mat temp = src(Rect(step, step, src.cols - 2 * step, src.rows - 2 * step));
 		Mat a; temp.copyTo(a);
 		Mat b;
-		copyMakeBorder(a, dest, step, step, step, step, border);
+		copyMakeBorder(a, dest, step, step, step, step, borderType);
 	}
 
 }
