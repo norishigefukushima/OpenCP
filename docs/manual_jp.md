@@ -1,10 +1,10 @@
 Reference Manual
 ================
-Documents in Japanese for Lab's members
-（現在，現状研究室内部専用：以下，研究室内向けメッセージ）
+Documents in Japanese for Lab's members  
+（現在，現状研究室内部専用：以下，研究室内向けメッセージ）  
 マニュアルは，みんなで更新していってください．  
-更新するのを期待して待っても，ほぼ更新されない更新頻度です．
-（バグを発見したときについでに更新するくらい）
+更新するのを期待して待っても，ほぼ更新されない更新頻度です．  
+（バグを発見したときについでに更新するくらい）  
 
 [Todo] がついているものはドキュメントの追記が必要．
 
@@ -196,7 +196,7 @@ imshowの拡張．
 
 ## kmeans.hpp
 * [class KMeans](kmeans_jp.md "#class KMeans")
-* [kmeans](kmeans.md "#kmeans")
+* [kmeans](kmeans_jp.md "#kmeans")
 
 ## [Todo] maskoperation.hpp
 矩形のマスクを作る．
@@ -299,9 +299,12 @@ class CP_EXPORT Stat
 	CP_EXPORT void conquerTilesAlign(const std::vector<cv::Mat>& src, cv::Mat& dest, const cv::Size div_size, const int r, const int left_multiple = 1, const int top_multiple = 1);
 ```
 
-## [Todo] timer.hpp
-
+## timer.hpp
 タイマーのクラス
+
+* [class Timer](Timer_jp.md "#class Timer")
+* [class DestinationTimePrediction](Timer_jp.md "#class DestinationTimePrediction")
+
 ```cpp
 class CP_EXPORT Timer
 class CP_EXPORT DestinationTimePrediction
