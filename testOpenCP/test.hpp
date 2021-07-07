@@ -26,6 +26,7 @@ void testRGBHistogram();
 void testRGBHistogram2();
 void testSplitMerge(cv::Mat& src);
 void testTimer(cv::Mat& src);
+void testDestinationTimePrediction(cv::Mat& src);
 void testTiling(cv::Mat& src);
 void testLocalPSNR(cv::Mat& ref);
 void testVideoSubtitle();

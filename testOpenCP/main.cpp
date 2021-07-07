@@ -42,13 +42,14 @@ int main(int argc, char** argv)
 	//testRGBHistogram();
 	//testRGBHistogram2();
 	//testTimer(img);
+	testDestinationTimePrediction(img);
 	//testAlphaBlend(left, right);
 	//testAlphaBlendMask(left, right);
 	//guiDissolveSlide(left, dmap);
 	//guiLocalDiffHistogram(img);
 	//guiContrast(img);
 	//guiContrast(guiCropZoom(img));
-	testVideoSubtitle();
+	//testVideoSubtitle();
 #pragma endregion
 
 #pragma region imgproc
@@ -62,8 +63,8 @@ int main(int argc, char** argv)
 #pragma endregion
 
 #pragma region filter
-	testGuidedImageFilter(Mat(), Mat()); return 0;
-	highDimentionalGaussianFilterTest(imgg); return 0;
+	//testGuidedImageFilter(Mat(), Mat()); return 0;
+	//highDimentionalGaussianFilterTest(imgg); return 0;
 	//testWeightedHistogramFilterDisparity(); return 0;
 	//testWeightedHistogramFilter();return 0;
 #pragma endregion 

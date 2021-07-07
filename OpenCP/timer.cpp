@@ -5,7 +5,7 @@ using namespace cv;
 
 namespace cp
 {
-
+#pragma region Timer
 	void Timer::start()
 	{
 		pre = getTickCount();
@@ -17,7 +17,7 @@ namespace cp
 		stat.clear();
 	}
 
-	int Timer::autoTimeMode()
+	int Timer::getAutoTimeMode()
 	{
 		if (cTime > 60.0 * 60.0 * 24.0)
 		{
@@ -54,7 +54,7 @@ namespace cp
 		int mode = timeMode;
 		if (mode == TIME_AUTO)
 		{
-			mode = autoTimeMode();
+			mode = getAutoTimeMode();
 			autoMode = mode;
 		}
 
@@ -90,23 +90,24 @@ namespace cp
 			switch (mode)
 			{
 			case TIME_NSEC:
-				cout << message << ": " << cTime << " nsec" << endl; break;
+				unit = "nsec";
 			case TIME_MICROSEC:
-				cout << message << ": " << cTime << " microsec" << endl; break;
+				unit = "microsec";
 			case TIME_MSEC:
-				cout << message << ": " << cTime << " msec" << endl; break;
+				unit = "msec";
 			case TIME_SEC:
-				cout << message << ": " << cTime << " sec" << endl; break;
+				unit = "sec";
 			case TIME_MIN:
-				cout << message << ": " << cTime << " minute" << endl; break;
+				unit = "minute";
 			case TIME_HOUR:
-				cout << message << ": " << cTime << " hour" << endl; break;
+				unit = "hour";
 			case TIME_DAY:
-				cout << message << ": " << cTime << " day" << endl; break;
-
+				unit = "day";
 			default:
+				unit = "";
 				cout << message << ": error" << endl; break;
 			}
+			cout << message << ": " << cTime << " "+unit << endl;
 		}
 	}
 
@@ -162,6 +163,8 @@ namespace cp
 		return cTime;
 	}
 
+	std::string Timer::getUnit() { return unit; };
+
 	int Timer::getStatSize()
 	{
 		return stat.num_data;
@@ -189,6 +192,11 @@ namespace cp
 		timeMode = mode;
 	}
 
+	void Timer::setIsShow(const bool flag)
+	{
+		this->isShow = flag;
+	}
+
 	void Timer::setCountMax(const int value)
 	{
 		countMax = value;
@@ -201,11 +209,8 @@ namespace cp
 
 	void Timer::init(string message, int mode, bool isShow)
 	{
-		_isShow = isShow;
+		this->isShow = isShow;
 		timeMode = mode;
-		countIgnoringThreshold = 1;
-		countMax = 0;
-		countIndex = 0;
 		setMessage(message);
 		start();
 	}
@@ -229,32 +234,12 @@ namespace cp
 
 	Timer::~Timer()
 	{
-		if (_isShow)	getTime(true);
+		if (isShow)	getTime(true);
 	}
+#pragma endregion
 
-	void DestinationTimePrediction::init(int DestinationCount)
-	{
-		pCount = 0;
-		destCount = DestinationCount;
-		startTime = getTickCount();
-
-		prestamp_for_prediction = startTime;
-		prestamp = startTime;
-
-		firstprediction = 0;
-	}
-
-	DestinationTimePrediction::DestinationTimePrediction()
-	{
-		;
-	}
-
-	DestinationTimePrediction::DestinationTimePrediction(int DestinationCount)
-	{
-		init(DestinationCount);
-	}
-
-	int DestinationTimePrediction::autoTimeMode(double cTime)
+#pragma region DestinationTimePrediction
+	int DestinationTimePrediction::getAutoTimeMode(double cTime)
 	{
 		if (cTime > 60.0 * 60.0 * 24.0)
 		{
@@ -268,9 +253,21 @@ namespace cp
 		{
 			return TIME_MIN;
 		}
-		else
+		else if (cTime > 1.0)
 		{
 			return TIME_SEC;
+		}
+		else if (cTime > 1.0 / 1000.0)
+		{
+			return TIME_MSEC;
+		}
+		else if (cTime > 1.0 / 1000000.0)
+		{
+			return TIME_MICROSEC;
+		}
+		else
+		{
+			return TIME_NSEC;
 		}
 	}
 
@@ -278,10 +275,16 @@ namespace cp
 	{
 		double cTime = tick / (getTickFrequency());
 
-		int timeMode = autoTimeMode(cTime);
+		int timeMode = getAutoTimeMode(cTime);
 
 		switch (timeMode)
 		{
+		case TIME_NSEC:
+			cTime *= 1000000000.0;
+			break;
+		case TIME_MICROSEC:
+			cTime *= 1000000.0;
+			break;
 		case TIME_MSEC:
 			cTime *= 1000.0;
 			break;
@@ -302,6 +305,15 @@ namespace cp
 
 		switch (timeMode)
 		{
+		case TIME_NSEC:
+			cout << mes << ": " << format("%.2f", cTime) << " nsec                 ";
+			break;
+		case TIME_MICROSEC:
+			cout << mes << ": " << format("%.2f", cTime) << " microsec                 ";
+			break;
+		case TIME_MSEC:
+			cout << mes << ": " << format("%.2f", cTime) << " msec                 ";
+			break;
 		case TIME_SEC:
 		default:
 			cout << mes << ": " << format("%.2f", cTime) << " sec                 ";
@@ -315,9 +327,6 @@ namespace cp
 		case TIME_DAY:
 			cout << mes << ": " << format("%.2f", cTime) << " day                 ";
 			break;
-		case TIME_MSEC:
-			cout << mes << ": " << format("%.2f", cTime) << " msec" << endl;
-			break;
 		}
 	}
 
@@ -326,7 +335,7 @@ namespace cp
 		int64 ret = (getTickCount() - startTime);
 		double cTime = ret / (getTickFrequency());
 
-		int timeMode = autoTimeMode(cTime);
+		int timeMode = getAutoTimeMode(cTime);
 
 		switch (timeMode)
 		{
@@ -370,12 +379,7 @@ namespace cp
 		return ret;
 	}
 
-	DestinationTimePrediction::~DestinationTimePrediction()
-	{
-		int64 a = getTime("actual ");
-		tick2Time((double)(firstprediction - a), "diff from 1st prediction ");
-	}
-
+	
 	void DestinationTimePrediction::predict()
 	{
 		pCount++;
@@ -385,8 +389,11 @@ namespace cp
 			firstprediction = (v > 0) ? v : firstprediction;
 		}
 		else
+		{
 			predict(pCount);
+		}
 	}
+
 	double DestinationTimePrediction::predict(int presentCount, int interval)
 	{
 		double ret = 0.0;
@@ -403,7 +410,7 @@ namespace cp
 
 			double cTime = pret / (getTickFrequency());
 
-			int timeMode = autoTimeMode(cTime);
+			int timeMode = getAutoTimeMode(cTime);
 
 			switch (timeMode)
 			{
@@ -422,7 +429,8 @@ namespace cp
 				break;
 			}
 
-			cout << "\r";
+			//cout << "\r";
+			cout << "\n";
 
 			string mes = format("%.3f %% computed, rest ", 100.0 * per);
 
@@ -447,4 +455,33 @@ namespace cp
 		}
 		return ret;
 	}
+
+	void DestinationTimePrediction::init(int DestinationCount)
+	{
+		pCount = 0;
+		destCount = DestinationCount;
+		startTime = getTickCount();
+
+		prestamp_for_prediction = startTime;
+		prestamp = startTime;
+
+		firstprediction = 0;
+	}
+
+	DestinationTimePrediction::DestinationTimePrediction()
+	{
+		;
+	}
+
+	DestinationTimePrediction::DestinationTimePrediction(int DestinationCount)
+	{
+		init(DestinationCount);
+	}
+
+	DestinationTimePrediction::~DestinationTimePrediction()
+	{
+		int64 a = getTime("actual ");
+		tick2Time((double)(firstprediction - a), "diff from 1st prediction ");
+	}
+#pragma endregion
 }

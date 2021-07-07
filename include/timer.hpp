@@ -30,7 +30,7 @@ namespace cp
 	//some function
 	t.getTime()
 
-	Sample 3: skip start timer (start function is called by constructor) 
+	Sample 3: skip start timer (start function is called by constructor)
 	Timer t;
 	//some function
 	t.getTime()
@@ -57,40 +57,42 @@ namespace cp
 	*/
 	class CP_EXPORT Timer
 	{
-		int64 pre;
-		std::string mes;
+		int64 pre = 0;
+		std::string mes = "";
+		std::string unit = "";
+		int timeMode = 0;
 
-		int timeMode;
+		double cTime = 0.0;
+		bool isShow = true;
 
-		double cTime;
-		bool _isShow;
-
-		int autoMode;
-		int autoTimeMode();
+		int autoMode = 0;
+		int getAutoTimeMode();
 		cp::Stat stat;
 
-		int countIgnoringThreshold;
-		int countMax;
-		int countIndex;
+		int countIgnoringThreshold = 1;
+		int countMax = 0;
+		int countIndex = 0;
 
-		void convertTime(bool isPrint, std::string message);
+		void convertTime(bool isShow, std::string message);
 	public:
 
 		void init(std::string message, int mode, bool isShow);
 
 		void setMode(int mode);
 		void setMessage(std::string& src);
+		void setIsShow(const bool flag);
 
 		void start();//call getTickCount();
-		void clearStat();
+		void clearStat();//clear Stat
 
-		void setCountMax(const int value);
-		void setIgnoringThreshold(const int value);
-		double getTime(bool isPrint = false, std::string message = "");
-		double getpushLapTime(bool isPrint = false, std::string message = "");
-		double getLapTimeMedian(bool isPrint = false, std::string message = "");
-		double getLapTimeMean(bool isPrint = false, std::string message = "");
-		int getStatSize();
+		void setCountMax(const int value);//set ring buffer max (loop value max) for Stat. Default is infinity.
+		void setIgnoringThreshold(const int value);//if(sample number < value) does not push the value into Stat for ignure cache 
+		double getTime(bool isPrint = false, std::string message = "");//only getTickCount()
+		double getpushLapTime(bool isPrint = false, std::string message = "");//getTickCount() and push the value to Stat
+		double getLapTimeMedian(bool isPrint = false, std::string message = "");//get median value from Stat
+		double getLapTimeMean(bool isPrint = false, std::string message = "");//get mean value from Stat
+		std::string getUnit();//return string unit
+		int getStatSize();//get the size of Stat
 		void drawDistribution(std::string wname = "Stat distribution", int div = 100);
 		void drawDistribution(std::string wname, int div, double minv, double maxv);
 
@@ -103,24 +105,27 @@ namespace cp
 
 	class CP_EXPORT DestinationTimePrediction
 	{
+		int getAutoTimeMode(double cTime);
 	public:
 		int destCount;
 		int pCount;
-		int64 startTime;
+		int64 startTime = 0;
+		int64 firstprediction = 0;
 
-		int64 firstprediction;
+		int64 prestamp = 0;
+		int64 prestamp_for_prediction = 0;
 
-		int64 prestamp;
-		int64 prestamp_for_prediction;
+		
+
+		void tick2Time(double tick, std::string mes);
+		int64 getTime(std::string mes);
+		
+		void predict();
+		double predict(int presentCount, int interval = 500);
 
 		void init(int DestinationCount);
 		DestinationTimePrediction();
 		DestinationTimePrediction(int DestinationCount);
-		int autoTimeMode(double cTime);
-		void tick2Time(double tick, std::string mes);
-		int64 getTime(std::string mes);
 		~DestinationTimePrediction();
-		void predict();
-		double predict(int presentCount, int interval = 500);
 	};
 }
