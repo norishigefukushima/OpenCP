@@ -271,7 +271,7 @@ namespace cp
 		}
 	}
 
-	void DestinationTimePrediction::print(double time, string mes)
+	void DestinationTimePrediction::printTime(double time, string mes)
 	{
 		double cTime = time;
 
@@ -293,7 +293,7 @@ namespace cp
 		case TIME_DAY:
 			unit = "day"; break;
 		}
-		cout << mes << ": " << format("%.2f", cTime) << " " + unit;
+		cout << mes << ": " << format("%5.2f", cTime) << " " + unit;
 	}
 
 	double DestinationTimePrediction::cvtTick2Time(double tick, const bool isStateChange)
@@ -333,7 +333,7 @@ namespace cp
 
 	int64 DestinationTimePrediction::getTime(string mes)
 	{
-		int64 ret = (getTickCount() - startTime);
+		int64 ret = (getTickCount() - time_stamp[0]);
 		double cTime = ret / (getTickFrequency());
 
 		int timeMode = getAutoTimeMode(cTime);
@@ -380,16 +380,74 @@ namespace cp
 		return ret;
 	}
 
-	double DestinationTimePrediction::predict_endstamp(const int idx, const int order)
+	inline int getOrder(int order, int index)
 	{
+		if (index == 0 && order == 1) return 0;
+		else if (index == 1 && order == 2||(index == 1 && order == 3)) return 1;
+		else if (index == 2 && order == 3) return 2;
+		else return order;
+	}
+
+
+	double DestinationTimePrediction::predict_endstamp(const int idx, const int order_, const bool isDiff)
+	{
+		int order = getOrder(order_, idx);
 		double ret = 0.0;
-		double per = (idx) / (double)(destCount);
-		if (order == 1 || idx == 1)
+		double per = (idx) / (double)(loopMax);
+		if (order == 0)
 		{
 			ret = double(time_stamp[idx] - time_stamp[0]) / per;
 		}
+		if (order == 1)
+		{
+			Mat a(idx + 1, 2, CV_64F);
+			Mat b(idx + 1, 1, CV_64F);
+			a.at<double>(0, 0) = 1.0;
+			a.at<double>(0, 1) = 0.0;
+			b.at<double>(0, 0) = 0.0;
+			if (isDiff)
+			{
+				const double normalize = time_stamp[idx] - time_stamp[idx - 1];
+				for (int i = 1; i < idx + 1; i++)
+				{
+					const double t = (time_stamp[i] - time_stamp[i - 1]) / normalize;
+					a.at<double>(i, 0) = 1.0;
+					a.at<double>(i, 1) = i;
+					b.at<double>(i, 0) = t;
+				}
+
+				Mat w, u, vt;
+				cv::SVDecomp(a, w, u, vt, SVD::FULL_UV);
+				SVD::backSubst(w, u, vt, b, coefficients);
+				coefficients *= normalize;
+				ret = time_stamp[idx] - time_stamp[0];
+				for (int i = idx; i < loopMax; i++)
+				{
+					double dv = coefficients.at<double>(1) * i + coefficients.at<double>(0);
+					ret += max(dv, 0.0);
+				}
+			}
+			else
+			{
+				const double normalize = time_stamp[idx] - time_stamp[0];
+				for (int i = 1; i < idx + 1; i++)
+				{
+					const double t = (time_stamp[i] - time_stamp[0]) / normalize;
+					a.at<double>(i, 0) = 1.0;
+					a.at<double>(i, 1) = i;
+					b.at<double>(i, 0) = t;
+				}
+
+				Mat w, u, vt;
+				cv::SVDecomp(a, w, u, vt, SVD::FULL_UV);
+				SVD::backSubst(w, u, vt, b, coefficients);
+
+				double v = loopMax;
+				coefficients *= normalize;
+				ret = coefficients.at<double>(1) * v + coefficients.at<double>(0);
+			}
+		}
 		else if (order == 2)
-			//if (idx > 1)
 		{
 			Mat a(idx + 1, 3, CV_64F);
 			Mat b(idx + 1, 1, CV_64F);
@@ -397,131 +455,135 @@ namespace cp
 			a.at<double>(0, 1) = 0.0;
 			a.at<double>(0, 2) = 0.0;
 			b.at<double>(0, 0) = 0.0;
-			for (int i = 1; i < idx + 1; i++)
+			if (isDiff)
 			{
-				const double t = (time_stamp[i] - time_stamp[0]);
-				a.at<double>(i, 0) = 1.0;
-				a.at<double>(i, 1) = i;
-				a.at<double>(i, 2) = i * i;
-				b.at<double>(i, 0) = t;
+				const double normalize = time_stamp[idx] - time_stamp[idx - 1];
+				for (int i = 1; i < idx + 1; i++)
+				{
+					const double t = (time_stamp[i] - time_stamp[i - 1]) / normalize;
+					a.at<double>(i, 0) = 1.0;
+					a.at<double>(i, 1) = i;
+					a.at<double>(i, 2) = i * i;
+					b.at<double>(i, 0) = t;
+				}
+
+				Mat w, u, vt;
+				cv::SVDecomp(a, w, u, vt, SVD::FULL_UV);
+				SVD::backSubst(w, u, vt, b, coefficients);
+				coefficients *= normalize;
+				ret = time_stamp[idx] - time_stamp[0];
+				for (int i = idx; i < loopMax; i++)
+				{
+					double dv = coefficients.at<double>(2) * i * i + coefficients.at<double>(1) * i + coefficients.at<double>(0);
+					ret += max(dv, 0.0);
+				}
 			}
-		
-			Mat w, u, vt;
-			cv::SVDecomp(a, w, u, vt, SVD::FULL_UV);
-			SVD::backSubst(w, u, vt, b, coefficients);
+			else
+			{
+				const double normalize = time_stamp[idx] - time_stamp[0];
+				for (int i = 1; i < idx + 1; i++)
+				{
+					const double t = (time_stamp[i] - time_stamp[0]) / normalize;
+					a.at<double>(i, 0) = 1.0;
+					a.at<double>(i, 1) = i;
+					a.at<double>(i, 2) = i * i;
+					b.at<double>(i, 0) = t;
+				}
 
-			double v = destCount;
-			ret = coefficients.at<double>(2) * v*v + coefficients.at<double>(1) * v + coefficients.at<double>(0);
-			//cout << per * 100 << ": ";
-			//print(cvtTick2Time(val, false), "est2");
-			//cout << endl;
+				Mat w, u, vt;
+				cv::SVDecomp(a, w, u, vt, SVD::FULL_UV);
+				SVD::backSubst(w, u, vt, b, coefficients);
 
+				double v = loopMax;
+				coefficients *= normalize;
+				ret = coefficients.at<double>(2) * v * v + coefficients.at<double>(1) * v + coefficients.at<double>(0);
+			}
+		}
+		else if (order == 3)
+		{
+			Mat a(idx + 1, 4, CV_64F);
+			Mat b(idx + 1, 1, CV_64F);
+			a.at<double>(0, 0) = 1.0;
+			a.at<double>(0, 1) = 0.0;
+			a.at<double>(0, 2) = 0.0;
+			a.at<double>(0, 3) = 0.0;
+			b.at<double>(0, 0) = 0.0;
+
+			if (isDiff)
+			{
+				const double normalize = time_stamp[idx] - time_stamp[idx - 1];
+				for (int i = 1; i < idx + 1; i++)
+				{
+					const double t = (time_stamp[i] - time_stamp[i - 1]) / normalize;
+					a.at<double>(i, 0) = 1.0;
+					a.at<double>(i, 1) = i;
+					a.at<double>(i, 2) = i * i;
+					a.at<double>(i, 3) = i * i * i;
+					b.at<double>(i, 0) = t;
+				}
+				Mat w, u, vt;
+				cv::SVDecomp(a, w, u, vt, SVD::FULL_UV);
+				SVD::backSubst(w, u, vt, b, coefficients);
+				coefficients *= normalize;
+				ret = time_stamp[idx] - time_stamp[0];
+				for (int i = idx; i < loopMax; i++)
+				{
+					double dv = coefficients.at<double>(3) * i * i * i + coefficients.at<double>(2) * i * i + coefficients.at<double>(1) * i + coefficients.at<double>(0);
+					ret += max(dv, 0.0);
+				}
+			}
+			else
+			{
+				const double normalize = time_stamp[idx] - time_stamp[0];
+				for (int i = 1; i < idx + 1; i++)
+				{
+					const double t = (time_stamp[i] - time_stamp[0]) / normalize;
+					a.at<double>(i, 0) = 1.0;
+					a.at<double>(i, 1) = i;
+					a.at<double>(i, 2) = i * i;
+					a.at<double>(i, 3) = i * i * i;
+					b.at<double>(i, 0) = t;
+				}
+
+				Mat w, u, vt;
+				cv::SVDecomp(a, w, u, vt, SVD::FULL_UV);
+				SVD::backSubst(w, u, vt, b, coefficients);
+
+				double v = loopMax;
+				coefficients *= normalize;
+				ret = coefficients.at<double>(3) * v * v * v + coefficients.at<double>(2) * v * v + coefficients.at<double>(1) * v + coefficients.at<double>(0);
+			}
 		}
 		return ret;
 	}
 
-	void DestinationTimePrediction::predict()
-	{
-		pCount++;
-		/*if (pCount < 11)
-		{
-			int64 v = (int64)predict(pCount, 10);
-			firstprediction = (v > 0) ? v : firstprediction;
-		}
-		else*/
-		{
-			predict(pCount);
-		}
-	}
-
-	double DestinationTimePrediction::predict(int presentCount, int interval)
+	double DestinationTimePrediction::predict(const int order, const bool isDiff, const bool isPrint)
 	{
 		double ret = 0.0;
 		int64 cstamp = getTickCount();
 		time_stamp.push_back(cstamp);
-		double per = (time_stamp.size() - 1) / (double)(destCount);
+		double per = (time_stamp.size() - 1) / (double)(loopMax);
 		//print_debug2(time_stamp.size(), destCount);
-		double pred_stamp = predict_endstamp(time_stamp.size() - 1);
+		double pred_stamp = predict_endstamp(time_stamp.size() - 1, order, isDiff);
 		double etime = cvtTick2Time(pred_stamp);
 		double ctime = cvtTick2Time(cstamp - time_stamp[0], false);
 
-		cout << format("%.3f %% computed, ", 100.0 * per);
-		print(etime - ctime, "last ");
-		print(etime, " estimated total");
-		cout << endl;
-		/*
-		if ((presentCount % interval) == 0)
+		if (isPrint)
 		{
-			double per = (double)presentCount / destCount;
-			//double ctime = (getTickCount()-preTime)/(getTickFrequency());
-			int64 cstamp = getTickCount();
-			double pret = ((double)destCount / (double)interval) * (cstamp - prestamp_for_prediction);
-
-			pret = (destCount - presentCount) / (double)interval * (cstamp - prestamp_for_prediction);
-			ret = pret;
-			prestamp_for_prediction = cstamp;
-
-			double cTime = pret / (getTickFrequency());
-
-			int timeMode = getAutoTimeMode(cTime);
-
-			switch (timeMode)
-			{
-			case TIME_SEC:
-			default:
-				cTime *= 1.0;
-				break;
-			case TIME_MIN:
-				cTime /= (60.0);
-				break;
-			case TIME_HOUR:
-				cTime /= (60 * 60);
-				break;
-			case TIME_DAY:
-				cTime /= (60 * 60 * 24);
-				break;
-			}
-
-			//cout << "\r";
-			cout << "\n";
-
-			string mes = format("%.3f %% computed, rest ", 100.0 * per);
-
-			switch (timeMode)
-			{
-			case TIME_SEC:
-			default:
-				cout << mes << ": " << format("%.2f", cTime) << " sec                 ";
-				break;
-			case TIME_MIN:
-				cout << mes << ": " << format("%.2f", cTime) << " minute              ";
-				break;
-			case TIME_HOUR:
-				cout << mes << ": " << format("%.2f", cTime) << " hour                ";
-				break;
-			case TIME_DAY:
-				cout << mes << ": " << format("%.2f", cTime) << " day                 ";
-				break;
-			}
-
-			prestamp = cstamp;
+			cout << format("%4.1f %%, ", 100.0 * per);
+			printTime(ctime, "current");
+			printTime(etime - ctime, " | last");
+			printTime(etime, " | estimated ");
+			cout << endl;
 		}
-		*/
 
 		return ret;
 	}
 
-	void DestinationTimePrediction::init(int DestinationCount)
+	void DestinationTimePrediction::init(int loopMax)
 	{
-		pCount = 0;
-		destCount = DestinationCount;
-		startTime = getTickCount();
-		time_stamp.push_back(startTime);
-
-		prestamp_for_prediction = startTime;
-		prestamp = startTime;
-
-		firstprediction = 0;
+		this->loopMax = loopMax;
+		time_stamp.push_back(getTickCount());
 	}
 
 	DestinationTimePrediction::DestinationTimePrediction()
@@ -529,57 +591,64 @@ namespace cp
 		;
 	}
 
-	DestinationTimePrediction::DestinationTimePrediction(int DestinationCount)
+	DestinationTimePrediction::DestinationTimePrediction(int loopMax)
 	{
-		init(DestinationCount);
+		init(loopMax);
 	}
 
 	DestinationTimePrediction::~DestinationTimePrediction()
 	{
-		int64 last_tick = getTime("actual ");
+		/*
 		//double time = cvtTick2Time((double)(time_stamp[0] - last_tick));
 		//print(time, "Actual ");
-		cout << endl;
+		
 		//print(time, "diff from 1st prediction ");
 		cp::Plot pt;
+		pt.setKey(cp::Plot::LEFT_TOP);
 		pt.setPlotTitle(0, "acctual");
+		pt.setPlotLineWidth(0, 3);
+		pt.setPlotLineWidth(2, 2);
+		pt.setPlotLineWidth(4, 2);
+		pt.setPlotLineWidth(6, 2);
 		pt.setPlotTitle(1, "est o1");
-		pt.setPlotTitle(2, "est o2");
-		pt.setPlotTitle(3, "estfit o2");
+		pt.setPlotTitle(2, "est o1 diff");
+		pt.setPlotTitle(3, "est o2");
+		pt.setPlotTitle(4, "est o2 diff");
+		pt.setPlotTitle(5, "est o3");
+		pt.setPlotTitle(6, "est o3 diff");
 		for (int j = 1; j < time_stamp.size(); j++)
 		{
-			for (int k = 1; k <= j; k++)
-			{
-				int64 stamp = time_stamp[k] - time_stamp[0];
-				double v = cvtTick2Time(stamp, false);
-				pt.push_back(k, v, 1);
-				pt.push_back(k, v, 2);
-			}
-			double pred1 = predict_endstamp(j, 1);
-			double pred2 = predict_endstamp(j, 2);
-			pt.push_back(time_stamp.size() - 1, cvtTick2Time(pred1, false), 1);
-			pt.push_back(time_stamp.size() - 1, cvtTick2Time(pred2, false), 2);
-
-			for (int i = 1; i < time_stamp.size(); i++)
-			{
-				if (coefficients.size().area() == 3)
-				{
-					double v = i;
-					double pred = coefficients.at<double>(2) * v * v + coefficients.at<double>(1) * v + coefficients.at<double>(0);
-					pt.push_back(i, cvtTick2Time(pred, false), 3);
-				}
-			}
 			for (int i = 1; i < time_stamp.size(); i++)
 			{
 				int64 stamp = time_stamp[i] - time_stamp[0];
 				double v = cvtTick2Time(stamp, false);
 				pt.push_back(i, v, 0);
 			}
+
+			for (int k = 1; k <= j; k++)
+			{
+				int64 stamp = time_stamp[k] - time_stamp[0];
+				double v = cvtTick2Time(stamp, false);
+				pt.push_back(k, v, 1);
+				pt.push_back(k, v, 2);
+				pt.push_back(k, v, 3);
+				pt.push_back(k, v, 4);
+				pt.push_back(k, v, 5);
+				pt.push_back(k, v, 6);
+			}
+
+			pt.push_back(time_stamp.size() - 1, cvtTick2Time(predict_endstamp(j, 1, false), false), 1);
+			pt.push_back(time_stamp.size() - 1, cvtTick2Time(predict_endstamp(j, 1, true), false), 2);
+			pt.push_back(time_stamp.size() - 1, cvtTick2Time(predict_endstamp(j, 2, false), false), 3);
+			pt.push_back(time_stamp.size() - 1, cvtTick2Time(predict_endstamp(j, 2, true), false), 4);
+			pt.push_back(time_stamp.size() - 1, cvtTick2Time(predict_endstamp(j, 3, false), false), 5);
+			pt.push_back(time_stamp.size() - 1, cvtTick2Time(predict_endstamp(j, 3, true), false), 6);
+
 			pt.plot("pred", false);
 			pt.clear();
-			waitKey();
+			waitKey();			
 		}
-
+		*/
 	}
 #pragma endregion
 }

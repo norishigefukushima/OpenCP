@@ -26,24 +26,44 @@ void testTimer(Mat& src)
 
 void testDestinationTimePrediction(Mat& src)
 {
-	const int iteration = 10;
+	const int iteration = 15;
 
+	Mat srcf = convert(src, CV_32F);
 	Mat dest;
 	int key = 0;
-	while (key != 'q')
-	{
-		DestinationTimePrediction t(iteration);
-		for (int i = 0; i < iteration; i++)
-		{
-			for (int j = 0; j < 10; j++)
-			{
-				//GaussianBlur(src, dest, Size(2 * i + 1, 2 * i + 1), 100);
-				bilateralFilter(src, dest, 2 * i + 1, 30, 30);
-				//blur(src, dest, Size(7, 7));
-			}
-			t.predict();
 
+	{
+		{
+			int paramMax = 10;
+			DestinationTimePrediction t(paramMax);
+			for (int i = 0; i < paramMax; i++)
+			{
+				for (int j = 0; j < iteration; j++)
+				{
+					//GaussianBlur(srcf, dest, Size(2 * i + 1, 2 * i + 1), 100);
+					//medianBlur(src, dest, 2 * i + 1);
+					bilateralFilter(src, dest, 2 * i + 1, 30, 30);
+					//blur(src, dest, Size(7, 7));
+				}
+				t.predict(3, false);
+			}
 		}
-		key = waitKey(1);
+		cout << endl;
+		{
+			int paramMax = 10;
+			DestinationTimePrediction t(iteration);
+			for (int j = 0; j < iteration; j++)
+			{
+				for (int i = 0; i < paramMax; i++)
+				{
+					//GaussianBlur(srcf, dest, Size(2 * i + 1, 2 * i + 1), 100);
+					//medianBlur(src, dest, 2 * i + 1);
+					bilateralFilter(src, dest, 2 * i + 1, 30, 30);
+					//blur(src, dest, Size(7, 7));
+				}
+				t.predict(0, false);
+			}
+		}
+
 	}
 }

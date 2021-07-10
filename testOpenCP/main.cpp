@@ -42,7 +42,7 @@ int main(int argc, char** argv)
 	//testRGBHistogram();
 	//testRGBHistogram2();
 	//testTimer(img);
-	testDestinationTimePrediction(img);
+	testDestinationTimePrediction(img); return 0;
 	//testAlphaBlend(left, right);
 	//testAlphaBlendMask(left, right);
 	//guiDissolveSlide(left, dmap);

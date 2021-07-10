@@ -111,26 +111,18 @@ namespace cp
 		int timeMode = 0;
 		std::vector<int64> time_stamp;
 		int order = 1;
-		double predict_endstamp(const int idx, const int order = 1);
-	public:
-		int destCount = 0;
-		int pCount = 0;
-		int64 startTime = 0;
-		int64 firstprediction = 0;
-
-		int64 prestamp = 0;
-		int64 prestamp_for_prediction = 0;
-
-		void print(double time, std::string mes);
-		double cvtTick2Time(const double tick, const bool isStateChange = true);
+		int loopMax = 0;
+		double predict_endstamp(const int idx, const int order = 1, const bool isDiff = true);
 		int64 getTime(std::string mes);
+		void printTime(double time, std::string mes);
+		double cvtTick2Time(const double tick, const bool isStateChange = true);
+	public:
 
-		void predict();
-		double predict(int presentCount, int interval = 500);
+		double predict(const int order, const bool isDiff, const bool isPrint = true);
 
 		void init(int DestinationCount);
 		DestinationTimePrediction();
-		DestinationTimePrediction(int DestinationCount);
+		DestinationTimePrediction(int loopCountMax);
 		~DestinationTimePrediction();
 	};
 }
