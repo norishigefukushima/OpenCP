@@ -21,9 +21,9 @@ void testStat()
 		RNG rng(getTickCount());
 		for (int i = 0; i < 10000; i++)
 		{
-			if(sw==0) st.push_back(rng.gaussian(sigma));
+			if (sw == 0) st.push_back(rng.gaussian(sigma));
 			else st.push_back(rng.uniform(0.0, (double)sigma));
-			
+
 		}
 		for (int i = 0; i < size; i++)
 		{
