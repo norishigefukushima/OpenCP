@@ -42,6 +42,7 @@ int main(int argc, char** argv)
 	//testRGBHistogram();
 	//testRGBHistogram2();
 	//testTimer(img);
+	testMatInfo(); return 0;
 	testStat(); return 0;
 	//testDestinationTimePrediction(img); return 0;
 	//testAlphaBlend(left, right);

@@ -50,7 +50,7 @@ CP_EXPORT void cvt8U32F(const cv::Mat& src, cv::Mat& dest);
 	
 CP_EXPORT void cvt32F16F(cv::Mat& srcdst);
 ```
-## [Todo]　bitconvertDD.hpp
+## [Todo] bitconvertDD.hpp
 doubledouble型の型変換．こっちはconvertToがそもそもない．
 
 ```cpp
@@ -207,22 +207,17 @@ imshowの拡張．
 	CP_EXPORT void setBoxMask(cv::Mat& mask, const int boundx, const int boundy);//clear mask and then set box mask
 ```
 
-## [Todo] matinfo.hpp
-Matの中身の情報を表示するデバッグ関数．
-`print_matinfo`はコンパイル時生成することで，引数も表示する．
-```cpp
-	CP_EXPORT void showMatInfo(cv::InputArray src, std::string name = "Mat", const bool isStatInfo = true);
-#define print_matinfo(a) cp::showMatInfo(a, #a, false)
-#define print_matinfo_detail(a) cp::showMatInfo(a, #a)
-```
+## matinfo.hpp
+Matの中身の情報を表示するデバッグ関数．  
+`print_matinfo`はマクロ展開することで，引数も表示する．  
+* [showMatInfo](matinfo_jp.md "#showMatInfo")
+* [print_matinfo](matinfo_jp.md "#print_matinfo")
+* [print_matinfo_detail](matinfo_jp.md "#print_matinfo_detail")
 
-## [Todo] noise.hpp
+## noise.hpp
 ノイズを付与する関数
-
-```cpp
-	CP_EXPORT void addNoise(cv::InputArray src, cv::OutputArray dest, const double sigma, const double solt_papper_ratio = 0.0, const uint64 seed = 0);
-	CP_EXPORT void addJPEGNoise(cv::InputArray src, cv::OutputArray dest, const int quality);
-```
+* [addNoise](noise_jp.md "#addNoise")
+* [addJPEGNoise](noise_jp.md "#addJPEGNoise")
 
 ## [Todo] plot.hpp
 プロット関数
@@ -241,7 +236,7 @@ class CP_EXPORT RGBHistogram
 class CP_EXPORT RandomizedQueue
 ```
 
-## [Todo] stat.hpp
+## stat.hpp
 統計情報を計算するクラス
 
 * [class Stat](Stat_jp.md "#class Stat")
@@ -495,10 +490,10 @@ Optimization
 # Todo
 優先すべきドキュメントは下記のデバッグと開発に頻繁に使用する関数群
 
-* matInfo
 * diff
 * Plot
-* noise
 * inlineSIMDFunctions.hpp
 * inlineMathFunctions.hpp
+* inlineCVFunctions.hpp
+* onelineCVFunctions.hpp
 * draw

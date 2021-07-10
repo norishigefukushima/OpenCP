@@ -7,16 +7,16 @@ namespace cp
 {
 	static void showMatInfo_internal(cv::Mat src, string name, const bool isStatInfo)
 	{
-		cout << "name   : " << name << endl;
+		cout << "name    : " << name << endl;
 		if (src.empty())
 		{
 			cout << "empty" << endl;
 			return;
 		}
 
-		cout << "size   : " << src.size() << endl;
-		cout << "channel: " << src.channels() << endl;
-		cout << "depth  : ";
+		cout << "size    : " << src.size() << endl;
+		cout << "channel : " << src.channels() << endl;
+		cout << "depth   : ";
 		if (src.depth() == CV_8U)cout << "8U" << endl;
 		else if (src.depth() == CV_8S)cout << "8S" << endl;
 		else if (src.depth() == CV_16S)cout << "16S" << endl;
@@ -25,11 +25,16 @@ namespace cp
 		else if (src.depth() == CV_32F)cout << "32F" << endl;
 		else if (src.depth() == CV_64F)cout << "64F" << endl;
 		else if (src.depth() == CV_16F)cout << "16F" << endl;
+		
+		if (src.isContinuous()) cout << "continue: true"<<endl;
+		else  cout << "continue: false" << endl;
+		if (src.isSubmatrix()) cout << "ROI     : true" << endl;
+		else  cout << "ROI     : false" << endl;
 
 		if (src.channels() < 5)
 		{
 			Scalar v = mean(src);
-			if (v.val[0] == 0)
+			if (v.val[0] == 0 && v.val[1] == 0 && v.val[2] == 0 && v.val[3] == 0)
 			{
 				cout << "zero set" << endl;
 			}
@@ -65,6 +70,7 @@ namespace cp
 	{
 		if (src_.isMatVector())
 		{
+			cout << "type    : vector<Mat>" << endl;
 			vector<Mat> v;
 			src_.getMatVector(v);
 			for (int i = 0; i < v.size(); i++)
@@ -73,8 +79,25 @@ namespace cp
 			}
 
 		}
+		else if (src_.isUMat())
+		{
+			cout << "type    : UMat" << endl;
+		}
+		else if (src_.isUMatVector())
+		{
+			cout << "type    : vector<UMat>" << endl;
+		}
+		else if (src_.isGpuMat())
+		{
+			cout << "type    : GpuMat" << endl;
+		}
+		else if (src_.isGpuMatVector())
+		{
+			cout << "type    : vector<GpuMat>" << endl;
+		}
 		else
 		{
+			cout << "type    : Mat" << endl;
 			Mat s = src_.getMat();
 			showMatInfo_internal(s, name, isStatInfo);
 		}

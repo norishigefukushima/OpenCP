@@ -150,6 +150,9 @@
     <ClCompile Include="testStat.cpp">
       <Filter>ソース ファイル\test\core</Filter>
     </ClCompile>
+    <ClCompile Include="testMatInfo.cpp">
+      <Filter>ソース ファイル\test\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="test.hpp">
