@@ -7,12 +7,16 @@ using namespace cv;
 
 namespace cp
 {
+	int Stat::getSize()
+	{
+		return data.size();
+	}
 
 	double Stat::getMin()
 	{
-		if (num_data == 0)return 0.0;
+		if (getSize() == 0)return 0.0;
 		double minv = DBL_MAX;
-		for (int i = 0; i < num_data; i++)
+		for (int i = 0; i < getSize(); i++)
 		{
 			minv = min(minv, data[i]);
 		}
@@ -21,41 +25,53 @@ namespace cp
 
 	double Stat::getMax()
 	{
-		if (num_data == 0)return 0.0;
+		if (getSize() == 0)return 0.0;
 		double maxv = DBL_MIN;
-		for (int i = 0; i < num_data; i++)
+		for (int i = 0; i < getSize(); i++)
 		{
 			maxv = max(maxv, data[i]);
 		}
 		return maxv;
 	}
 
-	double Stat::getMean()
+	double Stat::getSum()
 	{
-		if (num_data == 0)return 0.0;
+		if (getSize() == 0)return 0.0;
 		double sum = 0.0;
-		for (int i = 0; i < num_data; i++)
+		for (int i = 0; i < getSize(); i++)
 		{
 			sum += data[i];
 		}
-		return sum / (double)num_data;
+		return sum;
+	}
+
+	double Stat::getMean()
+	{
+		if (getSize() == 0)return 0.0;
+		return getSum() / (double)getSize();
+	}
+
+	double Stat::getVar()
+	{
+		if (getSize() == 0)return 0.0;
+		double std = 0.0;
+		double mean = getMean();
+		for (int i = 0; i < getSize(); i++)
+		{
+			std += (mean - data[i]) * (mean - data[i]);
+		}
+		return std / (double)getSize();
 	}
 
 	double Stat::getStd()
 	{
-		if (num_data == 0)return 0.0;
-		double std = 0.0;
-		double mean = getMean();
-		for (int i = 0; i < num_data; i++)
-		{
-			std += (mean - data[i])*(mean - data[i]);
-		}
-		return sqrt(std / (double)num_data);
+		if (getSize() == 0)return 0.0;
+		return sqrt(getVar());
 	}
 
 	double Stat::getMedian()
 	{
-		if (num_data == 0)return 0.0;
+		if (getSize() == 0)return 0.0;
 		vector<double> v;
 		vector<double> s;
 		for (int i = 0; i < data.size(); i++)
@@ -63,28 +79,34 @@ namespace cp
 			s.push_back(data[i]);
 		}
 		cv::sort(s, v, cv::SORT_ASCENDING);
-		return v[num_data / 2];
+		return v[getSize() / 2];
+	}
+
+	void Stat::pop_back()
+	{
+		data.pop_back();
 	}
 
 	void Stat::push_back(double val)
 	{
 		data.push_back(val);
-		num_data = (int)data.size();
 	}
 
 	void Stat::clear()
 	{
 		data.clear();
-		num_data = 0;
 	}
 
 	void Stat::print()
 	{
+		cout << "samples" << getSize() << endl;
+		cout << "sum " << getSum() << endl;
 		cout << "mean " << getMean() << endl;
 		cout << "min  " << getMin() << endl;
 		cout << "med  " << getMedian() << endl;
 		cout << "max  " << getMax() << endl;
 		cout << "std  " << getStd() << endl;
+		cout << "var  " << getVar() << endl;
 	}
 
 	void Stat::drawDistribution(string wname, int div)
@@ -140,7 +162,7 @@ namespace cp
 		for (int i = 0; i < div; i++)
 		{
 			if (i % (div / 10) == 0)cv::line(draw_, Point(i, 0), Point(i, draw_.rows - 1), cv::Scalar::all(50));
-			int h = int((1.0 - (double)hist[i] / (double)hmax)*draw_.rows - 1);
+			int h = int((1.0 - (double)hist[i] / (double)hmax) * draw_.rows - 1);
 			cv::line(draw_, Point(i, h), Point(i, draw_.rows - 1), cv::Scalar(230, 230, 230));
 
 			if (i == meanv) cv::line(draw_, Point(i, h), Point(i, draw_.rows - 1), cv::Scalar(255, 0, 0));
@@ -149,7 +171,7 @@ namespace cp
 		}
 		Mat draw;
 		int amp = (int)ceil(256.0 / div);
-		
+
 		resize(draw_, draw, Size(), amp, 1, INTER_NEAREST);
 		Mat text_img = Mat::zeros(Size(draw.cols, 30), CV_8UC3);
 
@@ -171,7 +193,7 @@ namespace cp
 		text = format("max%f", maxv);
 		putText(text_img, text, Point(10, 20), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_WHITE);
 		vconcat(draw, text_img, draw);
-		
+
 
 		//static int idx = 0;
 		//imwrite(format("%04d.png", idx++), draw);

@@ -130,7 +130,7 @@ namespace cp
 			}
 			else
 			{
-				if (stat.num_data < countMax)
+				if (stat.getSize() < countMax)
 				{
 					stat.push_back(time);
 				}
@@ -167,18 +167,18 @@ namespace cp
 
 	int Timer::getStatSize()
 	{
-		return stat.num_data;
+		return stat.getSize();
 	}
 
 	void Timer::drawDistribution(string wname, int div)
 	{
-		if (stat.num_data > 1)
+		if (stat.getSize() > 1)
 			stat.drawDistribution(wname, div);
 	}
 
 	void Timer::drawDistribution(string wname, int div, double minv, double maxv)
 	{
-		if (stat.num_data > 1)
+		if (stat.getSize() > 1)
 			stat.drawDistribution(wname, div, minv, maxv);
 	}
 

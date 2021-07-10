@@ -228,7 +228,7 @@ void testKMeans(Mat& src)
 
 		index = 0;
 
-		ci("global:trials %d", st[0].num_data);
+		ci("global:trials %d", st[0].getSize());
 		ci("local :trials %d", trials);
 		ci("ch %d, size %d, sizeSqrt %d", ch, (int)pow(2, size), (int)sqrt(pow(2, size)));
 		ci("kmeans iteration %d", iterations);

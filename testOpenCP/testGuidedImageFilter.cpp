@@ -311,7 +311,7 @@ void testGuidedImageFilter(Mat& img_p, Mat& img_I)
 			ci("Box Type        : " + getBoxType((BoxFilterMethod)boxType));
 			ci("Parallel Type   : " + getParallelType(parallelType));
 			ci("Parallel Type   : " + cp::getInterpolationName(downsample) + " Up: " + cp::getInterpolationName(upsample));
-			ci("NUM             : %d", stats[0].num_data);
+			ci("NUM             : %d", stats[0].getSize());
 			ci("======Time======");
 			idx = 0;
 			ci("0: ref64f   : %f", stats[idx++].getMedian());

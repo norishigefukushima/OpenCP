@@ -189,6 +189,7 @@
     <ClCompile Include="testGuidedImageFilter.cpp" />
     <ClCompile Include="guiHazeRemoveTest.cpp" />
     <ClCompile Include="testKMeans.cpp" />
+    <ClCompile Include="testStat.cpp" />
     <ClCompile Include="testStereo.cpp" />
     <ClCompile Include="guiUpsampleTest.cpp" />
     <ClCompile Include="testVideoSubtitle.cpp" />

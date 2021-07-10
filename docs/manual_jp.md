@@ -244,9 +244,7 @@ class CP_EXPORT RandomizedQueue
 ## [Todo] stat.hpp
 統計情報を計算するクラス
 
-```cpp
-class CP_EXPORT Stat
-```
+* [class Stat](Stat_jp.md "#class Stat")
 
 ## [Todo] stencil.hpp
 
@@ -497,8 +495,6 @@ Optimization
 # Todo
 優先すべきドキュメントは下記のデバッグと開発に頻繁に使用する関数群
 
-* Timer
-* Stat
 * matInfo
 * diff
 * Plot
