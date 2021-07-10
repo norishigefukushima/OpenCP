@@ -4,7 +4,7 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-	cout << cv::getBuildInformation() << endl;
+	//cout << cv::getBuildInformation() << endl;
 
 #pragma region setup
 	//Mat img = imread("img/lenna.png");

@@ -26,20 +26,22 @@ void testTimer(Mat& src)
 
 void testDestinationTimePrediction(Mat& src)
 {
-	const int iteration = 100;
+	const int iteration = 10;
 
 	Mat dest;
 	int key = 0;
 	while (key != 'q')
 	{
-		cp::Timer tt("Timerrrrrrrrrr");
-
 		DestinationTimePrediction t(iteration);
 		for (int i = 0; i < iteration; i++)
 		{
+			for (int j = 0; j < 10; j++)
+			{
+				//GaussianBlur(src, dest, Size(2 * i + 1, 2 * i + 1), 100);
+				bilateralFilter(src, dest, 2 * i + 1, 30, 30);
+				//blur(src, dest, Size(7, 7));
+			}
 			t.predict();
-			for (int j = 0; j < 100; j++)
-				blur(src, dest, Size(7, 7));
 
 		}
 		key = waitKey(1);

@@ -1,5 +1,5 @@
 #include "timer.hpp"
-
+#include "debugcp.hpp"
 using namespace std;
 using namespace cv;
 
@@ -107,7 +107,7 @@ namespace cp
 				unit = "";
 				cout << message << ": error" << endl; break;
 			}
-			cout << message << ": " << cTime << " "+unit << endl;
+			cout << message << ": " << cTime << " " + unit << endl;
 		}
 	}
 
@@ -271,11 +271,36 @@ namespace cp
 		}
 	}
 
-	void DestinationTimePrediction::tick2Time(double tick, string mes)
+	void DestinationTimePrediction::print(double time, string mes)
 	{
-		double cTime = tick / (getTickFrequency());
+		double cTime = time;
 
-		int timeMode = getAutoTimeMode(cTime);
+		switch (timeMode)
+		{
+		case TIME_NSEC:
+			unit = "nsec"; break;
+		case TIME_MICROSEC:
+			unit = "microsec"; break;
+		case TIME_MSEC:
+			unit = "msec"; break;
+		case TIME_SEC:
+		default:
+			unit = "sec"; break;
+		case TIME_MIN:
+			unit = "min"; break;
+		case TIME_HOUR:
+			unit = "hour"; break;
+		case TIME_DAY:
+			unit = "day"; break;
+		}
+		cout << mes << ": " << format("%.2f", cTime) << " " + unit;
+	}
+
+	double DestinationTimePrediction::cvtTick2Time(double tick, const bool isStateChange)
+	{
+		double cTime = tick / getTickFrequency();
+		if (isStateChange)
+			timeMode = getAutoTimeMode(cTime);
 
 		switch (timeMode)
 		{
@@ -303,31 +328,7 @@ namespace cp
 			break;
 		}
 
-		switch (timeMode)
-		{
-		case TIME_NSEC:
-			cout << mes << ": " << format("%.2f", cTime) << " nsec                 ";
-			break;
-		case TIME_MICROSEC:
-			cout << mes << ": " << format("%.2f", cTime) << " microsec                 ";
-			break;
-		case TIME_MSEC:
-			cout << mes << ": " << format("%.2f", cTime) << " msec                 ";
-			break;
-		case TIME_SEC:
-		default:
-			cout << mes << ": " << format("%.2f", cTime) << " sec                 ";
-			break;
-		case TIME_MIN:
-			cout << mes << ": " << format("%.2f", cTime) << " minute              ";
-			break;
-		case TIME_HOUR:
-			cout << mes << ": " << format("%.2f", cTime) << " hour                ";
-			break;
-		case TIME_DAY:
-			cout << mes << ": " << format("%.2f", cTime) << " day                 ";
-			break;
-		}
+		return cTime;
 	}
 
 	int64 DestinationTimePrediction::getTime(string mes)
@@ -379,16 +380,55 @@ namespace cp
 		return ret;
 	}
 
-	
+	double DestinationTimePrediction::predict_endstamp(const int idx, const int order)
+	{
+		double ret = 0.0;
+		double per = (idx) / (double)(destCount);
+		if (order == 1 || idx == 1)
+		{
+			ret = double(time_stamp[idx] - time_stamp[0]) / per;
+		}
+		else if (order == 2)
+			//if (idx > 1)
+		{
+			Mat a(idx + 1, 3, CV_64F);
+			Mat b(idx + 1, 1, CV_64F);
+			a.at<double>(0, 0) = 1.0;
+			a.at<double>(0, 1) = 0.0;
+			a.at<double>(0, 2) = 0.0;
+			b.at<double>(0, 0) = 0.0;
+			for (int i = 1; i < idx + 1; i++)
+			{
+				const double t = (time_stamp[i] - time_stamp[0]);
+				a.at<double>(i, 0) = 1.0;
+				a.at<double>(i, 1) = i;
+				a.at<double>(i, 2) = i * i;
+				b.at<double>(i, 0) = t;
+			}
+		
+			Mat w, u, vt;
+			cv::SVDecomp(a, w, u, vt, SVD::FULL_UV);
+			SVD::backSubst(w, u, vt, b, coefficients);
+
+			double v = destCount;
+			ret = coefficients.at<double>(2) * v*v + coefficients.at<double>(1) * v + coefficients.at<double>(0);
+			//cout << per * 100 << ": ";
+			//print(cvtTick2Time(val, false), "est2");
+			//cout << endl;
+
+		}
+		return ret;
+	}
+
 	void DestinationTimePrediction::predict()
 	{
 		pCount++;
-		if (pCount < 11)
+		/*if (pCount < 11)
 		{
 			int64 v = (int64)predict(pCount, 10);
 			firstprediction = (v > 0) ? v : firstprediction;
 		}
-		else
+		else*/
 		{
 			predict(pCount);
 		}
@@ -397,6 +437,19 @@ namespace cp
 	double DestinationTimePrediction::predict(int presentCount, int interval)
 	{
 		double ret = 0.0;
+		int64 cstamp = getTickCount();
+		time_stamp.push_back(cstamp);
+		double per = (time_stamp.size() - 1) / (double)(destCount);
+		//print_debug2(time_stamp.size(), destCount);
+		double pred_stamp = predict_endstamp(time_stamp.size() - 1);
+		double etime = cvtTick2Time(pred_stamp);
+		double ctime = cvtTick2Time(cstamp - time_stamp[0], false);
+
+		cout << format("%.3f %% computed, ", 100.0 * per);
+		print(etime - ctime, "last ");
+		print(etime, " estimated total");
+		cout << endl;
+		/*
 		if ((presentCount % interval) == 0)
 		{
 			double per = (double)presentCount / destCount;
@@ -453,6 +506,8 @@ namespace cp
 
 			prestamp = cstamp;
 		}
+		*/
+
 		return ret;
 	}
 
@@ -461,6 +516,7 @@ namespace cp
 		pCount = 0;
 		destCount = DestinationCount;
 		startTime = getTickCount();
+		time_stamp.push_back(startTime);
 
 		prestamp_for_prediction = startTime;
 		prestamp = startTime;
@@ -480,8 +536,50 @@ namespace cp
 
 	DestinationTimePrediction::~DestinationTimePrediction()
 	{
-		int64 a = getTime("actual ");
-		tick2Time((double)(firstprediction - a), "diff from 1st prediction ");
+		int64 last_tick = getTime("actual ");
+		//double time = cvtTick2Time((double)(time_stamp[0] - last_tick));
+		//print(time, "Actual ");
+		cout << endl;
+		//print(time, "diff from 1st prediction ");
+		cp::Plot pt;
+		pt.setPlotTitle(0, "acctual");
+		pt.setPlotTitle(1, "est o1");
+		pt.setPlotTitle(2, "est o2");
+		pt.setPlotTitle(3, "estfit o2");
+		for (int j = 1; j < time_stamp.size(); j++)
+		{
+			for (int k = 1; k <= j; k++)
+			{
+				int64 stamp = time_stamp[k] - time_stamp[0];
+				double v = cvtTick2Time(stamp, false);
+				pt.push_back(k, v, 1);
+				pt.push_back(k, v, 2);
+			}
+			double pred1 = predict_endstamp(j, 1);
+			double pred2 = predict_endstamp(j, 2);
+			pt.push_back(time_stamp.size() - 1, cvtTick2Time(pred1, false), 1);
+			pt.push_back(time_stamp.size() - 1, cvtTick2Time(pred2, false), 2);
+
+			for (int i = 1; i < time_stamp.size(); i++)
+			{
+				if (coefficients.size().area() == 3)
+				{
+					double v = i;
+					double pred = coefficients.at<double>(2) * v * v + coefficients.at<double>(1) * v + coefficients.at<double>(0);
+					pt.push_back(i, cvtTick2Time(pred, false), 3);
+				}
+			}
+			for (int i = 1; i < time_stamp.size(); i++)
+			{
+				int64 stamp = time_stamp[i] - time_stamp[0];
+				double v = cvtTick2Time(stamp, false);
+				pt.push_back(i, v, 0);
+			}
+			pt.plot("pred", false);
+			pt.clear();
+			waitKey();
+		}
+
 	}
 #pragma endregion
 }

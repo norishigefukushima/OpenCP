@@ -105,21 +105,26 @@ namespace cp
 
 	class CP_EXPORT DestinationTimePrediction
 	{
+		cv::Mat coefficients;
 		int getAutoTimeMode(double cTime);
+		std::string unit = "";
+		int timeMode = 0;
+		std::vector<int64> time_stamp;
+		int order = 1;
+		double predict_endstamp(const int idx, const int order = 1);
 	public:
-		int destCount;
-		int pCount;
+		int destCount = 0;
+		int pCount = 0;
 		int64 startTime = 0;
 		int64 firstprediction = 0;
 
 		int64 prestamp = 0;
 		int64 prestamp_for_prediction = 0;
 
-		
-
-		void tick2Time(double tick, std::string mes);
+		void print(double time, std::string mes);
+		double cvtTick2Time(const double tick, const bool isStateChange = true);
 		int64 getTime(std::string mes);
-		
+
 		void predict();
 		double predict(int presentCount, int interval = 500);
 
