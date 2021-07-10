@@ -139,6 +139,8 @@
 #include "inlineCVFunctions.hpp"
 #include "inlineMathFunctions.hpp"
 
+//one line fuinctions
+#include "onelineCVFunctions.hpp"
 
 //template for new files
 /*

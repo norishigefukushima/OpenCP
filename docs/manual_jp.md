@@ -8,6 +8,16 @@ Documents in Japanese for Lab's members
 
 [Todo] がついているものはドキュメントの追記が必要．
 
+# [Todo] onelineCVFunctions
+下記の頻出の変換を1行で書けるようにした関数群
+* convert
+* cvtColor
+* copyMakeBorder
+* split
+
+* [convert](onelineCVFunctions_jp.md "#convert")
+* [cenvertCentering](onelineCVFunctions_jp.md "#cenvertCentering")
+
 # core
 ## [Todo] arithmetic.hpp
 画像の点の演算
@@ -371,8 +381,6 @@ class CP_EXPORT YUVReader
 
 ## contrast.hpp
 トーンカーブによるコントラスト強調の関数群
-* [convert](contrast_jp.md "#convert")
-* [cenvertCentering](contrast_jp.md "#cenvertCentering")
 * [contrastSToneExp](contrast_jp.md "#contrastSToneExp")
 * [contrastGamma](contrast_jp.md "#contrastGamma")
 * [quantization](contrast_jp.md "#quantization")

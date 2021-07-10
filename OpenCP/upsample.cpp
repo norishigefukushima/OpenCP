@@ -1,7 +1,7 @@
 #include "downsample.hpp"
 #include "upsample.hpp"
 #include "shiftimage.hpp"
-#include "contrast.hpp"//convert
+#include "onelineCVFunctions.hpp"
 #include "inlineSIMDFunctions.hpp"
 #include "inlineMathFunctions.hpp"
 using namespace std;

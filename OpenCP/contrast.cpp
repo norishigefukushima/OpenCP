@@ -1,24 +1,10 @@
-#include "contrast.hpp"
+#include "onelineCVFunctions.hpp"
 #include "debugcp.hpp"
 using namespace std;
 using namespace cv;
 
 namespace cp
 {
-	cv::Mat convert(cv::Mat& src, const int depth, const double alpha, const double beta)
-	{
-		cv::Mat ret;
-		src.convertTo(ret, depth, alpha, beta);
-		return ret;
-	}
-
-	cv::Mat cenvertCentering(cv::InputArray src, int depth, double a, double b)
-	{
-		Mat ret;
-		src.getMat().convertTo(ret, depth, a, -a * b + b);
-		return ret;
-	}
-
 	template<typename srcType>
 	void contrastSToneExp_(srcType* src, srcType* dest, const int size, const double sigma, const double a, const double b)
 	{

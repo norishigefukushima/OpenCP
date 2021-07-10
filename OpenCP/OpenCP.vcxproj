@@ -241,6 +241,7 @@
     <ClCompile Include="kmeans.cpp" />
     <ClCompile Include="metricsDD.cpp" />
     <ClCompile Include="NEDI.cpp" />
+    <ClCompile Include="onelineCVFunctions.cpp" />
     <ClCompile Include="stereoEval.cpp" />
     <ClCompile Include="depthfilter.cpp" />
     <ClCompile Include="detailEnhancement.cpp" />
@@ -426,6 +427,7 @@
     <ClInclude Include="..\include\kmeans.hpp" />
     <ClInclude Include="..\include\metricsDD.hpp" />
     <ClInclude Include="..\include\NEDI.hpp" />
+    <ClInclude Include="..\include\onelineCVFunctions.hpp" />
     <ClInclude Include="..\include\StereoEval.hpp" />
     <ClInclude Include="..\include\depthfilter.hpp" />
     <ClInclude Include="..\include\detailEnhancement.hpp" />

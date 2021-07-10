@@ -576,6 +576,9 @@
     <ClCompile Include="VideoSubtitle.cpp">
       <Filter>ソース ファイル\core</Filter>
     </ClCompile>
+    <ClCompile Include="onelineCVFunctions.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libGaussian\gaussian_conv.h">
@@ -1033,6 +1036,9 @@
     </ClInclude>
     <ClInclude Include="..\include\VideoSubtitle.hpp">
       <Filter>ヘッダー ファイル\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\onelineCVFunctions.hpp">
+      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
