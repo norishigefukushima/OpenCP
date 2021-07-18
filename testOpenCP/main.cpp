@@ -2,6 +2,7 @@
 #include "test.hpp"
 using namespace std;
 
+
 int main(int argc, char** argv)
 {
 	//cout << cv::getBuildInformation() << endl;
@@ -30,7 +31,7 @@ int main(int argc, char** argv)
 	//testHistogram(); return 0;
 	//testPlot(); return 0;
 	//testPlot2D(); return 0;
-	
+
 	//guiHazeRemoveTest();
 
 	//testCropZoom(); return 0;
