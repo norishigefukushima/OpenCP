@@ -872,7 +872,7 @@ namespace cp
 		return mssim;
 	}
 
-	double SSIM(Mat& src, Mat& ref, double sigma)
+	/*double SSIM(Mat& src, Mat& ref, double sigma)
 	{
 		Mat gray1, gray2;
 		cvtColor(src, gray1, COLOR_BGR2GRAY);
@@ -880,7 +880,7 @@ namespace cp
 
 		Scalar v = getMSSIM(gray1, gray2, sigma);
 		return v.val[0];
-	}
+	}*/
 
 	inline int norm_l(int a, int b, int norm)
 	{

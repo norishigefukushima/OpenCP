@@ -883,7 +883,7 @@ namespace fmath {
 	}
 
 #ifdef __AVX2__
-	inline __m256 log_ps256(__m256 x)
+	inline __m256 log_ps256(__m256 x)//base e
 	{
 		__m128 a = fmath::log_ps(_mm256_extractf128_ps(x, 1));
 		__m128 b = fmath::log_ps(_mm256_extractf128_ps(x, 0));

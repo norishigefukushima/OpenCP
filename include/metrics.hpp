@@ -98,7 +98,7 @@ namespace cp
 
 	CP_EXPORT double getTotalVariation(cv::InputArray src);
 
-	CP_EXPORT double SSIM(cv::Mat& src, cv::Mat& ref, double sigma = 1.5);
+	//CP_EXPORT double SSIM(cv::Mat& src, cv::Mat& ref, double sigma = 1.5);removed for update
 
 	CP_EXPORT bool isSameMat(cv::InputArray src, cv::InputArray answer, bool isShowMessage = true, std::string ok_mes = "OK", std::string ng_mes = "NG");
 }

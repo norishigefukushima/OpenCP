@@ -44,6 +44,47 @@ namespace cp
 	}
 
 
+	//sign(src)*pow(abs(src),v)
+	void powsign(cv::InputArray src, const float v, cv::OutputArray dest)
+	{
+		dest.create(src.size(), src.type());
+		const float* s = src.getMat().ptr<float>();
+		float* d = dest.getMat().ptr<float>();
+		__m256 mv = _mm256_set1_ps(v);
+		const int simd_width = get_simd_floor(src.total(), 8);
+		for (int i = 0; i < simd_width; i += 8)
+		{
+			__m256 ms = _mm256_load_ps(s + i);
+			_mm256_store_ps(d + i, _mm256_mul_ps(_mm256_sign_ps(ms), _mm256_pow_ps(_mm256_abs_ps(ms), mv)));
+		}
+
+		for (int i = simd_width; i < src.total(); i++)
+		{
+			if (s[i] >= 0)d[i] = pow(s[i], v);
+			else d[i] = -pow(-s[i], v);
+		}
+	}
+
+	//sign(src)*pow(abs(src),v)
+	void powZeroClip(cv::InputArray src, const float v, cv::OutputArray dest)
+	{
+		dest.create(src.size(), src.type());
+		const float* s = src.getMat().ptr<float>();
+		float* d = dest.getMat().ptr<float>();
+		__m256 mv = _mm256_set1_ps(v);
+		const int simd_width = get_simd_floor(src.total(), 8);
+		for (int i = 0; i < simd_width; i += 8)
+		{
+			__m256 ms = _mm256_max_ps(_mm256_load_ps(s + i), _mm256_setzero_ps());
+			_mm256_store_ps(d + i, _mm256_pow_ps(ms, mv));
+		}
+
+		for (int i = simd_width; i < src.total(); i++)
+		{
+			d[i] = -pow(max(s[i],0.f), v);
+		}
+	}
+
 	void pow_fmath(const float a, const Mat& src, Mat& dest)
 	{
 		if (dest.empty())dest.create(src.size(), CV_32F);
@@ -697,6 +738,44 @@ namespace cp
 		{
 			ave = sum;
 			var = mulsum;
+		}
+	}
+
+	void sqrtZeroClip(InputArray src_, OutputArray dst_)
+	{
+		CV_Assert(src_.depth() == CV_32F || src_.depth() == CV_64F);
+
+		Mat src = src_.getMat();
+		dst_.create(src.size(), src.type());
+		Mat dst = dst_.getMat();
+
+		if (src.depth() == CV_32F)
+		{
+			float* s = src.ptr <float>();
+			float* d = dst.ptr <float>();
+			const int simd_end = get_simd_floor((int)src.total(), 8);
+			for (int i = 0; i < simd_end; i += 8)
+			{
+				_mm256_store_ps(d + i, _mm256_sqrt_ps(_mm256_max_ps(_mm256_setzero_ps(), _mm256_load_ps(s + i))));
+			}
+			for (int i = simd_end; i < src.total(); i++)
+			{
+				d[i] = sqrt(max(s[i], 0.f));
+			}
+		}
+		else if (src.depth() == CV_64F)
+		{
+			double* s = src.ptr <double>();
+			double* d = dst.ptr <double>();
+			const int simd_end = get_simd_floor((int)src.total(), 4);
+			for (int i = 0; i < simd_end; i += 4)
+			{
+				_mm256_store_pd(d + i, _mm256_sqrt_pd(_mm256_max_pd(_mm256_setzero_pd(), _mm256_load_pd(s + i))));
+			}
+			for (int i = simd_end; i < src.total(); i++)
+			{
+				d[i] = sqrt(max(s[i], 0.0));
+			}
 		}
 	}
 }

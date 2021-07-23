@@ -90,19 +90,19 @@ namespace cp
 			switch (mode)
 			{
 			case TIME_NSEC:
-				unit = "nsec";
+				unit = "nsec"; break;
 			case TIME_MICROSEC:
-				unit = "microsec";
+				unit = "microsec"; break;
 			case TIME_MSEC:
-				unit = "msec";
+				unit = "msec"; break;
 			case TIME_SEC:
-				unit = "sec";
+				unit = "sec"; break;
 			case TIME_MIN:
-				unit = "minute";
+				unit = "minute"; break;
 			case TIME_HOUR:
-				unit = "hour";
+				unit = "hour"; break;
 			case TIME_DAY:
-				unit = "day";
+				unit = "day"; break;
 			default:
 				unit = "";
 				cout << message << ": error" << endl; break;

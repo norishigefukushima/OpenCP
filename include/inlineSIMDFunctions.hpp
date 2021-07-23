@@ -168,6 +168,330 @@ inline void _mm_transposel_epi8(__m128i& s0, __m128i& s1, __m128i& s2, __m128i& 
           __out0##__LINE__, __out1##__LINE__, __out2##__LINE__, __out3##__LINE__, __out4##__LINE__, __out5##__LINE__, __out6##__LINE__, __out7##__LINE__, \
           __tmp0##__LINE__, __tmp1##__LINE__, __tmp2##__LINE__, __tmp3##__LINE__, __tmp4##__LINE__, __tmp5##__LINE__, __tmp6##__LINE__, __tmp7##__LINE__, \
           __tmpp0##__LINE__, __tmpp1##__LINE__, __tmpp2##__LINE__, __tmpp3##__LINE__, __tmpp4##__LINE__, __tmpp5##__LINE__, __tmpp6##__LINE__, __tmpp7##__LINE__)
+
+#define _MM256_TRANSPOSE8INPLACE_PS(in_row0, in_row1, in_row2, in_row3, in_row4, in_row5, in_row6, in_row7){	\
+	__m256 tmp0, tmp1,tmp2,tmp3,tmp4,tmp5,tmp6,tmp7;														\
+																											\
+	tmp0 = _mm256_unpackhi_ps((in_row0), (in_row2));													\
+	tmp1 = _mm256_unpackhi_ps((in_row1), (in_row3));													\
+	tmp2 = _mm256_unpacklo_ps((in_row0), (in_row2));													\
+	tmp3 = _mm256_unpacklo_ps((in_row1), (in_row3));													\
+	tmp4 = _mm256_unpackhi_ps((in_row4), (in_row6));													\
+	tmp5 = _mm256_unpackhi_ps((in_row5), (in_row7));													\
+	tmp6 = _mm256_unpacklo_ps((in_row4), (in_row6));													\
+	tmp7 = _mm256_unpacklo_ps((in_row5), (in_row7));													\
+																											\
+	in_row0 = _mm256_unpackhi_ps(tmp0, tmp1);															\
+	in_row1 = _mm256_unpacklo_ps(tmp0, tmp1);															\
+	in_row2 = _mm256_unpackhi_ps(tmp2, tmp3);															\
+	in_row3 = _mm256_unpacklo_ps(tmp2, tmp3);															\
+	in_row4 = _mm256_unpackhi_ps(tmp4, tmp5);															\
+	in_row5 = _mm256_unpacklo_ps(tmp4, tmp5);															\
+	in_row6 = _mm256_unpackhi_ps(tmp6, tmp7);															\
+	in_row7 = _mm256_unpacklo_ps(tmp6, tmp7);															\
+																											\
+	(tmp7) = _mm256_permute2f128_ps(in_row0, in_row4, 0x31);													\
+	(tmp6) = _mm256_permute2f128_ps(in_row1, in_row5, 0x31);													\
+	(tmp5) = _mm256_permute2f128_ps(in_row2, in_row6, 0x31);													\
+	(tmp4) = _mm256_permute2f128_ps(in_row3, in_row7, 0x31);													\
+	(tmp3) = _mm256_permute2f128_ps(in_row0, in_row4, 0x20);													\
+	(tmp2) = _mm256_permute2f128_ps(in_row1, in_row5, 0x20);													\
+	(tmp1) = _mm256_permute2f128_ps(in_row2, in_row6, 0x20);													\
+	(tmp0) = _mm256_permute2f128_ps(in_row3, in_row7, 0x20);													\
+    (in_row0) = (tmp0);													\
+    (in_row1) = (tmp1);													\
+    (in_row2) = (tmp2);													\
+    (in_row3) = (tmp3);													\
+    (in_row4) = (tmp4);													\
+    (in_row5) = (tmp5);													\
+    (in_row6) = (tmp6);													\
+    (in_row7) = (tmp7);													\
+}
+
+inline void _mm256_transpose8_ps(__m256* in_row, __m256* out_row)
+{
+	_MM256_TRANSPOSE8_PS(in_row[0], in_row[1], in_row[2], in_row[3], in_row[4], in_row[5], in_row[6], in_row[7]
+		, out_row[0], out_row[1], out_row[2], out_row[3], out_row[4], out_row[5], out_row[6], out_row[7]);
+}
+
+inline void _mm256_transpose8_ps(__m256* in_row)
+{
+	//_MM256_TRANSPOSE8_PS(in_row[0], in_row[1], in_row[2], in_row[3], in_row[4], in_row[5], in_row[6], in_row[7]
+	//	, in_row[0], in_row[1], in_row[2], in_row[3], in_row[4], in_row[5], in_row[6], in_row[7]);
+	_MM256_TRANSPOSE8INPLACE_PS(in_row[0], in_row[1], in_row[2], in_row[3], in_row[4], in_row[5], in_row[6], in_row[7]);
+}
+
+#ifdef CV_AVX_512
+inline void _mm512_transpose16_ps(__m512* in_row)
+{
+	__m512i t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, ta, tb, tc, td, te, tf;
+	__m512i* r0, * r1, * r2, * r3, * r4, * r5, * r6, * r7, * r8, * r9, * ra, * rb, * rc, * rd, * re, * rf;
+
+	r0 = (__m512i*)&in_row[0];
+	r1 = (__m512i*)&in_row[1];
+	r2 = (__m512i*)&in_row[2];
+	r3 = (__m512i*)&in_row[3];
+	r4 = (__m512i*)&in_row[4];
+	r5 = (__m512i*)&in_row[5];
+	r6 = (__m512i*)&in_row[6];
+	r7 = (__m512i*)&in_row[7];
+	r8 = (__m512i*)&in_row[8];
+	r9 = (__m512i*)&in_row[9];
+	ra = (__m512i*)&in_row[10];
+	rb = (__m512i*)&in_row[11];
+	rc = (__m512i*)&in_row[12];
+	rd = (__m512i*)&in_row[13];
+	re = (__m512i*)&in_row[14];
+	rf = (__m512i*)&in_row[15];
+
+	t0 = _mm512_unpacklo_epi32(*r0, *r1); //   0  16   1  17   4  20   5  21   8  24   9  25  12  28  13  29 
+	t1 = _mm512_unpackhi_epi32(*r0, *r1); //   2  18   3  19   6  22   7  23  10  26  11  27  14  30  15  31
+	t2 = _mm512_unpacklo_epi32(*r2, *r3); //  32  48  33  49 ...
+	t3 = _mm512_unpackhi_epi32(*r2, *r3); //  34  50  35  51 ...
+	t4 = _mm512_unpacklo_epi32(*r4, *r5); //  64  80  65  81 ...  
+	t5 = _mm512_unpackhi_epi32(*r4, *r5); //  66  82  67  83 ...
+	t6 = _mm512_unpacklo_epi32(*r6, *r7); //  96 112  97 113 ...
+	t7 = _mm512_unpackhi_epi32(*r6, *r7); //  98 114  99 115 ...
+	t8 = _mm512_unpacklo_epi32(*r8, *r9); // 128 ...
+	t9 = _mm512_unpackhi_epi32(*r8, *r9); // 130 ...
+	ta = _mm512_unpacklo_epi32(*ra, *rb); // 160 ...
+	tb = _mm512_unpackhi_epi32(*ra, *rb); // 162 ...
+	tc = _mm512_unpacklo_epi32(*rc, *rd); // 196 ...
+	td = _mm512_unpackhi_epi32(*rc, *rd); // 198 ...
+	te = _mm512_unpacklo_epi32(*re, *rf); // 228 ...
+	tf = _mm512_unpackhi_epi32(*re, *rf); // 230 ...
+
+	*r0 = _mm512_unpacklo_epi64(t0, t2); //   0  16  32  48 ...
+	*r1 = _mm512_unpackhi_epi64(t0, t2); //   1  17  33  49 ...
+	*r2 = _mm512_unpacklo_epi64(t1, t3); //   2  18  34  49 ...
+	*r3 = _mm512_unpackhi_epi64(t1, t3); //   3  19  35  51 ...
+	*r4 = _mm512_unpacklo_epi64(t4, t6); //  64  80  96 112 ...  
+	*r5 = _mm512_unpackhi_epi64(t4, t6); //  65  81  97 114 ...
+	*r6 = _mm512_unpacklo_epi64(t5, t7); //  66  82  98 113 ...
+	*r7 = _mm512_unpackhi_epi64(t5, t7); //  67  83  99 115 ...
+	*r8 = _mm512_unpacklo_epi64(t8, ta); // 128 144 160 176 ...  
+	*r9 = _mm512_unpackhi_epi64(t8, ta); // 129 145 161 178 ...
+	*ra = _mm512_unpacklo_epi64(t9, tb); // 130 146 162 177 ... 
+	*rb = _mm512_unpackhi_epi64(t9, tb); // 131 147 163 179 ...
+	*rc = _mm512_unpacklo_epi64(tc, te); // 192 208 228 240 ... 
+	*rd = _mm512_unpackhi_epi64(tc, te); // 193 209 229 241 ...
+	*re = _mm512_unpacklo_epi64(td, tf); // 194 210 230 242 ...
+	*rf = _mm512_unpackhi_epi64(td, tf); // 195 211 231 243 ...
+
+	//_mm512_shuffle_f32x4
+	t0 = _mm512_shuffle_i32x4(*r0, *r4, 0x88); //   0  16  32  48   8  24  40  56  64  80  96  112 ...
+	t1 = _mm512_shuffle_i32x4(*r1, *r5, 0x88); //   1  17  33  49 ...
+	t2 = _mm512_shuffle_i32x4(*r2, *r6, 0x88); //   2  18  34  50 ...
+	t3 = _mm512_shuffle_i32x4(*r3, *r7, 0x88); //   3  19  35  51 ...
+	t4 = _mm512_shuffle_i32x4(*r0, *r4, 0xdd); //   4  20  36  52 ...
+	t5 = _mm512_shuffle_i32x4(*r1, *r5, 0xdd); //   5  21  37  53 ...
+	t6 = _mm512_shuffle_i32x4(*r2, *r6, 0xdd); //   6  22  38  54 ...
+	t7 = _mm512_shuffle_i32x4(*r3, *r7, 0xdd); //   7  23  39  55 ...
+	t8 = _mm512_shuffle_i32x4(*r8, *rc, 0x88); // 128 144 160 176 ...
+	t9 = _mm512_shuffle_i32x4(*r9, *rd, 0x88); // 129 145 161 177 ...
+	ta = _mm512_shuffle_i32x4(*ra, *re, 0x88); // 130 146 162 178 ...
+	tb = _mm512_shuffle_i32x4(*rb, *rf, 0x88); // 131 147 163 179 ...
+	tc = _mm512_shuffle_i32x4(*r8, *rc, 0xdd); // 132 148 164 180 ...
+	td = _mm512_shuffle_i32x4(*r9, *rd, 0xdd); // 133 149 165 181 ...
+	te = _mm512_shuffle_i32x4(*ra, *re, 0xdd); // 134 150 166 182 ...
+	tf = _mm512_shuffle_i32x4(*rb, *rf, 0xdd); // 135 151 167 183 ...
+
+	*r0 = _mm512_shuffle_i32x4(t0, t8, 0x88); //   0  16  32  48  64  80  96 112 ... 240
+	*r1 = _mm512_shuffle_i32x4(t1, t9, 0x88); //   1  17  33  49  66  81  97 113 ... 241
+	*r2 = _mm512_shuffle_i32x4(t2, ta, 0x88); //   2  18  34  50  67  82  98 114 ... 242
+	*r3 = _mm512_shuffle_i32x4(t3, tb, 0x88); //   3  19  35  51  68  83  99 115 ... 243
+	*r4 = _mm512_shuffle_i32x4(t4, tc, 0x88); //   4 ...
+	*r5 = _mm512_shuffle_i32x4(t5, td, 0x88); //   5 ...
+	*r6 = _mm512_shuffle_i32x4(t6, te, 0x88); //   6 ...
+	*r7 = _mm512_shuffle_i32x4(t7, tf, 0x88); //   7 ...
+	*r8 = _mm512_shuffle_i32x4(t0, t8, 0xdd); //   8 ...
+	*r9 = _mm512_shuffle_i32x4(t1, t9, 0xdd); //   9 ...
+	*ra = _mm512_shuffle_i32x4(t2, ta, 0xdd); //  10 ...
+	*rb = _mm512_shuffle_i32x4(t3, tb, 0xdd); //  11 ...
+	*rc = _mm512_shuffle_i32x4(t4, tc, 0xdd); //  12 ...
+	*rd = _mm512_shuffle_i32x4(t5, td, 0xdd); //  13 ...
+	*re = _mm512_shuffle_i32x4(t6, te, 0xdd); //  14 ...
+	*rf = _mm512_shuffle_i32x4(t7, tf, 0xdd); //  15  31  47  63  79  96 111 127 ... 255
+}
+#endif
+
+void show_patch(__m256* patch);
+
+
+
+inline void _mm256_storepatch_ph(short* base, __m256* patch, const int index)
+{
+	_mm_store_si128((__m128i*)(base + 0 * index), _mm256_cvtps_ph(patch[0], 0));
+	_mm_store_si128((__m128i*)(base + 1 * index), _mm256_cvtps_ph(patch[1], 0));
+	_mm_store_si128((__m128i*)(base + 2 * index), _mm256_cvtps_ph(patch[2], 0));
+	_mm_store_si128((__m128i*)(base + 3 * index), _mm256_cvtps_ph(patch[3], 0));
+	_mm_store_si128((__m128i*)(base + 4 * index), _mm256_cvtps_ph(patch[4], 0));
+	_mm_store_si128((__m128i*)(base + 5 * index), _mm256_cvtps_ph(patch[5], 0));
+	_mm_store_si128((__m128i*)(base + 6 * index), _mm256_cvtps_ph(patch[6], 0));
+	_mm_store_si128((__m128i*)(base + 7 * index), _mm256_cvtps_ph(patch[7], 0));
+}
+
+inline void _mm256_storeupatch_ph(short* base, __m256* patch, const int index)
+{
+	_mm_storeu_si128((__m128i*)(base + 0 * index), _mm256_cvtps_ph(patch[0], 0));
+	_mm_storeu_si128((__m128i*)(base + 1 * index), _mm256_cvtps_ph(patch[1], 0));
+	_mm_storeu_si128((__m128i*)(base + 2 * index), _mm256_cvtps_ph(patch[2], 0));
+	_mm_storeu_si128((__m128i*)(base + 3 * index), _mm256_cvtps_ph(patch[3], 0));
+	_mm_storeu_si128((__m128i*)(base + 4 * index), _mm256_cvtps_ph(patch[4], 0));
+	_mm_storeu_si128((__m128i*)(base + 5 * index), _mm256_cvtps_ph(patch[5], 0));
+	_mm_storeu_si128((__m128i*)(base + 6 * index), _mm256_cvtps_ph(patch[6], 0));
+	_mm_storeu_si128((__m128i*)(base + 7 * index), _mm256_cvtps_ph(patch[7], 0));
+}
+
+inline void _mm256_storepatch_ps(float* base, __m256* patch, const int index)
+{
+	_mm256_store_ps(base, patch[0]);
+	_mm256_store_ps(base + index, patch[1]);
+	_mm256_store_ps(base + 2 * index, patch[2]);
+	_mm256_store_ps(base + 3 * index, patch[3]);
+	_mm256_store_ps(base + 4 * index, patch[4]);
+	_mm256_store_ps(base + 5 * index, patch[5]);
+	_mm256_store_ps(base + 6 * index, patch[6]);
+	_mm256_store_ps(base + 7 * index, patch[7]);
+}
+
+inline void _mm256_storeupatch_ps(float* base, __m256* patch, const int index)
+{
+	_mm256_storeu_ps(base, patch[0]);
+	_mm256_storeu_ps(base + index, patch[1]);
+	_mm256_storeu_ps(base + 2 * index, patch[2]);
+	_mm256_storeu_ps(base + 3 * index, patch[3]);
+	_mm256_storeu_ps(base + 4 * index, patch[4]);
+	_mm256_storeu_ps(base + 5 * index, patch[5]);
+	_mm256_storeu_ps(base + 6 * index, patch[6]);
+	_mm256_storeu_ps(base + 7 * index, patch[7]);
+}
+
+#ifdef CV_AVX_512
+inline void _mm512_storeupatch_ps(float* base, __m512* patch, const int index)
+{
+	_mm512_storeu_ps(base, patch[0]);
+	_mm512_storeu_ps(base + index, patch[1]);
+	_mm512_storeu_ps(base + 2 * index, patch[2]);
+	_mm512_storeu_ps(base + 3 * index, patch[3]);
+	_mm512_storeu_ps(base + 4 * index, patch[4]);
+	_mm512_storeu_ps(base + 5 * index, patch[5]);
+	_mm512_storeu_ps(base + 6 * index, patch[6]);
+	_mm512_storeu_ps(base + 7 * index, patch[7]);
+	_mm512_storeu_ps(base + 8 * index, patch[8]);
+	_mm512_storeu_ps(base + 9 * index, patch[9]);
+	_mm512_storeu_ps(base + 10 * index, patch[10]);
+	_mm512_storeu_ps(base + 11 * index, patch[11]);
+	_mm512_storeu_ps(base + 12 * index, patch[12]);
+	_mm512_storeu_ps(base + 13 * index, patch[13]);
+	_mm512_storeu_ps(base + 14 * index, patch[14]);
+	_mm512_storeu_ps(base + 15 * index, patch[15]);
+}
+#endif
+inline void _mm256_addstorepatch_ps(float* base, __m256* patch, const int index)
+{
+	_mm256_store_ps(base, _mm256_add_ps(*(__m256*) base, patch[0]));
+	_mm256_store_ps(base + index, _mm256_add_ps(*(__m256*)(base + index), patch[1]));
+	_mm256_store_ps(base + 2 * index, _mm256_add_ps(*(__m256*)(base + 2 * index), patch[2]));
+	_mm256_store_ps(base + 3 * index, _mm256_add_ps(*(__m256*)(base + 3 * index), patch[3]));
+	_mm256_store_ps(base + 4 * index, _mm256_add_ps(*(__m256*)(base + 4 * index), patch[4]));
+	_mm256_store_ps(base + 5 * index, _mm256_add_ps(*(__m256*)(base + 5 * index), patch[5]));
+	_mm256_store_ps(base + 6 * index, _mm256_add_ps(*(__m256*)(base + 6 * index), patch[6]));
+	_mm256_store_ps(base + 7 * index, _mm256_add_ps(*(__m256*)(base + 7 * index), patch[7]));
+}
+
+inline void show_patch(__m256* patch)
+{
+	std::cout << std::fixed;
+	for (int i = 0; i < 8; ++i)
+	{
+		for (int j = 0; j < 8; ++j)
+		{
+			std::cout << "," << std::setw(10) << std::setprecision(4) << *((float*)&patch[i] + j);
+		}
+		std::cout << std::endl;
+	}
+	std::cout << std::endl;
+}
+
+#define _MM256_TRANSPOSE4INPLACE_PD(inout_row0, inout_row1, inout_row2, inout_row3){		\
+	__m256d tmp0, tmp1, tmp2, tmp3;									\
+																	\
+	tmp0 = _mm256_unpackhi_pd((inout_row0), (inout_row1));				\
+	tmp1 = _mm256_unpackhi_pd((inout_row2), (inout_row3));				\
+	tmp2 = _mm256_unpacklo_pd((inout_row0), (inout_row1));				\
+	tmp3 = _mm256_unpacklo_pd((inout_row2), (inout_row3));				\
+																	\
+	(inout_row3) = _mm256_permute2f128_pd(tmp0, tmp1,0x31);			\
+	(inout_row2) = _mm256_permute2f128_pd(tmp2, tmp3,0x31);			\
+	(inout_row1) = _mm256_permute2f128_pd(tmp0, tmp1,0x20);			\
+	(inout_row0) = _mm256_permute2f128_pd(tmp2, tmp3,0x20);			\
+}
+
+//for 64F
+inline void _mm256_transpose4_pd(__m256d* in_row, __m256d* out_row)
+{
+	_MM256_TRANSPOSE4_PD(in_row[0], in_row[1], in_row[2], in_row[3], out_row[0], out_row[1], out_row[2], out_row[3]);
+}
+
+inline void _mm256_transpose4_pd(__m256d* inout_row)
+{
+	_MM256_TRANSPOSE4INPLACE_PD(inout_row[0], inout_row[1], inout_row[2], inout_row[3]);
+}
+
+inline void _mm256_storepatch_pd(double* base, __m256d* patch, const int index)
+{
+	_mm256_store_pd(base + 0 * index, patch[0]);
+	_mm256_store_pd(base + 1 * index, patch[1]);
+	_mm256_store_pd(base + 2 * index, patch[2]);
+	_mm256_store_pd(base + 3 * index, patch[3]);
+}
+
+inline void _mm256_storeupatch_pd(double* base, __m256d* patch, const int index)
+{
+	_mm256_store_pd(base + 0 * index, patch[0]);
+	_mm256_store_pd(base + 1 * index, patch[1]);
+	_mm256_store_pd(base + 2 * index, patch[2]);
+	_mm256_store_pd(base + 3 * index, patch[3]);
+}
+
+inline void _mm_storepatch_pdps(float* base, __m256d* patch, const int index)
+{
+	*(__m128*) base = _mm256_cvtpd_ps(patch[0]);
+	*(__m128*)(base + index) = _mm256_cvtpd_ps(patch[1]);
+	*(__m128*)(base + 2 * index) = _mm256_cvtpd_ps(patch[2]);
+	*(__m128*)(base + 3 * index) = _mm256_cvtpd_ps(patch[3]);
+}
+
+inline void _mm_storepatch_ps(float* base, __m128* patch, const int index)
+{
+	_mm_storeu_ps(base + 0 * index, patch[0]);
+	_mm_storeu_ps(base + 1 * index, patch[1]);
+	_mm_storeu_ps(base + 2 * index, patch[2]);
+	_mm_storeu_ps(base + 3 * index, patch[3]);
+}
+
+inline void _mm256_addstorepatch_pd(double* base, __m256d* patch, const int index)
+{
+	*(__m256d*)base = _mm256_add_pd(*(__m256d*)base, patch[0]);
+	*(__m256d*)(base + index) = _mm256_add_pd(*(__m256d*)(base + index), patch[1]);
+	*(__m256d*)(base + 2 * index) = _mm256_add_pd(*(__m256d*)(base + 2 * index), patch[2]);
+	*(__m256d*)(base + 3 * index) = _mm256_add_pd(*(__m256d*)(base + 3 * index), patch[3]);
+}
+
+inline void show_patch(__m256d* patch)
+{
+	std::cout << std::fixed;
+	for (int i = 0; i < 4; ++i)
+	{
+		for (int j = 0; j < 4; ++j)
+		{
+			std::cout << "," << std::setw(10) << std::setprecision(4) << *((double*)&patch[i] + j);
+		}
+		std::cout << std::endl;
+	}
+	std::cout << std::endl;
+}
 #pragma endregion
 
 #pragma region convert
@@ -955,6 +1279,12 @@ inline __m256 _mm256_abs_ps(__m256 src)
 	return _mm256_and_ps(src, _mm256_castsi256_ps(_mm256_set1_epi32(0x7fffffff)));
 }
 
+inline __m256 _mm256_sign_ps(__m256 src)
+{
+	__m256 mask = _mm256_cmp_ps(src, _mm256_setzero_ps(), _CMP_GE_OS);
+	return _mm256_blendv_ps(_mm256_set1_ps(-1.f), _mm256_set1_ps(1.f), mask);
+}
+
 inline float _mm_reduceadd_ps(__m128 src)
 {
 	src = _mm_hadd_ps(src, src);
@@ -1074,10 +1404,11 @@ inline void print(__m128d src)
 	//src.m128d_f64[0], src.m128d_f64[1]);
 }
 
+#define print_m256d(src) printf_s("%s: %6.2f %6.2f | %6.2f %6.2f\n",#src,((double*)&src)[0], ((double*)&src)[1], ((double*)&src)[2], ((double*)&src)[3]);
+
 inline void print(__m256d src)
 {
-	printf_s("%5.3f %5.3f %5.3f %5.3f\n",
-		((double*)&src)[0], ((double*)&src)[1], ((double*)&src)[2], ((double*)&src)[3]);
+	printf_s("%6.2f %6.2f %6.2f %6.2f\n",((double*)&src)[0], ((double*)&src)[1], ((double*)&src)[2], ((double*)&src)[3]);
 }
 
 inline void print(__m128 src)
@@ -1086,9 +1417,13 @@ inline void print(__m128 src)
 		((float*)&src)[0], ((float*)&src)[1], ((float*)&src)[2], ((float*)&src)[3]);
 }
 
+
+
+#define print_m256(src) printf_s("%s: %6.2f %6.2f %6.2f %6.2f | %6.2f %6.2f %6.2f %6.2f\n",#src,((float*)&src)[0], ((float*)&src)[1], ((float*)&src)[2], ((float*)&src)[3], ((float*)&src)[4], ((float*)&src)[5], ((float*)&src)[6], ((float*)&src)[7]);
+
 inline void print(__m256 src)
 {
-	printf_s("%5.3f %5.3f %5.3f %5.3f %5.3f %5.3f %5.3f %5.3f\n",
+	printf_s("%6.2f %6.2f %6.2f %6.2f %6.2f %6.2f %6.2f %6.2f\n",
 		((float*)&src)[0], ((float*)&src)[1], ((float*)&src)[2], ((float*)&src)[3], ((float*)&src)[4], ((float*)&src)[5], ((float*)&src)[6], ((float*)&src)[7]);
 }
 
@@ -1195,6 +1530,16 @@ inline void print_uint(__m256i src)
 	for (int i = 0; i < 8; i++)
 	{
 		printf_s("%3d ", data[i]);
+	}
+	printf_s("\n");
+}
+
+inline void print_long(__m256i src)
+{
+	long long* data = (long long*)&src;
+	for (int i = 0; i < 4; i++)
+	{
+		printf_s("%3lld ", data[i]);
 	}
 	printf_s("\n");
 }
@@ -1373,6 +1718,26 @@ inline void _mm256_stream_auto(uchar* dest, __m256 ms)
 inline void _mm256_stream_auto(float* dest, __m256 ms)
 {
 	_mm256_stream_ps(dest, ms);
+}
+
+inline void _mm256_maskstore_auto(float* dest, __m256i mask, __m256 ms)
+{
+	_mm256_maskstore_ps(dest, mask, ms);
+}
+
+inline void _mm256_maskstore_auto(double* dest, __m256i mask, __m256d ms)
+{
+	_mm256_maskstore_pd(dest, mask, ms);
+}
+
+inline void _mm256_maskstore_auto(uchar* dest, __m256i mask, __m256 ms)
+{		
+	uchar CV_DECL_ALIGNED(32) buffscalarstore[32];
+	_mm256_store_cvtps_epu8((__m128i*)buffscalarstore, ms);
+	for (int i = 0; i < 8; i++)
+	{
+		if(((int*)&mask)[i]==255) dest[i] = buffscalarstore[i];
+	}
 }
 
 inline void _mm256_storescalar_auto(uchar* dest, __m256 ms, const int numpixel)

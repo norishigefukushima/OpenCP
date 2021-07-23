@@ -97,6 +97,57 @@ namespace cp
 		}
 	}
 
+
+	static void addNoisePoissonMono_int(Mat& src, Mat& dest, double lambda)
+	{
+		Mat s;
+		src.convertTo(s, CV_32S);
+		Mat n(s.size(), CV_32S);
+		randn(n, 0, lambda);
+		add(s, n, dest, noArray(), src.depth());
+	}
+
+	static void addNoisePoissonMono_double(Mat& src, Mat& dest, const double lambda)
+	{
+		Mat s; src.convertTo(s, CV_64F);
+		Mat n(s.size(), CV_64F);
+		randn(n, 0, lambda);
+		add(s, n, dest, noArray(), src.depth());
+	}
+
+	static void addNoisePoissonMono(Mat& src, Mat& dest, const double lambda)
+	{
+		if (src.depth() == CV_32F || src.depth() == CV_64F)
+		{
+			addNoisePoissonMono_double(src, dest, lambda);
+		}
+		else
+		{
+			addNoisePoissonMono_int(src, dest, lambda);
+		}
+	}
+	void addNoisePoisson(InputArray src_, OutputArray dest_, const double lambda, const uint64 seed)
+	{
+		CV_Assert(!src_.empty());
+		dest_.create(src_.size(), src_.type());
+		Mat src = src_.getMat();
+		Mat dest = dest_.getMat();
+
+		if (seed != 0) cv::theRNG().state = seed;
+		if (src.channels() == 1)
+		{
+			addNoiseMono(src, dest, lambda);
+			return;
+		}
+		else
+		{
+			Mat s = src.reshape(1);
+			dest = dest.reshape(1);
+			addNoiseMono(s, dest, lambda);
+			dest = dest.reshape(3);
+		}
+	}
+	
 	void addJPEGNoise(InputArray src, OutputArray dest, const int quality)
 	{
 		std::vector<uchar> buff;

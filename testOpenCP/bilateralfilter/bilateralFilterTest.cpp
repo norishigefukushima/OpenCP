@@ -167,7 +167,7 @@ void guiSeparableBilateralFilterTest(Mat& src)
 			setTrackbarPos("a", wname, a);
 		}
 		ci(format("%f dB", PSNR(ref, dest)));
-		ci(format("%f dB", SSIM(ref, dest, ssims)));
+		//ci(format("%f dB", SSIM(ref, dest, ssims)));
 		//		ci(format("%f %f",getTV(dest),getTV(ref)));
 		ci.show();
 

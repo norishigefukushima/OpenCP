@@ -27,4 +27,11 @@ namespace cp
 
 	CP_EXPORT double average(const cv::Mat& src, const int left = 0, const int right = 0, const int top = 0, const int bottom = 0, const bool isNormalize = true);
 	CP_EXPORT void average_variance(const cv::Mat& src, double& ave, double& var, const int left = 0, const int right = 0, const int top = 0, const int bottom = 0, const bool isNormalize = true);
+
+	//sqrt(max(src, 0))
+	CP_EXPORT void sqrtZeroClip(cv::InputArray src, cv::OutputArray dest);
+	//sign(src)*pow(abs(src),v)
+	CP_EXPORT void powsign(cv::InputArray src, const float v, cv::OutputArray dest);
+	//pow(max(src,0),v)
+	CP_EXPORT void powZeroClip(cv::InputArray src, const float v, cv::OutputArray dest);
 }
