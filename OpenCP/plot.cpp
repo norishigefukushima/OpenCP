@@ -730,6 +730,24 @@ namespace cp
 		pinfo[plotIndex].data.push_back(Point2d(x, y));
 	}
 
+	void Plot::push_back(std::vector<float>& x, std::vector<float>& y, int plotIndex)
+	{
+		data_max = max(data_max, plotIndex + 1);
+		for (int i = 0; i < (int)x.size(); i++)
+		{
+			push_back(x[i], y[i], plotIndex);
+		}
+	}
+
+	void Plot::push_back(std::vector<double>& x, std::vector<double>& y, int plotIndex)
+	{
+		data_max = max(data_max, plotIndex + 1);
+		for (int i = 0; i < (int)x.size(); i++)
+		{
+			push_back(x[i], y[i], plotIndex);
+		}
+	}
+
 	void Plot::push_back(vector<cv::Point> point, int plotIndex)
 	{
 		data_max = max(data_max, plotIndex + 1);
