@@ -1457,6 +1457,9 @@ inline void print_uchar(__m128i src)
 	printf_s("\n");
 }
 
+#define print_m128i_uchar(src) printf_s("%s: %3d %3d %3d %3d;%3d %3d %3d %3d;%3d %3d %3d %3d;%3d %3d %3d %3d\n",#src,((uchar*)&src)[0], ((uchar*)&src)[1], ((uchar*)&src)[2], ((uchar*)&src)[3], ((uchar*)&src)[4], ((uchar*)&src)[5], ((uchar*)&src)[6], ((uchar*)&src)[7],((uchar*)&src)[8], ((uchar*)&src)[9], ((uchar*)&src)[10], ((uchar*)&src)[11], ((uchar*)&src)[12], ((uchar*)&src)[13], ((uchar*)&src)[14], ((uchar*)&src)[15]);
+#define print_m256i_uchar(src) printf_s("%s: %3d %3d %3d %3d;%3d %3d %3d %3d;%3d %3d %3d %3d;%3d %3d %3d %3d|%3d %3d %3d %3d;%3d %3d %3d %3d;%3d %3d %3d %3d;%3d %3d %3d %3d\n",#src,((uchar*)&src)[0], ((uchar*)&src)[1], ((uchar*)&src)[2], ((uchar*)&src)[3], ((uchar*)&src)[4], ((uchar*)&src)[5], ((uchar*)&src)[6], ((uchar*)&src)[7],((uchar*)&src)[8], ((uchar*)&src)[9], ((uchar*)&src)[10], ((uchar*)&src)[11], ((uchar*)&src)[12], ((uchar*)&src)[13], ((uchar*)&src)[14], ((uchar*)&src)[15],((uchar*)&src)[16], ((uchar*)&src)[17], ((uchar*)&src)[18], ((uchar*)&src)[19], ((uchar*)&src)[20], ((uchar*)&src)[21], ((uchar*)&src)[22], ((uchar*)&src)[23],((uchar*)&src)[24], ((uchar*)&src)[25], ((uchar*)&src)[26], ((uchar*)&src)[27], ((uchar*)&src)[28], ((uchar*)&src)[29], ((uchar*)&src)[30], ((uchar*)&src)[31]);
+
 #define print_uchar(src) std::cout << #src << ": ";\
 for (int i = 0; i < 32; i++){if(i%8==0)printf_s("|%3d ", ((uchar*)&src)[i]);else printf_s("%3d ", ((uchar*)&src)[i]);}printf_s("|\n");
 
@@ -1470,6 +1473,8 @@ inline void print_short(__m128i src)
 	}
 	printf_s("\n");
 }
+
+#define print_m256i_short(src) printf_s("%s: %3d %3d %3d %3d;%3d %3d %3d %3d|%3d %3d %3d %3d;%3d %3d %3d %3d\n",#src,((short*)&src)[0], ((short*)&src)[1], ((short*)&src)[2], ((short*)&src)[3], ((short*)&src)[4], ((short*)&src)[5], ((short*)&src)[6], ((short*)&src)[7],((short*)&src)[8], ((short*)&src)[9], ((short*)&src)[10], ((short*)&src)[11], ((short*)&src)[12], ((short*)&src)[13], ((short*)&src)[14], ((short*)&src)[15]);
 
 #define print_short(src) std::cout << #src << ": ";\
 for (int i = 0; i < 16; i++){if(i%8==0)printf_s("|%4d ", ((short*)&src)[i]);else printf_s("%4d ", ((short*)&src)[i]);}printf_s("|\n");
@@ -1493,6 +1498,8 @@ inline void print_ushort(__m256i src)
 	}
 	printf_s("\n");
 }
+
+#define print_m256i_int(src) printf_s("%s: %3d %3d %3d %3d | %3d %3d %3d %3d\n",#src,((int*)&src)[0], ((int*)&src)[1], ((int*)&src)[2], ((int*)&src)[3], ((int*)&src)[4], ((int*)&src)[5], ((int*)&src)[6], ((int*)&src)[7]);
 
 inline void print_int(__m128i src)
 {
@@ -1878,6 +1885,13 @@ inline void _mm256_i32scaterscalar_auto_color(float* dest, __m256i vindex, __m25
 inline __m256 _mm256_set_step_ps(float v, float step = 1.f)
 {
 	return _mm256_setr_ps(v, v + step, v + 2.f * step, v + 3.f * step, v + 4.f * step, v + 5.f * step, v + 6.f * step, v + 7.f * step);
+}
+
+inline __m128i _mm_set_step_epi8(char v, char step = 1)
+{
+	return _mm_setr_epi8(
+		v + 0 * step, v + 1 * step, v + 2 * step, v + 3 * step, v + 4 * step, v + 5 * step, v + 6 * step, v + 7 * step,
+		v + 8 * step, v + 9 * step, v + 10 * step, v + 11 * step, v + 12 * step, v + 13 * step, v + 14 * step, v + 15 * step);
 }
 
 inline __m256i _mm256_set_step_epi8(char v, char step = 1)
