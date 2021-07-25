@@ -4,6 +4,7 @@
 #include "onelineCVFunctions.hpp"
 #include "inlineSIMDFunctions.hpp"
 #include "inlineMathFunctions.hpp"
+#include "debugcp.hpp"
 using namespace std;
 using namespace cv;
 
@@ -91,6 +92,60 @@ namespace cp
 				}
 			}
 		}
+	}
+
+
+	template <>
+	void upsampleNearest_<uchar>(Mat& src, Mat& dest, const int scale)
+	{
+		const int simdsize = src.cols / 16;
+		if (scale == 2)
+		{
+			for (int j = 0; j < src.rows; j++)
+			{
+				__m128i* s = (__m128i*)(src.ptr<uchar>(j));
+				__m128i* dl = (__m128i*)(dest.ptr<uchar>(2 * j));
+				__m128i* dh = (__m128i*)(dest.ptr<uchar>(2 * j + 1));
+
+				for (int i = simdsize; i != 0; i--)
+				{
+					const __m128i sv = _mm_load_si128(s); s++;
+					const __m128i dvl = _mm_unpacklo_epi8(sv, sv);
+					const __m128i dvh = _mm_unpackhi_epi8(sv, sv);
+					_mm_store_si128(dl, dvl);
+					_mm_store_si128(dl + 1, dvh);
+					_mm_storeu_si128(dh, dvl);
+					_mm_storeu_si128(dh + 1, dvh);
+					dl += 2;
+					dh += 2;					
+				}
+				//imshow("test", dest);
+				//waitKey();
+			}
+		}
+#if 0
+		else
+		{
+			for (int j = 0; j < src.rows; j++)
+			{
+				int n = j * scale;
+
+				uchar* s = src.ptr<uchar>(j);
+				for (int i = 0, m = 0; i < src.cols; i++, m += scale)
+				{
+					const uchar ltd = s[i];
+					for (int l = 0; l < scale; l++)
+					{
+						uchar* d = dest.ptr<uchar>(n + l);
+						for (int k = 0; k < scale; k++)
+						{
+							d[m + k] = ltd;
+						}
+					}
+				}
+			}
+		}	
+#endif
 	}
 
 	template <>
@@ -337,7 +392,7 @@ namespace cp
 		else if (src.depth() == CV_32S) nnUpsample_<int>(src, dest);
 		else if (src.depth() == CV_32F) nnUpsample_<float>(src, dest);
 		else if (src.depth() == CV_64F) nnUpsample_<double>(src, dest);
-	}
+}
 #endif
 #pragma endregion
 
@@ -1875,16 +1930,16 @@ namespace cp
 								v0 += weightmap_ptr[k] * neighbor_b[k];
 								v1 += weightmap_ptr[k] * neighbor_g[k];
 								v2 += weightmap_ptr[k] * neighbor_r[k];
-							}
+						}
 #endif
 							dest_ptr[3 * (x + m) + 0] = saturate_cast<uchar>(v0);
 							dest_ptr[3 * (x + m) + 1] = saturate_cast<uchar>(v1);
 							dest_ptr[3 * (x + m) + 2] = saturate_cast<uchar>(v2);
-						}
 					}
 				}
 			}
 		}
+	}
 	};
 
 	class UpsampleConv4x4_32F_ParallelBody : public cv::ParallelLoopBody
@@ -2018,16 +2073,16 @@ namespace cp
 									v0 += weightmap_ptr[k] * neighbor_b[k];
 									v1 += weightmap_ptr[k] * neighbor_g[k];
 									v2 += weightmap_ptr[k] * neighbor_r[k];
-								}
+							}
 #endif
 								dest_ptr[3 * (x + m) + 0] = v0;
 								dest_ptr[3 * (x + m) + 1] = v1;
 								dest_ptr[3 * (x + m) + 2] = v2;
-							}
 						}
 					}
 				}
 			}
+		}
 			else if (src->channels() == 1)
 			{
 				for (int y = 0; y < dest->rows; y += scale)
@@ -2090,16 +2145,16 @@ namespace cp
 								for (int k = 0; k < 16; k++)
 								{
 									v0 += weightmap_ptr[k] * neighbor_b[k];
-								}
+							}
 #endif
 								dest_ptr[x + m] = v0;
-							}
 						}
 					}
 				}
 			}
-		}
-	};
+	}
+			}
+		};
 
 	void upsampleCubic_parallel(const Mat& src, Mat& dest, const int scale, const double a)
 	{
@@ -2380,4 +2435,4 @@ namespace cp
 
 		b.convertTo(dest_, src_.depth());
 	}
-}
+		}

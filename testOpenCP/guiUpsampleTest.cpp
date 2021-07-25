@@ -84,7 +84,7 @@ public:
 
 			double minv, maxv;
 			minMaxLoc(dest, &minv, &maxv);
-			dest = (255.0 / maxv * dest)*((255. - base) / 255.0) + base;
+			dest = (255.0 / maxv * dest) * ((255. - base) / 255.0) + base;
 
 			//normalize(dest, dest, 255, 0, NORM_MINMAX);
 
@@ -92,7 +92,7 @@ public:
 			dest.convertTo(show, CV_8U);
 
 			applyColorMap(show, show, 2);
-			alphaBlend(srcc, show, a*0.01, show);
+			alphaBlend(srcc, show, a * 0.01, show);
 
 			imshow(wname, show);
 			key = waitKey(1);
@@ -105,7 +105,7 @@ class JointBilateralFilter_32f_Invoker : public cv::ParallelLoopBody
 {
 public:
 	JointBilateralFilter_32f_Invoker(Mat& _dest, const Mat& _temp, const Mat& _guide, int _radiusH, int _radiusV, int _maxk,
-		int* _space_ofs, int* _space_guide_ofs, float *_space_weight, float *_color_weight, Mat& mask_) :
+		int* _space_ofs, int* _space_guide_ofs, float* _space_weight, float* _color_weight, Mat& mask_) :
 		temp(&_temp), dest(&_dest), guide(&_guide), radiusH(_radiusH), radiusV(_radiusV),
 		maxk(_maxk), space_ofs_src(_space_ofs), space_ofs_jnt(_space_guide_ofs), space_weight(_space_weight), color_weight(_color_weight), mask(&mask_)
 	{
@@ -118,8 +118,8 @@ public:
 
 		for (i = range.start; i != range.end; i++)
 		{
-			const float* jptr = guide->ptr<float>(i + radiusV) + radiusH*cnj;
-			const float* sptr = temp->ptr<float>(i + radiusV) + radiusH*cn;
+			const float* jptr = guide->ptr<float>(i + radiusV) + radiusH * cnj;
+			const float* sptr = temp->ptr<float>(i + radiusV) + radiusH * cn;
 			float* dptr = dest->ptr<float>(i);
 			uchar* msk = mask->ptr<uchar>(i);
 
@@ -140,7 +140,7 @@ public:
 							//float val = jptr[j + space_ofs_src[k]];
 							float vals = sptr[j + space_ofs_src[k]];
 							//float w = space_weight[k] * color_weight[cvRound(std::abs(val - val0))];
-							sum += vals*w;
+							sum += vals * w;
 							wsum += w;
 						}
 						dptr[j] = sum / wsum;
@@ -165,15 +165,15 @@ public:
 
 							float w = space_weight[k]
 								* color_weight[cvRound(std::abs(bj - b0j) + std::abs(gj - g0j) + std::abs(rj - r0j))];
-							sum_b += b*w;
-							sum_g += g*w;
-							sum_r += r*w;
+							sum_b += b * w;
+							sum_g += g * w;
+							sum_r += r * w;
 							wsum += w;
 						}
 						wsum = 1.f / wsum;
-						dptr[j] = sum_b*wsum;
-						dptr[j + 1] = sum_g*wsum;
-						dptr[j + 2] = sum_r*wsum;
+						dptr[j] = sum_b * wsum;
+						dptr[j + 1] = sum_g * wsum;
+						dptr[j + 2] = sum_r * wsum;
 					}
 				}
 			}
@@ -192,7 +192,7 @@ public:
 							float b = sptr_k[0], g = sptr_k[1], r = sptr_k[2];
 							float w = space_weight[k] * color_weight[cvRound(std::abs(b - b0) +
 								std::abs(g - g0) + std::abs(r - r0))];
-							sum_b += val*w;
+							sum_b += val * w;
 							wsum += w;
 						}
 						dptr[l] = sum_b / wsum;
@@ -217,21 +217,21 @@ public:
 							wsum += w;
 						}
 						wsum = 1.f / wsum;
-						dptr[j] = sum_b*wsum;
-						dptr[j + 1] = sum_g*wsum;
-						dptr[j + 2] = sum_r*wsum;
+						dptr[j] = sum_b * wsum;
+						dptr[j + 1] = sum_g * wsum;
+						dptr[j + 2] = sum_r * wsum;
 					}
 				}
 			}
 		}
 	}
 private:
-	const Mat *temp;
-	const Mat *weightMap;
-	Mat *dest;
+	const Mat* temp;
+	const Mat* weightMap;
+	Mat* dest;
 	const Mat* guide;
-	int radiusH, radiusV, maxk, *space_ofs_src, *space_ofs_jnt;
-	float *space_weight, *color_weight;
+	int radiusH, radiusV, maxk, * space_ofs_src, * space_ofs_jnt;
+	float* space_weight, * color_weight;
 	Mat* mask;
 };
 
@@ -239,7 +239,7 @@ class JointBilateralFilter_8u_Invoker : public cv::ParallelLoopBody
 {
 public:
 	JointBilateralFilter_8u_Invoker(Mat& _dest, const Mat& _temp, const Mat& _guide, int _radiusH, int _radiusV, int _maxk,
-		int* _space_ofs, int* _space_guide_ofs, float *_space_weight, float *_color_weight, Mat& mask_) :
+		int* _space_ofs, int* _space_guide_ofs, float* _space_weight, float* _color_weight, Mat& mask_) :
 		temp(&_temp), dest(&_dest), guide(&_guide), radiusH(_radiusH), radiusV(_radiusV),
 		maxk(_maxk), space_ofs_src(_space_ofs), space_ofs_jnt(_space_guide_ofs), space_weight(_space_weight), color_weight(_color_weight), mask(&mask_)
 	{
@@ -252,8 +252,8 @@ public:
 
 		for (i = range.start; i != range.end; i++)
 		{
-			const uchar* jptr = guide->ptr<uchar>(i + radiusV) + radiusH*cnj;
-			const uchar* sptr = temp->ptr<uchar>(i + radiusV) + radiusH*cn;
+			const uchar* jptr = guide->ptr<uchar>(i + radiusV) + radiusH * cnj;
+			const uchar* sptr = temp->ptr<uchar>(i + radiusV) + radiusH * cn;
 			uchar* dptr = dest->ptr<uchar>(i);
 			uchar* msk = mask->ptr<uchar>(i);
 
@@ -271,7 +271,7 @@ public:
 							int val = jptr[j + space_ofs_src[k]];
 							//float w = space_weight[k] * color_weight[cvRound(abs(val - val0))];
 							float w = color_weight[cvRound(abs(val - val0))];
-							sum += w*sptr[j + space_ofs_src[k]];
+							sum += w * sptr[j + space_ofs_src[k]];
 							wsum += w;
 						}
 						dptr[j] = cvRound(sum / wsum);
@@ -296,15 +296,15 @@ public:
 
 							float w = space_weight[k]
 								* color_weight[cvRound(std::abs(bj - b0j) + std::abs(gj - g0j) + std::abs(rj - r0j))];
-							sum_b += b*w;
-							sum_g += g*w;
-							sum_r += r*w;
+							sum_b += b * w;
+							sum_g += g * w;
+							sum_r += r * w;
 							wsum += w;
 						}
 						wsum = 1.f / wsum;
-						dptr[j] = cvRound(sum_b*wsum);
-						dptr[j + 1] = cvRound(sum_g*wsum);
-						dptr[j + 2] = cvRound(sum_r*wsum);
+						dptr[j] = cvRound(sum_b * wsum);
+						dptr[j + 1] = cvRound(sum_g * wsum);
+						dptr[j + 2] = cvRound(sum_r * wsum);
 					}
 				}
 			}
@@ -321,7 +321,7 @@ public:
 							const uchar* sptr_k = jptr + j + space_ofs_jnt[k];
 							int b = sptr_k[0], g = sptr_k[1], r = sptr_k[2];
 							float w = space_weight[k] * color_weight[cvRound(std::abs(b - b0) + std::abs(g - g0) + std::abs(r - r0))];
-							sum_b += *(sptr + l + space_ofs_src[k])*w;
+							sum_b += *(sptr + l + space_ofs_src[k]) * w;
 							wsum += w;
 						}
 						dptr[l] = cvRound(sum_b / wsum);
@@ -346,21 +346,21 @@ public:
 							wsum += w;
 						}
 						wsum = 1.f / wsum;
-						dptr[j] = cvRound(sum_b*wsum);
-						dptr[j + 1] = cvRound(sum_g*wsum);
-						dptr[j + 2] = cvRound(sum_r*wsum);
+						dptr[j] = cvRound(sum_b * wsum);
+						dptr[j + 1] = cvRound(sum_g * wsum);
+						dptr[j + 2] = cvRound(sum_r * wsum);
 					}
 				}
 			}
 		}
 	}
 private:
-	const Mat *temp;
-	const Mat *weightMap;
-	Mat *dest;
+	const Mat* temp;
+	const Mat* weightMap;
+	Mat* dest;
 	const Mat* guide;
-	int radiusH, radiusV, maxk, *space_ofs_src, *space_ofs_jnt;
-	float *space_weight, *color_weight;
+	int radiusH, radiusV, maxk, * space_ofs_src, * space_ofs_jnt;
+	float* space_weight, * color_weight;
 	Mat* mask;
 };
 
@@ -413,11 +413,11 @@ void rapidDetailPreservingBase_(const Mat& src, const Mat& joint, Mat& dst, Size
 	{
 		for (int j = -radiusH; j <= radiusH; j++)
 		{
-			double r = std::sqrt((double)i*i + (double)j*j);
+			double r = std::sqrt((double)i * i + (double)j * j);
 			//if (r > max(radiusV, radiusH)) continue;
 			//space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-			space_ofs_jnt[maxk] = (int)(i*jim.cols*cnj + j*cnj);
-			space_ofs_src[maxk++] = (int)(i*sim.cols*cn + j*cn);
+			space_ofs_jnt[maxk] = (int)(i * jim.cols * cnj + j * cnj);
+			space_ofs_src[maxk++] = (int)(i * sim.cols * cn + j * cn);
 		}
 	}
 
@@ -464,10 +464,10 @@ void downSampleBox(Mat& src, Mat& dest, int step, int r)
 	downSample(b, dest, step);
 }
 
-void downSampleGauss(Mat& src, Mat& dest, int step, int r, double sigma=0.0)
+void downSampleGauss(Mat& src, Mat& dest, int step, int r, double sigma = 0.0)
 {
 	Mat b;
-	if(sigma ==0.0) sigma = r / 3.0;
+	if (sigma == 0.0) sigma = r / 3.0;
 	GaussianBlur(src, b, Size(2 * r + 1, 2 * r + 1), sigma, sigma, BORDER_REPLICATE);
 
 	downSample(b, dest, step);
@@ -487,7 +487,7 @@ void downSampleRDP(Mat& src, Mat& dest, int step, int r, double lambda)
 void downSampleBilateral(Mat& src, Mat& dest, int step, int r, double sigmaC, double sigmaS)
 {
 	Mat b;
-	Mat g; 
+	Mat g;
 	double sigma = r / 3.0;
 	GaussianBlur(src, g, Size(2 * r + 1, 2 * r + 1), sigma, sigma, BORDER_REPLICATE);
 	bilateralFilter(src, b, 2 * r + 1, sigmaC, sigmaS, BORDER_REPLICATE);
@@ -498,7 +498,7 @@ void downSampleArea(Mat& src, Mat& dest, int step)
 {
 	dest.create(Size(src.cols / step, src.rows / step), src.type());
 	uchar* d = dest.ptr<uchar>(0);
-	const float div = 1.f / (step*step);
+	const float div = 1.f / (step * step);
 	for (int j = 0; j < src.rows; j += step)
 	{
 		for (int i = 0; i < src.cols; i += step)
@@ -512,7 +512,7 @@ void downSampleArea(Mat& src, Mat& dest, int step)
 					v += sp[k];
 				}
 			}
-			*d++ = saturate_cast<uchar>(v*div + 0.5f);
+			*d++ = saturate_cast<uchar>(v * div + 0.5f);
 		}
 	}
 }
@@ -523,7 +523,7 @@ void hblend(Mat& src, Mat& dest, float a)
 {
 	Mat s;
 	warpShift(src, s, 1, 1, BORDER_REFLECT);
-	addWeighted(src, 1.0-a, s, a, 0.0, dest);
+	addWeighted(src, 1.0 - a, s, a, 0.0, dest);
 }
 
 
@@ -547,20 +547,19 @@ public:
 	{
 		src.copyTo(dest);
 		Mat joint = guide.clone();
-		GaussianBlur(guide, joint, Size(2 * r + 1, 2 * r + 1), sigma*0.1);
-		rapidDetailPreservingBase(src, joint, dest, Size(2 * r + 1, 2 * r + 1), lambda*0.01, BORDER_REPLICATE, Mat());
+		GaussianBlur(guide, joint, Size(2 * r + 1, 2 * r + 1), sigma * 0.1);
+		rapidDetailPreservingBase(src, joint, dest, Size(2 * r + 1, 2 * r + 1), lambda * 0.01, BORDER_REPLICATE, Mat());
 	}
 };
 
 void guiUpsampleTest(Mat& src_)
 {
-	
 	Mat src;
 	if (src_.channels() == 3)cvtColor(src_, src, COLOR_BGR2GRAY);
 	else src = src_;
 
-	VizKernelRDP rpd;
-	rpd.run(src);
+	//VizKernelRDP rpd;
+	//rpd.run(src);
 
 	//src_.copyTo(src);
 	Mat dest = src.clone();
@@ -571,7 +570,7 @@ void guiUpsampleTest(Mat& src_)
 	int a = 0; createTrackbar("a", wname, &a, 100);
 	int r = 1; createTrackbar("r", wname, &r, 10);
 
-	int sw = 6; createTrackbar("sw:up", wname, &sw, 10);
+	int sw = 4; createTrackbar("sw:up", wname, &sw, 10);
 	int swd = 8; createTrackbar("sw:down", wname, &swd, 10);
 	int acubic = 100; createTrackbar("acubic", wname, &acubic, 200);
 
@@ -581,17 +580,20 @@ void guiUpsampleTest(Mat& src_)
 
 	int lambda = 50; createTrackbar("lambda", wname, &lambda, 200);
 	int mx = 0; createTrackbar("x", wname, &mx, 10);
-	
+
 
 	int key = 0;
 	Mat show;
 	ConsoleImage ci;
 	string downsampleMethod;
 	string upsampleMethod;
+	Timer t("", TIME_MICROSEC, false);
+	Mat sub;
+	cp::UpdateCheck uc(sw);
 	while (key != 'q')
 	{
 		int s = (int)pow(2, r);
-		Mat sub;
+		
 		//resize(src, sub, Size(), 1.0 / s, 1.0 / s, INTER_AREA);
 
 		switch (swd)
@@ -632,12 +634,12 @@ void guiUpsampleTest(Mat& src_)
 			break;
 
 		case 7:
-			downSampleGauss(src, sub, s, br, bsigma/100.0);
+			downSampleGauss(src, sub, s, br, bsigma / 100.0);
 			downsampleMethod = "MyGauss";
 			break;
 
 		case 8:
-			downSampleRDP(src, sub, s, br, lambda*0.01);
+			downSampleRDP(src, sub, s, br, lambda * 0.01);
 			downsampleMethod = "RDP";
 			//downSampleBilateral(src, sub, s, br,csigma/10.0,bsigma / 100.0);
 			//downsampleMethod = "MyBilateral";
@@ -653,59 +655,61 @@ void guiUpsampleTest(Mat& src_)
 			downsampleMethod = "NN";
 			break;
 		}
-		Timer t;
+
+
+		dest.setTo(0);
+		t.start();
+		switch (sw)
 		{
-			dest.setTo(0);
-			t.start();
-			switch (sw)
-			{
-			case 0:
-				resize(sub, dest, Size(), s, s, INTER_NEAREST);
-				upsampleMethod = "NN";
-				break;
+		case 0:
+			resize(sub, dest, Size(), s, s, INTER_NEAREST);
+			upsampleMethod = "NN";
+			break;
 
-			case 1:
-				resize(sub, dest, Size(), s, s, INTER_LINEAR);
-				upsampleMethod = "Linear";
-				break;
+		case 1:
+			resize(sub, dest, Size(), s, s, INTER_LINEAR);
+			upsampleMethod = "Linear";
+			break;
 
-			case 2:
-				resize(sub, dest, Size(), s, s, INTER_CUBIC);
-				upsampleMethod = "Cubic";
-				break;
+		case 2:
+			resize(sub, dest, Size(), s, s, INTER_CUBIC);
+			upsampleMethod = "Cubic";
+			break;
 
-			case 3:
-				resize(sub, dest, Size(), s, s, INTER_LANCZOS4);
-				upsampleMethod = "LANCZOS";
-				break;
+		case 3:
+			resize(sub, dest, Size(), s, s, INTER_LANCZOS4);
+			upsampleMethod = "LANCZOS";
+			break;
 
-			case 4:
-				upsampleNearest(sub, dest, s);
-				upsampleMethod = "myNN";
-				break;
+		case 4:
+			upsampleNearest(sub, dest, s);
+			upsampleMethod = "myNN";
+			break;
 
-			case 5:
-				upsampleLinear(sub, dest, s);
-				upsampleMethod = "myLinear";
-				break;
+		case 5:
+			upsampleLinear(sub, dest, s);
+			upsampleMethod = "myLinear";
+			break;
 
-			case 6:
-				upsampleCubic(sub, dest, s , -acubic / 100.0);
-				upsampleMethod = "myCubic";
-				break;
+		case 6:
+			upsampleCubic(sub, dest, s, -acubic / 100.0);
+			upsampleMethod = "myCubic";
+			break;
 
-			default:
-				resize(sub, dest, Size(), s, s, INTER_NEAREST);
-				upsampleMethod = "NN";
-				break;
-			}
+		default:
+			resize(sub, dest, Size(), s, s, INTER_NEAREST);
+			upsampleMethod = "NN";
+			break;
 		}
-		hblend(dest, dest, mx*0.1f);
-		
+		t.getpushLapTime();
+
+
+		hblend(dest, dest, mx * 0.1f);
+		ci("%d", t.getStatSize());
 		ci(format("Up   : %s", upsampleMethod.c_str()));
 		ci(format("Down : %s", downsampleMethod.c_str()));
 		ci(format("PSNR : %f", calcImageQualityMetric(dest, src, cp::IQM_PSNR, 5)));
-		ci(format("time : %f", t.getTime()));
+		ci(format("time : %f", t.getLapTimeMedian()));
 		ci.show();
 
 		if (key == 'f')
@@ -718,6 +722,10 @@ void guiUpsampleTest(Mat& src_)
 		imshow(wname, show);
 		imshow("sub", sub);
 		key = waitKey(1);
+		if(uc.isUpdate(sw))
+		{
+			t.clearStat();
+		}
 	}
 	destroyWindow(wname);
 }
