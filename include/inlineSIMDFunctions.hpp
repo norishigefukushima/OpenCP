@@ -169,6 +169,7 @@ inline void _mm_transposel_epi8(__m128i& s0, __m128i& s1, __m128i& s2, __m128i& 
           __tmp0##__LINE__, __tmp1##__LINE__, __tmp2##__LINE__, __tmp3##__LINE__, __tmp4##__LINE__, __tmp5##__LINE__, __tmp6##__LINE__, __tmp7##__LINE__, \
           __tmpp0##__LINE__, __tmpp1##__LINE__, __tmpp2##__LINE__, __tmpp3##__LINE__, __tmpp4##__LINE__, __tmpp5##__LINE__, __tmpp6##__LINE__, __tmpp7##__LINE__)
 
+
 #define _MM256_TRANSPOSE8INPLACE_PS(in_row0, in_row1, in_row2, in_row3, in_row4, in_row5, in_row6, in_row7){	\
 	__m256 tmp0, tmp1,tmp2,tmp3,tmp4,tmp5,tmp6,tmp7;														\
 																											\
@@ -503,6 +504,10 @@ inline __m128i _mm256_castsi256hi_si128(__m256i src)
 	return _mm256_extractf128_si256(src, 1);
 }
 
+inline __m128 _mm256_castps256hi_ps128(__m256 src)
+{
+	return _mm256_extractf128_ps(src, 1);
+}
 //opencp (same as _mm256_extractf128_si256(src, 1))
 //#define _mm256_castsi256hi_si128(src) *((__m128i*)&(src) + 1)
 
@@ -1276,7 +1281,23 @@ inline void _mm256_cvtps_planar2bgr(const __m256 b, const __m256 g, const __m256
 
 inline __m256 _mm256_abs_ps(__m256 src)
 {
-	return _mm256_and_ps(src, _mm256_castsi256_ps(_mm256_set1_epi32(0x7fffffff)));
+	//return _mm256_and_ps(src, _mm256_castsi256_ps(_mm256_set1_epi32(0x7fffffff)));
+	return _mm256_andnot_ps(_mm256_set1_ps(-0.f), src);
+}
+
+inline __m256 _mm256_signinv_ps(__m256 src)
+{
+	return _mm256_xor_ps(src, _mm256_set1_ps(-0.f));
+}
+
+inline __m256 _mm256_signbit_ps(__m256 src)
+{
+	return _mm256_and_ps(_mm256_set1_ps(-0.f), src);
+}
+
+inline __m256 _mm256_signbitinv_ps(__m256 src)
+{
+	return _mm256_andnot_ps(src, _mm256_set1_ps(-0.f));
 }
 
 inline __m256 _mm256_sign_ps(__m256 src)
@@ -1392,6 +1413,17 @@ inline __m256i _mm256_not_si256(__m256i src)
 	return _mm256_xor_si256(src, _mm256_cmpeq_epi8(src, src));
 	//return _mm256_xor_si256(src, _mm256_cmpeq_epi8(_mm256_setzero_si256(), _mm256_setzero_si256()));
 }
+
+inline __m256 _mm256_not_ps(__m256 src)
+{
+	return _mm256_xor_ps(src, _mm256_cmp_ps(src, src, 0));
+}
+
+inline __m256d _mm256_not_pd(__m256d src)
+{
+	return _mm256_xor_pd(src, _mm256_cmp_pd(src, src, 0));
+}
+
 #pragma endregion
 
 #pragma region print
@@ -1408,7 +1440,7 @@ inline void print(__m128d src)
 
 inline void print(__m256d src)
 {
-	printf_s("%6.2f %6.2f %6.2f %6.2f\n",((double*)&src)[0], ((double*)&src)[1], ((double*)&src)[2], ((double*)&src)[3]);
+	printf_s("%6.2f %6.2f %6.2f %6.2f\n", ((double*)&src)[0], ((double*)&src)[1], ((double*)&src)[2], ((double*)&src)[3]);
 }
 
 inline void print(__m128 src)
@@ -1738,12 +1770,12 @@ inline void _mm256_maskstore_auto(double* dest, __m256i mask, __m256d ms)
 }
 
 inline void _mm256_maskstore_auto(uchar* dest, __m256i mask, __m256 ms)
-{		
+{
 	uchar CV_DECL_ALIGNED(32) buffscalarstore[32];
 	_mm256_store_cvtps_epu8((__m128i*)buffscalarstore, ms);
 	for (int i = 0; i < 8; i++)
 	{
-		if(((int*)&mask)[i]==255) dest[i] = buffscalarstore[i];
+		if (((int*)&mask)[i] == 255) dest[i] = buffscalarstore[i];
 	}
 }
 
@@ -1832,6 +1864,7 @@ inline __m128i _mm_i32gather_epu8(const uchar* src, __m128i idx)
 	//return _mm_setr_epi8(src[idx.m256i_i32[0]], src[idx.m256i_i32[1]], src[idx.m256i_i32[2]], src[idx.m256i_i32[3]], src[idx.m256i_i32[4]], src[idx.m256i_i32[5]], src[idx.m256i_i32[6]], src[idx.m256i_i32[7]], 0, 0, 0, 0, 0, 0, 0, 0);
 }
 
+//dest: si64
 inline __m128i _mm256_i32gather_epu8(const uchar* src, __m256i idx)
 {
 	return _mm256_cvtepi32_epu8(_mm256_srli_epi32(_mm256_i32gather_epi32(reinterpret_cast<const int*>(src - 3), idx, 1), 24));
@@ -1880,6 +1913,11 @@ inline void _mm256_i32scaterscalar_auto_color(float* dest, __m256i vindex, __m25
 	_mm256_i32scaterscalar_ps_color(dest, vindex, b, g, r);
 }
 #pragma endregion
+
+inline __m128 _mm_set_step_ps(float v, float step = 1.f)
+{
+	return _mm_setr_ps(v, v + step, v + 2.f * step, v + 3.f * step);
+}
 
 //_mm256_setr_ps(v + step, v + 2 * step, v + 3 * step, v + 4 * step, v + 5 * step, v + 6 * step, v + 7 * step);
 inline __m256 _mm256_set_step_ps(float v, float step = 1.f)
