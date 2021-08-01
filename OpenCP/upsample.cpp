@@ -119,8 +119,6 @@ namespace cp
 					dl += 2;
 					dh += 2;					
 				}
-				//imshow("test", dest);
-				//waitKey();
 			}
 		}
 #if 0
