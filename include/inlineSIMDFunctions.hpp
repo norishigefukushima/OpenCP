@@ -584,6 +584,49 @@ inline __m256i _mm256_cvepi32x2_epi16(__m256i src1, __m256i src2)
 
 #pragma endregion
 
+#pragma region load
+inline __m128 _mm_lddqu_ps(float* src)
+{
+	return _mm_castsi128_ps(_mm_lddqu_si128((__m128i*)src));
+}
+
+inline __m128d _mm_lddqu_pd(double* src)
+{
+	return _mm_castsi128_pd(_mm_lddqu_si128((__m128i*)src));
+}
+
+inline __m128 _mm_stream_load_ps(float* src)
+{
+	return _mm_castsi128_ps(_mm_stream_load_si128((__m128i*)src));
+}
+
+inline __m128d _mm_stream_load_pd(double* src)
+{
+	return _mm_castsi128_pd(_mm_stream_load_si128((__m128i*)src));
+}
+
+inline __m256 _mm256_lddqu_ps(float* src)
+{
+	return _mm256_castsi256_ps(_mm256_lddqu_si256((__m256i*)src));
+}
+
+inline __m256d _mm256_lddqu_pd(double* src)
+{
+	return _mm256_castsi256_pd(_mm256_lddqu_si256((__m256i*)src));
+}
+
+inline __m256 _mm256_stream_load_ps(float* src)
+{
+	return _mm256_castsi256_ps(_mm256_stream_load_si256((__m256i*)src));
+}
+
+inline __m256d _mm256_stream_load_pd(double* src)
+{
+	return _mm256_castsi256_pd(_mm256_stream_load_si256((__m256i*)src));
+}
+
+#pragma endregion
+
 #pragma region load and cast 
 //opencp: uchar->short
 inline __m256i _mm256_load_epu8cvtepi16(const __m128i* P)
@@ -2176,4 +2219,51 @@ inline __m128i _mm_get_gatherIndex_border(int pad, int borderType)
 	}
 	}
 	return rem_idx;
+}
+
+enum class MM_PRINT_EXCEPTION
+{
+	ALL,
+	NO_PRINT,
+	NO_INEXACT,
+};
+inline std::vector<std::string> _MM_PRINT_EXCEPTION(std::string mes = "", const MM_PRINT_EXCEPTION isPrint = MM_PRINT_EXCEPTION::ALL)
+{
+	if (mes.size() != 0) std::cout << mes << ": " << std::endl;
+	std::vector<std::string> ret;
+	if (_MM_GET_EXCEPTION_STATE() & _MM_EXCEPT_INVALID)
+	{
+		ret.push_back("_MM_EXCEPT_INVALID");
+	}
+	if (_MM_GET_EXCEPTION_STATE() & _MM_EXCEPT_DENORM)
+	{
+		ret.push_back("_MM_EXCEPT_DENORM");
+	}
+	if (_MM_GET_EXCEPTION_STATE() & _MM_EXCEPT_DIV_ZERO)
+	{
+		ret.push_back("_MM_EXCEPT_DIV_ZERO");
+	}
+	if (_MM_GET_EXCEPTION_STATE() & _MM_EXCEPT_OVERFLOW)
+	{
+		ret.push_back("_MM_EXCEPT_OVERFLOW");
+	}
+	if (_MM_GET_EXCEPTION_STATE() & _MM_EXCEPT_UNDERFLOW)
+	{
+		ret.push_back("_MM_EXCEPT_UNDERFLOW");
+	}
+	if (_MM_GET_EXCEPTION_STATE() & _MM_EXCEPT_INEXACT)
+	{
+		if (isPrint != MM_PRINT_EXCEPTION::NO_INEXACT)
+			ret.push_back("_MM_EXCEPT_INEXACT");
+	}
+	if (isPrint == MM_PRINT_EXCEPTION::ALL || isPrint == MM_PRINT_EXCEPTION::NO_INEXACT)
+	{
+		if (ret.size() == 0) std::cout << "NO_EXCEPTION" << std::endl;
+
+		for (int i = 0; i < ret.size(); i++)
+		{
+			std::cout << ret[i] << std::endl;
+		}
+	}
+	return ret;
 }
