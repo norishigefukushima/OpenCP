@@ -1549,6 +1549,7 @@ inline void print_short(__m128i src)
 	printf_s("\n");
 }
 
+#define print_m128i_short(src) printf_s("%s: %3d %3d %3d %3d;%3d %3d %3d %3d\n",#src,((short*)&src)[0], ((short*)&src)[1], ((short*)&src)[2], ((short*)&src)[3], ((short*)&src)[4], ((short*)&src)[5], ((short*)&src)[6], ((short*)&src)[7]);
 #define print_m256i_short(src) printf_s("%s: %3d %3d %3d %3d;%3d %3d %3d %3d|%3d %3d %3d %3d;%3d %3d %3d %3d\n",#src,((short*)&src)[0], ((short*)&src)[1], ((short*)&src)[2], ((short*)&src)[3], ((short*)&src)[4], ((short*)&src)[5], ((short*)&src)[6], ((short*)&src)[7],((short*)&src)[8], ((short*)&src)[9], ((short*)&src)[10], ((short*)&src)[11], ((short*)&src)[12], ((short*)&src)[13], ((short*)&src)[14], ((short*)&src)[15]);
 
 #define print_short(src) std::cout << #src << ": ";\
@@ -1574,6 +1575,7 @@ inline void print_ushort(__m256i src)
 	printf_s("\n");
 }
 
+#define print_m128i_int(src) printf_s("%s: %3d %3d %3d %3d\n",#src,((int*)&src)[0], ((int*)&src)[1], ((int*)&src)[2], ((int*)&src)[3]);
 #define print_m256i_int(src) printf_s("%s: %3d %3d %3d %3d | %3d %3d %3d %3d\n",#src,((int*)&src)[0], ((int*)&src)[1], ((int*)&src)[2], ((int*)&src)[3], ((int*)&src)[4], ((int*)&src)[5], ((int*)&src)[6], ((int*)&src)[7]);
 
 inline void print_int(__m128i src)
