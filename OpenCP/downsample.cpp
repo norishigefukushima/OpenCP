@@ -73,6 +73,40 @@ namespace cp
 		}
 	}
 
+	template <>
+	static void downsampleNN_<float>(const Mat& src, Mat& dest, const int scale)
+	{
+		if (src.channels() == 1)
+		{
+			const int w = src.cols / scale;
+			for (int j = 0, n = 0; j < src.rows; j += scale, n++)
+			{
+				const float* s = src.ptr<float>(j);
+				float* d = dest.ptr<float>(n);
+				for (int i = 0; i < w; i++)
+				{
+					*d = *s;
+					s += scale;
+					d++;
+				}
+			}
+		}
+		else
+		{
+			for (int j = 0, n = 0; j < src.rows; j += scale, n++)
+			{
+				const float* s = src.ptr<float>(j);
+				float* d = dest.ptr<float>(n);
+				for (int i = 0, m = 0; i < 3 * src.cols; i += 3 * scale, m += 3)
+				{
+					d[m + 0] = s[i + 0];
+					d[m + 1] = s[i + 1];
+					d[m + 2] = s[i + 2];
+				}
+			}
+		}
+	}
+
 	static void hatConvolution(const Mat& src, Mat& dst, const int r)
 	{
 		const float invr = 1.f / r;
@@ -219,33 +253,71 @@ namespace cp
 			dest_.create(src_.size() / scale, src_.type());
 			Mat src = src_.getMat();
 			Mat dest = dest_.getMat();
-			switch (downsample_method)
+			if (src.depth() == CV_8U)
 			{
-			case Downsample::CP_NEAREST:
-				downsampleNN_<uchar>(src, dest, scale); break;
-			case Downsample::CP_LINEAR:
-				downsampleLinear_<uchar>(src, dest, scale, r); break;
-			case Downsample::CP_CUBIC:
-				if (parameter == 0)downsampleCubic_<uchar>(src, dest, scale, r);
-				else downsampleCubic_<uchar>(src, dest, scale, r, parameter);
-				break;
-			case Downsample::CP_AREA:
-				downsampleArea_<uchar>(src, dest, scale, r); break;
-			case Downsample::CP_LANCZOS:
-				if (parameter == 0)downsampleLanczos_<uchar>(src, dest, scale, (4 + 1) * r);
-				else downsampleLanczos_<uchar>(src, dest, scale, int(parameter + 1) * r, (int)parameter);
-				break;
-			case Downsample::CP_GAUSS:
-				if (parameter == 0)downsampleGauss_<uchar>(src, dest, scale, r);
-				else downsampleGauss_<uchar>(src, dest, scale, r, parameter);
-				break;
-			case Downsample::CP_GAUSS_FAST:
-				if (parameter == 0)downsampleGaussFast_<uchar>(src, dest, scale, r);
-				else downsampleGaussFast_<uchar>(src, dest, scale, r, parameter);
-				break;
-			default:
-				cout << "no method in downsample" << endl;
-				break;
+				switch (downsample_method)
+				{
+				case Downsample::CP_NEAREST:
+					downsampleNN_<uchar>(src, dest, scale); break;
+				case Downsample::CP_LINEAR:
+					downsampleLinear_<uchar>(src, dest, scale, r); break;
+				case Downsample::CP_CUBIC:
+					if (parameter == 0)downsampleCubic_<uchar>(src, dest, scale, r);
+					else downsampleCubic_<uchar>(src, dest, scale, r, parameter);
+					break;
+				case Downsample::CP_AREA:
+					downsampleArea_<uchar>(src, dest, scale, r); break;
+				case Downsample::CP_LANCZOS:
+					if (parameter == 0)downsampleLanczos_<uchar>(src, dest, scale, (4 + 1) * r);
+					else downsampleLanczos_<uchar>(src, dest, scale, int(parameter + 1) * r, (int)parameter);
+					break;
+				case Downsample::CP_GAUSS:
+					if (parameter == 0)downsampleGauss_<uchar>(src, dest, scale, r);
+					else downsampleGauss_<uchar>(src, dest, scale, r, parameter);
+					break;
+				case Downsample::CP_GAUSS_FAST:
+					if (parameter == 0)downsampleGaussFast_<uchar>(src, dest, scale, r);
+					else downsampleGaussFast_<uchar>(src, dest, scale, r, parameter);
+					break;
+				default:
+					cout << "no method in downsample" << endl;
+					break;
+				}
+			}
+			else if (src.depth() == CV_32F)
+			{
+				switch (downsample_method)
+				{
+				case Downsample::CP_NEAREST:
+					downsampleNN_<float>(src, dest, scale); break;
+				case Downsample::CP_LINEAR:
+					downsampleLinear_<float>(src, dest, scale, r); break;
+				case Downsample::CP_CUBIC:
+					if (parameter == 0)downsampleCubic_<float>(src, dest, scale, r);
+					else downsampleCubic_<float>(src, dest, scale, r, parameter);
+					break;
+				case Downsample::CP_AREA:
+					downsampleArea_<float>(src, dest, scale, r); break;
+				case Downsample::CP_LANCZOS:
+					if (parameter == 0)downsampleLanczos_<float>(src, dest, scale, (4 + 1) * r);
+					else downsampleLanczos_<float>(src, dest, scale, int(parameter + 1) * r, (int)parameter);
+					break;
+				case Downsample::CP_GAUSS:
+					if (parameter == 0)downsampleGauss_<float>(src, dest, scale, r);
+					else downsampleGauss_<float>(src, dest, scale, r, parameter);
+					break;
+				case Downsample::CP_GAUSS_FAST:
+					if (parameter == 0)downsampleGaussFast_<float>(src, dest, scale, r);
+					else downsampleGaussFast_<float>(src, dest, scale, r, parameter);
+					break;
+				default:
+					cout << "no method in downsample" << endl;
+					break;
+				}
+			}
+			else
+			{
+				cout << "do not support this type in cp::downsample" << endl;
 			}
 		}
 	}

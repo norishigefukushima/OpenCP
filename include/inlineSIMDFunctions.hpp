@@ -65,45 +65,16 @@ inline void get_simd_width_end(const int cv_depth, const int channels, const int
 inline void _mm_transposel_epi8(__m128i& s0, __m128i& s1, __m128i& s2, __m128i& s3, __m128i& s4, __m128i& s5, __m128i& s6, __m128i& s7)
 {
 	__m128i t[8];
-
-	/*
 	for (int i = 0; i < 8; i++)
 	{
-		//_mm_extract_epi8(s0, 0);
-		//_mm_insert_epi8(t[i], )
-		//((uchar*)t[i])[0]= ((uchar*)s0)[i]
-		t[i].m128i_u8[0] = s0.m128i_u8[i];
-		t[i].m128i_u8[1] = s1.m128i_u8[i];
-		t[i].m128i_u8[2] = s2.m128i_u8[i];
-		t[i].m128i_u8[3] = s3.m128i_u8[i];
-		t[i].m128i_u8[4] = s4.m128i_u8[i];
-		t[i].m128i_u8[5] = s5.m128i_u8[i];
-		t[i].m128i_u8[6] = s6.m128i_u8[i];
-		t[i].m128i_u8[7] = s7.m128i_u8[i];
-	}
-	*/
-	uchar CV_DECL_ALIGNED(32) buff[16 * 8];
-	_mm_store_si128((__m128i*)(buff + 0), s0);
-	_mm_store_si128((__m128i*)(buff + 16), s0);
-	_mm_store_si128((__m128i*)(buff + 32), s0);
-	_mm_store_si128((__m128i*)(buff + 48), s0);
-	_mm_store_si128((__m128i*)(buff + 64), s0);
-	_mm_store_si128((__m128i*)(buff + 80), s0);
-	_mm_store_si128((__m128i*)(buff + 96), s0);
-	_mm_store_si128((__m128i*)(buff + 112), s0);
-	for (int i = 0; i < 8; i++)
-	{
-		//_mm_extract_epi8(s0, 0);
-		//_mm_insert_epi8(t[i], )
-		//((uchar*)t[i])[0]= ((uchar*)s0)[i]
-		((uchar*)&t[i])[0] = buff[i + 0];
-		((uchar*)&t[i])[1] = buff[i + 16];
-		((uchar*)&t[i])[2] = buff[i + 32];
-		((uchar*)&t[i])[3] = buff[i + 48];
-		((uchar*)&t[i])[4] = buff[i + 64];
-		((uchar*)&t[i])[5] = buff[i + 80];
-		((uchar*)&t[i])[6] = buff[i + 96];
-		((uchar*)&t[i])[7] = buff[i + 112];
+		((uchar*)&t[i])[0] = ((uchar*)&s0)[i];
+		((uchar*)&t[i])[1] = ((uchar*)&s1)[i];
+		((uchar*)&t[i])[2] = ((uchar*)&s2)[i];
+		((uchar*)&t[i])[3] = ((uchar*)&s3)[i];
+		((uchar*)&t[i])[4] = ((uchar*)&s4)[i];
+		((uchar*)&t[i])[5] = ((uchar*)&s5)[i];
+		((uchar*)&t[i])[6] = ((uchar*)&s6)[i];
+		((uchar*)&t[i])[7] = ((uchar*)&s7)[i];
 	}
 	s0 = t[0];
 	s1 = t[1];
@@ -585,42 +556,42 @@ inline __m256i _mm256_cvepi32x2_epi16(__m256i src1, __m256i src2)
 #pragma endregion
 
 #pragma region load
-inline __m128 _mm_lddqu_ps(float* src)
+inline __m128 _mm_lddqu_ps(const float* src)
 {
 	return _mm_castsi128_ps(_mm_lddqu_si128((__m128i*)src));
 }
 
-inline __m128d _mm_lddqu_pd(double* src)
+inline __m128d _mm_lddqu_pd(const double* src)
 {
 	return _mm_castsi128_pd(_mm_lddqu_si128((__m128i*)src));
 }
 
-inline __m128 _mm_stream_load_ps(float* src)
+inline __m128 _mm_stream_load_ps(const float* src)
 {
 	return _mm_castsi128_ps(_mm_stream_load_si128((__m128i*)src));
 }
 
-inline __m128d _mm_stream_load_pd(double* src)
+inline __m128d _mm_stream_load_pd(const double* src)
 {
 	return _mm_castsi128_pd(_mm_stream_load_si128((__m128i*)src));
 }
 
-inline __m256 _mm256_lddqu_ps(float* src)
+inline __m256 _mm256_lddqu_ps(const float* src)
 {
 	return _mm256_castsi256_ps(_mm256_lddqu_si256((__m256i*)src));
 }
 
-inline __m256d _mm256_lddqu_pd(double* src)
+inline __m256d _mm256_lddqu_pd(const double* src)
 {
 	return _mm256_castsi256_pd(_mm256_lddqu_si256((__m256i*)src));
 }
 
-inline __m256 _mm256_stream_load_ps(float* src)
+inline __m256 _mm256_stream_load_ps(const float* src)
 {
 	return _mm256_castsi256_ps(_mm256_stream_load_si256((__m256i*)src));
 }
 
-inline __m256d _mm256_stream_load_pd(double* src)
+inline __m256d _mm256_stream_load_pd(const double* src)
 {
 	return _mm256_castsi256_pd(_mm256_stream_load_si256((__m256i*)src));
 }
@@ -1432,6 +1403,23 @@ inline __m256i _mm256_absdiff_epu8(__m256i src1, __m256i src2)
 	return _mm256_max_epu8(_mm256_subs_epu8(src1, src2), _mm256_subs_epu8(src2, src1));
 }
 
+//rcp with newton-raphson 1-iteration
+inline __m256 _mm256_rcpnr_ps(__m256 x)
+{
+	__m256 res = _mm256_rcp_ps(x);
+	//rcp*(2-rcp*x)->(rcp+rcp)-rcp*rcp*x
+	return res = _mm256_sub_ps(_mm256_add_ps(res, res), _mm256_mul_ps(x, _mm256_mul_ps(res, res)));
+}
+
+//rcp with newton-raphson 1-iteration (FMA ver) requided set2
+inline __m256 _mm256_rcpnr_fma_ps(__m256 x, __m256 two = _mm256_set1_ps(2.f))
+{
+	__m256 rcp = _mm256_rcp_ps(x);
+	//rcp*(2-rcp*x)
+	return _mm256_mul_ps(rcp, _mm256_fnmadd_ps(x, rcp, two));
+}
+
+
 #pragma endregion
 
 #pragma region compare
@@ -2048,24 +2036,18 @@ inline __m256 _mm256_load_auto(const uchar* src)
 	return _mm256_load_epu8cvtps((const __m128i*)src);
 }
 
-inline __m256 _mm256_loadu_auto(const uchar* src)
-{
-	return _mm256_load_epu8cvtps((const __m128i*)src);
-}
-
 inline __m256 _mm256_load_auto(const float* src)
 {
 	return _mm256_load_ps(src);
 }
 
-inline __m256 _mm256_loadu_auto(const float* src)
-{
-	return _mm256_loadu_ps(src);
-}
-
 inline __m256d _mm256_load_auto(const double* src)
 {
 	return _mm256_load_pd(src);
+}
+inline __m256 _mm256_loadu_auto(const float* src)
+{
+	return _mm256_loadu_ps(src);
 }
 
 inline __m256d _mm256_loadu_auto(const double* src)
@@ -2073,6 +2055,25 @@ inline __m256d _mm256_loadu_auto(const double* src)
 	return _mm256_loadu_pd(src);
 }
 
+inline __m256 _mm256_loadu_auto(const uchar* src)
+{
+	return _mm256_load_epu8cvtps((const __m128i*)src);
+}
+
+inline __m256 _mm256_lddqu_auto(const float* src)
+{
+	return _mm256_lddqu_ps(src);
+}
+
+inline __m256d _mm256_lddqu_auto(const double* src)
+{
+	return _mm256_lddqu_pd(src);
+}
+
+inline __m256 _mm256_lddqu_auto(const uchar* src)
+{
+	return _mm256_load_epu8cvtps((const __m128i*)src);
+}
 
 inline void _mm256_store_auto(uchar* dest, __m256 src)
 {
