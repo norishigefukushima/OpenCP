@@ -47,6 +47,19 @@ Test function in OpenCP
 ```cpp
 void testPSNR(Mat& src);
 ```
+# getPSNRClip
+```cpp
+double getPSNRClip(cv::InputArray src, 
+	cv::InputArray reference, 
+	double minval,
+	double maxval,
+	const int boundingBox = 0, //bounding box to ignore boundary
+	const int precision = PSNR_UP_CAST, 
+	const int compare_channel = PSNR_ALL);
+```
+## Usage
+getPSNR関数にsrcとreferenceの値に制限値を付けるclip関数付きの実装です．
+入出力の値が0-255の値に収まらない時に収まったとみなして計算するなどの用途に使います．
 
 # getPSNR_PRECISION
 ```cpp
@@ -66,7 +79,6 @@ string getPSNR_PRECISION(const int precision)
 ```
 
 ## Usage
-
 PSNRやMSEを計算するときに，画素値をダウンキャストするためのオプションのenumです．  
 ダウンキャストすることで，実際に使用するビット深度におけるPSNRを計測できます．  
 `PSNR_UP_CAST`は入力，参照画素のうちデプスの優先順位(`uchar<short<int<float<double`)が高いほうに計算精度がキャストされます．  
@@ -206,13 +218,3 @@ double getTotalVariation(cv::InputArray src);
 入力画像のトータルバリエーションが出力されます．  
 ## Optimization
 * 高速ははされていません．
-
-# isSameMat
-```cpp
-bool isSameMat(cv::InputArray src, cv::InputArray answer, bool isShowMessage = true, std::string ok_mes = "OK", std::string ng_mes = "NG");
-```
-
-## Usage
-2つの入力が同じかどうかだけを見て，同じなら`true`違うなら`false`を返します．
-`isShowMessage`が`true`の場合，コンソールに状態をprintします．
-PSNRなどの指標よりもただ差分を取ってcountNonZeroしているだけなのでPSNRやMSEを図るよりは高速です．

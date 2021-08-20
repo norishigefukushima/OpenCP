@@ -1077,7 +1077,7 @@ namespace cp
 				leftim.copyTo(L);
 				rightim.copyTo(R);
 
-				if (!cp::checkSameImage(gt, eval.ground_truth))
+				if (!cp::isSame(gt, eval.ground_truth))
 					eval.init(gt, evalamp, igb);
 			}
 			if (isNoise)

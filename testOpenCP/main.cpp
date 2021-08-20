@@ -2,9 +2,21 @@
 #include "test.hpp"
 using namespace std;
 
+void testIsSame()
+{
+	Mat a(256, 256, CV_8U);
+	Mat b(256, 256, CV_8U);
+	randu(a, 0, 255);
+	randu(b, 0, 255);
+	isSame(a, b);
+	isSame(a, a);
+	isSame(a, b, 10);
+	isSame(a, a, 10);
+}
 
 int main(int argc, char** argv)
 {
+	testIsSame(); return 0;
 	//cout << cv::getBuildInformation() << endl;
 
 #pragma region setup

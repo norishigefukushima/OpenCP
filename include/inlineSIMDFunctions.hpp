@@ -1455,12 +1455,22 @@ inline __m256d _mm256_not_pd(__m256d src)
 	return _mm256_xor_pd(src, _mm256_cmp_pd(src, src, 0));
 }
 
+//1: same, 0: not same
+inline int _mm256_testsame_ps(__m256 a, __m256 b)
+{
+	return _mm256_testc_si256(_mm256_castps_si256(a), _mm256_castps_si256(b));
+}
+
+//1: same, 0: not same
+inline int _mm256_testsame_pd(__m256d a, __m256d b)
+{
+	return _mm256_testc_si256(_mm256_castpd_si256(a), _mm256_castpd_si256(b));
+}
 #pragma endregion
 
 #pragma region print
 inline void print(__m128d src)
 {
-
 	printf_s("%5.3f %5.3f\n",
 		((double*)&src)[0], ((double*)&src)[1]);
 	//

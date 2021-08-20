@@ -1,6 +1,7 @@
 #include "stat.hpp"
 #include "histogram.hpp"
 #include "matinfo.hpp"
+#include "plot.hpp"
 
 using namespace std;
 using namespace cv;
@@ -200,4 +201,17 @@ namespace cp
 		//show();
 		imshow(wname, draw);
 	}
+
+	void Stat::drawPlofilePlot(string wname)
+	{
+		cp::Plot pt;
+		pt.setKey(cp::Plot::NOKEY);
+		pt.setPlotSymbolALL(0);
+		for (int i = 0; i < getSize(); i++)
+		{
+			pt.push_back(i, data[i]);
+		}
+		pt.plot(wname, false);
+	}
+
 }

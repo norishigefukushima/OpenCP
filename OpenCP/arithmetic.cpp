@@ -1,6 +1,8 @@
 #include "arithmetic.hpp"
 #include "fmath/fmath.hpp"
 #include "inlineSIMDFunctions.hpp"
+#include "checkSameImage.hpp"
+
 using namespace std;
 using namespace cv;
 using namespace fmath;
@@ -777,5 +779,140 @@ namespace cp
 				d[i] = sqrt(max(s[i], 0.0));
 			}
 		}
+	}
+
+	template<class T>
+	void clip(Mat& src, Mat& dst, const T minval, const T maxval)
+	{
+		const int size = src.total();
+		T* sptr = src.ptr<T>();
+		T* dptr = dst.ptr<T>();
+		for (int i = 0; i < size; i++)
+		{
+			dptr[i] = std::min(std::max(sptr[i], minval), maxval);
+		}
+	}
+
+	template<>
+	void clip<uchar>(Mat& src, Mat& dst, const uchar minval, const uchar maxval)
+	{
+		const __m256i mmin = _mm256_set1_epi8(minval);
+		const __m256i mmax = _mm256_set1_epi8(maxval);
+
+		const int size = src.total();
+		const int simdsize = get_simd_floor(size, 128);
+		const int loopsize = size / 128;
+
+		uchar* sptr = src.ptr<uchar>();
+		uchar* dptr = dst.ptr<uchar>();
+		__m256i* ms = (__m256i*)sptr;
+		__m256i* md = (__m256i*)dptr;
+		for (int i = 0; i < loopsize; i++)
+		{
+			*md++ = _mm256_min_epu8(_mm256_max_epu8(*ms, mmin), mmax); ms++;
+			*md++ = _mm256_min_epu8(_mm256_max_epu8(*ms, mmin), mmax); ms++;
+			*md++ = _mm256_min_epu8(_mm256_max_epu8(*ms, mmin), mmax); ms++;
+			*md++ = _mm256_min_epu8(_mm256_max_epu8(*ms, mmin), mmax); ms++;
+		}
+		for (int i = simdsize; i < size; i++)
+		{
+			dptr[i] = std::min(std::max(sptr[i], minval),maxval);
+		}
+	}
+
+	template<>
+	void clip<char>(Mat& src, Mat& dst, const char minval, const char maxval)
+	{
+		const __m256i mmin = _mm256_set1_epi8(minval);
+		const __m256i mmax = _mm256_set1_epi8(maxval);
+
+		const int size = src.total();
+		const int simdsize = get_simd_floor(size, 128);
+		const int loopsize = size / 128;
+
+		char* sptr = src.ptr<char>();
+		char* dptr = dst.ptr<char>();
+		__m256i* ms = (__m256i*)sptr;
+		__m256i* md = (__m256i*)dptr;
+		for (int i = 0; i < loopsize; i++)
+		{
+			*md++ = _mm256_min_epi8(_mm256_max_epi8(*ms, mmin), mmax); ms++;
+			*md++ = _mm256_min_epi8(_mm256_max_epi8(*ms, mmin), mmax); ms++;
+			*md++ = _mm256_min_epi8(_mm256_max_epi8(*ms, mmin), mmax); ms++;
+			*md++ = _mm256_min_epi8(_mm256_max_epi8(*ms, mmin), mmax); ms++;
+		}
+		for (int i = simdsize; i < size; i++)
+		{
+			dptr[i] = std::min(std::max(sptr[i], minval), maxval);
+		}
+	}
+
+
+	template<>
+	void clip<float>(Mat& src, Mat& dst, const float minval, const float maxval)
+	{
+		const __m256 mmin = _mm256_set1_ps(minval);
+		const __m256 mmax = _mm256_set1_ps(maxval);
+
+		const int size = src.total();
+		const int simdsize = get_simd_floor(size, 32);
+		const int loopsize = size / 32;
+
+		float* sptr = src.ptr<float>();
+		float* dptr = dst.ptr<float>();
+		__m256* ms = (__m256*)sptr;
+		__m256* md = (__m256*)dptr;
+		for (int i = 0; i < loopsize; i++)
+		{
+			*md++ = _mm256_min_ps(_mm256_max_ps(*ms, mmin), mmax); ms++;
+			*md++ = _mm256_min_ps(_mm256_max_ps(*ms, mmin), mmax); ms++;
+			*md++ = _mm256_min_ps(_mm256_max_ps(*ms, mmin), mmax); ms++;
+			*md++ = _mm256_min_ps(_mm256_max_ps(*ms, mmin), mmax); ms++;
+		}
+		for (int i = simdsize; i < size; i++)
+		{
+			dptr[i] = std::min(std::max(sptr[i], minval), maxval);
+		}
+	}
+
+	template<>
+	void clip<double>(Mat& src, Mat& dst, const double minval, const double maxval)
+	{
+		const __m256d mmin = _mm256_set1_pd(minval);
+		const __m256d mmax = _mm256_set1_pd(maxval);
+
+		const int size = src.total();
+		const int simdsize = get_simd_floor(size, 16);
+		const int loopsize = size / 16;
+
+		double* sptr = src.ptr<double>();
+		double* dptr = dst.ptr<double>();
+		__m256d* ms = (__m256d*)sptr;
+		__m256d* md = (__m256d*)dptr;
+		for (int i = 0; i < loopsize; i++)
+		{
+			*md++ = _mm256_min_pd(_mm256_max_pd(*ms, mmin), mmax); ms++;
+			*md++ = _mm256_min_pd(_mm256_max_pd(*ms, mmin), mmax); ms++;
+			*md++ = _mm256_min_pd(_mm256_max_pd(*ms, mmin), mmax); ms++;
+			*md++ = _mm256_min_pd(_mm256_max_pd(*ms, mmin), mmax); ms++;
+		}
+		for (int i = simdsize; i < size; i++)
+		{
+			dptr[i] = std::min(std::max(sptr[i], minval), maxval);
+		}
+	}
+
+	void clip(InputArray src, OutputArray dst, const double minval, const double maxval)
+	{
+		Mat s = src.getMat();
+		dst.create(src.size(), src.type());
+		Mat d = dst.getMat();
+		if (src.depth() == CV_8U)clip<uchar>(s,d, uchar(minval), uchar(maxval));
+		if (src.depth() == CV_8S)clip<char>(s, d, char(minval), char(maxval));
+		if (src.depth() == CV_16U)clip<ushort>(s, d, ushort(minval), ushort(maxval));
+		if (src.depth() == CV_16S)clip<short>(s, d, short(minval), short(maxval));
+		if (src.depth() == CV_32S)clip<int>(s, d, int(minval), int(maxval));
+		if (src.depth() == CV_32F)clip<float>(s, d, float(minval), float(maxval));
+		if (src.depth() == CV_64F)clip <double> (s, d, double(minval), double(maxval));
 	}
 }

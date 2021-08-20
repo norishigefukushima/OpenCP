@@ -136,11 +136,11 @@ namespace cp
 			if(isDebug) std::cout << "computing VarCov in GIF Share" << std::endl;
 			computeVarCov();
 			isComputeForReuseGuide = false;
-			checkimage.isSameImage(guide);
+			checkimage.isSame(guide);
 		}
 		else
 		{
-			isComputeForReuseGuide = !checkimage.isSameImage(guide);
+			isComputeForReuseGuide = !checkimage.isSame(guide);
 		}
 
 		filterGuidePrecomputed();

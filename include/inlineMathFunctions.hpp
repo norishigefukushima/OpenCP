@@ -221,24 +221,6 @@ namespace cp
 			return 10.0 * log10(255.0 * 255.0 / mse);
 		}
 	}
-
-	inline std::string getDepthName(int depth)
-	{
-		std::string ret;
-		switch (depth)
-		{
-		case CV_8U: ret = "CV_8U"; break;
-		case CV_8S:ret = "CV_8S"; break;
-		case CV_16U:ret = "CV_16U"; break;
-		case CV_16S:ret = "CV_16S"; break;
-		case CV_32S:ret = "CV_32S"; break;
-		case CV_32F:ret = "CV_32F"; break;
-		case CV_64F:ret = "CV_64F"; break;
-		case CV_16F:ret = "CV_16F"; break;
-		default: ret = "not support this type of depth."; break;
-		}
-		return ret;
-	}
 }
 
 inline double getHannWindow(const double x)

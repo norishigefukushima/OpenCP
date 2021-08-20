@@ -48,21 +48,37 @@ namespace cp
 		void cvtImageForMSE32F(const cv::Mat& src, cv::Mat& dest, const int cmethod);
 		void cvtImageForMSE8U(const cv::Mat& src, cv::Mat& dest, const int cmethod);
 	public:
-
+		/// <summary>
+		/// compute MSE
+		/// </summary>
+		/// <param name="src">src image</param>
+		/// <param name="ref">reference image</param>
+		/// <param name="boundingBox">bonding box ignoring outside region. default is 0.</param>
+		/// <param name="precision">computing precision. Default: PSNR_UP_CAST(0). Other: PSNR_8U(0),PSNR_32F(1), PSNR_64F(2), PSNR_KAHAN_64F(3)</param>
+		/// <param name="compare_channel">computing channlel. Default: compute MSE all channele PSNR_ALL(0). Other: PSNR_Y(1), PSNR_B(2), PSNR_G(3), PSNR_R(4)</param>
+		/// <returns>MSE value</returns>
 		double getMSE(cv::InputArray src, cv::InputArray ref, const int boundingBox = 0, const int precision = PSNR_UP_CAST, const int compare_channel = PSNR_ALL);
-		/*
-		boundingBox: ignoring outside region. default is 0
-		precision: computing precision, default PSNR_UP_CAST(0), other PSNR_8U(0),PSNR_32F(1), PSNR_64F(2), PSNR_KAHAN_64F(3)
-		compare_channel: default compute MSE all channele and then logged PSNR_ALL(0), PSNR_Y(1), PSNR_B(2), PSNR_G(3), PSNR_R(4),
-		*/
+
+		/// <summary>
+		/// compute PSNR
+		/// </summary>
+		/// <param name="src">src image</param>
+		/// <param name="ref">reference image</param>
+		/// <param name="boundingBox">bonding box ignoring outside region. default is 0.</param>
+		/// <param name="precision">computing precision. Default: PSNR_UP_CAST(0). Other: PSNR_8U(0),PSNR_32F(1), PSNR_64F(2), PSNR_KAHAN_64F(3)</param>
+		/// <param name="compare_channel">computing channlel. Default: compute MSE all channele and then logged PSNR_ALL(0). Other: PSNR_Y(1), PSNR_B(2), PSNR_G(3), PSNR_R(4)</param>
+		/// <returns>PSNR value, 0: same, -1: NaN, -2: Inf</returns>
 		double getPSNR(cv::InputArray src, cv::InputArray ref, const int boundingBox = 0, const int precision = PSNR_UP_CAST, const int compare_channel = PSNR_ALL);
 
-		/*
-		same function of getPSNR() for short cut
-		boundingBox: ignoring outside region. default is 0
-		precision: computing precision, default PSNR_UP_CAST(0), other PSNR_8U(0),PSNR_32F(1), PSNR_64F(2), PSNR_KAHAN_64F(3)
-		compare_channel: default compute MSE all channele and then logged PSNR_ALL(0), PSNR_Y(1), PSNR_B(2), PSNR_G(3), PSNR_R(4),
-		*/
+		/// <summary>
+		/// same function of getPSNR() for short cut
+		/// </summary>
+		/// <param name="src">src image</param>
+		/// <param name="ref">reference image</param>
+		/// <param name="boundingBox">bonding box ignoring outside region. default is 0.</param>
+		/// <param name="precision">computing precision. Default: PSNR_UP_CAST(0). Other: PSNR_8U(0),PSNR_32F(1), PSNR_64F(2), PSNR_KAHAN_64F(3)</param>
+		/// <param name="compare_channel">computing channlel. Default: compute MSE all channele and then logged PSNR_ALL(0). Other: PSNR_Y(1), PSNR_B(2), PSNR_G(3), PSNR_R(4)</param>
+		/// <returns>PSNR value, 0: same, -1: NaN, -2: Inf</returns>
 		double operator()(cv::InputArray src, cv::InputArray ref, const int boundingBox = 0, const int precision = PSNR_UP_CAST, const int compare_channel = PSNR_ALL);
 
 		//set reference image for acceleration
@@ -76,20 +92,43 @@ namespace cp
 	};
 
 	/*
-	wrapper function for class PSNRMetrics
+
 	boundingBox: ignoring outside region. default is 0
 	precision: computing precision, default PSNR_32F(1), other PSNR_8U(0),PSNR_64F(2), PSNR_KAHAN_64F(3)
 	compare_channel: default compute MSE all channele and then logged PSNR_ALL(0), PSNR_Y(1), PSNR_B(2), PSNR_G(3), PSNR_R(4),
 	0: same image, -1: NaN, -2: Inf, else PSNR.
 	*/
+
+	/// <summary>
+	/// Wrapper function for class PSNRMetrics::getPSNR
+	/// </summary>
+	/// <param name="src">Src image</param>
+	/// <param name="reference">Reference image</param>
+	/// <param name="boundingBox">bonding box ignoring outside region. Default is 0.</param>
+	/// <param name="precision">Computing precision. Default: PSNR_UP_CAST(0). Other: PSNR_8U(0),PSNR_32F(1), PSNR_64F(2), PSNR_KAHAN_64F(3)</param>
+	/// <param name="compare_channel">Computing channlel. Default: compute MSE all channele and then logged PSNR_ALL(0). Other: PSNR_Y(1), PSNR_B(2), PSNR_G(3), PSNR_R(4)</param>
+	/// <returns>PSNR value</returns>
 	CP_EXPORT double getPSNR(cv::InputArray src, cv::InputArray reference, const int boundingBox = 0, const int precision = PSNR_UP_CAST, const int compare_channel = PSNR_ALL);
+
+	/// <summary>
+	/// clip src and reference value with min/maxval an then compuite PSNR.
+	/// </summary>
+	/// <param name="src">Src image</param>
+	/// <param name="reference">Reference image</param>
+	/// <param name="minval">Minimum value for clip.</param>
+	/// <param name="maxval">Maximum value for clip.</param>
+	/// <param name="boundingBox">bonding box ignoring outside region. Default is 0.</param>
+	/// <param name="precision">Computing precision. Default: PSNR_UP_CAST(0). Other: PSNR_8U(0),PSNR_32F(1), PSNR_64F(2), PSNR_KAHAN_64F(3)</param>
+	/// <param name="compare_channel">Computing channlel. Default: compute MSE all channele and then logged PSNR_ALL(0). Other: PSNR_Y(1), PSNR_B(2), PSNR_G(3), PSNR_R(4)</param>
+	/// <returns>PSNR value</returns>
+	CP_EXPORT double getPSNRClip(cv::InputArray src, cv::InputArray reference, const double minval = 0.0, const double maxval = 255.0, const int boundingBox = 0, const int precision = PSNR_UP_CAST, const int compare_channel = PSNR_ALL);
 	CP_EXPORT double getMSE(cv::InputArray src1, cv::InputArray src2const, int boundingBox = 0, const int precision = PSNR_UP_CAST, const int compare_channel = PSNR_ALL);
 	CP_EXPORT double getMSE(cv::InputArray src1, cv::InputArray src2, cv::InputArray mask);
 
 	CP_EXPORT void localPSNRMap(cv::InputArray src1, cv::InputArray src2, cv::OutputArray dest, const int r, const int compare_channel, const double psnr_infinity_value = 0.0);
 	CP_EXPORT void guiLocalPSNRMap(cv::InputArray src1, cv::InputArray src2, const bool isWait = true, std::string wname = "AreaPSNR");
 
-	
+
 
 	//bad pixel ratio for stere matching evaluation
 	CP_EXPORT double getInacceptableRatio(cv::InputArray src, cv::InputArray ref, const int threshold);
@@ -99,6 +138,4 @@ namespace cp
 	CP_EXPORT double getTotalVariation(cv::InputArray src);
 
 	//CP_EXPORT double SSIM(cv::Mat& src, cv::Mat& ref, double sigma = 1.5);removed for update
-
-	CP_EXPORT bool isSameMat(cv::InputArray src, cv::InputArray answer, bool isShowMessage = true, std::string ok_mes = "OK", std::string ng_mes = "NG");
 }

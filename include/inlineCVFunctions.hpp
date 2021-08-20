@@ -209,4 +209,44 @@ namespace cp
 		if(src.channels()==1) cvtColor(ret, ret, cv::COLOR_GRAY2BGR);
 		return ret;
 	}
+
+	inline std::string getDepthName(int depth)
+	{
+		std::string ret;
+		switch (depth)
+		{
+		case CV_8U: ret = "CV_8U"; break;
+		case CV_8S:ret = "CV_8S"; break;
+		case CV_16U:ret = "CV_16U"; break;
+		case CV_16S:ret = "CV_16S"; break;
+		case CV_32S:ret = "CV_32S"; break;
+		case CV_32F:ret = "CV_32F"; break;
+		case CV_64F:ret = "CV_64F"; break;
+		case CV_16F:ret = "CV_16F"; break;
+		default: ret = "not support this type of depth."; break;
+		}
+		return ret;
+	}
+
+	inline int get_avx_element_size(int cv_depth)
+	{
+		int ret = 0;
+		switch (cv_depth)
+		{
+		case CV_8U:
+		case CV_8S:
+			ret = 32; break;
+		case CV_16U:
+		case CV_16S:
+			ret = 16; break;
+		case CV_32F:
+		case CV_32S:
+			ret = 8; break;
+		case CV_64F:
+			ret = 4; break;
+		default:
+			break;
+		}
+		return ret;
+	}
 }

@@ -414,6 +414,7 @@ class CP_EXPORT YUVReader
 ## [Todo:SSIM] metrics.hpp
 画質評価関数群
  * [getPSNR](metrics_jp.md "#getPSNR")
+ * [getPSNRClip](metrics_jp.md "#getPSNRClip")
  * [getPSNR_PRECISION](metrics_jp.md "#getPSNR_PRECISION")
  * [getPSNR_CHANNEL](metrics_jp.md "#getPSNR_CHANNEL")
  * [class PSNRMetrics](metrics_jp.md "#class PSNRMetrics")
@@ -423,7 +424,6 @@ class CP_EXPORT YUVReader
  * [getInacceptableRatio](metrics_jp.md "#getInacceptableRatio")
  * [getEntropy](metrics_jp.md "#getEntropy")
  * [getTotalVariation](metrics_jp.md "#getTotalVariation")
- * [isSameMat](metrics_jp.md "#isSameMat")
  * SSIM：関数修正中
 
 ## [Todo] metricsDD.hpp

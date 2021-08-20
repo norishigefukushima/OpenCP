@@ -552,6 +552,17 @@ namespace cp
 		return psnr(src, ref, boundingBox, precision, compare_channel);
 	}
 
+	double getPSNRClip(cv::InputArray src, cv::InputArray ref, const double minval, const double maxval, const int boundingBox, const int precision, const int compare_channel)
+	{
+		Mat s;
+		Mat r;
+		cp::clip(src, s, minval, maxval);
+		cp::clip(ref, r, minval, maxval);
+
+		PSNRMetrics psnr;
+		return psnr(s, r, boundingBox, precision, compare_channel);
+	}
+
 	//internal
 	void localPSNRMapColor_64F(vector<Mat>& s1, vector<Mat>& s2, Mat& dest, const int r, const double psnr_inf)
 	{
@@ -1011,44 +1022,6 @@ namespace cp
 		{
 			;
 		}
-		return ret;
-	}
-
-	bool isSameMat(InputArray src_, InputArray answer_, bool isShowMessage, string ok_mes, string ng_mes)
-	{
-		Mat src = src_.getMat().reshape(1);
-		Mat answer = answer_.getMat().reshape(1);
-
-		if (src.size() != answer.size())
-		{
-			if (isShowMessage)cout << "not same size. src: " << src.size() << ", answer: " << answer.size() << endl;
-			return false;
-		}
-
-		if (src.depth() != answer.depth())
-		{
-			if (isShowMessage)cout << "not same depth. src: " << getDepthName(src.depth()) << ", answer: " << getDepthName(answer.depth()) << endl;
-			return false;
-		}
-
-		Mat smat;
-		subtract(src, answer, smat, noArray(), CV_64F);
-
-		bool ret;
-		string m;
-		if (!countNonZero(smat))
-		{
-			ret = true;
-			m = ok_mes;
-		}
-		else
-		{
-			ret = false;
-			m = ng_mes;
-		}
-
-		if (isShowMessage) cout << m << endl;
-
 		return ret;
 	}
 
