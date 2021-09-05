@@ -8,37 +8,37 @@ namespace cp
 	void rotYaw(cv::InputArray src_, cv::OutputArray dest, const double yaw)
 	{
 		Mat src = src_.getMat();
-		double angle = yaw / 180.0*CV_PI;
+		double angle = yaw / 180.0 * CV_PI;
 		Mat rot = Mat::eye(3, 3, CV_64F);
 
 		rot.at<double>(1, 1) = cos(angle);
-		rot.at<double>(1, 2) = sin(angle);
-		rot.at<double>(2, 1) = -sin(angle);
+		rot.at<double>(1, 2) = -sin(angle);
+		rot.at<double>(2, 1) = sin(angle);
 		rot.at<double>(2, 2) = cos(angle);
 
-		Mat a = rot*src;
-		a.copyTo(dest);
+		Mat a = rot * src;
+		a.clone().copyTo(dest);
 	}
 
 	void rotPitch(cv::InputArray src_, cv::OutputArray dest, const double pitch)
 	{
 		Mat src = src_.getMat();
-		double angle = pitch / 180.0*CV_PI;
+		double angle = pitch / 180.0 * CV_PI;
 		Mat rot = Mat::eye(3, 3, CV_64F);
 
 		rot.at<double>(0, 0) = cos(angle);
-		rot.at<double>(0, 2) = -sin(angle);
-		rot.at<double>(2, 0) = sin(angle);
+		rot.at<double>(0, 2) = sin(angle);
+		rot.at<double>(2, 0) = -sin(angle);
 		rot.at<double>(2, 2) = cos(angle);
 
-		Mat a = rot*src;
-		a.copyTo(dest);
+		Mat a = rot * src;
+		a.clone().copyTo(dest);
 	}
 
 	void rotRoll(cv::InputArray src_, cv::OutputArray dest, const double roll)
 	{
 		Mat src = src_.getMat();
-		double angle = roll / 180.0*CV_PI;
+		double angle = roll / 180.0 * CV_PI;
 		Mat rot = Mat::eye(3, 3, CV_64F);
 
 		rot.at<double>(0, 0) = cos(angle);
@@ -46,36 +46,37 @@ namespace cp
 		rot.at<double>(1, 0) = sin(angle);
 		rot.at<double>(1, 1) = cos(angle);
 
-		Mat a = rot*src;
-		a.copyTo(dest);
+		Mat a = rot * src;
+		a.clone().copyTo(dest);
 	}
 
 	void Eular2Rotation(const double pitch, const double roll, const double yaw, cv::OutputArray dest)
 	{
 		dest.create(3, 3, CV_64F);
-
+		
 		Mat a = Mat::eye(3, 3, CV_64F); a.copyTo(dest);
 		rotYaw(dest, dest, yaw);
-		rotPitch(dest, dest, pitch);
+		
 		rotRoll(dest, dest, roll);
+		rotPitch(dest, dest, pitch);
 	}
 
-	void Rotation2Eular(InputArray R_, double & angle_x, double & angle_y, double & angle_z)
+	void Rotation2Eular(InputArray R_, double& angle_x, double& angle_y, double& angle_z)
 	{
 		Mat R = R_.getMat();
 		double threshold = 0.001;
 
-		if (abs(R.at<double>(2, 1) - 1.0) < threshold){ // R(2,1) = sin(x) = 1
+		if (abs(R.at<double>(2, 1) - 1.0) < threshold) { // R(2,1) = sin(x) = 1
 			angle_x = CV_PI / 2;
 			angle_y = 0;
 			angle_z = atan2(R.at<double>(1, 0), R.at<double>(0, 0));
 		}
-		else if (abs(R.at<double>(2, 1) + 1.0) < threshold){ // R(2,1) = sin(x) = -1
+		else if (abs(R.at<double>(2, 1) + 1.0) < threshold) { // R(2,1) = sin(x) = -1
 			angle_x = -CV_PI / 2;
 			angle_y = 0;
 			angle_z = atan2(R.at<double>(1, 0), R.at<double>(0, 0));
 		}
-		else{
+		else {
 			angle_x = asin(R.at<double>(2, 1));
 			angle_y = atan2(-R.at<double>(2, 0), R.at<double>(2, 2));
 			angle_z = atan2(-R.at<double>(0, 1), R.at<double>(1, 1));
@@ -141,7 +142,7 @@ namespace cp
 		Mat rotaxis = srcMat.cross(destMat);
 		double angle = acos(srcMat.dot(destMat));
 		//normalize cross product and multiply rotation angle
-		rotaxis = rotaxis / norm(rotaxis)*angle;
+		rotaxis = rotaxis / norm(rotaxis) * angle;
 		Rodrigues(rotaxis, destR);
 	}
 }
