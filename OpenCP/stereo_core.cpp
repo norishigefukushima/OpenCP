@@ -56,9 +56,8 @@ namespace cp
 		
 		Mat a = Mat::eye(3, 3, CV_64F); a.copyTo(dest);
 		rotYaw(dest, dest, yaw);
-		
-		rotRoll(dest, dest, roll);
 		rotPitch(dest, dest, pitch);
+		rotRoll(dest, dest, roll);
 	}
 
 	void Rotation2Eular(InputArray R_, double& angle_x, double& angle_y, double& angle_z)
