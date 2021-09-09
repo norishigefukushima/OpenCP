@@ -467,6 +467,14 @@ inline void show_patch(__m256d* patch)
 #pragma endregion
 
 #pragma region convert
+#define _mm256_cvtss_si64(a) (_mm_cvtss_si64(_mm256_castpd256_pd128(a)))
+#define _mm256_cvtss_si32(a) (_mm_cvtss_si32(_mm256_castpd256_pd128(a)))
+#define _mm256_cvttss_si64(a) (_mm_cvttss_si64(_mm256_castpd256_pd128(a)))
+#define _mm256_cvttss_si32(a) (_mm_cvttss_si32(_mm256_castpd256_pd128(a)))
+#define _mm256_cvtsd_si64(a) (_mm_cvtsd_si64(_mm256_castpd256_pd128(a)))
+#define _mm256_cvtsd_si32(a) (_mm_cvtsd_si32(_mm256_castpd256_pd128(a)))
+#define _mm256_cvttsd_si64(a) (_mm_cvttsd_si64(_mm256_castpd256_pd128(a)))
+#define _mm256_cvttsd_si32(a) (_mm_cvttsd_si32(_mm256_castpd256_pd128(a)))
 
 //cast
 //opencp cast __m256i of hi register ->__m128i

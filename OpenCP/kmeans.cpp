@@ -801,17 +801,25 @@ namespace cp
 	};
 
 #pragma endregion
-
 	double KMeans::clusteringSoA(cv::InputArray _data, int K, cv::InputOutputArray _bestLabels, cv::TermCriteria criteria, int attempts, int flags, OutputArray dest_centroids, MeanFunction function, int loop)
 	{
+		const int SPP_TRIALS = 3;
+		Mat src = _data.getMat();
+		const bool isrow = (src.rows == 1);
+		const int N = max(src.cols, src.rows);//input data size
+		const int dims = min(src.cols, src.rows) * src.channels();//input dimensions
+		const int type = src.depth();
+
 		//std::cout << "KMeans::clustering" << std::endl;
 		//std::cout << "sigma" << sigma << std::endl;
-		float* weight_table = (float*)_mm_malloc(sizeof(float) * 443, AVX_ALIGN);
+		const int tableSize = (int)ceil(sqrt(255 * 255 * dims));
+		//std::cout << "tableSize" << tableSize << std::endl;
+		float* weight_table = (float*)_mm_malloc(sizeof(float) * tableSize, AVX_ALIGN);
 		if (function == MeanFunction::GaussInv)
 		{
 			//for 3chanel 255 max case
-			//443=sqrt(3*255^2)
-			for (int i = 0; i < 443; i++)
+			//442=sqrt(3*255^2)
+			for (int i = 0; i < tableSize; i++)
 			{
 				weight_table[i] = 1.f - exp(i * i / (-2.f * sigma * sigma)) + 0.02f;
 				//weight_table[i] = pow(i,sigma*0.1)+0.01;
@@ -829,12 +837,7 @@ namespace cp
 			}
 		}
 
-		const int SPP_TRIALS = 3;
-		Mat src = _data.getMat();
-		const bool isrow = (src.rows == 1);
-		const int N = max(src.cols, src.rows);//input data size
-		const int dims = min(src.cols, src.rows) * src.channels();//input dimensions
-		const int type = src.depth();
+		
 
 		//AoS to SoA by transpose
 		Mat	src_t = (src.cols < src.rows) ? src.t() : src;
@@ -1892,11 +1895,11 @@ namespace cp
 					for (int k = 0; k < K; k++) counters[k] = 0;
 					if (function == MeanFunction::Harmonic)
 					{
-						cout << "not support" << endl;
+						cout << "MeanFunction::Harmonic not support" << endl;
 					}
 					else if (function == MeanFunction::Gauss || function == MeanFunction::GaussInv)
 					{
-						cout << "not support" << endl;
+						cout << "MeanFunction::Gauss/MeanFunction::GaussInv not support" << endl;
 					}
 					else if (function == MeanFunction::Mean)
 					{

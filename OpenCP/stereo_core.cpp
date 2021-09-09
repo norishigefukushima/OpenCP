@@ -50,11 +50,12 @@ namespace cp
 		a.copyTo(dest);
 	}
 
-	void Eular2Rotation(const double pitch, const double roll, const double yaw, cv::OutputArray dest)
-	{
-		dest.create(3, 3, CV_64F);
 
-		Mat a = Mat::eye(3, 3, CV_64F); a.copyTo(dest);
+	void Eular2Rotation(const double pitch, const double roll, const double yaw, cv::OutputArray dest, const int depth)
+	{
+		dest.create(3, 3, depth);
+
+		Mat a = Mat::eye(3, 3, depth); a.copyTo(dest);
 		rotYaw(dest, dest, yaw);
 		rotPitch(dest, dest, pitch);
 		rotRoll(dest, dest, roll);

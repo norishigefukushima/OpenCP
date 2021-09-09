@@ -26,6 +26,7 @@ class CP_EXPORT Stat
 		void print();//print all stat
 		void drawDistribution(std::string wname = "Stat distribution", int div = 100);
 		void drawDistribution(std::string wname, int div, double minv, double maxv);
+		void drawPlofilePlot(std::string wname);
 	};
 ```
 
@@ -56,5 +57,6 @@ cout<<st.getMedian()<<endl;
 ```
 
 * `drawDistribution`メソッドで，中の統計情報のヒストグラムを描画可能．
+* `drawPlofilePlot`メソッドで，時間経過による値のプロット．
 * `print`メソッドは，すべての統計情報をprintfする．
 * `clear`によりすべての情報をクリア

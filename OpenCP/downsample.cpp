@@ -107,6 +107,72 @@ namespace cp
 		}
 	}
 
+	static void downsampleNN2_32F(const Mat& src, Mat& dest)
+	{
+		if (src.channels() == 1)
+		{
+			if (src.cols >= 32 && src.rows >= 32)
+			{
+				const int w = src.cols >> 1;
+				const int simdw = w / 8;
+				for (int j = 0; j < src.rows; j += 2)
+				{
+#if 0
+					const float* s = src.ptr<float>(j);
+					float* d = dest.ptr<float>(j >> 1);
+					for (int i = 0; i < w; i++)
+					{
+						*d = *s;
+						s += 2;
+						d++;
+					}
+#else
+					__m256* d = (__m256*)dest.ptr<float>(j >> 1);
+					__m256* ms = (__m256*)src.ptr<float>(j);
+
+					for (int i = 0; i < simdw; i++)
+					{
+						__m256 a = _mm256_shuffle_ps(*ms, *(ms + 1), _MM_SHUFFLE(2, 0, 2, 0));
+						//*d = _mm256_castps256_ps128(_mm256_permute4x64_epi64(a,a,0x10));
+						*d = _mm256_castsi256_ps(_mm256_permute4x64_epi64(_mm256_castps_si256(a), _MM_SHUFFLE(3, 1, 2, 0)));
+						d++;
+						ms += 2;
+					}
+#endif
+				}
+			}
+			else
+			{
+				const int w = src.cols >> 1;
+				for (int j = 0; j < src.rows; j += 2)
+				{
+					const float* s = src.ptr<float>(j);
+					float* d = dest.ptr<float>(j >> 1);
+					for (int i = 0; i < w; i++)
+					{
+						*d = *s;
+						s += 2;
+						d++;
+					}
+				}
+			}	
+		}
+		else
+		{
+			for (int j = 0, n = 0; j < src.rows; j += 2, n++)
+			{
+				const float* s = src.ptr<float>(j);
+				float* d = dest.ptr<float>(n);
+				for (int i = 0, m = 0; i < 3 * src.cols; i += 3 * 2, m += 3)
+				{
+					d[m + 0] = s[i + 0];
+					d[m + 1] = s[i + 1];
+					d[m + 2] = s[i + 2];
+				}
+			}
+		}
+	}
+
 	static void hatConvolution(const Mat& src, Mat& dst, const int r)
 	{
 		const float invr = 1.f / r;
@@ -289,7 +355,8 @@ namespace cp
 				switch (downsample_method)
 				{
 				case Downsample::CP_NEAREST:
-					downsampleNN_<float>(src, dest, scale); break;
+					if (scale == 2 && src.cols % 2 == 0 && src.rows && 2)downsampleNN2_32F(src, dest);
+					else downsampleNN_<float>(src, dest, scale); break;
 				case Downsample::CP_LINEAR:
 					downsampleLinear_<float>(src, dest, scale, r); break;
 				case Downsample::CP_CUBIC:

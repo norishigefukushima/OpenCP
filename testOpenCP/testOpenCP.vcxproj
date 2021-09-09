@@ -172,6 +172,7 @@
     <ClCompile Include="guiBlendTest.cpp" />
     <ClCompile Include="bilateralfilter\bilateralFilterTest.cpp" />
     <ClCompile Include="highDimentionalGaussianFilterTest.cpp" />
+    <ClCompile Include="testCalibration.cpp" />
     <ClCompile Include="testColorCorrection.cpp" />
     <ClCompile Include="denoise\denoiseTest.cpp" />
     <ClCompile Include="disparityRefinement\disparityRefinementTest.cpp" />

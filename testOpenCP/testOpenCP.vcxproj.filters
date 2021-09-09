@@ -153,6 +153,9 @@
     <ClCompile Include="testMatInfo.cpp">
       <Filter>ソース ファイル\test\core</Filter>
     </ClCompile>
+    <ClCompile Include="testCalibration.cpp">
+      <Filter>ソース ファイル\test\stereo</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="test.hpp">

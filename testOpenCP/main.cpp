@@ -14,9 +14,10 @@ void testIsSame()
 	isSame(a, a, 10);
 }
 
+
 int main(int argc, char** argv)
 {
-	testIsSame(); return 0;
+	//testIsSame(); return 0;
 	//cout << cv::getBuildInformation() << endl;
 
 #pragma region setup
@@ -32,7 +33,7 @@ int main(int argc, char** argv)
 
 
 #pragma region core
-	//testKMeans(img); return 0;
+	testKMeans(img); return 0;
 	//testTiling(img); return 0;
 	//copyMakeBorderTest(img); return 0;
 	//testSplitMerge(img); return 0;
@@ -84,7 +85,7 @@ int main(int argc, char** argv)
 	//testWeightedHistogramFilter();return 0;
 #pragma endregion 
 
-	guiUpsampleTest(img);return 0;
+	guiUpsampleTest(img); return 0;
 	//guiDomainTransformFilterTest(img);
 	//guiMedianFilterTest(img);
 	//VisualizeDenormalKernel vdk;

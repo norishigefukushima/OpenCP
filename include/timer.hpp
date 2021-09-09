@@ -95,6 +95,8 @@ namespace cp
 		int getStatSize();//get the size of Stat
 		void drawDistribution(std::string wname = "Stat distribution", int div = 100);
 		void drawDistribution(std::string wname, int div, double minv, double maxv);
+		void drawPlofilePlot(std::string wname);
+		
 
 		Timer(std::string message, int mode = TIME_AUTO, bool isShow = true);
 		Timer(char* message, int mode = TIME_AUTO, bool isShow = true);

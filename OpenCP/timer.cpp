@@ -176,12 +176,19 @@ namespace cp
 			stat.drawDistribution(wname, div);
 	}
 
+
 	void Timer::drawDistribution(string wname, int div, double minv, double maxv)
 	{
 		if (stat.getSize() > 1)
 			stat.drawDistribution(wname, div, minv, maxv);
 	}
 
+	void Timer::drawPlofilePlot(string wname)
+	{
+		if (stat.getSize() > 1)
+		stat.drawPlofilePlot(wname);
+	}
+	
 	void Timer::setMessage(string& src)
 	{
 		mes = src;

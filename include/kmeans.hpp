@@ -52,6 +52,7 @@ namespace cp
 
 		void boxMeanCentroidAoS(cv::Mat& data_points, const int* labels, cv::Mat& dest_centroid, int* counters);//N*d simple average
 
+		//data.cols < data.rows transpos data;
 		double clusteringSoA(cv::InputArray _data, int K, cv::InputOutputArray _bestLabels, cv::TermCriteria criteria, int attempts, int flags, cv::OutputArray _centers, MeanFunction function = MeanFunction::Mean, int loop = 0);
 		double clusteringAoS(cv::InputArray _data, int K, cv::InputOutputArray _bestLabels, cv::TermCriteria criteria, int attempts, int flags, cv::OutputArray _centers, MeanFunction function = MeanFunction::Mean, int loop = 1);
 		double clusteringSoAoS(cv::InputArray _data, int K, cv::InputOutputArray _bestLabels, cv::TermCriteria criteria, int attempts, int flags, cv::OutputArray _centers, MeanFunction function = MeanFunction::Mean, int loop = 0);

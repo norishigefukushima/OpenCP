@@ -1562,6 +1562,26 @@ namespace cp
 #pragma endregion
 
 #pragma region cvtColorAverageGray
+	static void cvtColorAverageGray_32F(vector<Mat>& src, Mat& dest, const float normalize)
+	{
+		CV_Assert(src.size() == 3);
+		CV_Assert(src[0].depth() == CV_32F);
+
+		__m256* b = (__m256*)src[0].ptr<float>();
+		__m256* g = (__m256*)src[1].ptr<float>();
+		__m256* r = (__m256*)src[2].ptr<float>();
+		float* dptr = dest.ptr<float>();
+		const int size = src[0].size().area() / 8;
+		const __m256 mnorm = _mm256_set1_ps(normalize);
+		for (int i = 0; i < size; i++)
+		{
+			_mm256_store_ps(dptr, _mm256_mul_ps(mnorm, _mm256_add_ps(*r, _mm256_add_ps(*b, *g))));
+			b++;
+			g++;
+			r++;
+			dptr += 8;
+		}
+	}
 	static void cvtColorAverageGray_32F(Mat& src, Mat& dest, const float normalize)
 	{
 		CV_Assert(src.type() == CV_32FC3);
@@ -1569,10 +1589,10 @@ namespace cp
 		float* sptr = src.ptr<float>();
 		float* dptr = dest.ptr<float>();
 		const int size = src.size().area() / 8;
-		__m256 mnorm = _mm256_set1_ps(normalize);
+		const __m256 mnorm = _mm256_set1_ps(normalize);
+		__m256 b, g, r;
 		for (int i = 0; i < size; i++)
 		{
-			__m256 b, g, r;
 			_mm256_load_cvtps_bgr2planar_ps(sptr, b, g, r);
 			_mm256_store_ps(dptr, _mm256_mul_ps(mnorm, _mm256_add_ps(r, _mm256_add_ps(b, g))));
 			sptr += 24;
@@ -1582,18 +1602,36 @@ namespace cp
 
 	void cvtColorAverageGray(InputArray src_, OutputArray dest, const bool isKeepDistance)
 	{
-		if (src_.channels() == 1)
+		if (src_.isMatVector())
 		{
-			src_.copyTo(dest);
-			return;
+			vector<Mat> src;
+			 src_.getMatVector(src);
+			if (src.size() == 1)
+			{
+				src[0].copyTo(dest);
+				return;
+			}
+	
+			dest.create(src[0].size(), src[0].depth());
+			const float normalize = (isKeepDistance) ? 1.f / sqrt(3.f) : 1.f / 3.f;
+			if (src[0].depth() == CV_32F) cvtColorAverageGray_32F(src, dest.getMat(), normalize);
+			else cout << "do not support this depth (cvtColorAverageGray)" << endl;
 		}
+		else
+		{
+			if (src_.channels() == 1)
+			{
+				src_.copyTo(dest);
+				return;
+			}
 
-		Mat src = src_.getMat();
-		dest.create(src_.size(), src.depth());
+			Mat src = src_.getMat();
+			dest.create(src_.size(), src.depth());
 
-		const float normalize = (isKeepDistance) ? 1.f / sqrt(3.f) : 1.f / 3.f;
-		if (src.depth() == CV_32F)cvtColorAverageGray_32F(src, dest.getMat(), normalize);
-		else cout << "do not support this depth (cvtColorAverageGray)" << endl;
+			const float normalize = (isKeepDistance) ? 1.f / sqrt(3.f) : 1.f / 3.f;
+			if (src.depth() == CV_32F)cvtColorAverageGray_32F(src, dest.getMat(), normalize);
+			else cout << "do not support this depth (cvtColorAverageGray)" << endl;
+		}
 	}
 
 #pragma region PCA

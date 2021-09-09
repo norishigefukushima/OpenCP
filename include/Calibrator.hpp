@@ -46,5 +46,6 @@ namespace cp
 		void undistort(cv::Mat& src, cv::Mat& dest);
 		void printParameters();
 		double operator()();//calibrate camera
+		double calibration(const int flag);
 	};
 }
