@@ -49,7 +49,7 @@ namespace cp
 
 		//computing centroid
 		void boxMeanCentroidSoA(cv::Mat& data_points, const int* labels, cv::Mat& dest_centroid, int* counters);//simple average
-		void weightedMeanCentroid(cv::Mat& data_points, const int* labels, const cv::Mat& src_centroid, float* Table, cv::Mat& dest_centroid, float* centroid_weight, int* counters);
+		void weightedMeanCentroid(cv::Mat& data_points, const int* labels, const cv::Mat& src_centroid, const float* Table, cv::Mat& dest_centroid, float* dest_centroid_weight, int* dest_counters);
 		void harmonicMeanCentroid(cv::Mat& data_points, const int* labels, const cv::Mat& src_centroid, cv::Mat& dest_centroid, float* centroid_weight, int* counters);
 
 		void boxMeanCentroidAoS(cv::Mat& data_points, const int* labels, cv::Mat& dest_centroid, int* counters);//N*d simple average

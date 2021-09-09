@@ -362,13 +362,13 @@ namespace cp
 	}
 
 	//N*dims
-	void KMeans::weightedMeanCentroid(Mat& data_points, const int* labels, const Mat& src_centroid, float* Table, Mat& dest_centroid, float* centroid_weight, int* counters)
+	void KMeans::weightedMeanCentroid(Mat& data_points, const int* labels, const Mat& src_centroid, const float* Table, Mat& dest_centroid, float* dest_centroid_weight, int* dest_counters)
 	{
 		const int dims = data_points.rows;
 		const int N = data_points.cols;
 		const int K = src_centroid.rows;
 
-		for (int k = 0; k < K; k++) centroid_weight[k] = 0.f;
+		for (int k = 0; k < K; k++) dest_centroid_weight[k] = 0.f;
 
 		cv::AutoBuffer<float*, 64> dataTop(dims);
 		for (int d = 0; d < dims; d++)
@@ -421,8 +421,8 @@ namespace cp
 			{
 				const int arg_k = ((int*)&marg_k)[v];
 				const float wi = ((float*)&mwi)[v];
-				centroid_weight[arg_k] += wi;
-				counters[arg_k]++;
+				dest_centroid_weight[arg_k] += wi;
+				dest_counters[arg_k]++;
 				float* dstCentroidPtr = dest_centroid.ptr<float>(arg_k);
 				for (int d = 0; d < dims; d++)
 				{
@@ -873,6 +873,7 @@ namespace cp
 
 			for (int i = 0; i < tableSize; i++)
 			{
+				//weight_table[i] = 1.f;
 				weight_table[i] = 1.f - exp(i * i / (-2.f * sigma * sigma)) + 0.001f;
 				//weight_table[i] =Huber(i, sigma) + 0.001f;
 				//weight_table[i] = i< sigma ? 0.001f: 1.f;
@@ -924,7 +925,6 @@ namespace cp
 				best_labels.type() == CV_32S &&
 				best_labels.isContinuous());
 
-			//best_labels.reshape(N, 1).copyTo(labels_internal);
 			best_labels.copyTo(labels_internal);
 			for (int i = 0; i < N; i++)
 			{
@@ -946,6 +946,10 @@ namespace cp
 		int* labels = labels_internal.ptr<int>();
 
 		Mat centroids(K, dims, type);
+		if ((flags & KMEANS_USE_INITIAL_LABELS) && (function == MeanFunction::Gauss || function == MeanFunction::GaussInv || function == MeanFunction::LnNorm))
+		{
+			dest_centroids.copyTo(centroids);
+		}
 		Mat old_centroids(K, dims, type);
 		Mat temp(1, dims, type);
 
@@ -979,7 +983,7 @@ namespace cp
 				float max_center_shift = (iter == 0) ? FLT_MAX : 0.f;
 
 				swap(centroids, old_centroids);
-
+				
 				const bool isInit = ((iter == 0) && (attempt_index > 0 || !(flags & KMEANS_USE_INITIAL_LABELS)));//initial attemp && KMEANS_USE_INITIAL_LABELS is true
 				if (isInit)//initialization for first loop
 				{
