@@ -13,7 +13,9 @@ namespace cp
 			Mean,//box
 			Gauss,
 			GaussInv,
+			LnNorm,
 			Harmonic
+
 		};
 		void setSigma(const float sigma) { this->sigma = sigma; }//for Gauss means
 
