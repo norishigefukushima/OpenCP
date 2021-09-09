@@ -54,8 +54,10 @@ artifacts/
 *.ilk
 *.meta
 *.obj
+*.iobj
 *.pch
 *.pdb
+*.ipdb
 *.pgc
 *.pgd
 *.rsp
@@ -289,7 +291,11 @@ __pycache__/
 
 bin/OpenCP.dll
 bin/OpenCPd.dll
+bin/SpatialFilter.dll
+bin/SpatialFilterd.dll
 lib/*.exp
 lib/OpenCP.lib
 lib/OpenCPd.lib
+lib/SpatialFilter.dll
+lib/SpatialFilterd.dll
 testOpenCP/My Advisor Results - testOpenCP/

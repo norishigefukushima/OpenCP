@@ -1,11 +1,16 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.40629.0
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30523.141
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OpenCP", "OpenCP\OpenCP.vcxproj", "{40F6023E-3DFD-4281-A0D7-C2C180F50658}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testOpenCP", "testOpenCP\testOpenCP.vcxproj", "{4AC8A78B-F138-4912-B08F-431A10477173}"
+	ProjectSection(ProjectDependencies) = postProject
+		{40F6023E-3DFD-4281-A0D7-C2C180F50658} = {40F6023E-3DFD-4281-A0D7-C2C180F50658}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SpatialFilter", "SpatialFilter\SpatialFilter.vcxproj", "{63C3BDA6-8219-44E1-A02C-0720698F1D5A}"
 	ProjectSection(ProjectDependencies) = postProject
 		{40F6023E-3DFD-4281-A0D7-C2C180F50658} = {40F6023E-3DFD-4281-A0D7-C2C180F50658}
 	EndProjectSection
@@ -44,8 +49,23 @@ Global
 		{4AC8A78B-F138-4912-B08F-431A10477173}.Release|Win32.Build.0 = Release|Win32
 		{4AC8A78B-F138-4912-B08F-431A10477173}.Release|x64.ActiveCfg = Release|x64
 		{4AC8A78B-F138-4912-B08F-431A10477173}.Release|x64.Build.0 = Release|x64
+		{63C3BDA6-8219-44E1-A02C-0720698F1D5A}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{63C3BDA6-8219-44E1-A02C-0720698F1D5A}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{63C3BDA6-8219-44E1-A02C-0720698F1D5A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{63C3BDA6-8219-44E1-A02C-0720698F1D5A}.Debug|Win32.Build.0 = Debug|Win32
+		{63C3BDA6-8219-44E1-A02C-0720698F1D5A}.Debug|x64.ActiveCfg = Debug|x64
+		{63C3BDA6-8219-44E1-A02C-0720698F1D5A}.Debug|x64.Build.0 = Debug|x64
+		{63C3BDA6-8219-44E1-A02C-0720698F1D5A}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{63C3BDA6-8219-44E1-A02C-0720698F1D5A}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{63C3BDA6-8219-44E1-A02C-0720698F1D5A}.Release|Win32.ActiveCfg = Release|Win32
+		{63C3BDA6-8219-44E1-A02C-0720698F1D5A}.Release|Win32.Build.0 = Release|Win32
+		{63C3BDA6-8219-44E1-A02C-0720698F1D5A}.Release|x64.ActiveCfg = Release|x64
+		{63C3BDA6-8219-44E1-A02C-0720698F1D5A}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D4ACD9FD-9D5E-44D2-A8EF-758EC7A76ACA}
 	EndGlobalSection
 EndGlobal
