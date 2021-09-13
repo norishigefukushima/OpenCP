@@ -125,6 +125,8 @@ void testTilingAccuracy(Mat& src, bool isPrint = false, const int r = 32, const 
 			if (isPrint)cout << "sub s:" << psnr << endl;
 			pasteTileAlign(tile_s, dest_tile_s, div, index, r);
 
+			pasteMergeTileAlign(sv2, dest_tile_s, div, index, r);
+
 #if 0
 			if (i == 3 && j == 0)
 			{

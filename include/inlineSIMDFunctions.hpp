@@ -767,23 +767,20 @@ inline void _mm_load_cvtepu8bgr2planar_epi64(const uchar* ptr, __m128i& b, __m12
 
 	const __m128i mask1 = _mm_setr_epi8(0, 3, 6, 9, 12, 15, 1, 4, 7, 10, 13, 2, 5, 8, 11, 14);
 	const __m128i mask2 = _mm_setr_epi8(0, 3, 6, 0, 0, 0, 2, 5, 0, 0, 0, 1, 4, 7, 0, 0);
-
-	const __m128i smask1 = _mm_setr_epi8(6, 7, 8, 9, 10, 0, 1, 2, 3, 4, 5, 11, 12, 13, 14, 15);
-	const __m128i smask2 = _mm_setr_epi8(11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-	const __m128i smask3 = _mm_setr_epi8(0, 0, 0, 0, 0, 11, 12, 13, 0, 0, 0, 0, 0, 0, 0, 0);
-
-	const __m128i bmask1 = _mm_setr_epi8(-1, -1, -1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-	const __m128i bmask2 = _mm_setr_epi8(-1, -1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-
 	__m128i s0 = _mm_shuffle_epi8(_mm_load_si128((__m128i*)(ptr)), mask1);      //bbbbbbgggggrrrrr
 	__m128i s1 = _mm_shuffle_epi8(_mm_loadl_epi64((__m128i*)(ptr + 16)), mask2);//ggg000bb000rrr00
 
-	b = _mm_blendv_epi8(s1, s0, bmask1);//bbbbbbbb
 
+	const __m128i bmask1 = _mm_setr_epi8(-1, -1, -1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+	b = _mm_blendv_epi8(s1, s0, bmask1);//bbbbbbbb
+	const __m128i smask1 = _mm_setr_epi8(6, 7, 8, 9, 10, 0, 1, 2, 3, 4, 5, 11, 12, 13, 14, 15);
+	const __m128i bmask2 = _mm_setr_epi8(-1, -1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 	s0 = _mm_shuffle_epi8(s0, smask1);  //gggggbbbbbbrrrrr
 	s1 = _mm_shuffle_epi8(s1, smask1);  //bb000ggg000rrr00
 	g = _mm_blendv_epi8(s1, s0, bmask2);//gggggggg
 
+	const __m128i smask2 = _mm_setr_epi8(11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+	const __m128i smask3 = _mm_setr_epi8(0, 0, 0, 0, 0, 11, 12, 13, 0, 0, 0, 0, 0, 0, 0, 0);
 	s0 = _mm_shuffle_epi8(s0, smask2);  //rrrrr00000000000
 	s1 = _mm_shuffle_epi8(s1, smask3);  //00000rrr00000000
 	r = _mm_blendv_epi8(s1, s0, bmask2);//rrrrrrrr
@@ -894,34 +891,134 @@ inline void _mm256_load_cvtepu8bgr2planar_psx4(const uchar* ptr,
 }
 
 
+inline void _mm_store_interleave_epi8_epi64(uchar* dst, __m128i b, __m128i g, __m128i r)
+{
+	const __m128i sh_a = _mm_setr_epi8(0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10, 5);
+	const __m128i sh_b = _mm_setr_epi8(5, 0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10);
+	const __m128i sh_c = _mm_setr_epi8(10, 5, 0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15);
 
+	__m128i a0 = _mm_shuffle_epi8(b, sh_a);
+	__m128i b0 = _mm_shuffle_epi8(g, sh_b);
+	__m128i c0 = _mm_shuffle_epi8(r, sh_c);
+
+	const __m128i m0 = _mm_setr_epi8(0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0);
+	const __m128i m1 = _mm_setr_epi8(0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0);
+
+	_mm_storeu_si128((__m128i*)(dst), _mm_blendv_epi8(_mm_blendv_epi8(a0, b0, m1), c0, m0));
+	_mm_storel_epi64((__m128i*)(dst + 16), _mm_blendv_epi8(_mm_blendv_epi8(b0, c0, m1), a0, m0));
+}
+
+#define _mm_store_epi8_color _mm_store_interleave_epi8_si128
+inline void _mm_store_epi8_color(uchar* dst, __m128i b, __m128i g, __m128i r)
+{
+	const __m128i sh_a = _mm_setr_epi8(0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10, 5);
+	const __m128i sh_b = _mm_setr_epi8(5, 0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10);
+	const __m128i sh_c = _mm_setr_epi8(10, 5, 0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15);
+	__m128i a0 = _mm_shuffle_epi8(b, sh_a);
+	__m128i b0 = _mm_shuffle_epi8(g, sh_b);
+	__m128i c0 = _mm_shuffle_epi8(r, sh_c);
+
+	const __m128i m0 = _mm_setr_epi8(0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0);
+	const __m128i m1 = _mm_setr_epi8(0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0);
+
+	_mm_store_si128((__m128i*)(dst), _mm_blendv_epi8(_mm_blendv_epi8(a0, b0, m1), c0, m0));
+	_mm_store_si128((__m128i*)(dst + 16), _mm_blendv_epi8(_mm_blendv_epi8(b0, c0, m1), a0, m0));
+	_mm_store_si128((__m128i*)(dst + 32), _mm_blendv_epi8(_mm_blendv_epi8(c0, a0, m1), b0, m0));
+}
+
+
+#define _mm_storeu_epi8_color _mm_storeu_interleave_epi8_si128
+inline void _mm_storeu_epi8_color(uchar* dst, __m128i b, __m128i g, __m128i r)
+{
+	const __m128i sh_a = _mm_setr_epi8(0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10, 5);
+	const __m128i sh_b = _mm_setr_epi8(5, 0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10);
+	const __m128i sh_c = _mm_setr_epi8(10, 5, 0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15);
+	__m128i a0 = _mm_shuffle_epi8(b, sh_a);
+	__m128i b0 = _mm_shuffle_epi8(g, sh_b);
+	__m128i c0 = _mm_shuffle_epi8(r, sh_c);
+
+	const __m128i m0 = _mm_setr_epi8(0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0);
+	const __m128i m1 = _mm_setr_epi8(0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0);
+
+	_mm_storeu_si128((__m128i*)(dst), _mm_blendv_epi8(_mm_blendv_epi8(a0, b0, m1), c0, m0));
+	_mm_storeu_si128((__m128i*)(dst + 16), _mm_blendv_epi8(_mm_blendv_epi8(b0, c0, m1), a0, m0));
+	_mm_storeu_si128((__m128i*)(dst + 32), _mm_blendv_epi8(_mm_blendv_epi8(c0, a0, m1), b0, m0));
+}
+
+#define _mm_stream_epi8_color _mm_stream_interleave_epi8_si256
+inline void _mm_stream_epi8_color(uchar* dst, __m128i b, __m128i g, __m128i r)
+{
+	const __m128i sh_a = _mm_setr_epi8(0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10, 5);
+	const __m128i sh_b = _mm_setr_epi8(5, 0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10);
+	const __m128i sh_c = _mm_setr_epi8(10, 5, 0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15);
+	__m128i a0 = _mm_shuffle_epi8(b, sh_a);
+	__m128i b0 = _mm_shuffle_epi8(g, sh_b);
+	__m128i c0 = _mm_shuffle_epi8(r, sh_c);
+
+	const __m128i m0 = _mm_setr_epi8(0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0);
+	const __m128i m1 = _mm_setr_epi8(0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0);
+
+	_mm_stream_si128((__m128i*)(dst), _mm_blendv_epi8(_mm_blendv_epi8(a0, b0, m1), c0, m0));
+	_mm_stream_si128((__m128i*)(dst + 16), _mm_blendv_epi8(_mm_blendv_epi8(b0, c0, m1), a0, m0));
+	_mm_stream_si128((__m128i*)(dst + 32), _mm_blendv_epi8(_mm_blendv_epi8(c0, a0, m1), b0, m0));
+}
+
+#define _mm256_store_epi8_color _mm256_store_interleave_epi8_si256
 inline void _mm256_store_epi8_color(uchar* dst, __m256i b, __m256i g, __m256i r)
 {
-	static const __m256i mask1 = _mm256_set_epi8(
+	const __m256i sh_b = _mm256_setr_epi8(
+		0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10, 5,
+		0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10, 5);
+	const __m256i sh_g = _mm256_setr_epi8(
+		5, 0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10,
+		5, 0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10);
+	const __m256i sh_r = _mm256_setr_epi8(
+		10, 5, 0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15,
+		10, 5, 0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15);
+
+	__m256i b0 = _mm256_shuffle_epi8(b, sh_b);
+	__m256i g0 = _mm256_shuffle_epi8(g, sh_g);
+	__m256i r0 = _mm256_shuffle_epi8(r, sh_r);
+
+	const __m256i m0 = _mm256_setr_epi8(0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0,
+		0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0);
+	const __m256i m1 = _mm256_setr_epi8(0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0,
+		0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0);
+
+	__m256i p0 = _mm256_blendv_epi8(_mm256_blendv_epi8(b0, g0, m0), r0, m1);
+	__m256i p1 = _mm256_blendv_epi8(_mm256_blendv_epi8(g0, r0, m0), b0, m1);
+	__m256i p2 = _mm256_blendv_epi8(_mm256_blendv_epi8(r0, b0, m0), g0, m1);
+
+	_mm256_store_si256((__m256i*)dst, _mm256_permute2x128_si256(p0, p1, 0 + 2 * 16));
+	_mm256_store_si256((__m256i*)(dst + 32), _mm256_permute2x128_si256(p2, p0, 0 + 3 * 16));
+	_mm256_store_si256((__m256i*)(dst + 64), _mm256_permute2x128_si256(p1, p2, 1 + 3 * 16));
+
+#if 0
+	const __m256i mask1 = _mm256_set_epi8(
 		5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0,
 		5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0
 	);
-	static const __m256i mask2 = _mm256_set_epi8(
+	const __m256i mask2 = _mm256_set_epi8(
 		10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5,
 		10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5
 	);
-	static const __m256i mask3 = _mm256_set_epi8(
+	const __m256i mask3 = _mm256_set_epi8(
 		15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5, 10,
 		15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5, 10
-	);
-
-	static const __m256i bmask1 = _mm256_set_epi8(
-		255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255,
-		0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0
-	);
-	static const __m256i bmask2 = _mm256_set_epi8(
-		255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255,
-		255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255
 	);
 
 	const __m256i aa = _mm256_shuffle_epi8(b, mask1);
 	const __m256i bb = _mm256_shuffle_epi8(g, mask2);
 	const __m256i cc = _mm256_shuffle_epi8(r, mask3);
+
+	const __m256i bmask1 = _mm256_set_epi8(
+		255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255,
+		0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0
+	);
+	const __m256i bmask2 = _mm256_set_epi8(
+		255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255,
+		255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255
+	);
 
 	__m256i aaa = _mm256_permute2x128_si256(aa, aa, 0x00);
 	__m256i bbb = _mm256_permute2x128_si256(bb, bb, 0x00);
@@ -932,7 +1029,78 @@ inline void _mm256_store_epi8_color(uchar* dst, __m256i b, __m256i g, __m256i r)
 	bbb = _mm256_permute2x128_si256(bb, bb, 0x11);
 	ccc = _mm256_permute2x128_si256(cc, cc, 0x11);
 	_mm256_store_si256(reinterpret_cast<__m256i*>(static_cast<uchar*>(dst) + 64), _mm256_blendv_epi8(aaa, _mm256_blendv_epi8(bbb, ccc, bmask1), bmask2));
+#endif
 }
+
+#define _mm256_storeu_epi8_color _mm256_storeu_interleave_epi8_si256
+inline void _mm256_storeu_epi8_color(uchar* dst, __m256i b, __m256i g, __m256i r)
+{
+	const __m256i sh_b = _mm256_setr_epi8(
+		0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10, 5,
+		0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10, 5);
+	const __m256i sh_g = _mm256_setr_epi8(
+		5, 0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10,
+		5, 0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10);
+	const __m256i sh_r = _mm256_setr_epi8(
+		10, 5, 0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15,
+		10, 5, 0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15);
+
+	__m256i b0 = _mm256_shuffle_epi8(b, sh_b);
+	__m256i g0 = _mm256_shuffle_epi8(g, sh_g);
+	__m256i r0 = _mm256_shuffle_epi8(r, sh_r);
+
+	const __m256i m0 = _mm256_setr_epi8(0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0,
+		0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0);
+	const __m256i m1 = _mm256_setr_epi8(0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0,
+		0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0);
+
+	__m256i p0 = _mm256_blendv_epi8(_mm256_blendv_epi8(b0, g0, m0), r0, m1);
+	__m256i p1 = _mm256_blendv_epi8(_mm256_blendv_epi8(g0, r0, m0), b0, m1);
+	__m256i p2 = _mm256_blendv_epi8(_mm256_blendv_epi8(r0, b0, m0), g0, m1);
+
+	_mm256_storeu_si256((__m256i*)dst, _mm256_permute2x128_si256(p0, p1, 0 + 2 * 16));
+	_mm256_storeu_si256((__m256i*)(dst + 32), _mm256_permute2x128_si256(p2, p0, 0 + 3 * 16));
+	_mm256_storeu_si256((__m256i*)(dst + 64), _mm256_permute2x128_si256(p1, p2, 1 + 3 * 16));
+
+#if 0
+	const __m256i mask1 = _mm256_set_epi8(
+		5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0,
+		5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0
+	);
+	const __m256i mask2 = _mm256_set_epi8(
+		10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5,
+		10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5
+	);
+	const __m256i mask3 = _mm256_set_epi8(
+		15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5, 10,
+		15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5, 10
+	);
+
+	const __m256i aa = _mm256_shuffle_epi8(b, mask1);
+	const __m256i bb = _mm256_shuffle_epi8(g, mask2);
+	const __m256i cc = _mm256_shuffle_epi8(r, mask3);
+
+	const __m256i bmask1 = _mm256_set_epi8(
+		255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255,
+		0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0
+	);
+	const __m256i bmask2 = _mm256_set_epi8(
+		255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255,
+		255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255
+	);
+
+	__m256i aaa = _mm256_permute2x128_si256(aa, aa, 0x00);
+	__m256i bbb = _mm256_permute2x128_si256(bb, bb, 0x00);
+	__m256i ccc = _mm256_permute2x128_si256(cc, cc, 0x00);
+	_mm256_store_si256(reinterpret_cast<__m256i*>(static_cast<uchar*>(dst)), _mm256_blendv_epi8(ccc, _mm256_blendv_epi8(aaa, bbb, bmask1), bmask2));
+	_mm256_store_si256(reinterpret_cast<__m256i*>(static_cast<uchar*>(dst) + 32), _mm256_blendv_epi8(cc, _mm256_blendv_epi8(bb, aa, bmask2), bmask1));
+	aaa = _mm256_permute2x128_si256(aa, aa, 0x11);
+	bbb = _mm256_permute2x128_si256(bb, bb, 0x11);
+	ccc = _mm256_permute2x128_si256(cc, cc, 0x11);
+	_mm256_store_si256(reinterpret_cast<__m256i*>(static_cast<uchar*>(dst) + 64), _mm256_blendv_epi8(aaa, _mm256_blendv_epi8(bbb, ccc, bmask1), bmask2));
+#endif
+}
+
 
 inline void _mm256_storeu_ps2epu8_color(void* dst, __m256 b, __m256 g, __m256 r)
 {
@@ -984,6 +1152,7 @@ inline void _mm256_storescalar_ps2epu8_color(void* dst, __m256 b, __m256 g, __m2
 		dest[i] = buffscalarstore[i];
 }
 
+#define _mm256_store_ps_color _mm256_store_interleave_ps
 inline void _mm256_store_ps_color(void* dst, const __m256 b, const __m256 g, const __m256 r)
 {
 	__m256 b0 = _mm256_shuffle_ps(b, b, 0x6c);
@@ -1003,6 +1172,7 @@ inline void _mm256_store_ps_color(void* dst, const __m256 b, const __m256 g, con
 	_mm256_store_ps((float*)dst + 16, bgr2);
 }
 
+#define _mm256_storeu_ps_color _mm256_storeu_interleave_ps
 inline void _mm256_storeu_ps_color(void* dst, const __m256 b, const __m256 g, const __m256 r)
 {
 	__m256 b0 = _mm256_shuffle_ps(b, b, 0x6c);
@@ -1045,6 +1215,7 @@ inline void _mm256_storescalar_ps_color(void* dst, const __m256 b, const __m256 
 		dest[i] = buffscalarstore[i];
 }
 
+#define _mm256_stream_ps_color _mm256_stream_interleve_ps
 inline void _mm256_stream_ps_color(void* dst, const __m256 b, const __m256 g, const __m256 r)
 {
 	__m256 b0 = _mm256_shuffle_ps(b, b, 0x6c);
@@ -1106,7 +1277,7 @@ void inline _mm256_store_ps_color_v2(void* dst, const __m256 b, const __m256 g, 
 	_mm256_store_ps((float*)dst + 16, _mm256_permute2f128_ps(rval, gval, pmask3));
 }
 
-
+#define _mm256_storeu_pd_color _mm256_storeu_interleave_pd
 inline void _mm256_storeu_pd_color(void* dst, const __m256d b, const __m256d g, const __m256d r)
 {
 	const __m256d b0 = _mm256_permute2f128_pd(b, b, 0b00000000);
@@ -1122,6 +1293,7 @@ inline void _mm256_storeu_pd_color(void* dst, const __m256d b, const __m256d g, 
 	_mm256_storeu_pd(static_cast<double*>(dst) + 8, _mm256_blend_pd(_mm256_blend_pd(b1, g0, 0b0100), r1, 0b1001));
 }
 
+#define _mm256_store_pd_color _mm256_store_interleave_pd
 inline void _mm256_store_pd_color(void* dst, const __m256d b, const __m256d g, const __m256d r)
 {
 	const __m256d b0 = _mm256_permute2f128_pd(b, b, 0b00000000);
@@ -1137,6 +1309,7 @@ inline void _mm256_store_pd_color(void* dst, const __m256d b, const __m256d g, c
 	_mm256_store_pd(static_cast<double*>(dst) + 8, _mm256_blend_pd(_mm256_blend_pd(b1, g0, 0b0100), r1, 0b1001));
 }
 
+#define _mm256_stream_pd_color _mm256_stream_interleave_pd
 inline void _mm256_stream_pd_color(void* dst, const __m256d b, const __m256d g, const __m256d r)
 {
 	const __m256d b0 = _mm256_permute2f128_pd(b, b, 0b00000000);
@@ -1649,7 +1822,7 @@ __m128 yyyy = _mm_shuffle_ps(first, first, 0x55); // _MM_SHUFFLE(1, 1, 1, 1)
 __m128 zzzz = _mm_shuffle_ps(first, first, 0xAA); // _MM_SHUFFLE(2, 2, 2, 2)
 __m128 wwww = _mm_shuffle_ps(first, first, 0xFF); // _MM_SHUFFLE(3, 3, 3, 3)
 */
-
+#pragma region store_auto_color
 inline void _mm256_storeu_auto_color(float* dest, __m256 b, __m256 g, __m256 r)
 {
 	_mm256_storeu_ps_color(dest, b, g, r);
@@ -1670,6 +1843,17 @@ inline void _mm256_store_auto_color(uchar* dest, __m256 b, __m256 g, __m256 r)
 	_mm256_store_ps2epu8_color(dest, b, g, r);
 }
 
+inline void _mm256_store_auto_color(uchar* dest, __m256i b, __m256i g, __m256i r)
+{
+	_mm256_store_epi8_color(dest, b, g, r);
+}
+
+inline void _mm256_storeu_auto_color(uchar* dest, __m256i b, __m256i g, __m256i r)
+{
+	_mm256_storeu_epi8_color(dest, b, g, r);
+}
+
+
 inline void _mm256_stream_auto_color(float* dest, __m256 b, __m256 g, __m256 r)
 {
 	_mm256_stream_ps_color(dest, b, g, r);
@@ -1679,7 +1863,7 @@ inline void _mm256_stream_auto_color(uchar* dest, __m256 b, __m256 g, __m256 r)
 {
 	_mm256_stream_ps2epu8_color(dest, b, g, r);
 }
-
+#pragma endregion
 
 #pragma region store
 
@@ -2254,6 +2438,7 @@ enum class MM_PRINT_EXCEPTION
 	NO_PRINT,
 	NO_INEXACT,
 };
+
 inline std::vector<std::string> _MM_PRINT_EXCEPTION(std::string mes = "", const MM_PRINT_EXCEPTION isPrint = MM_PRINT_EXCEPTION::ALL)
 {
 	if (mes.size() != 0) std::cout << mes << ": " << std::endl;

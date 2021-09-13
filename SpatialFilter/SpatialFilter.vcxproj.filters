@@ -75,11 +75,11 @@
     <ClCompile Include="SpatialFilterSlidingDCT7_AVX.cpp">
       <Filter>ソース ファイル\SlidingDCT</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Sliding-DCT-Gaussian-Filtering\ConstantTimeBF\GaussianFilter\GaussianFilterFIRSep2DOpenCV.cpp">
-      <Filter>ソース ファイル\FIR</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Sliding-DCT-Gaussian-Filtering\ConstantTimeBF\GaussianFilter\timeDiv.cpp">
+    <ClCompile Include="timeDiv.cpp">
       <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="GaussianFilterFIRSep2DOpenCV.cpp">
+      <Filter>ソース ファイル\FIR</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

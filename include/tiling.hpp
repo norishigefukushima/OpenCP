@@ -30,6 +30,10 @@ namespace cp
 	CP_EXPORT void pasteTile(const cv::Mat& src, cv::Mat& dest, const cv::Size div_size, const cv::Point idx, const int r);
 	CP_EXPORT void pasteTileAlign(const cv::Mat& src, cv::Mat& dest, const cv::Size div_size, const cv::Point idx, const int r, const int left_multiple = 1, const int top_multiple = 1);
 
+	CP_EXPORT void pasteMergeTile(const std::vector <cv::Mat>& src, cv::Mat& dest, const cv::Size div_size, const cv::Point idx, const int top, const int left);
+	CP_EXPORT void pasteMergeTile(const std::vector <cv::Mat>& src, cv::Mat& dest, const cv::Size div_size, const cv::Point idx, const int r);
+	CP_EXPORT void pasteMergeTileAlign(const std::vector <cv::Mat>& src, cv::Mat& dest, const cv::Size div_size, const cv::Point idx, const int r, const int left_multiple = 1, const int top_multiple = 1);
+
 	//split an image to sub images in std::vector 
 	CP_EXPORT void divideTiles(const cv::Mat& src, std::vector<cv::Mat>& dest, const cv::Size div_size, const int r, const int borderType = cv::BORDER_DEFAULT);
 	CP_EXPORT void divideTilesAlign(const cv::Mat& src, std::vector<cv::Mat>& dest, const cv::Size div_size, const int r, const int borderType = cv::BORDER_DEFAULT, const int align_x = 8, const int align_y = 1, const int left_multiple = 1, const int top_multiple = 1);

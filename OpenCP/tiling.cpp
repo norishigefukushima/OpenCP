@@ -3064,6 +3064,261 @@ namespace cp
 	}
 #pragma endregion
 
+#pragma region pastMergeTile
+	template<typename srcType>
+	void pasteMergeTile_internal(const vector<Mat>& src, Mat& dest, const Size div_size, const Point idx, const int top, const int left)
+	{
+		const int channels = (int)src.size();
+		const int tilex = dest.cols / div_size.width;
+		const int tiley = dest.rows / div_size.height;
+
+		int align = 0;
+		if (typeid(srcType) == typeid(float))align = 8;
+		if (typeid(srcType) == typeid(double))align = 4;
+		const int simd_tile_width = get_simd_floor(tilex, align) * channels;
+		const int rem = tilex * channels - simd_tile_width;
+
+		if (channels == 1)
+		{
+			for (int j = 0; j < tiley; j++)
+			{
+				srcType* d = dest.ptr<srcType>(tiley * idx.y + j, tilex * idx.x);
+				const srcType* s = src[0].ptr<srcType>(top + j, left);
+				for (int i = 0; i < simd_tile_width; i += align)
+				{
+					_mm256_storeu_auto(d + i, _mm256_loadu_auto(s + i));
+				}
+				for (int i = 0; i < rem; i++)
+				{
+					d[simd_tile_width + i] = s[simd_tile_width + i];
+				}
+			}
+		}
+		else if (channels == 3)
+		{
+			for (int j = 0; j < tiley; j++)
+			{
+				srcType* d = dest.ptr<srcType>(tiley * idx.y + j, tilex * idx.x);
+				const srcType* s0 = src[0].ptr<srcType>(top + j, left);
+				const srcType* s1 = src[1].ptr<srcType>(top + j, left);
+				const srcType* s2 = src[2].ptr<srcType>(top + j, left);
+				for (int i = 0; i < simd_tile_width; i += align)
+				{
+					_mm256_store_auto_color(d + 3 * i, _mm256_loadu_auto(s0 + i), _mm256_loadu_auto(s1 + i), _mm256_loadu_auto(s2 + i));
+				}
+				for (int i = 0; i < rem; i++)
+				{
+					d[3 * (simd_tile_width + i) + 0] = s0[simd_tile_width + i];
+					d[3 * (simd_tile_width + i) + 1] = s0[simd_tile_width + i];
+					d[3 * (simd_tile_width + i) + 2] = s0[simd_tile_width + i];
+				}
+			}
+		}
+	}
+
+	template<>
+	void pasteMergeTile_internal<double>(const vector<Mat>& src, Mat& dest, const Size div_size, const Point idx, const int top, const int left)
+	{
+		const int channels = (int)src.size();
+		const int tilex = dest.cols / div_size.width;
+		const int tiley = dest.rows / div_size.height;
+
+		int align = 4;
+		const int simd_tile_width = get_simd_floor(tilex, align);
+		const int rem = tilex - simd_tile_width;
+
+		if (channels == 1)
+		{
+			for (int j = 0; j < tiley; j++)
+			{
+				double* d = dest.ptr<double>(tiley * idx.y + j, tilex * idx.x);
+				const double* s = src[0].ptr<double>(top + j, left);
+				for (int i = 0; i < simd_tile_width; i += align)
+				{
+					_mm256_storeu_pd(d + i, _mm256_loadu_pd(s + i));
+				}
+				for (int i = 0; i < rem; i++)
+				{
+					d[simd_tile_width + i] = s[simd_tile_width + i];
+				}
+			}
+		}
+		else if (channels == 3)
+		{
+			for (int j = 0; j < tiley; j++)
+			{
+				double* d = dest.ptr<double>(tiley * idx.y + j, tilex * idx.x);
+				const double* s0 = src[0].ptr<double>(top + j, left);
+				const double* s1 = src[1].ptr<double>(top + j, left);
+				const double* s2 = src[2].ptr<double>(top + j, left);
+				for (int i = 0; i < simd_tile_width; i += align)
+				{
+					_mm256_store_interleave_pd(d + 3 * i, _mm256_loadu_pd(s0 + i), _mm256_loadu_pd(s1 + i), _mm256_loadu_pd(s2 + i));
+				}
+				for (int i = 0; i < rem; i++)
+				{
+					d[3 * (simd_tile_width + i) + 0] = s0[simd_tile_width + i];
+					d[3 * (simd_tile_width + i) + 1] = s0[simd_tile_width + i];
+					d[3 * (simd_tile_width + i) + 2] = s0[simd_tile_width + i];
+				}
+			}
+		}
+	}
+
+	template<>
+	void pasteMergeTile_internal<float>(const vector<Mat>& src, Mat& dest, const Size div_size, const Point idx, const int top, const int left)
+	{
+		const int channels = (int)src.size();
+		const int tilex = dest.cols / div_size.width;
+		const int tiley = dest.rows / div_size.height;
+
+		int align = 8;
+		const int simd_tile_width = get_simd_floor(tilex, align);
+		const int rem = tilex - simd_tile_width;
+
+		if (channels == 1)
+		{
+			for (int j = 0; j < tiley; j++)
+			{
+				float* d = dest.ptr<float>(tiley * idx.y + j, tilex * idx.x);
+				const float* s = src[0].ptr<float>(top + j, left);
+				for (int i = 0; i < simd_tile_width; i += align)
+				{
+					_mm256_storeu_ps(d + i, _mm256_loadu_ps(s + i));
+				}
+				for (int i = 0; i < rem; i++)
+				{
+					d[simd_tile_width + i] = s[simd_tile_width + i];
+				}
+			}
+		}
+		else if (channels == 3)
+		{
+			for (int j = 0; j < tiley; j++)
+			{
+				float* d = dest.ptr<float>(tiley * idx.y + j, tilex * idx.x);
+				const float* s0 = src[0].ptr<float>(top + j, left);
+				const float* s1 = src[1].ptr<float>(top + j, left);
+				const float* s2 = src[2].ptr<float>(top + j, left);
+				for (int i = 0; i < simd_tile_width; i += align)
+				{
+					_mm256_storeu_interleave_ps(d + 3 * i, _mm256_loadu_ps(s0 + i), _mm256_loadu_ps(s1 + i), _mm256_loadu_ps(s2 + i));
+				}
+				for (int i = 0; i < rem; i++)
+				{
+					d[3 * (simd_tile_width + i) + 0] = s0[simd_tile_width + i];
+					d[3 * (simd_tile_width + i) + 1] = s0[simd_tile_width + i];
+					d[3 * (simd_tile_width + i) + 2] = s0[simd_tile_width + i];
+				}
+			}
+		}
+	}
+
+	template<>
+	void pasteMergeTile_internal<uchar>(const vector<Mat>& src, Mat& dest, const Size div_size, const Point idx, const int top, const int left)
+	{
+		const int channels = (int)src.size();
+		const int tilex = dest.cols / div_size.width;
+		const int tiley = dest.rows / div_size.height;
+
+		const int align0 = 32;
+		const int align1 = 16;
+		const int align2 = 8;
+		const int simd_tile_width0 = get_simd_floor(tilex, align0);
+		const int rem0 = tilex - simd_tile_width0;
+		const int simd_tile_width1 = get_simd_floor(rem0, align1);
+		const int rem1 = align1 - simd_tile_width1;
+		const int simd_tile_width2 = get_simd_floor(rem1, align2);
+		const int rem2 = align2 - simd_tile_width2;
+
+		if (channels == 1)
+		{
+			for (int j = 0; j < tiley; j++)
+			{
+				uchar* d = dest.ptr<uchar>(tiley * idx.y + j, tilex * idx.x);
+				const uchar* s = src[0].ptr<uchar>(top + j, left);
+				for (int i = 0; i < simd_tile_width0; i += align0)
+				{
+					_mm256_storeu_si256((__m256i*)(d + i), _mm256_loadu_si256((__m256i*)(s + i)));
+				}
+				for (int i = simd_tile_width0; i < simd_tile_width1; i += align1)
+				{
+					_mm_storeu_si128((__m128i*)(d + i), _mm_loadu_si128((__m128i*)(s + i)));
+				}
+				for (int i = simd_tile_width1; i < simd_tile_width2; i += align2)
+				{
+					_mm_storel_epi64((__m128i*)(d + i), _mm_loadl_epi64((__m128i*)(s + i)));
+				}
+				for (int i = simd_tile_width2; i < tilex; i++)
+				{
+					d[i] = s[i];
+				}
+			}
+		}
+		else if (channels == 3)
+		{
+			for (int j = 0; j < tiley; j++)
+			{
+				uchar* d = dest.ptr<uchar>(tiley * idx.y + j, tilex * idx.x);
+				const uchar* s0 = src[0].ptr<uchar>(top + j, left);
+				const uchar* s1 = src[1].ptr<uchar>(top + j, left);
+				const uchar* s2 = src[2].ptr<uchar>(top + j, left);
+				for (int i = 0; i < simd_tile_width0; i += align0)
+				{
+					_mm256_storeu_interleave_epi8_si256((d + 3 * i), _mm256_loadu_si256((__m256i*)(s0 + i)), _mm256_loadu_si256((__m256i*)(s1 + i)), _mm256_loadu_si256((__m256i*)(s2 + i)));
+				}
+				for (int i = simd_tile_width0; i < simd_tile_width1; i += align1)
+				{
+					_mm_storeu_interleave_epi8_si128((d + 3 * i), _mm_loadu_si128((__m128i*)(s0 + i)), _mm_loadu_si128((__m128i*)(s1 + i)), _mm_loadu_si128((__m128i*)(s2 + i)));
+				}
+				for (int i = simd_tile_width1; i < simd_tile_width2; i += align2)
+				{
+					_mm_store_interleave_epi8_epi64((d + 3 * i), _mm_loadl_epi64((__m128i*)(s0 + i)), _mm_loadl_epi64((__m128i*)(s1 + i)), _mm_loadl_epi64((__m128i*)(s2 + i)));
+				}
+				for (int i = simd_tile_width2; i < tilex; i++)
+				{
+					d[3 * i + 0] = s0[i];
+					d[3 * i + 1] = s1[i];
+					d[3 * i + 2] = s2[i];
+				}
+			}
+		}
+	}
+
+	void pasteMergeTile(const vector<Mat>& src, Mat& dest, const Size div_size, const Point idx, const int top, const int left)
+	{
+		CV_Assert(!dest.empty());
+		CV_Assert(src[0].depth() == dest.depth());
+		CV_Assert(src.size() == dest.channels());
+		//CV_Assert(dest.cols % div_size.width == 0 && dest.rows % div_size.height == 0);
+
+		if (src[0].depth() == CV_8U)
+		{
+			pasteMergeTile_internal<uchar>(src, dest, div_size, idx, top, left);
+		}
+		else if (src[0].depth() == CV_32F)
+		{
+			pasteMergeTile_internal<float>(src, dest, div_size, idx, top, left);
+		}
+		else if (src[0].depth() == CV_64F)
+		{
+			pasteMergeTile_internal<double>(src, dest, div_size, idx, top, left);
+		}
+	}
+
+	void pasteMergeTile(const vector<Mat>& src, Mat& dest, const Size div_size, const Point idx, const int r)
+	{
+		pasteMergeTile(src, dest, div_size, idx, r, r);
+	}
+
+	void pasteMergeTileAlign(const vector<Mat>& src, Mat& dest, const Size div_size, const Point idx, const int r, const int left_multiple, const int top_multiple)
+	{
+		const int L = get_simd_ceil(r, left_multiple);
+		const int T = get_simd_ceil(r, top_multiple);
+		pasteMergeTile(src, dest, div_size, idx, L, T);
+	}
+#pragma endregion
+
 #pragma region divide and conquer tiles
 	void divideTiles(const Mat& src, vector<Mat>& dest, const Size div_size, const int r, const int borderType)
 	{
