@@ -33,7 +33,9 @@ namespace cp
 
 		if (src.channels() < 5)
 		{
-			Scalar v = mean(src);
+			Scalar v, stdv;
+			cv::meanStdDev(src, v, stdv);
+			
 			if (v.val[0] == 0 && v.val[1] == 0 && v.val[2] == 0 && v.val[3] == 0)
 			{
 				cout << "zero set" << endl;
@@ -43,6 +45,7 @@ namespace cp
 				if (src.channels() == 1)
 				{
 					cout << "mean  : " << v.val[0] << endl;
+					cout << "std   : " << stdv.val[0] << endl;
 					double minv, maxv;
 					minMaxLoc(src, &minv, &maxv);
 					cout << "minmax: " << minv << "," << maxv << endl;
@@ -50,6 +53,7 @@ namespace cp
 				else if (src.channels() == 3)
 				{
 					cout << "mean  : " << v.val[0] << "," << v.val[1] << "," << v.val[2] << endl;
+					cout << "std   : " << stdv.val[0] << "," << stdv.val[1] << "," << stdv.val[2] << endl;
 
 					vector<Mat> vv;
 					split(src, vv);

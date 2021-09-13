@@ -18,6 +18,7 @@ namespace cp
 
 		};
 		void setSigma(const float sigma) { this->sigma = sigma; }//for Gauss means
+		void setSignalMax(const float signal_max) { this->signal_max = signal_max; };//for Gauss means
 
 		enum class Schedule
 		{
@@ -33,7 +34,10 @@ namespace cp
 		};
 		double clustering(cv::InputArray _data, int K, cv::InputOutputArray _bestLabels, cv::TermCriteria criteria, int attempts, int flags, cv::OutputArray _centers, MeanFunction function = MeanFunction::Mean, Schedule schedule = Schedule::Auto);
 	private:
-		float sigma = 0.f;
+		float sigma = 0.f;//for weightedMeanCentroid
+		float signal_max = 255.f;//for weightedMeanCentroid
+		int weightTableSize = 0;//for weightedMeanCentroid
+
 		cv::Mat labels_internal;
 		cv::AutoBuffer<float> _distance;//for kmeans++
 
@@ -49,7 +53,7 @@ namespace cp
 
 		//computing centroid
 		void boxMeanCentroidSoA(cv::Mat& data_points, const int* labels, cv::Mat& dest_centroid, int* counters);//simple average
-		void weightedMeanCentroid(cv::Mat& data_points, const int* labels, const cv::Mat& src_centroid, const float* Table, cv::Mat& dest_centroid, float* dest_centroid_weight, int* dest_counters);
+		void weightedMeanCentroid(cv::Mat& data_points, const int* labels, const cv::Mat& src_centroid, const float* Table, const int tableSize, cv::Mat& dest_centroid, float* dest_centroid_weight, int* dest_counters);
 		void harmonicMeanCentroid(cv::Mat& data_points, const int* labels, const cv::Mat& src_centroid, cv::Mat& dest_centroid, float* centroid_weight, int* counters);
 
 		void boxMeanCentroidAoS(cv::Mat& data_points, const int* labels, cv::Mat& dest_centroid, int* counters);//N*d simple average

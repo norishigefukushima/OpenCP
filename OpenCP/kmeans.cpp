@@ -362,7 +362,7 @@ namespace cp
 	}
 
 	//N*dims
-	void KMeans::weightedMeanCentroid(Mat& data_points, const int* labels, const Mat& src_centroid, const float* Table, Mat& dest_centroid, float* dest_centroid_weight, int* dest_counters)
+	void KMeans::weightedMeanCentroid(Mat& data_points, const int* labels, const Mat& src_centroid, const float* Table, const int tableSize, Mat& dest_centroid, float* dest_centroid_weight, int* dest_counters)
 	{
 		const int dims = data_points.rows;
 		const int N = data_points.cols;
@@ -403,6 +403,7 @@ namespace cp
 		}
 #else
 		const float* centroidPtr = src_centroid.ptr<float>();//dim*K
+		const __m256i mtsize = _mm256_set1_epi32(tableSize - 1);
 		for (int i = 0; i < N; i += 8)
 		{
 			const __m256i marg_k = _mm256_load_si256((__m256i*)(labels + i));
@@ -416,7 +417,8 @@ namespace cp
 				mdist = _mm256_fmadd_ps(mc, mc, mdist);
 			}
 
-			__m256 mwi = _mm256_i32gather_ps(Table, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist)), 4);
+			//__m256 mwi = _mm256_i32gather_ps(Table, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist)), 4);
+			__m256 mwi = _mm256_i32gather_ps(Table, _mm256_min_epi32(mtsize, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist))), 4);
 			for (int v = 0; v < 8; v++)
 			{
 				const int arg_k = ((int*)&marg_k)[v];
@@ -845,13 +847,6 @@ namespace cp
 		}
 	};
 
-	inline float Huber(float x, float delta)
-	{
-		float ax = abs(x);
-		if (ax <= delta) return 0.5 * x * x;
-		else delta* (ax - 0.5 * delta);
-	}
-
 #pragma endregion
 	double KMeans::clusteringSoA(cv::InputArray _data, int K, cv::InputOutputArray _bestLabels, cv::TermCriteria criteria, int attempts, int flags, OutputArray dest_centroids, MeanFunction function, int loop)
 	{
@@ -864,14 +859,14 @@ namespace cp
 
 		//std::cout << "KMeans::clustering" << std::endl;
 		//std::cout << "sigma" << sigma << std::endl;
-		const int tableSize = (int)ceil(sqrt(255 * 255 * dims));//for 3channel 255 max case 442=ceil(sqrt(3*255^2))
+		weightTableSize = (int)ceil(sqrt(signal_max * signal_max * dims));//for 3channel 255 max case 442=ceil(sqrt(3*255^2))
 		//std::cout << "tableSize" << tableSize << std::endl;
-		float* weight_table = (float*)_mm_malloc(sizeof(float) * tableSize, AVX_ALIGN);
+		float* weight_table = (float*)_mm_malloc(sizeof(float) * weightTableSize, AVX_ALIGN);
 		if (function == MeanFunction::GaussInv)
 		{
 			//cout << "MeanFunction::GaussInv sigma " << sigma << endl;
 
-			for (int i = 0; i < tableSize; i++)
+			for (int i = 0; i < weightTableSize; i++)
 			{
 				//weight_table[i] = 1.f;
 				weight_table[i] = 1.f - exp(i * i / (-2.f * sigma * sigma)) + 0.001f;
@@ -887,15 +882,15 @@ namespace cp
 		}
 		if (function == MeanFunction::LnNorm)
 		{
-			for (int i = 0; i < tableSize; i++)
+			for (int i = 0; i < weightTableSize; i++)
 			{
 				weight_table[i] = pow(i, min(sigma, 10.f)) + FLT_EPSILON;
 			}
 		}
-		
+
 		if (function == MeanFunction::Gauss)
 		{
-			for (int i = 0; i < tableSize; i++)
+			for (int i = 0; i < weightTableSize; i++)
 			{
 				weight_table[i] = exp(i * i / (-2.f * sigma * sigma));
 				//w = 1.0 - exp(pow(sqrt(w), n) / (-n * pow(sigma, n)));
@@ -983,7 +978,7 @@ namespace cp
 				float max_center_shift = (iter == 0) ? FLT_MAX : 0.f;
 
 				swap(centroids, old_centroids);
-				
+
 				const bool isInit = ((iter == 0) && (attempt_index > 0 || !(flags & KMEANS_USE_INITIAL_LABELS)));//initial attemp && KMEANS_USE_INITIAL_LABELS is true
 				if (isInit)//initialization for first loop
 				{
@@ -1009,9 +1004,9 @@ namespace cp
 					{
 						harmonicMeanCentroid(data_points, labels, old_centroids, centroids, centroid_weight, label_count);
 					}
-					else if (function == MeanFunction::Gauss || function == MeanFunction::GaussInv|| function == MeanFunction::LnNorm)
+					else if (function == MeanFunction::Gauss || function == MeanFunction::GaussInv || function == MeanFunction::LnNorm)
 					{
-						weightedMeanCentroid(data_points, labels, old_centroids, weight_table, centroids, centroid_weight, label_count);
+						weightedMeanCentroid(data_points, labels, old_centroids, weight_table, weightTableSize, centroids, centroid_weight, label_count);
 					}
 					else if (function == MeanFunction::Mean)
 					{
@@ -1068,7 +1063,7 @@ namespace cp
 								max_dist = dist;
 								farthest_i = i;
 							}
-					}
+						}
 
 						label_count[k_count_max]--;
 						label_count[k]++;
@@ -1081,7 +1076,7 @@ namespace cp
 							base_centroids[d] -= data_points.ptr<float>(d)[farthest_i];
 							cur_center[d] += data_points.ptr<float>(d)[farthest_i];
 						}
-						}
+					}
 #ifdef DEBUG_SHOW_SKIP
 					cout << iter << ": compute " << count / ((float)N * K) * 100.f << " %" << endl;
 #endif

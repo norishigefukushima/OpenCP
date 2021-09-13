@@ -1582,6 +1582,25 @@ namespace cp
 			dptr += 8;
 		}
 	}
+
+	static void cvtColorAverageGray_8U(Mat& src, Mat& dest, const float normalize)
+	{
+		CV_Assert(src.type() == CV_8UC3);
+
+		uchar* sptr = src.ptr<uchar>();
+		uchar* dptr = dest.ptr<uchar>();
+		const int size = src.size().area() / 8;
+		const __m256 mnorm = _mm256_set1_ps(normalize);
+		__m256 b, g, r;
+		for (int i = 0; i < size; i++)
+		{
+			_mm256_load_cvtepu8bgr2planar_ps(sptr, b, g, r);
+			_mm_storel_epi64((__m128i*)dptr,_mm256_cvtps_epu8(_mm256_mul_ps(mnorm, _mm256_add_ps(r, _mm256_add_ps(b, g)))));
+			sptr += 24;
+			dptr += 8;
+		}
+	}
+
 	static void cvtColorAverageGray_32F(Mat& src, Mat& dest, const float normalize)
 	{
 		CV_Assert(src.type() == CV_32FC3);
@@ -1630,6 +1649,7 @@ namespace cp
 
 			const float normalize = (isKeepDistance) ? 1.f / sqrt(3.f) : 1.f / 3.f;
 			if (src.depth() == CV_32F)cvtColorAverageGray_32F(src, dest.getMat(), normalize);
+			else if (src.depth() == CV_8U)cvtColorAverageGray_8U(src, dest.getMat(), normalize);
 			else cout << "do not support this depth (cvtColorAverageGray)" << endl;
 		}
 	}

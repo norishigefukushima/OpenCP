@@ -1389,6 +1389,12 @@ inline __m256 _mm256_div_zerodivzero_ps(const __m256 src1, const __m256 src2)
 	return _mm256_blendv_ps(_mm256_div_ps(src1, src2), _mm256_set1_ps(FLT_MIN), _mm256_cmp_ps(src2, _mm256_setzero_ps(), 0));
 }
 
+inline __m256 _mm256_div_zerodivone_ps(const __m256 src1, const __m256 src2)
+{
+	return _mm256_blendv_ps(_mm256_div_ps(src1, src2), _mm256_set1_ps(1.f), _mm256_cmp_ps(src2, _mm256_setzero_ps(), 0));
+}
+
+
 inline __m256 _mm256_ssd_ps(__m256 src, __m256 ref)
 {
 	__m256 diff = _mm256_sub_ps(src, ref);
