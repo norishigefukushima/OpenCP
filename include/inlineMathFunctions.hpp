@@ -429,7 +429,6 @@ inline std::string getWindowTypeName(const int window_type)
 	return ret;
 }
 
-
 inline double getRangeKernelFunction(const double x, const double sigma, const int window_type)
 {
 	const double gaussRangeCoeff = (x / sigma);

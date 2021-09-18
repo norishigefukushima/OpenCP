@@ -160,15 +160,15 @@ double efmul(
 	/* End of CUDA-specific version */
 #else
 	/* Generic version */
-	const double product = a * b;
+	const double x = a * b;
 #if defined(__GNUC__)
 	*e = __builtin_fma(a, b, -product);
 #else
-	*e = fma(a, b, -product);
+	*e = fma(a, b, -x);
 #endif
 	/* End of generic version */
 #endif
-	return product;
+	return x;
 }
 
 /**
