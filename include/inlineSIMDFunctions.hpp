@@ -1522,10 +1522,24 @@ inline double _mm256_reduceadd_pspd(__m256 src)
 	return ret;
 }
 
+//hadd output is same d0 = d1 = a0+a1, d2 = d3 = a2+a3, d4 = d5 = a4+a5, d6 = d7 = a6+a7
+inline __m256 _mm256_hadd_shuffle_ps(__m256 a)
+{
+	__m256 ret = _mm256_shuffle_ps(a, a, _MM_SHUFFLE(2, 3, 0, 1));
+	return _mm256_add_ps(a, ret);
+}
+
+//hadd output is same d0 = d2 = a0+a2, d1 = d3 = a1+a3, d4 = d6 = a4+a6, d5 = d7 = a5+a7
+inline __m256 _mm256_hadd_shuffle_evenodd_ps(__m256 a)
+{
+	__m256 ret = _mm256_shuffle_ps(a, a, _MM_SHUFFLE(1, 0, 3, 2));
+	return _mm256_add_ps(a, ret);
+}
+
 inline float _mm256_reduceadd_ps(__m256 src)
 {
-	src = _mm256_hadd_ps(src, src);
-	src = _mm256_hadd_ps(src, src);
+	src = _mm256_hadd_shuffle_ps(src);
+	src = _mm256_hadd_shuffle_evenodd_ps(src);
 	__m256 high = _mm256_permute2f128_ps(src, src, 1);
 	return _mm256_cvtss_f32(_mm256_add_ps(src, high));
 	//return (src.m256_f32[0] + src.m256_f32[4]);
@@ -1583,6 +1597,11 @@ inline __m256 _mm256_ssd_ps(__m256 src0, __m256 src1, __m256 src2, __m256 ref0, 
 	diff = _mm256_sub_ps(src2, ref2);
 	difft = _mm256_fmadd_ps(diff, diff, difft);
 	return difft;
+}
+
+inline __m128i _mm_absdiff_epu8(__m128i src1, __m128i src2)
+{
+	return _mm_max_epu8(_mm_subs_epu8(src1, src2), _mm_subs_epu8(src2, src1));
 }
 
 inline __m256i _mm256_absdiff_epu8(__m256i src1, __m256i src2)
@@ -2086,6 +2105,7 @@ inline void _mm256_i32gather_bgr_epi32(const uchar* src, __m256i idx, __m256i& b
 	r = _mm256_srli_epi32(v, 26);
 }
 
+//gather 8 uchar elements
 inline __m256i _mm256_i8gather_epi32(const uchar* src, __m256i idx)
 {
 	return _mm256_srli_epi32(_mm256_i32gather_epi32(reinterpret_cast<const int*>(&src[-3]), idx, 1), 24);
@@ -2098,7 +2118,7 @@ inline __m128 _mm_i8gather_ps(const uchar* src, __m128i idx)
 	//return _mm_setr_epi8(src[idx.m256i_i32[0]], src[idx.m256i_i32[1]], src[idx.m256i_i32[2]], src[idx.m256i_i32[3]], src[idx.m256i_i32[4]], src[idx.m256i_i32[5]], src[idx.m256i_i32[6]], src[idx.m256i_i32[7]], 0, 0, 0, 0, 0, 0, 0, 0);
 }
 
-//gather only 8 elements
+//gather 4 uchar elements
 inline __m128i _mm_i32gather_epu8(const uchar* src, __m128i idx)
 {
 	return _mm_cvtepi32_epu8(_mm_srli_epi32(_mm_i32gather_epi32(reinterpret_cast<const int*>(&src[-3]), idx, 1), 24));

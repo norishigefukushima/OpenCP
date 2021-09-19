@@ -295,7 +295,6 @@ FPPLUS_STATIC_INLINE doubledouble dddiv(const doubledouble a, const doubledouble
 FPPLUS_STATIC_INLINE doubledouble ddsqrt(const doubledouble a)
 {
 	double z1, z2, z3, z4;
-	doubledouble ret;
 
 	z1 = std::sqrt(a.lo);
 	z4 = efmul(-z1, z1, &z3);
@@ -353,7 +352,7 @@ static std::string get_number(std::string& s)
 // mode ==  0 : nearest
 // mode ==  1 : up
 static void string2DD(std::string s, double& x1, double& x2, const int mode = 0, const bool fast = false) {
-	int i, j, tmp;
+	int i, tmp;
 	bool flag;
 	int sign, e10, esign;
 	std::string num1_s, num2_s, nume_s;
@@ -1333,6 +1332,13 @@ inline void _mm256_fmakahan_pdd(const __m256d a, const __m256d x, __m256dd& b)
 	__m256d t = _mm256_add_pd(b.hi, y);
 	b.lo = _mm256_sub_pd(_mm256_sub_pd(t, b.hi), y);
 	b.hi = t;
+}
+
+inline __m256dd _mm256_fmakahan_pdd(const __m256d a, const __m256d x, const __m256d bhi, const __m256d blo)
+{
+	__m256d y = _mm256_fmsub_pd(a, x, blo);
+	__m256d t = _mm256_add_pd(bhi, y);
+	return {t,_mm256_sub_pd(_mm256_sub_pd(t, bhi), y) };
 }
 
 #endif /* FPPLUS_DD_H */
