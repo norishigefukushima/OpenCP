@@ -1073,6 +1073,13 @@ FPPLUS_STATIC_INLINE __m256dd _mm256_addl_pd(const __m256d a, const __m256d b)
 	return sum;
 }
 
+FPPLUS_STATIC_INLINE __m256dd _mm256_subl_pdd(const __m256d a, const __m256d b)
+{
+	__m256dd sum;
+	sum.hi = _mm256_twonsum_pd(a, b, &sum.lo);
+	return sum;
+}
+
 FPPLUS_STATIC_INLINE __m256dd _mm256_addw_pdd(const __m256dd a, const __m256d b)
 {
 	__m256dd sum = _mm256_addl_pd(a.lo, b);
@@ -1324,6 +1331,13 @@ inline void _mm256_addkahan_pdd(const __m256d a, __m256dd& b)
 	__m256d t = _mm256_add_pd(b.hi, y);
 	b.lo = _mm256_sub_pd(_mm256_sub_pd(t, b.hi), y);
 	b.hi = t;
+}
+
+inline __m256dd _mm256_addkahan_pdd(const __m256d a, const __m256d bhi, const __m256d blo)
+{
+	__m256d y = _mm256_sub_pd(a, blo);
+	__m256d t = _mm256_add_pd(bhi, y);
+	return { t, _mm256_sub_pd(_mm256_sub_pd(t, bhi), y) };
 }
 
 inline void _mm256_fmakahan_pdd(const __m256d a, const __m256d x, __m256dd& b)

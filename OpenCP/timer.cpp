@@ -414,7 +414,7 @@ namespace cp
 			b.at<double>(0, 0) = 0.0;
 			if (isDiff)
 			{
-				const double normalize = time_stamp[idx] - time_stamp[idx - 1];
+				const double normalize = double(time_stamp[idx] - time_stamp[idx - 1]);
 				for (int i = 1; i < idx + 1; i++)
 				{
 					const double t = (time_stamp[i] - time_stamp[i - 1]) / normalize;

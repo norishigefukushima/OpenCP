@@ -10,7 +10,7 @@ namespace cp
 {
 	int Stat::getSize()
 	{
-		return data.size();
+		return (int)data.size();
 	}
 
 	double Stat::getMin()

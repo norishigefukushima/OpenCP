@@ -383,6 +383,26 @@ __m256d _mm256_twosum_pd(
 	return x;
 }
 
+//a-b
+FPPLUS_STATIC_INLINE FPPLUS_NONNULL_POINTER_ARGUMENTS
+__m256d _mm256_twonsum_pd(
+	__m256d a,
+	__m256d b,
+	__m256d FPPLUS_NONNULL_POINTER(e))
+{
+	const __m256d x = _mm256_sub_pd(a, b);
+#if FPPLUS_USE_FPADDRE == 0
+	const __m256d b_virtual = _mm256_sub_pd(x, a);
+	const __m256d a_virtual = _mm256_sub_pd(x, b_virtual);
+	const __m256d b_roundoff = _mm256_add_pd(b, b_virtual);
+	const __m256d a_roundoff = _mm256_sub_pd(a, a_virtual);
+	*e = _mm256_sub_pd(a_roundoff, b_roundoff);
+#else
+	* e = _mm256_addre_pd(a, b);
+#endif
+	return x;
+}
+
 FPPLUS_STATIC_INLINE FPPLUS_NONNULL_POINTER_ARGUMENTS
 __m256d _mm256_twosumfast_pd(
 	__m256d a,

@@ -663,6 +663,8 @@ namespace cp
 
 #pragma endregion
 
+
+
 #pragma region convert
 	void cvtBGR2RawVector(cv::InputArray src, vector<float>& dest)
 	{
@@ -699,6 +701,7 @@ namespace cp
 		merge(v, dest);
 	}
 
+#pragma region splitLineInterleave
 	//8u
 	void splitBGRLineInterleave_8u(const Mat& src, Mat& dest)
 	{
@@ -835,26 +838,93 @@ namespace cp
 		b.convertTo(dest, src.type());
 	}
 
+	void splitBGRLineInterleaveAVX_64f(const Mat& src, Mat& dest)
+	{
+		const int size = src.size().area();
+		const int dstep = src.cols * 3;
+		const int sstep = src.cols * 3;
+
+		const double* s = src.ptr<double>(0);
+		double* B = dest.ptr<double>(0);//line by line interleave
+		double* G = dest.ptr<double>(1);
+		double* R = dest.ptr<double>(2);
+
+		for (int j = 0; j < src.rows; j++)
+		{
+			int i = 0;
+			for (; i < src.cols; i += 4)
+			{
+				const __m256d aa = _mm256_load_pd((s + 3 * i));
+				const __m256d bb = _mm256_load_pd((s + 3 * i + 4));
+				const __m256d cc = _mm256_load_pd((s + 3 * i + 8));
+
+#if CP_AVX2
+				__m256d a = _mm256_blend_pd(aa, bb, 0b0110);
+				__m256d b = _mm256_blend_pd(a, cc, 0b0010);
+				__m256d c = _mm256_permute4x64_pd(b, 0b01101100);
+				_mm256_stream_pd((B + i), c);
+
+				a = _mm256_blend_pd(aa, bb, 0b1001);
+				b = _mm256_blend_pd(a, cc, 0b0100);
+				c = _mm256_permute4x64_pd(b, 0b10110001);
+				_mm256_stream_pd((G + i), c);
+
+				a = _mm256_blend_pd(aa, bb, 0b1011);
+				b = _mm256_blend_pd(a, cc, 0b1001);
+				c = _mm256_permute4x64_pd(b, 0b11000110);
+				_mm256_stream_pd((R + i), c);
+#else
+				__m256d a = _mm256_blend_pd(_mm256_permute2f128_pd(aa, aa, 0b00000001), aa, 0b0001);
+				__m256d b = _mm256_blend_pd(_mm256_permute2f128_pd(cc, cc, 0b00000000), bb, 0b0100);
+				__m256d c = _mm256_blend_pd(a, b, 0b1100);
+				_mm256_stream_pd((B + i), c);
+
+				a = _mm256_blend_pd(aa, bb, 0b1001);
+				b = _mm256_blend_pd(a, cc, 0b0100);
+				c = _mm256_permute_pd(b, 0b0101);
+				_mm256_stream_pd((G + i), c);
+
+				a = _mm256_blend_pd(_mm256_permute2f128_pd(aa, aa, 0b0001), bb, 0b0010);
+				b = _mm256_blend_pd(_mm256_permute2f128_pd(cc, cc, 0b0001), cc, 0b1000);
+				c = _mm256_blend_pd(a, b, 0b1100);
+				_mm256_stream_pd((R + i), c);
+#endif
+			}
+			R += dstep;
+			G += dstep;
+			B += dstep;
+			s += sstep;
+		}
+	}
+
 	void splitBGRLineInterleave(cv::InputArray src_, cv::OutputArray dest_)
 	{
 		dest_.create(Size(src_.size().width, src_.size().height * 3), src_.depth());
 		Mat src = src_.getMat();
 		Mat dest = dest_.getMat();
-		if (src.type() == CV_MAKE_TYPE(CV_8U, 3))
+		if (src.type() == CV_8UC3)
 		{
+			CV_Assert(src.cols % 32 == 0);
 			splitBGRLineInterleave_8u(src, dest);
 		}
-		else if (src.type() == CV_MAKE_TYPE(CV_32F, 3))
+		else if (src.type() == CV_32FC3)
+		{
+			CV_Assert(src.cols % 8 == 0);
+			splitBGRLineInterleave_32f(src, dest);
+		}
+		else if (src.type() == CV_64FC3)
 		{
 			CV_Assert(src.cols % 4 == 0);
-			splitBGRLineInterleave_32f(src, dest);
+			splitBGRLineInterleaveAVX_64f(src, dest);
 		}
 		else
 		{
-			CV_Assert(src.cols % 4 == 0);
+			CV_Assert(src.cols % 8 == 0);
 			splitBGRLineInterleave_32fcast(src, dest);
 		}
 	}
+#pragma endregion
+	
 
 	void cvtColorBGR2PLANE_8u(const Mat& src, Mat& dest)
 	{

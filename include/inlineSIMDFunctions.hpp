@@ -1,6 +1,10 @@
 #pragma once
 #pragma warning(disable:4309)
 #include <intrin.h>
+#include <opencv2/core.hpp>
+#include <iostream>
+#include <iomanip>
+#include <vector>
 #define SSE_ALIGN 16
 #define AVX_ALIGN 32
 #define AVX512_ALIGN 64
@@ -477,6 +481,15 @@ inline void show_patch(__m256d* patch)
 #define _mm256_cvttsd_si32(a) (_mm_cvttsd_si32(_mm256_castpd256_pd128(a)))
 
 //cast
+//cast ps to ph and then return cast value as float
+inline float cvtps_ph(float v)
+{
+	__m256 mv = _mm256_set1_ps(v);
+	__m128i ms = _mm256_cvtps_ph(mv, 0);
+	mv = _mm256_cvtph_ps(ms);
+	return _mm256_cvtss_f32(mv);
+}
+
 //opencp cast __m256i of hi register ->__m128i
 inline __m128i _mm256_castsi256hi_si128(__m256i src)
 {
@@ -1565,6 +1578,83 @@ inline double _mm256_reduceadd_pd(__m256d src)
 	//return (src.m256d_f64[0] + src.m256d_f64[2]);
 }
 
+#pragma region kahan
+inline __m256d _mm256_sub32fto64f_lo_pd(const __m256& src0, const __m256& src1)
+{
+	return _mm256_sub_pd(_mm256_cvtps_pd(_mm256_castps256_ps128(src0)), _mm256_cvtps_pd(_mm256_castps256_ps128(src1)));
+}
+
+inline __m256d _mm256_sub32fto64f_hi_pd(const __m256& src0, const __m256& src1)
+{
+	return _mm256_sub_pd(_mm256_cvtps_pd(_mm256_castps256hi_ps128(src0)), _mm256_cvtps_pd(_mm256_castps256hi_ps128(src1)));
+}
+
+inline double _mm256_reduceadd_kahan_64f(const __m256& src, const __m256& carry, const double v = 0.0)
+{	
+	__m256d l = _mm256_sub32fto64f_lo_pd(src, carry);
+	__m256d h = _mm256_sub32fto64f_hi_pd(src, carry);
+
+	h = _mm256_hadd_pd(h, l);
+	h = _mm256_add_pd(h, _mm256_shuffle_pd(h, h, 0b0101));
+
+	return v + h.m256d_f64[0]+ h.m256d_f64[2];
+}
+
+inline float _mm256_reduceadd_kahan_32f(const __m256& src, const __m256& carry, const float v = 0.f)
+{
+	__m256d h = _mm256_sub32fto64f_lo_pd(src, carry);
+	__m256d l = _mm256_sub32fto64f_hi_pd(src, carry);
+
+	h = _mm256_hadd_pd(h, l);
+	h = _mm256_add_pd(h, _mm256_shuffle_pd(h, h, 0b0101));
+	return (float)(double(v) + h.m256d_f64[0]  + h.m256d_f64[2]);
+}
+
+inline float _mm256_reduceadd_kahanfast_32f(const __m256& src, const __m256& carry, const float v = 0.f)
+{
+	float sum = v;
+	float c = 0.f;
+	for (int i = 0; i < 8; i++)
+		c += carry.m256_f32[i];
+
+	for (int i = 0; i < 8; i++)
+	{
+		float y = src.m256_f32[i] - c;
+		float t = sum + y;
+		c = (t - sum) - y;
+		sum = t;
+	}
+
+	return sum;
+}
+
+inline double _mm256_reduceadd_kahan_64f(const __m256d src, const __m256d carry, const double v = 0.0)
+{
+	double sum = v;
+
+	double c = carry.m256d_f64[0] + carry.m256d_f64[1] + carry.m256d_f64[2] + carry.m256d_f64[3];
+	/*
+	* double c = 0.0;
+	for (int i = 0; i < 4; i++)
+	{
+		double y = -carry.m256d_f64[i] - c;
+		double t = sum + y;
+		c = (t - sum) - y;
+		sum = t;
+	}*/
+
+	for (int i = 0; i < 4; i++)
+	{
+		double y = src.m256d_f64[i] - c;
+		double t = sum + y;
+		c = (t - sum) - y;
+		sum = t;
+	}
+
+	return sum;
+}
+#pragma endregion
+
 inline __m256 _mm256_div_avoidzerodiv_ps(const __m256 src1, const __m256 src2)
 {
 	return _mm256_div_ps(src1, _mm256_blendv_ps(src2, _mm256_set1_ps(FLT_MIN), _mm256_cmp_ps(src2, _mm256_setzero_ps(), 0)));
@@ -2105,8 +2195,8 @@ inline void _mm256_i32gather_bgr_epi32(const uchar* src, __m256i idx, __m256i& b
 	r = _mm256_srli_epi32(v, 26);
 }
 
-//gather 8 uchar elements
-inline __m256i _mm256_i8gather_epi32(const uchar* src, __m256i idx)
+//gather 8 uchar elements and output 32bit integer
+inline __m256i _mm256_i32gather_epi32(const uchar* src, __m256i idx)
 {
 	return _mm256_srli_epi32(_mm256_i32gather_epi32(reinterpret_cast<const int*>(&src[-3]), idx, 1), 24);
 	//return _mm256_setr_epi32(src[idx.m256i_i32[0]], src[idx.m256i_i32[1]], src[idx.m256i_i32[2]], src[idx.m256i_i32[3]], src[idx.m256i_i32[4]], src[idx.m256i_i32[5]], src[idx.m256i_i32[6]], src[idx.m256i_i32[7]]);
