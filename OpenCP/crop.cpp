@@ -114,9 +114,21 @@ namespace cp
 
 		int key = 0;
 		displayOverlay(wname, "s: save, p: change position, ?: help", 5000);
+
+		bool isScale = false;
+		if (input.depth() == CV_32F)
+		{
+			double minv, maxv;
+			cv::minMaxLoc(input, &minv, &maxv);
+			if (maxv > 1)isScale = true;
+		}
 		while (key != 'q')
 		{
-			input.copyTo(show);
+			if(isScale) input.convertTo(show, CV_8U, 255);
+			else input.copyTo(show);
+				
+			
+
 			zoom_factor = max(zoom_factor, 1);
 
 			if (zoom_show_option == 0)

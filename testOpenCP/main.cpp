@@ -34,7 +34,7 @@ int main(int argc, char** argv)
 
 #pragma region core
 	//testKMeans(img); return 0;
-	testTiling(img); return 0;
+	//testTiling(img); return 0;
 	//copyMakeBorderTest(img); return 0;
 	//testSplitMerge(img); return 0;
 	//consoleImageTest(); return 0;
@@ -79,7 +79,7 @@ int main(int argc, char** argv)
 #pragma endregion
 
 #pragma region filter
-	//testGuidedImageFilter(Mat(), Mat()); return 0;
+	testGuidedImageFilter(Mat(), Mat()); return 0;
 	//highDimentionalGaussianFilterTest(imgg); return 0;
 	//testWeightedHistogramFilterDisparity(); return 0;
 	//testWeightedHistogramFilter();return 0;
