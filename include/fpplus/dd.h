@@ -82,6 +82,20 @@ FPPLUS_STATIC_INLINE doubledouble ddaddw(const doubledouble a, const double b)
 	return sum;
 }
 
+FPPLUS_STATIC_INLINE doubledouble ddsubw(const doubledouble a, const double b)
+{
+	doubledouble sum = ddaddl(a.lo, -b);
+	double e;
+	/* QD uses efaddord here. I think it is a bug (what if b > a.hi -> sum.hi > a.hi ?). */
+	sum.hi = twosum(a.hi, sum.hi, &e);
+#ifdef __CUDA_ARCH__
+	sum.lo = __dadd_rn(sum.lo, e);
+#else
+	sum.lo += e;
+#endif
+	return sum;
+}
+
 /**
  * @ingroup DD
  * @brief Addition of two double-double numbers.

@@ -9,13 +9,14 @@ namespace cp
 	{
 		doubledouble ret = doubledouble{ 0.0,0.0 };
 		doubledouble m = doubledouble{ -1.0,0.0 };
+		
 		for (int i = 0; i < size; i++)
 		{
-			doubledouble v = ddmul(src1[i], m);
-			v = ddadd(src2[i], v);
+			doubledouble v = ddsub(src2[i], src1[i]);
 			v = ddmul(v, v);
 			ret = ddadd(ret, v);
 		}
+
 		double mse = ret.hi / (double)size;
 
 		if (mse == 0.0)
