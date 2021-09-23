@@ -1579,20 +1579,20 @@ inline double _mm256_reduceadd_pd(__m256d src)
 }
 
 #pragma region kahan
-inline __m256d _mm256_sub32fto64f_lo_pd(const __m256& src0, const __m256& src1)
+inline __m256d _mm256_cvtkahanlo_pd(const __m256 sum, const __m256 carry)
 {
-	return _mm256_sub_pd(_mm256_cvtps_pd(_mm256_castps256_ps128(src0)), _mm256_cvtps_pd(_mm256_castps256_ps128(src1)));
+	return _mm256_sub_pd(_mm256_cvtps_pd(_mm256_castps256_ps128(sum)), _mm256_cvtps_pd(_mm256_castps256_ps128(carry)));
 }
 
-inline __m256d _mm256_sub32fto64f_hi_pd(const __m256& src0, const __m256& src1)
+inline __m256d _mm256_cvtkahanhi_pd(const __m256 sum, const __m256 carry)
 {
-	return _mm256_sub_pd(_mm256_cvtps_pd(_mm256_castps256hi_ps128(src0)), _mm256_cvtps_pd(_mm256_castps256hi_ps128(src1)));
+	return _mm256_sub_pd(_mm256_cvtps_pd(_mm256_castps256hi_ps128(sum)), _mm256_cvtps_pd(_mm256_castps256hi_ps128(carry)));
 }
 
-inline double _mm256_reduceadd_kahan_64f(const __m256& src, const __m256& carry, const double v = 0.0)
+inline double _mm256_reduceadd_kahan_64f(const __m256 src, const __m256 carry, const double v = 0.0)
 {	
-	__m256d l = _mm256_sub32fto64f_lo_pd(src, carry);
-	__m256d h = _mm256_sub32fto64f_hi_pd(src, carry);
+	__m256d l = _mm256_cvtkahanlo_pd(src, carry);
+	__m256d h = _mm256_cvtkahanhi_pd(src, carry);
 
 	h = _mm256_hadd_pd(h, l);
 	h = _mm256_add_pd(h, _mm256_shuffle_pd(h, h, 0b0101));
@@ -1600,17 +1600,17 @@ inline double _mm256_reduceadd_kahan_64f(const __m256& src, const __m256& carry,
 	return v + h.m256d_f64[0]+ h.m256d_f64[2];
 }
 
-inline float _mm256_reduceadd_kahan_32f(const __m256& src, const __m256& carry, const float v = 0.f)
+inline float _mm256_reduceadd_kahan_32f(const __m256 src, const __m256 carry, const float v = 0.f)
 {
-	__m256d h = _mm256_sub32fto64f_lo_pd(src, carry);
-	__m256d l = _mm256_sub32fto64f_hi_pd(src, carry);
+	__m256d l = _mm256_cvtkahanlo_pd(src, carry);
+	__m256d h = _mm256_cvtkahanhi_pd(src, carry);
 
 	h = _mm256_hadd_pd(h, l);
 	h = _mm256_add_pd(h, _mm256_shuffle_pd(h, h, 0b0101));
 	return (float)(double(v) + h.m256d_f64[0]  + h.m256d_f64[2]);
 }
 
-inline float _mm256_reduceadd_kahanfast_32f(const __m256& src, const __m256& carry, const float v = 0.f)
+inline float _mm256_reduceadd_kahanfast_32f(const __m256 src, const __m256 carry, const float v = 0.f)
 {
 	float sum = v;
 	float c = 0.f;
