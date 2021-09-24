@@ -35,7 +35,7 @@ namespace cp
 				{
 					float dist = hypot(x + r - 1 - i, y + r - 1 - j);
 					//float dist = hypot(x - r + 1 + i, y - r + 1 + j);
-					float w_ = exp(pow(dist, pown) / (-pown * sigma * sigma));
+					float w_ = exp(float(pow(dist, pown) / (-pown * sigma * sigma)));
 					//float w_ = exp(dist / (-sigma));//Laplacian
 					wsum += w_;
 					w[idx++] = w_;
