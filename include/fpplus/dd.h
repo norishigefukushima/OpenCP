@@ -1087,7 +1087,7 @@ FPPLUS_STATIC_INLINE __m256dd _mm256_addl_pd(const __m256d a, const __m256d b)
 	return sum;
 }
 
-FPPLUS_STATIC_INLINE __m256dd _mm256_subl_pdd(const __m256d a, const __m256d b)
+FPPLUS_STATIC_INLINE __m256dd _mm256_subl_pd(const __m256d a, const __m256d b)
 {
 	__m256dd sum;
 	sum.hi = _mm256_twonsum_pd(a, b, &sum.lo);
@@ -1097,6 +1097,15 @@ FPPLUS_STATIC_INLINE __m256dd _mm256_subl_pdd(const __m256d a, const __m256d b)
 FPPLUS_STATIC_INLINE __m256dd _mm256_addw_pdd(const __m256dd a, const __m256d b)
 {
 	__m256dd sum = _mm256_addl_pd(a.lo, b);
+	__m256d e;
+	sum.hi = _mm256_twosum_pd(a.hi, sum.hi, &e);
+	sum.lo = _mm256_add_pd(sum.lo, e);
+	return sum;
+}
+
+FPPLUS_STATIC_INLINE __m256dd _mm256_subw_pdd(const __m256dd a, const __m256d b)
+{
+	__m256dd sum = _mm256_subl_pd(a.lo, b);
 	__m256d e;
 	sum.hi = _mm256_twosum_pd(a.hi, sum.hi, &e);
 	sum.lo = _mm256_add_pd(sum.lo, e);

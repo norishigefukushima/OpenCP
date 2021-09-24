@@ -127,8 +127,6 @@ namespace cp
 			if(isScale) input.convertTo(show, CV_8U, 255);
 			else input.copyTo(show);
 				
-			
-
 			zoom_factor = max(zoom_factor, 1);
 
 			if (zoom_show_option == 0)
