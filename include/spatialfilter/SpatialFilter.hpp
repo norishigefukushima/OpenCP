@@ -56,7 +56,8 @@ namespace cp
 		SlidingDCT7_AVX,
 		FIR_OPENCV,
 		FIR_SEPARABLE,//under debug
-		FIR_Sep2D_OPENCV,
+		FIR_Sep2D_OPENCV,//call sepFilter2D
+		FIR_OPENCV2D,//call filter2D
 		DCT_AVX,
 		FIR_KAHAN,
 		BOX,
@@ -240,6 +241,22 @@ namespace cp
 		GaussianFilterFIROpenCV(cv::Size img_size, double sigma, int trunc, int depth);
 		GaussianFilterFIROpenCV(const int internal_depth, const bool isCompute32F);
 		~GaussianFilterFIROpenCV();
+
+		void body(const cv::Mat& src, cv::Mat& dst, const int borderType)override;
+		void filter(const cv::Mat& src, cv::Mat& dst, const double sigma, const int order, const int borderType = cv::BORDER_DEFAULT)override;
+	};
+
+	class CP_EXPORT GaussianFilterFIROpenCV2D : public SpatialFilterBase
+	{
+	private:
+		cv::Mat internalBuff;
+		int dest_depth = -1;
+		int d = 0;
+
+	public:
+		GaussianFilterFIROpenCV2D(cv::Size img_size, double sigma, int trunc, int depth);
+		GaussianFilterFIROpenCV2D(const int internal_depth, const bool isCompute32F);
+		~GaussianFilterFIROpenCV2D();
 
 		void body(const cv::Mat& src, cv::Mat& dst, const int borderType)override;
 		void filter(const cv::Mat& src, cv::Mat& dst, const double sigma, const int order, const int borderType = cv::BORDER_DEFAULT)override;
@@ -1312,7 +1329,7 @@ namespace cp
 	};
 #pragma endregion
 
-
+	//option 0: DCT_COEFFICIENTS::FULL_SEARCH_OPT, 1: DCT_COEFFICIENTS::FULL_SEARCH_NOOPT;
 	CP_EXPORT cv::Ptr<cp::SpatialFilterBase> createSpatialFilter(const cp::SpatialFilterAlgorithm method, const int dest_depth, const SpatialKernel skernel, const int option = 0);
 
 	//implement class

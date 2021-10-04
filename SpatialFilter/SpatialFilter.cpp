@@ -12,6 +12,7 @@ namespace cp
 		{
 		case SpatialFilterAlgorithm::FIR_OPENCV:			ret = "FIR_OPENCV";			break;
 		case SpatialFilterAlgorithm::FIR_Sep2D_OPENCV:		ret = "FIR_Sep2D_OPENCV";	break;
+		case SpatialFilterAlgorithm::FIR_OPENCV2D:			ret = "FIR_OPENCV2D";		break;
 		case SpatialFilterAlgorithm::FIR_OPENCV_64F:		ret = "FIR_OPENCV_64F";		break;
 		case SpatialFilterAlgorithm::FIR_SEPARABLE:			ret = "FIR_SEPARABLE";		break;
 		case SpatialFilterAlgorithm::FIR_KAHAN:				ret = "FIR_KAHAN";			break;
@@ -65,6 +66,7 @@ namespace cp
 		{
 		case SpatialFilterAlgorithm::FIR_OPENCV:			ret = "FIR";			break;
 		case SpatialFilterAlgorithm::FIR_Sep2D_OPENCV:		ret = "FIR";	break;
+		case SpatialFilterAlgorithm::FIR_OPENCV2D:			ret = "FIR";		break;
 		case SpatialFilterAlgorithm::FIR_OPENCV_64F:		ret = "FIR";		break;
 		case SpatialFilterAlgorithm::FIR_SEPARABLE:			ret = "FIR";		break;
 		case SpatialFilterAlgorithm::FIR_KAHAN:				ret = "FIR_KAHAN";			break;
@@ -187,6 +189,8 @@ namespace cp
 				return cv::Ptr<cp::SpatialFilterBase>(new GaussianFilterFIROpenCV(dest_depth, false)); break;
 			case SpatialFilterAlgorithm::FIR_Sep2D_OPENCV:
 				return cv::Ptr<cp::SpatialFilterBase>(new GaussianFilterFIRSep2DOpenCV(dest_depth, true)); break;
+			case SpatialFilterAlgorithm::FIR_OPENCV2D:
+				return cv::Ptr<cp::SpatialFilterBase>(new GaussianFilterFIROpenCV2D(dest_depth, true)); break;
 			case SpatialFilterAlgorithm::FIR_KAHAN:
 				return cv::Ptr<cp::SpatialFilterBase>(new GaussianFilterFIRKahan(dest_depth)); break;
 			case SpatialFilterAlgorithm::FIR_SEPARABLE:
@@ -270,6 +274,8 @@ namespace cp
 				return cv::Ptr<cp::SpatialFilterBase>(new GaussianFilterFIROpenCV(dest_depth, false)); break;
 			case SpatialFilterAlgorithm::FIR_Sep2D_OPENCV:
 				return cv::Ptr<cp::SpatialFilterBase>(new GaussianFilterFIRSep2DOpenCV(dest_depth, false)); break;
+			case SpatialFilterAlgorithm::FIR_OPENCV2D:
+				return cv::Ptr<cp::SpatialFilterBase>(new GaussianFilterFIROpenCV2D(dest_depth, false)); break;
 			case SpatialFilterAlgorithm::FIR_KAHAN:
 				return cv::Ptr<cp::SpatialFilterBase>(new GaussianFilterFIRKahan(dest_depth)); break;
 			case SpatialFilterAlgorithm::FIR_SEPARABLE:

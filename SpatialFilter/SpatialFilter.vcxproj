@@ -354,6 +354,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseCompileFast|x64'">Use</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="GaussianFilterFIRSep2DOpenCV.cpp" />
+    <ClCompile Include="GaussianFilterOpenCV2D.cpp" />
     <ClCompile Include="GaussianFilterSepFIR.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseModerateOpt|x64'">Use</PrecompiledHeader>

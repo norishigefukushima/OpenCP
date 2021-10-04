@@ -150,8 +150,8 @@ namespace cp
 			}
 			else
 			{
-				space_weight1[0] = space_weight1[1] = space_weight1[1] + getOuterWeight(gauss_space_coeff, radiusH, (int)ceil(sigma_space * 10));;
-				space_weight2[0] = space_weight2[1] = space_weight2[1] + getOuterWeight(gauss_space_coeff, radiusV, (int)ceil(sigma_space * 10));;
+				space_weight1[0] = space_weight1[1] = space_weight1[1] + getOuterWeight(gauss_space_coeff, radiusH, (int)ceil(sigma_space * 10));
+				space_weight2[0] = space_weight2[1] = space_weight2[1] + getOuterWeight(gauss_space_coeff, radiusV, (int)ceil(sigma_space * 10));
 			}
 		}
 

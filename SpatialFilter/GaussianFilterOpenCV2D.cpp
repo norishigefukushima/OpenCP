@@ -38,7 +38,7 @@ namespace cp
 		const double ialpha = 1.0 - alpha;
 		data[r - 1] += (T)(eout * ialpha);
 		data[-r + 1] += (T)(eout * ialpha);
-	
+
 		sum += 2.0 * eout;
 
 		//cout << "o: "<<eout << endl;
@@ -50,7 +50,7 @@ namespace cp
 		}
 	}
 
-	static void sepGauss(const Mat& src, Mat& dest, const int r, const double sigma, const int borderType)
+	static void conv2D(const Mat& src, Mat& dest, const int r, const double sigma, const int borderType)
 	{
 		const int size = 2 * r + 1;
 		Mat gauss;
@@ -71,33 +71,34 @@ namespace cp
 			cout << "not support this type" << src.depth() << endl;
 		}
 
-		sepFilter2D(src, dest, dest.depth(), gauss, gauss, Point(-1, -1), 0.0, borderType);
+		Mat kernel = gauss * gauss.t();
+		filter2D(src, dest, dest.depth(), kernel, Point(-1, -1), 0.0, borderType);
 	}
 
 	//===============================================================================
 	//FIR
-	GaussianFilterFIRSep2DOpenCV::GaussianFilterFIRSep2DOpenCV(cv::Size imgSize, double sigma, int trunc, int depth)
+	GaussianFilterFIROpenCV2D::GaussianFilterFIROpenCV2D(cv::Size imgSize, double sigma, int trunc, int depth)
 		: SpatialFilterBase(imgSize, depth)
 	{
-		this->algorithm = SpatialFilterAlgorithm::FIR_Sep2D_OPENCV;
+		this->algorithm = SpatialFilterAlgorithm::FIR_OPENCV2D;
 		this->sigma = sigma;
 		this->gf_order = trunc;
 		this->radius = (int)ceil(gf_order * sigma);
 	}
 
-	GaussianFilterFIRSep2DOpenCV::GaussianFilterFIRSep2DOpenCV(const int dest_depth, const bool isCompute32F)
+	GaussianFilterFIROpenCV2D::GaussianFilterFIROpenCV2D(const int dest_depth, const bool isCompute32F)
 	{
 		this->algorithm = SpatialFilterAlgorithm::FIR_Sep2D_OPENCV;
 		this->depth = isCompute32F ? CV_32F : CV_64F;
 		this->dest_depth = dest_depth;
 	}
 
-	GaussianFilterFIRSep2DOpenCV::~GaussianFilterFIRSep2DOpenCV()
+	GaussianFilterFIROpenCV2D::~GaussianFilterFIROpenCV2D()
 	{
 		;
 	}
 
-	void GaussianFilterFIRSep2DOpenCV::body(const cv::Mat& src, cv::Mat& dst, const int borderType)
+	void GaussianFilterFIROpenCV2D::body(const cv::Mat& src, cv::Mat& dst, const int borderType)
 	{
 		if (dest_depth == src.depth() && this->depth == src.depth())
 		{
@@ -105,24 +106,24 @@ namespace cp
 			{
 				cv::Mat internalBuff;
 				src.convertTo(internalBuff, CV_32F);
-				sepGauss(internalBuff, internalBuff, radius, sigma, borderType);
+				conv2D(internalBuff, internalBuff, radius, sigma, borderType);
 				internalBuff.convertTo(dst, dest_depth);
 			}
 			else
 			{
-				sepGauss(src, dst, radius, sigma, borderType);
+				conv2D(src, dst, radius, sigma, borderType);
 			}
 		}
 		else
 		{
 			cv::Mat internalBuff;
 			src.convertTo(internalBuff, this->depth);
-			sepGauss(internalBuff, internalBuff, radius, sigma, borderType);
+			conv2D(internalBuff, internalBuff, radius, sigma, borderType);
 			internalBuff.convertTo(dst, dest_depth);
 		}
 	}
 
-	void GaussianFilterFIRSep2DOpenCV::filter(const cv::Mat& _src, cv::Mat& dst, const double sigma, const int order, const int borderType)
+	void GaussianFilterFIROpenCV2D::filter(const cv::Mat& _src, cv::Mat& dst, const double sigma, const int order, const int borderType)
 	{
 		this->sigma = sigma;
 		this->gf_order = order;

@@ -81,6 +81,9 @@
     <ClCompile Include="GaussianFilterFIRSep2DOpenCV.cpp">
       <Filter>ソース ファイル\FIR</Filter>
     </ClCompile>
+    <ClCompile Include="GaussianFilterOpenCV2D.cpp">
+      <Filter>ソース ファイル\FIR</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\spatialfilter\SpatialFilter.hpp">
