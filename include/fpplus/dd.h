@@ -25,300 +25,6 @@ typedef struct {
 	double lo;
 } doubledouble;
 
-
-/**
- * @ingroup DD
- * @brief Long addition of double-precision numbers.
- * @details Adds two double-precision numbers and produces double-double result.
- * The algorith is a version of error-free addition due to @cite Knuth1997.
- *
- * @par	Computational complexity
- *     <table>
- *         <tr><th>Operation</th> <th>Count (default ISA)</th> <th>Count (with ADDRE)</th></tr>
- *         <tr><td>FP ADD   </td> <td>6                  </td> <td>1                 </td></tr>
- *         <tr><td>FP ADDRE </td> <td>                   </td> <td>1                 </td></tr>
- *     </table>
- *
- * @param[in] a - addend, the first double-precision number to be added.
- * @param[in] b - augend, the second double-precision number to be added.
- * @return The sum of @b a and @b b as a double-double number.
- */
-FPPLUS_STATIC_INLINE doubledouble ddaddl(const double a, const double b)
-{
-	doubledouble sum;
-	sum.hi = twosum(a, b, &sum.lo);
-	return sum;
-}
-
-/**
- * @ingroup DD
- * @brief Wide addition of double-precision number to a double-double number.
- * @details Adds double-precision number to a double-double number and produces a double-double result.
- *
- * Implementation follows @cite QD2000, Figure 7.
- *
- * @par	Computational complexity
- *     <table>
- *         <tr><th>Operation</th> <th>Count (default ISA)</th> <th>Count (with ADDRE)</th></tr>
- *         <tr><td>FP ADD   </td> <td>10                 </td> <td>3                 </td></tr>
- *         <tr><td>FP ADDRE </td> <td>                   </td> <td>2                 </td></tr>
- *     </table>
- *
- * @param[in] a - addend, the double-double number to be added to.
- * @param[in] b - augend, the double-precision number to be added.
- * @return The sum of @b a and @b b as a double-double number.
- */
-FPPLUS_STATIC_INLINE doubledouble ddaddw(const doubledouble a, const double b)
-{
-	doubledouble sum = ddaddl(a.lo, b);
-	double e;
-	/* QD uses efaddord here. I think it is a bug (what if b > a.hi -> sum.hi > a.hi ?). */
-	sum.hi = twosum(a.hi, sum.hi, &e);
-#ifdef __CUDA_ARCH__
-	sum.lo = __dadd_rn(sum.lo, e);
-#else
-	sum.lo += e;
-#endif
-	return sum;
-}
-
-FPPLUS_STATIC_INLINE doubledouble ddsubw(const doubledouble a, const double b)
-{
-	doubledouble sum = ddaddl(a.lo, -b);
-	double e;
-	/* QD uses efaddord here. I think it is a bug (what if b > a.hi -> sum.hi > a.hi ?). */
-	sum.hi = twosum(a.hi, sum.hi, &e);
-#ifdef __CUDA_ARCH__
-	sum.lo = __dadd_rn(sum.lo, e);
-#else
-	sum.lo += e;
-#endif
-	return sum;
-}
-
-/**
- * @ingroup DD
- * @brief Addition of two double-double numbers.
- * @details Adds two double-double numbers and produces a double-double result.
- *
- * According to a comment in the source of @cite QD2000, the algorithm due to Briggs and Kahan.
- * Implementation follows @cite FPHandbook2009.
- *
- * @par	Computational complexity
- *     <table>
- *         <tr><th>Operation</th><th>Count</th></tr>
- *         <tr><td>FP ADD</td><td>20</td></tr>
- *     </table>
- *
- * @param[in] a - addend, the first double-double number to be added.
- * @param[in] b - augend, the second double-double number to be added.
- * @return The sum of @b a and @b b as a double-double number.
- */
-FPPLUS_STATIC_INLINE doubledouble ddadd(const doubledouble a, const doubledouble b)
-{
-#if 0
-	const doubledouble s = ddaddl(a.hi, b.hi);
-	const doubledouble t = ddaddl(a.lo, b.lo);
-	doubledouble v;
-#ifdef __CUDA_ARCH__
-	v.hi = efaddord(s.hi, __dadd_rn(s.lo, t.hi), &v.lo);
-#else
-	v.hi = twosumfast(s.hi, s.lo + t.hi, &v.lo);
-#endif
-	doubledouble z;
-#ifdef __CUDA_ARCH__
-	z.hi = efaddord(v.hi, __dadd_rn(t.lo, v.lo), &z.lo);
-#else
-	z.hi = twosumfast(v.hi, t.lo + v.lo, &z.lo);
-#endif
-	return z;
-#else
-	double z1, z2, z3, z4;
-
-	z1 = twosum(a.hi, b.hi, &z2);
-	z2 += a.lo + b.lo;
-	z3 = twosum(z1, z2, &z4);
-
-	return { z3, z4 };
-#endif
-}
-
-FPPLUS_STATIC_INLINE doubledouble ddsub(const doubledouble a, const doubledouble b)
-{
-#if 0
-	const doubledouble s = ddaddl(a.hi, -b.hi);
-	const doubledouble t = ddaddl(a.lo, b.lo);
-	doubledouble v;
-#ifdef __CUDA_ARCH__
-	v.hi = efaddord(s.hi, __dadd_rn(s.lo, t.hi), &v.lo);
-#else
-	v.hi = twosumfast(s.hi, s.lo - t.hi, &v.lo);
-#endif
-	doubledouble z;
-#ifdef __CUDA_ARCH__
-	z.hi = efaddord(v.hi, __dadd_rn(t.lo, v.lo), &z.lo);
-#else
-	z.hi = twosumfast(v.hi, t.lo + v.lo, &z.lo);
-#endif
-	return z;
-#else
-	double z1, z2, z3, z4;
-
-	z1 = twosum(a.hi, -b.hi, &z2);
-	z2 += a.lo - b.lo;
-	z3 = twosum(z1, z2, &z4);
-
-	return { z3, z4 };
-#endif
-}
-
-/**
- * @ingroup DD
- * @brief Fast addition of two double-double numbers with weaker error guarantees.
- * @details Adds two double-double numbers and produces a double-double result.
- *
- * Implementation based on @cite Dekker1971, Section 8, function add2.
- *
- * @par	Computational complexity
- *     <table>
- *         <tr><th>Operation</th><th>Count (default ISA)</th><th>Count (with ADDRE)</th></tr>
- *         <tr><td>FP ADD  </td> <td>11</td> <td>4</td> </tr>
- *         <tr><td>FP ADDRE</td> <td>  </td> <td>2</td> </tr>
- *     </table>
- *
- * @param[in] a - addend, the first double-double number to be added.
- * @param[in] b - augend, the second double-double number to be added.
- * @return The sum of @b a and @b b as a double-double number.
- */
-FPPLUS_STATIC_INLINE doubledouble ddadd_fast(const doubledouble a, const doubledouble b)
-{
-	doubledouble sum = ddaddl(a.hi, b.hi);
-#ifdef __CUDA_ARCH__
-	sum.lo = __dadd_rn(sum.lo, __dadd_rn(a.lo, b.lo));
-#else
-	sum.lo += a.lo + b.lo;
-#endif
-	sum.hi = twosumfast(sum.hi, sum.lo, &sum.lo);
-	return sum;
-}
-
-/**
- * @ingroup DD
- * @brief Long multiplication of double-precision numbers.
- * @details Multiplies two double-precision numbers and produces double-double result.
- * The algorith is a version of error-free multiplication.
- *
- * @par	Computational complexity
- *     <table>
- *         <tr><th>Operation</th><th>Count (default ISA)</th></tr>
- *         <tr><td>FP MUL</td><td>1</td></tr>
- *         <tr><td>FP FMA</td><td>1</td></tr>
- *     </table>
- *
- * @param[in] a - multiplicand, the double-precision number to be multiplied.
- * @param[in] b - multiplier, the double-precision number to multipliy by.
- * @return The product of @b a and @b b as a double-double number.
- */
-FPPLUS_STATIC_INLINE doubledouble ddmull(const double a, const double b)
-{
-	doubledouble product;
-	product.hi = efmul(a, b, &product.lo);
-	return product;
-}
-
-/**
- * @ingroup DD
- * @brief Multiplication of double-double numbers.
- * @details Multiplies two double-double numbers and produces double-double result.
- *
- * Implementation mostly follows @cite Dekker1971, Section 8, function mul2.
- *
- * @par	Computational complexity
- *     <table>
- *         <tr><th>Operation</th><th>Count (default ISA)</th></tr>
- *         <tr><td>FP ADD</td><td>3</td></tr>
- *         <tr><td>FP MUL</td><td>1</td></tr>
- *         <tr><td>FP FMA</td><td>3</td></tr>
- *     </table>
- *
- * @param[in] a - multiplicand, the double-double number to be multiplied.
- * @param[in] b - multiplier, the double-double number to multipliy by.
- * @return The product of @b a and @b b as a double-double number.
- */
-FPPLUS_STATIC_INLINE doubledouble ddmul(const doubledouble a, const doubledouble b)
-{
-	doubledouble product = ddmull(a.hi, b.hi);
-
-	/*
-	 * Dekker's paper used product.lo += (a.lo * b.hi) + (a.hi * b.lo) here,
-	 * but FMA-based implementation should be slightly faster and more accurate
-	 */
-#if defined(__CUDA_ARCH__)
-	product.lo = __fma_rn(a.lo, b.hi, product.lo);
-	product.lo = __fma_rn(a.hi, b.lo, product.lo);
-#elif defined(__GNUC__)
-	product.lo = __builtin_fma(a.lo, b.hi, product.lo);
-	product.lo = __builtin_fma(a.hi, b.lo, product.lo);
-#else
-#if 0
-	 //product.lo += a.lo * b.hi + a.hi * b.lo;//fast vaer
-	product.lo = fma(a.lo, b.hi, product.lo);
-	product.lo = fma(a.hi, b.lo, product.lo);
-#else
-	 //product.lo += a.lo * b.hi + a.hi * b.lo  + a.lo * b.lo; //accurate ver
-	product.lo = fma(a.lo, b.lo, product.lo);
-	product.lo = fma(a.lo, b.hi, product.lo);
-	product.lo = fma(a.hi, b.lo, product.lo);
-	
-#endif
-
-#endif
-
-	//product.hi = twosumfast(product.hi, product.lo, &product.lo);
-	product.hi = twosum(product.hi, product.lo, &product.lo);
-	return product;
-}
-
-FPPLUS_STATIC_INLINE doubledouble dddiv(const doubledouble a, const double b)
-{
-	const double z1 = a.hi / b;
-	double z4;
-	double z3 = efmul(-z1, b, &z4);
-	//z2 = ((((z3 + a.hi) - z1 * b.lo) + a.lo) + z4) / b.hi;
-	const double z2 = (((a.hi + z3) + a.lo) + z4) / b;
-	
-	//z3 = twosumfast(z1, z2, &z4);
-	z3 = twosum(z1, z2, &z4);
-	return { z3, z4 };
-}
-
-FPPLUS_STATIC_INLINE doubledouble dddiv(const doubledouble a, const doubledouble b)
-{
-	const double z1 = a.hi / b.hi;
-	double z4;
-	double z3 = efmul(-z1, b.hi, &z4);
-	//z2 = ((((z3 + a.hi) - z1 * b.lo) + a.lo) + z4) / b.hi;
-	//const double z2 = ((((a.hi + z3) - z1 * b.lo) + a.lo) + z4) / b.hi;
-	const double z2 = ((fma(-z1, b.lo, (a.hi + z3)) + a.lo) + z4) / b.hi;
-
-	//z3 = twosumfast(z1, z2, &z4);
-	z3 = twosum(z1, z2, &z4);
-	return { z3, z4 };
-}
-
-FPPLUS_STATIC_INLINE doubledouble ddsqrt(const doubledouble a)
-{
-	double z1, z2, z3, z4;
-
-	z1 = std::sqrt(a.lo);
-	z4 = efmul(-z1, z1, &z3);
-
-	z2 = ((z3 + a.lo) + a.hi + z4) / (2.0 * z1);
-	z4 = twosum(z1, z2, &z3);
-
-	return { z3, z4 };
-}
-
 static void ignore_space(std::string& s)
 {
 	int p = 0;
@@ -684,6 +390,307 @@ static doubledouble string2DD(std::string s, const int mode = 0, const bool fast
 	return ret;
 }
 
+//M_E
+static const doubledouble M_E_DD = string2DD("2.7182818284590452353602874713526624977572470937000");
+static const doubledouble M_PI_DD =  string2DD("3.1415926535897932384626433832795028841971693993751");
+static const doubledouble M_2PI_DD =     string2DD("6.2831853071795864769252867665590057683943387987502");
+static const doubledouble M_SQRT2PI_DD = string2DD("2.5066282746310005024157652848110452530069867406099");
+static const doubledouble M_LN2_DD = string2DD("0.69314718055994530941723212145817656807550013436026");
+
+
+/**
+ * @ingroup DD
+ * @brief Long addition of double-precision numbers.
+ * @details Adds two double-precision numbers and produces double-double result.
+ * The algorith is a version of error-free addition due to @cite Knuth1997.
+ *
+ * @par	Computational complexity
+ *     <table>
+ *         <tr><th>Operation</th> <th>Count (default ISA)</th> <th>Count (with ADDRE)</th></tr>
+ *         <tr><td>FP ADD   </td> <td>6                  </td> <td>1                 </td></tr>
+ *         <tr><td>FP ADDRE </td> <td>                   </td> <td>1                 </td></tr>
+ *     </table>
+ *
+ * @param[in] a - addend, the first double-precision number to be added.
+ * @param[in] b - augend, the second double-precision number to be added.
+ * @return The sum of @b a and @b b as a double-double number.
+ */
+FPPLUS_STATIC_INLINE doubledouble ddaddl(const double a, const double b)
+{
+	doubledouble sum;
+	sum.hi = twosum(a, b, &sum.lo);
+	return sum;
+}
+
+/**
+ * @ingroup DD
+ * @brief Wide addition of double-precision number to a double-double number.
+ * @details Adds double-precision number to a double-double number and produces a double-double result.
+ *
+ * Implementation follows @cite QD2000, Figure 7.
+ *
+ * @par	Computational complexity
+ *     <table>
+ *         <tr><th>Operation</th> <th>Count (default ISA)</th> <th>Count (with ADDRE)</th></tr>
+ *         <tr><td>FP ADD   </td> <td>10                 </td> <td>3                 </td></tr>
+ *         <tr><td>FP ADDRE </td> <td>                   </td> <td>2                 </td></tr>
+ *     </table>
+ *
+ * @param[in] a - addend, the double-double number to be added to.
+ * @param[in] b - augend, the double-precision number to be added.
+ * @return The sum of @b a and @b b as a double-double number.
+ */
+FPPLUS_STATIC_INLINE doubledouble ddaddw(const doubledouble a, const double b)
+{
+	doubledouble sum = ddaddl(a.lo, b);
+	double e;
+	/* QD uses efaddord here. I think it is a bug (what if b > a.hi -> sum.hi > a.hi ?). */
+	sum.hi = twosum(a.hi, sum.hi, &e);
+#ifdef __CUDA_ARCH__
+	sum.lo = __dadd_rn(sum.lo, e);
+#else
+	sum.lo += e;
+#endif
+	return sum;
+}
+
+FPPLUS_STATIC_INLINE doubledouble ddsubw(const doubledouble a, const double b)
+{
+	doubledouble sum = ddaddl(a.lo, -b);
+	double e;
+	/* QD uses efaddord here. I think it is a bug (what if b > a.hi -> sum.hi > a.hi ?). */
+	sum.hi = twosum(a.hi, sum.hi, &e);
+#ifdef __CUDA_ARCH__
+	sum.lo = __dadd_rn(sum.lo, e);
+#else
+	sum.lo += e;
+#endif
+	return sum;
+}
+
+/**
+ * @ingroup DD
+ * @brief Addition of two double-double numbers.
+ * @details Adds two double-double numbers and produces a double-double result.
+ *
+ * According to a comment in the source of @cite QD2000, the algorithm due to Briggs and Kahan.
+ * Implementation follows @cite FPHandbook2009.
+ *
+ * @par	Computational complexity
+ *     <table>
+ *         <tr><th>Operation</th><th>Count</th></tr>
+ *         <tr><td>FP ADD</td><td>20</td></tr>
+ *     </table>
+ *
+ * @param[in] a - addend, the first double-double number to be added.
+ * @param[in] b - augend, the second double-double number to be added.
+ * @return The sum of @b a and @b b as a double-double number.
+ */
+FPPLUS_STATIC_INLINE doubledouble ddadd(const doubledouble a, const doubledouble b)
+{
+#if 0
+	const doubledouble s = ddaddl(a.hi, b.hi);
+	const doubledouble t = ddaddl(a.lo, b.lo);
+	doubledouble v;
+#ifdef __CUDA_ARCH__
+	v.hi = efaddord(s.hi, __dadd_rn(s.lo, t.hi), &v.lo);
+#else
+	v.hi = twosumfast(s.hi, s.lo + t.hi, &v.lo);
+#endif
+	doubledouble z;
+#ifdef __CUDA_ARCH__
+	z.hi = efaddord(v.hi, __dadd_rn(t.lo, v.lo), &z.lo);
+#else
+	z.hi = twosumfast(v.hi, t.lo + v.lo, &z.lo);
+#endif
+	return z;
+#else
+	double z1, z2, z3, z4;
+
+	z1 = twosum(a.hi, b.hi, &z2);
+	z2 += a.lo + b.lo;
+	z3 = twosum(z1, z2, &z4);
+
+	return { z3, z4 };
+#endif
+}
+
+FPPLUS_STATIC_INLINE doubledouble ddsub(const doubledouble a, const doubledouble b)
+{
+#if 0
+	const doubledouble s = ddaddl(a.hi, -b.hi);
+	const doubledouble t = ddaddl(a.lo, b.lo);
+	doubledouble v;
+#ifdef __CUDA_ARCH__
+	v.hi = efaddord(s.hi, __dadd_rn(s.lo, t.hi), &v.lo);
+#else
+	v.hi = twosumfast(s.hi, s.lo - t.hi, &v.lo);
+#endif
+	doubledouble z;
+#ifdef __CUDA_ARCH__
+	z.hi = efaddord(v.hi, __dadd_rn(t.lo, v.lo), &z.lo);
+#else
+	z.hi = twosumfast(v.hi, t.lo + v.lo, &z.lo);
+#endif
+	return z;
+#else
+	double z1, z2, z3, z4;
+
+	z1 = twosum(a.hi, -b.hi, &z2);
+	z2 += a.lo - b.lo;
+	z3 = twosum(z1, z2, &z4);
+
+	return { z3, z4 };
+#endif
+}
+
+/**
+ * @ingroup DD
+ * @brief Fast addition of two double-double numbers with weaker error guarantees.
+ * @details Adds two double-double numbers and produces a double-double result.
+ *
+ * Implementation based on @cite Dekker1971, Section 8, function add2.
+ *
+ * @par	Computational complexity
+ *     <table>
+ *         <tr><th>Operation</th><th>Count (default ISA)</th><th>Count (with ADDRE)</th></tr>
+ *         <tr><td>FP ADD  </td> <td>11</td> <td>4</td> </tr>
+ *         <tr><td>FP ADDRE</td> <td>  </td> <td>2</td> </tr>
+ *     </table>
+ *
+ * @param[in] a - addend, the first double-double number to be added.
+ * @param[in] b - augend, the second double-double number to be added.
+ * @return The sum of @b a and @b b as a double-double number.
+ */
+FPPLUS_STATIC_INLINE doubledouble ddadd_fast(const doubledouble a, const doubledouble b)
+{
+	doubledouble sum = ddaddl(a.hi, b.hi);
+#ifdef __CUDA_ARCH__
+	sum.lo = __dadd_rn(sum.lo, __dadd_rn(a.lo, b.lo));
+#else
+	sum.lo += a.lo + b.lo;
+#endif
+	sum.hi = twosumfast(sum.hi, sum.lo, &sum.lo);
+	return sum;
+}
+
+/**
+ * @ingroup DD
+ * @brief Long multiplication of double-precision numbers.
+ * @details Multiplies two double-precision numbers and produces double-double result.
+ * The algorith is a version of error-free multiplication.
+ *
+ * @par	Computational complexity
+ *     <table>
+ *         <tr><th>Operation</th><th>Count (default ISA)</th></tr>
+ *         <tr><td>FP MUL</td><td>1</td></tr>
+ *         <tr><td>FP FMA</td><td>1</td></tr>
+ *     </table>
+ *
+ * @param[in] a - multiplicand, the double-precision number to be multiplied.
+ * @param[in] b - multiplier, the double-precision number to multipliy by.
+ * @return The product of @b a and @b b as a double-double number.
+ */
+FPPLUS_STATIC_INLINE doubledouble ddmull(const double a, const double b)
+{
+	doubledouble product;
+	product.hi = efmul(a, b, &product.lo);
+	return product;
+}
+
+/**
+ * @ingroup DD
+ * @brief Multiplication of double-double numbers.
+ * @details Multiplies two double-double numbers and produces double-double result.
+ *
+ * Implementation mostly follows @cite Dekker1971, Section 8, function mul2.
+ *
+ * @par	Computational complexity
+ *     <table>
+ *         <tr><th>Operation</th><th>Count (default ISA)</th></tr>
+ *         <tr><td>FP ADD</td><td>3</td></tr>
+ *         <tr><td>FP MUL</td><td>1</td></tr>
+ *         <tr><td>FP FMA</td><td>3</td></tr>
+ *     </table>
+ *
+ * @param[in] a - multiplicand, the double-double number to be multiplied.
+ * @param[in] b - multiplier, the double-double number to multipliy by.
+ * @return The product of @b a and @b b as a double-double number.
+ */
+FPPLUS_STATIC_INLINE doubledouble ddmul(const doubledouble a, const doubledouble b)
+{
+	doubledouble product = ddmull(a.hi, b.hi);
+
+	/*
+	 * Dekker's paper used product.lo += (a.lo * b.hi) + (a.hi * b.lo) here,
+	 * but FMA-based implementation should be slightly faster and more accurate
+	 */
+#if defined(__CUDA_ARCH__)
+	product.lo = __fma_rn(a.lo, b.hi, product.lo);
+	product.lo = __fma_rn(a.hi, b.lo, product.lo);
+#elif defined(__GNUC__)
+	product.lo = __builtin_fma(a.lo, b.hi, product.lo);
+	product.lo = __builtin_fma(a.hi, b.lo, product.lo);
+#else
+#if 0
+	 //product.lo += a.lo * b.hi + a.hi * b.lo;//fast vaer
+	product.lo = fma(a.lo, b.hi, product.lo);
+	product.lo = fma(a.hi, b.lo, product.lo);
+#else
+	 //product.lo += a.lo * b.hi + a.hi * b.lo  + a.lo * b.lo; //accurate ver
+	product.lo = fma(a.lo, b.lo, product.lo);
+	product.lo = fma(a.lo, b.hi, product.lo);
+	product.lo = fma(a.hi, b.lo, product.lo);
+	
+#endif
+
+#endif
+
+	//product.hi = twosumfast(product.hi, product.lo, &product.lo);
+	product.hi = twosum(product.hi, product.lo, &product.lo);
+	return product;
+}
+
+FPPLUS_STATIC_INLINE doubledouble dddiv(const doubledouble a, const double b)
+{
+	const double z1 = a.hi / b;
+	double z4;
+	double z3 = efmul(-z1, b, &z4);
+	//z2 = ((((z3 + a.hi) - z1 * b.lo) + a.lo) + z4) / b.hi;
+	const double z2 = (((a.hi + z3) + a.lo) + z4) / b;
+	
+	//z3 = twosumfast(z1, z2, &z4);
+	z3 = twosum(z1, z2, &z4);
+	return { z3, z4 };
+}
+
+FPPLUS_STATIC_INLINE doubledouble dddiv(const doubledouble a, const doubledouble b)
+{
+	const double z1 = a.hi / b.hi;
+	double z4;
+	double z3 = efmul(-z1, b.hi, &z4);
+	//z2 = ((((z3 + a.hi) - z1 * b.lo) + a.lo) + z4) / b.hi;
+	//const double z2 = ((((a.hi + z3) - z1 * b.lo) + a.lo) + z4) / b.hi;
+	const double z2 = ((fma(-z1, b.lo, (a.hi + z3)) + a.lo) + z4) / b.hi;
+
+	//z3 = twosumfast(z1, z2, &z4);
+	z3 = twosum(z1, z2, &z4);
+	return { z3, z4 };
+}
+
+FPPLUS_STATIC_INLINE doubledouble ddsqrt(const doubledouble a)
+{
+	double z1, z2, z3, z4;
+
+	z1 = std::sqrt(a.lo);
+	z4 = efmul(-z1, z1, &z3);
+
+	z2 = ((z3 + a.lo) + a.hi + z4) / (2.0 * z1);
+	z4 = twosum(z1, z2, &z3);
+
+	return { z3, z4 };
+}
+
 FPPLUS_STATIC_INLINE doubledouble round(const doubledouble x)
 {
 	double z1, z2, z3, z4;
@@ -743,7 +750,6 @@ FPPLUS_STATIC_INLINE doubledouble ipower(const doubledouble x, double i)
 	return r;
 }
 
-static const doubledouble M_E_DD = string2DD("2.7182818284590452353602874713526624977572470937000");
 
 FPPLUS_STATIC_INLINE doubledouble ddexp(const doubledouble x)
 {
