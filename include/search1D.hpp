@@ -1,9 +1,10 @@
 #pragma once
-
+#include <plot.hpp>
 #include <cmath>
 #include <string>
+#include <iostream>
 
-namespace util
+namespace cp
 {
 	class Search1DInt
 	{

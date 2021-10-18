@@ -413,9 +413,7 @@
     <ClCompile Include="timeDiv.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\include\spatialfilter\SpatialFilter.hpp" />
     <ClInclude Include="patchSIMDFunctions.hpp" />
-    <ClInclude Include="search1D.hpp" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

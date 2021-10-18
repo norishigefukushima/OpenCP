@@ -265,7 +265,7 @@ namespace cp
 		dest.at<double>(0, 0) = 1.0;//u=0
 		sum += 1.0;//u=0
 
-		const int rend = 10.0 * sigma;
+		const int rend = int(10.0 * sigma);
 		double eout = 0.0;
 		for (int i = R + 1; i <= rend; i++)
 		{
@@ -537,7 +537,7 @@ namespace cp
 		return true;
 	}
 
-	class SearchFullDCTRadius :public util::Search1DInt
+	class SearchFullDCTRadius :public cp::Search1DInt
 	{
 		double sigma;
 		int K;
@@ -659,7 +659,7 @@ namespace cp
 			return 0;
 		}
 		a = c_1 * K * K * K + c_2 * K * K + c_3 * K + c_4;
-		return dest = (a * sigma + b);
+		return dest = int(a * sigma + b);
 	}
 
 	int argminR_BruteForce_DCT(const double sigma, const int K, const int dcttype, const double* spect, const bool isOptimize, const bool isGoldenSelectionSearch)
@@ -707,7 +707,7 @@ namespace cp
 	}
 
 #pragma region ContinuousForm
-	class SearchDCTRadiusContinuousForm :public util::Search1DInt
+	class SearchDCTRadiusContinuousForm :public cp::Search1DInt
 	{
 		double sigma;
 		int K;

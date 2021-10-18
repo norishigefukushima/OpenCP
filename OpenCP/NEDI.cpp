@@ -123,7 +123,7 @@ namespace cp
 					Mat offset = (CInv * onesVector) * (1.f - temp2.at<float>(0)) / (temp1.at<float>(0) + FLT_EPSILON);
 #else
 					invert(CtC, CInv, DECOMP_LU);
-					float v1 = cv::sum(CInv).val[0] + FLT_EPSILON;//(onesVector.t()*CInv*onesVector);//sum all element;
+					float v1 = float(cv::sum(CInv).val[0] + FLT_EPSILON);//(onesVector.t()*CInv*onesVector);//sum all element;
 					reduce(CInv, rowsum, 0, REDUCE_SUM, CV_32F);
 					float v2 = Mat(rowsum * c).at<float>(0);//Mat temp2 = (onesVector.t()*CInv*c);//ones.t()*C: col sum 
 					reduce(CInv, colsum, 1, REDUCE_SUM, CV_32F);//C*one: col sum
@@ -224,7 +224,7 @@ namespace cp
 						Mat offset = (CInv * onesVector) * (1.f - temp2.at<float>(0)) / (temp1.at<float>(0) + FLT_EPSILON);
 #else
 						invert(CtC, CInv, DECOMP_LU);
-						float v1 = cv::sum(CInv).val[0] + FLT_EPSILON;//(onesVector.t()*CInv*onesVector);//sum all element;
+						float v1 = float(cv::sum(CInv).val[0] + FLT_EPSILON);//(onesVector.t()*CInv*onesVector);//sum all element;
 						reduce(CInv, rowsum, 0, REDUCE_SUM, CV_32F);
 						float v2 = Mat(rowsum * c).at<float>(0);//Mat temp2 = (onesVector.t()*CInv*c);//ones.t()*C: col sum 
 						reduce(CInv, colsum, 1, REDUCE_SUM, CV_32F);//C*one: col sum
@@ -645,7 +645,7 @@ namespace cp
 						dest_border[i].setTo(0);
 					}
 
-					if (method == 0)upsampleGrayDoubleLU(image_border[i], dest_border[i], threshold, WindowSize, eps * 1.0 / 2560.0);
+					if (method == 0)upsampleGrayDoubleLU(image_border[i], dest_border[i], threshold, WindowSize, float(eps * 1.0 / 2560.0));
 					else if (method == 1)
 					{
 						//upsampleGrayDoubleLU(image_border[i], dest_border[i], threshold, WindowSize);

@@ -661,6 +661,7 @@
     <ClInclude Include="..\include\metricsDD.hpp" />
     <ClInclude Include="..\include\NEDI.hpp" />
     <ClInclude Include="..\include\onelineCVFunctions.hpp" />
+    <ClInclude Include="..\include\search1D.hpp" />
     <ClInclude Include="..\include\StereoEval.hpp" />
     <ClInclude Include="..\include\depthfilter.hpp" />
     <ClInclude Include="..\include\detailEnhancement.hpp" />
