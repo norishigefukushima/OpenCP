@@ -41,4 +41,33 @@ namespace cp
 	//merge subimages in std::vector to an image
 	CP_EXPORT void conquerTiles(const std::vector<cv::Mat>& src, cv::Mat& dest, const cv::Size div_size, const int r);
 	CP_EXPORT void conquerTilesAlign(const std::vector<cv::Mat>& src, cv::Mat& dest, const cv::Size div_size, const int r, const int left_multiple = 1, const int top_multiple = 1);
+
+	class CP_EXPORT TileDivision
+	{
+		std::vector<cv::Point> pt;//left top point
+		std::vector<cv::Size> tileSize;
+		std::vector<int> threadnum;
+		cv::Size div;
+		cv::Size imgSize;
+		int width_step = 0;
+		int height_step = 0;
+
+		void update_pt();
+		bool isRecompute = true;
+		bool preReturnFlag = false;
+	public:
+
+		//div.width * y + x;
+		cv::Rect getROI(const int x, int y);
+		cv::Rect getROI(const int index);
+
+		TileDivision();
+		void init(cv::Size imgSize, cv::Size div);
+		TileDivision(cv::Size imgSize, cv::Size div);
+
+		bool compute(const int width_step_, const int height_step_);
+
+		void draw(cv::Mat& src, cv::Mat& dst);
+		void show(std::string wname);
+	};
 }
