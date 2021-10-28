@@ -3602,6 +3602,65 @@ namespace cp
 		}
 	}
 
+	void TileDivision::draw(cv::Mat& src, cv::Mat& dst, std::vector<std::string>& info)
+	{
+		if (src.data == dst.data)
+		{
+			dst = src;
+		}
+		else
+		{
+			dst.create(src.size(), CV_8UC3);
+			switch (src.type())
+			{
+			case CV_8UC3: dst = src.clone(); break;
+			case CV_8UC1: cv::cvtColor(src, dst, cv::COLOR_GRAY2BGR); break;
+
+			default:
+			{
+				if (src.channels() == 3)
+				{
+					dst = cp::convert(src, CV_8U); break;
+				}
+				else
+				{
+					cv::Mat temp = cp::convert(src, CV_8U);
+					cv::cvtColor(temp, dst, cv::COLOR_GRAY2BGR); break;
+				}
+				break;
+			}
+			}
+		}
+
+		const int threadMax = omp_get_max_threads();
+
+		for (int i = 0; i < div.area(); i++)
+		{
+			const int threadNumber = threadnum[i];
+			//const int threadNumber = 0;
+			cv::Rect roi = getROI(i);
+			if (tileSize[i].width % width_step == 0 && tileSize[i].height % height_step == 0)
+			{
+				rectangle(dst, roi, COLOR_GREEN);
+			}
+			else
+			{
+				rectangle(dst, roi, COLOR_YELLOW);
+			}
+			if (pt[i].x + tileSize[i].width > imgSize.width || pt[i].y + tileSize[i].height > imgSize.height)
+			{
+				rectangle(dst, roi, COLOR_RED);
+			}
+			const Scalar txtcolor = COLOR_WHITE;
+			//const Scalar txtcolor = COLOR_GREEN;
+			addText(dst, std::to_string(tileSize[i].width) + "x" + std::to_string(tileSize[i].height), pt[i] + cv::Point(10, 20), "Consolas", 12, txtcolor);
+			addText(dst, cv::format("#T %d/%d", threadNumber, threadMax - 1), pt[i] + cv::Point(10, 40), "Consolas", 12, txtcolor);
+			addText(dst, cv::format("%s", info[i]), pt[i] + cv::Point(10, 60), "Consolas", 12, txtcolor);
+
+			//cout << roi << endl;
+		}
+	}
+
 	void TileDivision::show(std::string wname)
 	{
 		cv::Mat show = cv::Mat::zeros(imgSize, CV_8UC3);

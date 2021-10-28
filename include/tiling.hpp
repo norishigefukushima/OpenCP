@@ -68,6 +68,7 @@ namespace cp
 		bool compute(const int width_step_, const int height_step_);
 
 		void draw(cv::Mat& src, cv::Mat& dst);
+		void draw(cv::Mat& src, cv::Mat& dst, std::vector<std::string>& info);
 		void show(std::string wname);
 	};
 }
