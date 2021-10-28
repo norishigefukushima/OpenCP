@@ -3451,7 +3451,7 @@ namespace cp
 
 	bool TileDivision::compute(const int width_step_, const int height_step_)
 	{
-		if (width_step != width_step_|| height_step != height_step_)
+		if (width_step != width_step_ || height_step != height_step_)
 			isRecompute = true;
 
 		if (!isRecompute) return preReturnFlag;
@@ -3533,7 +3533,7 @@ namespace cp
 		}
 
 		update_pt();
-		if(threadnum.size()!=div.area())threadnum.resize(div.area());
+		if (threadnum.size() != div.area())threadnum.resize(div.area());
 #pragma omp parallel for schedule (static)
 		for (int i = 0; i < div.area(); i++)
 		{
@@ -3661,11 +3661,182 @@ namespace cp
 		}
 	}
 
+	void TileDivision::draw(cv::Mat& src, cv::Mat& dst, std::vector<std::string>& info, std::vector<std::string>& info2)
+	{
+		if (src.data == dst.data)
+		{
+			dst = src;
+		}
+		else
+		{
+			dst.create(src.size(), CV_8UC3);
+			switch (src.type())
+			{
+			case CV_8UC3: dst = src.clone(); break;
+			case CV_8UC1: cv::cvtColor(src, dst, cv::COLOR_GRAY2BGR); break;
+
+			default:
+			{
+				if (src.channels() == 3)
+				{
+					dst = cp::convert(src, CV_8U); break;
+				}
+				else
+				{
+					cv::Mat temp = cp::convert(src, CV_8U);
+					cv::cvtColor(temp, dst, cv::COLOR_GRAY2BGR); break;
+				}
+				break;
+			}
+			}
+		}
+
+		const int threadMax = omp_get_max_threads();
+
+		for (int i = 0; i < div.area(); i++)
+		{
+			const int threadNumber = threadnum[i];
+			//const int threadNumber = 0;
+			cv::Rect roi = getROI(i);
+			if (tileSize[i].width % width_step == 0 && tileSize[i].height % height_step == 0)
+			{
+				rectangle(dst, roi, COLOR_GREEN);
+			}
+			else
+			{
+				rectangle(dst, roi, COLOR_YELLOW);
+			}
+			if (pt[i].x + tileSize[i].width > imgSize.width || pt[i].y + tileSize[i].height > imgSize.height)
+			{
+				rectangle(dst, roi, COLOR_RED);
+			}
+			const Scalar txtcolor = COLOR_WHITE;
+			//const Scalar txtcolor = COLOR_GREEN;
+			addText(dst, std::to_string(tileSize[i].width) + "x" + std::to_string(tileSize[i].height), pt[i] + cv::Point(10, 20), "Consolas", 12, txtcolor);
+			addText(dst, cv::format("#T %d/%d", threadNumber, threadMax - 1), pt[i] + cv::Point(10, 40), "Consolas", 12, txtcolor);
+			addText(dst, cv::format("%s", info[i]), pt[i] + cv::Point(10, 60), "Consolas", 12, txtcolor);
+			addText(dst, cv::format("%s", info2[i]), pt[i] + cv::Point(10, 80), "Consolas", 12, txtcolor);
+
+			//cout << roi << endl;
+		}
+	}
+
 	void TileDivision::show(std::string wname)
 	{
 		cv::Mat show = cv::Mat::zeros(imgSize, CV_8UC3);
 		draw(show, show);
 		imshow(wname, show);
 	}
+
+#pragma region TileParallelBody
+	void TileParallelBody::init(const Size div)
+	{
+		this->div = div;
+
+		if (srcTile.size() != div.area())srcTile.resize(div.area());
+		if (dstTile.size() != div.area())dstTile.resize(div.area());
+	}
+
+	void TileParallelBody::initGuide(const Size div, std::vector<Mat>& guide)
+	{
+		isUseGuide = true;
+		this->guideMaps = guide;
+		const int numGuides = guide.size();
+		if (guideTile.size() != numGuides)
+		{
+			guideTile.resize(numGuides);
+			for (int i = 0; i < numGuides; i++)
+			{
+				guideTile[i].resize(div.area());
+			}
+		}
+	}
+
+	void TileParallelBody::unsetUseGuide()
+	{
+		isUseGuide = false;
+	}
+
+	void TileParallelBody::drawMinMax(string wname, cv::Mat& src)
+	{
+		vector<string>info(div.area());
+		//vector<string>info2(div.area());
+
+		for (int i = 0; i < div.area(); i++)
+		{
+			double minv, maxv;
+			minMaxLoc(srcTile[i], &minv, &maxv);
+			info[i] = format("%4.1f %4.1f", minv, maxv);
+			//minMaxLoc(dstTile[i], &minv, &maxv);
+			//info2[i] = format("%5.2f %5.2f", minv, maxv);
+		}
+		Mat dst;
+		tdiv.draw(src, dst, info);
+		imshow(wname, dst);
+	}
+
+	void TileParallelBody::invoker(const cv::Size div, const cv::Mat& src, cv::Mat& dst, int tileBoundary, const int borderType, const int depth)
+	{
+		init(div);
+
+		dst.create(src.size(), (depth < 0) ? src.depth() : depth);
+		int vecsize = (dst.depth() == CV_64F) ? 4 : 8;
+
+		tdiv.init(src.size(), div);
+		tdiv.compute(vecsize, vecsize);
+
+		if (0 < tileBoundary && tileBoundary < vecsize)
+		{
+			tileBoundary = vecsize;
+		}
+
+#pragma omp parallel for schedule (static)
+		for (int n = 0; n < div.area(); n++)
+		{
+			const int threadNumber = omp_get_thread_num();
+			Rect roi = tdiv.getROI(n);
+			cp::cropTileAlign(src, srcTile[n], roi, tileBoundary, borderType, vecsize, vecsize, 1);
+			if (isUseGuide)
+			{
+				for (int i = 0; i < guideTile.size(); i++)
+				{
+					cp::cropTileAlign(guideMaps[i], guideTile[i][n], roi, tileBoundary, borderType, vecsize, vecsize, 1);
+				}
+			}
+			if (src.data == dst.data)
+			{
+				process(srcTile[n], srcTile[n], threadNumber, n);
+				if (srcTile[n].depth() != dst.depth())
+				{
+					print_matinfo(src);
+					print_matinfo(srcTile[n]);
+					print_matinfo(dst);
+				}
+				cp::pasteTile(srcTile[n], dst, roi, tileBoundary);
+			}
+			else
+			{
+				process(srcTile[n], dstTile[n], threadNumber, n);
+				if (dstTile[n].depth() != dst.depth())
+				{
+					print_matinfo(dstTile[n]);
+					print_matinfo(dst);
+				}
+				cp::pasteTile(dstTile[n], dst, roi, tileBoundary);
+			}
+		}
+		tileSize = srcTile[0].size();
+
+		//Mat show;
+		//tdiv.draw(dst, show);
+		//imshow("tile", show);
+	}
+
+	cv::Size TileParallelBody::getTileSize()
+	{
+		return tileSize;
+	}
+#pragma endregion
+
 #pragma endregion
 }

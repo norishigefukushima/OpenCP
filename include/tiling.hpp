@@ -2,7 +2,7 @@
 #pragma once
 
 #include "common.hpp"
-
+#include <omp.h>
 namespace cp
 {
 	//get online image size
@@ -69,6 +69,32 @@ namespace cp
 
 		void draw(cv::Mat& src, cv::Mat& dst);
 		void draw(cv::Mat& src, cv::Mat& dst, std::vector<std::string>& info);
+		void draw(cv::Mat& src, cv::Mat& dst, std::vector<std::string>& info, std::vector<std::string>& info2);
 		void show(std::string wname);
+	};
+
+	class CP_EXPORT TileParallelBody
+	{
+		cp::TileDivision tdiv;
+		cv::Size div;
+		cv::Size tileSize;
+
+		void init(const cv::Size div);
+	protected:
+		virtual void process(const cv::Mat& src, cv::Mat& dst, const int threadIndex, const int imageIndex) = 0;
+		std::vector<cv::Mat> srcTile;
+		std::vector<cv::Mat> dstTile;
+		std::vector<cv::Mat> guideMaps;
+		std::vector<std::vector<cv::Mat>> guideTile;
+		int threadMax = omp_get_max_threads();
+		bool isUseGuide = false;
+		void initGuide(const cv::Size div, std::vector<cv::Mat>& guide);
+	public:
+		void drawMinMax(std::string wname, cv::Mat& src);
+
+		void invoker(const cv::Size div, const cv::Mat& src, cv::Mat& dst, const int tileBoundary, const int borderType = cv::BORDER_DEFAULT, const int depth = -1);
+		void unsetUseGuide();
+		cv::Size getTileSize();
+		//void printParameter();
 	};
 }
