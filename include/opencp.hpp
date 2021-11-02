@@ -28,6 +28,7 @@
 #include "randomizedQueue.hpp"
 #include "stat.hpp"
 #include "stencil.hpp"
+#include "stream.hpp"
 #include "timer.hpp"
 #include "tiling.hpp"
 #include "updateCheck.hpp"

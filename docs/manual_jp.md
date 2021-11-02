@@ -220,12 +220,14 @@ imshowの拡張．
 ## matinfo.hpp
 Matの中身の情報を表示するデバッグ関数．  
 `print_matinfo`はマクロ展開することで，引数も表示する．  
+
 * [showMatInfo](matinfo_jp.md "#showMatInfo")
 * [print_matinfo](matinfo_jp.md "#print_matinfo")
 * [print_matinfo_detail](matinfo_jp.md "#print_matinfo_detail")
 
 ## noise.hpp
 ノイズを付与する関数
+
 * [addNoise](noise_jp.md "#addNoise")
 * [addJPEGNoise](noise_jp.md "#addJPEGNoise")
 
@@ -262,6 +264,13 @@ class CP_EXPORT RandomizedQueue
 	CP_EXPORT void mergeHorizon(const std::vector<cv::Mat>& src, cv::Mat& dest);
 	CP_EXPORT void splitHorizon(const cv::Mat& src, std::vector<cv::Mat>& dest, int num);
 ```
+
+## stream.hpp
+キャッシュを汚さないcopyやconvert命令
+
+* [streamCopy](noise_jp.md "# streamCopy")
+* [streamConvertTo8U](noise_jp.md "# streamConvertTo8U")
+
 
 ## [Todo] tiling.hpp
 

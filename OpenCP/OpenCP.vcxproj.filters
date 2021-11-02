@@ -579,6 +579,9 @@
     <ClCompile Include="onelineCVFunctions.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="stream.cpp">
+      <Filter>ソース ファイル\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libGaussian\gaussian_conv.h">
@@ -1042,6 +1045,9 @@
     </ClInclude>
     <ClInclude Include="..\include\search1D.hpp">
       <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\stream.hpp">
+      <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

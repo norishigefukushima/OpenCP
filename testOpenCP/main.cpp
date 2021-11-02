@@ -33,6 +33,7 @@ int main(int argc, char** argv)
 
 
 #pragma region core
+	testStreamConvert8U(); return 0;
 	//testKMeans(img); return 0;
 	//testTiling(img); return 0;
 	//copyMakeBorderTest(img); return 0;

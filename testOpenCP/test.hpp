@@ -27,6 +27,7 @@ void testRGBHistogram2();
 void testSplitMerge(cv::Mat& src);
 void testMatInfo();
 void testStat();
+void testStreamConvert8U();
 void testTimer(cv::Mat& src);
 void testDestinationTimePrediction(cv::Mat& src);
 void testTiling(cv::Mat& src);

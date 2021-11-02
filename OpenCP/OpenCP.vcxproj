@@ -617,6 +617,7 @@
     <ClCompile Include="StereoIterativeBM.cpp" />
     <ClCompile Include="StereoSGM2.cpp" />
     <ClCompile Include="stereo_core.cpp" />
+    <ClCompile Include="stream.cpp" />
     <ClCompile Include="tiling.cpp" />
     <ClCompile Include="timer.cpp" />
     <ClCompile Include="updateCheck.cpp" />
@@ -730,6 +731,7 @@
     <ClInclude Include="..\include\stereo_core.hpp" />
     <ClInclude Include="..\include\stereoDisplay.hpp" />
     <ClInclude Include="..\include\stereoDP.hpp" />
+    <ClInclude Include="..\include\stream.hpp" />
     <ClInclude Include="..\include\tiling.hpp" />
     <ClInclude Include="..\include\timer.hpp" />
     <ClInclude Include="..\include\updateCheck.hpp" />

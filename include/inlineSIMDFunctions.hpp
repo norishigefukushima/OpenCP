@@ -63,6 +63,59 @@ inline void get_simd_width_end(const int cv_depth, const int channels, const int
 		dest_pad_pixels = (image_width - dest_endwidth) * channels;
 	}
 }
+
+inline __m256i get_simd_residualmask_epi32(const int width)
+{
+	const int rem = width - get_simd_floor(width, 8);
+	__m256i ret = _mm256_undefined_si256();
+	switch (rem)
+	{
+	case 0: ret = _mm256_cmpeq_epi32(_mm256_set1_epi32(1), _mm256_setzero_si256()); break;
+	case 1: ret = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 1, 1, 1, 1, 1, 1, 1), _mm256_setzero_si256()); break;
+	case 2: ret = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 1, 1, 1, 1, 1, 1), _mm256_setzero_si256()); break;
+	case 3: ret = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 1, 1, 1, 1, 1), _mm256_setzero_si256()); break;
+	case 4: ret = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 1, 1, 1, 1), _mm256_setzero_si256()); break;
+	case 5: ret = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 0, 1, 1, 1), _mm256_setzero_si256()); break;
+	case 6: ret = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 0, 0, 1, 1), _mm256_setzero_si256()); break;
+	case 7: ret = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 0, 0, 0, 1), _mm256_setzero_si256()); break;
+	}
+	return ret;
+}
+
+inline __m256 get_simd_residualmask_ps(const int width)
+{
+	const int rem = width - get_simd_floor(width, 8);
+	__m256 ret = _mm256_undefined_ps();
+	switch (rem)
+	{
+	case 0: ret = _mm256_cmp_ps(_mm256_set1_ps(1), _mm256_setzero_ps(), 0); break;
+	case 1: ret = _mm256_cmp_ps(_mm256_setr_ps(0, 1, 1, 1, 1, 1, 1, 1), _mm256_setzero_ps(), 0); break;
+	case 2: ret = _mm256_cmp_ps(_mm256_setr_ps(0, 0, 1, 1, 1, 1, 1, 1), _mm256_setzero_ps(), 0); break;
+	case 3: ret = _mm256_cmp_ps(_mm256_setr_ps(0, 0, 0, 1, 1, 1, 1, 1), _mm256_setzero_ps(), 0); break;
+	case 4: ret = _mm256_cmp_ps(_mm256_setr_ps(0, 0, 0, 0, 1, 1, 1, 1), _mm256_setzero_ps(), 0); break;
+	case 5: ret = _mm256_cmp_ps(_mm256_setr_ps(0, 0, 0, 0, 0, 1, 1, 1), _mm256_setzero_ps(), 0); break;
+	case 6: ret = _mm256_cmp_ps(_mm256_setr_ps(0, 0, 0, 0, 0, 0, 1, 1), _mm256_setzero_ps(), 0); break;
+	case 7: ret = _mm256_cmp_ps(_mm256_setr_ps(0, 0, 0, 0, 0, 0, 0, 1), _mm256_setzero_ps(), 0); break;
+	}
+	return ret;
+}
+
+inline __m256d get_simd_residualmask_pd(const int width)
+{
+	const int rem = width - get_simd_floor(width, 4);
+	__m256d ret = _mm256_undefined_pd();
+	switch (rem)
+	{
+	case 0: ret = _mm256_cmp_pd(_mm256_set1_pd(1), _mm256_setzero_pd(), 0); break;
+	case 1: ret = _mm256_cmp_pd(_mm256_setr_pd(0, 1, 1, 1), _mm256_setzero_pd(), 0); break;
+	case 2: ret = _mm256_cmp_pd(_mm256_setr_pd(0, 0, 1, 1), _mm256_setzero_pd(), 0); break;
+	case 3: ret = _mm256_cmp_pd(_mm256_setr_pd(0, 0, 0, 1), _mm256_setzero_pd(), 0); break;
+
+	}
+	return ret;
+}
+
+
 #pragma endregion
 
 #pragma region transpose
@@ -574,6 +627,10 @@ inline __m256i _mm256_cvepi32x2_epi16(__m256i src1, __m256i src2)
 	return _mm256_permute4x64_epi64(_mm256_packs_epi32(src1, src2), _MM_SHUFFLE(3, 1, 2, 0));
 }
 
+inline __m256 _mm256_cvtpdx2_ps(__m256d src1, __m256d src2)
+{
+	return _mm256_insertf128_ps(_mm256_castps128_ps256(_mm256_cvtpd_ps(src1)), _mm256_cvtpd_ps(src2), 1);
+}
 #pragma endregion
 
 #pragma region load
@@ -1590,14 +1647,14 @@ inline __m256d _mm256_cvtkahanhi_pd(const __m256 sum, const __m256 carry)
 }
 
 inline double _mm256_reduceadd_kahan_64f(const __m256 src, const __m256 carry, const double v = 0.0)
-{	
+{
 	__m256d l = _mm256_cvtkahanlo_pd(src, carry);
 	__m256d h = _mm256_cvtkahanhi_pd(src, carry);
 
 	h = _mm256_hadd_pd(h, l);
 	h = _mm256_add_pd(h, _mm256_shuffle_pd(h, h, 0b0101));
 
-	return v + h.m256d_f64[0]+ h.m256d_f64[2];
+	return v + h.m256d_f64[0] + h.m256d_f64[2];
 }
 
 inline float _mm256_reduceadd_kahan_32f(const __m256 src, const __m256 carry, const float v = 0.f)
@@ -1607,7 +1664,7 @@ inline float _mm256_reduceadd_kahan_32f(const __m256 src, const __m256 carry, co
 
 	h = _mm256_hadd_pd(h, l);
 	h = _mm256_add_pd(h, _mm256_shuffle_pd(h, h, 0b0101));
-	return (float)(double(v) + h.m256d_f64[0]  + h.m256d_f64[2]);
+	return (float)(double(v) + h.m256d_f64[0] + h.m256d_f64[2]);
 }
 
 inline float _mm256_reduceadd_kahanfast_32f(const __m256 src, const __m256 carry, const float v = 0.f)
