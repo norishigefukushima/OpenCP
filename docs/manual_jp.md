@@ -19,7 +19,7 @@ Documents in Japanese for Lab's members
 * split
 
 * [convert](inline/onelineCVFunctions_jp.md "#convert")
-* [cenvertCentering](/inline/onelineCVFunctions_jp.md "#cenvertCentering")
+* [cenvertCentering](inline/onelineCVFunctions_jp.md "#cenvertCentering")
 
 # core
 ## [Todo] arithmetic.hpp
@@ -424,16 +424,16 @@ class CP_EXPORT YUVReader
 
 ## [Todo:SSIM] metrics.hpp
 画質評価関数群
- * [getPSNR](imgproc/metrics_jp.md "#getpsnr")
- * [getPSNRClip](imgproc/metrics_jp.md "#getPSNRClip")
- * [getPSNR_PRECISION](imgproc/metrics_jp.md "#getPSNR_PRECISION")
- * [getPSNR_CHANNEL](imgproc/metrics_jp.md "#getPSNR_CHANNEL")
- * [class PSNRMetrics](imgproc/metrics_jp.md "#class PSNRMetrics")
- * [localPSNRMap](imgproc/metrics_jp.md "#localPSNRMap")
- * [guiLocalPSNRMap](imgproc/metrics_jp.md "#guiLocalPSNRMap")
- * [getMSE](imgproc/metrics_jp.md "#getMSE")
- * [getInacceptableRatio](imgproc/metrics_jp.md "#getInacceptableRatio")
- * [getEntropy](imgproc/metrics_jp.md "#getEntropy")
+ * [getPSNR](imgproc/metrics_jp.md"#getpsnr")
+ * [getPSNRClip](imgproc/metrics_jp.md "#getpsnrclip")
+ * [getPSNR_PRECISION](imgproc/metrics_jp.md "#getpsnr_precision")
+ * [getPSNR_CHANNEL](imgproc/metrics_jp.md "#getpsnr_channel")
+ * [class PSNRMetrics](imgproc/metrics_jp.md "#class-psnrmetrics")
+ * [localPSNRMap](imgproc/metrics_jp.md "#localpsnrmap")
+ * [guiLocalPSNRMap](imgproc/metrics_jp.md "#guilocalpsnrmap")
+ * [getMSE](imgproc/metrics_jp.md "#getmse")
+ * [getInacceptableRatio](imgproc/metrics_jp.md "#getinacceptableratio")
+ * [getEntropy](imgproc/metrics_jp.md "#getentropy")
  * [getTotalVariation](imgproc/metrics_jp.md "#gettotalvariation")
  * SSIM：関数修正中
 
