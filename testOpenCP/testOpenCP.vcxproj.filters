@@ -159,6 +159,9 @@
     <ClCompile Include="testStream.cpp">
       <Filter>ソース ファイル\test\core</Filter>
     </ClCompile>
+    <ClCompile Include="guiPixelizationTest.cpp">
+      <Filter>ソース ファイル\test\imgproc</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="test.hpp">

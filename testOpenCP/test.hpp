@@ -96,7 +96,3 @@ void guiAnalysisCompare(cv::Mat& src1, cv::Mat& src2);
 void imshowAnalysisCompare(cv::String winname, cv::Mat& src1, cv::Mat& src2);
 void imshowAnalysis(cv::String winname, std::vector<cv::Mat>& s);
 void imshowAnalysis(cv::String winname, cv::Mat& src);
-
-using namespace cv;
-using namespace cp;
-

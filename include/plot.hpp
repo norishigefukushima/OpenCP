@@ -173,6 +173,22 @@ namespace cp
 		//PENTAGON,
 		//PENTAGON_FILL,
 		void setPlotSymbol(int plotnum, int symbol_type);
+		//NOPOINT = 0,
+		//PLUS,
+		//TIMES,
+		//ASTERISK,
+		//CIRCLE,
+		//RECTANGLE,
+		//CIRCLE_FILL,
+		//RECTANGLE_FILL,
+		//TRIANGLE,
+		//TRIANGLE_FILL,
+		//TRIANGLE_INV,
+		//TRIANGLE_INV_FILL,
+		//DIAMOND,
+		//DIAMOND_FILL,
+		//PENTAGON,
+		//PENTAGON_FILL,
 		void setPlotSymbolALL(int symbol_type);
 
 		//Plot::LINE::NONE,
@@ -230,7 +246,7 @@ namespace cp
 		void setKey(Plot::KEY pos, const bool align_right = false, const double spacing = 1.0, const int width_offset = 0, const int height_offset = 0);
 		void setXLabel(const std::string label);
 		void setYLabel(const std::string label);
-		
+
 		void plotPDF(std::string plot_command, PlotSize mode = PlotSize::COLUMN_WIDTH, const std::string font = "CMU Serif", const int fontSize = 10, bool isCrop = true);
 		void cmd(const std::string name);
 		~GNUPlot();

@@ -349,6 +349,7 @@
   <ItemGroup>
     <ClCompile Include="guiBlendTest.cpp" />
     <ClCompile Include="bilateralfilter\bilateralFilterTest.cpp" />
+    <ClCompile Include="guiPixelizationTest.cpp" />
     <ClCompile Include="highDimentionalGaussianFilterTest.cpp" />
     <ClCompile Include="testCalibration.cpp" />
     <ClCompile Include="testColorCorrection.cpp" />

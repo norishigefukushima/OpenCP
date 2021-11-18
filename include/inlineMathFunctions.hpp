@@ -66,19 +66,19 @@ namespace cp
 	inline double sign(double x)
 	{
 		if (x >= 0.0)return 1.0;
-		else return 0.0;
+		else return -1.0;
 	}
 
 	inline float sign(float x)
 	{
 		if (x >= 0.f)return 1.f;
-		else return 0.f;
+		else return -1.f;
 	}
 
 	inline int sign(int x)
 	{
 		if (x >= 0)return 1;
-		else return 0;
+		else return -1;
 	}
 
 	inline int ceilToMultiple(const int x, const int multiple)

@@ -92,5 +92,8 @@
     <ClInclude Include="patchSIMDFunctions.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\spatialfilter\SpatialFilter.hpp">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

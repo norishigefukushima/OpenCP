@@ -48,6 +48,7 @@
 #include "iterativeBackProjection.hpp"
 #include "metrics.hpp"
 #include "metricsDD.hpp"
+#include "pixelization.hpp"
 #include "ppmx.hpp"
 #include "shiftImage.hpp"
 #include "slic.hpp"

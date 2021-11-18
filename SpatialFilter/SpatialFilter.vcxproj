@@ -413,6 +413,7 @@
     <ClCompile Include="timeDiv.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\include\spatialfilter\SpatialFilter.hpp" />
     <ClInclude Include="patchSIMDFunctions.hpp" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>

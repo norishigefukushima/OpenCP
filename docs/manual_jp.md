@@ -6,7 +6,10 @@ Documents in Japanese for Lab's members
 更新するのを期待して待っても，ほぼ更新されない更新頻度です．  
 （バグを発見したときについでに更新するくらい）  
 
+
 [Todo] がついているものはドキュメントの追記が必要．
+ページ内リンクは要修正
+[ページ内リンク記法] (https://qiita.com/hennin/items/7ee58dd7d7c013a23be7)
 
 # [Todo] onelineCVFunctions
 下記の頻出の変換を1行で書けるようにした関数群
@@ -15,8 +18,8 @@ Documents in Japanese for Lab's members
 * copyMakeBorder
 * split
 
-* [convert](onelineCVFunctions_jp.md "#convert")
-* [cenvertCentering](onelineCVFunctions_jp.md "#cenvertCentering")
+* [convert](inline/onelineCVFunctions_jp.md "#convert")
+* [cenvertCentering](/inline/onelineCVFunctions_jp.md "#cenvertCentering")
 
 # core
 ## [Todo] arithmetic.hpp
@@ -71,39 +74,39 @@ CP_EXPORT void cvtDDtoMat(const doubledouble* src, const cv::Size size, cv::Mat&
 
 ## checkSameImage.hpp
 ランダムサンプルで点を選び，2つの画像が同一画像かどうか高速に確認する関数群．
-* [class CheckSameImage](checkSameImage.md "class CheckSameImage")
-* [checkSameImage](checkSameImage.md "checkSameImage")
+* [class CheckSameImage](core/checkSameImage.md "#class CheckSameImage")
+* [checkSameImage](core/checkSameImage.md "#checkSameImage")
 
 ## concat.hpp
 画像の連結・分解の関数群
-* [concat/concatMerge](concat_jp.md "#concat/concatMerge")
-* [concatSplit](concat_jp.md "#concatSplit")
-* [concatExtract](concat_jp.md "#")
+* [concat/concatMerge](core/concat_jp.md "#concat/concatMerge")
+* [concatSplit](core/concat_jp.md "#concatSplit")
+* [concatExtract](core/concat_jp.md "#concatExtract")
 
 ## consoleImage.hpp
 printf等のconsole出力を画像として出力するためのクラスConsoleImage．
 
-* [class ConsoleImage](ConsoleImage_jp.md "#class ConsoleImage")
+* [class ConsoleImage](core/ConsoleImage_jp.md "#class-ConsoleImage")
 
 ## copyMakeBorder.hpp
 cv::copyMakeBorderを高速化した関数群
-* [copyMakeBorderReplicate](copyMakeBorder_jp.md "#copyMakeBorderReplicate")
-* [splitCopyMakeBorder](copyMakeBorder_jp.md "#splitCopyMakeBorder")
+* [copyMakeBorderReplicate](core/copyMakeBorder_jp.md "#copyMakeBorderReplicate")
+* [splitCopyMakeBorder](core/copyMakeBorder_jp.md "#splitCopyMakeBorder")
 
 ## count.hpp
 画像の画素の属性をカウントする関数群
- * [countNaN](count_jp.md "#countNaN")
- * [countInf](count_jp.md "#countInf")
- * [countDenormalizedNumber](count_jp.md "#countDenormalizedNumber")
- * [countDenormalizedNumberRatio](count_jp.md "#countDenormalizedNumberRatio")
+ * [countNaN](core/count_jp.md "#countNaN")
+ * [countInf](core/count_jp.md "#countInf")
+ * [countDenormalizedNumber](core/count_jp.md "#countDenormalizedNumber")
+ * [countDenormalizedNumberRatio](core/count_jp.md "#countDenormalizedNumberRatio")
 
 ## crop.hpp
 画像の切り抜き（クロップ）用関数群
- * [cropZoom](crop_jp.md "#cropZoom")
- * [cropZoomWithBoundingBox](crop_jp.md "#cropZoomWithBoundingBox")
- * [cropZoomWithSrcMarkAndBoundingBox](crop_jp.md "#cropZoomWithSrcMarkAndBoundingBox")
- * [cropZoom](crop_jp.md "#cropCenter")
- * [guiCropZoom](crop_jp.md "#guiCropZoom")
+ * [cropZoom](core/crop_jp.md "#cropZoom")
+ * [cropZoomWithBoundingBox](core/crop_jp.md "#cropZoomWithBoundingBox")
+ * [cropZoomWithSrcMarkAndBoundingBox](core/crop_jp.md "#cropZoomWithSrcMarkAndBoundingBox")
+ * [cropZoom](core/crop_jp.md "#cropCenter")
+ * [guiCropZoom](core/crop_jp.md "#guiCropZoom")
 
 ## [Todo] csv.hpp
 CSVを走査するクラス
@@ -178,11 +181,11 @@ Qtで表示するテキストのサイズを取得する．
 
 ## histogram.hpp
 ヒストグラムの描画関数群
- * [drawHistogramImage](histogram_jp.md "#drawHistogramImage")
- * [drawHistogramImageGray](histogram_jp.md "#drawHistogramImageGray")
- * [drawAccumulateHistogramImage](histogram_jp.md "#drawAccumulateHistogramImage")
- * [drawAccumulateHistogramImageGray](histogram_jp.md "#drawAccumulateHistogramImageGray")
- * [guiLocalDiffHistogram](histogram_jp.md "#guiLocalDiffHistogram")
+ * [drawHistogramImage](core/histogram_jp.md "#drawHistogramImage")
+ * [drawHistogramImageGray](core/histogram_jp.md "#drawHistogramImageGray")
+ * [drawAccumulateHistogramImage](core/histogram_jp.md "#drawAccumulateHistogramImage")
+ * [drawAccumulateHistogramImageGray](core/histogram_jp.md "#drawAccumulateHistogramImageGray")
+ * [guiLocalDiffHistogram](core/histogram_jp.md "#guiLocalDiffHistogram")
 
 ## [Todo] imagediff.hpp
 画像のdiffを取る
@@ -199,14 +202,14 @@ Qtで表示するテキストのサイズを取得する．
 
 ## imshowExtension.hpp
 imshowの拡張．
-* [imshowNormalize](imshowExtension_jp.md "#imshowNormalize")
-* [imshowScale](imshowExtension_jp.md "#imshowScale")
-* [imshowResize](imshowExtension_jp.md "#imshowResize")
-* [imshowCountDown](imshowExtension_jp.md "#imshowCountDown")
+* [imshowNormalize](core/imshowExtension_jp.md "#imshowNormalize")
+* [imshowScale](core/imshowExtension_jp.md "#imshowScale")
+* [imshowResize](core/imshowExtension_jp.md "#imshowResize")
+* [imshowCountDown](core/imshowExtension_jp.md "#imshowCountDown")
 
 ## kmeans.hpp
-* [class KMeans](kmeans_jp.md "#class KMeans")
-* [kmeans](kmeans_jp.md "#kmeans")
+* [class KMeans](core/kmeans_jp.md "#class KMeans")
+* [kmeans](core/kmeans_jp.md "#kmeans")
 
 ## [Todo] maskoperation.hpp
 矩形のマスクを作る．
@@ -251,7 +254,7 @@ class CP_EXPORT RandomizedQueue
 ## stat.hpp
 統計情報を計算するクラス
 
-* [class Stat](Stat_jp.md "#class Stat")
+* [class Stat](core/Stat_jp.md "#class Stat")
 
 ## [Todo] stencil.hpp
 
@@ -268,9 +271,8 @@ class CP_EXPORT RandomizedQueue
 ## stream.hpp
 キャッシュを汚さないcopyやconvert命令
 
-* [streamCopy](noise_jp.md "# streamCopy")
-* [streamConvertTo8U](noise_jp.md "# streamConvertTo8U")
-
+* [streamCopy](stream_jp.md "#streamCopy")
+* [streamConvertTo8U](stream_jp.md "#streamConvertTo8U")
 
 ## [Todo] tiling.hpp
 
@@ -314,8 +316,8 @@ class CP_EXPORT RandomizedQueue
 ## timer.hpp
 タイマーのクラス
 
-* [class Timer](Timer_jp.md "#class Timer")
-* [class DestinationTimePrediction](Timer_jp.md "#class DestinationTimePrediction")
+* [class Timer](core/Timer_jp.md "#class Timer")
+* [class DestinationTimePrediction](core/Timer_jp.md "#class DestinationTimePrediction")
 
 ```cpp
 class CP_EXPORT Timer
@@ -323,7 +325,7 @@ class CP_EXPORT DestinationTimePrediction
 ```
 ## updateCheck.hpp
 パラメータの更新確認クラス．
-* [class UpdateCheck](UpdateCheck_jp.md "#class UpdateCheck")
+* [class UpdateCheck](core/UpdateCheck_jp.md "#class UpdateCheck")
 
 ## [Todo] video.hpp
 動画を表示するだけ．
@@ -333,7 +335,7 @@ CP_EXPORT void guiVideoShow(std::string wname);
 ```
 
 ## VideoSubtitle.hpp
-* [class VideoSubtitle](VideoSubtitle_jp.md "#class VideoSubtitle")
+* [class VideoSubtitle](core/VideoSubtitle_jp.md "#class VideoSubtitle")
 
 ## [Todo] yuvio.hpp
 YUVファイルの読み書き．
@@ -373,14 +375,14 @@ class CP_EXPORT YUVReader
 ```
 
 
-# imgprog
+# imgproc
 ## blend.hpp
 2枚の画像の合成関数群
-* [alphaBlend](blend_jp.md "#alphaBlend")
-* [alphaBlendFixedPoint](blend_jp.md "#alphaBlendFixedPoint")
-* [guiAlphaBlend](blend_jp.md "#guiAlphaBlend")
-* [dissolveSlideBlend](blend_jp.md "#dissolveSlideBlend")
-* [guiDissolveSlideBlend](blend_jp.md "#guiDissolveSlideBlend")
+* [alphaBlend](imgproc/blend_jp.md "#alphaBlend")
+* [alphaBlendFixedPoint](imgproc/blend_jp.md "#alphaBlendFixedPoint")
+* [guiAlphaBlend](imgproc/blend_jp.md "#guiAlphaBlend")
+* [dissolveSlideBlend](imgproc/blend_jp.md "#dissolveSlideBlend")
+* [guiDissolveSlideBlend](imgproc/blend_jp.md "#guiDissolveSlideBlend")
 
 ## [Todo] color.hpp
 
@@ -390,17 +392,17 @@ class CP_EXPORT YUVReader
 
 ## contrast.hpp
 トーンカーブによるコントラスト強調の関数群
-* [contrastSToneExp](contrast_jp.md "#contrastSToneExp")
-* [contrastGamma](contrast_jp.md "#contrastGamma")
-* [quantization](contrast_jp.md "#quantization")
-* [guiContrast](contrast_jp.md "#guiContrast")
+* [contrastSToneExp](imgproc/contrast_jp.md "#contrastSToneExp")
+* [contrastGamma](imgproc/contrast_jp.md "#contrastGamma")
+* [quantization](imgproc/contrast_jp.md "#quantization")
+* [guiContrast](imgproc/contrast_jp.md "#guiContrast")
 
 ## detailEnhancement.hpp
 詳細強調の関数
-* [detailEnhancementBox](detailEnhancement_jp.md "#detailEnhancementBox")
-* [detailEnhancementGauss](detailEnhancement_jp.md "#detailEnhancementGauss")
-* [detailEnhancementBilateral](detailEnhancement_jp.md "#detailEnhancementBilateral")
-* [detailEnhancementGuided](detailEnhancement_jp.md "#detailEnhancementGuided")
+* [detailEnhancementBox](imgproc/detailEnhancement_jp.md "#detailEnhancementBox")
+* [detailEnhancementGauss](imgproc/detailEnhancement_jp.md "#detailEnhancementGauss")
+* [detailEnhancementBilateral](imgproc/detailEnhancement_jp.md "#detailEnhancementBilateral")
+* [detailEnhancementGuided](imgproc/detailEnhancement_jp.md "#detailEnhancementGuided")
 
 ## [Todo] diffPixel.hpp
 
@@ -422,17 +424,17 @@ class CP_EXPORT YUVReader
 
 ## [Todo:SSIM] metrics.hpp
 画質評価関数群
- * [getPSNR](metrics_jp.md "#getPSNR")
- * [getPSNRClip](metrics_jp.md "#getPSNRClip")
- * [getPSNR_PRECISION](metrics_jp.md "#getPSNR_PRECISION")
- * [getPSNR_CHANNEL](metrics_jp.md "#getPSNR_CHANNEL")
- * [class PSNRMetrics](metrics_jp.md "#class PSNRMetrics")
- * [localPSNRMap](metrics_jp.md "#localPSNRMap")
- * [guiLocalPSNRMap](metrics_jp.md "#guiLocalPSNRMap")
- * [getMSE](metrics_jp.md "#getMSE")
- * [getInacceptableRatio](metrics_jp.md "#getInacceptableRatio")
- * [getEntropy](metrics_jp.md "#getEntropy")
- * [getTotalVariation](metrics_jp.md "#getTotalVariation")
+ * [getPSNR](imgproc/metrics_jp.md "#getpsnr")
+ * [getPSNRClip](imgproc/metrics_jp.md "#getPSNRClip")
+ * [getPSNR_PRECISION](imgproc/metrics_jp.md "#getPSNR_PRECISION")
+ * [getPSNR_CHANNEL](imgproc/metrics_jp.md "#getPSNR_CHANNEL")
+ * [class PSNRMetrics](imgproc/metrics_jp.md "#class PSNRMetrics")
+ * [localPSNRMap](imgproc/metrics_jp.md "#localPSNRMap")
+ * [guiLocalPSNRMap](imgproc/metrics_jp.md "#guiLocalPSNRMap")
+ * [getMSE](imgproc/metrics_jp.md "#getMSE")
+ * [getInacceptableRatio](imgproc/metrics_jp.md "#getInacceptableRatio")
+ * [getEntropy](imgproc/metrics_jp.md "#getEntropy")
+ * [getTotalVariation](imgproc/metrics_jp.md "#gettotalvariation")
  * SSIM：関数修正中
 
 ## [Todo] metricsDD.hpp
@@ -469,27 +471,27 @@ ppmファイルの読み書き
 # filter
 ## guidedFilter.hpp
 ガイデットフィルタの関数
-* [guidedImageFilter](guidedFilter_jp.md "#guidedImageFilter")
-* [class GuidedImageFilter](guidedFilter_jp.md "#class GuidedImageFilter")
-* [class GuidedImageFilterTiling](guidedFilter_jp.md "#GuidedImageFilterTiling")
+* [guidedImageFilter](filter/guidedFilter_jp.md "#guidedImageFilter")
+* [class GuidedImageFilter](filter/guidedFilter_jp.md "#class GuidedImageFilter")
+* [class GuidedImageFilterTiling](filter/guidedFilter_jp.md "#GuidedImageFilterTiling")
 
 ## weightedHistogramFilter.hpp
 weighted histogram filterの関数
-* [weightedHistogramFilter](weightedHistogramFilter_jp.md "#weightedHistogramFilter")
-* [weightedWeightedHistogramFilter](weightedHistogramFilter_jp.md "#weightedWeightedHistogramFilter")
-* [weightedModeFilter/weightedModeFilter](weightedHistogramFilter_jp.md "#weightedModeFilter/weightedMedianFilter")
-* [weightedWeightedModeFilter/weightedWeightedModeFilter](weightedHistogramFilter_jp.md "#weightedWeightedModeFilter/weightedWeightedMedianFilter")
+* [weightedHistogramFilter](filter/weightedHistogramFilter_jp.md "#weightedHistogramFilter")
+* [weightedWeightedHistogramFilter](filter/weightedHistogramFilter_jp.md "#weightedWeightedHistogramFilter")
+* [weightedModeFilter/weightedModeFilter](filter/weightedHistogramFilter_jp.md "#weightedModeFilter/weightedMedianFilter")
+* [weightedWeightedModeFilter/weightedWeightedModeFilter](filter/weightedHistogramFilter_jp.md "#weightedWeightedModeFilter/weightedWeightedMedianFilter")
 
 # stereo
 ## StereoBase.hpp
 ステレオマッチングの関数
-* [class StereoBase](StereoBase.md)
+* [class StereoBase](stereo/StereoBase.md)
 ## StereoEval.hpp
 ベンチマーク用の評価関数
-* [calcBadPixel](StereoEval.md "#calcBadPixel")
-* [createDisparityALLMask](StereoEval.md "#createDisparityALLMask")
-* [createDisparityNonOcclusionMask](StereoEval.md "#createDisparityNonOcclusionMask")
-* [class calcBadPixel](StereoEval.md "#class StereoEval")
+* [calcBadPixel](stereo/StereoEval.md "#calcBadPixel")
+* [createDisparityALLMask](stereo/StereoEval.md "#createDisparityALLMask")
+* [createDisparityNonOcclusionMask](stereo/StereoEval.md "#createDisparityNonOcclusionMask")
+* [class calcBadPixel](stereo/StereoEval.md "#class StereoEval")
 
 # memo
 Optimization
