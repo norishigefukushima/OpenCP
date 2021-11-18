@@ -424,7 +424,7 @@ class CP_EXPORT YUVReader
 
 ## [Todo:SSIM] metrics.hpp
 画質評価関数群
- * [getPSNR](imgproc/metrics_jp.md"#getpsnr")
+ * [getPSNR](imgproc/metrics_jp.md "#getpsnr")
  * [getPSNRClip](imgproc/metrics_jp.md "#getpsnrclip")
  * [getPSNR_PRECISION](imgproc/metrics_jp.md "#getpsnr_precision")
  * [getPSNR_CHANNEL](imgproc/metrics_jp.md "#getpsnr_channel")
