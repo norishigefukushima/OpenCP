@@ -2876,8 +2876,19 @@ inline void _mm512_i32scaterscalar_epu8_color(uchar* dest, __m512i vindex, __m51
 	dest[idx + 0] = ((uchar*)&bb)[15];	dest[idx + 1] = ((uchar*)&gb)[15];	dest[idx + 2] = ((uchar*)&rb)[15];
 }
 
+inline void _mm512_i32scater_ps_color(float* dest, __m512i vindex, __m512 b, __m512 g, __m512 r)
+{
+	_mm512_i32scatter_ps(dest + 0, vindex, b, sizeof(float));
+	_mm512_i32scatter_ps(dest + 1, vindex, g, sizeof(float));
+	_mm512_i32scatter_ps(dest + 2, vindex, r, sizeof(float));
+}
+
 inline void _mm512_i32scaterscalar_ps_color(float* dest, __m512i vindex, __m512 b, __m512 g, __m512 r)
 {
+	_mm512_i32scatter_ps(dest + 0, vindex, b, sizeof(float));
+	_mm512_i32scatter_ps(dest + 1, vindex, g, sizeof(float));
+	_mm512_i32scatter_ps(dest + 2, vindex, r, sizeof(float));
+	return;
 	int idx = ((int*)&vindex)[0];
 	dest[idx + 0] = ((float*)&b)[0];	dest[idx + 1] = ((float*)&g)[0];	dest[idx + 2] = ((float*)&r)[0];
 	idx = ((int*)&vindex)[1];
@@ -2911,6 +2922,32 @@ inline void _mm512_i32scaterscalar_ps_color(float* dest, __m512i vindex, __m512 
 	dest[idx + 0] = ((float*)&b)[14];	dest[idx + 1] = ((float*)&g)[14];	dest[idx + 2] = ((float*)&r)[14];
 	idx = ((int*)&vindex)[15];
 	dest[idx + 0] = ((float*)&b)[15];	dest[idx + 1] = ((float*)&g)[15];	dest[idx + 2] = ((float*)&r)[15];
+	/*idx = ((int*)&vindex)[8] + 3;
+	dest[idx + 0] = ((float*)&b)[8];	dest[idx + 1] = ((float*)&g)[8];	dest[idx + 2] = ((float*)&r)[8];
+	idx = ((int*)&vindex)[9] + 3;
+	dest[idx + 0] = ((float*)&b)[9];	dest[idx + 1] = ((float*)&g)[9];	dest[idx + 2] = ((float*)&r)[9];
+	idx = ((int*)&vindex)[10] + 3;
+	dest[idx + 0] = ((float*)&b)[10];	dest[idx + 1] = ((float*)&g)[10];	dest[idx + 2] = ((float*)&r)[10];
+	idx = ((int*)&vindex)[11] + 3;
+	dest[idx + 0] = ((float*)&b)[11];	dest[idx + 1] = ((float*)&g)[11];	dest[idx + 2] = ((float*)&r)[11];
+	idx = ((int*)&vindex)[12] + 3;
+	dest[idx + 0] = ((float*)&b)[12];	dest[idx + 1] = ((float*)&g)[12];	dest[idx + 2] = ((float*)&r)[12];
+	idx = ((int*)&vindex)[13] + 3;
+	dest[idx + 0] = ((float*)&b)[13];	dest[idx + 1] = ((float*)&g)[13];	dest[idx + 2] = ((float*)&r)[13];
+	idx = ((int*)&vindex)[14] + 3;
+	dest[idx + 0] = ((float*)&b)[14];	dest[idx + 1] = ((float*)&g)[14];	dest[idx + 2] = ((float*)&r)[14];
+	idx = ((int*)&vindex)[15] + 3;
+	dest[idx + 0] = ((float*)&b)[15];	dest[idx + 1] = ((float*)&g)[15];	dest[idx + 2] = ((float*)&r)[15];*/
+}
+
+inline void _mm512_i32scater_auto_color(uchar* dest, __m512i vindex, __m512 b, __m512 g, __m512 r)
+{
+	_mm512_i32scaterscalar_epu8_color(dest, vindex, b, g, r);
+}
+
+inline void _mm512_i32scater_auto_color(float* dest, __m512i vindex, __m512 b, __m512 g, __m512 r)
+{
+	_mm512_i32scater_ps_color(dest, vindex, b, g, r);
 }
 
 inline void _mm512_i32scaterscalar_auto_color(uchar* dest, __m512i vindex, __m512 b, __m512 g, __m512 r)
@@ -3133,7 +3170,7 @@ inline void _mm512_storeu_auto_color(uchar* dest, __m512 b, __m512 g, __m512 r)
 	_mm_storeu_si128((__m128i*)(dest), _mm512_cvtps_epu8(db));
 	_mm_storeu_si128((__m128i*)(dest + 8), _mm512_cvtps_epu8(dg));
 	_mm_storeu_si128((__m128i*)(dest + 16), _mm512_cvtps_epu8(dr));
-}							
+}
 
 inline void _mm512_store_auto_color(uchar* dest, __m512 b, __m512 g, __m512 r)
 {
@@ -3169,6 +3206,22 @@ inline void _mm512_storescalar_auto_color(float* dest, __m512 b, __m512 g, __m51
 
 	for (int i = 0; i < numpixel; i++)
 		dest[i] = buffscalarstore[i];
+}
+
+//rcp with newton-raphson 1-iteration
+inline __m512 _mm512_rcpnr_ps(__m512 x)
+{
+	__m512 res = _mm512_rcp14_ps(x);
+	//rcp*(2-rcp*x)->(rcp+rcp)-rcp*rcp*x
+	return res = _mm512_sub_ps(_mm512_add_ps(res, res), _mm512_mul_ps(x, _mm512_mul_ps(res, res)));
+}
+
+//rcp with newton-raphson 1-iteration (FMA ver) requided set2
+inline __m512 _mm512_rcpnr_fma_ps(__m512 x, __m512 two = _mm512_set1_ps(2.f))
+{
+	__m512 rcp = _mm512_rcp14_ps(x);
+	//rcp*(2-rcp*x)
+	return _mm512_mul_ps(rcp, _mm512_fnmadd_ps(x, rcp, two));
 }
 
 #endif
