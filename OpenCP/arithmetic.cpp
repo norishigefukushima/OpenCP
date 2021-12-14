@@ -53,7 +53,7 @@ namespace cp
 		const float* s = src.getMat().ptr<float>();
 		float* d = dest.getMat().ptr<float>();
 		__m256 mv = _mm256_set1_ps(v);
-		const int simd_width = get_simd_floor(src.total(), 8);
+		const int simd_width = get_simd_floor((int)src.total(), 8);
 		for (int i = 0; i < simd_width; i += 8)
 		{
 			__m256 ms = _mm256_load_ps(s + i);
@@ -74,7 +74,7 @@ namespace cp
 		const float* s = src.getMat().ptr<float>();
 		float* d = dest.getMat().ptr<float>();
 		__m256 mv = _mm256_set1_ps(v);
-		const int simd_width = get_simd_floor(src.total(), 8);
+		const int simd_width = get_simd_floor((int)src.total(), 8);
 		for (int i = 0; i < simd_width; i += 8)
 		{
 			__m256 ms = _mm256_max_ps(_mm256_load_ps(s + i), _mm256_setzero_ps());
@@ -784,7 +784,7 @@ namespace cp
 	template<class T>
 	void clip(Mat& src, Mat& dst, const T minval, const T maxval)
 	{
-		const int size = src.total();
+		const int size = (int)src.total();
 		T* sptr = src.ptr<T>();
 		T* dptr = dst.ptr<T>();
 		for (int i = 0; i < size; i++)
@@ -799,7 +799,7 @@ namespace cp
 		const __m256i mmin = _mm256_set1_epi8(minval);
 		const __m256i mmax = _mm256_set1_epi8(maxval);
 
-		const int size = src.total();
+		const int size = (int)src.total();
 		const int simdsize = get_simd_floor(size, 128);
 		const int loopsize = size / 128;
 
@@ -826,7 +826,7 @@ namespace cp
 		const __m256i mmin = _mm256_set1_epi8(minval);
 		const __m256i mmax = _mm256_set1_epi8(maxval);
 
-		const int size = src.total();
+		const int size = (int)src.total();
 		const int simdsize = get_simd_floor(size, 128);
 		const int loopsize = size / 128;
 
@@ -854,7 +854,7 @@ namespace cp
 		const __m256 mmin = _mm256_set1_ps(minval);
 		const __m256 mmax = _mm256_set1_ps(maxval);
 
-		const int size = src.total();
+		const int size = (int)src.total();
 		const int simdsize = get_simd_floor(size, 32);
 		const int loopsize = size / 32;
 
@@ -881,7 +881,7 @@ namespace cp
 		const __m256d mmin = _mm256_set1_pd(minval);
 		const __m256d mmax = _mm256_set1_pd(maxval);
 
-		const int size = src.total();
+		const int size = (int)src.total();
 		const int simdsize = get_simd_floor(size, 16);
 		const int loopsize = size / 16;
 
