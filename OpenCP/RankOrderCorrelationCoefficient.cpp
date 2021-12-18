@@ -1,4 +1,4 @@
-#include "SpearmanRankOrderCorrelationCoefficient.hpp"
+#include "RankOrderCorrelationCoefficient.hpp"
 #include <numeric>
 
 using namespace cv;
@@ -192,13 +192,13 @@ namespace cp
 		pt.clear();
 	}
 
-	double SpearmanRankOrderCorrelationCoefficient::spearman(vector<float>& v1, vector<float>& v2)
+	double SpearmanRankOrderCorrelationCoefficient::spearman(vector<float> v1, vector<float> v2)
 	{
 		setPlotData(v1, v2, plotsRAW);
 		return spearman_<float>(v1, v2);
 	}
 
-	double SpearmanRankOrderCorrelationCoefficient::spearman(vector<double>& v1, vector<double>& v2)
+	double SpearmanRankOrderCorrelationCoefficient::spearman(vector<double> v1, vector<double> v2)
 	{
 		setPlotData(v1, v2, plotsRAW);
 		return spearman_<double>(v1, v2);

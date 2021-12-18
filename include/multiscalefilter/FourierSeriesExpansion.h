@@ -29,7 +29,7 @@ class FourierDecomposition
 		case HAT:
 			return x * std::max(0.0, 1.0 - abs(x / sigma)) * sin(omega_n * x); break;
 		case SMOOTH_HAT:
-			return getSmoothingHat(x, 0.f, sigma, 10) * (float)sin(omega_n * x); break;
+			return getSmoothingHat(x, 0.0, sigma, 10) * sin(omega_n * x); break;
 		}
 		return x * sin(omega_n * x);// getSToneWeight(x, remap_sigma, beta, alpha)* sin(omega_n * x);
 	}
@@ -45,7 +45,7 @@ class FourierDecomposition
 		case HAT:
 			return std::max(0.0, 1.0 - abs(x / sigma)); break;
 		case SMOOTH_HAT:
-			return getSmoothingHat(x, 0.f, sigma, 10); break;
+			return getSmoothingHat(x, 0.0, sigma, 10); break;
 		}
 
 		return getSToneWeight(float(x), remap_sigma, beta, alpha);

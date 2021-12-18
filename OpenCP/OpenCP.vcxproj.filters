@@ -585,7 +585,7 @@
     <ClCompile Include="pixelization.cpp">
       <Filter>ソース ファイル\imgproc</Filter>
     </ClCompile>
-    <ClCompile Include="SpearmanRankOrderCorrelationCoefficient.cpp">
+    <ClCompile Include="RankOrderCorrelationCoefficient.cpp">
       <Filter>ソース ファイル\core</Filter>
     </ClCompile>
   </ItemGroup>
@@ -1058,7 +1058,7 @@
     <ClInclude Include="..\include\pixelization.hpp">
       <Filter>ヘッダー ファイル\imgproc</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\SpearmanRankOrderCorrelationCoefficient.hpp">
+    <ClInclude Include="..\include\RankOrderCorrelationCoefficient.hpp">
       <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
   </ItemGroup>

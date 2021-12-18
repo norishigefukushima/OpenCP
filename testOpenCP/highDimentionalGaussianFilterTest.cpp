@@ -28,12 +28,12 @@ void highDimentionalGaussianFilterTest(Mat& src)
 		//cout<<"r="<<r<<": "<<"please change 'sw' for changing the type of implimentations."<<endl;
 		float sigma_color = color / 10.f;
 		float sigma_space = space / 10.f;
-		int d = 2 * ceil(sigma_space * 3) + 1;
+		int d = 2 * (int)ceil(sigma_space * 3.f) + 1;
 		double time;
 		string method;
 
 		Mat ref;
-		cp::bilateralFilterL2(srcf, ref, ceil(sigma_space * 3), sigma_color, sigma_space, BORDER_DEFAULT);
+		cp::bilateralFilterL2(srcf, ref, (int)ceil(sigma_space * 3.f), sigma_color, sigma_space, BORDER_DEFAULT);
 		if (sw == 0)
 		{
 			method = "cp::highDimensionalGaussianFilter";

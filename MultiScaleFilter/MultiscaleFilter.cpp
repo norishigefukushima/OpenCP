@@ -6199,8 +6199,8 @@ namespace cp
 				case GAUSS:
 				{
 					FourierDecomposition Fourier(T, sigma_range, 0, 0, 0, k + 1, windowType);
-					alpha[k] = a0 * Fourier.st(0, T / 2, 100);
-					alphaSum += alpha[k];
+					alpha[k] = float(a0 * Fourier.st(0, T / 2, 100));
+					alphaSum += double(alpha[k]);
 					break;
 				}
 				default:
@@ -6216,7 +6216,7 @@ namespace cp
 			alphaSum *= sqrt(CV_2PI);
 			for (int k = 0; k < order; k++)
 			{
-				alpha[k] /= alphaSum;
+				alpha[k] = float(alpha[k] / alphaSum);
 			}
 		}
 
