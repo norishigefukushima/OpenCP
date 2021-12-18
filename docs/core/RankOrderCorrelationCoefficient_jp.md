@@ -1,6 +1,6 @@
- SpearmanRankOrderCorrelationCoefficient.hpp
+ RankOrderCorrelationCoefficient.hpp
 ===================
- Spearmanの順位相関係数（SROCC or SRCC）を計算します．
+ 順位相関係数（SROCC or KROCC）を計算します．SRCC，KRCCと省略することもあります．
 
 # class SpearmanRankOrderCorrelationCoefficient
 引数vectorに入った2つの指標のSpearmanの順位相関係数を計算します．
