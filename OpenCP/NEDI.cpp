@@ -649,7 +649,7 @@ namespace cp
 					else if (method == 1)
 					{
 						//upsampleGrayDoubleLU(image_border[i], dest_border[i], threshold, WindowSize);
-						upsampleGrayDoubleLUOpt(image_border[i], dest_border[i], threshold, WindowSize, eps * 1.0 / 2560.0);
+						upsampleGrayDoubleLUOpt(image_border[i], dest_border[i], threshold, WindowSize, float(eps * 1.0 / 2560.0));
 					}
 
 				}

@@ -102,13 +102,14 @@ namespace cp
 		dst.create(src.size(), src.type());
 		Mat s = src.getMat();
 		Mat d = dst.getMat();
-		if (src.depth() == CV_8U) streamCopy(s.ptr<uchar>(), d.ptr<uchar>(), s.total());
-		if (src.depth() == CV_8S) streamCopy(s.ptr<char>(), d.ptr<char>(), s.total());
-		if (src.depth() == CV_16U) streamCopy(s.ptr<ushort>(), d.ptr<ushort>(), s.total());
-		if (src.depth() == CV_16S) streamCopy(s.ptr<short>(), d.ptr<short>(), s.total());
-		if (src.depth() == CV_32S) streamCopy(s.ptr<int>(), d.ptr<int>(), s.total());
-		if (src.depth() == CV_32F) streamCopy(s.ptr<float>(), d.ptr<float>(), s.total());
-		if (src.depth() == CV_64F) streamCopy(s.ptr<double>(), d.ptr<double>(), s.total());
+		const int size = (int)s.total();
+		if (src.depth() == CV_8U) streamCopy(s.ptr<uchar>(), d.ptr<uchar>(), size);
+		if (src.depth() == CV_8S) streamCopy(s.ptr<char>(), d.ptr<char>(), size);
+		if (src.depth() == CV_16U) streamCopy(s.ptr<ushort>(), d.ptr<ushort>(), size);
+		if (src.depth() == CV_16S) streamCopy(s.ptr<short>(), d.ptr<short>(), size);
+		if (src.depth() == CV_32S) streamCopy(s.ptr<int>(), d.ptr<int>(), size);
+		if (src.depth() == CV_32F) streamCopy(s.ptr<float>(), d.ptr<float>(), size);
+		if (src.depth() == CV_64F) streamCopy(s.ptr<double>(), d.ptr<double>(), size);
 	}
 
 	void streamConvertTo8U(const char* src, uchar* dst, const int size)
@@ -196,12 +197,13 @@ namespace cp
 		dst.create(src.size(), CV_MAKETYPE(CV_8U, src.channels()));
 		Mat s = src.getMat();
 		Mat d = dst.getMat();
-		if (src.depth() == CV_8U) streamCopy(s.ptr<uchar>(), d.ptr<uchar>(), s.total());
-		if (src.depth() == CV_8S) streamConvertTo8U(s.ptr<char>(), d.ptr<uchar>(), s.total());
-		if (src.depth() == CV_16U) streamConvertTo8U(s.ptr<short>(), d.ptr<uchar>(), s.total());
-		if (src.depth() == CV_16S) streamConvertTo8U(s.ptr<short>(), d.ptr<uchar>(), s.total());
-		if (src.depth() == CV_32S) streamConvertTo8U(s.ptr<int>(), d.ptr<uchar>(), s.total());
-		if (src.depth() == CV_32F) streamConvertTo8U(s.ptr<float>(), d.ptr<uchar>(), s.total());
-		if (src.depth() == CV_64F) streamConvertTo8U(s.ptr<double>(), d.ptr<uchar>(), s.total());
+		const int size = (int)s.total();
+		if (src.depth() == CV_8U) streamCopy(s.ptr<uchar>(), d.ptr<uchar>(), size);
+		if (src.depth() == CV_8S) streamConvertTo8U(s.ptr<char>(), d.ptr<uchar>(), size);
+		if (src.depth() == CV_16U) streamConvertTo8U(s.ptr<short>(), d.ptr<uchar>(), size);
+		if (src.depth() == CV_16S) streamConvertTo8U(s.ptr<short>(), d.ptr<uchar>(), size);
+		if (src.depth() == CV_32S) streamConvertTo8U(s.ptr<int>(), d.ptr<uchar>(), size);
+		if (src.depth() == CV_32F) streamConvertTo8U(s.ptr<float>(), d.ptr<uchar>(), size);
+		if (src.depth() == CV_64F) streamConvertTo8U(s.ptr<double>(), d.ptr<uchar>(), size);
 	}
 }
