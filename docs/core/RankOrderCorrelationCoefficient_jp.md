@@ -1,9 +1,10 @@
  RankOrderCorrelationCoefficient.hpp
 ===================
- 順位相関係数（SROCC or KROCC）を計算します．SRCC，KRCCと省略することもあります．
+ 順位相関係数（SROCC or KROCC）を計算します．
+ SRCC，KRCCと省略することもあります．
 
 # class SpearmanRankOrderCorrelationCoefficient
-引数vectorに入った2つの指標のSpearmanの順位相関係数を計算します．
+引数のvectorに入った2つの指標のSpearmanの順位相関係数を計算します．
 
 ```cpp
 class CP_EXPORT SpearmanRankOrderCorrelationCoefficient
@@ -41,7 +42,7 @@ class CP_EXPORT SpearmanRankOrderCorrelationCoefficient
 
 ## Usage
 
-public関数は以下の3つである．
+public関数は以下の3つです．
 
 ```cpp
 void plot(const bool isWait = true);
@@ -50,7 +51,7 @@ double spearman(std::vector<double> v1, std::vector<double> v2);//copy v1 and v2
 ```
 
 spearmanメソッドはfloatもしくはdoubleのvector配列を引数に取り計算します．
-そこまで重要な情報ではないが，内部でコピーが必要となるため参照渡しをしてません．
+あまり重要な情報ではありませんが，内部でvectorのコピーが必要となるため参照渡しをせず，コピとなるように値を渡しています．
 
 plotメソッドは，順位相関として計算した場合に散布図がどのようになっているかを可視化します．
 isWaitがtrueである場合グラフをプロットして関数を停止します．
