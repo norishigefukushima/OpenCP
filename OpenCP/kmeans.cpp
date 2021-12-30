@@ -199,9 +199,9 @@ namespace cp
 			int argindex = 0;
 			for (int i = 0; i < N; i++)
 			{
-				float diff = (d0[i] - v0.val[0]) * (d0[i] - v0.val[0])
+				float diff = float((d0[i] - v0.val[0]) * (d0[i] - v0.val[0])
 					+ (d1[i] - v1.val[0]) * (d1[i] - v1.val[0])
-					+ (d2[i] - v2.val[0]) * (d2[i] - v2.val[0]);
+					+ (d2[i] - v2.val[0]) * (d2[i] - v2.val[0]));
 				if (diff < diff_max)
 				{
 					diff_max = diff;
@@ -884,7 +884,7 @@ namespace cp
 		{
 			for (int i = 0; i < weightTableSize; i++)
 			{
-				weight_table[i] = pow(i, min(sigma, 10.f)) + FLT_EPSILON;
+				weight_table[i] = (float)pow(i, min(sigma, 10.f)) + FLT_EPSILON;
 			}
 		}
 

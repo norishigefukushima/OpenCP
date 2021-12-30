@@ -450,6 +450,7 @@
     <ClCompile Include="NEDI.cpp" />
     <ClCompile Include="onelineCVFunctions.cpp" />
     <ClCompile Include="pixelization.cpp" />
+    <ClCompile Include="RankOrderCorrelationCoefficient.cpp" />
     <ClCompile Include="stereoEval.cpp" />
     <ClCompile Include="depthfilter.cpp" />
     <ClCompile Include="detailEnhancement.cpp" />
@@ -665,6 +666,7 @@
     <ClInclude Include="..\include\onelineCVFunctions.hpp" />
     <ClInclude Include="..\include\pixelization.hpp" />
     <ClInclude Include="..\include\search1D.hpp" />
+    <ClInclude Include="..\include\RankOrderCorrelationCoefficient.hpp" />
     <ClInclude Include="..\include\StereoEval.hpp" />
     <ClInclude Include="..\include\depthfilter.hpp" />
     <ClInclude Include="..\include\detailEnhancement.hpp" />

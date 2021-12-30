@@ -26,6 +26,7 @@
 #include "noise.hpp"
 #include "plot.hpp"
 #include "randomizedQueue.hpp"
+#include "RankOrderCorrelationCoefficient.hpp"
 #include "stat.hpp"
 #include "stencil.hpp"
 #include "stream.hpp"

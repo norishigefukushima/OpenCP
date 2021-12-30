@@ -3741,7 +3741,7 @@ namespace cp
 	{
 		isUseGuide = true;
 		this->guideMaps = guide;
-		const int numGuides = guide.size();
+		const int numGuides = (int)guide.size();
 		if (guideTile.size() != numGuides)
 		{
 			guideTile.resize(numGuides);

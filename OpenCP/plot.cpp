@@ -2632,12 +2632,12 @@ namespace cp
 		guide.push_back(Point3f(127.5, 127.5, -127.5)); //bgmax
 
 		//guide.push_back(Point3f(0.f, 0.f, 0.f)); //eigen 0
-		Point3f cnt = Point3f(mean.at<double>(0), mean.at<double>(1), mean.at<double>(2));
+		Point3f cnt = Point3f((float)mean.at<double>(0), (float)mean.at<double>(1), (float)mean.at<double>(2));
 		float eveclen = 127.5;
 		guide.push_back(cnt); //eigen 0
-		guide.push_back(cnt + Point3f(evec.at<double>(0, 0), evec.at<double>(0, 1), evec.at<double>(0, 2)) * eveclen); //eigen 0
-		guide.push_back(cnt + Point3f(evec.at<double>(1, 0), evec.at<double>(1, 1), evec.at<double>(1, 2)) * eveclen); //eigen 1
-		guide.push_back(cnt + Point3f(evec.at<double>(2, 0), evec.at<double>(2, 1), evec.at<double>(2, 2)) * eveclen); //eigen 2
+		guide.push_back(cnt + Point3f((float)evec.at<double>(0, 0), (float)evec.at<double>(0, 1), (float)evec.at<double>(0, 2)) * eveclen); //eigen 0
+		guide.push_back(cnt + Point3f((float)evec.at<double>(1, 0), (float)evec.at<double>(1, 1), (float)evec.at<double>(1, 2)) * eveclen); //eigen 1
+		guide.push_back(cnt + Point3f((float)evec.at<double>(2, 0), (float)evec.at<double>(2, 1), (float)evec.at<double>(2, 2)) * eveclen); //eigen 2
 
 		vector<Point2f> guidept(guide.rows);
 		vector<Point2f> additionalpt(additionalPoints.rows);

@@ -37,8 +37,22 @@ namespace cp
 
 	void rotRoll(cv::InputArray src_, cv::OutputArray dest, const double roll)
 	{
-		Mat src = src_.getMat();
-		double angle = roll / 180.0 * CV_PI;
+		Mat src__ = src_.getMat();
+		const bool isRod = (min(src__.cols, src__.rows) == 1) ? true : false;
+
+		Mat src;
+		if (isRod)
+		{
+			Rodrigues(src__, src);
+			if (src.depth() == CV_32F)src.convertTo(src, CV_64F);
+		}
+		else
+		{
+			if (src__.depth() == CV_32F)src__.convertTo(src, CV_64F);
+			else src = src__;
+		}
+
+		const double angle = roll / 180.0 * CV_PI;
 		Mat rot = Mat::eye(3, 3, CV_64F);
 
 		rot.at<double>(0, 0) = cos(angle);
@@ -47,7 +61,10 @@ namespace cp
 		rot.at<double>(1, 1) = cos(angle);
 
 		Mat a = rot * src;
-		a.clone().copyTo(dest);
+		if (isRod) Rodrigues(a, a);
+		if (src__.depth() == CV_32F)a.convertTo(dest, CV_32F);
+		else a.clone().copyTo(dest);
+		//cout << "return" << endl;
 	}
 
 

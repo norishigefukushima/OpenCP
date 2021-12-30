@@ -40,16 +40,16 @@ inline float getSToneWeight(float x, float remap_sigma, float beta, float alpha)
 }
 
 template<typename T>
-inline float getSToneCurve(T i, T g, T remap_sigma, T beta, T alpha)
+inline T getSToneCurve(T i, T g, T remap_sigma, T beta, T alpha)
 {
 	if (abs(i - g) <= remap_sigma)
 	{
 		//std::cout << "power : " << std::pow((abs(i - g) / remap_sigma), alpha) << std::endl;
-		return g + cp::sign(i - g) * remap_sigma * pow((abs(i - g) / remap_sigma), alpha);
+		return g + cp::sign(i - g) * remap_sigma * (T)pow((abs(i - g) / remap_sigma), alpha);
 		//return g + sign(i - g) * remap_sigma * sqrt(abs(i - g) / remap_sigma);
 	}
 	else
-		return float(g + cp::sign(i - g) * (beta * (abs(i - g) - remap_sigma) + remap_sigma));
+		return g + cp::sign(i - g) * (beta * (abs(i - g) - remap_sigma) + remap_sigma);
 }
 
 
@@ -59,7 +59,17 @@ inline float getSmoothingHat(float x, float t, float sigma, int r)
 	float re = 0.f;
 	for (int i = -r; i <= r; i++)
 	{
-		re += (x - t + i) * std::max(0.0, 1.0 - abs((float)((x + i - t) / sigma)));
+		re += (x - t + i) * std::max(0.f, 1.f - abs((float)((x + i - t) / sigma)));
+	}
+	return re / (2 * r + 1);
+}
+
+inline double getSmoothingHat(double x, double t, double sigma, int r)
+{
+	double re = 0.0;
+	for (int i = -r; i <= r; i++)
+	{
+		re += (x - t + i) * std::max(0.0, 1.0 - abs((double)((x + i - t) / sigma)));
 	}
 	return re / (2 * r + 1);
 }

@@ -133,7 +133,7 @@ void testMSF()
 	int b = 60; cv::createTrackbar("b", "trackbar", &b, 512);
 	int isPlot = 0; cv::createTrackbar("Plot", "trackbar", &isPlot, 1);
 	int WindowType = WindowType::GAUSS; cv::createTrackbar("WindowType", "trackbar", &WindowType, 3);
-	//int periodMethod = LocalMultiScaleFilterFourier::Period::OPTIMIZE; 
+	//int periodMethod = LocalMultiScaleFilterFourier::Period::OPTIMIZE;
 	int periodMethod = LocalMultiScaleFilterFourier::Period::GAUSS_DIFF;
 	cv::createTrackbar("PeriodMethod", "trackbar", &periodMethod, 2);
 	int alpha_ = 5; cv::createTrackbar("alpha", "trackbar", &alpha_, 1000);
@@ -157,7 +157,7 @@ void testMSF()
 #pragma region variable
 	MultiScaleGaussianFilter msf;
 #if 0
-	
+
 	MultiScaleBilateralFilter msbf;
 	LocalMultiScaleFilter lmsf;
 	LocalMultiScaleFilterFull lmsffull;
@@ -852,11 +852,34 @@ void testMSF()
 	return;
 }
 */
-int main(int argc, char** argv)
+
+string getInformation()
 {
+	string ret = "version: " + cv::getVersionString() + "\n";
+	ret += "==============\n";
+	if (cv::useOptimized()) ret += "cv::useOptimized: true\n";
+	else ret += "cv::useOptimized: false\n";
+	if (cv::ipp::useIPP()) ret += "cv::ipp::useIPP: true\n";
+	else ret += "cv::ipp::useIPP: true\n";
+	ret += cv::ipp::getIppVersion() + "\n";
+	ret += format("cv::getNumberOfCPUs = %d\n", cv::getNumberOfCPUs());
+	ret += format("cv::getNumThreads = %d\n", cv::getNumThreads());
+	ret += getCPUFeaturesLine() + "\n";
+	ret += "==============\n";
+	
+	return ret;
+}
+
+int main(int argc, char** argv)
+{	
+	cout << getInformation() << endl; return 0;
+	cout << cv::getBuildInformation() << endl;
+	cv::ipp::setUseIPP(false);
+	cv::setUseOptimized(false);
+
 	//testMSF();
 	//testIsSame(); return 0;
-	cout << cv::getBuildInformation() << endl;
+	
 
 #pragma region setup
 	//Mat img = imread("img/lenna.png");

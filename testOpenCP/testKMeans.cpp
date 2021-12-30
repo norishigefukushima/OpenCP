@@ -22,7 +22,7 @@ void testKMeans(Mat& src)
 	for (int i = 0; i < ch; i++)vdata2[i] = vdata[i % src.channels()].clone();
 	for (int i = 0; i < ch; i++)
 	{
-		vdata2[i].create(Size(pow(2, size) + pad, 1), CV_32F);
+		vdata2[i].create(Size((int)pow(2, size) + pad, 1), CV_32F);
 		randn(vdata2[i], 0, 5);
 	}
 	merge(vdata2, data);
@@ -59,7 +59,7 @@ void testKMeans(Mat& src)
 
 			for (int i = 0; i < ch; i++)
 			{
-				vdata2[i].create(Size(pow(2, size) + pad, 1), CV_32F);
+				vdata2[i].create(Size((int)pow(2, size) + pad, 1), CV_32F);
 				randn(vdata2[i], 0, 5);
 			}
 
