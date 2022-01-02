@@ -296,6 +296,6 @@ bin/SpatialFilterd.dll
 lib/*.exp
 lib/OpenCP.lib
 lib/OpenCPd.lib
-lib/SpatialFilter.dll
-lib/SpatialFilterd.dll
+lib/SpatialFilter.lib
+lib/SpatialFilterd.lib
 testOpenCP/My Advisor Results - testOpenCP/

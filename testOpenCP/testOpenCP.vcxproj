@@ -128,8 +128,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(OPENCV_INCLUDE_DIR);$(FFTW_INCLUDE_DIR);../include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(OPENCV_LIB_DIR);$(FFTW_LIB_DIR);../lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>../include;$(OPENCV_INCLUDE_DIR);$(FFTW_INCLUDE_DIR);../include;$(IncludePath)</IncludePath>
+    <LibraryPath>../lib;$(OPENCV_LIB_DIR);$(FFTW_LIB_DIR);../lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
