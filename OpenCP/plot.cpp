@@ -1266,7 +1266,7 @@ namespace cp
 		int xmaxbar = xmax;
 		int yminbar = ymin;
 		int ymaxbar = ymax;
-		if (isUseMinmaxBar)
+		if (isUseMinmaxBar&&isWait)
 		{
 			if (xmax > 0 && xmax - xmin > 0) { createTrackbar("xmin", wname, &xminbar, xmax); setTrackbarMin("xmin", wname, xmin); }
 			if (xmax > 0 && xmax - xmin > 0) { createTrackbar("xmax", wname, &xmaxbar, xmax); setTrackbarMin("xmax", wname, xmin); }
