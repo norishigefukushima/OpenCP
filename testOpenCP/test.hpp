@@ -4,8 +4,12 @@
 
 #ifdef _DEBUG
 #pragma comment(lib, "opencpd.lib")
+#pragma comment(lib, "MultiScaleFilter.lib")
+#pragma comment(lib, "SpatialFilter.lib")
 #else
 #pragma comment(lib, "opencp.lib")
+#pragma comment(lib, "MultiScaleFilter.lib")
+#pragma comment(lib, "SpatialFilter.lib")
 #endif
 
 //core
@@ -96,3 +100,5 @@ void guiAnalysisCompare(cv::Mat& src1, cv::Mat& src2);
 void imshowAnalysisCompare(cv::String winname, cv::Mat& src1, cv::Mat& src2);
 void imshowAnalysis(cv::String winname, std::vector<cv::Mat>& s);
 void imshowAnalysis(cv::String winname, cv::Mat& src);
+
+void testMultiScaleFilter();
