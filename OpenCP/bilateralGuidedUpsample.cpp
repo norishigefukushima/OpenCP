@@ -42,10 +42,11 @@ namespace cp
 	// Size of each spatial bin in the grid. Typically 16.
 	void bilateralGuidedUpsample(Mat& low_res_in, Mat& low_res_out, Mat& high_res_in, Mat& high_res_out, const int s_sigma, const float r_sigma)
 	{
+		cout << "createTrackbase in bilateralGuidedUpsample" << endl;
 		static int l = 100; createTrackbar("l", "", &l, 100000);
 		static int e = 100; createTrackbar("e", "", &e, 100000);
-		const float lambda = 1e-6f * l * 0.01;
-		const float epsilon = 1e-6f * e * 0.01;
+		const float lambda = float(1e-6f * l * 0.01);
+		const float epsilon = float(1e-6f * e * 0.01);
 
 		// The low resolution input
 		Mat low_in;
@@ -67,8 +68,8 @@ namespace cp
 
 		// Figure out how much we're upsampling by. Not relevant if we're
 		// just fitting curves.
-		int upsample_factor_x = ceil((float)(high_in.cols / low_in.cols));		// factor = highres / rowres
-		int upsample_factor_y = ceil((float)(high_in.rows / low_in.rows));
+		int upsample_factor_x = (int)ceil((float)(high_in.cols / low_in.cols));		// factor = highres / rowres
+		int upsample_factor_y = (int)ceil((float)(high_in.rows / low_in.rows));
 		int upsample_factor = max(upsample_factor_x, upsample_factor_y);
 
 		Mat gray_low_in(clamped_low_in.rows, clamped_low_in.cols, CV_32FC1);
@@ -82,7 +83,7 @@ namespace cp
 		const int clamped_width = clamped_low_in.cols;
 		int grid_width = clamped_width / s_sigma;
 		int grid_height = clamped_height / s_sigma;
-		const int grid_range = 1.f / r_sigma + 1;		// 8
+		const int grid_range = int(1.f / r_sigma + 1);		// 8
 		Mat histogram = Mat::zeros(grid_width * grid_height, 22 * grid_range, CV_32FC1);
 
 		//#pragma omp parallel for schedule(dynamic)
@@ -94,7 +95,7 @@ namespace cp
 
 				for (int i = 0; i < s_sigma; i++)
 				{
-					float sy = y * s_sigma + i;
+					int sy = y * s_sigma + i;
 					float* clamped_low_out_ptr = clamped_low_out.ptr<float>(sy);
 					float* clamped_low_in_ptr = clamped_low_in.ptr<float>(sy);
 
@@ -377,7 +378,7 @@ namespace cp
 		}
 
 		// Spatial bin size in the high-res image.
-		float big_sigma = s_sigma * upsample_factor;
+		float big_sigma = float(s_sigma * upsample_factor);
 		Mat interpolated_z(high_in.rows * high_in.cols, 12, CV_32FC1);
 		Mat interpolated(high_in.rows, high_in.cols, CV_32FC3);
 		int num_intensity_bins = (int)(1.0f / r_sigma);
@@ -901,7 +902,7 @@ namespace cp
 		//interpolating bilateral grid for full resolution.
 		//t.start();
 		color2gray(high_in, gray_high_in);
-		const float upsampleFactorBG2Highres = upsampleFactor * num_spatial_blocks;
+		const float upsampleFactorBG2Highres = float(upsampleFactor * num_spatial_blocks);
 		linearInterpolation(high_in, gray_high_in, bilateralGridOpt, output32f, grid_width, grid_height, grid_range, upsampleFactorBG2Highres);
 		//t.getTime(true);cout << endl;
 
