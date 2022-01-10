@@ -40,7 +40,7 @@ int main(int argc, char** argv)
 	cv::ipp::setUseIPP(false);
 	cv::setUseOptimized(false);
 	*/
-	testMultiScaleFilter(); return 0;
+	//testMultiScaleFilter(); return 0;
 	//testIsSame(); return 0;
 	
 
@@ -57,7 +57,8 @@ int main(int argc, char** argv)
 
 
 #pragma region core
-	testStreamConvert8U(); return 0;
+	guiPixelizationTest();
+	//testStreamConvert8U(); return 0;
 	//testKMeans(img); return 0;
 	//testTiling(img); return 0;
 	//copyMakeBorderTest(img); return 0;
@@ -119,7 +120,7 @@ int main(int argc, char** argv)
 	//VizKernel vk;
 	//vk.run(img, 2);
 
-
+	
 	//guiShift(left,right); return 0;
 	//
 	//iirGuidedFilterTest2(img); return 0;

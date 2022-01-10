@@ -6,6 +6,6 @@ using namespace cp;
 
 void guiPixelizationTest()
 {
-	Mat src = imread("img/lamp.png");
+	Mat src = imread("img/Mandrill.png");
 	guiPixelization("pixel", src);
 }

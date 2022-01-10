@@ -39,6 +39,7 @@ void testLocalPSNR(cv::Mat& ref);
 void testVideoSubtitle();
 
 //imgproc
+void guiPixelizationTest();
 void guiSLICTest(cv::Mat& src);
 void guiDisparityPlaneFitSLICTest(cv::Mat& leftim, cv::Mat& rightim, cv::Mat& GT);
 void fitPlaneTest();
