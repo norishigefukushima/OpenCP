@@ -754,7 +754,7 @@ namespace cp
 
 		virtual void operator() (const Range& range) const
 		{
-			int i, j, cn = dest->channels(), k;
+			int i, j, cn = dest->channels();
 			int cng = (guide->rows - 2 * radiusV) / dest->rows;
 			Size size = dest->size();
 
@@ -776,20 +776,19 @@ namespace cp
 				for (i = range.start; i != range.end; i++, dptr += dstep, sptr += sstep, gptr += gstep)
 				{
 					j = 0;
-
 					if (haveAVX)
 					{
 						for (; j < size.width; j += unroll)//8 pixel unit 
 						{
-							int* ofs = &space_ofs[0];
-							int* gofs = &space_guide_ofs[0];
+							int* ofs = space_ofs;
+							int* gofs = space_guide_ofs;
 							float* spw = space_weight;
 							const float* sptrj = sptr + j;
 							const float* gptrj = gptr + j;
-							const __m256 sval1 = _mm256_load_ps((gptrj + 0));
-							const __m256 sval2 = _mm256_load_ps((gptrj + 8));
-							const __m256 sval3 = _mm256_load_ps((gptrj + 16));
-							const __m256 sval4 = _mm256_load_ps((gptrj + 24));
+							const __m256 sval1 = _mm256_loadu_ps((gptrj + 0));
+							//const __m256 sval2 = _mm256_loadu_ps((gptrj + 8));
+							//const __m256 sval3 = _mm256_loadu_ps((gptrj + 16));
+							//const __m256 sval4 = _mm256_loadu_ps((gptrj + 24));
 
 							__m256 clip = _mm256_set1_ps(200);
 							__m256 wval1 = _mm256_setzero_ps();
@@ -803,17 +802,15 @@ namespace cp
 							__m256 wval4 = _mm256_setzero_ps();
 							__m256 tval4 = _mm256_setzero_ps();
 							*/
-							for (k = 0; k < maxk; k++, ofs++, gofs++, spw++)
+							for (int k = 0; k < maxk; k++, ofs++, gofs++, spw++)
 							{
 								const __m256 _sw = _mm256_set1_ps(*spw);
 
 								__m256 sref = _mm256_loadu_ps((gptrj + *gofs));
 								__m256 diff = _mm256_min_ps(clip, _mm256_and_ps(_mm256_sub_ps(sval1, sref), *(const __m256*)v32f_absmask));
 								__m256 vref = _mm256_loadu_ps((sptrj + *ofs));
-
 								__m256 _w = _mm256_mul_ps(_sw, _mm256_i32gather_ps(color_weight, _mm256_cvtps_epi32(diff), 4));
-								vref = _mm256_mul_ps(_w, vref);
-								tval1 = _mm256_add_ps(tval1, vref);
+								tval1 = _mm256_fmadd_ps(_w, vref, tval1);
 								wval1 = _mm256_add_ps(wval1, _w);
 
 								/*
@@ -838,7 +835,7 @@ namespace cp
 						const float val0 = gptr[j];
 						float sum = 0.0f;
 						float wsum = 0.0f;
-						for (k = 0; k < maxk; k++)
+						for (int k = 0; k < maxk; k++)
 						{
 							float gval = gptr[j + space_guide_ofs[k]];
 							float val = sptr[j + space_ofs[k]];
@@ -884,7 +881,7 @@ namespace cp
 
 							__m128 wval1 = _mm_setzero_ps();
 							__m128 tval1 = _mm_setzero_ps();
-							for (k = 0; k < maxk; k++, ofs++, gofs++, spw++)
+							for (int k = 0; k < maxk; k++, ofs++, gofs++, spw++)
 							{
 								const __m128 bref = _mm_loadu_ps((gptrbj + *gofs));
 								const __m128 gref = _mm_loadu_ps((gptrgj + *gofs));
@@ -925,7 +922,7 @@ namespace cp
 
 						float sum = 0.0f;
 						float wsum = 0.0f;
-						for (k = 0; k < maxk; k++)
+						for (int k = 0; k < maxk; k++)
 						{
 							const float r = gptrrj[space_guide_ofs[k]], g = gptrgj[space_guide_ofs[k]], b = gptrbj[space_guide_ofs[k]];
 							float w = space_weight[k] * color_weight[cvRound(std::abs(b - b0) + std::abs(g - g0) + std::abs(r - r0))];
@@ -954,8 +951,6 @@ namespace cp
 				for (i = range.start; i != range.end; i++, gptrr += gstep, gptrg += gstep, gptrb += gstep, sptrr += sstep, sptrg += sstep, sptrb += sstep, dptr += dstep)
 				{
 					j = 0;
-
-
 					{
 						for (; j < size.width; j += 4)//4 pixel unit
 						{
@@ -977,7 +972,7 @@ namespace cp
 							__m128 gval1 = _mm_setzero_ps();
 							__m128 bval1 = _mm_setzero_ps();
 
-							for (k = 0; k < maxk; k++, ofs++, gofs++, spw++)
+							for (int k = 0; k < maxk; k++, ofs++, gofs++, spw++)
 							{
 								__m128 bref = _mm_loadu_ps((gptrbj + *gofs));
 								__m128 gref = _mm_loadu_ps((gptrgj + *gofs));
@@ -1022,7 +1017,6 @@ namespace cp
 							_mm_stream_ps((dptrc + 8), _mm_blend_ps(_mm_blend_ps(a, c, 4), b, 2));
 						}
 					}
-
 					for (; j < size.width; j++)
 					{
 						const float* sptrrj = sptrr + j;
@@ -1038,7 +1032,7 @@ namespace cp
 
 						float sum_r = 0.0f, sum_b = 0.0f, sum_g = 0.0f;
 						float wsum = 0.0f;
-						for (k = 0; k < maxk; k++)
+						for (int k = 0; k < maxk; k++)
 						{
 							const float r = gptrrj[space_guide_ofs[k]], g = gptrgj[space_guide_ofs[k]], b = gptrbj[space_guide_ofs[k]];
 							float w = space_weight[k] * color_weight[cvRound(std::abs(b - b0) + std::abs(g - g0) + std::abs(r - r0))];
@@ -1069,7 +1063,6 @@ namespace cp
 				for (i = range.start; i != range.end; i++, gptr += gstep, sptrr += sstep, sptrg += sstep, sptrb += sstep, dptr += dstep)
 				{
 					j = 0;
-
 					{
 						for (; j < size.width; j += 4)//4 pixel unit
 						{
@@ -1086,7 +1079,7 @@ namespace cp
 							__m128 rval1 = _mm_set1_ps(0.0f);
 							__m128 gval1 = _mm_set1_ps(0.0f);
 							__m128 bval1 = _mm_set1_ps(0.0f);
-							for (k = 0; k < maxk; k++, ofs++, gofs++, spw++)
+							for (int k = 0; k < maxk; k++, ofs++, gofs++, spw++)
 							{
 								__m128 sref = _mm_loadu_ps((gptrj + *gofs));
 								_mm_store_si128((__m128i*)buf, _mm_cvtps_epi32(_mm_and_ps(_mm_sub_ps(sval, sref), *(const __m128*)v32f_absmask)));
@@ -1120,7 +1113,6 @@ namespace cp
 							_mm_stream_ps((dptrc + 8), _mm_blend_ps(_mm_blend_ps(a, c, 4), b, 2));
 						}
 					}
-
 					for (; j < size.width; j++)
 					{
 						const float* sptrrj = sptrr + j;
@@ -1131,7 +1123,7 @@ namespace cp
 						const float r0 = gptrj[0];
 						float sum_r = 0.0f, sum_b = 0.0f, sum_g = 0.0f;
 						float wsum = 0.0f;
-						for (k = 0; k < maxk; k++)
+						for (int k = 0; k < maxk; k++)
 						{
 							const float r = gptrj[space_guide_ofs[k]];
 							float w = space_weight[k] * color_weight[cvRound(std::abs(r - r0))];
@@ -2433,7 +2425,7 @@ namespace cp
 						dptr[j] = (uchar)cvRound(sum / wsum);
 					}
 				}
-			}
+		}
 			else if (cn == 1 && cng == 3)
 			{
 				assert(cng == 3);//color
@@ -3046,7 +3038,7 @@ namespace cp
 					}
 				}
 			}
-		}
+	}
 	private:
 		const Mat* temp;
 		const Mat* weightMap;
@@ -3054,7 +3046,7 @@ namespace cp
 		const Mat* guide;
 		int radiusH, radiusV, maxk, * space_ofs, * space_guide_ofs, * space_w_ofs;
 		float* space_weight, * color_weight;
-	};
+};
 
 	void weightedJointBilateralFilter_32f(const Mat& src, Mat& weight, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int borderType, bool isRectangle)
 	{
@@ -3311,7 +3303,7 @@ namespace cp
 		Mat(dest(Rect(0, 0, dst.cols, dst.rows))).copyTo(dst);
 	}
 
-	void jointBilateralFilter_32f(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int borderType, bool isRectangle)
+	void jointBilateralFilter_AVX_32f(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int borderType, bool isRectangle)
 	{
 		if (kernelSize.width == 0 || kernelSize.height == 0) { src.copyTo(dst); return; }
 		int cn = src.channels();
@@ -3335,10 +3327,11 @@ namespace cp
 
 		Mat temp, tempg;
 
-		int dpad = (4 - src.cols % 4) % 4;
-		int spad = dpad + (4 - (2 * radiusH) % 4) % 4;
-		if (spad < 4) spad += 4;
-		int lpad = 4 * (radiusH / 4 + 1) - radiusH;
+		int simd_size = 8;
+		int dpad = (simd_size - src.cols % simd_size) % simd_size;
+		int spad = dpad + (simd_size - (2 * radiusH) % simd_size) % simd_size;
+		if (spad < simd_size) spad += simd_size;
+		int lpad = simd_size * (radiusH / simd_size + 1) - radiusH;
 		int rpad = spad - lpad;
 		if (cn == 1 && cng == 1)
 		{
@@ -3400,7 +3393,7 @@ namespace cp
 		Mat(dest(Rect(0, 0, dst.cols, dst.rows))).copyTo(dst);
 	}
 
-	void jointBilateralFilter_8u(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int borderType, bool isRectangle)
+	void jointBilateralFilter_SSE_8u(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int borderType, bool isRectangle)
 	{
 		if (kernelSize.width == 0 || kernelSize.height == 0) { src.copyTo(dst); return; }
 		int cn = src.channels();
@@ -3486,14 +3479,14 @@ namespace cp
 
 	void jointBilateralFilterSP_32f(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int borderType)
 	{
-		jointBilateralFilter_32f(src, guide, dst, Size(kernelSize.width, 1), sigma_color, sigma_space, borderType, false);
-		jointBilateralFilter_32f(dst, guide, dst, Size(1, kernelSize.height), sigma_color, sigma_space, borderType, false);
+		jointBilateralFilter_AVX_32f(src, guide, dst, Size(kernelSize.width, 1), sigma_color, sigma_space, borderType, false);
+		jointBilateralFilter_AVX_32f(dst, guide, dst, Size(1, kernelSize.height), sigma_color, sigma_space, borderType, false);
 	}
 
 	void jointBilateralFilterSP_8u(const Mat& src, const Mat& guide, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int borderType)
 	{
-		jointBilateralFilter_8u(src, guide, dst, Size(kernelSize.width, 1), sigma_color, sigma_space, borderType, false);
-		jointBilateralFilter_8u(dst, guide, dst, Size(1, kernelSize.height), sigma_color, sigma_space, borderType, false);
+		jointBilateralFilter_SSE_8u(src, guide, dst, Size(kernelSize.width, 1), sigma_color, sigma_space, borderType, false);
+		jointBilateralFilter_SSE_8u(dst, guide, dst, Size(1, kernelSize.height), sigma_color, sigma_space, borderType, false);
 	}
 
 	void jointBilateralFilter(cv::InputArray src_, cv::InputArray guide_, cv::OutputArray dest, Size kernelSize, double sigma_color, double sigma_space, int kernelType, int borderType)
@@ -3507,11 +3500,11 @@ namespace cp
 		{
 			if (src.depth() == CV_8U)
 			{
-				jointBilateralFilter_8u(src, guide, dst, kernelSize, sigma_color, sigma_space, borderType, false);
+				jointBilateralFilter_SSE_8u(src, guide, dst, kernelSize, sigma_color, sigma_space, borderType, false);
 			}
 			else if (src.depth() == CV_32F)
 			{
-				jointBilateralFilter_32f(src, guide, dst, kernelSize, sigma_color, sigma_space, borderType, false);
+				jointBilateralFilter_AVX_32f(src, guide, dst, kernelSize, sigma_color, sigma_space, borderType, false);
 			}
 			else
 			{
@@ -3520,7 +3513,7 @@ namespace cp
 				src.convertTo(srcf, CV_32F);
 				guide.convertTo(guidef, CV_32F);
 				dstf = Mat::zeros(src.size(), srcf.type());
-				jointBilateralFilter_32f(srcf, guidef, dstf, kernelSize, sigma_color, sigma_space, borderType, false);
+				jointBilateralFilter_AVX_32f(srcf, guidef, dstf, kernelSize, sigma_color, sigma_space, borderType, false);
 				dstf.convertTo(dst, src.type());
 			}
 		}
@@ -3528,11 +3521,11 @@ namespace cp
 		{
 			if (src.depth() == CV_8U)
 			{
-				jointBilateralFilter_8u(src, guide, dst, kernelSize, sigma_color, sigma_space, borderType, true);
+				jointBilateralFilter_SSE_8u(src, guide, dst, kernelSize, sigma_color, sigma_space, borderType, true);
 			}
 			else if (src.depth() == CV_32F)
 			{
-				jointBilateralFilter_32f(src, guide, dst, kernelSize, sigma_color, sigma_space, borderType, true);
+				jointBilateralFilter_AVX_32f(src, guide, dst, kernelSize, sigma_color, sigma_space, borderType, true);
 			}
 			else
 			{
@@ -3541,7 +3534,7 @@ namespace cp
 				src.convertTo(srcf, CV_32F);
 				guide.convertTo(guidef, CV_32F);
 				dstf = Mat::zeros(src.size(), srcf.type());
-				jointBilateralFilter_32f(srcf, guidef, dstf, kernelSize, sigma_color, sigma_space, borderType, true);
+				jointBilateralFilter_AVX_32f(srcf, guidef, dstf, kernelSize, sigma_color, sigma_space, borderType, true);
 				dstf.convertTo(dst, src.type());
 			}
 		}

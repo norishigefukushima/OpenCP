@@ -716,7 +716,17 @@ namespace cp
 		}
 
 		// Filter the input with respect to the position vectors. 
-		PermutohedralLattice::filter(src, ref, dest);
+		if (src.depth() == CV_8U)
+		{
+			Mat src32f; src.convertTo(src32f, CV_32F);
+			Mat dst32f(src.size(),src32f.type());
+			PermutohedralLattice::filter(src32f, ref, dst32f);
+			dst32f.convertTo(dest, CV_8U);
+		}
+		else
+		{
+			PermutohedralLattice::filter(src, ref, dest);
+		}
 	}
 
 	void highDimensionalGaussianFilterPermutohedralLattice(const vector<Mat>& vsrc, const vector<Mat>& vguide, Mat& dest, const float sigma_color, const float sigma_space)
