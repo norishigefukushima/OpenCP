@@ -1,4 +1,5 @@
 #include "onelineCVFunctions.hpp"
+#include "contrast.hpp"
 #include "debugcp.hpp"
 using namespace std;
 using namespace cv;
@@ -66,8 +67,8 @@ namespace cp
 
 		switch (src.depth())
 		{
-		case CV_8U: contrastGamma_<uchar>(src.getMat().ptr<uchar>(), dest.getMat().ptr<uchar>(), size, gamma); break;
-		case CV_8S: contrastGamma_<char>(src.getMat().ptr<char>(), dest.getMat().ptr<char>(), size, gamma); break;
+		case CV_8U: contrastGamma_< uchar>(src.getMat().ptr< uchar>(), dest.getMat().ptr< uchar>(), size, gamma); break;
+		case CV_8S: contrastGamma_<  char>(src.getMat().ptr<  char>(), dest.getMat().ptr<  char>(), size, gamma); break;
 		case CV_16U:contrastGamma_<ushort>(src.getMat().ptr<ushort>(), dest.getMat().ptr<ushort>(), size, gamma); break;
 		case CV_16S:contrastGamma_< short>(src.getMat().ptr< short>(), dest.getMat().ptr< short>(), size, gamma); break;
 		case CV_32S:contrastGamma_<   int>(src.getMat().ptr<   int>(), dest.getMat().ptr<   int>(), size, gamma); break;

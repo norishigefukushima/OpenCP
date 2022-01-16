@@ -3228,7 +3228,7 @@ inline __m512 _mm512_rcpnr_fma_ps(__m512 x, __m512 two = _mm512_set1_ps(2.f))
 inline void _mm512_transpose16_ps(__m512& s00, __m512& s01, __m512& s02, __m512& s03, __m512& s04, __m512& s05, __m512& s06, __m512& s07, __m512& s08, __m512& s09, __m512& s10, __m512& s11, __m512& s12, __m512& s13, __m512& s14, __m512& s15)
 {
 	__m512i t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, ta, tb, tc, td, te, tf;
-	__m512i r0,  r1,  r2,  r3,  r4,  r5, r6,  r7,  r8,  r9,  ra,  rb,  rc,  rd,  re, rf;
+	__m512i r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, ra, rb, rc, rd, re, rf;
 
 	r0 = _mm512_castps_si512(s00);
 	r1 = _mm512_castps_si512(s01);
@@ -3317,4 +3317,11 @@ inline void _mm512_transpose16_ps(__m512& s00, __m512& s01, __m512& s02, __m512&
 	s15 = _mm512_castsi512_ps(_mm512_shuffle_i32x4(t7, tf, 0xdd)); //  15  31  47  63  79  96 111 127 ... 255
 }
 
+//_mm512_setr_ps(v, v + step, v + 2.f * step, v + 3.f * step, v + 4.f * step, v + 5.f * step, v + 6.f * step, v + 7.f * step, v + 8.f * step, v + 9.f * step, v + 10.f * step, v + 11.f * step, v + 12.f * step, v + 13.f * step, v + 14.f * step, v + 15.f * step);
+inline __m512 _mm512_set_step_ps(float v, float step = 1.f)
+{
+	return _mm512_setr_ps(v, v + step, v + 2.f * step, v + 3.f * step, v + 4.f * step, v + 5.f * step, v + 6.f * step, v + 7.f * step, v + 8.f * step, v + 9.f * step, v + 10.f * step, v + 11.f * step, v + 12.f * step, v + 13.f * step, v + 14.f * step, v + 15.f * step);
+}
+
+#define print_m512(src) printf_s("%s: %6.2f %6.2f %6.2f %6.2f | %6.2f %6.2f %6.2f %6.2f | %6.2f %6.2f %6.2f %6.2f | %6.2f %6.2f %6.2f %6.2f\n",#src,((float*)&src)[0], ((float*)&src)[1], ((float*)&src)[2], ((float*)&src)[3], ((float*)&src)[4], ((float*)&src)[5], ((float*)&src)[6], ((float*)&src)[7], ((float*)&src)[8], ((float*)&src)[9], ((float*)&src)[10], ((float*)&src)[11], ((float*)&src)[12], ((float*)&src)[13], ((float*)&src)[14], ((float*)&src)[15]);
 #endif

@@ -1992,7 +1992,7 @@ namespace cp
 		imshow(wname, show8u);
 	}
 
-	void MultiScaleFilter::drawRemap(bool isWait)
+	void MultiScaleFilter::drawRemap(bool isWait, Size size)
 	{
 		if (rangeTable.empty())
 		{
@@ -2000,7 +2000,7 @@ namespace cp
 			return;
 		}
 
-		cp::Plot pt(Size(512, 512));
+		cp::Plot pt(size);
 		string wname = "remap function";
 		cv::namedWindow(wname);
 		static int x = 128; cv::createTrackbar("x", wname, &x, 255);
@@ -2076,6 +2076,8 @@ namespace cp
 
 	cv::Size MultiScaleFilter::getLayerSize(const int level)
 	{
+		if (layerSize.empty())return Size(0, 0);
+		if (layerSize.size() < level)return Size(0, 0);
 		return layerSize[level];
 	}
 
@@ -6028,10 +6030,9 @@ namespace cp
 
 	template<typename Type>
 	void LocalMultiScaleFilterFourier::kernelPlot(const int window_type, const int order, const int R, const double boost, const double sigma_range, float Salpha, float Sbeta, float Ssigma, const int Imin, const int Imax, const int Irange, const Type T,
-		Type* sinTable, Type* cosTable, std::vector<Type>& alpha, std::vector<Type>& beta, int windowType)
+		Type* sinTable, Type* cosTable, std::vector<Type>& alpha, std::vector<Type>& beta, int windowType, const std::string wname, const cv::Size windowSize)
 	{
-		cp::Plot pt;
-		const std::string wname = "plt f(x)";
+		cp::Plot pt(windowSize);
 		pt.setPlotTitle(0, "Ideal");
 		pt.setPlotTitle(1, "y=xf(x)");
 		pt.setPlotTitle(2, "y=x");
@@ -6062,14 +6063,13 @@ namespace cp
 				switch (windowType)
 				{
 				case GAUSS:
-					wr += lalpha * (st[s] * ct[t] - ct[s] * st[t]);
-					break;
+					wr += Type(lalpha * (st[s] * ct[t] - ct[s] * st[t])); break;
 				case S_TONE:
-					wr += beta[k] * (sinTable[256 * k + s] * cosTable[256 * k + t] - cosTable[256 * k + s] * sinTable[256 * k + t]); break;
+					wr += Type(beta[k] * (sinTable[256 * k + s] * cosTable[256 * k + t] - cosTable[256 * k + s] * sinTable[256 * k + t])); break;
 				case HAT:
-					wr += alpha[k] * (sinTable[256 * k + s] * cosTable[256 * k + t] - cosTable[256 * k + s] * sinTable[256 * k + t]); break;
+					wr += Type(alpha[k] * (sinTable[256 * k + s] * cosTable[256 * k + t] - cosTable[256 * k + s] * sinTable[256 * k + t])); break;
 				case SMOOTH_HAT:
-					wr += alpha[k] * (sinTable[256 * k + s] * cosTable[256 * k + t] - cosTable[256 * k + s] * sinTable[256 * k + t]); break;
+					wr += Type(alpha[k] * (sinTable[256 * k + s] * cosTable[256 * k + t] - cosTable[256 * k + s] * sinTable[256 * k + t])); break;
 				}
 			}
 
@@ -13251,8 +13251,19 @@ namespace cp
 		collapseLaplacianPyramid(LaplacianPyramid, LaplacianPyramid[0]);
 		LaplacianPyramid[0](Rect(r_pad0, r_pad0, src.cols, src.rows)).copyTo(dest);
 
-		//if (isPlot)
-		kernelPlot(GAUSS, order, 255, boost, sigma_range, Salpha, Sbeta, sigma_range, 0, 255, 255, T, sinTable, cosTable, alpha, beta, windowType);
+		if (isPlot)
+		{
+			kernelPlot(GAUSS, order, 255, boost, sigma_range, Salpha, Sbeta, sigma_range, 0, 255, 255, T, sinTable, cosTable, alpha, beta, windowType, "GFP f(x)");
+			isPlotted = true;
+		}
+		else
+		{
+			if (isPlotted)
+			{
+				cv::destroyWindow("GFP f(x)");
+				isPlotted = false;
+			}
+		}
 	}
 
 	void LocalMultiScaleFilterFourier::pyramidSerial(const Mat& src, Mat& dest)
@@ -13888,12 +13899,12 @@ namespace cp
 
 	void LocalMultiScaleFilterFourier::setIsParallel(const bool flag)
 	{
-		isParallel = flag;
+		this->isParallel = flag;
 	}
 
 	void  LocalMultiScaleFilterFourier::setIsPlot(const bool flag)
 	{
-		isPlot = flag;
+		this->isPlot = flag;
 	}
 
 	std::string LocalMultiScaleFilterFourier::getPeriodName()

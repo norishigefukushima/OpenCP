@@ -142,7 +142,7 @@ namespace cp
 		inline int getGaussianRadius(const float sigma) { return (pyramidComputeMethod == OpenCV) ? 2 : get_simd_ceil(int(ceil(1.5 * sigma)), 2); }
 
 		static void showPyramid(std::string wname, std::vector<cv::Mat>& pyramid, bool isShowLevel = true);
-		void drawRemap(bool isWait = true);
+		void drawRemap(bool isWait = true, const cv::Size size = cv::Size(512, 512));
 
 	protected:
 		std::vector<cv::Size> layerSize;
@@ -546,9 +546,10 @@ namespace cp
 	private:
 		int kernel_plotting_t = 128;
 		int kernel_plotting_amp = 0;
+		bool isPlotted = false;//for destroy window flag
 		template<typename Type>
 		void kernelPlot(const int window_type, const int order, const int R, const double boost, const double sigma_range, float Salpha, float Sbeta, float Ssigma, const int Imin, const int Imax, const int Irange, const Type T,
-			Type* sinTable, Type* cosTable, std::vector<Type>& alpha, std::vector<Type>& beta, int windowType);
+			Type* sinTable, Type* cosTable, std::vector<Type>& alpha, std::vector<Type>& beta, int windowType, const std::string wname = "plt f(x)", const cv::Size windowSize = cv::Size(512, 512));
 
 		bool isParallel = true;
 		bool isPlot = false;

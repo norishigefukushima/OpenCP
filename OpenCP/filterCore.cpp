@@ -12,13 +12,13 @@ namespace cp
 		{
 			for (int j = -radiusH; j <= radiusH; j++)
 			{
-				double r = std::sqrt((double)i*i + (double)j*j);
+				double r = std::sqrt((double)i * i + (double)j * j);
 				if (r > maxr && !isRectangle) continue;
 				if (i != j) continue;
 
 				//printf("45: %d %d\n", i,j);
-				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-				space_ofs[maxk++] = (int)(i*imstep + j);
+				space_weight[maxk] = (float)std::exp(r * r * gauss_space_coeff);
+				space_ofs[maxk++] = (int)(i * imstep + j);
 			}
 		}
 	}
@@ -30,12 +30,12 @@ namespace cp
 		{
 			for (int j = -radiusH; j <= radiusH; j++)
 			{
-				double r = std::sqrt((double)i*i + (double)j*j);
+				double r = std::sqrt((double)i * i + (double)j * j);
 				if (r > maxr && !isRectangle) continue;
 				if (i != -j) continue;
 				//printf("135: %d %d\n", i,j);
-				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-				space_ofs[maxk++] = (int)(i*imstep + j);
+				space_weight[maxk] = (float)std::exp(r * r * gauss_space_coeff);
+				space_ofs[maxk++] = (int)(i * imstep + j);
 			}
 		}
 	}
@@ -47,11 +47,11 @@ namespace cp
 		{
 			for (int j = -radiusH; j <= radiusH; j++)
 			{
-				double r = std::sqrt((double)i*i + (double)j*j);
+				double r = std::sqrt((double)i * i + (double)j * j);
 				if (r > maxr && !isRectangle) continue;
 
-				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-				space_ofs[maxk++] = (int)(i*imstep + j);
+				space_weight[maxk] = (float)std::exp(r * r * gauss_space_coeff);
+				space_ofs[maxk++] = (int)(i * imstep + j);
 			}
 		}
 	}
@@ -63,12 +63,12 @@ namespace cp
 		{
 			for (int j = -radiusH; j <= radiusH; j++)
 			{
-				double r = std::sqrt((double)i*i + (double)j*j);
+				double r = std::sqrt((double)i * i + (double)j * j);
 				if (r > maxr && !isRectangle) continue;
 
-				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-				space_ofs[maxk] = (int)(i*imstep1 + j);
-				space_guide_ofs[maxk++] = (int)(i*imstep2 + j);
+				space_weight[maxk] = (float)std::exp(r * r * gauss_space_coeff);
+				space_ofs[maxk] = (int)(i * imstep1 + j);
+				space_guide_ofs[maxk++] = (int)(i * imstep2 + j);
 			}
 		}
 	}
@@ -80,14 +80,14 @@ namespace cp
 		{
 			for (int j = -radiusH; j <= radiusH; j++)
 			{
-				double r = std::sqrt((double)i*i + (double)j*j);
+				double r = std::sqrt((double)i * i + (double)j * j);
 				if (r > maxr && !isRectangle) continue;
 				if (i != j) continue;
 
 				//printf("45: %d %d\n", i,j);
-				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-				space_ofs[maxk] = (int)(i*imstep1 + j);
-				space_guide_ofs[maxk++] = (int)(i*imstep2 + j);
+				space_weight[maxk] = (float)std::exp(r * r * gauss_space_coeff);
+				space_ofs[maxk] = (int)(i * imstep1 + j);
+				space_guide_ofs[maxk++] = (int)(i * imstep2 + j);
 			}
 		}
 	}
@@ -99,14 +99,14 @@ namespace cp
 		{
 			for (int j = -radiusH; j <= radiusH; j++)
 			{
-				double r = std::sqrt((double)i*i + (double)j*j);
+				double r = std::sqrt((double)i * i + (double)j * j);
 				if (r > maxr && !isRectangle) continue;
 				if (i != -j) continue;
 
 				//printf("135: %d %d\n", i,j);
-				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-				space_ofs[maxk] = (int)(i*imstep1 + j);
-				space_guide_ofs[maxk++] = (int)(i*imstep2 + j);
+				space_weight[maxk] = (float)std::exp(r * r * gauss_space_coeff);
+				space_ofs[maxk] = (int)(i * imstep1 + j);
+				space_guide_ofs[maxk++] = (int)(i * imstep2 + j);
 			}
 		}
 	}

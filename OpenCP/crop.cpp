@@ -20,7 +20,7 @@ namespace cp
 		Mat cropimage;
 		bb(Rect(roi.x + w, roi.y + h, roi.width, roi.height)).copyTo(cropimage);
 
-		resize(cropimage, crop_zoom, Size(zoom_factor*w, zoom_factor*h), 0, 0, INTER_NEAREST);
+		resize(cropimage, crop_zoom, Size(zoom_factor * w, zoom_factor * h), 0, 0, INTER_NEAREST);
 	}
 
 	void cropZoom(InputArray src, OutputArray crop_zoom, const Point center, const int window_size, const int zoom_factor)
@@ -39,7 +39,7 @@ namespace cp
 		bb(Rect(roi.x + w, roi.y + h, roi.width, roi.height)).copyTo(cropimage);
 		rectangle(cropimage, Rect(0, 0, w, h), color, thickness);
 
-		resize(cropimage, crop_zoom, Size(zoom_factor*w, zoom_factor*h), 0, 0, INTER_NEAREST);
+		resize(cropimage, crop_zoom, Size(zoom_factor * w, zoom_factor * h), 0, 0, INTER_NEAREST);
 	}
 
 	void cropZoomWithBoundingBox(InputArray src, OutputArray crop_zoom, const Point center, const int window_size, const int zoom_factor, const Scalar color, const int thickness)
@@ -70,7 +70,7 @@ namespace cp
 		std::string wname;
 	};
 
-	void onMouseGUICropZoom(int events, int x, int y, int flags, void *param)
+	void onMouseGUICropZoom(int events, int x, int y, int flags, void* param)
 	{
 		MouseParameterGUICropZoom* retp = (MouseParameterGUICropZoom*)param;
 		//if(events==CV_EVENT_LBUTTONDOWN)
@@ -91,23 +91,32 @@ namespace cp
 		const int width = src.size().width;
 		const int height = src.size().height;
 
+		string trackbarname = "parameters";
+		if (src.size().height < 1024)trackbarname = wname;
+		else namedWindow(trackbarname);
 		static MouseParameterGUICropZoom param
 		{
 			Rect(width / 2, height / 2, width, height),
-			wname
+			trackbarname
 		};
 
 		namedWindow(wname);
 		setMouseCallback(wname, onMouseGUICropZoom, (void*)&param);
 
-		static int zoom_show_option = 0; createTrackbar("zoom_show_op", wname, &zoom_show_option, 1);
-		static int zoom_position = 0; createTrackbar("zoom_position", wname, &zoom_position, 4);
-		createTrackbar("zoom_x", wname, &param.pt.x, width - 1);
-		createTrackbar("zoom_y", wname, &param.pt.y, height - 1);
+		static int zoom_show_option = 0;
+		static int zoom_position = 0;
 		static int zoom_count = 0;
-		static int zoom_window = 40; createTrackbar("zoom_window", wname, &zoom_window, min(width, height) - 1);
-		static int zoom_factor = 8; createTrackbar("zoom_factor", wname, &zoom_factor, zoom_factor_max);
-		static int thick = thickness; createTrackbar("thickness", wname, &thick, 10);
+		static int zoom_window = 40;
+		static int zoom_factor = 8;
+		static int thick = thickness;
+		createTrackbar("zoom_show_op", trackbarname, &zoom_show_option, 1);
+		createTrackbar("zoom_position", trackbarname, &zoom_position, 4);
+		createTrackbar("zoom_x", trackbarname, &param.pt.x, width - 1);
+		createTrackbar("zoom_y", trackbarname, &param.pt.y, height - 1);
+		createTrackbar("zoom_window", trackbarname, &zoom_window, min(width, height) - 1);
+		createTrackbar("zoom_factor", trackbarname, &zoom_factor, zoom_factor_max);
+		createTrackbar("thickness", trackbarname, &thick, 10);
+
 		Mat show;
 		Mat crop_resize;
 		Mat input = src.getMat();
@@ -124,9 +133,9 @@ namespace cp
 		}
 		while (key != 'q')
 		{
-			if(isScale) input.convertTo(show, CV_8U, 255);
+			if (isScale) input.convertTo(show, CV_8U, 255);
 			else input.copyTo(show);
-				
+
 			zoom_factor = max(zoom_factor, 1);
 
 			if (zoom_show_option == 0)
@@ -140,7 +149,7 @@ namespace cp
 
 			imshow(wname + "_image", crop_resize);
 
-			if (crop_resize.cols < width&&crop_resize.rows < height)
+			if (crop_resize.cols < width && crop_resize.rows < height)
 			{
 				if (zoom_position == 1) crop_resize.copyTo(show(Rect(0, 0, crop_resize.size().width, crop_resize.size().height)));
 				else if (zoom_position == 2) crop_resize.copyTo(show(Rect(show.cols - 1 - crop_resize.size().width, 0, crop_resize.size().width, crop_resize.size().height)));
@@ -204,7 +213,11 @@ namespace cp
 			}
 		}
 
-		if (isWait) destroyWindow(wname);
+		if (isWait)
+		{
+			destroyWindow(wname);
+			destroyWindow(trackbarname);
+		}
 		return crop_resize;
 	}
 

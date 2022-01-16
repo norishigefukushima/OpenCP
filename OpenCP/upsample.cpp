@@ -25,7 +25,7 @@ namespace cp
 
 		while (key != 'q')
 		{
-			cp::setCubicWeight4x4(weightmap, (alpha - 200) * 0.01);
+			cp::setCubicWeight4x4(weightmap, float((alpha - 200) * 0.01));
 			displayStatusBar(wname, "(alpha-200)*0.01!!");
 
 			int idx = iy * scale + ix;
@@ -468,29 +468,29 @@ namespace cp
 			for (int k = 0; k < dw; k++)
 			{
 				const double x = (double)k / (double)dw;
-				weight[idx][0] = cp::cubic(1.0 + x, a) * cp::cubic(1.0 + y, a);
-				weight[idx][1] = cp::cubic(0.0 + x, a) * cp::cubic(1.0 + y, a);
-				weight[idx][2] = cp::cubic(1.0 - x, a) * cp::cubic(1.0 + y, a);
-				weight[idx][3] = cp::cubic(2.0 - x, a) * cp::cubic(1.0 + y, a);
+				weight[idx][0] = float(cp::cubic(1.0 + x, a) * cp::cubic(1.0 + y, a));
+				weight[idx][1] = float(cp::cubic(0.0 + x, a) * cp::cubic(1.0 + y, a));
+				weight[idx][2] = float(cp::cubic(1.0 - x, a) * cp::cubic(1.0 + y, a));
+				weight[idx][3] = float(cp::cubic(2.0 - x, a) * cp::cubic(1.0 + y, a));
 
-				weight[idx][4] = cp::cubic(1.0 + x, a) * cp::cubic(0.0 + y, a);
-				weight[idx][5] = cp::cubic(0.0 + x, a) * cp::cubic(0.0 + y, a);
-				weight[idx][6] = cp::cubic(1.0 - x, a) * cp::cubic(0.0 + y, a);
-				weight[idx][7] = cp::cubic(2.0 - x, a) * cp::cubic(0.0 + y, a);
+				weight[idx][4] = float(cp::cubic(1.0 + x, a) * cp::cubic(0.0 + y, a));
+				weight[idx][5] = float(cp::cubic(0.0 + x, a) * cp::cubic(0.0 + y, a));
+				weight[idx][6] = float(cp::cubic(1.0 - x, a) * cp::cubic(0.0 + y, a));
+				weight[idx][7] = float(cp::cubic(2.0 - x, a) * cp::cubic(0.0 + y, a));
 
-				weight[idx][8] = cp::cubic(1.0 + x, a) * cp::cubic(1.0 - y, a);
-				weight[idx][9] = cp::cubic(0.0 + x, a) * cp::cubic(1.0 - y, a);
-				weight[idx][10] = cp::cubic(1.0 - x, a) * cp::cubic(1.0 - y, a);
-				weight[idx][11] = cp::cubic(2.0 - x, a) * cp::cubic(1.0 - y, a);
+				weight[idx][8] =  float(cp::cubic(1.0 + x, a) * cp::cubic(1.0 - y, a));
+				weight[idx][9] =  float(cp::cubic(0.0 + x, a) * cp::cubic(1.0 - y, a));
+				weight[idx][10] = float(cp::cubic(1.0 - x, a) * cp::cubic(1.0 - y, a));
+				weight[idx][11] = float(cp::cubic(2.0 - x, a) * cp::cubic(1.0 - y, a));
 
-				weight[idx][12] = cp::cubic(1.0 + x, a) * cp::cubic(2.0 - y, a);
-				weight[idx][13] = cp::cubic(0.0 + x, a) * cp::cubic(2.0 - y, a);
-				weight[idx][14] = cp::cubic(1.0 - x, a) * cp::cubic(2.0 - y, a);
-				weight[idx][15] = cp::cubic(2.0 - x, a) * cp::cubic(2.0 - y, a);
+				weight[idx][12] = float(cp::cubic(1.0 + x, a) * cp::cubic(2.0 - y, a));
+				weight[idx][13] = float(cp::cubic(0.0 + x, a) * cp::cubic(2.0 - y, a));
+				weight[idx][14] = float(cp::cubic(1.0 - x, a) * cp::cubic(2.0 - y, a));
+				weight[idx][15] = float(cp::cubic(2.0 - x, a) * cp::cubic(2.0 - y, a));
 
 				double wsum = 0.0;
 				for (int i = 0; i < 16; i++)wsum += weight[idx][i];
-				for (int i = 0; i < 16; i++)weight[idx][i] /= wsum;
+				for (int i = 0; i < 16; i++)weight[idx][i] = float(weight[idx][i]/wsum);
 
 				idx++;
 			}
@@ -2159,7 +2159,7 @@ namespace cp
 		dest.create(src.size() * scale, src.type());
 
 		Mat weightmap(scale * scale, 16, CV_32F);
-		cp::setCubicWeight4x4(weightmap, a);
+		cp::setCubicWeight4x4(weightmap, float(a));
 		//vizCubicKernel(scale);
 
 		if (src.depth() == CV_32F)
@@ -2209,10 +2209,10 @@ namespace cp
 		}*/
 
 
-		float n = nrm * 0.1;
+		float n = float(nrm * 0.1);
 		for (int i = 0; i < 256; i++)
 		{
-			rweight[i] = exp(pow(i, n) / (-1.0 / n * pow(sr, n)));
+			rweight[i] = float(exp(pow(i, n) / (-1.0 / n * pow(sr, n))));
 		}
 		/*
 		cp::Plot pt(Size(512, 512));
