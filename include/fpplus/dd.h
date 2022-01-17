@@ -392,8 +392,8 @@ static doubledouble string2DD(std::string s, const int mode = 0, const bool fast
 
 //M_E
 static const doubledouble M_E_DD = string2DD("2.7182818284590452353602874713526624977572470937000");
-static const doubledouble M_PI_DD =  string2DD("3.1415926535897932384626433832795028841971693993751");
-static const doubledouble M_2PI_DD =     string2DD("6.2831853071795864769252867665590057683943387987502");
+static const doubledouble M_PI_DD = string2DD("3.1415926535897932384626433832795028841971693993751");
+static const doubledouble M_2PI_DD = string2DD("6.2831853071795864769252867665590057683943387987502");
 static const doubledouble M_SQRT2PI_DD = string2DD("2.5066282746310005024157652848110452530069867406099");
 static const doubledouble M_LN2_DD = string2DD("0.69314718055994530941723212145817656807550013436026");
 
@@ -641,7 +641,7 @@ FPPLUS_STATIC_INLINE doubledouble ddmul(const doubledouble a, const doubledouble
 	product.lo = fma(a.lo, b.lo, product.lo);
 	product.lo = fma(a.lo, b.hi, product.lo);
 	product.lo = fma(a.hi, b.lo, product.lo);
-	
+
 #endif
 
 #endif
@@ -658,7 +658,7 @@ FPPLUS_STATIC_INLINE doubledouble dddiv(const doubledouble a, const double b)
 	double z3 = efmul(-z1, b, &z4);
 	//z2 = ((((z3 + a.hi) - z1 * b.lo) + a.lo) + z4) / b.hi;
 	const double z2 = (((a.hi + z3) + a.lo) + z4) / b;
-	
+
 	//z3 = twosumfast(z1, z2, &z4);
 	z3 = twosum(z1, z2, &z4);
 	return { z3, z4 };
@@ -1021,6 +1021,14 @@ FPPLUS_STATIC_INLINE __m256dd _mm256_setzero_pdd(void)
 	return ret;
 }
 
+FPPLUS_STATIC_INLINE __m256dd _mm256_set1_pdd(const doubledouble val)
+{
+	__m256dd ret;
+	ret.hi = _mm256_set1_pd(val.hi);
+	ret.lo = _mm256_set1_pd(val.lo);
+	return ret;
+}
+
 FPPLUS_STATIC_INLINE __m256dd _mm256_broadcast_sdd(
 	const doubledouble FPPLUS_NONNULL_POINTER(pointer))
 {
@@ -1147,8 +1155,8 @@ FPPLUS_STATIC_INLINE __m256dd _mm256_mull_pd(const __m256d a, const __m256d b)
 FPPLUS_STATIC_INLINE __m256dd _mm256_mulw_pdd(const __m256dd a, const __m256d b)
 {
 	__m256dd product;
-	product.hi= _mm256_twoproduct_pd(a.hi, b, &product.lo);
-	 
+	product.hi = _mm256_twoproduct_pd(a.hi, b, &product.lo);
+
 #if defined(__FMA__) || defined(__AVX2__)
 	product.lo = _mm256_fmadd_pd(a.lo, b, product.lo);
 #else
@@ -1381,7 +1389,7 @@ inline __m256dd _mm256_fmakahan_pdd(const __m256d a, const __m256d x, const __m2
 {
 	__m256d y = _mm256_fmsub_pd(a, x, blo);
 	__m256d t = _mm256_add_pd(bhi, y);
-	return {t,_mm256_sub_pd(_mm256_sub_pd(t, bhi), y) };
+	return { t,_mm256_sub_pd(_mm256_sub_pd(t, bhi), y) };
 }
 
 #endif /* FPPLUS_DD_H */
