@@ -564,9 +564,6 @@
     <ClCompile Include="box\boxFilter_SSAT_HV_8x8.cpp">
       <Filter>ソース ファイル\filter\boxFilter</Filter>
     </ClCompile>
-    <ClCompile Include="highDimensionalGaussianFilter.cpp">
-      <Filter>ソース ファイル\filter</Filter>
-    </ClCompile>
     <ClCompile Include="fftFilter.cpp">
       <Filter>ソース ファイル\filter\dct-fft</Filter>
     </ClCompile>
@@ -587,6 +584,12 @@
     </ClCompile>
     <ClCompile Include="RankOrderCorrelationCoefficient.cpp">
       <Filter>ソース ファイル\core</Filter>
+    </ClCompile>
+    <ClCompile Include="highDimensionalGaussianFilter.cpp">
+      <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="GaussianKDTree.cpp">
+      <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1060,6 +1063,9 @@
     </ClInclude>
     <ClInclude Include="..\include\RankOrderCorrelationCoefficient.hpp">
       <Filter>ヘッダー ファイル\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\GaussianKDTree.hpp">
+      <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -14,7 +14,7 @@ void highDimentionalGaussianFilterTest(Mat& src)
 	namedWindow(wname);
 
 	int a = 0; createTrackbar("a", wname, &a, 100);
-	int sw = 0; createTrackbar("switch", wname, &sw, 1);
+	int sw = 2; createTrackbar("switch", wname, &sw, 2);
 	//int r = 20; createTrackbar("r", wname, &r, 200);
 	int space = 36; createTrackbar("space", wname, &space, 200);
 	int color = 500; createTrackbar("color", wname, &color, 2550);
@@ -34,26 +34,35 @@ void highDimentionalGaussianFilterTest(Mat& src)
 
 		Mat ref;
 		cp::bilateralFilterL2(srcf, ref, (int)ceil(sigma_space * 3.f), sigma_color, sigma_space, BORDER_DEFAULT);
+		dest.setTo(0);
 		if (sw == 0)
 		{
 			method = "cp::highDimensionalGaussianFilter";
 			Timer t("bilateral filter: opencv", TIME_MSEC, false);
 			//cp::nonLocalMeansFilter(srcf, dest, Size(6, 6), Size(22, 22), sigma_space, -1.0, 0);
-			cp::nonLocalMeansFilter(srcf, dest, Size(6, 6), Size(22, 22), sigma_color, sigma_space, 0);
-			//cp::highDimensionalGaussianFilter(srcf, srcf, dest, Size(d, d), sigma_color, sigma_space, BORDER_DEFAULT);
+			//cp::nonLocalMeansFilter(srcf, dest, Size(6, 6), Size(22, 22), sigma_color, sigma_space, 0);
+			cp::highDimensionalGaussianFilter(srcf, srcf, dest, Size(d, d), sigma_color, sigma_space, BORDER_DEFAULT);
+			//cp::highDimensionalGaussianFilterPermutohedralLattice(srcf, dest, sigma_color, sigma_space);
 			time = t.getTime();
 		}
 		else if (sw == 1)
 		{
 			method = "cp::bilateralFilterPermutohedralLattice";
 			Timer t("bilateral filter: opencv", TIME_MSEC, false);
-			cp::nonLocalMeansFilter(srcf, dest, Size(6, 6), Size(22, 22), sigma_color, sigma_space, 4);
 			//cp::highDimensionalGaussianFilterPermutohedralLattice(srcf, dest, sigma_color, sigma_space);
-			//cp::highDimensionalGaussianFilterPermutohedralLatticeTile(srcf, srcf, dest, sigma_color, sigma_space, Size(4, 4));
-			
+			cp::highDimensionalGaussianFilterPermutohedralLatticeTile(srcf, srcf, dest, sigma_color, sigma_space, Size(4, 4));
+
 			time = t.getTime();
 		}
-		
+		else if (sw == 2)
+		{
+			method = "cp::bilateralFilterGaussianKDTree";
+			Timer t("bilateral filter: opencv", TIME_MSEC, false);
+			//cp::nonLocalMeansFilter(srcf, dest, Size(6, 6), Size(22, 22), sigma_color, sigma_space, 4);
+			cp::highDimensionalGaussianFilterGaussianKDTreeTile(srcf, srcf, dest, sigma_color, sigma_space, Size(4, 2), 3.f);
+			time = t.getTime();
+		}
+
 		ci(method);
 		ci("time %f ms", time);
 		ci("PSNR %f dB", getPSNR(dest, ref));

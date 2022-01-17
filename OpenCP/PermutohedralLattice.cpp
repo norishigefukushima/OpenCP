@@ -253,7 +253,6 @@ namespace cp
 		PermutohedralLattice(int d_, int vd_, int nData_) :
 			dim(d_), sdim(vd_), nData(nData_), hashTable(d_, vd_)
 		{
-
 			CV_Assert(dim < 127);
 			CV_Assert(sdim < 127);
 			// Allocate storage for various arrays
@@ -684,6 +683,7 @@ namespace cp
 		const float ColorStdev = 255.f / invColorStdev;
 
 		Mat ref(src.size(), CV_MAKETYPE(CV_32F, guide.channels() + 2));
+		Timer t;
 		if (src.depth() == CV_8U)
 		{
 			for (int y = 0; y < src.rows; y++)
@@ -714,7 +714,7 @@ namespace cp
 				}
 			}
 		}
-
+		cout<<t.getpushLapTime()<<endl;
 		// Filter the input with respect to the position vectors. 
 		if (src.depth() == CV_8U)
 		{
@@ -741,7 +741,6 @@ namespace cp
 	{
 		highDimensionalGaussianFilterPermutohedralLattice(src, src, dest, sigma_color, sigma_space);
 	}
-
 
 	void highDimensionalGaussianFilterPermutohedralLatticeTile(const Mat& src, const Mat& guide, Mat& dest, const float sigma_color, const float sigma_space, const Size div, const float truncateBoundary)
 	{

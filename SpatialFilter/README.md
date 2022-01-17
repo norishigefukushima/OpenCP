@@ -1,7 +1,7 @@
 OpenCP: MultiScaleFilter
 ========================
 
-Implementation of the following paper
+Implementation of the following paper.
 
 Y. Sumiya, T. Otsuka, Y. Maeda, and N. Fukushima, "Gaussian Fourier Pyramid for Local Laplacian Filter," IEEE Signal Processing Letters (SPL), 2021. [pdf](https://fukushima.web.nitech.ac.jp/paper/2021_spl_sumiya.pdf) [IEEE](https://ieeexplore.ieee.org/document/9580704)
 

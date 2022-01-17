@@ -73,6 +73,7 @@
 #include "dxtDenoise.hpp"
 #include "GaussianFilter.hpp"
 #include "GaussianFilterSpectralRecursive.hpp"
+#include "GaussianKDTree.hpp"
 #include "guidedFilter.hpp"
 #include "highDimensionalGaussianFilter.hpp"
 #include "jointBilateralFilter.hpp"

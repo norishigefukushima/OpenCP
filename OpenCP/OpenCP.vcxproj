@@ -444,6 +444,7 @@
     <ClCompile Include="depth2disparity.cpp" />
     <ClCompile Include="depthUpsample.cpp" />
     <ClCompile Include="downsample.cpp" />
+    <ClCompile Include="GaussianKDTree.cpp" />
     <ClCompile Include="highDimensionalGaussianFilter.cpp" />
     <ClCompile Include="kmeans.cpp" />
     <ClCompile Include="metricsDD.cpp" />
@@ -658,6 +659,7 @@
     <ClInclude Include="..\include\depth2disparity.hpp" />
     <ClInclude Include="..\include\depthUpsample.hpp" />
     <ClInclude Include="..\include\downsample.hpp" />
+    <ClInclude Include="..\include\GaussianKDTree.hpp" />
     <ClInclude Include="..\include\highDimensionalGaussianFilter.hpp" />
     <ClInclude Include="..\include\inlineCVFunctions.hpp" />
     <ClInclude Include="..\include\kmeans.hpp" />

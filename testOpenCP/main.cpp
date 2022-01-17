@@ -301,6 +301,7 @@ int main(int argc, char** argv)
 #pragma region filter
 	//testGuidedImageFilter(Mat(), Mat()); return 0;
 	//highDimentionalGaussianFilterTest(imgg); return 0;
+	highDimentionalGaussianFilterTest(img); return 0;
 	//testWeightedHistogramFilterDisparity(); return 0;
 	//testWeightedHistogramFilter();return 0;
 #pragma endregion 
@@ -326,14 +327,14 @@ int main(int argc, char** argv)
 
 
 	//guiGeightedJointBilateralFilterTest();
-	guiHazeRemoveTest();
-	guiDenoiseTest(img);
+	//guiHazeRemoveTest();
+	//guiDenoiseTest(img);
 	//Mat ff3 = imread("img/pixelart/ff3.png");
 
 	Mat src = imread("img/lenna.png");
 
 	//Mat src = imread("img/Kodak/kodim07.png",0);
-	guiIterativeBackProjectionTest(src);
+	//guiIterativeBackProjectionTest(src);
 	//Mat src = imread("img/Kodak/kodim15.png",0);
 
 	//Mat src = imread("img/cave-flash.png");
