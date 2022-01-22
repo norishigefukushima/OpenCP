@@ -325,9 +325,9 @@ enum
 	EXP_L160_WINDOW,
 
 	BOX_WINDOW,
-	BARTLETT_WINDOW,
+	BARTLETT_WINDOW,//triangle window
 	WELCH_WINDOW,
-	PARZEN_WINDOW,
+	PARZEN_WINDOW,//peachwise approximation of Gaussian with cubic
 	DIVSQRT_WINDOW,
 
 	HANN_WINDOW,
