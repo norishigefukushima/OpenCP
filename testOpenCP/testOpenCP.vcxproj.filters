@@ -54,9 +54,6 @@
     <ClCompile Include="guiEPFWeightMapTest.cpp">
       <Filter>ソース ファイル\test\filter</Filter>
     </ClCompile>
-    <ClCompile Include="guiEdgePreservingFilter.cpp">
-      <Filter>ソース ファイル\test\filter</Filter>
-    </ClCompile>
     <ClCompile Include="guiBlendTest.cpp">
       <Filter>ソース ファイル\test\core</Filter>
     </ClCompile>
@@ -163,6 +160,9 @@
       <Filter>ソース ファイル\test\imgproc</Filter>
     </ClCompile>
     <ClCompile Include="multiScaleFilterTest.cpp">
+      <Filter>ソース ファイル\test\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="guiEdgePreservingFilterOpenCV.cpp">
       <Filter>ソース ファイル\test\filter</Filter>
     </ClCompile>
   </ItemGroup>

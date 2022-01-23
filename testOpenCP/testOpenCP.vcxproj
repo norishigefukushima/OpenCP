@@ -367,7 +367,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="guiDomainTransformTest.cpp" />
-    <ClCompile Include="guiEdgePreservingFilter.cpp" />
+    <ClCompile Include="guiEdgePreservingFilterOpenCV.cpp" />
     <ClCompile Include="guiEPFWeightMapTest.cpp" />
     <ClCompile Include="testGuidedImageFilter.cpp" />
     <ClCompile Include="guiHazeRemoveTest.cpp" />

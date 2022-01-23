@@ -1738,12 +1738,24 @@ inline __m256 _mm256_ssd_ps(__m256 src, __m256 ref)
 inline __m256 _mm256_ssd_ps(__m256 src0, __m256 src1, __m256 src2, __m256 ref0, __m256 ref1, __m256 ref2)
 {
 	__m256 diff = _mm256_sub_ps(src0, ref0);
-	__m256 difft = _mm256_mul_ps(diff, diff);
+	__m256 ret = _mm256_mul_ps(diff, diff);
 	diff = _mm256_sub_ps(src1, ref1);
-	difft = _mm256_fmadd_ps(diff, diff, difft);
+	ret = _mm256_fmadd_ps(diff, diff, ret);
 	diff = _mm256_sub_ps(src2, ref2);
-	difft = _mm256_fmadd_ps(diff, diff, difft);
-	return difft;
+	ret = _mm256_fmadd_ps(diff, diff, ret);
+	return ret;
+}
+
+//return offset + ssd
+inline __m256 _mm256_ssdadd_ps(__m256 offset, __m256 src0, __m256 src1, __m256 src2, __m256 ref0, __m256 ref1, __m256 ref2)
+{
+	__m256 diff = _mm256_sub_ps(src0, ref0);
+	__m256 ret = _mm256_fmadd_ps(diff, diff, offset);
+	diff = _mm256_sub_ps(src1, ref1);
+	ret = _mm256_fmadd_ps(diff, diff, ret);
+	diff = _mm256_sub_ps(src2, ref2);
+	ret = _mm256_fmadd_ps(diff, diff, ret);
+	return ret;
 }
 
 inline __m128i _mm_absdiff_epu8(__m128i src1, __m128i src2)

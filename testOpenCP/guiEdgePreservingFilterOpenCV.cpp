@@ -29,7 +29,7 @@ void guiEdgePresevingFilterOpenCV(Mat& src)
 		if (sw == 0)
 		{
 			Timer t("Bilateral filter");
-			bilateralFilter(src, dest, d, sigma_color, sigma_space);
+			cv::bilateralFilter(src, dest, d, sigma_color, sigma_space);
 		}
 		else if (sw == 1)
 		{

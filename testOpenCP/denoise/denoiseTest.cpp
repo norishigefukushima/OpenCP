@@ -4,6 +4,37 @@ using namespace std;
 using namespace cv;
 using namespace cp;
 
+static enum method
+{
+	BILATERAL,
+	GUIDED,
+	BINARYRANGE,
+	NONLOCAL,
+	NONLOCAL_L1,
+	REC_BF,
+	BM3D,
+
+	SIZE
+};
+
+string getDenoiseMethodName(int method)
+{
+	string ret = "";
+	switch (method)
+	{
+	case BILATERAL: ret = "BILATERAL"; break;
+	case GUIDED: ret = "GUIDED"; break;
+	case BINARYRANGE: ret = "BINARYRANGE"; break;
+	case NONLOCAL: ret = "NONLOCAL"; break;
+	case NONLOCAL_L1: ret = "NONLOCAL_L1"; break;
+	case REC_BF: ret = "REC_BF"; break;
+	case BM3D: ret = "BM3D"; break;
+	default:
+		break;
+	}
+	return ret;
+}
+
 void guiDenoiseTest(Mat& src)
 {
 	Mat dest, dest2;
@@ -12,12 +43,13 @@ void guiDenoiseTest(Mat& src)
 	namedWindow(wname);
 
 	int a = 0; createTrackbar("a", wname, &a, 100);
-	int sw = 5; createTrackbar("switch", wname, &sw, 5);
+	
+	int sw = NONLOCAL; createTrackbar("switch", wname, &sw, method::SIZE-1);
 
-	int sigma_color10 = 100; createTrackbar("sigma_color", wname, &sigma_color10, 2550);
-	int sigma_space10 = 120; createTrackbar("sigma_space", wname, &sigma_color10, 2550);
+	int sigma_color10 = 400; createTrackbar("sigma_color", wname, &sigma_color10, 5000);
+	int sigma_space10 = 100; createTrackbar("sigma_space", wname, &sigma_space10, 200);
 	int r = 4; createTrackbar("r", wname, &r, 100);
-
+	int powexp = 2; createTrackbar("powexp", wname, &powexp, 100);
 	int tr = 1; createTrackbar("tr", wname, &tr, 20);
 
 	int noise_s10 = 200; createTrackbar("noise", wname, &noise_s10, 2550);
@@ -25,7 +57,13 @@ void guiDenoiseTest(Mat& src)
 	Mat show;
 
 	RecursiveBilateralFilter recbf(src.size());
-
+	cp::ConsoleImage ci;
+	cp::UpdateCheck uc(sw);
+	cp::UpdateCheck ucnoise(noise_s10);
+	Timer t("time", TIME_MSEC, false);
+	Mat noise;
+	Mat srcf; src.convertTo(srcf, CV_32F);
+	bool isFourceUpdateNoise = false;
 	while (key != 'q')
 	{
 		float sigma_color = sigma_color10 / 10.f;
@@ -33,38 +71,56 @@ void guiDenoiseTest(Mat& src)
 		int d = 2 * r + 1;
 		int td = 2 * tr + 1;
 
-		Mat noise;
-		Mat srcf; src.convertTo(srcf, CV_32F);
-		addNoise(src, noise, noise_s10 / 10.0);
+		
+		if (ucnoise.isUpdate(noise_s10)||isFourceUpdateNoise)
+		{
+			addNoise(src, noise, noise_s10 / 10.0);
+		}
+
+		if (uc.isUpdate(sw))
+		{
+			t.clearStat();
+		}
 		if (sw == 0)
 		{
-			Timer t("bilateral filter");
+			t.start();
 			//bilateralFilter(noise, dest, Size(d, d), sigma_color, sigma_space, FILTER_RECTANGLE);
 			bilateralFilter(noise, dest, d, sigma_color, sigma_space, FILTER_RECTANGLE);
+			t.getpushLapTime();
 		}
 		else if (sw == 1)
 		{
-			Timer t("bilateral filter: separable ");
+			t.start();
 			//GaussianBlur(noise,dest,Size(d,d),sigma_space);
 			guidedImageFilter(noise, noise, dest, r, sigma_color * 10.f);
 			//bilateralFilter(noise,dest,Size(d,d),sigma_color,sigma_space,FILTER_SEPARABLE);
+			t.getpushLapTime();
 		}
 		else if (sw == 2)
 		{
-			Timer t("binary weighted range filter");
+			t.start();
 			binalyWeightedRangeFilter(noise, dest, Size(d, d), sigma_color);
+			t.getpushLapTime();
 		}
 		else if (sw == 3)
 		{
-			Timer t("non local means");
-			nonLocalMeansFilter(noise, dest, td, d, sigma_color, sigma_color, 0);
+			t.start();
+			nonLocalMeansFilter(noise, dest, td, d, sigma_color, powexp);
+			t.getpushLapTime();
 		}
 		else if (sw == 4)
 		{
-			Timer t("recursive birateral filter");
-			recbf(noise, dest, sigma_color, sigma_space);
+			t.start();
+			nonLocalMeansFilterL1PatchDistance(noise, dest, td, d, sigma_color, powexp);
+			t.getpushLapTime();
 		}
 		else if (sw == 5)
+		{
+			t.start();
+			recbf(noise, dest, sigma_color, sigma_space);
+			t.getpushLapTime();
+		}
+		else if (sw == 6)
 		{
 			/*
 			CalcTime t("DCT Denoising");
@@ -73,16 +129,23 @@ void guiDenoiseTest(Mat& src)
 			xphoto::dctDenoising(temp, temp, sigma_color, 16);
 			Mat(temp(Rect(8, 8, noise.cols, noise.rows))).copyTo(dest);
 			*/
-			Timer t("BM3D");
+			t.start();
 			xphoto::bm3dDenoising(noise, dest, sigma_color, 8, 16, 2500, 400, 16, 1, 2.f, 4, 1, cv::xphoto::HAAR);
+			t.getpushLapTime();
 		}
 
-		cout << "before:" << PSNR(src, noise) << endl;
-		cout << "filter:" << PSNR(src, dest) << endl << endl;
+		ci(getDenoiseMethodName(sw));
+		if(isFourceUpdateNoise) ci("noise  %6.3f dB, update (swich 'n' key)", PSNR(src, noise));
+		else ci("noise  %6.3f dB, const (swich 'n' key)", PSNR(src, noise));
+		
+		ci("filter %6.3f dB", PSNR(src, dest));
+		ci("time   %f ms %d", t.getLapTimeMedian(), t.getStatSize());
+		ci.show();
 
-		dissolveSlideBlend(noise, dest, dest);
-		alphaBlend(src, dest, a / 100.0, show);
+		cp::dissolveSlideBlend(noise, dest, dest);
+		cp::alphaBlend(src, dest, a / 100.0, show);
 		cv::imshow(wname, show);
 		key = waitKey(1);
+		if (key == 'n')isFourceUpdateNoise = isFourceUpdateNoise ? false : true;
 	}
 }

@@ -2,14 +2,15 @@
 #include "jointNonLocalMeans.hpp"
 #include "color.hpp"
 #include "blend.hpp"
-#include <intrin.h>
+#include "inlineSIMDFunctions.hpp"
+#include "inlineMathFunctions.hpp"
 
 using namespace std;
 using namespace cv;
 
 namespace cp
 {
-
+#pragma region NLM L1
 	template <class srcType>
 	class NonlocalMeansFilterNonzeroBaseInvorker_ : public cv::ParallelLoopBody
 	{
@@ -777,7 +778,7 @@ namespace cp
 	};
 
 
-	void nonLocalMeansFilterBase(Mat& src, Mat& dest, Size templeteWindowSize, Size searchWindowSize, double h, double sigma, int borderType)
+	void nonLocalMeansFilterBase(const Mat& src, Mat& dest, Size templeteWindowSize, Size searchWindowSize, double h, double sigma, int borderType)
 	{
 		dest.create(src.size(), src.type());
 
@@ -826,7 +827,7 @@ namespace cp
 		}
 	}
 
-	void nonLocalMeansFilter_SSE(Mat& src, Mat& dest, Size templeteWindowSize, Size searchWindowSize, double h, double sigma, int borderType)
+	void nonLocalMeansFilter_SSE(const Mat& src, Mat& dest, Size templeteWindowSize, Size searchWindowSize, double sigma, double powexp,int borderType)
 	{
 		dest.create(src.size(), src.type());
 
@@ -862,28 +863,32 @@ namespace cp
 		}
 
 		//weight computation;
-		vector<float> weight(256 * src.channels());
-		weight.resize(256);
-		float* w = &weight[0];
-		const double gauss_sd = (sigma == 0.0) ? h : sigma;
-		double gauss_color_coeff = -(1.0 / (double)(src.channels())) * (1.0 / (h * h));
-		for (int i = 0; i < 256 * src.channels(); i++)
+		const int range_size = (int)256 * src.channels();
+		vector<float> weight(range_size);
+		float* range_weight = &weight[0];
+		double gauss_color_coeff = (1.0 / (sigma));
+		for (int i = 0; i < range_size; i++)
 		{
-			double v = std::exp(max(i * i - 2.0 * gauss_sd * gauss_sd, 0.0) * gauss_color_coeff);
-			w[i] = (float)v;
+			range_weight[i] = (float)std::exp(-pow(abs(i * gauss_color_coeff), powexp) / powexp);
 		}
 
 		if (src.depth() == CV_8U)
 		{
-			NonlocalMeansFilterInvorker8u_SSE4 body(im, dst, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, w);
+			NonlocalMeansFilterInvorker8u_SSE4 body(im, dst, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, range_weight);
 			cv::parallel_for_(Range(0, dst.rows), body);
+			/*Mat imf, dstf;
+			im.convertTo(imf, CV_32F);
+			dst.convertTo(dstf, CV_32F);
+			NonlocalMeansFilterInvorker32f_SSE4 body(imf, dstf, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, w);
+			cv::parallel_for_(Range(0, dst.rows), body);
+			dstf.convertTo(dst, CV_8U);*/
 		}
 		if (src.depth() == CV_16U)
 		{
 			Mat imf, dstf;
 			im.convertTo(imf, CV_32F);
 			dst.convertTo(dstf, CV_32F);
-			NonlocalMeansFilterInvorker32f_SSE4 body(imf, dstf, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, w);
+			NonlocalMeansFilterInvorker32f_SSE4 body(imf, dstf, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, range_weight);
 			cv::parallel_for_(Range(0, dst.rows), body);
 			dstf.convertTo(dst, CV_16U);
 		}
@@ -892,13 +897,13 @@ namespace cp
 			Mat imf, dstf;
 			im.convertTo(imf, CV_32F);
 			dst.convertTo(dstf, CV_32F);
-			NonlocalMeansFilterInvorker32f_SSE4 body(imf, dstf, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, w);
+			NonlocalMeansFilterInvorker32f_SSE4 body(imf, dstf, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, range_weight);
 			cv::parallel_for_(Range(0, dst.rows), body);
 			dstf.convertTo(dst, CV_16S);
 		}
 		else if (src.depth() == CV_32F)
 		{
-			NonlocalMeansFilterInvorker32f_SSE4 body(im, dst, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, w);
+			NonlocalMeansFilterInvorker32f_SSE4 body(im, dst, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, range_weight);
 			cv::parallel_for_(Range(0, dst.rows), body);
 		}
 		else if (src.depth() == CV_64F)
@@ -906,7 +911,7 @@ namespace cp
 			Mat imf, dstf;
 			im.convertTo(imf, CV_32F);
 			dst.convertTo(dstf, CV_32F);
-			NonlocalMeansFilterInvorker32f_SSE4 body(imf, dstf, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, w);
+			NonlocalMeansFilterInvorker32f_SSE4 body(imf, dstf, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, range_weight);
 			cv::parallel_for_(Range(0, dst.rows), body);
 			dstf.convertTo(dst, CV_64F);
 		}
@@ -914,60 +919,68 @@ namespace cp
 		Mat(dst(Rect(0, 0, dest.cols, dest.rows))).copyTo(dest);
 	}
 
-	void nonLocalMeansFilter_SP(Mat& src, Mat& dest, Size templeteWindowSize, Size searchWindowSize, double h, double sigma, int borderType)
+	void nonLocalMeansFilter_SP(const Mat& src, Mat& dest, Size templeteWindowSize, Size searchWindowSize, double h, double sigma, int borderType)
 	{
 		nonLocalMeansFilter_SSE(src, dest, templeteWindowSize, Size(searchWindowSize.width, 1), h, sigma, borderType);
 		nonLocalMeansFilter_SSE(dest, dest, templeteWindowSize, Size(1, searchWindowSize.height), h, sigma, borderType);
 	}
 
-	void nonLocalMeansFilter(Mat& src, Mat& dest, Size templeteWindowSize, Size searchWindowSize, double h, double sigma, int method, int borderType)
+
+	void nonLocalMeansFilterL1PatchDistance(const Mat& src, Mat& dest, const Size templeteWindowSize, const Size searchWindowSize, const double sigma, const double powexp, const int method, const int borderType)
 	{
 		CV_Assert(FILTER_CIRCLE);
-		if (sigma < 1.0) sigma = h;
 
 		if (method == FILTER_SLOWEST)
 		{
-			nonLocalMeansFilterBase(src, dest, templeteWindowSize, searchWindowSize, h, sigma, borderType);
+			//cout << "C++ implementation" << endl;
+			nonLocalMeansFilterBase(src, dest, templeteWindowSize, searchWindowSize, sigma, powexp, borderType);
 		}
 		else if (method == FILTER_RECTANGLE || method == FILTER_DEFAULT)
 		{
-			nonLocalMeansFilter_SSE(src, dest, templeteWindowSize, searchWindowSize, h, sigma, borderType);
+			//cout << "default" << endl;
+			nonLocalMeansFilter_SSE(src, dest, templeteWindowSize, searchWindowSize, sigma, powexp, borderType);
 		}
 		else if (method == FILTER_SEPARABLE)
 		{
-			nonLocalMeansFilter_SP(src, dest, templeteWindowSize, searchWindowSize, h, sigma, borderType);
+			//cout << "sep" << endl;
+			nonLocalMeansFilter_SP(src, dest, templeteWindowSize, searchWindowSize, sigma, powexp, borderType);
+		}
+		else
+		{
+			//cout << "not supported, call defalt" << endl;
+			nonLocalMeansFilter_SSE(src, dest, templeteWindowSize, searchWindowSize, sigma, powexp, borderType);
 		}
 	}
 
-	void nonLocalMeansFilter(Mat& src, Mat& dest, int templeteWindowSize, int searchWindowSize, double h, double sigma, int method, int borderType)
+	void nonLocalMeansFilterL1PatchDistance(const Mat& src, Mat& dest, const int templeteWindowSize, const int searchWindowSize, const double h, const double sigma, const int method, const int borderType)
 	{
-		nonLocalMeansFilter(src, dest, Size(templeteWindowSize, templeteWindowSize), Size(searchWindowSize, searchWindowSize), h, sigma, method, borderType);
+		nonLocalMeansFilterL1PatchDistance(src, dest, Size(templeteWindowSize, templeteWindowSize), Size(searchWindowSize, searchWindowSize), h, sigma, method, borderType);
 	}
+
 
 	void separableNonLocalMeansFilter(Mat& src, Mat& dest, int templeteWindowSize, int searchWindowSize, double h, double sigma, double alpha, int method, int borderType)
 	{
 		separableNonLocalMeansFilter(src, dest, Size(templeteWindowSize, templeteWindowSize), Size(searchWindowSize, searchWindowSize), h, sigma, alpha, method, borderType);
 	}
 
-
 	void separableNonLocalMeansFilter(Mat& src, Mat& dst, Size templeteSize, Size kernelSize, double h, double sigma_offset, double alpha, int method, int borderType)
 	{
 		if (method == DUAL_KERNEL_HV)
 		{
-			nonLocalMeansFilter(src, dst, templeteSize, Size(kernelSize.width, 1), h, sigma_offset, method, borderType);
+			nonLocalMeansFilterL1PatchDistance(src, dst, templeteSize, Size(kernelSize.width, 1), h, sigma_offset, method, borderType);
 			jointNonLocalMeansFilter(dst, src, dst, templeteSize, Size(1, kernelSize.height), h * alpha, sigma_offset, method, borderType);
 		}
 		else if (method == DUAL_KERNEL_VH)
 		{
-			nonLocalMeansFilter(src, dst, templeteSize, Size(1, kernelSize.height), h, sigma_offset, method, borderType);
+			nonLocalMeansFilterL1PatchDistance(src, dst, templeteSize, Size(1, kernelSize.height), h, sigma_offset, method, borderType);
 			jointNonLocalMeansFilter(dst, src, dst, templeteSize, Size(kernelSize.width, 1), h * alpha, sigma_offset, method, borderType);
 		}
 		else if (method == DUAL_KERNEL_HVVH)
 		{
-			nonLocalMeansFilter(src, dst, templeteSize, Size(kernelSize.width, 1), h, sigma_offset, method, borderType);
+			nonLocalMeansFilterL1PatchDistance(src, dst, templeteSize, Size(kernelSize.width, 1), h, sigma_offset, method, borderType);
 			jointNonLocalMeansFilter(dst, src, dst, templeteSize, Size(1, kernelSize.height), h * alpha, sigma_offset, method, borderType);
 			Mat dst2;
-			nonLocalMeansFilter(src, dst2, templeteSize, Size(1, kernelSize.height), h, sigma_offset, method, borderType);
+			nonLocalMeansFilterL1PatchDistance(src, dst2, templeteSize, Size(1, kernelSize.height), h, sigma_offset, method, borderType);
 			jointNonLocalMeansFilter(dst2, src, dst2, templeteSize, Size(kernelSize.width, 1), h * alpha, sigma_offset, method, borderType);
 			alphaBlend(dst, dst2, 0.5, dst);
 		}
@@ -988,10 +1001,243 @@ namespace cp
 		alphaBlend(dst,dst2,0.5,dst);
 		}*/
 	}
+#pragma endregion
 
+	class NonlocalMeansFilterInvorker32f_AVX : public cv::ParallelLoopBody
+	{
+	private:
+		Mat* im;
+		Mat* dest;
+		int templeteWindowSizeX;
+		int templeteWindowSizeY;
+		int searchWindowSizeX;
+		int searchWindowSizeY;
 
+		float* weight;
+	public:
 
-	void epsillonFilter(Mat& src, Mat& dest, Size templeteWindowSize, Size searchWindowSize, double h, int borderType)
+		NonlocalMeansFilterInvorker32f_AVX(Mat& src_, Mat& dest_, int templeteWindowSizeX_, int templeteWindowSizeY_, int searchWindowSizeX_, int searchWindowSizeY_, float* weight)
+			: im(&src_), dest(&dest_), templeteWindowSizeX(templeteWindowSizeX_), templeteWindowSizeY(templeteWindowSizeY_), searchWindowSizeX(searchWindowSizeX_), searchWindowSizeY(searchWindowSizeY_), weight(weight)
+		{
+			;
+		}
+
+		virtual void operator()(const cv::Range& r) const
+		{
+			const int tr_x = templeteWindowSizeX >> 1;
+			const int sr_x = searchWindowSizeX >> 1;
+			const int tr_y = templeteWindowSizeY >> 1;
+			const int sr_y = searchWindowSizeY >> 1;
+			const int cstep = im->cols - templeteWindowSizeX;
+			const int imstep = im->cols;
+
+			const int templateSize = templeteWindowSizeX * templeteWindowSizeY;
+			const float tdiv = 1.f / (float)(templateSize);//templete square div
+			__m256 mtdiv = _mm256_set1_ps(tdiv);
+
+			if (dest->channels() == 3)
+			{
+				const int colorstep = im->size().area() / 3;
+				const int colorstep2 = colorstep * 2;
+				for (int j = r.start; j < r.end; j++)
+				{
+					float* d = dest->ptr<float>(j);
+					const float* tprt_ = im->ptr<float>(sr_y + j) + sr_x;
+					const float* sptr2_ = im->ptr<float>(j);
+					for (int i = 0; i < dest->cols; i += 8)
+					{
+						__m256 mr = _mm256_setzero_ps();
+						__m256 mg = _mm256_setzero_ps();
+						__m256 mb = _mm256_setzero_ps();
+						__m256 mw = _mm256_setzero_ps();
+
+						//search loop
+						const float* tprt = tprt_ + i;
+						const float* sptr2 = sptr2_ + i;
+						for (int l = searchWindowSizeY; l--;)
+						{
+							const float* sptr = sptr2 + imstep * (l);
+							for (int k = searchWindowSizeX; k--;)
+							{
+								//templete loop
+								float* t = (float*)tprt;
+								float* s = (float*)(sptr + k);
+								//colorstep
+								__m256 mdist = _mm256_setzero_ps();
+								for (int n = templeteWindowSizeY; n--;)
+								{
+									for (int m = templeteWindowSizeX; m--;)
+									{
+										// computing color L2 norm
+										mdist= _mm256_ssdadd_ps(mdist,
+											_mm256_loadu_ps(s), _mm256_loadu_ps(s + colorstep), _mm256_loadu_ps(s + colorstep2),
+											_mm256_loadu_ps(t), _mm256_loadu_ps(t + colorstep), _mm256_loadu_ps(t + colorstep2));
+										s++, t++;
+									}
+									t += cstep;
+									s += cstep;
+								}
+								const __m256 mrw = _mm256_i32gather_ps(weight, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist)), 4);
+
+								const float* ss = sptr2 + imstep * (tr_y + l) + (tr_x + k);
+								mb = _mm256_fmadd_ps(mrw, _mm256_loadu_ps(ss), mb);
+								mg = _mm256_fmadd_ps(mrw, _mm256_loadu_ps(ss + colorstep), mg);
+								mr = _mm256_fmadd_ps(mrw, _mm256_loadu_ps(ss + colorstep2), mr);
+								mw = _mm256_add_ps(mrw, mw);
+							}
+						}
+						mb = _mm256_div_ps(mb, mw);
+						mg = _mm256_div_ps(mg, mw);
+						mr = _mm256_div_ps(mr, mw);
+						_mm256_storeu_ps_color(d, mb, mg, mr);
+						d += 24;
+					}//i
+				}//j
+			}
+			else if (dest->channels() == 1)
+			{
+				for (int j = r.start; j < r.end; j++)
+				{
+					float* d = dest->ptr<float>(j);
+					for (int i = 0; i < dest->cols; i += 8)
+					{
+						__m256 mv = _mm256_setzero_ps();
+						__m256 mw = _mm256_setzero_ps();
+
+						//search loop
+						float* tprt = im->ptr<float>(sr_y + j) + (sr_x + i);
+						float* sptr2 = im->ptr<float>(j) + (i);
+						for (int l = searchWindowSizeY; l--;)
+						{
+							float* sptr = sptr2 + imstep * (l);
+							for (int k = searchWindowSizeX; k--;)
+							{
+								//templete loop
+								__m256 mdist = _mm256_setzero_ps();
+								float* t = tprt;
+								float* s = sptr + k;
+								for (int n = templeteWindowSizeY; n--;)
+								{
+									for (int m = templeteWindowSizeX; m--;)
+									{
+										// computing color L2 norm
+										__m256 ml2 = _mm256_ssd_ps(_mm256_loadu_ps(s), _mm256_loadu_ps(t));
+										mdist = _mm256_add_ps(mdist, ml2);
+										s++, t++;
+									}
+									t += cstep;
+									s += cstep;
+								}
+								__m256 mrw = _mm256_i32gather_ps(weight, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist)), 4);
+								mv = _mm256_fmadd_ps(mrw, _mm256_loadu_ps(sptr2 + imstep * (tr_y + l) + tr_x + k), mv);
+								mw = _mm256_add_ps(mrw, mw);
+							}
+						}
+						//weight normalization
+						_mm256_storeu_ps(d, _mm256_div_ps(mv, mw));
+						d += 8;
+					}//i
+				}//j
+			}
+		}
+	};
+
+	void nonLocalMeansFilter(const Mat& src, Mat& dest, const Size templeteWindowSize, const Size searchWindowSize, const double sigma, const double powexp, const int borderType)
+	{
+		dest.create(src.size(), src.type());
+
+		const int bbx = (templeteWindowSize.width >> 1) + (searchWindowSize.width >> 1);
+		const int bby = (templeteWindowSize.height >> 1) + (searchWindowSize.height >> 1);
+		//	const int D = searchWindowSize*searchWindowSize;
+
+		int dpad;
+		int spad;
+		//create large size image for bounding box;
+		if (src.depth() == CV_8U)
+		{
+			dpad = (16 - src.cols % 16) % 16;
+			spad = (16 - (src.cols + 2 * bbx) % 16) % 16;
+		}
+		else
+		{
+			dpad = (8 - src.cols % 8) % 8;
+			spad = (8 - (src.cols + 2 * bbx) % 8) % 8;
+		}
+		Mat dst(Size(src.cols + dpad, src.rows), dest.type());
+
+		Mat im;
+		if (src.channels() == 1)
+		{
+			copyMakeBorder(src, im, bby, bby, bbx, bbx + spad, borderType);
+		}
+		else if (src.channels() == 3)
+		{
+			Mat temp;
+			copyMakeBorder(src, temp, bby, bby, bbx, bbx + spad, borderType);
+			cvtColorBGR2PLANE(temp, im);
+		}
+
+		//weight computation;
+		const int range_size = (int)ceil(sqrt(255 * 255 * src.channels() * templeteWindowSize.area()));
+		vector<float> weight(range_size);
+		float* range_weight = &weight[0];
+		double gauss_color_coeff = (1.0 / (sigma));
+		for (int i = 0; i < range_size; i++)
+		{
+			range_weight[i] = (float)std::exp(-pow(abs(i * gauss_color_coeff), powexp) / powexp);
+		}
+
+		if (src.depth() == CV_8U)
+		{
+			Mat imf, dstf;
+			im.convertTo(imf, CV_32F);
+			dst.convertTo(dstf, CV_32F);
+			NonlocalMeansFilterInvorker32f_AVX body(imf, dstf, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, range_weight);
+			cv::parallel_for_(Range(0, dst.rows), body);
+			dstf.convertTo(dst, CV_8U);
+		}
+		if (src.depth() == CV_16U)
+		{
+			Mat imf, dstf;
+			im.convertTo(imf, CV_32F);
+			dst.convertTo(dstf, CV_32F);
+			NonlocalMeansFilterInvorker32f_AVX body(imf, dstf, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, range_weight);
+			cv::parallel_for_(Range(0, dst.rows), body);
+			dstf.convertTo(dst, CV_16U);
+		}
+		if (src.depth() == CV_16S)
+		{
+			Mat imf, dstf;
+			im.convertTo(imf, CV_32F);
+			dst.convertTo(dstf, CV_32F);
+			NonlocalMeansFilterInvorker32f_AVX body(imf, dstf, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, range_weight);
+			cv::parallel_for_(Range(0, dst.rows), body);
+			dstf.convertTo(dst, CV_16S);
+		}
+		else if (src.depth() == CV_32F)
+		{
+			NonlocalMeansFilterInvorker32f_AVX body(im, dst, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, range_weight);
+			cv::parallel_for_(Range(0, dst.rows), body);
+		}
+		else if (src.depth() == CV_64F)
+		{
+			Mat imf, dstf;
+			im.convertTo(imf, CV_32F);
+			dst.convertTo(dstf, CV_32F);
+			NonlocalMeansFilterInvorker32f_AVX body(imf, dstf, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, range_weight);
+			cv::parallel_for_(Range(0, dst.rows), body);
+			dstf.convertTo(dst, CV_64F);
+		}
+
+		Mat(dst(Rect(0, 0, dest.cols, dest.rows))).copyTo(dest);
+	}
+
+	void nonLocalMeansFilter(const Mat& src, Mat& dest, const int templeteWindowSize, const int searchWindowSize, const  double sigma, const double powexp, const int borderType)
+	{
+		nonLocalMeansFilter(src, dest, Size(templeteWindowSize, templeteWindowSize), Size(searchWindowSize, searchWindowSize),sigma, powexp, borderType);
+	}
+
+	void epsillonFilterL1PatchDistance(Mat& src, Mat& dest, Size templeteWindowSize, Size searchWindowSize, double h, int borderType)
 	{
 		if (dest.empty())dest = Mat::zeros(src.size(), src.type());
 
