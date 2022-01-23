@@ -1,26 +1,12 @@
-nonLocalMeanFilter_jp.md
-================
+nonLocalMeanFilter.hpp
+======================
+
 ノンローカルミーンフィルタ Non-local means (NLM) filter
 
 テスト関数は，guiDenoiseTest.cppの下記．
 ```cpp
 void guiDenoiseTest(Mat& src)
 ```
-
-//weight[i] = (-pow(abs(i/sigma), powexp) / powexp), powexp=2: Gaussian, powexp=infinity: Box
-	CP_EXPORT void nonLocalMeansFilterL1PatchDistance(const cv::Mat& src, cv::Mat& dest, const int patchWindowSize, const int kernelWindowSize, const double sigma, const double powexp = 2.0, const int method = FILTER_DEFAULT, const int borderType = cv::BORDER_REPLICATE);
-	//weight[i] = (-pow(abs(i/sigma), powexp) / powexp), powexp=2: Gaussian, powexp=infinity: Box
-	CP_EXPORT void nonLocalMeansFilterL1PatchDistance(const cv::Mat& src, cv::Mat& dest, const cv::Size patchWindowSize, const cv::Size kernelWindowSize, const double sigma, const double powexp = 2.0, const int method = FILTER_DEFAULT, const int borderType = cv::BORDER_REPLICATE);
-	//weight[i] = (-pow(abs(i/sigma), powexp) / powexp), powexp=2: Gaussian, powexp=infinity: Box
-	CP_EXPORT 
-	//weight[i] = (-pow(abs(i/sigma), powexp) / powexp), powexp=2: Gaussian, powexp=infinity: Box
-	CP_EXPORT void 
-	//powexp=infinity in nonLocalMeansFilter
-	CP_EXPORT void epsillonFilterL1PatchDistance(cv::Mat& src, cv::Mat& dest, cv::Size templeteWindowSize, cv::Size searchWindowSize, double h, int borderType = cv::BORDER_REPLICATE);
-	
-	//not tested
-	CP_EXPORT void separableNonLocalMeansFilterL1PatchDistance(cv::Mat& src, cv::Mat& dest, cv::Size templeteWindowSize, cv::Size searchWindowSize, double h, double sigma = -1.0, double alpha = 1.0, int method = DUAL_KERNEL_HV, int borderType = cv::BORDER_REPLICATE);
-	CP_EXPORT void separableNonLocalMeansFilterL1PatchDistance(cv::Mat& src, cv::Mat& dest, int templeteWindowSize, int searchWindowSize, double h, double sigma = -1.0, double alpha = 1.0, int method = DUAL_KERNEL_HV, int borderType = cv::BORDER_REPLICATE);
 
 # nonLocalMeansFilter
 ```cpp
@@ -38,6 +24,7 @@ const cv::Size kernelWindowSize, //カーネルサイズ
 const double sigma, //レンジ重みのσ
 const double powexp //レンジ重みの形状．
 const int borderType = cv::BORDER_REPLICATE//境界条件
+```
 
 重み関数は下記で計算されます．
 powexp=2でガウス，powexp=１でラプラス，infinityでボックスになります．
@@ -84,14 +71,6 @@ void nonLocalMeansFilterL1PatchDistance(const cv::Mat& src, cv::Mat& dest, const
 * SSE：まだ最適化していなが，AVXのL2よりも速いです．
 * OpenCV parallel framework
 
-
-# epsillonFilterL1PatchDistance
-```cpp
-//powexp=infinity in nonLocalMeansFilter
-	CP_EXPORT void epsillonFilterL1PatchDistance(cv::Mat& src, cv::Mat& dest, cv::Size templeteWindowSize, cv::Size searchWindowSize, double h, int borderType = cv::BORDER_REPLICATE);
-```
-修正前．
-L1距離でカーネル重みをボックスにした場合の高効率実装．
 
 # epsillonFilterL1PatchDistance
 ```cpp
