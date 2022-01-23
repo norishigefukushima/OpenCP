@@ -31,21 +31,27 @@ powexp=2でガウス，powexp=１でラプラス，infinityでボックスにな
 デノイジング時は，ある程度ボックスに近いほうが高性能になります．
 
 ```math
-w_r[i] = \frac{-|i/\sigma|^{powexp}}{powexp}
+w_r[i] = \exp(-\frac{|i/\sigma|^{powexp}}{powexp})
+```
+
+Githubはtex math表記ができないので，実装
+
+```cpp
+w_r[i] = exp(-pow(abs(i/σ),powexp)/powexp)
 ```
 
 元論文の重み関数は，σに代わってhを使って下記で定義されてますが，この実装はexpのn乗関数として拡張してしています．
 powexp=2のガウスとして定義した場合，元論文よりもパラメータを半分に設定しないと同じ出力は得られません．
 
 
-```
-exp(x^2/h^2)
+```cpp
+w_r[i] = exp(-i*i/(h*h))
 ```
 
 また，元論文は，σを使って分散の中央付近を平らにする処理の実装も記述してあります．
 
-```
-exp(max(x^2-σ^2,0)/h^2)
+```cpp
+w_r[i] = exp(-max(i*i-σ*σ,0)/(h*h)) 
 ```
 
 これは，概ね重みの0付近を1に強制的にセットして平らにするするための処理で，OpenCPの実装の場合powexpの次数を増やすことで対応できます．
@@ -60,6 +66,7 @@ exp(max(x^2-σ^2,0)/h^2)
 void nonLocalMeansFilterL1PatchDistance(const cv::Mat& src, cv::Mat& dest, const cv::Size patchWindowSize, const cv::Size kernelWindowSize, const double sigma, const double powexp = 2.0, const int borderType = cv::BORDER_REPLICATE);
 void nonLocalMeansFilterL1PatchDistance(const cv::Mat& src, cv::Mat& dest, const int patchWindowSize, const int kernelWindowSize, const double sigma, const double powexp = 2.0, const int borderType = cv::BORDER_REPLICATE);
 ```
+
 ## USage
 ノンローカルミーンフィルタを適用します．
 ただし，パッチ間距離をL1距離で測って高速に演算します．
@@ -68,9 +75,8 @@ void nonLocalMeansFilterL1PatchDistance(const cv::Mat& src, cv::Mat& dest, const
 他のパラメータは通常の物と同じです．
 
 ## Optimization
-* SSE：まだ最適化していなが，AVXのL2よりも速いです．
+* SSE：まだ最適化していませんがAVXのL2よりも速いです．
 * OpenCV parallel framework
-
 
 # epsillonFilterL1PatchDistance
 ```cpp
