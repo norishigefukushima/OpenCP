@@ -97,4 +97,7 @@ L1距離で強制的にセパラブルにNLMを書けた実装．
 
 * Original NLM: Antoni Buades, Bartomeu Coll, and Jean-Michel Morel, "A non-local algorithm for image denoising," in Proc. Computer Vision and Pattern Recognition (CVPR), 2005.
 	* [Non-Local Means Denoising (IPOL)](http://www.ipol.im/pub/art/2011/bcm_nlm/)
-* Separable NLM: N. Fukushima, S. Fujita, and Y. Ishibashi, "Switching dual kernels for separable edge-preserving filtering," in Proc. IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP), pp. 1588-1592, Apr. 2015.
+* Separable NLM: N. Fukushima, S. Fujita, and Y. Ishibashi, "Switching dual kernels for separable edge-preserving filtering," in Proc. IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP), pp. 1588-1592, Apr. 2015. 
+	* [pdf](https://fukushima.web.nitech.ac.jp/paper/2015_icassp_fukushima.pdf)
+	* [IEEE xplore](https://ieeexplore.ieee.org/document/7178238?arnumber=7178238)
+	* [old code](https://github.com/norishigefukushima/Separable-Edge-Preserving-Filter)
