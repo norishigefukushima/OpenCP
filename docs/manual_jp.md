@@ -480,12 +480,20 @@ ppmファイルの読み書き
 * [class GuidedImageFilter](filter/guidedFilter_jp.md "#class GuidedImageFilter")
 * [class GuidedImageFilterTiling](filter/guidedFilter_jp.md "#GuidedImageFilterTiling")
 
+## nonLocalMeanFilter.hpp
+* [nonLocalMeansFilter](filter/nonLocalMeanFilter_jp.md "#nonLocalMeansFilter")
+* [nonLocalMeansFilterL1PatchDistance](filter/nonLocalMeanFilter_jp.md "#nonLocalMeansFilterL1PatchDistance")
+* [epsillonFilterL1PatchDistance](filter/nonLocalMeanFilter_jp.md "#separableNonLocalMeansFilterL1PatchDistance")
+* [separableNonLocalMeansFilterL1PatchDistance](filter/nonLocalMeanFilter_jp.md "#separableNonLocalMeansFilterL1PatchDistance")
+
 ## weightedHistogramFilter.hpp
 weighted histogram filterの関数
 * [weightedHistogramFilter](filter/weightedHistogramFilter_jp.md "#weightedHistogramFilter")
 * [weightedWeightedHistogramFilter](filter/weightedHistogramFilter_jp.md "#weightedWeightedHistogramFilter")
 * [weightedModeFilter/weightedModeFilter](filter/weightedHistogramFilter_jp.md "#weightedModeFilter/weightedMedianFilter")
 * [weightedWeightedModeFilter/weightedWeightedModeFilter](filter/weightedHistogramFilter_jp.md "#weightedWeightedModeFilter/weightedWeightedMedianFilter")
+
+
 
 # stereo
 ## StereoBase.hpp
