@@ -958,12 +958,12 @@ namespace cp
 	}
 
 
-	void separableNonLocalMeansFilter(Mat& src, Mat& dest, int templeteWindowSize, int searchWindowSize, double h, double sigma, double alpha, int method, int borderType)
+	void separableNonLocalMeansFilterL1PatchDistance(Mat& src, Mat& dest, int templeteWindowSize, int searchWindowSize, double h, double sigma, double alpha, int method, int borderType)
 	{
-		separableNonLocalMeansFilter(src, dest, Size(templeteWindowSize, templeteWindowSize), Size(searchWindowSize, searchWindowSize), h, sigma, alpha, method, borderType);
+		separableNonLocalMeansFilterL1PatchDistance(src, dest, Size(templeteWindowSize, templeteWindowSize), Size(searchWindowSize, searchWindowSize), h, sigma, alpha, method, borderType);
 	}
 
-	void separableNonLocalMeansFilter(Mat& src, Mat& dst, Size templeteSize, Size kernelSize, double h, double sigma_offset, double alpha, int method, int borderType)
+	void separableNonLocalMeansFilterL1PatchDistance(Mat& src, Mat& dst, Size templeteSize, Size kernelSize, double h, double sigma_offset, double alpha, int method, int borderType)
 	{
 		if (method == DUAL_KERNEL_HV)
 		{

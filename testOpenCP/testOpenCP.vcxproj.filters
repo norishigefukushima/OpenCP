@@ -39,9 +39,6 @@
     <ClCompile Include="shockFilterTest\coherenceEnhancingShockFilterTest.cpp">
       <Filter>ソース ファイル\test\filter</Filter>
     </ClCompile>
-    <ClCompile Include="denoise\denoiseTest.cpp">
-      <Filter>ソース ファイル\test\filter</Filter>
-    </ClCompile>
     <ClCompile Include="dualExponentialSmoothingTest.cpp">
       <Filter>ソース ファイル\test\filter</Filter>
     </ClCompile>
@@ -163,6 +160,9 @@
       <Filter>ソース ファイル\test\filter</Filter>
     </ClCompile>
     <ClCompile Include="guiEdgePreservingFilterOpenCV.cpp">
+      <Filter>ソース ファイル\test\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="denoise\guiDenoiseTest.cpp">
       <Filter>ソース ファイル\test\filter</Filter>
     </ClCompile>
   </ItemGroup>
