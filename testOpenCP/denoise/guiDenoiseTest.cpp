@@ -11,6 +11,8 @@ static enum method
 	BINARYRANGE,
 	NONLOCAL,
 	NONLOCAL_L1,
+	PATCHBF,
+	PATCHBF_L1,
 	REC_BF,
 	BM3D,
 
@@ -27,6 +29,8 @@ string getDenoiseMethodName(int method)
 	case BINARYRANGE: ret = "BINARYRANGE"; break;
 	case NONLOCAL: ret = "NONLOCAL"; break;
 	case NONLOCAL_L1: ret = "NONLOCAL_L1"; break;
+	case PATCHBF: ret = "PATCHBF"; break;
+	case PATCHBF_L1: ret = "PATCHBF_L1"; break;
 	case REC_BF: ret = "REC_BF"; break;
 	case BM3D: ret = "BM3D"; break;
 	default:
@@ -45,11 +49,11 @@ void guiDenoiseTest(Mat& src)
 	int a = 0; createTrackbar("a", wname, &a, 100);
 	
 	int sw = NONLOCAL; createTrackbar("switch", wname, &sw, method::SIZE-1);
-
 	int sigma_color10 = 400; createTrackbar("sigma_color", wname, &sigma_color10, 5000);
 	int sigma_space10 = 100; createTrackbar("sigma_space", wname, &sigma_space10, 200);
 	int r = 4; createTrackbar("r", wname, &r, 100);
 	int powexp = 2; createTrackbar("powexp", wname, &powexp, 100);
+	int powexp_space = 2; createTrackbar("powexp_space", wname, &powexp_space, 100);
 	int tr = 1; createTrackbar("tr", wname, &tr, 20);
 
 	int noise_s10 = 200; createTrackbar("noise", wname, &noise_s10, 2550);
@@ -64,6 +68,7 @@ void guiDenoiseTest(Mat& src)
 	Mat noise;
 	Mat srcf; src.convertTo(srcf, CV_32F);
 	bool isFourceUpdateNoise = false;
+	
 	while (key != 'q')
 	{
 		float sigma_color = sigma_color10 / 10.f;
@@ -111,16 +116,30 @@ void guiDenoiseTest(Mat& src)
 		else if (sw == 4)
 		{
 			t.start();
-			nonLocalMeansFilterL1PatchDistance(noise, dest, td, d, sigma_color, powexp);
+			nonLocalMeansFilter(noise, dest, td, d, sigma_color, powexp, 1);
+			//nonLocalMeansFilterL1PatchDistance(noise, dest, td, d, sigma_color, powexp);
 			t.getpushLapTime();
 		}
 		else if (sw == 5)
 		{
 			t.start();
-			recbf(noise, dest, sigma_color, sigma_space);
+			patchBilateralFilter(noise, dest, td, d, sigma_color, powexp, 2, sigma_space, powexp_space);
 			t.getpushLapTime();
 		}
 		else if (sw == 6)
+		{
+			t.start();
+			patchBilateralFilter(noise, dest, td, d, sigma_color, powexp, 1, sigma_space, powexp_space);
+			//nonLocalMeansFilterL1PatchDistance(noise, dest, td, d, sigma_color, powexp);
+			t.getpushLapTime();
+		}
+		else if (sw == 7)
+		{
+			t.start();
+			recbf(noise, dest, sigma_color, sigma_space);
+			t.getpushLapTime();
+		}
+		else if (sw == 8)
 		{
 			/*
 			CalcTime t("DCT Denoising");
@@ -140,6 +159,7 @@ void guiDenoiseTest(Mat& src)
 		
 		ci("filter %6.3f dB", PSNR(src, dest));
 		ci("time   %f ms %d", t.getLapTimeMedian(), t.getStatSize());
+		if (key == 'p')ci.push();
 		ci.show();
 
 		cp::dissolveSlideBlend(noise, dest, dest);
@@ -147,5 +167,6 @@ void guiDenoiseTest(Mat& src)
 		cv::imshow(wname, show);
 		key = waitKey(1);
 		if (key == 'n')isFourceUpdateNoise = isFourceUpdateNoise ? false : true;
+		
 	}
 }

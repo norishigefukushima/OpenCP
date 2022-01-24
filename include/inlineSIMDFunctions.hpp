@@ -703,12 +703,20 @@ inline void _mm256_load_epu8cvtepi32x2(const __m128i* P, __m256i& d0, __m256i& d
 	d1 = _mm256_cvtepu8_epi32(_mm_shuffle_epi32(s, _MM_SHUFFLE(1, 0, 3, 2)));
 }
 
-//opencp: uchar->float
+//opencp: uchar->float loadu and load is the same intrinsics
 inline __m256 _mm256_load_epu8cvtps(const __m128i* P)
 {
 	return _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(_mm_loadl_epi64((__m128i*)P)));
 	//return _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(_mm_loadu_si128((__m128i*)P)));
 }
+
+//opencp: uchar->float loadu and load is the same intrinsics
+inline __m256 _mm256_loadu_epu8cvtps(const __m128i* P)
+{
+	return _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(_mm_loadl_epi64((__m128i*)P)));
+	//return _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(_mm_loadu_si128((__m128i*)P)));
+}
+
 
 //opencp: uchar->floatx2
 inline void _mm256_load_epu8cvtpsx2(const __m128i* P, __m256& d0, __m256& d1)

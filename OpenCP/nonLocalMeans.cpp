@@ -10,7 +10,1490 @@ using namespace cv;
 
 namespace cp
 {
-#pragma region NLM L1
+	template<int norm>
+	class PatchBilateralFilterInvorker8u_AVX : public cv::ParallelLoopBody
+	{
+	private:
+		Mat* im;
+		Mat* dest;
+		int patchWindowSizeX;
+		int patchWindowSizeY;
+		int kernelWindowSizeX;
+		int kernelWindowSizeY;
+
+		float* range_weight;
+		float* space_weight;
+	public:
+
+		PatchBilateralFilterInvorker8u_AVX(Mat& src_, Mat& dest_, int patchWindowSizeX_, int patchWindowSizeY_, int kernelWindowSizeX_, int kernelWindowSizeY_, float* range_weight, float* space_weight)
+			: im(&src_), dest(&dest_), patchWindowSizeX(patchWindowSizeX_), patchWindowSizeY(patchWindowSizeY_), kernelWindowSizeX(kernelWindowSizeX_), kernelWindowSizeY(kernelWindowSizeY_), range_weight(range_weight), space_weight(space_weight)
+		{
+			;
+		}
+
+		//tested only unroll 4
+		void unroll4(const cv::Range& r) const
+		{
+			const int tr_x = patchWindowSizeX >> 1;
+			const int sr_x = kernelWindowSizeX >> 1;
+			const int tr_y = patchWindowSizeY >> 1;
+			const int sr_y = kernelWindowSizeY >> 1;
+			const int cstep = im->cols - patchWindowSizeX;
+			const int imstep = im->cols;
+
+			const int patchSize = patchWindowSizeX * patchWindowSizeY;
+			const float tdiv = 1.f / (float)(patchSize);//templete square div
+			__m256 mtdiv = _mm256_set1_ps(tdiv);
+			__m256i mtdivi = _mm256_set1_epi32(patchSize);
+
+			if (dest->channels() == 3)
+			{
+				const int colorstep = im->size().area() / 3;
+				const int colorstep2 = colorstep * 2;
+				for (int j = r.start; j < r.end; j++)
+				{
+					uchar* d = dest->ptr<uchar>(j);
+					const uchar* tprt_ = im->ptr<uchar>(sr_y + j) + sr_x;
+					const uchar* sptr2_ = im->ptr<uchar>(j);
+					for (int i = 0; i < dest->cols; i += 32)
+					{
+						__m256 mr0 = _mm256_setzero_ps();
+						__m256 mg0 = _mm256_setzero_ps();
+						__m256 mb0 = _mm256_setzero_ps();
+						__m256 mw0 = _mm256_setzero_ps();
+
+						__m256 mr1 = _mm256_setzero_ps();
+						__m256 mg1 = _mm256_setzero_ps();
+						__m256 mb1 = _mm256_setzero_ps();
+						__m256 mw1 = _mm256_setzero_ps();
+
+						__m256 mr2 = _mm256_setzero_ps();
+						__m256 mg2 = _mm256_setzero_ps();
+						__m256 mb2 = _mm256_setzero_ps();
+						__m256 mw2 = _mm256_setzero_ps();
+
+						__m256 mr3 = _mm256_setzero_ps();
+						__m256 mg3 = _mm256_setzero_ps();
+						__m256 mb3 = _mm256_setzero_ps();
+						__m256 mw3 = _mm256_setzero_ps();
+
+						//search loop
+						const uchar* tprt = tprt_ + i;
+						const uchar* sptr2 = sptr2_ + i;
+						int sindex = 0;
+						for (int l = kernelWindowSizeY; l--;)
+						{
+							const uchar* sptr = sptr2 + imstep * (l);
+							for (int k = kernelWindowSizeX; k--;)
+							{
+								//templete loop
+								const uchar* t = tprt;
+								const uchar* s = (sptr + k);
+								const __m256 sw = _mm256_set1_ps(space_weight[sindex++]);
+								//colorstep
+								if constexpr (norm == 1)
+								{
+									__m256i mdist0 = _mm256_setzero_si256();
+									__m256i mdist1 = _mm256_setzero_si256();
+									for (int n = patchWindowSizeY; n--;)
+									{
+										for (int m = patchWindowSizeX; m--;)
+										{
+											// computing color L1 norm
+											const __m256i diffb = _mm256_absdiff_epu8(_mm256_loadu_si256((__m256i*)(s + 0)), _mm256_loadu_si256((__m256i*)(t + 0)));
+											const __m256i diffg = _mm256_absdiff_epu8(_mm256_loadu_si256((__m256i*)(s + colorstep)), _mm256_loadu_si256((__m256i*)(t + colorstep)));
+											const __m256i diffr = _mm256_absdiff_epu8(_mm256_loadu_si256((__m256i*)(s + colorstep2)), _mm256_loadu_si256((__m256i*)(t + colorstep2)));
+
+											__m256i v = _mm256_cvtepu8_epi16(_mm256_castsi256_si128(diffb));
+											mdist0 = _mm256_adds_epu16(mdist0, v);
+											v = _mm256_cvtepu8_epi16(_mm256_castsi256_si128(diffg));
+											mdist0 = _mm256_adds_epu16(mdist0, v);
+											v = _mm256_cvtepu8_epi16(_mm256_castsi256_si128(diffr));
+											mdist0 = _mm256_adds_epu16(mdist0, v);
+
+											v = _mm256_cvtepu8_epi16(_mm256_castsi256hi_si128(diffb));
+											mdist1 = _mm256_adds_epu16(mdist1, v);
+											v = _mm256_cvtepu8_epi16(_mm256_castsi256hi_si128(diffg));
+											mdist1 = _mm256_adds_epu16(mdist1, v);
+											v = _mm256_cvtepu8_epi16(_mm256_castsi256hi_si128(diffr));
+											mdist1 = _mm256_adds_epu16(mdist1, v);
+
+											s++, t++;
+										}
+										t += cstep;
+										s += cstep;
+									}
+
+									const uchar* ss = sptr2 + imstep * (tr_y + l) + (tr_x + k);
+
+									const __m256 mrw0 = _mm256_mul_ps(sw, _mm256_i32gather_ps(range_weight, _mm256_div_epi32(_mm256_cvtepu16_epi32(_mm256_castsi256_si128(mdist0)), mtdivi), 4));
+									mb0 = _mm256_fmadd_ps(mrw0, _mm256_load_epu8cvtps((__m128i*)ss), mb0);
+									mg0 = _mm256_fmadd_ps(mrw0, _mm256_load_epu8cvtps((__m128i*)(ss + colorstep)), mg0);
+									mr0 = _mm256_fmadd_ps(mrw0, _mm256_load_epu8cvtps((__m128i*)(ss + colorstep2)), mr0);
+									mw0 = _mm256_add_ps(mrw0, mw0);
+
+									const __m256 mrw1 = _mm256_mul_ps(sw, _mm256_i32gather_ps(range_weight, _mm256_div_epi32(_mm256_cvtepu16_epi32(_mm256_castsi256hi_si128(mdist0)), mtdivi), 4));
+									mb1 = _mm256_fmadd_ps(mrw1, _mm256_load_epu8cvtps((__m128i*)(ss + 8)), mb1);
+									mg1 = _mm256_fmadd_ps(mrw1, _mm256_load_epu8cvtps((__m128i*)(ss + 8 + colorstep)), mg1);
+									mr1 = _mm256_fmadd_ps(mrw1, _mm256_load_epu8cvtps((__m128i*)(ss + 8 + colorstep2)), mr1);
+									mw1 = _mm256_add_ps(mrw1, mw1);
+
+									const __m256 mrw2 = _mm256_mul_ps(sw, _mm256_i32gather_ps(range_weight, _mm256_div_epi32(_mm256_cvtepu16_epi32(_mm256_castsi256_si128(mdist1)), mtdivi), 4));
+									mb2 = _mm256_fmadd_ps(mrw2, _mm256_load_epu8cvtps((__m128i*)(ss + 16)), mb2);
+									mg2 = _mm256_fmadd_ps(mrw2, _mm256_load_epu8cvtps((__m128i*)(ss + 16 + colorstep)), mg2);
+									mr2 = _mm256_fmadd_ps(mrw2, _mm256_load_epu8cvtps((__m128i*)(ss + 16 + colorstep2)), mr2);
+									mw2 = _mm256_add_ps(mrw2, mw2);
+
+									const __m256 mrw3 = _mm256_mul_ps(sw, _mm256_i32gather_ps(range_weight, _mm256_div_epi32(_mm256_cvtepu16_epi32(_mm256_castsi256hi_si128(mdist1)), mtdivi), 4));
+									mb3 = _mm256_fmadd_ps(mrw3, _mm256_load_epu8cvtps((__m128i*)(ss + 24)), mb3);
+									mg3 = _mm256_fmadd_ps(mrw3, _mm256_load_epu8cvtps((__m128i*)(ss + 24 + colorstep)), mg3);
+									mr3 = _mm256_fmadd_ps(mrw3, _mm256_load_epu8cvtps((__m128i*)(ss + 24 + colorstep2)), mr3);
+									mw3 = _mm256_add_ps(mrw3, mw3);
+								}
+								else
+								{
+									__m256 mdist0 = _mm256_setzero_ps();
+									__m256 mdist1 = _mm256_setzero_ps();
+									__m256 mdist2 = _mm256_setzero_ps();
+									__m256 mdist3 = _mm256_setzero_ps();
+									for (int n = patchWindowSizeY; n--;)
+									{
+										for (int m = patchWindowSizeX; m--;)
+										{
+											// computing color L2 norm
+											const __m256i diffb = _mm256_absdiff_epu8(_mm256_loadu_si256((__m256i*)(s + 0)), _mm256_loadu_si256((__m256i*)(t + 0)));
+											const __m256i diffg = _mm256_absdiff_epu8(_mm256_loadu_si256((__m256i*)(s + colorstep)), _mm256_loadu_si256((__m256i*)(t + colorstep)));
+											const __m256i diffr = _mm256_absdiff_epu8(_mm256_loadu_si256((__m256i*)(s + colorstep2)), _mm256_loadu_si256((__m256i*)(t + colorstep2)));
+
+											__m256 v = _mm256_cvtepu8_ps(_mm256_castsi256_si128(diffb));
+											mdist0 = _mm256_fmadd_ps(v, v, mdist0);
+											v = _mm256_cvtepu8_ps(_mm256_castsi256_si128(diffg));
+											mdist0 = _mm256_fmadd_ps(v, v, mdist0);
+											v = _mm256_cvtepu8_ps(_mm256_castsi256_si128(diffr));
+											mdist0 = _mm256_fmadd_ps(v, v, mdist0);
+
+											v = _mm256_cvtepu8_ps(_mm256_castsi256_si128(_mm256_permute4x64_epi64(diffb, _MM_SHUFFLE(2, 3, 0, 1))));
+											mdist1 = _mm256_fmadd_ps(v, v, mdist1);
+											v = _mm256_cvtepu8_ps(_mm256_castsi256_si128(_mm256_permute4x64_epi64(diffg, _MM_SHUFFLE(2, 3, 0, 1))));
+											mdist1 = _mm256_fmadd_ps(v, v, mdist1);
+											v = _mm256_cvtepu8_ps(_mm256_castsi256_si128(_mm256_permute4x64_epi64(diffr, _MM_SHUFFLE(2, 3, 0, 1))));
+											mdist1 = _mm256_fmadd_ps(v, v, mdist1);
+
+											v = _mm256_cvtepu8_ps(_mm256_castsi256hi_si128(diffb));
+											mdist2 = _mm256_fmadd_ps(v, v, mdist2);
+											v = _mm256_cvtepu8_ps(_mm256_castsi256hi_si128(diffg));
+											mdist2 = _mm256_fmadd_ps(v, v, mdist2);
+											v = _mm256_cvtepu8_ps(_mm256_castsi256hi_si128(diffr));
+											mdist2 = _mm256_fmadd_ps(v, v, mdist2);
+
+											v = _mm256_cvtepu8_ps(_mm256_castsi256_si128(_mm256_permute4x64_epi64(diffb, _MM_SHUFFLE(0, 1, 2, 3))));
+											mdist3 = _mm256_fmadd_ps(v, v, mdist3);
+											v = _mm256_cvtepu8_ps(_mm256_castsi256_si128(_mm256_permute4x64_epi64(diffg, _MM_SHUFFLE(0, 1, 2, 3))));
+											mdist3 = _mm256_fmadd_ps(v, v, mdist3);
+											v = _mm256_cvtepu8_ps(_mm256_castsi256_si128(_mm256_permute4x64_epi64(diffr, _MM_SHUFFLE(0, 1, 2, 3))));
+											mdist3 = _mm256_fmadd_ps(v, v, mdist3);
+											/*
+										mdist0 = _mm256_ssdadd_ps(mdist0,
+											_mm256_load_epu8cvtps((__m128i*)s), _mm256_load_epu8cvtps((__m128i*)(s + colorstep)), _mm256_load_epu8cvtps((__m128i*)(s + colorstep2)),
+											_mm256_load_epu8cvtps((__m128i*)t), _mm256_load_epu8cvtps((__m128i*)(t + colorstep)), _mm256_load_epu8cvtps((__m128i*)(t + colorstep2)));
+										mdist1 = _mm256_ssdadd_ps(mdist1,
+											_mm256_load_epu8cvtps((__m128i*)(s + 8)), _mm256_load_epu8cvtps((__m128i*)(s + 8 + colorstep)), _mm256_load_epu8cvtps((__m128i*)(s + 8 + colorstep2)),
+											_mm256_load_epu8cvtps((__m128i*)(t + 8)), _mm256_load_epu8cvtps((__m128i*)(t + 8 + colorstep)), _mm256_load_epu8cvtps((__m128i*)(t + 8 + colorstep2)));
+										mdist2 = _mm256_ssdadd_ps(mdist2,
+											_mm256_load_epu8cvtps((__m128i*)(s + 16)), _mm256_load_epu8cvtps((__m128i*)(s + 16 + colorstep)), _mm256_load_epu8cvtps((__m128i*)(s + 16 + colorstep2)),
+											_mm256_load_epu8cvtps((__m128i*)(t + 16)), _mm256_load_epu8cvtps((__m128i*)(t + 16 + colorstep)), _mm256_load_epu8cvtps((__m128i*)(t + 16 + colorstep2)));
+										mdist3 = _mm256_ssdadd_ps(mdist3,
+											_mm256_load_epu8cvtps((__m128i*)(s + 24)), _mm256_load_epu8cvtps((__m128i*)(s + 24 + colorstep)), _mm256_load_epu8cvtps((__m128i*)(s + 24 + colorstep2)),
+											_mm256_load_epu8cvtps((__m128i*)(t + 24)), _mm256_load_epu8cvtps((__m128i*)(t + 24 + colorstep)), _mm256_load_epu8cvtps((__m128i*)(t + 24 + colorstep2)));
+											*/
+											s++, t++;
+										}
+										t += cstep;
+										s += cstep;
+									}
+
+									const uchar* ss = sptr2 + imstep * (tr_y + l) + (tr_x + k);
+
+									const __m256 mrw0 = _mm256_mul_ps(sw, _mm256_i32gather_ps(range_weight, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist0)), 4));
+									mb0 = _mm256_fmadd_ps(mrw0, _mm256_load_epu8cvtps((__m128i*)ss), mb0);
+									mg0 = _mm256_fmadd_ps(mrw0, _mm256_load_epu8cvtps((__m128i*)(ss + colorstep)), mg0);
+									mr0 = _mm256_fmadd_ps(mrw0, _mm256_load_epu8cvtps((__m128i*)(ss + colorstep2)), mr0);
+									mw0 = _mm256_add_ps(mrw0, mw0);
+
+									const __m256 mrw1 = _mm256_mul_ps(sw, _mm256_i32gather_ps(range_weight, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist1)), 4));
+									mb1 = _mm256_fmadd_ps(mrw1, _mm256_load_epu8cvtps((__m128i*)(ss + 8)), mb1);
+									mg1 = _mm256_fmadd_ps(mrw1, _mm256_load_epu8cvtps((__m128i*)(ss + 8 + colorstep)), mg1);
+									mr1 = _mm256_fmadd_ps(mrw1, _mm256_load_epu8cvtps((__m128i*)(ss + 8 + colorstep2)), mr1);
+									mw1 = _mm256_add_ps(mrw1, mw1);
+
+									const __m256 mrw2 = _mm256_mul_ps(sw, _mm256_i32gather_ps(range_weight, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist2)), 4));
+									mb2 = _mm256_fmadd_ps(mrw2, _mm256_load_epu8cvtps((__m128i*)(ss + 16)), mb2);
+									mg2 = _mm256_fmadd_ps(mrw2, _mm256_load_epu8cvtps((__m128i*)(ss + 16 + colorstep)), mg2);
+									mr2 = _mm256_fmadd_ps(mrw2, _mm256_load_epu8cvtps((__m128i*)(ss + 16 + colorstep2)), mr2);
+									mw2 = _mm256_add_ps(mrw2, mw2);
+
+									const __m256 mrw3 = _mm256_mul_ps(sw, _mm256_i32gather_ps(range_weight, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist3)), 4));
+									mb3 = _mm256_fmadd_ps(mrw3, _mm256_load_epu8cvtps((__m128i*)(ss + 24)), mb3);
+									mg3 = _mm256_fmadd_ps(mrw3, _mm256_load_epu8cvtps((__m128i*)(ss + 24 + colorstep)), mg3);
+									mr3 = _mm256_fmadd_ps(mrw3, _mm256_load_epu8cvtps((__m128i*)(ss + 24 + colorstep2)), mr3);
+									mw3 = _mm256_add_ps(mrw3, mw3);
+								}
+							}
+						}
+
+						mb0 = _mm256_div_ps(mb0, mw0);
+						mg0 = _mm256_div_ps(mg0, mw0);
+						mr0 = _mm256_div_ps(mr0, mw0);
+						_mm256_storeu_ps2epu8_color(d, mb0, mg0, mr0);
+
+						mb1 = _mm256_div_ps(mb1, mw1);
+						mg1 = _mm256_div_ps(mg1, mw1);
+						mr1 = _mm256_div_ps(mr1, mw1);
+						_mm256_storeu_ps2epu8_color(d + 24, mb1, mg1, mr1);
+
+						mb2 = _mm256_div_ps(mb2, mw2);
+						mg2 = _mm256_div_ps(mg2, mw2);
+						mr2 = _mm256_div_ps(mr2, mw2);
+						_mm256_storeu_ps2epu8_color(d + 48, mb2, mg2, mr2);
+
+						mb3 = _mm256_div_ps(mb3, mw3);
+						mg3 = _mm256_div_ps(mg3, mw3);
+						mr3 = _mm256_div_ps(mr3, mw3);
+						if (i == dest->cols - 32)_mm256_storescalar_ps2epu8_color(d + 72, mb3, mg3, mr3);
+						else _mm256_storeu_ps2epu8_color(d + 72, mb3, mg3, mr3);
+
+						d += 96;
+					}//i
+				}//j
+			}
+			else if (dest->channels() == 1)
+			{
+				for (int j = r.start; j < r.end; j++)
+				{
+					uchar* d = dest->ptr<uchar>(j);
+					for (int i = 0; i < dest->cols; i += 32)
+					{
+						__m256 mv0 = _mm256_setzero_ps();
+						__m256 mw0 = _mm256_setzero_ps();
+
+						__m256 mv1 = _mm256_setzero_ps();
+						__m256 mw1 = _mm256_setzero_ps();
+
+						__m256 mv2 = _mm256_setzero_ps();
+						__m256 mw2 = _mm256_setzero_ps();
+
+						__m256 mv3 = _mm256_setzero_ps();
+						__m256 mw3 = _mm256_setzero_ps();
+
+						//search loop
+						uchar* tprt = im->ptr <uchar>(sr_y + j) + (sr_x + i);
+						uchar* sptr2 = im->ptr<uchar>(j) + (i);
+						int sindex = 0;
+						for (int l = kernelWindowSizeY; l--;)
+						{
+							uchar* sptr = sptr2 + imstep * (l);
+							for (int k = kernelWindowSizeX; k--;)
+							{
+								uchar* t = tprt;
+								uchar* s = sptr + k;
+								const __m256 sw = _mm256_set1_ps(space_weight[sindex++]);
+								if constexpr (norm == 1)
+								{
+									//templete loop
+									__m256i mdist0 = _mm256_setzero_si256();
+									__m256i mdist1 = _mm256_setzero_si256();
+									for (int n = patchWindowSizeY; n--;)
+									{
+										for (int m = patchWindowSizeX; m--;)
+										{
+											// computing color L1 norm
+											const __m256i diffv = _mm256_absdiff_epu8(_mm256_loadu_si256((__m256i*)(s + 0)), _mm256_loadu_si256((__m256i*)(t + 0)));
+											__m256i v = _mm256_cvtepu8_epi16(_mm256_castsi256_si128(diffv));
+											mdist0 = _mm256_adds_epu16(mdist0, v);
+											v = _mm256_cvtepu8_epi16(_mm256_castsi256hi_si128(diffv));
+											mdist1 = _mm256_adds_epu16(mdist1, v);
+											s++, t++;
+										}
+										t += cstep;
+										s += cstep;
+									}
+									const __m256 mrw0 = _mm256_mul_ps(sw, _mm256_i32gather_ps(range_weight, _mm256_div_epi32(_mm256_cvtepu16_epi32(_mm256_castsi256_si128(mdist0)), mtdivi), 4));
+									mv0 = _mm256_fmadd_ps(mrw0, _mm256_load_epu8cvtps((__m128i*)(sptr2 + imstep * (tr_y + l) + tr_x + k + 0)), mv0);
+									mw0 = _mm256_add_ps(mrw0, mw0);
+
+									const __m256 mrw1 = _mm256_mul_ps(sw, _mm256_i32gather_ps(range_weight, _mm256_div_epi32(_mm256_cvtepu16_epi32(_mm256_castsi256hi_si128(mdist0)), mtdivi), 4));
+									mv1 = _mm256_fmadd_ps(mrw1, _mm256_load_epu8cvtps((__m128i*)(sptr2 + imstep * (tr_y + l) + tr_x + k + 8)), mv1);
+									mw1 = _mm256_add_ps(mrw1, mw1);
+
+									const __m256 mrw2 = _mm256_mul_ps(sw, _mm256_i32gather_ps(range_weight, _mm256_div_epi32(_mm256_cvtepu16_epi32(_mm256_castsi256_si128(mdist1)), mtdivi), 4));
+									mv2 = _mm256_fmadd_ps(mrw2, _mm256_load_epu8cvtps((__m128i*)(sptr2 + imstep * (tr_y + l) + tr_x + k + 16)), mv2);
+									mw2 = _mm256_add_ps(mrw2, mw2);
+
+									const __m256 mrw3 = _mm256_mul_ps(sw, _mm256_i32gather_ps(range_weight, _mm256_div_epi32(_mm256_cvtepu16_epi32(_mm256_castsi256hi_si128(mdist1)), mtdivi), 4));
+									mv3 = _mm256_fmadd_ps(mrw3, _mm256_load_epu8cvtps((__m128i*)(sptr2 + imstep * (tr_y + l) + tr_x + k + 24)), mv3);
+									mw3 = _mm256_add_ps(mrw3, mw3);
+								}
+								else
+								{
+									//templete loop
+									__m256 mdist0 = _mm256_setzero_ps();
+									__m256 mdist1 = _mm256_setzero_ps();
+									__m256 mdist2 = _mm256_setzero_ps();
+									__m256 mdist3 = _mm256_setzero_ps();
+									for (int n = patchWindowSizeY; n--;)
+									{
+										for (int m = patchWindowSizeX; m--;)
+										{
+											// computing color L2 norm
+											const __m256i diffv = _mm256_absdiff_epu8(_mm256_loadu_si256((__m256i*)(s + 0)), _mm256_loadu_si256((__m256i*)(t + 0)));
+											__m256 v = _mm256_cvtepu8_ps(_mm256_castsi256_si128(diffv));
+											mdist0 = _mm256_fmadd_ps(v, v, mdist0);
+											v = _mm256_cvtepu8_ps(_mm256_castsi256_si128(_mm256_permute4x64_epi64(diffv, _MM_SHUFFLE(2, 3, 0, 1))));
+											mdist1 = _mm256_fmadd_ps(v, v, mdist1);
+											v = _mm256_cvtepu8_ps(_mm256_castsi256hi_si128(diffv));
+											mdist2 = _mm256_fmadd_ps(v, v, mdist2);
+											v = _mm256_cvtepu8_ps(_mm256_castsi256_si128(_mm256_permute4x64_epi64(diffv, _MM_SHUFFLE(0, 1, 2, 3))));
+											mdist3 = _mm256_fmadd_ps(v, v, mdist3);
+											s++, t++;
+										}
+										t += cstep;
+										s += cstep;
+									}
+									const __m256 mrw0 = _mm256_mul_ps(sw, _mm256_i32gather_ps(range_weight, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist0)), 4));
+									mv0 = _mm256_fmadd_ps(mrw0, _mm256_load_epu8cvtps((__m128i*)(sptr2 + imstep * (tr_y + l) + tr_x + k + 0)), mv0);
+									mw0 = _mm256_add_ps(mrw0, mw0);
+
+									const __m256 mrw1 = _mm256_mul_ps(sw, _mm256_i32gather_ps(range_weight, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist1)), 4));
+									mv1 = _mm256_fmadd_ps(mrw1, _mm256_load_epu8cvtps((__m128i*)(sptr2 + imstep * (tr_y + l) + tr_x + k + 8)), mv1);
+									mw1 = _mm256_add_ps(mrw1, mw1);
+
+									const __m256 mrw2 = _mm256_mul_ps(sw, _mm256_i32gather_ps(range_weight, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist2)), 4));
+									mv2 = _mm256_fmadd_ps(mrw2, _mm256_load_epu8cvtps((__m128i*)(sptr2 + imstep * (tr_y + l) + tr_x + k + 16)), mv2);
+									mw2 = _mm256_add_ps(mrw2, mw2);
+
+									const __m256 mrw3 = _mm256_mul_ps(sw, _mm256_i32gather_ps(range_weight, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist3)), 4));
+									mv3 = _mm256_fmadd_ps(mrw3, _mm256_load_epu8cvtps((__m128i*)(sptr2 + imstep * (tr_y + l) + tr_x + k + 24)), mv3);
+									mw3 = _mm256_add_ps(mrw3, mw3);
+								}
+							}
+						}
+						//weight normalization
+						_mm_storel_epi64((__m128i*)(d + 0), _mm256_cvtps_epu8(_mm256_div_ps(mv0, mw0)));
+						_mm_storel_epi64((__m128i*)(d + 8), _mm256_cvtps_epu8(_mm256_div_ps(mv1, mw1)));
+						_mm_storel_epi64((__m128i*)(d + 16), _mm256_cvtps_epu8(_mm256_div_ps(mv2, mw2)));
+						_mm_storel_epi64((__m128i*)(d + 32), _mm256_cvtps_epu8(_mm256_div_ps(mv3, mw3)));
+						d += 32;
+					}//i
+				}//j
+			}
+		}
+
+		virtual void operator()(const cv::Range& r) const
+		{
+			//unroll1(r);
+			//unroll2(r);
+			unroll4(r);
+		}
+	};
+
+	template<int norm>
+	class NonlocalMeansFilterInvorker8u_AVX : public cv::ParallelLoopBody
+	{
+	private:
+		Mat* im;
+		Mat* dest;
+		int patchWindowSizeX;
+		int patchWindowSizeY;
+		int kernelWindowSizeX;
+		int kernelWindowSizeY;
+
+		float* weight;
+	public:
+
+		NonlocalMeansFilterInvorker8u_AVX(Mat& src_, Mat& dest_, int patchWindowSizeX_, int patchWindowSizeY_, int kernelWindowSizeX_, int kernelWindowSizeY_, float* weight)
+			: im(&src_), dest(&dest_), patchWindowSizeX(patchWindowSizeX_), patchWindowSizeY(patchWindowSizeY_), kernelWindowSizeX(kernelWindowSizeX_), kernelWindowSizeY(kernelWindowSizeY_), weight(weight)
+		{
+			;
+		}
+
+		void unroll1(const cv::Range& r) const
+		{
+			const int tr_x = patchWindowSizeX >> 1;
+			const int sr_x = kernelWindowSizeX >> 1;
+			const int tr_y = patchWindowSizeY >> 1;
+			const int sr_y = kernelWindowSizeY >> 1;
+			const int cstep = im->cols - patchWindowSizeX;
+			const int imstep = im->cols;
+
+			const int patchSize = (float)patchWindowSizeX * patchWindowSizeY;
+			const float tdiv = 1.f / (float)(patchSize);//templete square div
+			__m256 mtdiv = _mm256_set1_ps(tdiv);
+
+			if (dest->channels() == 3)
+			{
+				const int colorstep = im->size().area() / 3;
+				const int colorstep2 = colorstep * 2;
+				for (int j = r.start; j < r.end; j++)
+				{
+					uchar* d = dest->ptr<uchar>(j);
+					const uchar* tprt_ = im->ptr<uchar>(sr_y + j) + sr_x;
+					const uchar* sptr2_ = im->ptr<uchar>(j);
+					for (int i = 0; i < dest->cols; i += 8)
+					{
+						__m256 mr = _mm256_setzero_ps();
+						__m256 mg = _mm256_setzero_ps();
+						__m256 mb = _mm256_setzero_ps();
+						__m256 mw = _mm256_setzero_ps();
+
+						//search loop
+						const uchar* tprt = tprt_ + i;
+						const uchar* sptr2 = sptr2_ + i;
+						for (int l = kernelWindowSizeY; l--;)
+						{
+							const uchar* sptr = sptr2 + imstep * (l);
+							for (int k = kernelWindowSizeX; k--;)
+							{
+								//templete loop
+								const uchar* t = tprt;
+								const uchar* s = (sptr + k);
+								//colorstep
+								__m256 mdist = _mm256_setzero_ps();
+								for (int n = patchWindowSizeY; n--;)
+								{
+									for (int m = patchWindowSizeX; m--;)
+									{
+										// computing color L2 norm
+										mdist = _mm256_ssdadd_ps(mdist,
+											_mm256_load_epu8cvtps((__m128i*)s), _mm256_load_epu8cvtps((__m128i*)(s + colorstep)), _mm256_load_epu8cvtps((__m128i*)(s + colorstep2)),
+											_mm256_load_epu8cvtps((__m128i*)t), _mm256_load_epu8cvtps((__m128i*)(t + colorstep)), _mm256_load_epu8cvtps((__m128i*)(t + colorstep2)));
+										s++, t++;
+									}
+									t += cstep;
+									s += cstep;
+								}
+
+								const __m256 mrw = _mm256_i32gather_ps(weight, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist)), 4);
+								const uchar* ss = sptr2 + imstep * (tr_y + l) + (tr_x + k);
+								mb = _mm256_fmadd_ps(mrw, _mm256_load_epu8cvtps((__m128i*)ss), mb);
+								mg = _mm256_fmadd_ps(mrw, _mm256_load_epu8cvtps((__m128i*)(ss + colorstep)), mg);
+								mr = _mm256_fmadd_ps(mrw, _mm256_load_epu8cvtps((__m128i*)(ss + colorstep2)), mr);
+								mw = _mm256_add_ps(mrw, mw);
+							}
+						}
+
+						mb = _mm256_div_ps(mb, mw);
+						mg = _mm256_div_ps(mg, mw);
+						mr = _mm256_div_ps(mr, mw);
+						_mm256_storeu_ps2epu8_color(d, mb, mg, mr);
+						d += 24;
+					}//i
+				}//j
+			}
+			else if (dest->channels() == 1)
+			{
+				for (int j = r.start; j < r.end; j++)
+				{
+					uchar* d = dest->ptr<uchar>(j);
+					for (int i = 0; i < dest->cols; i += 8)
+					{
+						__m256 mv = _mm256_setzero_ps();
+						__m256 mw = _mm256_setzero_ps();
+
+						//search loop
+						uchar* tprt = im->ptr <uchar>(sr_y + j) + (sr_x + i);
+						uchar* sptr2 = im->ptr<uchar>(j) + (i);
+						for (int l = kernelWindowSizeY; l--;)
+						{
+							uchar* sptr = sptr2 + imstep * (l);
+							for (int k = kernelWindowSizeX; k--;)
+							{
+								//templete loop
+								__m256 mdist = _mm256_setzero_ps();
+								uchar* t = tprt;
+								uchar* s = sptr + k;
+								for (int n = patchWindowSizeY; n--;)
+								{
+									for (int m = patchWindowSizeX; m--;)
+									{
+										// computing color L2 norm
+										__m256 ml2 = _mm256_ssd_ps(_mm256_load_epu8cvtps((__m128i*)s), _mm256_load_epu8cvtps((__m128i*)t));
+										mdist = _mm256_add_ps(mdist, ml2);
+										s++, t++;
+									}
+									t += cstep;
+									s += cstep;
+								}
+								__m256 mrw = _mm256_i32gather_ps(weight, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist)), 4);
+								mv = _mm256_fmadd_ps(mrw, _mm256_load_epu8cvtps((__m128i*)sptr2 + imstep * (tr_y + l) + tr_x + k), mv);
+								mw = _mm256_add_ps(mrw, mw);
+							}
+						}
+						//weight normalization
+						_mm_storel_epi64((__m128i*)d, _mm256_cvtps_epu8(_mm256_div_ps(mv, mw)));
+						d += 8;
+					}//i
+				}//j
+			}
+		}
+
+		void unroll2(const cv::Range& r) const
+		{
+			const int tr_x = patchWindowSizeX >> 1;
+			const int sr_x = kernelWindowSizeX >> 1;
+			const int tr_y = patchWindowSizeY >> 1;
+			const int sr_y = kernelWindowSizeY >> 1;
+			const int cstep = im->cols - patchWindowSizeX;
+			const int imstep = im->cols;
+
+			const int patchSize = (float)patchWindowSizeX * patchWindowSizeY;
+			const float tdiv = 1.f / (float)(patchSize);//templete square div
+			__m256 mtdiv = _mm256_set1_ps(tdiv);
+
+			if (dest->channels() == 3)
+			{
+				const int colorstep = im->size().area() / 3;
+				const int colorstep2 = colorstep * 2;
+				for (int j = r.start; j < r.end; j++)
+				{
+					uchar* d = dest->ptr<uchar>(j);
+					const uchar* tprt_ = im->ptr<uchar>(sr_y + j) + sr_x;
+					const uchar* sptr2_ = im->ptr<uchar>(j);
+					for (int i = 0; i < dest->cols; i += 16)
+					{
+						__m256 mr0 = _mm256_setzero_ps();
+						__m256 mg0 = _mm256_setzero_ps();
+						__m256 mb0 = _mm256_setzero_ps();
+						__m256 mw0 = _mm256_setzero_ps();
+
+						__m256 mr1 = _mm256_setzero_ps();
+						__m256 mg1 = _mm256_setzero_ps();
+						__m256 mb1 = _mm256_setzero_ps();
+						__m256 mw1 = _mm256_setzero_ps();
+
+						//search loop
+						const uchar* tprt = tprt_ + i;
+						const uchar* sptr2 = sptr2_ + i;
+						for (int l = kernelWindowSizeY; l--;)
+						{
+							const uchar* sptr = sptr2 + imstep * (l);
+							for (int k = kernelWindowSizeX; k--;)
+							{
+								//templete loop
+								const uchar* t = tprt;
+								const uchar* s = (sptr + k);
+								//colorstep
+								__m256 mdist0 = _mm256_setzero_ps();
+								__m256 mdist1 = _mm256_setzero_ps();
+								for (int n = patchWindowSizeY; n--;)
+								{
+									for (int m = patchWindowSizeX; m--;)
+									{
+										// computing color L2 norm
+										mdist0 = _mm256_ssdadd_ps(mdist0,
+											_mm256_load_epu8cvtps((__m128i*)s), _mm256_load_epu8cvtps((__m128i*)(s + colorstep)), _mm256_load_epu8cvtps((__m128i*)(s + colorstep2)),
+											_mm256_load_epu8cvtps((__m128i*)t), _mm256_load_epu8cvtps((__m128i*)(t + colorstep)), _mm256_load_epu8cvtps((__m128i*)(t + colorstep2)));
+										mdist1 = _mm256_ssdadd_ps(mdist1,
+											_mm256_load_epu8cvtps((__m128i*)(s + 8)), _mm256_load_epu8cvtps((__m128i*)(s + 8 + colorstep)), _mm256_load_epu8cvtps((__m128i*)(s + 8 + colorstep2)),
+											_mm256_load_epu8cvtps((__m128i*)(t + 8)), _mm256_load_epu8cvtps((__m128i*)(t + 8 + colorstep)), _mm256_load_epu8cvtps((__m128i*)(t + 8 + colorstep2)));
+										s++, t++;
+									}
+									t += cstep;
+									s += cstep;
+								}
+
+								const uchar* ss = sptr2 + imstep * (tr_y + l) + (tr_x + k);
+
+								const __m256 mrw0 = _mm256_i32gather_ps(weight, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist0)), 4);
+								mb0 = _mm256_fmadd_ps(mrw0, _mm256_load_epu8cvtps((__m128i*)ss), mb0);
+								mg0 = _mm256_fmadd_ps(mrw0, _mm256_load_epu8cvtps((__m128i*)(ss + colorstep)), mg0);
+								mr0 = _mm256_fmadd_ps(mrw0, _mm256_load_epu8cvtps((__m128i*)(ss + colorstep2)), mr0);
+								mw0 = _mm256_add_ps(mrw0, mw0);
+
+								const __m256 mrw1 = _mm256_i32gather_ps(weight, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist1)), 4);
+								mb1 = _mm256_fmadd_ps(mrw1, _mm256_load_epu8cvtps((__m128i*)(ss + 8)), mb1);
+								mg1 = _mm256_fmadd_ps(mrw1, _mm256_load_epu8cvtps((__m128i*)(ss + 8 + colorstep)), mg1);
+								mr1 = _mm256_fmadd_ps(mrw1, _mm256_load_epu8cvtps((__m128i*)(ss + 8 + colorstep2)), mr1);
+								mw1 = _mm256_add_ps(mrw1, mw1);
+							}
+						}
+
+						mb0 = _mm256_div_ps(mb0, mw0);
+						mg0 = _mm256_div_ps(mg0, mw0);
+						mr0 = _mm256_div_ps(mr0, mw0);
+						_mm256_storeu_ps2epu8_color(d, mb0, mg0, mr0);
+
+						mb1 = _mm256_div_ps(mb1, mw1);
+						mg1 = _mm256_div_ps(mg1, mw1);
+						mr1 = _mm256_div_ps(mr1, mw1);
+						_mm256_storeu_ps2epu8_color(d + 24, mb1, mg1, mr1);
+
+						d += 48;
+					}//i
+				}//j
+			}
+			else if (dest->channels() == 1)
+			{
+				for (int j = r.start; j < r.end; j++)
+				{
+					uchar* d = dest->ptr<uchar>(j);
+					for (int i = 0; i < dest->cols; i += 8)
+					{
+						__m256 mv = _mm256_setzero_ps();
+						__m256 mw = _mm256_setzero_ps();
+
+						//search loop
+						uchar* tprt = im->ptr <uchar>(sr_y + j) + (sr_x + i);
+						uchar* sptr2 = im->ptr<uchar>(j) + (i);
+						for (int l = kernelWindowSizeY; l--;)
+						{
+							uchar* sptr = sptr2 + imstep * (l);
+							for (int k = kernelWindowSizeX; k--;)
+							{
+								//templete loop
+								__m256 mdist = _mm256_setzero_ps();
+								uchar* t = tprt;
+								uchar* s = sptr + k;
+								for (int n = patchWindowSizeY; n--;)
+								{
+									for (int m = patchWindowSizeX; m--;)
+									{
+										// computing color L2 norm
+										__m256 ml2 = _mm256_ssd_ps(_mm256_load_epu8cvtps((__m128i*)s), _mm256_load_epu8cvtps((__m128i*)t));
+										mdist = _mm256_add_ps(mdist, ml2);
+										s++, t++;
+									}
+									t += cstep;
+									s += cstep;
+								}
+								__m256 mrw = _mm256_i32gather_ps(weight, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist)), 4);
+								mv = _mm256_fmadd_ps(mrw, _mm256_load_epu8cvtps((__m128i*)sptr2 + imstep * (tr_y + l) + tr_x + k), mv);
+								mw = _mm256_add_ps(mrw, mw);
+							}
+						}
+						//weight normalization
+						_mm_storel_epi64((__m128i*)d, _mm256_cvtps_epu8(_mm256_div_ps(mv, mw)));
+						d += 8;
+					}//i
+				}//j
+			}
+		}
+
+		//tested only unroll 4
+		void unroll4(const cv::Range& r) const
+		{
+			const int tr_x = patchWindowSizeX >> 1;
+			const int sr_x = kernelWindowSizeX >> 1;
+			const int tr_y = patchWindowSizeY >> 1;
+			const int sr_y = kernelWindowSizeY >> 1;
+			const int cstep = im->cols - patchWindowSizeX;
+			const int imstep = im->cols;
+
+			const int patchSize = patchWindowSizeX * patchWindowSizeY;
+			const float tdiv = 1.f / (float)(patchSize);//templete square div
+			__m256 mtdiv = _mm256_set1_ps(tdiv);
+			__m256i mtdivi = _mm256_set1_epi32(patchSize);
+
+			if (dest->channels() == 3)
+			{
+				const int colorstep = im->size().area() / 3;
+				const int colorstep2 = colorstep * 2;
+				for (int j = r.start; j < r.end; j++)
+				{
+					uchar* d = dest->ptr<uchar>(j);
+					const uchar* tprt_ = im->ptr<uchar>(sr_y + j) + sr_x;
+					const uchar* sptr2_ = im->ptr<uchar>(j);
+					for (int i = 0; i < dest->cols; i += 32)
+					{
+						__m256 mr0 = _mm256_setzero_ps();
+						__m256 mg0 = _mm256_setzero_ps();
+						__m256 mb0 = _mm256_setzero_ps();
+						__m256 mw0 = _mm256_setzero_ps();
+
+						__m256 mr1 = _mm256_setzero_ps();
+						__m256 mg1 = _mm256_setzero_ps();
+						__m256 mb1 = _mm256_setzero_ps();
+						__m256 mw1 = _mm256_setzero_ps();
+
+						__m256 mr2 = _mm256_setzero_ps();
+						__m256 mg2 = _mm256_setzero_ps();
+						__m256 mb2 = _mm256_setzero_ps();
+						__m256 mw2 = _mm256_setzero_ps();
+
+						__m256 mr3 = _mm256_setzero_ps();
+						__m256 mg3 = _mm256_setzero_ps();
+						__m256 mb3 = _mm256_setzero_ps();
+						__m256 mw3 = _mm256_setzero_ps();
+
+						//search loop
+						const uchar* tprt = tprt_ + i;
+						const uchar* sptr2 = sptr2_ + i;
+						for (int l = kernelWindowSizeY; l--;)
+						{
+							const uchar* sptr = sptr2 + imstep * (l);
+							for (int k = kernelWindowSizeX; k--;)
+							{
+								//templete loop
+								const uchar* t = tprt;
+								const uchar* s = (sptr + k);
+								//colorstep
+								if constexpr (norm == 1)
+								{
+									__m256i mdist0 = _mm256_setzero_si256();
+									__m256i mdist1 = _mm256_setzero_si256();
+									for (int n = patchWindowSizeY; n--;)
+									{
+										for (int m = patchWindowSizeX; m--;)
+										{
+											// computing color L1 norm
+											const __m256i diffb = _mm256_absdiff_epu8(_mm256_loadu_si256((__m256i*)(s + 0)), _mm256_loadu_si256((__m256i*)(t + 0)));
+											const __m256i diffg = _mm256_absdiff_epu8(_mm256_loadu_si256((__m256i*)(s + colorstep)), _mm256_loadu_si256((__m256i*)(t + colorstep)));
+											const __m256i diffr = _mm256_absdiff_epu8(_mm256_loadu_si256((__m256i*)(s + colorstep2)), _mm256_loadu_si256((__m256i*)(t + colorstep2)));
+
+											__m256i v = _mm256_cvtepu8_epi16(_mm256_castsi256_si128(diffb));
+											mdist0 = _mm256_adds_epu16(mdist0, v);
+											v = _mm256_cvtepu8_epi16(_mm256_castsi256_si128(diffg));
+											mdist0 = _mm256_adds_epu16(mdist0, v);
+											v = _mm256_cvtepu8_epi16(_mm256_castsi256_si128(diffr));
+											mdist0 = _mm256_adds_epu16(mdist0, v);
+
+											v = _mm256_cvtepu8_epi16(_mm256_castsi256hi_si128(diffb));
+											mdist1 = _mm256_adds_epu16(mdist1, v);
+											v = _mm256_cvtepu8_epi16(_mm256_castsi256hi_si128(diffg));
+											mdist1 = _mm256_adds_epu16(mdist1, v);
+											v = _mm256_cvtepu8_epi16(_mm256_castsi256hi_si128(diffr));
+											mdist1 = _mm256_adds_epu16(mdist1, v);
+
+											s++, t++;
+										}
+										t += cstep;
+										s += cstep;
+									}
+
+									const uchar* ss = sptr2 + imstep * (tr_y + l) + (tr_x + k);
+
+									const __m256 mrw0 = _mm256_i32gather_ps(weight, _mm256_div_epi32(_mm256_cvtepu16_epi32(_mm256_castsi256_si128(mdist0)), mtdivi), 4);
+									mb0 = _mm256_fmadd_ps(mrw0, _mm256_load_epu8cvtps((__m128i*)ss), mb0);
+									mg0 = _mm256_fmadd_ps(mrw0, _mm256_load_epu8cvtps((__m128i*)(ss + colorstep)), mg0);
+									mr0 = _mm256_fmadd_ps(mrw0, _mm256_load_epu8cvtps((__m128i*)(ss + colorstep2)), mr0);
+									mw0 = _mm256_add_ps(mrw0, mw0);
+
+									const __m256 mrw1 = _mm256_i32gather_ps(weight, _mm256_div_epi32(_mm256_cvtepu16_epi32(_mm256_castsi256hi_si128(mdist0)), mtdivi), 4);
+									mb1 = _mm256_fmadd_ps(mrw1, _mm256_load_epu8cvtps((__m128i*)(ss + 8)), mb1);
+									mg1 = _mm256_fmadd_ps(mrw1, _mm256_load_epu8cvtps((__m128i*)(ss + 8 + colorstep)), mg1);
+									mr1 = _mm256_fmadd_ps(mrw1, _mm256_load_epu8cvtps((__m128i*)(ss + 8 + colorstep2)), mr1);
+									mw1 = _mm256_add_ps(mrw1, mw1);
+
+									const __m256 mrw2 = _mm256_i32gather_ps(weight, _mm256_div_epi32(_mm256_cvtepu16_epi32(_mm256_castsi256_si128(mdist1)), mtdivi), 4);
+									mb2 = _mm256_fmadd_ps(mrw2, _mm256_load_epu8cvtps((__m128i*)(ss + 16)), mb2);
+									mg2 = _mm256_fmadd_ps(mrw2, _mm256_load_epu8cvtps((__m128i*)(ss + 16 + colorstep)), mg2);
+									mr2 = _mm256_fmadd_ps(mrw2, _mm256_load_epu8cvtps((__m128i*)(ss + 16 + colorstep2)), mr2);
+									mw2 = _mm256_add_ps(mrw2, mw2);
+
+									const __m256 mrw3 = _mm256_i32gather_ps(weight, _mm256_div_epi32(_mm256_cvtepu16_epi32(_mm256_castsi256hi_si128(mdist1)), mtdivi), 4);
+									mb3 = _mm256_fmadd_ps(mrw3, _mm256_load_epu8cvtps((__m128i*)(ss + 24)), mb3);
+									mg3 = _mm256_fmadd_ps(mrw3, _mm256_load_epu8cvtps((__m128i*)(ss + 24 + colorstep)), mg3);
+									mr3 = _mm256_fmadd_ps(mrw3, _mm256_load_epu8cvtps((__m128i*)(ss + 24 + colorstep2)), mr3);
+									mw3 = _mm256_add_ps(mrw3, mw3);
+								}
+								else
+								{
+									__m256 mdist0 = _mm256_setzero_ps();
+									__m256 mdist1 = _mm256_setzero_ps();
+									__m256 mdist2 = _mm256_setzero_ps();
+									__m256 mdist3 = _mm256_setzero_ps();
+									for (int n = patchWindowSizeY; n--;)
+									{
+										for (int m = patchWindowSizeX; m--;)
+										{
+											// computing color L2 norm
+											const __m256i diffb = _mm256_absdiff_epu8(_mm256_loadu_si256((__m256i*)(s + 0)), _mm256_loadu_si256((__m256i*)(t + 0)));
+											const __m256i diffg = _mm256_absdiff_epu8(_mm256_loadu_si256((__m256i*)(s + colorstep)), _mm256_loadu_si256((__m256i*)(t + colorstep)));
+											const __m256i diffr = _mm256_absdiff_epu8(_mm256_loadu_si256((__m256i*)(s + colorstep2)), _mm256_loadu_si256((__m256i*)(t + colorstep2)));
+
+											__m256 v = _mm256_cvtepu8_ps(_mm256_castsi256_si128(diffb));
+											mdist0 = _mm256_fmadd_ps(v, v, mdist0);
+											v = _mm256_cvtepu8_ps(_mm256_castsi256_si128(diffg));
+											mdist0 = _mm256_fmadd_ps(v, v, mdist0);
+											v = _mm256_cvtepu8_ps(_mm256_castsi256_si128(diffr));
+											mdist0 = _mm256_fmadd_ps(v, v, mdist0);
+
+											v = _mm256_cvtepu8_ps(_mm256_castsi256_si128(_mm256_permute4x64_epi64(diffb, _MM_SHUFFLE(2, 3, 0, 1))));
+											mdist1 = _mm256_fmadd_ps(v, v, mdist1);
+											v = _mm256_cvtepu8_ps(_mm256_castsi256_si128(_mm256_permute4x64_epi64(diffg, _MM_SHUFFLE(2, 3, 0, 1))));
+											mdist1 = _mm256_fmadd_ps(v, v, mdist1);
+											v = _mm256_cvtepu8_ps(_mm256_castsi256_si128(_mm256_permute4x64_epi64(diffr, _MM_SHUFFLE(2, 3, 0, 1))));
+											mdist1 = _mm256_fmadd_ps(v, v, mdist1);
+
+											v = _mm256_cvtepu8_ps(_mm256_castsi256hi_si128(diffb));
+											mdist2 = _mm256_fmadd_ps(v, v, mdist2);
+											v = _mm256_cvtepu8_ps(_mm256_castsi256hi_si128(diffg));
+											mdist2 = _mm256_fmadd_ps(v, v, mdist2);
+											v = _mm256_cvtepu8_ps(_mm256_castsi256hi_si128(diffr));
+											mdist2 = _mm256_fmadd_ps(v, v, mdist2);
+
+											v = _mm256_cvtepu8_ps(_mm256_castsi256_si128(_mm256_permute4x64_epi64(diffb, _MM_SHUFFLE(0, 1, 2, 3))));
+											mdist3 = _mm256_fmadd_ps(v, v, mdist3);
+											v = _mm256_cvtepu8_ps(_mm256_castsi256_si128(_mm256_permute4x64_epi64(diffg, _MM_SHUFFLE(0, 1, 2, 3))));
+											mdist3 = _mm256_fmadd_ps(v, v, mdist3);
+											v = _mm256_cvtepu8_ps(_mm256_castsi256_si128(_mm256_permute4x64_epi64(diffr, _MM_SHUFFLE(0, 1, 2, 3))));
+											mdist3 = _mm256_fmadd_ps(v, v, mdist3);
+											/*
+										mdist0 = _mm256_ssdadd_ps(mdist0,
+											_mm256_load_epu8cvtps((__m128i*)s), _mm256_load_epu8cvtps((__m128i*)(s + colorstep)), _mm256_load_epu8cvtps((__m128i*)(s + colorstep2)),
+											_mm256_load_epu8cvtps((__m128i*)t), _mm256_load_epu8cvtps((__m128i*)(t + colorstep)), _mm256_load_epu8cvtps((__m128i*)(t + colorstep2)));
+										mdist1 = _mm256_ssdadd_ps(mdist1,
+											_mm256_load_epu8cvtps((__m128i*)(s + 8)), _mm256_load_epu8cvtps((__m128i*)(s + 8 + colorstep)), _mm256_load_epu8cvtps((__m128i*)(s + 8 + colorstep2)),
+											_mm256_load_epu8cvtps((__m128i*)(t + 8)), _mm256_load_epu8cvtps((__m128i*)(t + 8 + colorstep)), _mm256_load_epu8cvtps((__m128i*)(t + 8 + colorstep2)));
+										mdist2 = _mm256_ssdadd_ps(mdist2,
+											_mm256_load_epu8cvtps((__m128i*)(s + 16)), _mm256_load_epu8cvtps((__m128i*)(s + 16 + colorstep)), _mm256_load_epu8cvtps((__m128i*)(s + 16 + colorstep2)),
+											_mm256_load_epu8cvtps((__m128i*)(t + 16)), _mm256_load_epu8cvtps((__m128i*)(t + 16 + colorstep)), _mm256_load_epu8cvtps((__m128i*)(t + 16 + colorstep2)));
+										mdist3 = _mm256_ssdadd_ps(mdist3,
+											_mm256_load_epu8cvtps((__m128i*)(s + 24)), _mm256_load_epu8cvtps((__m128i*)(s + 24 + colorstep)), _mm256_load_epu8cvtps((__m128i*)(s + 24 + colorstep2)),
+											_mm256_load_epu8cvtps((__m128i*)(t + 24)), _mm256_load_epu8cvtps((__m128i*)(t + 24 + colorstep)), _mm256_load_epu8cvtps((__m128i*)(t + 24 + colorstep2)));
+											*/
+											s++, t++;
+										}
+										t += cstep;
+										s += cstep;
+									}
+
+									const uchar* ss = sptr2 + imstep * (tr_y + l) + (tr_x + k);
+
+									const __m256 mrw0 = _mm256_i32gather_ps(weight, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist0)), 4);
+									mb0 = _mm256_fmadd_ps(mrw0, _mm256_load_epu8cvtps((__m128i*)ss), mb0);
+									mg0 = _mm256_fmadd_ps(mrw0, _mm256_load_epu8cvtps((__m128i*)(ss + colorstep)), mg0);
+									mr0 = _mm256_fmadd_ps(mrw0, _mm256_load_epu8cvtps((__m128i*)(ss + colorstep2)), mr0);
+									mw0 = _mm256_add_ps(mrw0, mw0);
+
+									const __m256 mrw1 = _mm256_i32gather_ps(weight, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist1)), 4);
+									mb1 = _mm256_fmadd_ps(mrw1, _mm256_load_epu8cvtps((__m128i*)(ss + 8)), mb1);
+									mg1 = _mm256_fmadd_ps(mrw1, _mm256_load_epu8cvtps((__m128i*)(ss + 8 + colorstep)), mg1);
+									mr1 = _mm256_fmadd_ps(mrw1, _mm256_load_epu8cvtps((__m128i*)(ss + 8 + colorstep2)), mr1);
+									mw1 = _mm256_add_ps(mrw1, mw1);
+
+									const __m256 mrw2 = _mm256_i32gather_ps(weight, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist2)), 4);
+									mb2 = _mm256_fmadd_ps(mrw2, _mm256_load_epu8cvtps((__m128i*)(ss + 16)), mb2);
+									mg2 = _mm256_fmadd_ps(mrw2, _mm256_load_epu8cvtps((__m128i*)(ss + 16 + colorstep)), mg2);
+									mr2 = _mm256_fmadd_ps(mrw2, _mm256_load_epu8cvtps((__m128i*)(ss + 16 + colorstep2)), mr2);
+									mw2 = _mm256_add_ps(mrw2, mw2);
+
+									const __m256 mrw3 = _mm256_i32gather_ps(weight, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist3)), 4);
+									mb3 = _mm256_fmadd_ps(mrw3, _mm256_load_epu8cvtps((__m128i*)(ss + 24)), mb3);
+									mg3 = _mm256_fmadd_ps(mrw3, _mm256_load_epu8cvtps((__m128i*)(ss + 24 + colorstep)), mg3);
+									mr3 = _mm256_fmadd_ps(mrw3, _mm256_load_epu8cvtps((__m128i*)(ss + 24 + colorstep2)), mr3);
+									mw3 = _mm256_add_ps(mrw3, mw3);
+								}
+							}
+						}
+
+						mb0 = _mm256_div_ps(mb0, mw0);
+						mg0 = _mm256_div_ps(mg0, mw0);
+						mr0 = _mm256_div_ps(mr0, mw0);
+						_mm256_storeu_ps2epu8_color(d, mb0, mg0, mr0);
+						
+						mb1 = _mm256_div_ps(mb1, mw1);
+						mg1 = _mm256_div_ps(mg1, mw1);
+						mr1 = _mm256_div_ps(mr1, mw1);
+						_mm256_storeu_ps2epu8_color(d + 24, mb1, mg1, mr1);
+
+						mb2 = _mm256_div_ps(mb2, mw2);
+						mg2 = _mm256_div_ps(mg2, mw2);
+						mr2 = _mm256_div_ps(mr2, mw2);
+						_mm256_storeu_ps2epu8_color(d + 48, mb2, mg2, mr2);
+
+						mb3 = _mm256_div_ps(mb3, mw3);
+						mg3 = _mm256_div_ps(mg3, mw3);
+						mr3 = _mm256_div_ps(mr3, mw3);
+						if (i == dest->cols - 32)_mm256_storescalar_ps2epu8_color(d + 72, mb3, mg3, mr3);
+						else _mm256_storeu_ps2epu8_color(d + 72, mb3, mg3, mr3);
+
+						d += 96;
+					}//i
+				}//j
+			}
+			else if (dest->channels() == 1)
+			{
+				for (int j = r.start; j < r.end; j++)
+				{
+					uchar* d = dest->ptr<uchar>(j);
+					for (int i = 0; i < dest->cols; i += 32)
+					{
+						__m256 mv0 = _mm256_setzero_ps();
+						__m256 mw0 = _mm256_setzero_ps();
+
+						__m256 mv1 = _mm256_setzero_ps();
+						__m256 mw1 = _mm256_setzero_ps();
+
+						__m256 mv2 = _mm256_setzero_ps();
+						__m256 mw2 = _mm256_setzero_ps();
+
+						__m256 mv3 = _mm256_setzero_ps();
+						__m256 mw3 = _mm256_setzero_ps();
+
+						//search loop
+						uchar* tprt = im->ptr <uchar>(sr_y + j) + (sr_x + i);
+						uchar* sptr2 = im->ptr<uchar>(j) + (i);
+						for (int l = kernelWindowSizeY; l--;)
+						{
+							uchar* sptr = sptr2 + imstep * (l);
+							for (int k = kernelWindowSizeX; k--;)
+							{
+								uchar* t = tprt;
+								uchar* s = sptr + k;
+								if constexpr (norm == 1)
+								{
+									//templete loop
+									__m256i mdist0 = _mm256_setzero_si256();
+									__m256i mdist1 = _mm256_setzero_si256();
+									for (int n = patchWindowSizeY; n--;)
+									{
+										for (int m = patchWindowSizeX; m--;)
+										{
+											// computing color L1 norm
+											const __m256i diffv = _mm256_absdiff_epu8(_mm256_loadu_si256((__m256i*)(s + 0)), _mm256_loadu_si256((__m256i*)(t + 0)));
+											__m256i v = _mm256_cvtepu8_epi16(_mm256_castsi256_si128(diffv));
+											mdist0 = _mm256_adds_epu16(mdist0, v);
+											v = _mm256_cvtepu8_epi16(_mm256_castsi256hi_si128(diffv));
+											mdist1 = _mm256_adds_epu16(mdist1, v);
+											s++, t++;
+										}
+										t += cstep;
+										s += cstep;
+									}
+									const __m256 mrw0 = _mm256_i32gather_ps(weight, _mm256_div_epi32(_mm256_cvtepu16_epi32(_mm256_castsi256_si128(mdist0)), mtdivi), 4);
+									mv0 = _mm256_fmadd_ps(mrw0, _mm256_load_epu8cvtps((__m128i*)(sptr2 + imstep * (tr_y + l) + tr_x + k + 0)), mv0);
+									mw0 = _mm256_add_ps(mrw0, mw0);
+
+									const __m256 mrw1 = _mm256_i32gather_ps(weight, _mm256_div_epi32(_mm256_cvtepu16_epi32(_mm256_castsi256hi_si128(mdist0)), mtdivi), 4);
+									mv1 = _mm256_fmadd_ps(mrw1, _mm256_load_epu8cvtps((__m128i*)(sptr2 + imstep * (tr_y + l) + tr_x + k + 8)), mv1);
+									mw1 = _mm256_add_ps(mrw1, mw1);
+
+									const __m256 mrw2 = _mm256_i32gather_ps(weight, _mm256_div_epi32(_mm256_cvtepu16_epi32(_mm256_castsi256_si128(mdist1)), mtdivi), 4);
+									mv2 = _mm256_fmadd_ps(mrw2, _mm256_load_epu8cvtps((__m128i*)(sptr2 + imstep * (tr_y + l) + tr_x + k + 16)), mv2);
+									mw2 = _mm256_add_ps(mrw2, mw2);
+
+									const __m256 mrw3 = _mm256_i32gather_ps(weight, _mm256_div_epi32(_mm256_cvtepu16_epi32(_mm256_castsi256hi_si128(mdist1)), mtdivi), 4);
+									mv3 = _mm256_fmadd_ps(mrw3, _mm256_load_epu8cvtps((__m128i*)(sptr2 + imstep * (tr_y + l) + tr_x + k + 24)), mv3);
+									mw3 = _mm256_add_ps(mrw3, mw3);
+								}
+								else
+								{
+									//templete loop
+									__m256 mdist0 = _mm256_setzero_ps();
+									__m256 mdist1 = _mm256_setzero_ps();
+									__m256 mdist2 = _mm256_setzero_ps();
+									__m256 mdist3 = _mm256_setzero_ps();
+									for (int n = patchWindowSizeY; n--;)
+									{
+										for (int m = patchWindowSizeX; m--;)
+										{
+											// computing color L2 norm
+											const __m256i diffv = _mm256_absdiff_epu8(_mm256_loadu_si256((__m256i*)(s + 0)), _mm256_loadu_si256((__m256i*)(t + 0)));
+											__m256 v = _mm256_cvtepu8_ps(_mm256_castsi256_si128(diffv));
+											mdist0 = _mm256_fmadd_ps(v, v, mdist0);
+											v = _mm256_cvtepu8_ps(_mm256_castsi256_si128(_mm256_permute4x64_epi64(diffv, _MM_SHUFFLE(2, 3, 0, 1))));
+											mdist1 = _mm256_fmadd_ps(v, v, mdist1);
+											v = _mm256_cvtepu8_ps(_mm256_castsi256hi_si128(diffv));
+											mdist2 = _mm256_fmadd_ps(v, v, mdist2);
+											v = _mm256_cvtepu8_ps(_mm256_castsi256_si128(_mm256_permute4x64_epi64(diffv, _MM_SHUFFLE(0, 1, 2, 3))));
+											mdist3 = _mm256_fmadd_ps(v, v, mdist3);
+											s++, t++;
+										}
+										t += cstep;
+										s += cstep;
+									}
+									__m256 mrw0 = _mm256_i32gather_ps(weight, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist0)), 4);
+									mv0 = _mm256_fmadd_ps(mrw0, _mm256_load_epu8cvtps((__m128i*)(sptr2 + imstep * (tr_y + l) + tr_x + k + 0)), mv0);
+									mw0 = _mm256_add_ps(mrw0, mw0);
+
+									__m256 mrw1 = _mm256_i32gather_ps(weight, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist1)), 4);
+									mv1 = _mm256_fmadd_ps(mrw1, _mm256_load_epu8cvtps((__m128i*)(sptr2 + imstep * (tr_y + l) + tr_x + k + 8)), mv1);
+									mw1 = _mm256_add_ps(mrw1, mw1);
+
+									__m256 mrw2 = _mm256_i32gather_ps(weight, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist2)), 4);
+									mv2 = _mm256_fmadd_ps(mrw2, _mm256_load_epu8cvtps((__m128i*)(sptr2 + imstep * (tr_y + l) + tr_x + k + 16)), mv2);
+									mw2 = _mm256_add_ps(mrw2, mw2);
+
+									__m256 mrw3 = _mm256_i32gather_ps(weight, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist3)), 4);
+									mv3 = _mm256_fmadd_ps(mrw3, _mm256_load_epu8cvtps((__m128i*)(sptr2 + imstep * (tr_y + l) + tr_x + k + 24)), mv3);
+									mw3 = _mm256_add_ps(mrw3, mw3);
+								}
+							}
+						}
+						//weight normalization
+						_mm_storel_epi64((__m128i*)(d + 0), _mm256_cvtps_epu8(_mm256_div_ps(mv0, mw0)));
+						_mm_storel_epi64((__m128i*)(d + 8), _mm256_cvtps_epu8(_mm256_div_ps(mv1, mw1)));
+						_mm_storel_epi64((__m128i*)(d + 16), _mm256_cvtps_epu8(_mm256_div_ps(mv2, mw2)));
+						_mm_storel_epi64((__m128i*)(d + 32), _mm256_cvtps_epu8(_mm256_div_ps(mv3, mw3)));
+						d += 32;
+					}//i
+				}//j
+			}
+		}
+
+		virtual void operator()(const cv::Range& r) const
+		{
+			//unroll1(r);
+			//unroll2(r);
+			unroll4(r);
+		}
+	};
+
+	template<int norm>
+	class NonlocalMeansFilterInvorker32f_AVX : public cv::ParallelLoopBody
+	{
+	private:
+		Mat* im;
+		Mat* dest;
+		int patchWindowSizeX;
+		int patchWindowSizeY;
+		int kernelWindowSizeX;
+		int kernelWindowSizeY;
+
+		float* weight;
+	public:
+
+		NonlocalMeansFilterInvorker32f_AVX(Mat& src_, Mat& dest_, int patchWindowSizeX_, int patchWindowSizeY_, int kernelWindowSizeX_, int kernelWindowSizeY_, float* weight)
+			: im(&src_), dest(&dest_), patchWindowSizeX(patchWindowSizeX_), patchWindowSizeY(patchWindowSizeY_), kernelWindowSizeX(kernelWindowSizeX_), kernelWindowSizeY(kernelWindowSizeY_), weight(weight)
+		{
+			;
+		}
+
+		void unroll1(const cv::Range& r) const
+		{
+			const int tr_x = patchWindowSizeX >> 1;
+			const int sr_x = kernelWindowSizeX >> 1;
+			const int tr_y = patchWindowSizeY >> 1;
+			const int sr_y = kernelWindowSizeY >> 1;
+			const int cstep = im->cols - patchWindowSizeX;
+			const int imstep = im->cols;
+
+			const int patchSize = (float)patchWindowSizeX * patchWindowSizeY;
+			const float tdiv = 1.f / (float)(patchSize);//templete square div
+			__m256 mtdiv = _mm256_set1_ps(tdiv);
+
+			if (dest->channels() == 3)
+			{
+				const int colorstep = im->size().area() / 3;
+				const int colorstep2 = colorstep * 2;
+				for (int j = r.start; j < r.end; j++)
+				{
+					float* d = dest->ptr<float>(j);
+					const float* tprt_ = im->ptr<float>(sr_y + j) + sr_x;
+					const float* sptr2_ = im->ptr<float>(j);
+					for (int i = 0; i < dest->cols; i += 8)
+					{
+						__m256 mr = _mm256_setzero_ps();
+						__m256 mg = _mm256_setzero_ps();
+						__m256 mb = _mm256_setzero_ps();
+						__m256 mw = _mm256_setzero_ps();
+
+						//search loop
+						const float* tprt = tprt_ + i;
+						const float* sptr2 = sptr2_ + i;
+						for (int l = kernelWindowSizeY; l--;)
+						{
+							const float* sptr = sptr2 + imstep * (l);
+							for (int k = kernelWindowSizeX; k--;)
+							{
+								//templete loop
+								const float* t = tprt;
+								const float* s = (sptr + k);
+								//colorstep
+								__m256 mdist = _mm256_setzero_ps();
+								if constexpr (norm == 1)
+								{
+									for (int n = patchWindowSizeY; n--;)
+									{
+										for (int m = patchWindowSizeX; m--;)
+										{
+											// computing color L1 norm
+											mdist = _mm256_add_ps(mdist, _mm256_abs_ps(_mm256_sub_ps(_mm256_loadu_ps(s), _mm256_loadu_ps(t))));
+											mdist = _mm256_add_ps(mdist, _mm256_abs_ps(_mm256_sub_ps(_mm256_loadu_ps(s + colorstep), _mm256_loadu_ps(t + colorstep))));
+											mdist = _mm256_add_ps(mdist, _mm256_abs_ps(_mm256_sub_ps(_mm256_loadu_ps(s + colorstep2), _mm256_loadu_ps(t + colorstep2))));
+											s++, t++;
+										}
+										t += cstep;
+										s += cstep;
+									}
+
+									const __m256 mrw = _mm256_i32gather_ps(weight, _mm256_cvtps_epi32(_mm256_mul_ps(mtdiv, mdist)), 4);
+
+									const float* ss = sptr2 + imstep * (tr_y + l) + (tr_x + k);
+									mb = _mm256_fmadd_ps(mrw, _mm256_loadu_ps(ss), mb);
+									mg = _mm256_fmadd_ps(mrw, _mm256_loadu_ps(ss + colorstep), mg);
+									mr = _mm256_fmadd_ps(mrw, _mm256_loadu_ps(ss + colorstep2), mr);
+									mw = _mm256_add_ps(mrw, mw);
+								}
+								else
+								{
+									for (int n = patchWindowSizeY; n--;)
+									{
+										for (int m = patchWindowSizeX; m--;)
+										{
+											// computing color L2 norm
+											mdist = _mm256_ssdadd_ps(mdist,
+												_mm256_loadu_ps(s), _mm256_loadu_ps(s + colorstep), _mm256_loadu_ps(s + colorstep2),
+												_mm256_loadu_ps(t), _mm256_loadu_ps(t + colorstep), _mm256_loadu_ps(t + colorstep2));
+											s++, t++;
+										}
+										t += cstep;
+										s += cstep;
+									}
+
+									const __m256 mrw = _mm256_i32gather_ps(weight, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist)), 4);
+									const float* ss = sptr2 + imstep * (tr_y + l) + (tr_x + k);
+									mb = _mm256_fmadd_ps(mrw, _mm256_loadu_ps(ss), mb);
+									mg = _mm256_fmadd_ps(mrw, _mm256_loadu_ps(ss + colorstep), mg);
+									mr = _mm256_fmadd_ps(mrw, _mm256_loadu_ps(ss + colorstep2), mr);
+									mw = _mm256_add_ps(mrw, mw);
+								}
+							}
+						}
+						mb = _mm256_div_ps(mb, mw);
+						mg = _mm256_div_ps(mg, mw);
+						mr = _mm256_div_ps(mr, mw);
+						_mm256_storeu_ps_color(d, mb, mg, mr);
+						d += 24;
+					}//i
+				}//j
+			}
+			else if (dest->channels() == 1)
+			{
+				for (int j = r.start; j < r.end; j++)
+				{
+					float* d = dest->ptr<float>(j);
+					for (int i = 0; i < dest->cols; i += 8)
+					{
+						__m256 mv = _mm256_setzero_ps();
+						__m256 mw = _mm256_setzero_ps();
+
+						//search loop
+						float* tprt = im->ptr<float>(sr_y + j) + (sr_x + i);
+						float* sptr2 = im->ptr<float>(j) + (i);
+						for (int l = kernelWindowSizeY; l--;)
+						{
+							float* sptr = sptr2 + imstep * (l);
+							for (int k = kernelWindowSizeX; k--;)
+							{
+								//templete loop
+								__m256 mdist = _mm256_setzero_ps();
+								float* t = tprt;
+								float* s = sptr + k;
+								if constexpr (norm == 1)
+								{
+									for (int n = patchWindowSizeY; n--;)
+									{
+										for (int m = patchWindowSizeX; m--;)
+										{
+											// computing color L1 norm
+											mdist = _mm256_add_ps(mdist, _mm256_abs_ps(_mm256_sub_ps(_mm256_loadu_ps(s), _mm256_loadu_ps(t))));
+											s++, t++;
+										}
+										t += cstep;
+										s += cstep;
+									}
+									const __m256 mrw = _mm256_i32gather_ps(weight, _mm256_cvtps_epi32(_mm256_mul_ps(mtdiv, mdist)), 4);
+									mv = _mm256_fmadd_ps(mrw, _mm256_loadu_ps(sptr2 + imstep * (tr_y + l) + tr_x + k), mv);
+									mw = _mm256_add_ps(mrw, mw);
+								}
+								else
+								{
+									for (int n = patchWindowSizeY; n--;)
+									{
+										for (int m = patchWindowSizeX; m--;)
+										{
+											// computing color L2 norm
+											__m256 ml2 = _mm256_ssd_ps(_mm256_loadu_ps(s), _mm256_loadu_ps(t));
+											mdist = _mm256_add_ps(mdist, ml2);
+											s++, t++;
+										}
+										t += cstep;
+										s += cstep;
+									}
+									__m256 mrw = _mm256_i32gather_ps(weight, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist)), 4);
+									mv = _mm256_fmadd_ps(mrw, _mm256_loadu_ps(sptr2 + imstep * (tr_y + l) + tr_x + k), mv);
+									mw = _mm256_add_ps(mrw, mw);
+								}
+							}
+						}
+						//weight normalization
+						_mm256_storeu_ps(d, _mm256_div_ps(mv, mw));
+						d += 8;
+					}//i
+				}//j
+			}
+		}
+
+		virtual void operator()(const cv::Range& r) const
+		{
+			unroll1(r);
+		}
+	};
+
+	void nonLocalMeansFilter(const Mat& src, Mat& dest, const Size patchWindowSize, const Size kernelWindowSize, const double sigma, const double powexp, const int patchnorm, const int borderType)
+	{
+		dest.create(src.size(), src.type());
+
+		const int bbx = (patchWindowSize.width >> 1) + (kernelWindowSize.width >> 1);
+		const int bby = (patchWindowSize.height >> 1) + (kernelWindowSize.height >> 1);
+		//	const int D = searchWindowSize*searchWindowSize;
+
+		//create large size image for bounding box;
+		const int dpad = get_simd_ceil(src.cols, 32) - src.cols;
+		const int spad = get_simd_ceil(src.cols + 2 * bbx, 32) - (src.cols + 2 * bbx);
+		Mat dst(Size(src.cols + dpad, src.rows), dest.type());
+
+		Mat im;
+		if (src.channels() == 1)
+		{
+			copyMakeBorder(src, im, bby, bby, bbx, bbx + spad, borderType);
+		}
+		else if (src.channels() == 3)
+		{
+			Mat temp;
+			copyMakeBorder(src, temp, bby, bby, bbx, bbx + spad, borderType);
+			cvtColorBGR2PLANE(temp, im);
+		}
+
+		//weight computation;
+		const int range_size = (patchnorm == 2) ? (int)ceil(sqrt(255 * 255 * src.channels() * patchWindowSize.area())) : (int)256 * src.channels();
+		vector<float> weight(range_size);
+		float* range_weight = &weight[0];
+		double gauss_color_coeff = (1.0 / (sigma));
+		for (int i = 0; i < range_size; i++)
+		{
+			range_weight[i] = (float)std::exp(-pow(abs(i * gauss_color_coeff), powexp) / powexp);
+		}
+
+		if (src.depth() == CV_8U)
+		{
+			if (patchnorm == 1)
+			{
+				NonlocalMeansFilterInvorker8u_AVX<1> body(im, dst, patchWindowSize.width, patchWindowSize.height, kernelWindowSize.width, kernelWindowSize.height, range_weight);
+				cv::parallel_for_(Range(0, dst.rows), body);
+			}
+			else
+			{
+				NonlocalMeansFilterInvorker8u_AVX<2> body(im, dst, patchWindowSize.width, patchWindowSize.height, kernelWindowSize.width, kernelWindowSize.height, range_weight);
+				cv::parallel_for_(Range(0, dst.rows), body);
+			}
+		}
+		if (src.depth() == CV_16U)
+		{
+			Mat imf, dstf;
+			im.convertTo(imf, CV_32F);
+			dst.convertTo(dstf, CV_32F);
+			if (patchnorm == 1)
+			{
+				NonlocalMeansFilterInvorker32f_AVX<1> body(imf, dstf, patchWindowSize.width, patchWindowSize.height, kernelWindowSize.width, kernelWindowSize.height, range_weight);
+				cv::parallel_for_(Range(0, dst.rows), body);
+			}
+			else
+			{
+				NonlocalMeansFilterInvorker32f_AVX<2> body(imf, dstf, patchWindowSize.width, patchWindowSize.height, kernelWindowSize.width, kernelWindowSize.height, range_weight);
+				cv::parallel_for_(Range(0, dst.rows), body);
+			}
+			dstf.convertTo(dst, CV_16U);
+		}
+		if (src.depth() == CV_16S)
+		{
+			Mat imf, dstf;
+			im.convertTo(imf, CV_32F);
+			dst.convertTo(dstf, CV_32F);
+			if (patchnorm == 1)
+			{
+				NonlocalMeansFilterInvorker32f_AVX<1> body(imf, dstf, patchWindowSize.width, patchWindowSize.height, kernelWindowSize.width, kernelWindowSize.height, range_weight);
+				cv::parallel_for_(Range(0, dst.rows), body);
+			}
+			else
+			{
+				NonlocalMeansFilterInvorker32f_AVX<2> body(imf, dstf, patchWindowSize.width, patchWindowSize.height, kernelWindowSize.width, kernelWindowSize.height, range_weight);
+				cv::parallel_for_(Range(0, dst.rows), body);
+			}
+			dstf.convertTo(dst, CV_16S);
+		}
+		else if (src.depth() == CV_32F)
+		{
+			if (patchnorm == 1)
+			{
+				NonlocalMeansFilterInvorker32f_AVX<1> body(im, dst, patchWindowSize.width, patchWindowSize.height, kernelWindowSize.width, kernelWindowSize.height, range_weight);
+				cv::parallel_for_(Range(0, dst.rows), body);
+			}
+			else
+			{
+				NonlocalMeansFilterInvorker32f_AVX<2> body(im, dst, patchWindowSize.width, patchWindowSize.height, kernelWindowSize.width, kernelWindowSize.height, range_weight);
+				cv::parallel_for_(Range(0, dst.rows), body);
+			}
+		}
+		else if (src.depth() == CV_64F)
+		{
+			Mat imf, dstf;
+			im.convertTo(imf, CV_32F);
+			dst.convertTo(dstf, CV_32F);
+			if (patchnorm == 1)
+			{
+				NonlocalMeansFilterInvorker32f_AVX<1> body(imf, dstf, patchWindowSize.width, patchWindowSize.height, kernelWindowSize.width, kernelWindowSize.height, range_weight);
+				cv::parallel_for_(Range(0, dst.rows), body);
+			}
+			else
+			{
+				NonlocalMeansFilterInvorker32f_AVX<2> body(imf, dstf, patchWindowSize.width, patchWindowSize.height, kernelWindowSize.width, kernelWindowSize.height, range_weight);
+				cv::parallel_for_(Range(0, dst.rows), body);
+			}
+			dstf.convertTo(dst, CV_64F);
+		}
+
+		Mat(dst(Rect(0, 0, dest.cols, dest.rows))).copyTo(dest);
+	}
+
+	void nonLocalMeansFilter(const Mat& src, Mat& dest, const int patchWindowSize, const int kernelWindowSize, const  double sigma, const double powexp, const int patchnorm, const int borderType)
+	{
+		nonLocalMeansFilter(src, dest, Size(patchWindowSize, patchWindowSize), Size(kernelWindowSize, kernelWindowSize), sigma, powexp, patchnorm, borderType);
+	}
+
+	void patchBilateralFilter(const Mat& src, Mat& dest, const Size patchWindowSize, const Size kernelWindowSize, const double sigma_range, const double powexp_range, const int patchnorm, const double sigma_space, const double powexp_space, const int borderType)
+	{
+		dest.create(src.size(), src.type());
+
+		const int bbx = (patchWindowSize.width >> 1) + (kernelWindowSize.width >> 1);
+		const int bby = (patchWindowSize.height >> 1) + (kernelWindowSize.height >> 1);
+		//	const int D = searchWindowSize*searchWindowSize;
+
+		//create large size image for bounding box;
+		const int dpad = get_simd_ceil(src.cols, 32) - src.cols;
+		const int spad = get_simd_ceil(src.cols + 2 * bbx, 32) - (src.cols + 2 * bbx);
+		Mat dst(Size(src.cols + dpad, src.rows), dest.type());
+
+		Mat im;
+		if (src.channels() == 1)
+		{
+			copyMakeBorder(src, im, bby, bby, bbx, bbx + spad, borderType);
+		}
+		else if (src.channels() == 3)
+		{
+			Mat temp;
+			copyMakeBorder(src, temp, bby, bby, bbx, bbx + spad, borderType);
+			cvtColorBGR2PLANE(temp, im);
+		}
+
+#pragma region weight computation
+		//space weight
+		const int space_size = kernelWindowSize.area();
+		float* space_weight = (float*)_mm_malloc(sizeof(float) * space_size, AVX_ALIGN);
+		for (int i = 0; i < space_size; i++)space_weight[i] = 1.f;
+		const int radius = kernelWindowSize.width / 2;
+		int sindex = 0;
+		double gauss_space_coeff = (1.0 / (sigma_space));
+		for (int j = -radius; j <= radius; j++)
+		{
+			for (int i = -radius; i <= radius; i++)
+			{
+				float dist = sqrt(i * i + j * j);
+				space_weight[sindex++] = (float)std::exp(-pow(abs(dist * gauss_space_coeff), powexp_space) / powexp_space);
+			}
+		}
+
+		//range weight
+		const int range_size = (patchnorm == 2) ? (int)ceil(sqrt(255 * 255 * src.channels() * patchWindowSize.area())) : (int)256 * src.channels();
+		float* range_weight = (float*)_mm_malloc(sizeof(float) * range_size, AVX_ALIGN);
+		double gauss_color_coeff = (1.0 / (sigma_range));
+		for (int i = 0; i < range_size; i++)
+		{
+			range_weight[i] = (float)std::exp(-pow(abs(i * gauss_color_coeff), powexp_range) / powexp_range);
+		}
+#pragma endregion
+
+		if (src.depth() == CV_8U)
+		{
+			if (patchnorm == 1)
+			{
+				PatchBilateralFilterInvorker8u_AVX<1> body(im, dst, patchWindowSize.width, patchWindowSize.height, kernelWindowSize.width, kernelWindowSize.height, range_weight, space_weight);
+				cv::parallel_for_(Range(0, dst.rows), body);
+			}
+			else
+			{
+				PatchBilateralFilterInvorker8u_AVX<2> body(im, dst, patchWindowSize.width, patchWindowSize.height, kernelWindowSize.width, kernelWindowSize.height, range_weight, space_weight);
+				cv::parallel_for_(Range(0, dst.rows), body);
+			}
+		}
+		if (src.depth() == CV_16U)
+		{
+			Mat imf, dstf;
+			im.convertTo(imf, CV_32F);
+			dst.convertTo(dstf, CV_32F);
+			if (patchnorm == 1)
+			{
+				NonlocalMeansFilterInvorker32f_AVX<1> body(imf, dstf, patchWindowSize.width, patchWindowSize.height, kernelWindowSize.width, kernelWindowSize.height, range_weight);
+				cv::parallel_for_(Range(0, dst.rows), body);
+			}
+			else
+			{
+				NonlocalMeansFilterInvorker32f_AVX<2> body(imf, dstf, patchWindowSize.width, patchWindowSize.height, kernelWindowSize.width, kernelWindowSize.height, range_weight);
+				cv::parallel_for_(Range(0, dst.rows), body);
+			}
+			dstf.convertTo(dst, CV_16U);
+		}
+		if (src.depth() == CV_16S)
+		{
+			Mat imf, dstf;
+			im.convertTo(imf, CV_32F);
+			dst.convertTo(dstf, CV_32F);
+			if (patchnorm == 1)
+			{
+				NonlocalMeansFilterInvorker32f_AVX<1> body(imf, dstf, patchWindowSize.width, patchWindowSize.height, kernelWindowSize.width, kernelWindowSize.height, range_weight);
+				cv::parallel_for_(Range(0, dst.rows), body);
+			}
+			else
+			{
+				NonlocalMeansFilterInvorker32f_AVX<2> body(imf, dstf, patchWindowSize.width, patchWindowSize.height, kernelWindowSize.width, kernelWindowSize.height, range_weight);
+				cv::parallel_for_(Range(0, dst.rows), body);
+			}
+			dstf.convertTo(dst, CV_16S);
+		}
+		else if (src.depth() == CV_32F)
+		{
+			if (patchnorm == 1)
+			{
+				NonlocalMeansFilterInvorker32f_AVX<1> body(im, dst, patchWindowSize.width, patchWindowSize.height, kernelWindowSize.width, kernelWindowSize.height, range_weight);
+				cv::parallel_for_(Range(0, dst.rows), body);
+			}
+			else
+			{
+				NonlocalMeansFilterInvorker32f_AVX<2> body(im, dst, patchWindowSize.width, patchWindowSize.height, kernelWindowSize.width, kernelWindowSize.height, range_weight);
+				cv::parallel_for_(Range(0, dst.rows), body);
+			}
+		}
+		else if (src.depth() == CV_64F)
+		{
+			Mat imf, dstf;
+			im.convertTo(imf, CV_32F);
+			dst.convertTo(dstf, CV_32F);
+			if (patchnorm == 1)
+			{
+				NonlocalMeansFilterInvorker32f_AVX<1> body(imf, dstf, patchWindowSize.width, patchWindowSize.height, kernelWindowSize.width, kernelWindowSize.height, range_weight);
+				cv::parallel_for_(Range(0, dst.rows), body);
+			}
+			else
+			{
+				NonlocalMeansFilterInvorker32f_AVX<2> body(imf, dstf, patchWindowSize.width, patchWindowSize.height, kernelWindowSize.width, kernelWindowSize.height, range_weight);
+				cv::parallel_for_(Range(0, dst.rows), body);
+			}
+			dstf.convertTo(dst, CV_64F);
+		}
+
+		Mat(dst(Rect(0, 0, dest.cols, dest.rows))).copyTo(dest);
+		_mm_free(space_weight);
+		_mm_free(range_weight);
+	}
+
+	void patchBilateralFilter(const Mat& src, Mat& dest, const int patchWindowSize, const int kernelWindowSize, const  double sigma_range, const double powexp_range, const int patchnorm, const double sigma_space, const double powexp_space, const int borderType)
+	{
+		patchBilateralFilter(src, dest, Size(patchWindowSize, patchWindowSize), Size(kernelWindowSize, kernelWindowSize), sigma_range, powexp_range, patchnorm, sigma_space, powexp_space, borderType);
+	}
+
+
+#pragma region NLM old
 	template <class srcType>
 	class NonlocalMeansFilterNonzeroBaseInvorker_ : public cv::ParallelLoopBody
 	{
@@ -305,7 +1788,7 @@ namespace cp
 		}
 	};
 
-	class NonlocalMeansFilterInvorker32f_SSE4 : public cv::ParallelLoopBody
+	class NonlocalMeansFilterInvorker32fL1Distance_SSE4 : public cv::ParallelLoopBody
 	{
 	private:
 		Mat* im;
@@ -318,7 +1801,7 @@ namespace cp
 		float* w;
 	public:
 
-		NonlocalMeansFilterInvorker32f_SSE4(Mat& src_, Mat& dest_, int templeteWindowSizeX_, int templeteWindowSizeY_, int searchWindowSizeX_, int searchWindowSizeY_, float* weight)
+		NonlocalMeansFilterInvorker32fL1Distance_SSE4(Mat& src_, Mat& dest_, int templeteWindowSizeX_, int templeteWindowSizeY_, int searchWindowSizeX_, int searchWindowSizeY_, float* weight)
 			: im(&src_), dest(&dest_), templeteWindowSizeX(templeteWindowSizeX_), templeteWindowSizeY(templeteWindowSizeY_), searchWindowSizeX(searchWindowSizeX_), searchWindowSizeY(searchWindowSizeY_), w(weight)
 		{
 			;
@@ -466,36 +1949,37 @@ namespace cp
 		}
 	};
 
-	class NonlocalMeansFilterInvorker8u_SSE4 : public cv::ParallelLoopBody
+	class NonlocalMeansFilterInvorker8uL1Distance_SSE4 : public cv::ParallelLoopBody
 	{
 	private:
 		Mat* im;
 		Mat* dest;
-		int templeteWindowSizeX;
-		int templeteWindowSizeY;
-		int searchWindowSizeX;
-		int searchWindowSizeY;
+		int patchWindowSizeX;
+		int patchWindowSizeY;
+		int kernelWindowSizeX;
+		int kernelWindowSizeY;
 
-		float* w;
+		float* weight;
 	public:
 
-		NonlocalMeansFilterInvorker8u_SSE4(Mat& src_, Mat& dest_, int templeteWindowSizeX_, int templeteWindowSizeY_, int searchWindowSizeX_, int searchWindowSizeY_, float* weight)
-			: im(&src_), dest(&dest_), templeteWindowSizeX(templeteWindowSizeX_), templeteWindowSizeY(templeteWindowSizeY_), searchWindowSizeX(searchWindowSizeX_), searchWindowSizeY(searchWindowSizeY_), w(weight)
+		NonlocalMeansFilterInvorker8uL1Distance_SSE4(Mat& src_, Mat& dest_, int patchWindowSizeX_, int patchWindowSizeY_, int kernelWindowSizeX_, int kernelWindowSizeY_, float* weight)
+			: im(&src_), dest(&dest_), patchWindowSizeX(patchWindowSizeX_), patchWindowSizeY(patchWindowSizeY_), kernelWindowSizeX(kernelWindowSizeX_), kernelWindowSizeY(kernelWindowSizeY_), weight(weight)
 		{
 			;
 		}
 		virtual void operator()(const cv::Range& r) const
 		{
-			const int tr_x = templeteWindowSizeX >> 1;
-			const int sr_x = searchWindowSizeX >> 1;
-			const int tr_y = templeteWindowSizeY >> 1;
-			const int sr_y = searchWindowSizeY >> 1;
-			const int cstep = im->cols - templeteWindowSizeX;
+			const int tr_x = patchWindowSizeX >> 1;
+			const int sr_x = kernelWindowSizeX >> 1;
+			const int tr_y = patchWindowSizeY >> 1;
+			const int sr_y = kernelWindowSizeY >> 1;
+			const int cstep = im->cols - patchWindowSizeX;
 			const int imstep = im->cols;
 
-			const int tD = templeteWindowSizeX * templeteWindowSizeY;
-			const float tdiv = 1.f / (float)(tD);//templete square div
+			const int patchSize = patchWindowSizeX * patchWindowSizeY;
+			const float tdiv = 1.f / (float)(patchSize);//templete square div
 			__m128 mtdiv = _mm_set1_ps(tdiv);
+
 			if (dest->channels() == 3)
 			{
 				const int colorstep = im->size().area() / 3;
@@ -532,10 +2016,10 @@ namespace cp
 						//search loop
 						const uchar* tprt = tprt_ + i;
 						const uchar* sptr2 = sptr2_ + i;
-						for (int l = searchWindowSizeY; l--;)
+						for (int l = kernelWindowSizeY; l--;)
 						{
 							const uchar* sptr = sptr2 + imstep * (l);
-							for (int k = searchWindowSizeX; k--;)
+							for (int k = kernelWindowSizeX; k--;)
 							{
 								uchar* t = (uchar*)tprt;
 								uchar* s = (uchar*)(sptr + k);
@@ -543,9 +2027,9 @@ namespace cp
 								__m128i me0 = _mm_setzero_si128();
 								__m128i me1 = _mm_setzero_si128();
 
-								for (int n = templeteWindowSizeY; n--;)
+								for (int n = patchWindowSizeY; n--;)
 								{
-									for (int m = templeteWindowSizeX; m--;)
+									for (int m = patchWindowSizeX; m--;)
 									{
 										// computing color L2 norm
 										__m128i ms = _mm_loadu_si128((__m128i*)s);
@@ -619,25 +2103,25 @@ namespace cp
 								__m128i sb3 = _mm_unpackhi_epi16(sb2, zero);
 								sb2 = _mm_unpacklo_epi16(sb2, zero);
 
-								__m128 www = _mm_set_ps(w[buf[3]], w[buf[2]], w[buf[1]], w[buf[0]]);
+								__m128 www = _mm_set_ps(weight[buf[3]], weight[buf[2]], weight[buf[1]], weight[buf[0]]);
 								mr0 = _mm_add_ps(mr0, _mm_mul_ps(www, _mm_cvtepi32_ps(sr0)));
 								mg0 = _mm_add_ps(mg0, _mm_mul_ps(www, _mm_cvtepi32_ps(sg0)));
 								mb0 = _mm_add_ps(mb0, _mm_mul_ps(www, _mm_cvtepi32_ps(sb0)));
 								mtweight0 = _mm_add_ps(mtweight0, www);
 
-								www = _mm_set_ps(w[buf[7]], w[buf[6]], w[buf[5]], w[buf[4]]);
+								www = _mm_set_ps(weight[buf[7]], weight[buf[6]], weight[buf[5]], weight[buf[4]]);
 								mr1 = _mm_add_ps(mr1, _mm_mul_ps(www, _mm_cvtepi32_ps(sr1)));
 								mg1 = _mm_add_ps(mg1, _mm_mul_ps(www, _mm_cvtepi32_ps(sg1)));
 								mb1 = _mm_add_ps(mb1, _mm_mul_ps(www, _mm_cvtepi32_ps(sb1)));
 								mtweight1 = _mm_add_ps(mtweight1, www);
 
-								www = _mm_set_ps(w[buf[11]], w[buf[10]], w[buf[9]], w[buf[8]]);
+								www = _mm_set_ps(weight[buf[11]], weight[buf[10]], weight[buf[9]], weight[buf[8]]);
 								mr2 = _mm_add_ps(mr2, _mm_mul_ps(www, _mm_cvtepi32_ps(sr2)));
 								mg2 = _mm_add_ps(mg2, _mm_mul_ps(www, _mm_cvtepi32_ps(sg2)));
 								mb2 = _mm_add_ps(mb2, _mm_mul_ps(www, _mm_cvtepi32_ps(sb2)));
 								mtweight2 = _mm_add_ps(mtweight2, www);
 
-								www = _mm_set_ps(w[buf[15]], w[buf[14]], w[buf[13]], w[buf[12]]);
+								www = _mm_set_ps(weight[buf[15]], weight[buf[14]], weight[buf[13]], weight[buf[12]]);
 								mr3 = _mm_add_ps(mr3, _mm_mul_ps(www, _mm_cvtepi32_ps(sr3)));
 								mg3 = _mm_add_ps(mg3, _mm_mul_ps(www, _mm_cvtepi32_ps(sg3)));
 								mb3 = _mm_add_ps(mb3, _mm_mul_ps(www, _mm_cvtepi32_ps(sb3)));
@@ -700,10 +2184,10 @@ namespace cp
 						//search loop
 						uchar* tprt = im->ptr<uchar>(sr_y + j) + (sr_x + i);
 						uchar* sptr2 = im->ptr<uchar>(j) + (i);
-						for (int l = searchWindowSizeY; l--;)
+						for (int l = kernelWindowSizeY; l--;)
 						{
 							uchar* sptr = sptr2 + imstep * (l);
-							for (int k = searchWindowSizeX; k--;)
+							for (int k = kernelWindowSizeX; k--;)
 							{
 								//templete loop
 								__m128i me0 = _mm_setzero_si128();
@@ -711,9 +2195,9 @@ namespace cp
 
 								uchar* t = tprt;
 								uchar* s = sptr + k;
-								for (int n = templeteWindowSizeY; n--;)
+								for (int n = patchWindowSizeY; n--;)
 								{
-									for (int m = templeteWindowSizeX; m--;)
+									for (int m = patchWindowSizeX; m--;)
 									{
 										// computing color L2 norm
 										__m128i ms = _mm_loadu_si128((__m128i*)s);
@@ -749,19 +2233,19 @@ namespace cp
 								__m128i s3 = _mm_unpackhi_epi16(s2, zero);
 								s2 = _mm_unpacklo_epi16(s2, zero);
 
-								__m128 www = _mm_set_ps(w[buf[3]], w[buf[2]], w[buf[1]], w[buf[0]]);
+								__m128 www = _mm_set_ps(weight[buf[3]], weight[buf[2]], weight[buf[1]], weight[buf[0]]);
 								mvalue0 = _mm_add_ps(mvalue0, _mm_mul_ps(www, _mm_cvtepi32_ps(s0)));
 								mtweight0 = _mm_add_ps(mtweight0, www);
 
-								www = _mm_set_ps(w[buf[7]], w[buf[6]], w[buf[5]], w[buf[4]]);
+								www = _mm_set_ps(weight[buf[7]], weight[buf[6]], weight[buf[5]], weight[buf[4]]);
 								mvalue1 = _mm_add_ps(mvalue1, _mm_mul_ps(www, _mm_cvtepi32_ps(s1)));
 								mtweight1 = _mm_add_ps(mtweight1, www);
 
-								www = _mm_set_ps(w[buf[11]], w[buf[10]], w[buf[9]], w[buf[8]]);
+								www = _mm_set_ps(weight[buf[11]], weight[buf[10]], weight[buf[9]], weight[buf[8]]);
 								mvalue2 = _mm_add_ps(mvalue2, _mm_mul_ps(www, _mm_cvtepi32_ps(s2)));
 								mtweight2 = _mm_add_ps(mtweight2, www);
 
-								www = _mm_set_ps(w[buf[15]], w[buf[14]], w[buf[13]], w[buf[12]]);
+								www = _mm_set_ps(weight[buf[15]], weight[buf[14]], weight[buf[13]], weight[buf[12]]);
 								mvalue3 = _mm_add_ps(mvalue3, _mm_mul_ps(www, _mm_cvtepi32_ps(s3)));
 								mtweight3 = _mm_add_ps(mtweight3, www);
 							}
@@ -776,7 +2260,6 @@ namespace cp
 			}
 		}
 	};
-
 
 	void nonLocalMeansFilterBase(const Mat& src, Mat& dest, Size templeteWindowSize, Size searchWindowSize, double h, double sigma, int borderType)
 	{
@@ -827,7 +2310,7 @@ namespace cp
 		}
 	}
 
-	void nonLocalMeansFilter_SSE(const Mat& src, Mat& dest, Size templeteWindowSize, Size searchWindowSize, double sigma, double powexp,int borderType)
+	void nonLocalMeansFilterL1Distance_SSE(const Mat& src, Mat& dest, Size templeteWindowSize, Size searchWindowSize, double sigma, double powexp, int borderType)
 	{
 		dest.create(src.size(), src.type());
 
@@ -874,7 +2357,7 @@ namespace cp
 
 		if (src.depth() == CV_8U)
 		{
-			NonlocalMeansFilterInvorker8u_SSE4 body(im, dst, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, range_weight);
+			NonlocalMeansFilterInvorker8uL1Distance_SSE4 body(im, dst, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, range_weight);
 			cv::parallel_for_(Range(0, dst.rows), body);
 			/*Mat imf, dstf;
 			im.convertTo(imf, CV_32F);
@@ -888,7 +2371,7 @@ namespace cp
 			Mat imf, dstf;
 			im.convertTo(imf, CV_32F);
 			dst.convertTo(dstf, CV_32F);
-			NonlocalMeansFilterInvorker32f_SSE4 body(imf, dstf, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, range_weight);
+			NonlocalMeansFilterInvorker32fL1Distance_SSE4 body(imf, dstf, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, range_weight);
 			cv::parallel_for_(Range(0, dst.rows), body);
 			dstf.convertTo(dst, CV_16U);
 		}
@@ -897,13 +2380,13 @@ namespace cp
 			Mat imf, dstf;
 			im.convertTo(imf, CV_32F);
 			dst.convertTo(dstf, CV_32F);
-			NonlocalMeansFilterInvorker32f_SSE4 body(imf, dstf, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, range_weight);
+			NonlocalMeansFilterInvorker32fL1Distance_SSE4 body(imf, dstf, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, range_weight);
 			cv::parallel_for_(Range(0, dst.rows), body);
 			dstf.convertTo(dst, CV_16S);
 		}
 		else if (src.depth() == CV_32F)
 		{
-			NonlocalMeansFilterInvorker32f_SSE4 body(im, dst, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, range_weight);
+			NonlocalMeansFilterInvorker32fL1Distance_SSE4 body(im, dst, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, range_weight);
 			cv::parallel_for_(Range(0, dst.rows), body);
 		}
 		else if (src.depth() == CV_64F)
@@ -911,7 +2394,7 @@ namespace cp
 			Mat imf, dstf;
 			im.convertTo(imf, CV_32F);
 			dst.convertTo(dstf, CV_32F);
-			NonlocalMeansFilterInvorker32f_SSE4 body(imf, dstf, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, range_weight);
+			NonlocalMeansFilterInvorker32fL1Distance_SSE4 body(imf, dstf, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, range_weight);
 			cv::parallel_for_(Range(0, dst.rows), body);
 			dstf.convertTo(dst, CV_64F);
 		}
@@ -921,10 +2404,9 @@ namespace cp
 
 	void nonLocalMeansFilter_SP(const Mat& src, Mat& dest, Size templeteWindowSize, Size searchWindowSize, double h, double sigma, int borderType)
 	{
-		nonLocalMeansFilter_SSE(src, dest, templeteWindowSize, Size(searchWindowSize.width, 1), h, sigma, borderType);
-		nonLocalMeansFilter_SSE(dest, dest, templeteWindowSize, Size(1, searchWindowSize.height), h, sigma, borderType);
+		nonLocalMeansFilterL1Distance_SSE(src, dest, templeteWindowSize, Size(searchWindowSize.width, 1), h, sigma, borderType);
+		nonLocalMeansFilterL1Distance_SSE(dest, dest, templeteWindowSize, Size(1, searchWindowSize.height), h, sigma, borderType);
 	}
-
 
 	void nonLocalMeansFilterL1PatchDistance(const Mat& src, Mat& dest, const Size templeteWindowSize, const Size searchWindowSize, const double sigma, const double powexp, const int method, const int borderType)
 	{
@@ -938,7 +2420,7 @@ namespace cp
 		else if (method == FILTER_RECTANGLE || method == FILTER_DEFAULT)
 		{
 			//cout << "default" << endl;
-			nonLocalMeansFilter_SSE(src, dest, templeteWindowSize, searchWindowSize, sigma, powexp, borderType);
+			nonLocalMeansFilterL1Distance_SSE(src, dest, templeteWindowSize, searchWindowSize, sigma, powexp, borderType);
 		}
 		else if (method == FILTER_SEPARABLE)
 		{
@@ -948,7 +2430,7 @@ namespace cp
 		else
 		{
 			//cout << "not supported, call defalt" << endl;
-			nonLocalMeansFilter_SSE(src, dest, templeteWindowSize, searchWindowSize, sigma, powexp, borderType);
+			nonLocalMeansFilterL1Distance_SSE(src, dest, templeteWindowSize, searchWindowSize, sigma, powexp, borderType);
 		}
 	}
 
@@ -956,7 +2438,6 @@ namespace cp
 	{
 		nonLocalMeansFilterL1PatchDistance(src, dest, Size(templeteWindowSize, templeteWindowSize), Size(searchWindowSize, searchWindowSize), h, sigma, method, borderType);
 	}
-
 
 	void separableNonLocalMeansFilterL1PatchDistance(Mat& src, Mat& dest, int templeteWindowSize, int searchWindowSize, double h, double sigma, double alpha, int method, int borderType)
 	{
@@ -1000,241 +2481,6 @@ namespace cp
 
 		alphaBlend(dst,dst2,0.5,dst);
 		}*/
-	}
-#pragma endregion
-
-	class NonlocalMeansFilterInvorker32f_AVX : public cv::ParallelLoopBody
-	{
-	private:
-		Mat* im;
-		Mat* dest;
-		int templeteWindowSizeX;
-		int templeteWindowSizeY;
-		int searchWindowSizeX;
-		int searchWindowSizeY;
-
-		float* weight;
-	public:
-
-		NonlocalMeansFilterInvorker32f_AVX(Mat& src_, Mat& dest_, int templeteWindowSizeX_, int templeteWindowSizeY_, int searchWindowSizeX_, int searchWindowSizeY_, float* weight)
-			: im(&src_), dest(&dest_), templeteWindowSizeX(templeteWindowSizeX_), templeteWindowSizeY(templeteWindowSizeY_), searchWindowSizeX(searchWindowSizeX_), searchWindowSizeY(searchWindowSizeY_), weight(weight)
-		{
-			;
-		}
-
-		virtual void operator()(const cv::Range& r) const
-		{
-			const int tr_x = templeteWindowSizeX >> 1;
-			const int sr_x = searchWindowSizeX >> 1;
-			const int tr_y = templeteWindowSizeY >> 1;
-			const int sr_y = searchWindowSizeY >> 1;
-			const int cstep = im->cols - templeteWindowSizeX;
-			const int imstep = im->cols;
-
-			const int templateSize = templeteWindowSizeX * templeteWindowSizeY;
-			const float tdiv = 1.f / (float)(templateSize);//templete square div
-			__m256 mtdiv = _mm256_set1_ps(tdiv);
-
-			if (dest->channels() == 3)
-			{
-				const int colorstep = im->size().area() / 3;
-				const int colorstep2 = colorstep * 2;
-				for (int j = r.start; j < r.end; j++)
-				{
-					float* d = dest->ptr<float>(j);
-					const float* tprt_ = im->ptr<float>(sr_y + j) + sr_x;
-					const float* sptr2_ = im->ptr<float>(j);
-					for (int i = 0; i < dest->cols; i += 8)
-					{
-						__m256 mr = _mm256_setzero_ps();
-						__m256 mg = _mm256_setzero_ps();
-						__m256 mb = _mm256_setzero_ps();
-						__m256 mw = _mm256_setzero_ps();
-
-						//search loop
-						const float* tprt = tprt_ + i;
-						const float* sptr2 = sptr2_ + i;
-						for (int l = searchWindowSizeY; l--;)
-						{
-							const float* sptr = sptr2 + imstep * (l);
-							for (int k = searchWindowSizeX; k--;)
-							{
-								//templete loop
-								float* t = (float*)tprt;
-								float* s = (float*)(sptr + k);
-								//colorstep
-								__m256 mdist = _mm256_setzero_ps();
-								for (int n = templeteWindowSizeY; n--;)
-								{
-									for (int m = templeteWindowSizeX; m--;)
-									{
-										// computing color L2 norm
-										mdist= _mm256_ssdadd_ps(mdist,
-											_mm256_loadu_ps(s), _mm256_loadu_ps(s + colorstep), _mm256_loadu_ps(s + colorstep2),
-											_mm256_loadu_ps(t), _mm256_loadu_ps(t + colorstep), _mm256_loadu_ps(t + colorstep2));
-										s++, t++;
-									}
-									t += cstep;
-									s += cstep;
-								}
-								const __m256 mrw = _mm256_i32gather_ps(weight, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist)), 4);
-
-								const float* ss = sptr2 + imstep * (tr_y + l) + (tr_x + k);
-								mb = _mm256_fmadd_ps(mrw, _mm256_loadu_ps(ss), mb);
-								mg = _mm256_fmadd_ps(mrw, _mm256_loadu_ps(ss + colorstep), mg);
-								mr = _mm256_fmadd_ps(mrw, _mm256_loadu_ps(ss + colorstep2), mr);
-								mw = _mm256_add_ps(mrw, mw);
-							}
-						}
-						mb = _mm256_div_ps(mb, mw);
-						mg = _mm256_div_ps(mg, mw);
-						mr = _mm256_div_ps(mr, mw);
-						_mm256_storeu_ps_color(d, mb, mg, mr);
-						d += 24;
-					}//i
-				}//j
-			}
-			else if (dest->channels() == 1)
-			{
-				for (int j = r.start; j < r.end; j++)
-				{
-					float* d = dest->ptr<float>(j);
-					for (int i = 0; i < dest->cols; i += 8)
-					{
-						__m256 mv = _mm256_setzero_ps();
-						__m256 mw = _mm256_setzero_ps();
-
-						//search loop
-						float* tprt = im->ptr<float>(sr_y + j) + (sr_x + i);
-						float* sptr2 = im->ptr<float>(j) + (i);
-						for (int l = searchWindowSizeY; l--;)
-						{
-							float* sptr = sptr2 + imstep * (l);
-							for (int k = searchWindowSizeX; k--;)
-							{
-								//templete loop
-								__m256 mdist = _mm256_setzero_ps();
-								float* t = tprt;
-								float* s = sptr + k;
-								for (int n = templeteWindowSizeY; n--;)
-								{
-									for (int m = templeteWindowSizeX; m--;)
-									{
-										// computing color L2 norm
-										__m256 ml2 = _mm256_ssd_ps(_mm256_loadu_ps(s), _mm256_loadu_ps(t));
-										mdist = _mm256_add_ps(mdist, ml2);
-										s++, t++;
-									}
-									t += cstep;
-									s += cstep;
-								}
-								__m256 mrw = _mm256_i32gather_ps(weight, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist)), 4);
-								mv = _mm256_fmadd_ps(mrw, _mm256_loadu_ps(sptr2 + imstep * (tr_y + l) + tr_x + k), mv);
-								mw = _mm256_add_ps(mrw, mw);
-							}
-						}
-						//weight normalization
-						_mm256_storeu_ps(d, _mm256_div_ps(mv, mw));
-						d += 8;
-					}//i
-				}//j
-			}
-		}
-	};
-
-	void nonLocalMeansFilter(const Mat& src, Mat& dest, const Size templeteWindowSize, const Size searchWindowSize, const double sigma, const double powexp, const int borderType)
-	{
-		dest.create(src.size(), src.type());
-
-		const int bbx = (templeteWindowSize.width >> 1) + (searchWindowSize.width >> 1);
-		const int bby = (templeteWindowSize.height >> 1) + (searchWindowSize.height >> 1);
-		//	const int D = searchWindowSize*searchWindowSize;
-
-		int dpad;
-		int spad;
-		//create large size image for bounding box;
-		if (src.depth() == CV_8U)
-		{
-			dpad = (16 - src.cols % 16) % 16;
-			spad = (16 - (src.cols + 2 * bbx) % 16) % 16;
-		}
-		else
-		{
-			dpad = (8 - src.cols % 8) % 8;
-			spad = (8 - (src.cols + 2 * bbx) % 8) % 8;
-		}
-		Mat dst(Size(src.cols + dpad, src.rows), dest.type());
-
-		Mat im;
-		if (src.channels() == 1)
-		{
-			copyMakeBorder(src, im, bby, bby, bbx, bbx + spad, borderType);
-		}
-		else if (src.channels() == 3)
-		{
-			Mat temp;
-			copyMakeBorder(src, temp, bby, bby, bbx, bbx + spad, borderType);
-			cvtColorBGR2PLANE(temp, im);
-		}
-
-		//weight computation;
-		const int range_size = (int)ceil(sqrt(255 * 255 * src.channels() * templeteWindowSize.area()));
-		vector<float> weight(range_size);
-		float* range_weight = &weight[0];
-		double gauss_color_coeff = (1.0 / (sigma));
-		for (int i = 0; i < range_size; i++)
-		{
-			range_weight[i] = (float)std::exp(-pow(abs(i * gauss_color_coeff), powexp) / powexp);
-		}
-
-		if (src.depth() == CV_8U)
-		{
-			Mat imf, dstf;
-			im.convertTo(imf, CV_32F);
-			dst.convertTo(dstf, CV_32F);
-			NonlocalMeansFilterInvorker32f_AVX body(imf, dstf, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, range_weight);
-			cv::parallel_for_(Range(0, dst.rows), body);
-			dstf.convertTo(dst, CV_8U);
-		}
-		if (src.depth() == CV_16U)
-		{
-			Mat imf, dstf;
-			im.convertTo(imf, CV_32F);
-			dst.convertTo(dstf, CV_32F);
-			NonlocalMeansFilterInvorker32f_AVX body(imf, dstf, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, range_weight);
-			cv::parallel_for_(Range(0, dst.rows), body);
-			dstf.convertTo(dst, CV_16U);
-		}
-		if (src.depth() == CV_16S)
-		{
-			Mat imf, dstf;
-			im.convertTo(imf, CV_32F);
-			dst.convertTo(dstf, CV_32F);
-			NonlocalMeansFilterInvorker32f_AVX body(imf, dstf, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, range_weight);
-			cv::parallel_for_(Range(0, dst.rows), body);
-			dstf.convertTo(dst, CV_16S);
-		}
-		else if (src.depth() == CV_32F)
-		{
-			NonlocalMeansFilterInvorker32f_AVX body(im, dst, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, range_weight);
-			cv::parallel_for_(Range(0, dst.rows), body);
-		}
-		else if (src.depth() == CV_64F)
-		{
-			Mat imf, dstf;
-			im.convertTo(imf, CV_32F);
-			dst.convertTo(dstf, CV_32F);
-			NonlocalMeansFilterInvorker32f_AVX body(imf, dstf, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, range_weight);
-			cv::parallel_for_(Range(0, dst.rows), body);
-			dstf.convertTo(dst, CV_64F);
-		}
-
-		Mat(dst(Rect(0, 0, dest.cols, dest.rows))).copyTo(dest);
-	}
-
-	void nonLocalMeansFilter(const Mat& src, Mat& dest, const int templeteWindowSize, const int searchWindowSize, const  double sigma, const double powexp, const int borderType)
-	{
-		nonLocalMeansFilter(src, dest, Size(templeteWindowSize, templeteWindowSize), Size(searchWindowSize, searchWindowSize),sigma, powexp, borderType);
 	}
 
 	void epsillonFilterL1PatchDistance(Mat& src, Mat& dest, Size templeteWindowSize, Size searchWindowSize, double h, int borderType)
@@ -1286,7 +2532,7 @@ namespace cp
 
 		if (src.depth() == CV_8U)
 		{
-			NonlocalMeansFilterInvorker8u_SSE4 body(im, dst, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, w);
+			NonlocalMeansFilterInvorker8uL1Distance_SSE4 body(im, dst, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, w);
 			cv::parallel_for_(Range(0, dst.rows), body);
 		}
 		if (src.depth() == CV_16U)
@@ -1294,7 +2540,7 @@ namespace cp
 			Mat imf, dstf;
 			im.convertTo(imf, CV_32F);
 			dst.convertTo(dstf, CV_32F);
-			NonlocalMeansFilterInvorker32f_SSE4 body(imf, dstf, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, w);
+			NonlocalMeansFilterInvorker32fL1Distance_SSE4 body(imf, dstf, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, w);
 			cv::parallel_for_(Range(0, dst.rows), body);
 			dstf.convertTo(dst, CV_16U);
 		}
@@ -1303,13 +2549,13 @@ namespace cp
 			Mat imf, dstf;
 			im.convertTo(imf, CV_32F);
 			dst.convertTo(dstf, CV_32F);
-			NonlocalMeansFilterInvorker32f_SSE4 body(imf, dstf, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, w);
+			NonlocalMeansFilterInvorker32fL1Distance_SSE4 body(imf, dstf, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, w);
 			cv::parallel_for_(Range(0, dst.rows), body);
 			dstf.convertTo(dst, CV_16S);
 		}
 		else if (src.depth() == CV_32F)
 		{
-			NonlocalMeansFilterInvorker32f_SSE4 body(im, dst, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, w);
+			NonlocalMeansFilterInvorker32fL1Distance_SSE4 body(im, dst, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, w);
 			cv::parallel_for_(Range(0, dst.rows), body);
 		}
 		else if (src.depth() == CV_64F)
@@ -1317,11 +2563,12 @@ namespace cp
 			Mat imf, dstf;
 			im.convertTo(imf, CV_32F);
 			dst.convertTo(dstf, CV_32F);
-			NonlocalMeansFilterInvorker32f_SSE4 body(imf, dstf, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, w);
+			NonlocalMeansFilterInvorker32fL1Distance_SSE4 body(imf, dstf, templeteWindowSize.width, templeteWindowSize.height, searchWindowSize.width, searchWindowSize.height, w);
 			cv::parallel_for_(Range(0, dst.rows), body);
 			dstf.convertTo(dst, CV_64F);
 		}
 
 		Mat(dst(Rect(0, 0, dest.cols, dest.rows))).copyTo(dest);
 	}
+#pragma endregion
 }
