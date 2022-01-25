@@ -276,7 +276,7 @@ namespace cp
 				{
 					Split* n = new Split;
 					n->cut_dim = longest;
-					n->cut_val = (maxl + minl) * 0.5;
+					n->cut_val = (maxl + minl) * 0.5f;
 
 					// these get computed later
 					n->min_val = -INF;
@@ -373,7 +373,7 @@ namespace cp
 				}
 			}
 
-			GKDTree tree(ref.channels(), points, points.size(), th_rho);
+			GKDTree tree(ref.channels(), points, (int)points.size(), th_rho);
 			tree.finalize();
 
 			AutoBuffer<int> indices(SLICE_ACCURACY);

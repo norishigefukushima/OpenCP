@@ -1761,8 +1761,8 @@ namespace cp
 		__m256 mbb = _mm256_setzero_ps();
 		__m256 mgg = _mm256_setzero_ps();
 		__m256 mbg = _mm256_setzero_ps();
-		const __m256 mba = _mm256_set1_ps(ave.val[0]);
-		const __m256 mga = _mm256_set1_ps(ave.val[1]);
+		const __m256 mba = _mm256_set1_ps(float(ave.val[0]));
+		const __m256 mga = _mm256_set1_ps(float(ave.val[1]));
 		for (int i = 0; i < simdsize; i += 8)
 		{
 			__m256 mb, mg;
@@ -1803,9 +1803,9 @@ namespace cp
 		__m256 mbg = _mm256_setzero_ps();
 		__m256 mbr = _mm256_setzero_ps();
 		__m256 mgr = _mm256_setzero_ps();
-		const __m256 mba = _mm256_set1_ps(ave.val[0]);
-		const __m256 mga = _mm256_set1_ps(ave.val[1]);
-		const __m256 mra = _mm256_set1_ps(ave.val[2]);
+		const __m256 mba = _mm256_set1_ps(float(ave.val[0]));
+		const __m256 mga = _mm256_set1_ps(float(ave.val[1]));
+		const __m256 mra = _mm256_set1_ps(float(ave.val[2]));
 		for (int i = 0; i < simdsize; i += 8)
 		{
 			__m256 mb, mg, mr;
@@ -1840,7 +1840,7 @@ namespace cp
 
 	static void calcCovarMatrix2_(const vector<Mat>& src, Mat& dest)
 	{
-		dest.create(src.size(), src.size(), CV_64F);
+		dest.create((int)src.size(), (int)src.size(), CV_64F);
 		CV_Assert(src.size() <= 4);
 		const float m0 = (float)cp::average(src[0]);
 		const float m1 = (float)cp::average(src[1]);
@@ -1877,7 +1877,7 @@ namespace cp
 
 	static void calcCovarMatrix3_(const vector<Mat>& src, Mat& dest)
 	{
-		dest.create(src.size(), src.size(), CV_64F);
+		dest.create((int)src.size(), (int)src.size(), CV_64F);
 		CV_Assert(src.size() <= 4);
 		const float m0 = (float)cp::average(src[0]);
 		const float m1 = (float)cp::average(src[1]);
@@ -1932,7 +1932,7 @@ namespace cp
 
 	static void calcCovarMatrix4_(const vector<Mat>& src, Mat& dest)
 	{
-		dest.create(src.size(), src.size(), CV_64F);
+		dest.create((int)src.size(), (int)src.size(), CV_64F);
 
 		const float m0 = (float)cp::average(src[0]);
 		const float m1 = (float)cp::average(src[1]);
@@ -2018,7 +2018,7 @@ namespace cp
 
 	static void calcCovarMatrix5_(const vector<Mat>& src, Mat& dest)
 	{
-		dest.create(src.size(), src.size(), CV_64F);
+		dest.create((int)src.size(), (int)src.size(), CV_64F);
 
 		const float m0 = (float)cp::average(src[0]);
 		const float m1 = (float)cp::average(src[1]);
@@ -2134,7 +2134,7 @@ namespace cp
 
 	static void calcCovarMatrix6_(const vector<Mat>& src, Mat& dest)
 	{
-		dest.create(src.size(), src.size(), CV_64F);
+		dest.create((int)src.size(), (int)src.size(), CV_64F);
 
 		const float m0 = (float)cp::average(src[0]);
 		const float m1 = (float)cp::average(src[1]);
@@ -3059,8 +3059,8 @@ namespace cp
 	//src M x dest N
 	static void projectPCA_MxN(const vector<Mat>& src, vector<Mat>& dest, Mat& evec)
 	{
-		const int src_channels = src.size();
-		const int dest_channels = dest.size();
+		const int src_channels = (int)src.size();
+		const int dest_channels = (int)dest.size();
 
 		const int sizesimd = src[0].size().area() / 8;
 

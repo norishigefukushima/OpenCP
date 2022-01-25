@@ -147,7 +147,7 @@ namespace cp
 		uchar* rptr = r.ptr<uchar>();
 		__m256i* ms = (__m256i*)sptr;
 		__m256i* mr = (__m256i*)rptr;
-		const int size = s.total() * se;
+		const int size = (int)s.total() * se;
 		const int simdsize = get_simd_floor(size, 128);
 		const int loopsize = simdsize / 128;
 		int ret = 0;

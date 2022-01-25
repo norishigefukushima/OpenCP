@@ -520,7 +520,7 @@ namespace cp
 				mygreedy[5] = rr[9];
 				sum = rr[0] + rr[1] + rr[2] + rr[3] + rr[8] + rr[9];
 			}
-			sum *= scale;
+			sum = int(sum *scale);
 
 			// rank differential to find the permutation between this simplex and the canonical one.
 			// (See pg. 3-4 in paper.)

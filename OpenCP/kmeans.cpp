@@ -1121,7 +1121,7 @@ namespace cp
 					{
 						// compute distance only
 						parallel_for_(Range(0, N), KMeansDistanceComputer_SoADim<true, KMeansDistanceLoop::KND>(dists.data(), labels, data_points, centroids), cv::getNumThreads());
-						compactness = sum(Mat(Size(N, 1), CV_32F, &dists[0]))[0];
+						compactness = float(sum(Mat(Size(N, 1), CV_32F, &dists[0]))[0]);
 						//getOuterSample(centroids, old_centroids, data_points, labels_internal);
 						//swap(centroids, old_centroids);		
 						break;

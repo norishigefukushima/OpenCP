@@ -27,8 +27,6 @@ void RowSumFilter_HV_AVXgather::filter_naive_impl()
 
 	for (int i = 0; i < row; i += 8)
 	{
-		__m256 mTmp;
-
 		float* sp_prev = src.ptr<float>(i);
 		float* sp_next = src.ptr<float>(i) + cn;
 		float* dp = dest.ptr<float>(i);
@@ -121,8 +119,6 @@ void RowSumFilter_HV_AVXgather::filter_omp_impl()
 #pragma omp parallel for
 	for (int i = 0; i < row; i += 8)
 	{
-		__m256 mTmp;
-
 		float* sp_prev = src.ptr<float>(i);
 		float* sp_next = src.ptr<float>(i) + cn;
 		float* dp = dest.ptr<float>(i);
