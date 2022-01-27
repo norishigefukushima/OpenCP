@@ -1,4 +1,5 @@
 #include "separableFilterCore.hpp"
+using namespace std;
 
 namespace cp
 {
