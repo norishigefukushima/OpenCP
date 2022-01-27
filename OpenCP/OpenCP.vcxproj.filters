@@ -597,6 +597,9 @@
     <ClCompile Include="separableFilterCore.cpp">
       <Filter>ソース ファイル\filter</Filter>
     </ClCompile>
+    <ClCompile Include="unnormalizedBilateralFilter.cpp">
+      <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libGaussian\gaussian_conv.h">
@@ -1072,6 +1075,9 @@
     </ClInclude>
     <ClInclude Include="..\include\search1D.hpp">
       <Filter>ヘッダー ファイル\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\unnormalizedBilateralFilter.hpp">
+      <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -240,7 +240,9 @@ int main(int argc, char** argv)
 	cv::ipp::setUseIPP(false);
 	cv::setUseOptimized(false);
 	*/
+	//testUnnormalizedBilateralFilter(); return 0;
 	//testMultiScaleFilter(); return 0;
+	
 	//testIsSame(); return 0;
 
 

@@ -88,6 +88,7 @@
 #include "recursiveBilateralFilter.hpp"
 #include "separableFilterCore.hpp"
 #include "shockFilter.hpp"
+#include "unnormalizedBilateralFilter.hpp"
 #include "weightedHistogramFilter.hpp"
 #include "Wiener2.hpp"
 #include "fftFilter.hpp"

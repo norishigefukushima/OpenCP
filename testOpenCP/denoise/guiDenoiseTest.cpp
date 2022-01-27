@@ -8,6 +8,8 @@ static enum class DENOISE_METHOD
 {
 	BILATERAL,
 	GUIDED,
+	UNNORMALIZED_BF,
+
 	NONLOCAL,
 	JOINTNONLOCAL,
 	NONLOCAL_L1,
@@ -27,18 +29,19 @@ string getDenoiseMethodName(DENOISE_METHOD method)
 	string ret = "";
 	switch (method)
 	{
-	case DENOISE_METHOD::BILATERAL: ret = "BILATERAL"; break;
-	case DENOISE_METHOD::GUIDED: ret = "GUIDED"; break;
-	case DENOISE_METHOD::NONLOCAL: ret = "NONLOCAL"; break;
-	case DENOISE_METHOD::NONLOCAL_L1: ret = "NONLOCAL_L1"; break;
-	case DENOISE_METHOD::PATCHBF: ret = "PATCHBF"; break;
-	case DENOISE_METHOD::PATCHBF_L1: ret = "PATCHBF_L1"; break;
-	case DENOISE_METHOD::JOINTNONLOCAL: ret = "JOINTNONLOCAL"; break;
-	case DENOISE_METHOD::JOINTNONLOCAL_L1: ret = "JOINTNONLOCAL_L1"; break;
-	case DENOISE_METHOD::JOINTPATCHBF: ret = "JOINTPATCHBF"; break;
-	case DENOISE_METHOD::JOINTPATCHBF_L1: ret = "JOINTPATCHBF_L1"; break;
-	case DENOISE_METHOD::REC_BF: ret = "REC_BF"; break;
-	case DENOISE_METHOD::BM3D: ret = "BM3D"; break;
+	case DENOISE_METHOD::BILATERAL:			ret = "BILATERAL"; break;
+	case DENOISE_METHOD::GUIDED:			ret = "GUIDED"; break;
+	case DENOISE_METHOD::UNNORMALIZED_BF:	ret = "UNNORMALIZED_BF"; break;
+	case DENOISE_METHOD::NONLOCAL:			ret = "NONLOCAL"; break;
+	case DENOISE_METHOD::NONLOCAL_L1:		ret = "NONLOCAL_L1"; break;
+	case DENOISE_METHOD::PATCHBF:			ret = "PATCHBF"; break;
+	case DENOISE_METHOD::PATCHBF_L1:		ret = "PATCHBF_L1"; break;
+	case DENOISE_METHOD::JOINTNONLOCAL:		ret = "JOINTNONLOCAL"; break;
+	case DENOISE_METHOD::JOINTNONLOCAL_L1:	ret = "JOINTNONLOCAL_L1"; break;
+	case DENOISE_METHOD::JOINTPATCHBF:		ret = "JOINTPATCHBF"; break;
+	case DENOISE_METHOD::JOINTPATCHBF_L1:	ret = "JOINTPATCHBF_L1"; break;
+	case DENOISE_METHOD::REC_BF:			ret = "REC_BF"; break;
+	case DENOISE_METHOD::BM3D:				ret = "BM3D"; break;
 	default:
 		break;
 	}
@@ -102,9 +105,11 @@ void guiDenoiseTest(Mat& src)
 		switch (method)
 		{
 		case DENOISE_METHOD::BILATERAL:
-			bilateralFilter(noise, dest, d, sigma_color, sigma_space, FILTER_RECTANGLE); break;
+			cv::bilateralFilter(noise, dest, d, sigma_color, sigma_space, BORDER_DEFAULT); break;
 		case DENOISE_METHOD::GUIDED:
-			guidedImageFilter(noise, noise, dest, r, sigma_color * 10.f);break;
+			cp::guidedImageFilter(noise, noise, dest, r, sigma_color * 10.f);break;
+		case DENOISE_METHOD::UNNORMALIZED_BF:
+			cp::unnormalizedBilateralFilter(noise, dest, r, sigma_color, sigma_space, false); break;
 		case DENOISE_METHOD::NONLOCAL:
 			if(isSep) nonLocalMeansFilterSeparable(noise, dest, td, d, sigma_color, powexp); 
 			else nonLocalMeansFilter(noise, dest, td, d, sigma_color, powexp); break;

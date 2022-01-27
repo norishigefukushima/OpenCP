@@ -103,3 +103,4 @@ void imshowAnalysis(cv::String winname, std::vector<cv::Mat>& s);
 void imshowAnalysis(cv::String winname, cv::Mat& src);
 
 void testMultiScaleFilter();
+void testUnnormalizedBilateralFilter();
