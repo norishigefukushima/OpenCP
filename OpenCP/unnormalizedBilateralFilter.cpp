@@ -254,24 +254,33 @@ namespace cp
 					for (int i = 0; i < src.cols; i += 32)
 					{
 						const float* si = s + i;
-						const __m256 mt0 = _mm256_lddqu_ps(bc + i);
-						const __m256 mt1 = _mm256_lddqu_ps(bc + i + 8);
-						const __m256 mt2 = _mm256_lddqu_ps(bc + i + 16);
-						const __m256 mt3 = _mm256_lddqu_ps(bc + i + 24);
+						const __m256 mbt0 = _mm256_lddqu_ps(bc + i);
+						const __m256 mbt1 = _mm256_lddqu_ps(bc + i + 8);
+						const __m256 mbt2 = _mm256_lddqu_ps(bc + i + 16);
+						const __m256 mbt3 = _mm256_lddqu_ps(bc + i + 24);
+
+						const __m256 mt0 = _mm256_lddqu_ps(si);
+						const __m256 mt1 = _mm256_lddqu_ps(si + 8);
+						const __m256 mt2 = _mm256_lddqu_ps(si + 16);
+						const __m256 mt3 = _mm256_lddqu_ps(si + 24);
 						__m256 msum0 = mt0;
 						__m256 msum1 = mt1;
 						__m256 msum2 = mt2;
 						__m256 msum3 = mt3;
 						for (int k = 0; k < d; k++)
 						{
-							__m256 mv0 = _mm256_sub_ps(_mm256_lddqu_ps(si + offset[k] + 0), mt0);
-							__m256 mv1 = _mm256_sub_ps(_mm256_lddqu_ps(si + offset[k] + 8), mt1);
-							__m256 mv2 = _mm256_sub_ps(_mm256_lddqu_ps(si + offset[k] + 16), mt2);
-							__m256 mv3 = _mm256_sub_ps(_mm256_lddqu_ps(si + offset[k] + 24), mt3);
+							__m256 mv0 = _mm256_sub_ps(_mm256_lddqu_ps(si + offset[k] + 0), mbt0);
+							__m256 mv1 = _mm256_sub_ps(_mm256_lddqu_ps(si + offset[k] + 8), mbt1);
+							__m256 mv2 = _mm256_sub_ps(_mm256_lddqu_ps(si + offset[k] + 16), mbt2);
+							__m256 mv3 = _mm256_sub_ps(_mm256_lddqu_ps(si + offset[k] + 24), mbt3);
 							__m256 mw0 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_i32gather_ps(rweight, _mm256_cvtps_epi32(_mm256_abs_ps(mv0)), 4));
 							__m256 mw1 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_i32gather_ps(rweight, _mm256_cvtps_epi32(_mm256_abs_ps(mv1)), 4));
 							__m256 mw2 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_i32gather_ps(rweight, _mm256_cvtps_epi32(_mm256_abs_ps(mv2)), 4));
 							__m256 mw3 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_i32gather_ps(rweight, _mm256_cvtps_epi32(_mm256_abs_ps(mv3)), 4));
+							mv0 = _mm256_sub_ps(_mm256_lddqu_ps(si + offset[k] + 0), mt0);
+							mv1 = _mm256_sub_ps(_mm256_lddqu_ps(si + offset[k] + 8), mt1);
+							mv2 = _mm256_sub_ps(_mm256_lddqu_ps(si + offset[k] + 16), mt2);
+							mv3 = _mm256_sub_ps(_mm256_lddqu_ps(si + offset[k] + 24), mt3);
 							msum0 = _mm256_fmadd_ps(mw0, mv0, msum0);
 							msum1 = _mm256_fmadd_ps(mw1, mv1, msum1);
 							msum2 = _mm256_fmadd_ps(mw2, mv2, msum2);
