@@ -8,7 +8,6 @@ static enum class DENOISE_METHOD
 {
 	BILATERAL,
 	GUIDED,
-	BINARYRANGE,
 	NONLOCAL,
 	JOINTNONLOCAL,
 	NONLOCAL_L1,
@@ -30,7 +29,6 @@ string getDenoiseMethodName(DENOISE_METHOD method)
 	{
 	case DENOISE_METHOD::BILATERAL: ret = "BILATERAL"; break;
 	case DENOISE_METHOD::GUIDED: ret = "GUIDED"; break;
-	case DENOISE_METHOD::BINARYRANGE: ret = "BINARYRANGE"; break;
 	case DENOISE_METHOD::NONLOCAL: ret = "NONLOCAL"; break;
 	case DENOISE_METHOD::NONLOCAL_L1: ret = "NONLOCAL_L1"; break;
 	case DENOISE_METHOD::PATCHBF: ret = "PATCHBF"; break;
@@ -55,9 +53,9 @@ void guiDenoiseTest(Mat& src)
 	namedWindow(wname);
 
 	int a = 0; createTrackbar("a", wname, &a, 100);
-	int type = 1; createTrackbar("type:8u/32f", wname, &type, 1);
+	int type = 0; createTrackbar("type:8u/32f", wname, &type, 1);
 	int color = 1; createTrackbar("color", wname, &color, 1);
-	int sw = (int)DENOISE_METHOD::REC_BF; createTrackbar("switch", wname, &sw, (int)DENOISE_METHOD::SIZE - 1);
+	int sw = (int)DENOISE_METHOD::NONLOCAL; createTrackbar("switch", wname, &sw, (int)DENOISE_METHOD::SIZE - 1);
 	int sigma_color10 = 850; createTrackbar("sigma_color", wname, &sigma_color10, 5000);
 	int sigma_space10 = 100; createTrackbar("sigma_space", wname, &sigma_space10, 200);
 	int r = 4; createTrackbar("r", wname, &r, 100);
@@ -107,8 +105,6 @@ void guiDenoiseTest(Mat& src)
 			bilateralFilter(noise, dest, d, sigma_color, sigma_space, FILTER_RECTANGLE); break;
 		case DENOISE_METHOD::GUIDED:
 			guidedImageFilter(noise, noise, dest, r, sigma_color * 10.f);break;
-		case DENOISE_METHOD::BINARYRANGE:
-			binalyWeightedRangeFilter(noise, dest, Size(d, d), sigma_color); break;
 		case DENOISE_METHOD::NONLOCAL:
 			if(isSep) nonLocalMeansFilterSeparable(noise, dest, td, d, sigma_color, powexp); 
 			else nonLocalMeansFilter(noise, dest, td, d, sigma_color, powexp); break;
