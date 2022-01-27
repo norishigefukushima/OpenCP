@@ -109,7 +109,8 @@ void guiDenoiseTest(Mat& src)
 		case DENOISE_METHOD::GUIDED:
 			cp::guidedImageFilter(noise, noise, dest, r, sigma_color * 10.f);break;
 		case DENOISE_METHOD::UNNORMALIZED_BF:
-			cp::unnormalizedBilateralFilter(noise, dest, r, sigma_color, sigma_space, false); break;
+			cp::unnormalizedBilateralFilterCenterBlur(noise, dest, r, sigma_color, sigma_space, 1, false); break;
+			//cp::unnormalizedBilateralFilter(noise, dest, r, sigma_color, sigma_space, false); break;
 		case DENOISE_METHOD::NONLOCAL:
 			if(isSep) nonLocalMeansFilterSeparable(noise, dest, td, d, sigma_color, powexp); 
 			else nonLocalMeansFilter(noise, dest, td, d, sigma_color, powexp); break;

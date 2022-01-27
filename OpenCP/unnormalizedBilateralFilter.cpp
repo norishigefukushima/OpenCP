@@ -36,7 +36,7 @@ namespace cp
 		else return ret;
 	}
 
-	void unnormalizedBilateralFilterGray(const Mat& src, Mat& dest, const int r, const float sigma_range, const float sigma_space, bool isEnhance, int borderType)
+	void unnormalizedBilateralFilterGray(const Mat& src, Mat& dest, const int r, const float sigma_range, const float sigma_space, const bool isEnhance, const int borderType)
 	{
 		Mat srcf;
 		if (src.depth() == CV_32F)srcf = src;
@@ -120,6 +120,144 @@ namespace cp
 						const __m256 mt1 = _mm256_lddqu_ps(si + 8);
 						const __m256 mt2 = _mm256_lddqu_ps(si + 16);
 						const __m256 mt3 = _mm256_lddqu_ps(si + 24);
+						__m256 msum0 = mt0;
+						__m256 msum1 = mt1;
+						__m256 msum2 = mt2;
+						__m256 msum3 = mt3;
+						for (int k = 0; k < d; k++)
+						{
+							__m256 mv0 = _mm256_sub_ps(_mm256_lddqu_ps(si + offset[k] + 0), mt0);
+							__m256 mv1 = _mm256_sub_ps(_mm256_lddqu_ps(si + offset[k] + 8), mt1);
+							__m256 mv2 = _mm256_sub_ps(_mm256_lddqu_ps(si + offset[k] + 16), mt2);
+							__m256 mv3 = _mm256_sub_ps(_mm256_lddqu_ps(si + offset[k] + 24), mt3);
+							__m256 mw0 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_i32gather_ps(rweight, _mm256_cvtps_epi32(_mm256_abs_ps(mv0)), 4));
+							__m256 mw1 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_i32gather_ps(rweight, _mm256_cvtps_epi32(_mm256_abs_ps(mv1)), 4));
+							__m256 mw2 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_i32gather_ps(rweight, _mm256_cvtps_epi32(_mm256_abs_ps(mv2)), 4));
+							__m256 mw3 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_i32gather_ps(rweight, _mm256_cvtps_epi32(_mm256_abs_ps(mv3)), 4));
+							msum0 = _mm256_fmadd_ps(mw0, mv0, msum0);
+							msum1 = _mm256_fmadd_ps(mw1, mv1, msum1);
+							msum2 = _mm256_fmadd_ps(mw2, mv2, msum2);
+							msum3 = _mm256_fmadd_ps(mw3, mv3, msum3);
+						}
+						_mm256_storeu_ps(dst + i + 0, msum0);
+						_mm256_storeu_ps(dst + i + 8, msum1);
+						_mm256_storeu_ps(dst + i + 16, msum2);
+						_mm256_storeu_ps(dst + i + 24, msum3);
+					}
+				}
+			}
+		}
+		else
+		{
+
+#pragma omp parallel for schedule(dynamic)
+			for (int j = 0; j < src.rows; j++)
+			{
+				float* s = im.ptr<float>(j + r) + r;
+				float* dst = destf.ptr<float>(j);
+				for (int i = 0; i < src.cols; i++)
+				{
+					const float t = s[i];
+					float sum = t;
+					for (int k = 0; k < d; k++)
+					{
+						const float v = s[offset[k] + i];
+						sum += space[k] * rangeTable[(int)abs(v - t)] * (v - t);
+					}
+					dst[i] = sum;
+				}
+			}
+		}
+
+		destf.convertTo(dest, src.type());
+	}
+
+	void unnormalizedBilateralFilterCenterBlurGray(const Mat& src, Mat& dest, const int r, const float sigma_range, const float sigma_space, const float sigma_space_center, const  bool isEnhance, const int borderType)
+	{
+		Mat srcf;
+		if (src.depth() == CV_32F)srcf = src;
+		else src.convertTo(srcf, CV_32F);
+
+		Mat destf(src.size(), CV_32F);
+		Mat blurredCenter;
+		GaussianBlur(srcf, blurredCenter, Size(2 * r + 1, 2 * r + 1), sigma_space_center);
+		Mat im;
+		copyMakeBorder(srcf, im, r, r, r, r, borderType);
+
+		const int d = (2 * r + 1) * (2 * r + 1);
+		vector<float> rangeTable(256);
+		float* rweight = &rangeTable[0];
+		vector<float> space(d);
+		vector<int> offset(d);
+
+		for (int i = 0; i < 256; i++)
+		{
+			rangeTable[i] = getGaussianRangeWeight(float(i), sigma_range, isEnhance, 1);
+		}
+
+		const double coeff_s = -1.0 / (2.0 * sigma_space * sigma_space);
+		float wsum = 0.f;
+		for (int j = -r, idx = 0; j <= r; j++)
+		{
+			for (int i = -r; i <= r; i++)
+			{
+				double dis = double(i * i + j * j);
+				offset[idx] = im.cols * j + i;
+				float v = (float)exp(dis * coeff_s);
+				wsum += v;
+				space[idx] = v;
+				idx++;
+			}
+		}
+
+		for (int k = 0; k < d; k++)
+		{
+			space[k] /= wsum;
+		}
+
+		bool isOpt = true;
+		int unroll = 4;
+		if (isOpt)
+		{
+			if (unroll == 1)
+			{
+
+#pragma omp parallel for schedule(dynamic)
+				for (int j = 0; j < src.rows; j++)
+				{
+					const float* s = im.ptr<float>(j + r) + r;
+					float* dst = destf.ptr<float>(j);
+					for (int i = 0; i < src.cols; i += 8)
+					{
+						const float* si = s + i;
+						const __m256 mt = _mm256_loadu_ps(si);
+						__m256 msum = mt;
+						for (int k = 0; k < d; k++)
+						{
+							__m256 mv = _mm256_sub_ps(_mm256_loadu_ps(si + offset[k]), mt);
+							__m256 mw = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_i32gather_ps(rweight, _mm256_cvtps_epi32(_mm256_abs_ps(mv)), 4));
+							msum = _mm256_fmadd_ps(mw, mv, msum);
+						}
+						_mm256_storeu_ps(dst + i, msum);
+					}
+				}
+			}
+			else
+			{
+
+#pragma omp parallel for schedule(dynamic)
+				for (int j = 0; j < src.rows; j++)
+				{
+					const float* bc = blurredCenter.ptr<float>(j);
+					const float* s = im.ptr<float>(j + r) + r;
+					float* dst = destf.ptr<float>(j);
+					for (int i = 0; i < src.cols; i += 32)
+					{
+						const float* si = s + i;
+						const __m256 mt0 = _mm256_lddqu_ps(bc + i);
+						const __m256 mt1 = _mm256_lddqu_ps(bc + i + 8);
+						const __m256 mt2 = _mm256_lddqu_ps(bc + i + 16);
+						const __m256 mt3 = _mm256_lddqu_ps(bc + i + 24);
 						__m256 msum0 = mt0;
 						__m256 msum1 = mt1;
 						__m256 msum2 = mt2;
@@ -323,6 +461,24 @@ namespace cp
 		}
 	}
 
+	void unnormalizedBilateralFilterCenterBlur(Mat& src, Mat& dest, const int r, const float sigma_range, const float sigma_space, const float sigma_space_center, const bool isEnhance, const int borderType)
+	{
+		if (src.channels() == 1)
+		{
+			unnormalizedBilateralFilterCenterBlurGray(src, dest, r, sigma_range, sigma_space, sigma_space_center, isEnhance, borderType);
+		}
+		else
+		{
+			vector<Mat> vsrc;
+			vector<Mat> vdst(3);
+			split(src, vsrc);
+			unnormalizedBilateralFilterCenterBlurGray(vsrc[0], vdst[0], r, sigma_range, sigma_space, sigma_space_center, isEnhance, borderType);
+			unnormalizedBilateralFilterCenterBlurGray(vsrc[1], vdst[1], r, sigma_range, sigma_space, sigma_space_center, isEnhance, borderType);
+			unnormalizedBilateralFilterCenterBlurGray(vsrc[2], vdst[2], r, sigma_range, sigma_space, sigma_space_center, isEnhance, borderType);
+			merge(vdst, dest);
+		}
+	}
+
 	void unnormalizedBilateralFilterMulti(Mat& src, Mat& dest, const int r, const float sigma_range, const float sigma_space, const int level, bool isEnhance, const int borderType)
 	{
 		if (src.channels() == 1)
@@ -340,4 +496,4 @@ namespace cp
 			merge(vdst, dest);
 		}
 	}
-	}
+}
