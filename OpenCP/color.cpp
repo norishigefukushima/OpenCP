@@ -924,7 +924,7 @@ namespace cp
 		}
 	}
 #pragma endregion
-	
+
 
 	void cvtColorBGR2PLANE_8u(const Mat& src, Mat& dest)
 	{
@@ -1245,21 +1245,35 @@ namespace cp
 		}
 	}
 
-	void cvtColorBGR2BGRA(const Mat& src, Mat& dest, const uchar alpha)
+	template<typename T>
+	void cvtColorBGR2BGRA_(const Mat& src, Mat& dest, const T a)
 	{
-		if (dest.empty())dest.create(src.size(), CV_8UC4);
-
-		int size = src.size().area();
-		uchar* s = (uchar*)src.ptr<uchar>(0);
-		uchar* d = dest.ptr<uchar>(0);
-
+		const int size = src.size().area();
+		const T* s = src.ptr<T>();
+		T* d = dest.ptr<T>();
+		
 		for (int i = 0; i < size; i++)
 		{
 			*d++ = *s++;
 			*d++ = *s++;
 			*d++ = *s++;
-			*d++ = alpha;
+			*d++ = a;
 		}
+	}
+
+	void cvtColorBGR2BGRA(InputArray src_, OutputArray dest_, const double alpha)
+	{
+		Mat src = src_.getMat();
+		dest_.create(src.size(), CV_MAKETYPE(src.depth(), 4));
+		Mat dest = dest_.getMat();
+		
+		if (src.depth() == CV_8U)  cvtColorBGR2BGRA_<uchar>(src, dest, (uchar)alpha);
+		if (src.depth() == CV_8S)  cvtColorBGR2BGRA_<char>(src, dest, (char)alpha);
+		if (src.depth() == CV_16U) cvtColorBGR2BGRA_<ushort>(src, dest, (ushort)alpha);
+		if (src.depth() == CV_16S) cvtColorBGR2BGRA_<short>(src, dest, (short)alpha);
+		if (src.depth() == CV_32S) cvtColorBGR2BGRA_<int>(src, dest, (int)alpha);
+		if (src.depth() == CV_32F) cvtColorBGR2BGRA_<float>(src, dest, (float)alpha);
+		if (src.depth() == CV_64F) cvtColorBGR2BGRA_<double>(src, dest, alpha);
 	}
 
 	void cvtColorBGRA32f2BGR8u(const Mat& src, Mat& dest)
@@ -1280,14 +1294,12 @@ namespace cp
 		}
 	}
 
-	void cvtColorBGRA2BGR(const Mat& src, Mat& dest)
+	template<typename T>
+	void cvtColorBGRA2BGR_(const Mat& src, Mat& dest)
 	{
-		CV_Assert(src.type() == CV_8UC4);
-		if (dest.empty())dest.create(src.size(), CV_8UC3);
-
-		int size = src.size().area();
-		uchar* s = (uchar*)src.ptr<uchar>(0);
-		uchar* d = dest.ptr<uchar>(0);
+		const int size = src.size().area();
+		const T* s = src.ptr<T>(0);
+		T* d = dest.ptr<T>();
 
 		for (int i = 0; i < size; i++)
 		{
@@ -1296,6 +1308,21 @@ namespace cp
 			*d++ = *s++;
 			*s++;
 		}
+	}
+
+	void cvtColorBGRA2BGR(InputArray src_, OutputArray dest_)
+	{
+		Mat src = src_.getMat();
+		dest_.create(src.size(), CV_MAKETYPE(src.depth(), 3));
+		Mat dest = dest_.getMat();
+
+		if (src.depth() == CV_8U) cvtColorBGRA2BGR_<uchar>(src, dest);
+		if (src.depth() == CV_8S) cvtColorBGRA2BGR_<char>(src, dest);
+		if (src.depth() == CV_16U) cvtColorBGRA2BGR_<ushort>(src, dest);
+		if (src.depth() == CV_16S) cvtColorBGRA2BGR_<short>(src, dest);
+		if (src.depth() == CV_32S) cvtColorBGRA2BGR_<int>(src, dest);
+		if (src.depth() == CV_32F) cvtColorBGRA2BGR_<float>(src, dest);
+		if (src.depth() == CV_64F) cvtColorBGRA2BGR_<double>(src, dest);
 	}
 
 	void makemultichannel(Mat& gray, Mat& color)
@@ -1665,7 +1692,7 @@ namespace cp
 		for (int i = 0; i < size; i++)
 		{
 			_mm256_load_cvtepu8bgr2planar_ps(sptr, b, g, r);
-			_mm_storel_epi64((__m128i*)dptr,_mm256_cvtps_epu8(_mm256_mul_ps(mnorm, _mm256_add_ps(r, _mm256_add_ps(b, g)))));
+			_mm_storel_epi64((__m128i*)dptr, _mm256_cvtps_epu8(_mm256_mul_ps(mnorm, _mm256_add_ps(r, _mm256_add_ps(b, g)))));
 			sptr += 24;
 			dptr += 8;
 		}
@@ -1694,13 +1721,13 @@ namespace cp
 		if (src_.isMatVector())
 		{
 			vector<Mat> src;
-			 src_.getMatVector(src);
+			src_.getMatVector(src);
 			if (src.size() == 1)
 			{
 				src[0].copyTo(dest);
 				return;
 			}
-	
+
 			dest.create(src[0].size(), src[0].depth());
 			const float normalize = (isKeepDistance) ? 1.f / sqrt(3.f) : 1.f / 3.f;
 			if (src[0].depth() == CV_32F) cvtColorAverageGray_32F(src, dest.getMat(), normalize);
@@ -1747,7 +1774,7 @@ namespace cp
 	{
 		dest.create(src.channels(), src.channels(), CV_64F);
 		CV_Assert(src.channels() <= 4);
-		
+
 		Scalar ave = mean(src);
 		average_value.create(1, 4, CV_64F);
 		average_value.at<double>(0) = ave.val[0];
@@ -1786,7 +1813,7 @@ namespace cp
 	{
 		dest.create(src.channels(), src.channels(), CV_64F);
 		CV_Assert(src.channels() <= 4);
-		
+
 		Scalar ave = mean(src);
 		average_value.create(1, 4, CV_64F);
 		average_value.at<double>(0) = ave.val[0];
@@ -3447,6 +3474,6 @@ namespace cp
 		if (C.empty())C.create(3, 4, CV_64F);
 
 		xcvFindColorMatrix(&CvMat(src_point_crowd1), &CvMat(src_point_crowd2), &CvMat(C));
-}
+	}
 #endif
-		}
+}

@@ -14,10 +14,10 @@ namespace cp
 	CP_EXPORT void cvtColorBGR2PLANE(cv::InputArray src, cv::OutputArray dest);
 	CP_EXPORT void cvtColorPLANE2BGR(cv::InputArray src, cv::OutputArray dest);
 
-	CP_EXPORT void cvtColorBGRA2BGR(const cv::Mat& src, cv::Mat& dest);
+	CP_EXPORT void cvtColorBGRA2BGR(cv::InputArray src, cv::OutputArray dest);
 	CP_EXPORT void cvtColorBGRA32f2BGR8u(const cv::Mat& src, cv::Mat& dest);
 
-	CP_EXPORT void cvtColorBGR2BGRA(const cv::Mat& src, cv::Mat& dest, const uchar alpha = 255);
+	CP_EXPORT void cvtColorBGR2BGRA(cv::InputArray src, cv::OutputArray dest, const double alpha = 255.0);
 	CP_EXPORT void cvtColorBGR8u2BGRA32f(const cv::Mat& src, cv::Mat& dest, const float alpha = 255.f);
 
 	CP_EXPORT void cvtColorOPP2BGR(cv::InputArray src, cv::OutputArray dest);
