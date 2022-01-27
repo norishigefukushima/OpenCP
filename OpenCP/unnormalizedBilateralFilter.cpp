@@ -180,7 +180,8 @@ namespace cp
 
 		Mat destf(src.size(), CV_32F);
 		Mat blurredCenter;
-		GaussianBlur(srcf, blurredCenter, Size(2 * r + 1, 2 * r + 1), sigma_space_center);
+		if (sigma_space_center == 0.f)srcf.copyTo(blurredCenter);
+		else GaussianBlur(srcf, blurredCenter, Size(2 * r + 1, 2 * r + 1), sigma_space_center);
 		Mat im;
 		copyMakeBorder(srcf, im, r, r, r, r, borderType);
 
@@ -190,6 +191,7 @@ namespace cp
 		vector<float> space(d);
 		vector<int> offset(d);
 
+		
 		for (int i = 0; i < 256; i++)
 		{
 			rangeTable[i] = getGaussianRangeWeight(float(i), sigma_range, isEnhance, 1);
@@ -244,7 +246,7 @@ namespace cp
 			}
 			else
 			{
-
+				const __m256 mcoeff_r = _mm256_set1_ps(-1.0 / (2.0 * sigma_range * sigma_range));
 #pragma omp parallel for schedule(dynamic)
 				for (int j = 0; j < src.rows; j++)
 				{
@@ -273,10 +275,15 @@ namespace cp
 							__m256 mv1 = _mm256_sub_ps(_mm256_lddqu_ps(si + offset[k] + 8), mbt1);
 							__m256 mv2 = _mm256_sub_ps(_mm256_lddqu_ps(si + offset[k] + 16), mbt2);
 							__m256 mv3 = _mm256_sub_ps(_mm256_lddqu_ps(si + offset[k] + 24), mbt3);
-							__m256 mw0 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_i32gather_ps(rweight, _mm256_cvtps_epi32(_mm256_abs_ps(mv0)), 4));
-							__m256 mw1 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_i32gather_ps(rweight, _mm256_cvtps_epi32(_mm256_abs_ps(mv1)), 4));
-							__m256 mw2 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_i32gather_ps(rweight, _mm256_cvtps_epi32(_mm256_abs_ps(mv2)), 4));
-							__m256 mw3 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_i32gather_ps(rweight, _mm256_cvtps_epi32(_mm256_abs_ps(mv3)), 4));
+							
+							__m256 mw0 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_exp_ps(_mm256_mul_ps(_mm256_mul_ps(mv0, mv0), mcoeff_r)));
+							__m256 mw1 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_exp_ps(_mm256_mul_ps(_mm256_mul_ps(mv1, mv1), mcoeff_r)));
+							__m256 mw2 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_exp_ps(_mm256_mul_ps(_mm256_mul_ps(mv2, mv2), mcoeff_r)));
+							__m256 mw3 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_exp_ps(_mm256_mul_ps(_mm256_mul_ps(mv3, mv3), mcoeff_r)));
+							//__m256 mw0 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_i32gather_ps(rweight, _mm256_cvtps_epi32(_mm256_abs_ps(mv0)), 4));
+							//__m256 mw1 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_i32gather_ps(rweight, _mm256_cvtps_epi32(_mm256_abs_ps(mv1)), 4));
+							//__m256 mw2 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_i32gather_ps(rweight, _mm256_cvtps_epi32(_mm256_abs_ps(mv2)), 4));
+							//__m256 mw3 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_i32gather_ps(rweight, _mm256_cvtps_epi32(_mm256_abs_ps(mv3)), 4));
 							mv0 = _mm256_sub_ps(_mm256_lddqu_ps(si + offset[k] + 0), mt0);
 							mv1 = _mm256_sub_ps(_mm256_lddqu_ps(si + offset[k] + 8), mt1);
 							mv2 = _mm256_sub_ps(_mm256_lddqu_ps(si + offset[k] + 16), mt2);
