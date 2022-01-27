@@ -138,9 +138,6 @@
     <ClCompile Include="GaussianFilter.cpp">
       <Filter>ソース ファイル\filter</Filter>
     </ClCompile>
-    <ClCompile Include="minmaxfilter.cpp">
-      <Filter>ソース ファイル\filter</Filter>
-    </ClCompile>
     <ClCompile Include="GaussianFilterSpectralRecursive.cpp">
       <Filter>ソース ファイル\filter</Filter>
     </ClCompile>
@@ -600,6 +597,9 @@
     <ClCompile Include="unnormalizedBilateralFilter.cpp">
       <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
     </ClCompile>
+    <ClCompile Include="statisticalFilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libGaussian\gaussian_conv.h">
@@ -657,9 +657,6 @@
       <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\L0Smoothing.hpp">
-      <Filter>ヘッダー ファイル\filter</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\minmaxfilter.hpp">
       <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\nonLocalMeans.hpp">
@@ -1077,6 +1074,9 @@
       <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\unnormalizedBilateralFilter.hpp">
+      <Filter>ヘッダー ファイル\filter</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\statisticalFilter.hpp">
       <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
   </ItemGroup>

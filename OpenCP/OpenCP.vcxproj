@@ -594,7 +594,7 @@
     <ClCompile Include="matrixsimdutil.cpp" />
     <ClCompile Include="mattingRendering.cpp" />
     <ClCompile Include="metrics.cpp" />
-    <ClCompile Include="minmaxfilter.cpp" />
+    <ClCompile Include="statisticalFilter.cpp" />
     <ClCompile Include="MultiCameraCalibrator.cpp" />
     <ClCompile Include="noise.cpp" />
     <ClCompile Include="nonLocalMeans.cpp" />
@@ -709,7 +709,7 @@
     <ClInclude Include="..\include\matinfo.hpp" />
     <ClInclude Include="..\include\mattingRendering.hpp" />
     <ClInclude Include="..\include\metrics.hpp" />
-    <ClInclude Include="..\include\minmaxfilter.hpp" />
+    <ClInclude Include="..\include\statisticalFilter.hpp" />
     <ClInclude Include="..\include\MultiCameraCalibrator.hpp" />
     <ClInclude Include="..\include\noise.hpp" />
     <ClInclude Include="..\include\nonLocalMeans.hpp" />

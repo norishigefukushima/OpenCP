@@ -56,7 +56,7 @@ void detailBoostGauss_(Mat& src, Mat& smooth, Mat& dest, const double boost, con
 	for (int i = 0; i < size; i++)
 	{
 		const double sub = imptr[i] - smptr[i];
-		dptr[i] = saturate_cast<T>(smptr[i] + boost*exp(sub*sub/(-2.0*sigma*sigma)) * (sub));
+		dptr[i] = saturate_cast<T>(smptr[i] + boost * exp(sub * sub / (-2.0 * sigma * sigma)) * (sub));
 	}
 }
 
@@ -68,7 +68,7 @@ inline double contrastLinear_(double val, double a, double c)
 inline double contrastGauss_(double val, double a, double c, double coeff)
 {
 	double sub = (val - c);
-	return val - a * exp(coeff * sub*sub) * sub;
+	return val - a * exp(coeff * sub * sub) * sub;
 }
 
 inline double contrastGamma_(double val, double gamma)
@@ -150,7 +150,7 @@ void baseContrast(cv::InputArray src, cv::InputArray smooth, cv::OutputArray des
 		if (im.depth() == CV_32F) baseContrastLinear_<float>(im, sm, dst, a, c, method);
 		if (im.depth() == CV_64F) baseContrastLinear_<double>(im, sm, dst, a, c, method);
 	}
-	else if(method==2)
+	else if (method == 2)
 	{
 		if (im.depth() == CV_8U)  baseContrastGauss_<uchar>(im, sm, dst, a, c, sigma, method);
 		if (im.depth() == CV_32F) baseContrastGauss_<float>(im, sm, dst, a, c, sigma, method);
@@ -179,8 +179,8 @@ void detailBoost(cv::InputArray src, cv::InputArray smooth, cv::OutputArray dest
 	}
 	else if (method == 1)
 	{
-		if (im.depth() == CV_8U) detailBoostLinear_<uchar>(im, sm, dst, boost  );
-		if (im.depth() == CV_32F) detailBoostLinear_<float>(im, sm, dst, boost );
+		if (im.depth() == CV_8U) detailBoostLinear_<uchar>(im, sm, dst, boost);
+		if (im.depth() == CV_32F) detailBoostLinear_<float>(im, sm, dst, boost);
 		if (im.depth() == CV_64F) detailBoostLinear_<double>(im, sm, dst, boost);
 	}
 }
@@ -199,7 +199,7 @@ void detailTest()
 	Mat src = imread("img/lenna.png", 0);
 	//addNoise(src, src, 5);
 	Mat smooth, smooth2;
-	
+
 	int key = 0;
 	Mat show, show2;
 	cp::ConsoleImage ci;
@@ -209,9 +209,9 @@ void detailTest()
 		cv::bilateralFilter(src, smooth, d, sr, ss);
 		edgePreservingFilter(src, smooth2, 1, ss, sr / 255.0);
 		//cp::highDimensionalGaussianFilterPermutohedralLattice(src, smooth2, sr, ss);
-		
-		detailBoost(src, smooth, show, boost*0.01, sigma, method);
-		detailBoost(src, smooth2, show2, boost*0.01,sigma, method);
+
+		detailBoost(src, smooth, show, boost * 0.01, sigma, method);
+		detailBoost(src, smooth2, show2, boost * 0.01, sigma, method);
 		//baseContrast(src, smooth, show, boost * 0.01, center, sigma, 0);
 		//baseContrast(src, smooth2, show2, boost * 0.01, center, sigma, 0);
 
@@ -219,15 +219,16 @@ void detailTest()
 		ci("PSNR enhance %f", getPSNR(show, show2));
 		ci.show();
 		imshow(wname, show);
-		imshow(wname+"2", show2);
+		imshow(wname + "2", show2);
 
 		key = waitKey(1);
 		if (key == 'c')guiAlphaBlend(show, show2);
 	}
 }
 
+
 int main(int argc, char** argv)
-{	
+{
 	/*__m256i a = _mm256_set_step_epi32(0);
 	__m256i b = _mm256_set_step_epi32(8);
 	__m256i c = _mm256_set_step_epi32(16);
@@ -242,7 +243,7 @@ int main(int argc, char** argv)
 	*/
 	//testUnnormalizedBilateralFilter(); return 0;
 	//testMultiScaleFilter(); return 0;
-	
+
 	//testIsSame(); return 0;
 
 
@@ -254,7 +255,7 @@ int main(int argc, char** argv)
 	//Mat img = imread("img/cameraman.png",0);
 	//Mat img = imread("img/barbara.png", 0);
 	//filter2DTest(img); return 0;
-	
+
 #pragma endregion
 
 

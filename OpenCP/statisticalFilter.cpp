@@ -1,4 +1,4 @@
-#include "minmaxfilter.hpp"
+#include "statisticalFilter.hpp"
 
 using namespace std;
 using namespace cv;
@@ -194,4 +194,53 @@ namespace cp
 			merge(v, dest);
 		}
 	}
+
+	void varianceFilter(InputArray src, OutputArray dest, const cv::Size kernelSize)
+	{
+		blur(src, dest, kernelSize);
+		subtract(src, dest, dest);
+		multiply(dest, dest, dest);
+		blur(dest, dest, kernelSize);
+	}
+
+	void varianceFilter(InputArray src, OutputArray dest, const int radius)
+	{
+		varianceFilter(src, dest, Size(2 * radius + 1, 2 * radius + 1));
+	}
+	
+	void stdFilter(InputArray src, OutputArray dest, const Size kernelSize)
+	{
+		varianceFilter(src, dest, kernelSize);
+		sqrt(dest, dest);
+	}
+
+	void stdFilter(InputArray src, OutputArray dest, const int radius)
+	{
+		stdFilter(src, dest, Size(2 * radius + 1, 2 * radius + 1));
+	}
+
+	void varianceFilterGaussian(InputArray src, OutputArray dest, const cv::Size kernelSize, const double sigma)
+	{
+		GaussianBlur(src, dest, kernelSize, sigma);
+		subtract(src, dest, dest);
+		multiply(dest, dest, dest);
+		GaussianBlur(dest, dest, kernelSize, sigma);
+	}
+
+	void varianceFilterGaussian(InputArray src, OutputArray dest, const int radius, const double sigma)
+	{
+		varianceFilterGaussian(src, dest, Size(2 * radius + 1, 2 * radius + 1), sigma);
+	}
+
+	void stdFilterGaussian(InputArray src, OutputArray dest, const Size kernelSize, const double sigma)
+	{
+		varianceFilterGaussian(src, dest, kernelSize, sigma);
+		sqrt(dest, dest);
+	}
+
+	void stdFilterGaussian(InputArray src, OutputArray dest, const int radius, const double sigma)
+	{
+		stdFilterGaussian(src, dest, Size(2 * radius + 1, 2 * radius + 1), sigma);
+	}
+
 }

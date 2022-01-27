@@ -80,7 +80,7 @@
 #include "jointDualBilateralFilter.hpp"
 #include "jointNearestFilter.hpp"
 #include "L0Smoothing.hpp"
-#include "minmaxfilter.hpp"
+#include "statisticalFilter.hpp"
 #include "nonLocalMeans.hpp"
 #include "PermutohedralLattice.hpp"
 #include "postFilterSet.hpp"

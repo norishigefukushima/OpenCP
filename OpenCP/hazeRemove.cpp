@@ -1,6 +1,6 @@
 #include "hazeRemove.hpp" 
 #include "guidedFilter.hpp"
-#include "minmaxfilter.hpp"
+#include "statisticalFilter.hpp"
 
 using namespace std;
 using namespace cv;

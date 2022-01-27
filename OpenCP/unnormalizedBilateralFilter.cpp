@@ -276,14 +276,14 @@ namespace cp
 							__m256 mv2 = _mm256_sub_ps(_mm256_lddqu_ps(si + offset[k] + 16), mbt2);
 							__m256 mv3 = _mm256_sub_ps(_mm256_lddqu_ps(si + offset[k] + 24), mbt3);
 							
-							__m256 mw0 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_exp_ps(_mm256_mul_ps(_mm256_mul_ps(mv0, mv0), mcoeff_r)));
-							__m256 mw1 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_exp_ps(_mm256_mul_ps(_mm256_mul_ps(mv1, mv1), mcoeff_r)));
-							__m256 mw2 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_exp_ps(_mm256_mul_ps(_mm256_mul_ps(mv2, mv2), mcoeff_r)));
-							__m256 mw3 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_exp_ps(_mm256_mul_ps(_mm256_mul_ps(mv3, mv3), mcoeff_r)));
-							//__m256 mw0 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_i32gather_ps(rweight, _mm256_cvtps_epi32(_mm256_abs_ps(mv0)), 4));
-							//__m256 mw1 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_i32gather_ps(rweight, _mm256_cvtps_epi32(_mm256_abs_ps(mv1)), 4));
-							//__m256 mw2 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_i32gather_ps(rweight, _mm256_cvtps_epi32(_mm256_abs_ps(mv2)), 4));
-							//__m256 mw3 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_i32gather_ps(rweight, _mm256_cvtps_epi32(_mm256_abs_ps(mv3)), 4));
+							//__m256 mw0 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_exp_ps(_mm256_mul_ps(_mm256_mul_ps(mv0, mv0), mcoeff_r)));
+							//__m256 mw1 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_exp_ps(_mm256_mul_ps(_mm256_mul_ps(mv1, mv1), mcoeff_r)));
+							//__m256 mw2 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_exp_ps(_mm256_mul_ps(_mm256_mul_ps(mv2, mv2), mcoeff_r)));
+							//__m256 mw3 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_exp_ps(_mm256_mul_ps(_mm256_mul_ps(mv3, mv3), mcoeff_r)));
+							__m256 mw0 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_i32gather_ps(rweight, _mm256_cvtps_epi32(_mm256_abs_ps(mv0)), 4));
+							__m256 mw1 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_i32gather_ps(rweight, _mm256_cvtps_epi32(_mm256_abs_ps(mv1)), 4));
+							__m256 mw2 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_i32gather_ps(rweight, _mm256_cvtps_epi32(_mm256_abs_ps(mv2)), 4));
+							__m256 mw3 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_i32gather_ps(rweight, _mm256_cvtps_epi32(_mm256_abs_ps(mv3)), 4));
 							mv0 = _mm256_sub_ps(_mm256_lddqu_ps(si + offset[k] + 0), mt0);
 							mv1 = _mm256_sub_ps(_mm256_lddqu_ps(si + offset[k] + 8), mt1);
 							mv2 = _mm256_sub_ps(_mm256_lddqu_ps(si + offset[k] + 16), mt2);
