@@ -227,7 +227,14 @@ void detailTest()
 }
 
 int main(int argc, char** argv)
-{	/*
+{	
+	/*__m256i a = _mm256_set_step_epi32(0);
+	__m256i b = _mm256_set_step_epi32(8);
+	__m256i c = _mm256_set_step_epi32(16);
+	__m256i d = _mm256_set_step_epi32(24);
+	print_uchar(_mm256_packus_epi16(_mm256_packus_epi32(a, b), _mm256_packus_epi32(c, d)));
+	return 0;*/
+	/*
 	cout << getInformation() << endl; return 0;
 	cout << cv::getBuildInformation() << endl;
 	cv::ipp::setUseIPP(false);
@@ -245,8 +252,7 @@ int main(int argc, char** argv)
 	//Mat img = imread("img/cameraman.png",0);
 	//Mat img = imread("img/barbara.png", 0);
 	//filter2DTest(img); return 0;
-	Mat flash = imread("img/cave-flash.png");
-	Mat noflash = imread("img/cave-noflash.png");
+	
 #pragma endregion
 
 
@@ -414,10 +420,10 @@ int main(int argc, char** argv)
 	//guiRecursiveBilateralFilterTest(mega);
 	//fftTest(src);
 
-	Mat feather = imread("img/feathering/toy-mask.png");
+	//Mat feather = imread("img/feathering/toy-mask.png");
 	//Mat guide = imread("img/feathering/toy.png");
 	//timeBirateralTest(mega);
-	Mat disparity = imread("img/teddy_disp1.png", 0);
+	//Mat disparity = imread("img/teddy_disp1.png", 0);
 	//guiJointBirateralFilterTest(noflash,flash);
 	//guiBinalyWeightedRangeFilterTest(disparity);
 	//guiCodingDistortionRemoveTest(disparity);

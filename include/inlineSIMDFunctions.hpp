@@ -605,6 +605,20 @@ inline __m128i _mm256_cvtepi32x2_epu8(const __m256i v0, const __m256i v1)
 	return _mm256_castsi256_si128(_mm256_permutevar8x32_epi32(_mm256_packus_epi16(_mm256_packs_epi32(v0, v1), _mm256_setzero_si256()), _mm256_setr_epi32(0, 4, 1, 5, 2, 6, 3, 7)));
 }
 
+//opencp intx4 ->uchar
+inline __m256i _mm256_cvtepi32x4_epu8(const __m256i v0, const __m256i v1, const __m256i v2, const __m256i v3)
+{
+	static __m256i shlmask = _mm256_setr_epi32(0, 4, 1, 5, 2, 6, 3, 7);
+	return _mm256_permutevar8x32_epi32(_mm256_packus_epi16(_mm256_packs_epi32(v0, v1), _mm256_packs_epi32(v2, v3)), shlmask);
+}
+
+//opencp floatx4 ->uchar
+inline __m256i _mm256_cvtpsx4_epu8(const __m256 v0, const __m256 v1, const __m256 v2, const __m256 v3)
+{
+	static __m256i shlmask = _mm256_setr_epi32(0, 4, 1, 5, 2, 6, 3, 7);
+	return _mm256_permutevar8x32_epi32(_mm256_packus_epi16(_mm256_packs_epi32(_mm256_cvtps_epi32(v0), _mm256_cvtps_epi32(v1)), _mm256_packs_epi32(_mm256_cvtps_epi32(v2), _mm256_cvtps_epi32(v3))), shlmask);
+}
+
 //_mm256_cvtepi32_epi16 is already defined in zmmintrin.h (AVX512)
 inline __m128i _mm256_cvtepi32_epi16_v2(__m256i src)
 {
@@ -1581,8 +1595,8 @@ inline __m256 _mm256_sign_ps(__m256 src)
 
 inline float _mm_reduceadd_ps(__m128 src)
 {
-	src = _mm_hadd_ps(src, src);
-	src = _mm_hadd_ps(src, src);
+	src = _mm_add_ps(src, _mm_shuffle_ps(src, src, _MM_SHUFFLE(2, 3, 0, 1)));
+	src = _mm_add_ps(src, _mm_shuffle_ps(src, src, _MM_SHUFFLE(0, 2, 0, 2)));
 	return _mm_cvtss_f32(src);
 }
 
@@ -1755,6 +1769,13 @@ inline __m256 _mm256_ssd_ps(__m256 src0, __m256 src1, __m256 src2, __m256 ref0, 
 }
 
 //return offset + ssd
+inline __m256 _mm256_ssdadd_ps(__m256 offset, __m256 src, __m256 ref)
+{
+	__m256 diff = _mm256_sub_ps(src, ref);
+	return _mm256_fmadd_ps(diff, diff, offset);
+}
+
+//return offset + ssd
 inline __m256 _mm256_ssdadd_ps(__m256 offset, __m256 src0, __m256 src1, __m256 src2, __m256 ref0, __m256 ref1, __m256 ref2)
 {
 	__m256 diff = _mm256_sub_ps(src0, ref0);
@@ -1774,6 +1795,12 @@ inline __m128i _mm_absdiff_epu8(__m128i src1, __m128i src2)
 inline __m256i _mm256_absdiff_epu8(__m256i src1, __m256i src2)
 {
 	return _mm256_max_epu8(_mm256_subs_epu8(src1, src2), _mm256_subs_epu8(src2, src1));
+}
+
+//rsqrt->rcp
+inline __m256 _mm256_fastsqrt_ps(__m256 x)
+{
+	return _mm256_rcp_ps(_mm256_rsqrt_ps(x));
 }
 
 //rcp with newton-raphson 1-iteration

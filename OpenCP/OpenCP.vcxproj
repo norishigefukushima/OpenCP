@@ -452,6 +452,7 @@
     <ClCompile Include="onelineCVFunctions.cpp" />
     <ClCompile Include="pixelization.cpp" />
     <ClCompile Include="RankOrderCorrelationCoefficient.cpp" />
+    <ClCompile Include="separableFilterCore.cpp" />
     <ClCompile Include="stereoEval.cpp" />
     <ClCompile Include="depthfilter.cpp" />
     <ClCompile Include="detailEnhancement.cpp" />
@@ -669,6 +670,7 @@
     <ClInclude Include="..\include\pixelization.hpp" />
     <ClInclude Include="..\include\search1D.hpp" />
     <ClInclude Include="..\include\RankOrderCorrelationCoefficient.hpp" />
+    <ClInclude Include="..\include\separableFilterCore.hpp" />
     <ClInclude Include="..\include\StereoEval.hpp" />
     <ClInclude Include="..\include\depthfilter.hpp" />
     <ClInclude Include="..\include\detailEnhancement.hpp" />
@@ -701,7 +703,6 @@
     <ClInclude Include="..\include\jointBilateralUpsample.hpp" />
     <ClInclude Include="..\include\jointDualBilateralFilter.hpp" />
     <ClInclude Include="..\include\jointNearestFilter.hpp" />
-    <ClInclude Include="..\include\jointNonLocalMeans.hpp" />
     <ClInclude Include="..\include\L0Smoothing.hpp" />
     <ClInclude Include="..\include\maskoperation.hpp" />
     <ClInclude Include="..\include\matinfo.hpp" />

@@ -474,6 +474,10 @@ ppmファイルの読み書き
 ```
 
 # filter
+
+## separableFilterCore.hpp
+* [getSeparableMethodName](filter/separableFilterCore_jp.md "#getSeparableMethodName")
+
 ## guidedFilter.hpp
 ガイデットフィルタの関数
 * [guidedImageFilter](filter/guidedFilter_jp.md "#guidedImageFilter")
@@ -481,10 +485,15 @@ ppmファイルの読み書き
 * [class GuidedImageFilterTiling](filter/guidedFilter_jp.md "#GuidedImageFilterTiling")
 
 ## nonLocalMeanFilter.hpp
+ノンローカルミーンフィルタとその拡張の関数群
 * [nonLocalMeansFilter](filter/nonLocalMeanFilter_jp.md "#nonLocalMeansFilter")
-* [nonLocalMeansFilterL1PatchDistance](filter/nonLocalMeanFilter_jp.md "#nonLocalMeansFilterL1PatchDistance")
-* [epsillonFilterL1PatchDistance](filter/nonLocalMeanFilter_jp.md "#separableNonLocalMeansFilterL1PatchDistance")
-* [separableNonLocalMeansFilterL1PatchDistance](filter/nonLocalMeanFilter_jp.md "#separableNonLocalMeansFilterL1PatchDistance")
+* [jointNonLocalMeansFilter](filter/nonLocalMeanFilter_jp.md "#jointNonLocalMeansFilter")
+* [patchBilateralFilter](filter/nonLocalMeanFilter_jp.md "#patchBilateralFilter")
+* [jointPatchBilateralFilter](filter/nonLocalMeanFilter_jp.md "#jointpatchBilateralFilter")
+* [nonLocalMeansFilterSeparable](filter/nonLocalMeanFilter_jp.md "#nonLocalMeansFilterSeparable")
+* [jointNonLocalMeansFilterSeparable](filter/nonLocalMeanFilter_jp.md "#jointNonLocalMeansFilterSeparable")
+* [patchBilateralFilterSeparable](filter/nonLocalMeanFilter_jp.md "#patchBilateralFilterSeparable")
+* [jointPatchBilateralFilterSeparable](filter/nonLocalMeanFilter_jp.md "#jointpatchBilateralFilterSeparable")
 
 ## weightedHistogramFilter.hpp
 weighted histogram filterの関数
