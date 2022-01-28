@@ -118,7 +118,7 @@ namespace cp
 			searchList(vect2, size, orig_vect[k], Indices);
 			nPosition = Indices[0]; // just need one ocurrence		
 			// Get the respective postion in sorted list then pushback in rank		
-			dest.push_back(R[nPosition - 1]);
+			dest.push_back(T(R[(int)nPosition - 1]));
 		}
 	}
 
@@ -127,7 +127,7 @@ namespace cp
 	{
 		CV_Assert(v1.size() == v2.size());
 
-		const int n = v1.size();
+		const int n = (int)v1.size();
 		vector<T> R1;
 		vector<T> R2;
 		vector<T> d;
@@ -150,7 +150,7 @@ namespace cp
 		{
 			double diff = R1[k] - R2[k]; // Difference d where R1.size() = R2.size()
 			double sq_diff = pow(diff, 2);
-			d.push_back(sq_diff);
+			d.push_back(T(sq_diff));
 		}
 		// Sum the Squared difference
 		double sum = std::accumulate(d.begin(), d.end(), 0.0);

@@ -17,7 +17,7 @@ namespace cp
 
 	cv::Rect VideoSubtitle::getRectText(std::vector<std::string>& text, std::vector<int>& fontSize)
 	{
-		int vtextsize = text.size();
+		int vtextsize = (int)text.size();
 		int h = fontSize[0];
 
 		for (int i = 0; i < vtextsize; i++)
@@ -25,11 +25,11 @@ namespace cp
 			h += fontSize[i] + vspace;
 		}
 
-		int w = (text[0].size() + 1) * fontSize[0];
+		int w = ((int)text[0].size() + 1) * fontSize[0];
 		int argmax = 0;
 		for (int i = 1; i < vtextsize; i++)
 		{
-			const int size = (text[i].size() + 1) * fontSize[i];
+			const int size = ((int)text[i].size() + 1) * fontSize[i];
 			if (size > w)
 			{
 				w = size;
@@ -37,7 +37,7 @@ namespace cp
 			}
 		}
 
-		const int textsize = text.size();
+		const int textsize = (int)text.size();
 		Mat temp = Mat::zeros(h, w, CV_8UC3);
 		addVText(temp, text, Point(0, 0), fontSize, Scalar(255, 255, 255, 0));
 		Rect roi_ = boundingRect(temp.reshape(1, temp.rows));

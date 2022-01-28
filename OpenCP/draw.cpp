@@ -58,10 +58,10 @@ namespace cp
 		int npt[] = { 4, 0 };
 		cv::Point pt1[1][4];
 
-		pt1[0][0] = Point(pt.x, pt.y + length * 0.5);
-		pt1[0][1] = Point(pt.x + length * 0.5, pt.y);
-		pt1[0][2] = Point(pt.x, pt.y - length * 0.5);
-		pt1[0][3] = Point(pt.x - length * 0.5, pt.y);
+		pt1[0][0] = Point(pt.x, int(pt.y + length * 0.5));
+		pt1[0][1] = Point(int(pt.x + length * 0.5), pt.y);
+		pt1[0][2] = Point(pt.x, int(pt.y - length * 0.5));
+		pt1[0][3] = Point(int(pt.x - length * 0.5), pt.y);
 
 		const cv::Point* ppt[1] = { pt1[0] };
 
@@ -83,8 +83,8 @@ namespace cp
 		cv::Point pt1[1][5];
 		for (int i = 0; i < 5; i++)
 		{
-			int xx = cos(CV_2PI * i / 5.0) * 0.5 * length;
-			int yy = sin(CV_2PI * i / 5.0) * 0.5 * length;
+			const int xx = int(cos(CV_2PI * i / 5.0) * 0.5 * length);
+			const int yy = int(sin(CV_2PI * i / 5.0) * 0.5 * length);
 			pt1[0][i] = Point(pt.x + yy, pt.y + xx);
 		}
 

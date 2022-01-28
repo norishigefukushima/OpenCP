@@ -1,7 +1,7 @@
 #include "mattingRendering.hpp"
 #include "guidedFilter.hpp"
 #include "GaussianFilter.hpp"
-#include "minmaxfilter.hpp"
+#include "statisticalFilter.hpp"
 
 using namespace cv;
 

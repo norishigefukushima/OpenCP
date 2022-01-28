@@ -1,5 +1,5 @@
 #include "opticalFlow.hpp"
-#include "minmaxfilter.hpp"
+#include "statisticalFilter.hpp"
 #include "shiftImage.hpp"
 #include "blend.hpp"
 #include <opencv2/optflow.hpp>
@@ -193,10 +193,12 @@ namespace cp
 
 		sqrt((xsqr + ysqr), dist);
 
-		for (int y = 0; y < xflow.rows; y++) {
-			for (int x = 0; x < xflow.cols; x++) {
+		for (int y = 0; y < xflow.rows; y++)
+		{
+			for (int x = 0; x < xflow.cols; x++)
+			{
 				theta.at<float>(y, x) = atan(tan.at<float>(y, x));
-				if (xflow.at<float>(y, x) < 0) theta.at<float>(y, x) += CV_PI;
+				if (xflow.at<float>(y, x) < 0) theta.at<float>(y, x) += float(CV_PI);
 			}
 		}
 	}
@@ -206,8 +208,10 @@ namespace cp
 		if (xflow.empty()) xflow.create(dist.rows, dist.cols, CV_32F);
 		if (yflow.empty()) yflow.create(dist.rows, dist.cols, CV_32F);
 
-		for (int y = 0; y < xflow.rows; y++) {
-			for (int x = 0; x < xflow.cols; x++) {
+		for (int y = 0; y < xflow.rows; y++) 
+		{
+			for (int x = 0; x < xflow.cols; x++) 
+			{
 				xflow.at<float>(y, x) = dist.at<float>(y, x)*cos(theta.at<float>(y, x));
 				yflow.at<float>(y, x) = dist.at<float>(y, x)*sin(theta.at<float>(y, x));
 			}
@@ -602,7 +606,7 @@ namespace cp
 		compare(xdif, th, xl, CMP_GE);
 		compare(ydif, th, yl, CMP_GE);
 
-		float th_f = 0.05;
+		float th_f = 0.05f;
 		Mat mask; compare(xl, yl, mask, CMP_NE);
 		Mat xcopy; copyMakeBorder(xaf, xcopy, 1, 1, 1, 1, BORDER_REPLICATE);
 		Mat ycopy; copyMakeBorder(yaf, ycopy, 1, 1, 1, 1, BORDER_REPLICATE);

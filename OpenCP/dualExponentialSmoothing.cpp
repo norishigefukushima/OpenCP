@@ -8,20 +8,20 @@ namespace cp
 {
 	float sigma2LaplacianSmootihngAlpha(const float sigma, float p)
 	{
-		return 1.f - exp(-p / (1.f*sigma));
+		return 1.f - exp(-p / (1.f * sigma));
 	}
 
 	void LaplacianSmoothingFIR2DFilter(Mat& src, Mat& dest, float sigma)
 	{
-		int r = 5.0*sigma;
+		int r = (int)ceil(5.0 * sigma);
 		Mat kernel = Mat::zeros(2 * r + 1, 2 * r + 1, CV_32F);
 		float total = 0.f;
 		for (int j = 0; j < kernel.rows; j++)
 		{
 			for (int i = 0; i < kernel.cols; i++)
 			{
-				float p = abs(sqrt((i - r)*(i - r) + (j - r)*(j - r)));
-				float v = exp(-p / sigma);
+				float p = abs(sqrtf(float((i - r) * (i - r) + (j - r) * (j - r))));
+				float v = expf(-p / sigma);
 				kernel.at<float>(j, i) = v;
 				total += v;
 			}
@@ -42,13 +42,13 @@ namespace cp
 		const int ksize = (2 * r + 1);
 		Mat im;
 		copyMakeBorder(src, im, r, r, r, r, border);
-		
-		float* gauss = (float*)_mm_malloc(sizeof(float)*ksize, 32);
+
+		float* gauss = (float*)_mm_malloc(sizeof(float) * ksize, 32);
 		const float gfrac = -1.f / (sigma);
 		float gsum = 0.f;
 		for (int j = -r, index = 0; j <= r; j++)
 		{
-			float v = exp(abs(j)*gfrac);
+			float v = exp(abs(j) * gfrac);
 			gsum += v;
 			gauss[index] = v;
 			index++;
@@ -88,7 +88,7 @@ namespace cp
 					float v = 0.f;
 					for (int k = 0; k < ksize; k++)
 					{
-						v += gauss[k] * s[i + k*wstep];
+						v += gauss[k] * s[i + k * wstep];
 					}
 					d[i] = v;
 				}
@@ -124,7 +124,7 @@ namespace cp
 					__m256 mv = _mm256_setzero_ps();
 					for (int k = 0; k < ksize; k++)
 					{
-						__m256 ms = _mm256_loadu_ps(s + i + k*wstep);
+						__m256 ms = _mm256_loadu_ps(s + i + k * wstep);
 						__m256 mg = _mm256_set1_ps(gauss[k]);
 						mv = _mm256_add_ps(mv, _mm256_mul_ps(ms, mg));
 					}
@@ -152,15 +152,15 @@ namespace cp
 				dt[0] = im[0];
 				for (int i = 1; i < src.cols; i++)
 				{
-					dt[i] = sigma*im[i] + is*dt[i - 1];
+					dt[i] = sigma * im[i] + is * dt[i - 1];
 				}
 
 				tp[src.cols - 1] = im[src.cols - 1];
-				dt[src.cols - 1] = (im[src.cols - 1] + dt[src.cols - 1])*0.5f;
+				dt[src.cols - 1] = (im[src.cols - 1] + dt[src.cols - 1]) * 0.5f;
 				for (int i = src.cols - 2; i >= 0; i--)
 				{
-					tp[i] = sigma*im[i] + is*tp[i + 1];
-					dt[i] = (dt[i] + tp[i])*0.5f;
+					tp[i] = sigma * im[i] + is * tp[i + 1];
+					dt[i] = (dt[i] + tp[i]) * 0.5f;
 				}
 			}
 			for (int i = 0; i < src.cols; i++)
@@ -172,14 +172,14 @@ namespace cp
 				tp[0] = im[0];
 				for (int j = 1; j < src.rows; j++)
 				{
-					tp[j*src.cols] = sigma*im[j*src.cols] + is*tp[(j - 1)*src.cols];
+					tp[j * src.cols] = sigma * im[j * src.cols] + is * tp[(j - 1) * src.cols];
 				}
-				tp2[src.rows - 1] = im[src.cols*(src.rows - 1)];
-				dt[src.cols*(src.rows - 1)] = (im[src.cols*(src.rows - 1)] + tp[src.cols*(src.rows - 1)])*0.5;
+				tp2[src.rows - 1] = im[src.cols * (src.rows - 1)];
+				dt[src.cols * (src.rows - 1)] = (im[src.cols * (src.rows - 1)] + tp[src.cols * (src.rows - 1)]) * 0.5f;
 				for (int j = src.rows - 2; j >= 0; j--)
 				{
-					tp2[j] = sigma*im[j*src.cols] + is*tp2[j + 1];
-					dt[j*src.cols] = (tp[j*src.cols] + tp2[j])*0.5f;
+					tp2[j] = sigma * im[j * src.cols] + is * tp2[j + 1];
+					dt[j * src.cols] = (tp[j * src.cols] + tp2[j]) * 0.5f;
 				}
 			}
 		}
@@ -196,15 +196,15 @@ namespace cp
 				dt[0] = im[0];
 				for (int i = 1; i < src.cols; i++)
 				{
-					dt[i] = sigma*im[i] + is*dt[i - 1];
+					dt[i] = sigma * im[i] + is * dt[i - 1];
 				}
 
 				tp[src.cols - 1] = im[src.cols - 1];
-				dt[src.cols - 1] = (im[src.cols - 1] + dt[src.cols - 1])*0.5f;
+				dt[src.cols - 1] = (im[src.cols - 1] + dt[src.cols - 1]) * 0.5f;
 				for (int i = src.cols - 2; i >= 0; i--)
 				{
-					tp[i] = sigma*im[i] + is*tp[i + 1];
-					dt[i] = (dt[i] + tp[i])*0.5f;
+					tp[i] = sigma * im[i] + is * tp[i + 1];
+					dt[i] = (dt[i] + tp[i]) * 0.5f;
 				}
 			}
 			for (int i = 0; i < src.cols; i++)
@@ -216,14 +216,14 @@ namespace cp
 				tp[0] = im[0];
 				for (int j = 1; j < src.rows; j++)
 				{
-					tp[j*src.cols] = sigma*im[j*src.cols] + is*tp[(j - 1)*src.cols];
+					tp[j * src.cols] = sigma * im[j * src.cols] + is * tp[(j - 1) * src.cols];
 				}
-				tp2[src.rows - 1] = im[src.cols*(src.rows - 1)];
-				dt[src.cols*(src.rows - 1)] = (im[src.cols*(src.rows - 1)] + tp[src.cols*(src.rows - 1)])*0.5;
+				tp2[src.rows - 1] = im[src.cols * (src.rows - 1)];
+				dt[src.cols * (src.rows - 1)] = (im[src.cols * (src.rows - 1)] + tp[src.cols * (src.rows - 1)]) * 0.5;
 				for (int j = src.rows - 2; j >= 0; j--)
 				{
-					tp2[j] = sigma*im[j*src.cols] + is*tp2[j + 1];
-					dt[j*src.cols] = (tp[j*src.cols] + tp2[j])*0.5f;
+					tp2[j] = sigma * im[j * src.cols] + is * tp2[j + 1];
+					dt[j * src.cols] = (tp[j * src.cols] + tp2[j]) * 0.5f;
 				}
 			}
 		}
@@ -271,7 +271,7 @@ namespace cp
 			__m256 t = pv;
 			pv = _mm256_i32gather_ps(im + src.cols - 1, gidx, 4);
 			t = _mm256_mul_ps(half, _mm256_add_ps(t, pv));
-			
+
 			dt[idx0 + src.cols - 1] = ((float*)&t)[7];
 			dt[idx1 + src.cols - 1] = ((float*)&t)[6];
 			dt[idx2 + src.cols - 1] = ((float*)&t)[5];
@@ -308,26 +308,26 @@ namespace cp
 			_mm256_storeu_ps(b, pv);
 			for (int j = 1; j < src.rows; j++)
 			{
-				pv = _mm256_fmadd_ps(ms, _mm256_loadu_ps(im + j*src.cols), _mm256_mul_ps(mis, pv));
+				pv = _mm256_fmadd_ps(ms, _mm256_loadu_ps(im + j * src.cols), _mm256_mul_ps(mis, pv));
 				_mm256_store_ps(b + j * 8, pv);
 			}
 
 			__m256 t = pv;
-			pv = _mm256_loadu_ps(im + src.cols*(src.rows - 1));
+			pv = _mm256_loadu_ps(im + src.cols * (src.rows - 1));
 			t = _mm256_mul_ps(half, _mm256_add_ps(t, pv));
-			_mm256_storeu_ps(dt + (src.rows - 1)*src.cols, t);
+			_mm256_storeu_ps(dt + (src.rows - 1) * src.cols, t);
 
 			for (int j = src.rows - 2; j >= 0; j--)
 			{
-				pv = _mm256_fmadd_ps(ms, _mm256_loadu_ps(im + j*src.cols), _mm256_mul_ps(mis, pv));
-				_mm256_storeu_ps(dt + j*src.cols, _mm256_mul_ps(half, _mm256_add_ps(_mm256_loadu_ps(b + j * 8), pv)));
+				pv = _mm256_fmadd_ps(ms, _mm256_loadu_ps(im + j * src.cols), _mm256_mul_ps(mis, pv));
+				_mm256_storeu_ps(dt + j * src.cols, _mm256_mul_ps(half, _mm256_add_ps(_mm256_loadu_ps(b + j * 8), pv)));
 			}
 		}
 	}
 
-	void LaplacianSmoothingIIRFilter(Mat& src, Mat& dest, const double sigma_, int opt)
+	void LaplacianSmoothingIIRFilter(Mat& src, Mat& dest, const double sigma, int opt)
 	{
-		if (opt == VECTOR_WITHOUT) LaplacianSmoothingIIRFilterBase(src, dest, sigma_);
-		else if (opt == VECTOR_AVX)LaplacianSmoothingIIRFilterAVX(src, dest, sigma_);
+		if (opt == VECTOR_WITHOUT) LaplacianSmoothingIIRFilterBase(src, dest, sigma);
+		else if (opt == VECTOR_AVX)LaplacianSmoothingIIRFilterAVX(src, dest, float(sigma));
 	}
 }

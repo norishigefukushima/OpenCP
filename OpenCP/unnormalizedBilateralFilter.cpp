@@ -246,7 +246,7 @@ namespace cp
 			}
 			else
 			{
-				const __m256 mcoeff_r = _mm256_set1_ps(-1.0 / (2.0 * sigma_range * sigma_range));
+				const __m256 mcoeff_r = _mm256_set1_ps(-1.f / (2.f * sigma_range * sigma_range));
 #pragma omp parallel for schedule(dynamic)
 				for (int j = 0; j < src.rows; j++)
 				{

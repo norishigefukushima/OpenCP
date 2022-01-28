@@ -4064,7 +4064,7 @@ namespace cp
 			{
 				integral[0] = 0;
 				for (int i = 0; i < sim.cols; i++)
-					integral[i + 1] = integral[i] + is[i];
+					integral[i + 1] = integral[i] + (unsigned int)is[i];
 
 				for (int i = 0; i < src.cols; i++)
 				{
@@ -4097,7 +4097,7 @@ namespace cp
 			{
 				integral[0] = 0;
 				for (int i = 0; i < sim.cols; i++)
-					integral[i + 1] = integral[i] + is[i];
+					integral[i + 1] = integral[i] + (int)is[i];
 
 				for (int i = 0; i < src.cols; i++)
 				{

@@ -1,5 +1,5 @@
 #include "depthUpsample.hpp"
-#include "minmaxfilter.hpp"
+#include "statisticalFilter.hpp"
 #include "shiftImage.hpp"
 
 using namespace std;

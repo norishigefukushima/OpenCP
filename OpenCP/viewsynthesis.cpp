@@ -2,7 +2,7 @@
 #include "depthfilter.hpp"
 #include "GaussianFilter.hpp"
 #include "binalyWeightedRangeFilter.hpp"
-#include "minmaxfilter.hpp"
+#include "statisticalFilter.hpp"
 #include "shiftImage.hpp"
 #include "blend.hpp"
 #include "metrics.hpp"

@@ -1,7 +1,7 @@
 #include "postFilterSet.hpp"
 #include "binalyWeightedRangeFilter.hpp"
 #include "depth2disparity.hpp"
-#include "minmaxfilter.hpp"
+#include "statisticalFilter.hpp"
 
 using namespace std;
 using namespace cv;

@@ -10,7 +10,7 @@
 #include "binalyWeightedRangeFilter.hpp"
 #include "jointNearestFilter.hpp"
 #include "weightedHistogramFilter.hpp"
-#include "minmaxfilter.hpp"
+#include "statisticalFilter.hpp"
 #include "plot.hpp"
 #include "timer.hpp"
 #include "consoleImage.hpp"

@@ -427,7 +427,7 @@ namespace cp
 				cv::SVDecomp(a, w, u, vt, SVD::FULL_UV);
 				SVD::backSubst(w, u, vt, b, coefficients);
 				coefficients *= normalize;
-				ret = time_stamp[idx] - time_stamp[0];
+				ret = double(time_stamp[idx] - time_stamp[0]);
 				for (int i = idx; i < loopMax; i++)
 				{
 					double dv = coefficients.at<double>(1) * i + coefficients.at<double>(0);
@@ -436,7 +436,7 @@ namespace cp
 			}
 			else
 			{
-				const double normalize = time_stamp[idx] - time_stamp[0];
+				const double normalize = double(time_stamp[idx] - time_stamp[0]);
 				for (int i = 1; i < idx + 1; i++)
 				{
 					const double t = (time_stamp[i] - time_stamp[0]) / normalize;
@@ -464,7 +464,7 @@ namespace cp
 			b.at<double>(0, 0) = 0.0;
 			if (isDiff)
 			{
-				const double normalize = time_stamp[idx] - time_stamp[idx - 1];
+				const double normalize = double(time_stamp[idx] - time_stamp[idx - 1]);
 				for (int i = 1; i < idx + 1; i++)
 				{
 					const double t = (time_stamp[i] - time_stamp[i - 1]) / normalize;
@@ -478,7 +478,7 @@ namespace cp
 				cv::SVDecomp(a, w, u, vt, SVD::FULL_UV);
 				SVD::backSubst(w, u, vt, b, coefficients);
 				coefficients *= normalize;
-				ret = time_stamp[idx] - time_stamp[0];
+				ret = double(time_stamp[idx] - time_stamp[0]);
 				for (int i = idx; i < loopMax; i++)
 				{
 					double dv = coefficients.at<double>(2) * i * i + coefficients.at<double>(1) * i + coefficients.at<double>(0);
@@ -487,7 +487,7 @@ namespace cp
 			}
 			else
 			{
-				const double normalize = time_stamp[idx] - time_stamp[0];
+				const double normalize = double(time_stamp[idx] - time_stamp[0]);
 				for (int i = 1; i < idx + 1; i++)
 				{
 					const double t = (time_stamp[i] - time_stamp[0]) / normalize;
@@ -518,7 +518,7 @@ namespace cp
 
 			if (isDiff)
 			{
-				const double normalize = time_stamp[idx] - time_stamp[idx - 1];
+				const double normalize = double(time_stamp[idx] - time_stamp[idx - 1]);
 				for (int i = 1; i < idx + 1; i++)
 				{
 					const double t = (time_stamp[i] - time_stamp[i - 1]) / normalize;
@@ -532,7 +532,7 @@ namespace cp
 				cv::SVDecomp(a, w, u, vt, SVD::FULL_UV);
 				SVD::backSubst(w, u, vt, b, coefficients);
 				coefficients *= normalize;
-				ret = time_stamp[idx] - time_stamp[0];
+				ret = double(time_stamp[idx] - time_stamp[0]);
 				for (int i = idx; i < loopMax; i++)
 				{
 					double dv = coefficients.at<double>(3) * i * i * i + coefficients.at<double>(2) * i * i + coefficients.at<double>(1) * i + coefficients.at<double>(0);
@@ -541,7 +541,7 @@ namespace cp
 			}
 			else
 			{
-				const double normalize = time_stamp[idx] - time_stamp[0];
+				const double normalize = double(time_stamp[idx] - time_stamp[0]);
 				for (int i = 1; i < idx + 1; i++)
 				{
 					const double t = (time_stamp[i] - time_stamp[0]) / normalize;
@@ -571,9 +571,9 @@ namespace cp
 		time_stamp.push_back(cstamp);
 		double per = (time_stamp.size() - 1) / (double)(loopMax);
 		//print_debug2(time_stamp.size(), destCount);
-		double pred_stamp = predict_endstamp(time_stamp.size() - 1, order, isDiff);
+		double pred_stamp = predict_endstamp((int)time_stamp.size() - 1, order, isDiff);
 		double etime = cvtTick2Time(pred_stamp);
-		double ctime = cvtTick2Time(cstamp - time_stamp[0], false);
+		double ctime = cvtTick2Time(double(cstamp - time_stamp[0]), false);
 
 		if (isPrint)
 		{

@@ -2,7 +2,7 @@
 #include "viewsynthesis.hpp"
 #include "depthfilter.hpp"
 #include "binalyWeightedRangeFilter.hpp"
-#include "minmaxfilter.hpp"
+#include "statisticalFilter.hpp"
 #include "noise.hpp"
 #include "stat.hpp"
 #include "timer.hpp"
