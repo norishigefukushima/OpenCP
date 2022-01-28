@@ -5,7 +5,7 @@ using namespace cv;
 
 namespace cp
 {
-	
+
 	void maxFilter(InputArray src, OutputArray dest, Size kernelSize, int shape)
 	{
 		Mat element = getStructuringElement(shape, kernelSize);
@@ -207,7 +207,20 @@ namespace cp
 	{
 		varianceFilter(src, dest, Size(2 * radius + 1, 2 * radius + 1));
 	}
-	
+
+	void meanVarianceFilter(InputArray src, OutputArray mean, OutputArray variance, const cv::Size kernelSize)
+	{
+		blur(src, mean, kernelSize);
+		subtract(src, mean, variance);
+		multiply(variance, variance, variance);
+		blur(variance, variance, kernelSize);
+	}
+
+	void meanVarianceFilter(InputArray src, OutputArray mean, OutputArray variance, const int radius)
+	{
+		meanVarianceFilter(src, mean, variance, Size(2 * radius + 1, 2 * radius + 1));
+	}
+
 	void stdFilter(InputArray src, OutputArray dest, const Size kernelSize)
 	{
 		varianceFilter(src, dest, kernelSize);
@@ -218,6 +231,19 @@ namespace cp
 	{
 		stdFilter(src, dest, Size(2 * radius + 1, 2 * radius + 1));
 	}
+
+	void meanStdFilter(InputArray src, OutputArray mean, OutputArray variance, const Size kernelSize)
+	{
+		meanVarianceFilter(src, mean, variance, kernelSize);
+		sqrt(mean, mean);
+	}
+
+	void meanStdFilter(InputArray src, OutputArray mean, OutputArray variance, const int radius)
+	{
+		meanStdFilter(src, mean, variance, Size(2 * radius + 1, 2 * radius + 1));
+	}
+
+
 
 	void varianceFilterGaussian(InputArray src, OutputArray dest, const cv::Size kernelSize, const double sigma)
 	{

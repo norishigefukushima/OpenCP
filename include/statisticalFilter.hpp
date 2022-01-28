@@ -45,6 +45,11 @@ namespace cp
 	/// <param name="radius">radius (square kernel)</param>
 	CP_EXPORT void stdFilter(cv::InputArray src, cv::OutputArray dest, const int radius);
 
+
+	CP_EXPORT void meanVarianceFilter(cv::InputArray src, cv::OutputArray mean, cv::OutputArray variance, const cv::Size kernelSize);
+	CP_EXPORT void meanVarianceFilter(cv::InputArray src, cv::OutputArray mean, cv::OutputArray variance, const int radius);
+	CP_EXPORT void meanStdFilter(cv::InputArray src, cv::OutputArray mean, cv::OutputArray variance, const cv::Size kernelSize);
+	CP_EXPORT void meanStdFilter(cv::InputArray src, cv::OutputArray mean, cv::OutputArray variance, const int radius);
 	/// <summary>
 	/// computing local Gaussian weighted variance in the kernel.
 	/// </summary>
