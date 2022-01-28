@@ -68,6 +68,7 @@ void guiDenoiseTest(Mat& src)
 	int isSep = 1; createTrackbar("sep", wname, &isSep, 1);
 
 	int noise_s10 = 200; createTrackbar("noise", wname, &noise_s10, 2550);
+	int sigma_space2_ = 100; createTrackbar("sigma_space2", wname, &sigma_space2_, 200);
 	int key = 0;
 	Mat show;
 
@@ -84,6 +85,7 @@ void guiDenoiseTest(Mat& src)
 	{
 		float sigma_color = sigma_color10 / 10.f;
 		float sigma_space = sigma_space10 / 10.f;
+		float sigma_space2 = sigma_space2_ / 10.f;
 		int d = 2 * r + 1;
 		int td = 2 * tr + 1;
 		
@@ -109,7 +111,7 @@ void guiDenoiseTest(Mat& src)
 		case DENOISE_METHOD::GUIDED:
 			cp::guidedImageFilter(noise, noise, dest, r, sigma_color * 10.f);break;
 		case DENOISE_METHOD::UNNORMALIZED_BF:
-			cp::unnormalizedBilateralFilterCenterBlur(noise, dest, r, sigma_color, sigma_space, 1, false); break;
+			cp::unnormalizedBilateralFilterCenterBlur(noise, dest, r, sigma_color, sigma_space, sigma_space2, false); break;
 			//cp::unnormalizedBilateralFilter(noise, dest, r, sigma_color, sigma_space, false); break;
 		case DENOISE_METHOD::NONLOCAL:
 			if(isSep) nonLocalMeansFilterSeparable(noise, dest, td, d, sigma_color, powexp); 
