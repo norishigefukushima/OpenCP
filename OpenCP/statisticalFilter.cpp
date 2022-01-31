@@ -195,6 +195,7 @@ namespace cp
 		}
 	}
 
+
 	void varianceFilter(InputArray src, OutputArray dest, const cv::Size kernelSize)
 	{
 		blur(src, dest, kernelSize);
@@ -232,18 +233,16 @@ namespace cp
 		stdFilter(src, dest, Size(2 * radius + 1, 2 * radius + 1));
 	}
 
-	void meanStdFilter(InputArray src, OutputArray mean, OutputArray variance, const Size kernelSize)
+	void meanStdFilter(InputArray src, OutputArray mean, OutputArray std, const Size kernelSize)
 	{
-		meanVarianceFilter(src, mean, variance, kernelSize);
-		sqrt(mean, mean);
+		meanVarianceFilter(src, mean, std, kernelSize);
+		sqrt(std, std);
 	}
 
-	void meanStdFilter(InputArray src, OutputArray mean, OutputArray variance, const int radius)
+	void meanStdFilter(InputArray src, OutputArray mean, OutputArray std, const int radius)
 	{
-		meanStdFilter(src, mean, variance, Size(2 * radius + 1, 2 * radius + 1));
+		meanStdFilter(src, mean, std, Size(2 * radius + 1, 2 * radius + 1));
 	}
-
-
 
 	void varianceFilterGaussian(InputArray src, OutputArray dest, const cv::Size kernelSize, const double sigma)
 	{

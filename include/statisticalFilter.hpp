@@ -46,10 +46,43 @@ namespace cp
 	CP_EXPORT void stdFilter(cv::InputArray src, cv::OutputArray dest, const int radius);
 
 
+	/// <summary>
+	/// computing local mean and variance in the kernel.
+	/// </summary>
+	/// <param name="src">input</param>
+	/// <param name="mean"> mean output</param>
+	/// <param name="variance"> variance output</param>
+	/// <param name="kernelSize">kernelShape (rectangle kernel)</param>
 	CP_EXPORT void meanVarianceFilter(cv::InputArray src, cv::OutputArray mean, cv::OutputArray variance, const cv::Size kernelSize);
+
+	/// <summary>
+	/// computing local mean and variance in the kernel.
+	/// </summary>
+	/// <param name="src">input</param>
+	/// <param name="mean"> mean output</param>
+	/// <param name="variance"> variance output</param>
+	/// <param name="kernelSize">kernelShape (square kernel)</param>
 	CP_EXPORT void meanVarianceFilter(cv::InputArray src, cv::OutputArray mean, cv::OutputArray variance, const int radius);
-	CP_EXPORT void meanStdFilter(cv::InputArray src, cv::OutputArray mean, cv::OutputArray variance, const cv::Size kernelSize);
-	CP_EXPORT void meanStdFilter(cv::InputArray src, cv::OutputArray mean, cv::OutputArray variance, const int radius);
+
+	/// <summary>
+	/// computing local mean and standard deviation in the kernel.
+	/// </summary>
+	/// <param name="src">input</param>
+	/// <param name="mean"> mean output</param>
+	/// <param name="std"> standard deviation output</param>
+	/// <param name="kernelSize">kernelShape (rectangle kernel)</param>
+	CP_EXPORT void meanStdFilter(cv::InputArray src, cv::OutputArray mean, cv::OutputArray std, const cv::Size kernelSize);
+
+	/// <summary>
+	/// computing local mean and standard deviation in the kernel.
+	/// </summary>
+	/// <param name="src">input</param>
+	/// <param name="mean"> mean output</param>
+	/// <param name="std"> standard deviation output</param>
+	/// <param name="kernelSize">kernelShape (square kernel)</param>
+	/// 
+	CP_EXPORT void meanStdFilter(cv::InputArray src, cv::OutputArray mean, cv::OutputArray std, const int radius);
+
 	/// <summary>
 	/// computing local Gaussian weighted variance in the kernel.
 	/// </summary>
