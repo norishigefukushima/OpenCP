@@ -5,6 +5,11 @@
 
 namespace cp
 {
+	//split multichannel image, scaling ax+b, cast to 8U, and then imshow the selected channel with trackbar
+	CP_EXPORT void imshowSplitScale(std::string wname, cv::InputArray src, const double alpha = 1.0, const double beta = 0.0);
+	//split multichannel image and then imshow the selected channel with trackbar.
+	CP_EXPORT void imshowSplit(std::string wname, cv::InputArray src);
+
 	//normalize image and then cast to 8U and imshow. NORM_INF(32) scale 0-max
 	CP_EXPORT void imshowNormalize(std::string wname, cv::InputArray src, const int norm_type = cv::NORM_MINMAX);
 
@@ -27,7 +32,7 @@ namespace cp
 		int num_stack = 0;
 		int stack_max = 0;
 	public:
-		StackImage(std::string window_name="image stack");
+		StackImage(std::string window_name = "image stack");
 		void setWindowName(std::string window_name);
 		void overwrite(cv::Mat& src);
 		void push(cv::Mat& src);

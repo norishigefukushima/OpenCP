@@ -53,7 +53,7 @@
 //#pragma CV_LIBRARY(dnn)
 //#pragma CV_LIBRARY(dpm)
 //#pragma CV_LIBRARY(face)
-//#pragma CV_LIBRARY(features2d)
+#pragma comment(lib, CV_LIBRARY(features2d))
 //#pragma CV_LIBRARY(flann)
 //#pragma CV_LIBRARY(fuzzy)
 //#pragma CV_LIBRARY(hal)

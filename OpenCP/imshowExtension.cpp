@@ -10,6 +10,28 @@ using namespace cv;
 namespace cp
 {
 
+	void imshowSplitScale(string wname, InputArray src, const double alpha, const double beta)
+	{
+		namedWindow(wname);
+		static int imshowSplitScaleColor = 0;
+		createTrackbar("channel", wname, &imshowSplitScaleColor, src.channels() - 1);
+		setTrackbarMax("channel", wname, src.channels() - 1);
+		vector<Mat> v;
+		split(src, v);
+		imshowScale(wname, v[imshowSplitScaleColor], alpha, beta);
+	}
+
+	void imshowSplit(string wname, InputArray src)
+	{
+		namedWindow(wname);
+		static int imshowSplitColor = 0;
+		createTrackbar("channel", wname, &imshowSplitColor, src.channels() - 1);
+		setTrackbarMax("channel", wname, src.channels() - 1);
+		vector<Mat> v;
+		split(src, v);
+		imshow(wname, v[imshowSplitColor]);
+	}
+
 	void imshowNormalize(string wname, InputArray src, const int norm_type)
 	{
 		Mat show;

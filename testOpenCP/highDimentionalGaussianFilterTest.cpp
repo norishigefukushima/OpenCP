@@ -27,6 +27,17 @@ void highDimentionalGaussianFilterTest(Mat& src)
 	cp::UpdateCheck uc2(color, space, sw);
 	Timer t;
 	Mat ref;
+
+
+	vector<string> dir;
+	vector<Mat> s;
+	cv::glob("img/hsi/braga/*.png", dir);
+	for (int i = 0; i < dir.size(); i++)
+	{
+		s.push_back(convert(imread(dir[i], 0), CV_32F));
+	}
+	Mat hsi; merge(s, hsi);
+	
 	while (key != 'q')
 	{
 		//cout<<"r="<<r<<": "<<"please change 'sw' for changing the type of implimentations."<<endl;
@@ -52,7 +63,7 @@ void highDimentionalGaussianFilterTest(Mat& src)
 			//cp::nonLocalMeansFilter(srcf, dest, Size(6, 6), Size(22, 22), sigma_space, -1.0, 0);
 			//cp::nonLocalMeansFilter(srcf, dest, Size(6, 6), Size(22, 22), sigma_color, sigma_space, 0);
 			t.start();
-			cp::highDimensionalGaussianFilter(srcf, srcf, dest, Size(d, d), sigma_color, sigma_space, BORDER_DEFAULT);
+			cp::highDimensionalGaussianFilter(srcf, srcf, dest, Size(d, d), sigma_color, sigma_space, BORDER_DEFAULT);			
 			//cp::highDimensionalGaussianFilterPermutohedralLattice(srcf, dest, sigma_color, sigma_space);
 			t.getpushLapTime();
 		}
@@ -74,6 +85,12 @@ void highDimentionalGaussianFilterTest(Mat& src)
 			t.getpushLapTime();
 		}
 
+		{
+			Timer t;
+			//cout << hsi.channels() << endl;
+			cp::highDimensionalGaussianFilter(hsi, hsi, dest2, Size(d, d), sigma_color, sigma_space, BORDER_DEFAULT);
+		}
+		cp::imshowSplitScale("hsi", hsi);
 		ci(method);
 		ci("time %7.2f ms (%5d)", t.getLapTimeMedian(),t.getStatSize());
 		ci("PSNR %f dB", getPSNR(dest, ref));
