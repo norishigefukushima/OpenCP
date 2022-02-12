@@ -2997,8 +2997,9 @@ namespace cp
 		if (typeid(srcType) == typeid(double))align = 4;
 		const int simd_tile_width = get_simd_floor(tilex, align) * src.channels();
 		const int rem = tilex * src.channels() - simd_tile_width;
+		const int channels = src.channels();
 
-		if (src.channels() == 1)
+		if (channels == 1)
 		{
 			for (int j = 0; j < tiley; j++)
 			{
@@ -3014,7 +3015,7 @@ namespace cp
 				}
 			}
 		}
-		else if (src.channels() == 3)
+		else // n-channel case if (channels == 3)
 		{
 			for (int j = 0; j < tiley; j++)
 			{

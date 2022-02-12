@@ -1251,7 +1251,7 @@ namespace cp
 		const int size = src.size().area();
 		const T* s = src.ptr<T>();
 		T* d = dest.ptr<T>();
-		
+
 		for (int i = 0; i < size; i++)
 		{
 			*d++ = *s++;
@@ -1266,7 +1266,7 @@ namespace cp
 		Mat src = src_.getMat();
 		dest_.create(src.size(), CV_MAKETYPE(src.depth(), 4));
 		Mat dest = dest_.getMat();
-		
+
 		if (src.depth() == CV_8U)  cvtColorBGR2BGRA_<uchar>(src, dest, (uchar)alpha);
 		if (src.depth() == CV_8S)  cvtColorBGR2BGRA_<char>(src, dest, (char)alpha);
 		if (src.depth() == CV_16U) cvtColorBGR2BGRA_<ushort>(src, dest, (ushort)alpha);
@@ -2310,6 +2310,106 @@ namespace cp
 		dest.at<double>(5, 5) = v55 / simdsize;
 	}
 
+	template<int N>
+	static void calcCovarMatrix__(const vector<Mat>& src, Mat& dest)
+	{
+		const int simdsize = get_simd_ceil(src[0].size().area(), 8);
+
+		dest.create((int)src.size(), (int)src.size(), CV_64F);
+
+		AutoBuffer<float> ave(N);
+		for (int c = 0; c < N; c++) ave[c] = (float)cp::average(src[c]);
+		AutoBuffer<const float*> s(N);
+		for (int c = 0; c < N; c++) s[c] = src[c].ptr<float>();
+
+		AutoBuffer<__m256> mc(N * N);
+		for (int c = 0; c < N * N; c++) mc[c] = _mm256_setzero_ps();
+		AutoBuffer<__m256> ma(N);
+		for (int c = 0; c < N; c++) ma[c] = _mm256_set1_ps(ave[c]);
+		AutoBuffer<__m256> m(N);
+
+		for (int i = 0; i < simdsize; i += 8)
+		{
+			for (int c = 0; c < N; c++) m[c] = _mm256_sub_ps(_mm256_load_ps(s[c] + i), ma[c]);
+
+			int idx = 0;
+			for (int c = 0; c < N; c++)
+			{
+				for (int d = c; d < N; d++)
+				{
+					mc[idx] = _mm256_fmadd_ps(m[c], m[d], mc[idx]);
+					idx++;
+				}
+			}
+		}
+		int idx = 0;
+		for (int c = 0; c < N; c++)
+		{
+			for (int d = c; d < N; d++)
+			{
+				dest.at<double>(c, d) = _mm256_reduceadd_ps(mc[idx]) / simdsize;
+				idx++;
+			}
+		}
+		for (int c = 0; c < N; c++)
+		{
+			for (int d = 0; d < c; d++)
+			{
+				dest.at<double>(c, d) = dest.at<double>(d, c);
+			}
+		}
+	}
+
+	static void calcCovarMatrixN_(const vector<Mat>& src, Mat& dest)
+	{
+		const int N = src.size();
+		const int simdsize = get_simd_ceil(src[0].size().area(), 8);
+
+		dest.create((int)src.size(), (int)src.size(), CV_64F);
+
+		AutoBuffer<float> ave(N);
+		for (int c = 0; c < N; c++) ave[c] = (float)cp::average(src[c]);
+		AutoBuffer<const float*> s(N);
+		for (int c = 0; c < N; c++) s[c] = src[c].ptr<float>();
+
+		AutoBuffer<__m256> mc(N * N);
+		for (int c = 0; c < N * N; c++) mc[c] = _mm256_setzero_ps();
+		AutoBuffer<__m256> ma(N);
+		for (int c = 0; c < N; c++) ma[c] = _mm256_set1_ps(ave[c]);
+		AutoBuffer<__m256> m(N);
+
+		for (int i = 0; i < simdsize; i += 8)
+		{
+			for (int c = 0; c < N; c++) m[c] = _mm256_sub_ps(_mm256_load_ps(s[c] + i), ma[c]);
+
+			int idx = 0;
+			for (int c = 0; c < N; c++)
+			{
+				for (int d = c; d < N; d++)
+				{
+					mc[idx] = _mm256_fmadd_ps(m[c], m[d], mc[idx]);
+					idx++;
+				}
+			}
+		}
+		int idx = 0;
+		for (int c = 0; c < N; c++)
+		{
+			for (int d = c; d < N; d++)
+			{
+				dest.at<double>(c, d) = _mm256_reduceadd_ps(mc[idx]) / simdsize;
+				idx++;
+			}
+		}
+		for (int c = 0; c < N; c++)
+		{
+			for (int d = 0; d < c; d++)
+			{
+				dest.at<double>(c, d) = dest.at<double>(d, c);
+			}
+		}
+	}
+
 	//src 3 x dest n(1-3)
 	static void projectPCA_2xn(const Mat& src, Mat& dest, Mat& evec)
 	{
@@ -3126,6 +3226,49 @@ namespace cp
 		}
 	}
 
+	//src M x dest N
+	template<int src_channels>
+	static void projectPCA_MxN(const vector<Mat>& src, vector<Mat>& dest, Mat& evec)
+	{
+		const int dest_channels = (int)dest.size();
+
+		const int sizesimd = src[0].size().area() / 8;
+
+		AutoBuffer < const float*> sptr(src_channels);
+		for (int c = 0; c < src_channels; c++)sptr[c] = src[c].ptr<float>();
+		AutoBuffer <float*> dptr(dest_channels);
+		for (int c = 0; c < dest_channels; c++)dptr[c] = (float*)dest[c].ptr<float>();
+
+		AutoBuffer<__m256> mv(evec.cols * evec.rows);
+		for (int i = 0; i < evec.rows; i++)
+		{
+			for (int j = 0; j < evec.cols; j++)
+			{
+				mv[evec.cols * i + j] = _mm256_set1_ps(evec.at<float>(i, j));
+			}
+		}
+
+		AutoBuffer<__m256> ms(src_channels);
+		for (int i = 0; i < sizesimd; i++)
+		{
+			for (int c = 0; c < src_channels; c++)
+			{
+				ms[c] = _mm256_load_ps(sptr[c]);
+				sptr[c] += 8;
+			}
+			for (int d = 0, idx = 0; d < dest_channels; d++)
+			{
+				__m256 md = _mm256_mul_ps(ms[0], mv[idx++]);
+				for (int c = 1; c < src_channels; c++)
+				{
+					md = _mm256_fmadd_ps(ms[c], mv[idx++], md);
+				}
+				_mm256_store_ps(dptr[d], md);
+				dptr[d] += 8;
+			}
+		}
+	}
+
 	static void eigenVecConvert(Mat& evec)
 	{
 		CV_Assert(evec.depth() == CV_64F);
@@ -3180,16 +3323,16 @@ namespace cp
 		}
 		else
 		{
-			if (src.channels() <= 6)
+			//if (src.channels() <= 6)
 			{
 				vector<Mat> vsrc; split(src, vsrc);
 				vector<Mat> vdst;
 				cvtColorPCA(vsrc, vdst, dest_channels);
 				merge(vdst, dest);
 			}
-			else
+			//else
 			{
-				cvtColorPCAOpenCVCovMat(src, dest, channels, eval, evec);
+				//cvtColorPCAOpenCVCovMat(src, dest, channels, eval, evec);
 			}
 		}
 	}
@@ -3220,38 +3363,30 @@ namespace cp
 			dest[c].create(src[0].size(), CV_32F);
 		}
 
-		if (channels <= 6 && src.size() <= 6)
+		Mat cov;
 		{
-			Mat cov;
-			{
-				//cp::Timer t("cov");
-				if (src.size() == 2) calcCovarMatrix2_(src, cov);
-				if (src.size() == 3) calcCovarMatrix3_(src, cov);
-				if (src.size() == 4) calcCovarMatrix4_(src, cov);
-				if (src.size() == 5) calcCovarMatrix5_(src, cov);
-				if (src.size() == 6) calcCovarMatrix6_(src, cov);
-			}
-
-			Mat eval, evec;
-			eigen(cov, eval, evec);
-
-			Mat transmat;
-			evec(Rect(0, 0, evec.cols, channels)).convertTo(transmat, CV_32F);
-			if (src.size() == 2) projectPCA_2xN(src, dest, transmat);
-			else if (src.size() == 3) projectPCA_3xN(src, dest, transmat);
-			else if (src.size() == 4) projectPCA_4xN(src, dest, transmat);
-			else if (src.size() == 5) projectPCA_5xN(src, dest, transmat);
-			else if (src.size() == 6) projectPCA_6xN(src, dest, transmat);
-			else  projectPCA_MxN(src, dest, transmat);
+			//cp::Timer t("cov");
+			if (src.size() == 2) calcCovarMatrix2_(src, cov);
+			else if (src.size() == 3) calcCovarMatrix3_(src, cov);
+			else if (src.size() == 4) calcCovarMatrix4_(src, cov);
+			else if (src.size() == 5) calcCovarMatrix5_(src, cov);
+			else if (src.size() == 6) calcCovarMatrix6_(src, cov);
+			else if (src.size() == 33) calcCovarMatrix__<33>(src, cov);
+			else calcCovarMatrixN_(src, cov);
 		}
-		else
-		{
-			Mat v, v2;
-			Mat eval, evec;
-			merge(src, v);
-			cvtColorPCAOpenCVCovMat(v, v2, channels, evec, eval);
-			split(v2, dest);
-		}
+
+		Mat eval, evec;
+		eigen(cov, eval, evec);
+
+		Mat transmat;
+		evec(Rect(0, 0, evec.cols, channels)).convertTo(transmat, CV_32F);
+		if (src.size() == 2) projectPCA_2xN(src, dest, transmat);
+		else if (src.size() == 3) projectPCA_3xN(src, dest, transmat);
+		else if (src.size() == 4) projectPCA_4xN(src, dest, transmat);
+		else if (src.size() == 5) projectPCA_5xN(src, dest, transmat);
+		else if (src.size() == 6) projectPCA_6xN(src, dest, transmat);
+		else if (src.size() == 33) projectPCA_MxN<33>(src, dest, transmat);
+		else  projectPCA_MxN(src, dest, transmat);
 	}
 
 	void guiSplit(InputArray src, string wname)
