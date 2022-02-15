@@ -505,7 +505,7 @@ int main(int argc, char** argv)
 #pragma endregion
 
 #pragma region imgproc
-	//guiCvtColorPCATest(); return 0;
+	guiCvtColorPCATest(); return 0;
 #pragma endregion
 
 #pragma region stereo

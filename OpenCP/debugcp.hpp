@@ -1,6 +1,7 @@
 #pragma once
 
 #include <matinfo.hpp>
+#include <imshowExtension.hpp>
 #include <timer.hpp>
 #include <updateCheck.hpp>
 #include <highguiex.hpp>

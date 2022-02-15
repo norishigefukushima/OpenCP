@@ -33,7 +33,7 @@ void guiCvtColorPCATest()
 	Mat srcf;
 	vector<Mat> vsrcf;
 #pragma region setup
-	const int channels = 4;
+	const int channels = 6;
 	if (channels == 2)
 	{
 		Mat flash = imread("img/flash/cave-flash.png", 0);
@@ -117,6 +117,7 @@ void guiCvtColorPCATest()
 	cp::Timer t3("", TIME_MSEC);
 	cp::UpdateCheck uc(ch);
 
+	double psnr = 0.0;
 	while (key != 'q')
 	{
 		bool isClear = false;
@@ -143,6 +144,9 @@ void guiCvtColorPCATest()
 			dst[cindex].copyTo(show[cindex]);
 		}
 
+		psnr = cvtColorPCAErrorPSNR(vsrcf, ch);
+		
+
 		t3.start();
 		ocvcvtPCA(srcf, dest, ch);
 		t3.getpushLapTime();
@@ -155,6 +159,7 @@ void guiCvtColorPCATest()
 
 		key = waitKey(1);
 		imshowNormalize(wname, show[cindex]);
+		ci("psnr %5.2f", psnr);
 		ci.show();
 
 		if (key == 'r')

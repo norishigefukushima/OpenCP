@@ -1,6 +1,10 @@
 #include "color.hpp"
 #include "arithmetic.hpp"
 #include "inlineSIMDfunctions.hpp"
+#include "metrics.hpp"
+#include "concat.hpp"
+
+#include "debugcp.hpp"
 using namespace std;
 using namespace cv;
 
@@ -2362,7 +2366,7 @@ namespace cp
 
 	static void calcCovarMatrixN_(const vector<Mat>& src, Mat& dest)
 	{
-		const int N = src.size();
+		const int N = (int)src.size();
 		const int simdsize = get_simd_ceil(src[0].size().area(), 8);
 
 		dest.create((int)src.size(), (int)src.size(), CV_64F);
@@ -3343,6 +3347,86 @@ namespace cp
 		Mat eval;
 		Mat mean;
 		cvtColorPCA(src, dest, dest_channels, evec, eval, mean);
+	}
+
+	double cvtColorPCAErrorPSNR(const vector<Mat>& src, const int dest_channels, const bool isShow, const int rows)
+	{
+		CV_Assert(src[0].depth() == CV_32F);
+
+		vector<Mat> dest;
+		if (src.size() == 1)
+		{
+			dest.resize(1);
+			src[0].copyTo(dest[0]);
+			return 0.0;
+		}
+
+		const int channels = min(dest_channels, (int)src.size());
+		dest.resize(channels);
+		for (int c = 0; c < channels; c++)
+		{
+			dest[c].create(src[0].size(), CV_32F);
+		}
+
+		Mat cov;
+		{
+			//cp::Timer t("cov");
+			if (src.size() == 2) calcCovarMatrix2_(src, cov);
+			else if (src.size() == 3) calcCovarMatrix3_(src, cov);
+			else if (src.size() == 4) calcCovarMatrix4_(src, cov);
+			else if (src.size() == 5) calcCovarMatrix5_(src, cov);
+			else if (src.size() == 6) calcCovarMatrix6_(src, cov);
+			else if (src.size() == 33) calcCovarMatrix__<33>(src, cov);
+			else calcCovarMatrixN_(src, cov);
+		}
+
+		Mat eval, evec;
+		eigen(cov, eval, evec);
+
+		Mat transmat;
+		evec(Rect(0, 0, evec.cols, channels)).convertTo(transmat, CV_32F);
+		if (src.size() == 2) projectPCA_2xN(src, dest, transmat);
+		else if (src.size() == 3) projectPCA_3xN(src, dest, transmat);
+		else if (src.size() == 4) projectPCA_4xN(src, dest, transmat);
+		else if (src.size() == 5) projectPCA_5xN(src, dest, transmat);
+		else if (src.size() == 6) projectPCA_6xN(src, dest, transmat);
+		else if (src.size() == 33) projectPCA_MxN<33>(src, dest, transmat);
+		else  projectPCA_MxN(src, dest, transmat);
+
+		vector<Mat> a(src.size());
+		vector<Mat> b(src.size());
+		for (int i = 0; i < src.size(); i++)
+		{
+			if (i < channels) a[i] = dest[i].clone();
+			else a[i] = Mat::zeros(dest[0].size(), CV_32F);
+
+			b[i].create(dest[0].size(), CV_32F);
+		}
+
+		Mat ei = evec.inv();
+		ei.convertTo(ei, CV_32F);
+		projectPCA_MxN(a, b, ei);
+
+		if (isShow)
+		{
+			Mat v0, v1;
+			const int s = get_simd_ceil((int)src.size(), rows);
+			cp::concat(src, v0, s / rows, rows);
+			cp::concat(b, v1, s / rows, rows);
+			cp::imshowScale("src", v0);
+			cp::imshowScale("pca", v1);
+		}
+
+		Mat v0, v1;
+		cp::concat(src, v0, (int)src.size());
+		cp::concat(b, v1, (int)src.size());
+		return cp::getPSNR(v0, v1);
+	}
+
+	double cvtColorPCAErrorPSNR(const Mat& src, const int dest_channels, const bool isShow, int rows)
+	{
+		vector<Mat> vsrc; split(src, vsrc);
+		return cvtColorPCAErrorPSNR(vsrc, dest_channels, isShow, rows);
 	}
 
 	void cvtColorPCA(vector<Mat>& src, vector<Mat>& dest, const int dest_channels)
