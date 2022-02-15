@@ -3349,7 +3349,7 @@ namespace cp
 		cvtColorPCA(src, dest, dest_channels, evec, eval, mean);
 	}
 
-	double cvtColorPCAErrorPSNR(const vector<Mat>& src, const int dest_channels, const bool isShow, const int rows)
+	double cvtColorPCAErrorPSNR(const vector<Mat>& src, const int dest_channels)
 	{
 		CV_Assert(src[0].depth() == CV_32F);
 
@@ -3384,7 +3384,7 @@ namespace cp
 		eigen(cov, eval, evec);
 
 		Mat transmat;
-		evec(Rect(0, 0, evec.cols, channels)).convertTo(transmat, CV_32F);
+		evec.convertTo(transmat, CV_32F);
 		if (src.size() == 2) projectPCA_2xN(src, dest, transmat);
 		else if (src.size() == 3) projectPCA_3xN(src, dest, transmat);
 		else if (src.size() == 4) projectPCA_4xN(src, dest, transmat);
@@ -3393,40 +3393,24 @@ namespace cp
 		else if (src.size() == 33) projectPCA_MxN<33>(src, dest, transmat);
 		else  projectPCA_MxN(src, dest, transmat);
 
-		vector<Mat> a(src.size());
-		vector<Mat> b(src.size());
-		for (int i = 0; i < src.size(); i++)
+		vector<Mat> a(src.size() - channels);
+		vector<Mat> b(src.size() - channels);
+		for (int i = 0; i < src.size() - channels; i++)
 		{
-			if (i < channels) a[i] = dest[i].clone();
-			else a[i] = Mat::zeros(dest[0].size(), CV_32F);
-
-			b[i].create(dest[0].size(), CV_32F);
-		}
-
-		Mat ei = evec.inv();
-		ei.convertTo(ei, CV_32F);
-		projectPCA_MxN(a, b, ei);
-
-		if (isShow)
-		{
-			Mat v0, v1;
-			const int s = get_simd_ceil((int)src.size(), rows);
-			cp::concat(src, v0, s / rows, rows);
-			cp::concat(b, v1, s / rows, rows);
-			cp::imshowScale("src", v0);
-			cp::imshowScale("pca", v1);
+			a[i] = dest[i + channels];
+			b[i] = Mat::zeros(src[0].size(), CV_32F);
 		}
 
 		Mat v0, v1;
-		cp::concat(src, v0, (int)src.size());
+		cp::concat(a, v0, (int)src.size());
 		cp::concat(b, v1, (int)src.size());
 		return cp::getPSNR(v0, v1);
 	}
 
-	double cvtColorPCAErrorPSNR(const Mat& src, const int dest_channels, const bool isShow, int rows)
+	double cvtColorPCAErrorPSNR(const Mat& src, const int dest_channels)
 	{
 		vector<Mat> vsrc; split(src, vsrc);
-		return cvtColorPCAErrorPSNR(vsrc, dest_channels, isShow, rows);
+		return cvtColorPCAErrorPSNR(vsrc, dest_channels);
 	}
 
 	void cvtColorPCA(vector<Mat>& src, vector<Mat>& dest, const int dest_channels)
