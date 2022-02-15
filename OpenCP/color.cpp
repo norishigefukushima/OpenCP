@@ -3362,8 +3362,8 @@ namespace cp
 		}
 
 		const int channels = min(dest_channels, (int)src.size());
-		dest.resize(channels);
-		for (int c = 0; c < channels; c++)
+		dest.resize(src.size());
+		for (int c = 0; c < (int)src.size(); c++)
 		{
 			dest[c].create(src[0].size(), CV_32F);
 		}
