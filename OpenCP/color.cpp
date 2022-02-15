@@ -3393,17 +3393,20 @@ namespace cp
 		else if (src.size() == 33) projectPCA_MxN<33>(src, dest, transmat);
 		else  projectPCA_MxN(src, dest, transmat);
 
-		vector<Mat> a(src.size() - channels);
-		vector<Mat> b(src.size() - channels);
-		for (int i = 0; i < src.size() - channels; i++)
+		const int s = (int)src.size() - channels;
+		vector<Mat> a(s);
+		vector<Mat> b(s);
+		for (int i = 0; i < s; i++)
 		{
 			a[i] = dest[i + channels];
 			b[i] = Mat::zeros(src[0].size(), CV_32F);
 		}
 
 		Mat v0, v1;
-		cp::concat(a, v0, (int)src.size());
-		cp::concat(b, v1, (int)src.size());
+		if (s == 0) return 0.0;
+
+		cp::concat(a, v0, s);
+		cp::concat(b, v1, s);
 		return cp::getPSNR(v0, v1);
 	}
 
