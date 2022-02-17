@@ -191,8 +191,9 @@ namespace cp
 		*   src : image to be filtered.
 		*  ref : reference image whose edges are to be respected.
 		*/
-		static void filter(const Mat& src, const Mat& ref, Mat& dest)
+		static double filter(const Mat& src, const Mat& ref, Mat& dest)
 		{
+			double ret = 0.0;
 			const int src_channels = src.channels();
 			const int ref_channels = ref.channels();
 			// Create lattice
@@ -223,6 +224,8 @@ namespace cp
 						}
 					}
 				}
+
+				ret = lattice.hashTable.size() / (double)src.size().area();
 
 				// Blur the lattice
 				{
@@ -267,6 +270,8 @@ namespace cp
 					}
 				}
 
+				ret = lattice.hashTable.size() / (double)src.size().area();
+
 				// Blur the lattice
 				{
 					//Timer t("Blurring");
@@ -293,6 +298,8 @@ namespace cp
 					}
 				}
 			}
+
+			return ret;
 		}
 
 		/* Constructor
@@ -981,17 +988,21 @@ namespace cp
 			}
 		}
 		// Filter the input with respect to the position vectors. 
+
+		double ratio = 0.0;
 		if (src.depth() == CV_8U)
 		{
 			Mat src32f; src.convertTo(src32f, CV_32F);
 			Mat dst32f(src.size(), src32f.type());
-			PermutohedralLattice::filter(src32f, ref, dst32f);
+			ratio = PermutohedralLattice::filter(src32f, ref, dst32f);
 			dst32f.convertTo(dest, CV_8U);
 		}
 		else
 		{
-			PermutohedralLattice::filter(src, ref, dest);
+			ratio = PermutohedralLattice::filter(src, ref, dest);
 		}
+		//ratio// hashTableSize/imageSize
+		//cout << ratio << endl;
 	}
 
 	void highDimensionalGaussianFilterPermutohedralLattice(const vector<Mat>& vsrc, const vector<Mat>& vguide, Mat& dest, const float sigma_color, const float sigma_space)

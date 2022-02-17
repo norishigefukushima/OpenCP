@@ -61,6 +61,7 @@ void testWeightedHistogramFilterDisparity();
 
 
 void highDimentionalGaussianFilterTest(cv::Mat& src);
+void highDimentionalGaussianFilterHSITest();
 
 void guiGausianFilterTest(cv::Mat& src_);
 void guiRecursiveBilateralFilterTest(cv::Mat& src);

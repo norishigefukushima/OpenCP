@@ -40,4 +40,9 @@ namespace cp
 
 	CP_EXPORT void guiSplit(cv::InputArray src, std::string wname = "split");
 
+	//convert hyperspectral image to BGR by simple average
+	CP_EXPORT void cvtColorHSI2BGR(cv::Mat& src, cv::Mat& dest);
+	//convert hyperspectral image to BGR by simple average (now not implemented)
+	//CP_EXPORT void cvtColorHSI2BGR(std::vector<cv::Mat>& src, cv::Mat& dest);
+
 }

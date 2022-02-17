@@ -505,7 +505,7 @@ int main(int argc, char** argv)
 #pragma endregion
 
 #pragma region imgproc
-	guiCvtColorPCATest(); return 0;
+	//guiCvtColorPCATest(); return 0;
 #pragma endregion
 
 #pragma region stereo
@@ -516,8 +516,8 @@ int main(int argc, char** argv)
 
 #pragma region filter
 	//testGuidedImageFilter(Mat(), Mat()); return 0;
-	highDimentionalGaussianFilterTest(imgg); return 0;
 	//highDimentionalGaussianFilterTest(img); return 0;
+	highDimentionalGaussianFilterHSITest(); return 0;
 	guiDenoiseTest(img);
 	//testWeightedHistogramFilterDisparity(); return 0;
 	//testWeightedHistogramFilter();return 0;

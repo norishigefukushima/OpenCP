@@ -3402,9 +3402,8 @@ namespace cp
 			b[i] = Mat::zeros(src[0].size(), CV_32F);
 		}
 
-		Mat v0, v1;
 		if (s == 0) return 0.0;
-
+		Mat v0, v1;
 		cp::concat(a, v0, s);
 		cp::concat(b, v1, s);
 		return cp::getPSNR(v0, v1);
@@ -3476,6 +3475,80 @@ namespace cp
 		}
 		destroyWindow(wname);
 	}
+
+	void cvtColorHSI2BGR(Mat& src, Mat& dest)
+	{
+		dest.create(src.size(), CV_8UC3);
+		const int channel = src.channels();
+
+		const int bc = channel / 3;
+		const int gc = 2 * bc;
+		const int size = src.size().area();
+		if (src.depth() == CV_32F)
+		{
+			float* s = src.ptr<float>();
+			uchar* d = dest.ptr<uchar>();
+#pragma omp parallel for
+			for (int i = 0; i < size; i++)
+			{
+				float b = 0.f;
+				float g = 0.f;
+				float r = 0.f;
+				for (int c = 0; c < bc; c++)
+				{
+					b += s[channel * i + c];
+					g += s[channel * i + c + bc];
+					r += s[channel * i + c + gc];
+				}
+				d[3 * i + 0] = cvRound(b / bc);
+				d[3 * i + 1] = cvRound(g / bc);
+				d[3 * i + 2] = cvRound(r / bc);
+			}
+		}
+		else if (src.depth() == CV_64F)
+		{
+			double* s = src.ptr <double>();
+			uchar* d = dest.ptr<uchar>();
+#pragma omp parallel for
+			for (int i = 0; i < size; i++)
+			{
+				double b = 0.0;
+				double g = 0.0;
+				double r = 0.0;
+				for (int c = 0; c < bc; c++)
+				{
+					b += s[channel * i + c + 0];
+					g += s[channel * i + c + bc];
+					r += s[channel * i + c + gc];
+				}
+				d[3 * i + 0] = cvRound(b / bc);
+				d[3 * i + 1] = cvRound(g / bc);
+				d[3 * i + 2] = cvRound(r / bc);
+			}
+		}
+		else if (src.depth() == CV_8U)
+		{
+			uchar* s = src.ptr <uchar>();
+			uchar* d = dest.ptr<uchar>();
+#pragma omp parallel for
+			for (int i = 0; i < size; i++)
+			{
+				float b = 0.f;
+				float g = 0.f;
+				float r = 0.f;
+				for (int c = 0; c < bc; c++)
+				{
+					b += s[channel * i + c + 0];
+					g += s[channel * i + c + bc];
+					r += s[channel * i + c + gc];
+				}
+				d[3 * i + 0] = cvRound(b / bc);
+				d[3 * i + 1] = cvRound(g / bc);
+				d[3 * i + 2] = cvRound(r / bc);
+			}
+		}
+	}
+
 #pragma endregion
 	//TODO: support OpenCV 4
 #if CV_MAJOR_VERSION == 3
