@@ -1,6 +1,7 @@
 #include "GaussianKDTree.hpp"
 #include "inlineSIMDFunctions.hpp"
 #include "tiling.hpp"
+#include "color.hpp"
 #include "debugcp.hpp"
 #include "count.hpp"
 using namespace std;
@@ -436,7 +437,7 @@ namespace cp
 						for (int c = 0; c < chs; c++)
 						{
 							const float v = outPtr[c] * invOutW;
-							if (0.f <= v && v<= 255.f) outPtr[c] = v;
+							if (0.f <= v && v <= 255.f) outPtr[c] = v;
 							else outPtr[c] = src.ptr<float>(y, x)[c];
 						}
 					}
@@ -585,6 +586,85 @@ namespace cp
 						cp::cropTileAlign(guideSplit[c], subImageGuide[thread_num][c], div, idx, r, borderType, vecsize, vecsize, vecsize, vecsize);
 					}
 				}
+
+				highDimensionalGaussianFilterGaussianKDTree(subImageInput[thread_num], subImageGuide[thread_num], subImageOutput[thread_num], sigma_color, sigma_space);
+
+				cp::pasteTileAlign(subImageOutput[thread_num], dest, div, idx, r, 8, 8);
+			}
+		}
+	}
+
+	void highDimensionalGaussianFilterGaussianKDTreePCATile(const Mat& src, const Mat& guide, Mat& dest, const float sigma_color, const float sigma_space, const int dest_pca_ch, const Size div, const float truncateBoundary)
+	{
+		const int channels = src.channels();
+		const int guide_channels = guide.channels();
+
+		dest.create(src.size(), CV_MAKETYPE(CV_32F, src.channels()));
+
+		const int borderType = cv::BORDER_REFLECT;
+		const int vecsize = sizeof(__m256) / sizeof(float);//8
+
+		if (div.area() == 1)
+		{
+			highDimensionalGaussianFilterGaussianKDTree(src, guide, dest, sigma_color, sigma_space);
+		}
+		else
+		{
+			int r = (int)ceil(truncateBoundary * sigma_space);
+			const int R = get_simd_ceil(r, 8);
+			Size tileSize = cp::getTileAlignSize(src.size(), div, r, vecsize, vecsize);
+			Size divImageSize = cv::Size(src.cols / div.width, src.rows / div.height);
+
+			vector<Mat> split_dst(channels);
+
+			for (int c = 0; c < channels; c++)
+			{
+				split_dst[c].create(tileSize, CV_32FC1);
+			}
+
+			const int thread_max = omp_get_max_threads();
+			vector<vector<Mat>>	subImageInput(thread_max);
+			vector<vector<Mat>>	subImageGuideBeforePCA(thread_max);
+			vector<vector<Mat>>	subImageGuide(thread_max);
+			vector<Mat>	subImageOutput(thread_max);
+			for (int n = 0; n < thread_max; n++)
+			{
+				subImageInput[n].resize(channels);
+				subImageGuideBeforePCA[n].resize(guide_channels);
+				subImageGuide[n].resize(dest_pca_ch);
+				subImageOutput[n].create(tileSize, CV_MAKETYPE(CV_32F, channels));
+			}
+
+			std::vector<cv::Mat> srcSplit;
+			std::vector<cv::Mat> guideSplit;
+			if (src.channels() != 3)split(src, srcSplit);
+			if (guide.channels() != 3)split(guide, guideSplit);
+
+#pragma omp parallel for schedule(static)
+			for (int n = 0; n < div.area(); n++)
+			{
+				const int thread_num = omp_get_thread_num();
+				const cv::Point idx = cv::Point(n % div.width, n / div.width);
+
+
+				if (src.channels() == 3)
+				{
+					cp::cropSplitTileAlign(src, subImageInput[thread_num], div, idx, r, borderType, vecsize, vecsize, vecsize, vecsize);
+				}
+				else
+				{
+					for (int c = 0; c < srcSplit.size(); c++)
+					{
+						cp::cropTileAlign(srcSplit[c], subImageInput[thread_num][c], div, idx, r, borderType, vecsize, vecsize, vecsize, vecsize);
+					}
+				}
+
+
+				for (int c = 0; c < guideSplit.size(); c++)
+				{
+					cp::cropTileAlign(guideSplit[c], subImageGuideBeforePCA[thread_num][c], div, idx, r, borderType, vecsize, vecsize, vecsize, vecsize);
+				}
+				cp::cvtColorPCA(subImageGuideBeforePCA[thread_num], subImageGuide[thread_num], dest_pca_ch);
 
 				highDimensionalGaussianFilterGaussianKDTree(subImageInput[thread_num], subImageGuide[thread_num], subImageOutput[thread_num], sigma_color, sigma_space);
 
