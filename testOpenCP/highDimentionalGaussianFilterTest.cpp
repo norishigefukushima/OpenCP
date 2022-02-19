@@ -139,15 +139,6 @@ void highDimentionalGaussianFilterTest(Mat& src)
 	Timer t;
 	Mat ref;
 
-	vector<string> dir;
-	vector<Mat> s;
-	cv::glob("img/hsi/braga/*.png", dir);
-	for (int i = 0; i < dir.size(); i++)
-	{
-		s.push_back(convert(imread(dir[i], 0), CV_32F));
-	}
-	Mat hsi; merge(s, hsi);
-
 	while (key != 'q')
 	{
 		//cout<<"r="<<r<<": "<<"please change 'sw' for changing the type of implimentations."<<endl;
@@ -181,8 +172,10 @@ void highDimentionalGaussianFilterTest(Mat& src)
 		{
 			method = "cp::bilateralFilterPermutohedralLattice";
 			t.start();
-			cp::highDimensionalGaussianFilterPermutohedralLattice(srcf, dest, sigma_color, sigma_space);
+			//cp::highDimensionalGaussianFilterPermutohedralLattice(srcf, dest, sigma_color, sigma_space);
+			//cp::highDimensionalGaussianFilterPermutohedralLattice(srcf, dest, sigma_color, sigma_space);
 			//cp::highDimensionalGaussianFilterPermutohedralLatticeTile(srcf, srcf, dest, sigma_color, sigma_space, Size(4, 4));
+			cp::highDimensionalGaussianFilterPermutohedralLatticePCATile(srcf, srcf, dest, sigma_color, sigma_space, 1,Size(4, 4));
 
 			t.getpushLapTime();
 		}
@@ -195,12 +188,6 @@ void highDimentionalGaussianFilterTest(Mat& src)
 			t.getpushLapTime();
 		}
 
-		/*{
-			Timer t;
-			//cout << hsi.channels() << endl;
-			cp::highDimensionalGaussianFilter(hsi, hsi, dest2, Size(d, d), sigma_color, sigma_space, BORDER_DEFAULT);
-		}
-		cp::imshowSplitScale("hsi", hsi);*/
 		ci(method);
 		ci("time %7.2f ms (%5d)", t.getLapTimeMedian(), t.getStatSize());
 		ci("PSNR %f dB", getPSNR(dest, ref));

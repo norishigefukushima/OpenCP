@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
+#include "debugcp.hpp"
 using namespace std;
 using namespace cv;
 
@@ -1143,14 +1143,13 @@ namespace cp
 			std::vector<cv::Mat> srcSplit;
 			std::vector<cv::Mat> guideSplit;
 			if (src.channels() != 3)split(src, srcSplit);
-			if (guide.channels() != 3)split(guide, guideSplit);
+			split(guide, guideSplit);
 
 #pragma omp parallel for schedule(static)
 			for (int n = 0; n < div.area(); n++)
 			{
 				const int thread_num = omp_get_thread_num();
 				const cv::Point idx = cv::Point(n % div.width, n / div.width);
-
 
 				if (src.channels() == 3)
 				{
@@ -1176,5 +1175,4 @@ namespace cp
 			}
 		}
 	}
-
 }
