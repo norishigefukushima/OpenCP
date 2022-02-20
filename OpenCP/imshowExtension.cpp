@@ -1,6 +1,7 @@
 #include "imshowExtension.hpp"
 #include "histogram.hpp"
 #include "draw.hpp"
+#include "concat.hpp"
 #include "consoleimage.hpp"
 #include "maskoperation.hpp"
 
@@ -14,22 +15,42 @@ namespace cp
 	{
 		namedWindow(wname);
 		static int imshowSplitScaleColor = 0;
-		createTrackbar("channel", wname, &imshowSplitScaleColor, src.channels() - 1);
+		createTrackbar("channel", wname, &imshowSplitScaleColor, 1);
+		setTrackbarMin("channel", wname, -1);
 		setTrackbarMax("channel", wname, src.channels() - 1);
 		vector<Mat> v;
 		split(src, v);
-		imshowScale(wname, v[imshowSplitScaleColor], alpha, beta);
+		if (imshowSplitScaleColor < 0)
+		{
+			Mat dest;
+			cp::concat(v, dest, (int)v.size());
+			imshowScale(wname, dest, alpha, beta);
+		}
+		else
+		{
+			imshowScale(wname, v[imshowSplitScaleColor], alpha, beta);
+		}
 	}
 
 	void imshowSplit(string wname, InputArray src)
 	{
 		namedWindow(wname);
 		static int imshowSplitColor = 0;
-		createTrackbar("channel", wname, &imshowSplitColor, src.channels() - 1);
+		createTrackbar("channel", wname, &imshowSplitColor, 1);
+		setTrackbarMin("channel", wname, -1);
 		setTrackbarMax("channel", wname, src.channels() - 1);
 		vector<Mat> v;
 		split(src, v);
-		imshow(wname, v[imshowSplitColor]);
+		if (imshowSplitColor < 0)
+		{
+			Mat dest;
+			cp::concat(v, dest, (int)v.size());
+			imshow(wname, dest);
+		}
+		else
+		{
+			imshow(wname, v[imshowSplitColor]);
+		}
 	}
 
 	void imshowNormalize(string wname, InputArray src, const int norm_type)
