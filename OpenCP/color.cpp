@@ -1665,22 +1665,46 @@ namespace cp
 #pragma region cvtColorAverageGray
 	static void cvtColorAverageGray_32F(vector<Mat>& src, Mat& dest, const float normalize)
 	{
-		CV_Assert(src.size() == 3);
+		const int channels = (int)src.size();
 		CV_Assert(src[0].depth() == CV_32F);
 
-		__m256* b = (__m256*)src[0].ptr<float>();
-		__m256* g = (__m256*)src[1].ptr<float>();
-		__m256* r = (__m256*)src[2].ptr<float>();
-		float* dptr = dest.ptr<float>();
-		const int size = src[0].size().area() / 8;
-		const __m256 mnorm = _mm256_set1_ps(normalize);
-		for (int i = 0; i < size; i++)
+		if (channels == 3)
 		{
-			_mm256_store_ps(dptr, _mm256_mul_ps(mnorm, _mm256_add_ps(*r, _mm256_add_ps(*b, *g))));
-			b++;
-			g++;
-			r++;
-			dptr += 8;
+			__m256* b = (__m256*)src[0].ptr<float>();
+			__m256* g = (__m256*)src[1].ptr<float>();
+			__m256* r = (__m256*)src[2].ptr<float>();
+			float* dptr = dest.ptr<float>();
+			const int size = src[0].size().area() / 8;
+			const __m256 mnorm = _mm256_set1_ps(normalize);
+			for (int i = 0; i < size; i++)
+			{
+				_mm256_store_ps(dptr, _mm256_mul_ps(mnorm, _mm256_add_ps(*r, _mm256_add_ps(*b, *g))));
+				b++;
+				g++;
+				r++;
+				dptr += 8;
+			}
+		}
+		else
+		{
+			AutoBuffer<__m256*> ptr(channels);
+			for (int c = 0; c < channels; c++)
+			{
+				ptr[c] = (__m256*)src[c].ptr<float>();
+			}
+			float* dptr = dest.ptr<float>();
+			const int size = src[0].size().area() / 8;
+			const __m256 mnorm = _mm256_set1_ps(normalize);
+			for (int i = 0; i < size; i++)
+			{
+				__m256 v = *ptr[0]++;
+				for (int c = 1; c < channels; c++)
+				{
+					v = _mm256_add_ps(v, *ptr[c]++);
+				}
+				_mm256_store_ps(dptr, _mm256_mul_ps(mnorm, v));
+				dptr += 8;
+			}
 		}
 	}
 
@@ -1733,7 +1757,7 @@ namespace cp
 			}
 
 			dest.create(src[0].size(), src[0].depth());
-			const float normalize = (isKeepDistance) ? 1.f / sqrt(3.f) : 1.f / 3.f;
+			const float normalize = (isKeepDistance) ? 1.f / sqrt((float)src.size()) : 1.f / (float)src.size();
 			if (src[0].depth() == CV_32F) cvtColorAverageGray_32F(src, dest.getMat(), normalize);
 			else cout << "do not support this depth (cvtColorAverageGray)" << endl;
 		}
@@ -3755,4 +3779,4 @@ namespace cp
 		xcvFindColorMatrix(&CvMat(src_point_crowd1), &CvMat(src_point_crowd2), &CvMat(C));
 	}
 #endif
-}
+			}
