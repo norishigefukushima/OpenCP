@@ -424,7 +424,7 @@ namespace cp
 						outW += w * vPtr[chs];
 					}
 
-					if (abs(outW) < 0.00001f || cvIsNaN(outW) || cvIsInf(outW))
+					if ((abs(outW) < 0.0000001f) || cvIsNaN(outW) || cvIsInf(outW))
 					{
 						for (int c = 0; c < chs; c++)
 						{
@@ -437,7 +437,8 @@ namespace cp
 						for (int c = 0; c < chs; c++)
 						{
 							const float v = outPtr[c] * invOutW;
-							if (0.f <= v && v <= 255.f) outPtr[c] = v;
+
+							if (0.f <= v && v <= 255.f && abs(src.ptr<float>(y, x)[c] - v) < 100) outPtr[c] = v;
 							else outPtr[c] = src.ptr<float>(y, x)[c];
 						}
 					}

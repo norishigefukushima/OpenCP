@@ -35,6 +35,9 @@ namespace cp
 	CP_EXPORT void cvtColorPCA(cv::InputArray src, cv::OutputArray dest, const int dest_channels);
 	CP_EXPORT void cvtColorPCA(cv::InputArray src, cv::OutputArray dest, const int dest_channels, cv::Mat& evec, cv::Mat& eval, cv::Mat& mean);
 	CP_EXPORT void cvtColorPCA(std::vector<cv::Mat>& src, std::vector<cv::Mat>& dest, const int dest_channels);
+
+	CP_EXPORT void cvtColorPCA2(cv::InputArray src, cv::OutputArray dest, const int dest_channels);
+	CP_EXPORT void cvtColorPCA2(cv::InputArray src, cv::OutputArray dest, const int dest_channels, cv::Mat& evec, cv::Mat& eval, cv::Mat& mean);
 	CP_EXPORT double cvtColorPCAErrorPSNR(const std::vector<cv::Mat>& src, const int dest_channels);
 	CP_EXPORT double cvtColorPCAErrorPSNR(const cv::Mat& src, const int dest_channels);
 

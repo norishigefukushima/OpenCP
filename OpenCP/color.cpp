@@ -3365,12 +3365,119 @@ namespace cp
 		}
 	}
 
+	template<typename T>
+	void eigenvectorWeightedBlend(Mat& src_, Mat& dest, Mat& eval, const int dest_channels)
+	{
+		Mat src = src_.clone();
+
+		vector <double> w(src.rows);
+
+		/*for (int i = dest_channels - 1; i < src.rows; i++)
+		{
+			w[i] = pow(eval.at<T>(i),4);
+		}*/
+
+		double etotal = 1.0+ pow(eval.at<T>(dest_channels)/eval.at<T>(dest_channels - 1),1.8);
+
+		if (dest_channels == src.rows)etotal = 1.0;
+		/*for (int i = dest_channels - 1; i < src.rows; i++)
+		{
+			etotal += w[i];
+		}*/
+		//etotal *= 0.95;
+
+		for (int j = 0; j < src.rows; j++)
+		{
+			if (j < dest_channels - 1)
+			{
+				for (int i = 0; i < src.cols; i++)
+				{
+					dest.at<T>(j, i) = src.at<T>(j, i);
+				}
+			}
+			else //last channel
+			{
+				for (int i = 0; i < src.cols; i++)
+				{
+					double v = 0.0;
+					/*for (int k = dest_channels - 1; k < src.rows; k++)
+					{
+						v += src.at<T>(k, i) * w[k];
+					}*/
+					dest.at<T>(j, i) = src.at<T>(j, i) * etotal;
+				}
+			}
+		}
+	}
+
 	void cvtColorPCA(InputArray src, OutputArray dest, const int dest_channels)
 	{
 		Mat evec;
 		Mat eval;
 		Mat mean;
 		cvtColorPCA(src, dest, dest_channels, evec, eval, mean);
+	}
+
+	void cvtColorPCA2(InputArray src_, OutputArray dest_, const int dest_channels, Mat& evec, Mat& eval, Mat& mean)
+	{
+		CV_Assert(src_.depth() == CV_32F);
+
+		if (src_.channels() == 1)
+		{
+			src_.copyTo(dest_);
+			return;
+		}
+
+		const int channels = min(dest_channels, src_.channels());
+		dest_.create(src_.size(), CV_MAKE_TYPE(CV_32F, channels));
+
+		Mat src = src_.getMat();
+		Mat dest = dest_.getMat();
+		Mat cov;
+		if (channels <= 3 && src_.channels() <= 3)
+		{
+			{
+				//cp::Timer t("cov");
+				if (src.channels() == 2) calcCovarMatrix2_(src, cov, mean);
+				if (src.channels() == 3) calcCovarMatrix3_(src, cov, mean);
+			}
+
+			eigen(cov, eval, evec);
+			eigenVecConvert(evec);
+
+			eigenvectorWeightedBlend<double>(evec, evec, eval, channels);
+			Mat transmat;
+			evec(Rect(0, 0, evec.cols, channels)).convertTo(transmat, CV_32F);
+
+
+			{
+				if (src.channels() == 2) projectPCA_2xn(src, dest, transmat);
+				else if (src.channels() == 3) projectPCA_3xN(src, dest, transmat);
+				else projectPCA_MxN(src, dest, transmat);
+			}
+		}
+		else
+		{
+			//if (src.channels() <= 6)
+			{
+				vector<Mat> vsrc; split(src, vsrc);
+				vector<Mat> vdst;
+				cvtColorPCA(vsrc, vdst, dest_channels);
+				merge(vdst, dest);
+			}
+			//else
+			{
+				//cvtColorPCAOpenCVCovMat(src, dest, channels, eval, evec);
+			}
+		}
+	}
+
+	void cvtColorPCA2(InputArray src, OutputArray dest, const int dest_channels)
+	{
+		Mat evec;
+		Mat eval;
+		Mat mean;
+		cvtColorPCA2(src, dest, dest_channels, evec, eval, mean);
 	}
 
 	double cvtColorPCAErrorPSNR(const vector<Mat>& src, const int dest_channels)
@@ -3770,7 +3877,7 @@ namespace cp
 		cvReleaseMat(&y);
 		cvReleaseMat(&A);
 		cvReleaseMat(&cmat);
-	}
+			}
 
 	void findColorMatrix(Mat& src_point_crowd1, Mat& src_point_crowd2, Mat& C)
 	{
@@ -3779,4 +3886,4 @@ namespace cp
 		xcvFindColorMatrix(&CvMat(src_point_crowd1), &CvMat(src_point_crowd2), &CvMat(C));
 	}
 #endif
-			}
+		}
