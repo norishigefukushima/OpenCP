@@ -11,10 +11,10 @@ namespace cp
 {
 #define INF (std::numeric_limits<float>::infinity())
 
-	RNG rng;
+	
 	float rand_float()
 	{
-		return rng.uniform(0.f, 1.f);
+		return cv::theRNG().uniform(0.f, 1.f);
 		//return rand() / (RAND_MAX + 1.0f);
 	}
 
@@ -45,7 +45,7 @@ namespace cp
 	class GKDTree
 	{
 	private:
-
+		RNG rng;
 		class Node
 		{
 		public:
@@ -509,9 +509,58 @@ namespace cp
 
 	void highDimensionalGaussianFilterGaussianKDTree(const vector<Mat>& vsrc, const vector<Mat>& vguide, Mat& dest, const float sigma_color, const float sigma_space)
 	{
-		Mat src; merge(vsrc, src);
-		Mat ref; merge(vguide, ref);
-		highDimensionalGaussianFilterGaussianKDTree(src, ref, dest, sigma_color, sigma_space);
+		dest.create(vsrc[0].size(), CV_MAKETYPE(vsrc[0].depth(), (int)vsrc.size()));
+
+		const float invSpatialStdev = 1.0f / sigma_space;
+		const float invColorStdev = 1.0f / (sigma_color);
+
+		Mat ref(vsrc[0].size(), CV_MAKETYPE(CV_32F, (int)vguide.size() + 2));
+		if (vsrc[0].depth() == CV_8U)
+		{
+			for (int y = 0; y < vsrc[0].rows; y++)
+			{
+				for (int x = 0; x < vsrc[0].cols; x++)
+				{
+					ref.ptr<float>(y, x)[0] = invSpatialStdev * x;
+					ref.ptr<float>(y, x)[1] = invSpatialStdev * y;
+					for (int c = 0; c < vguide.size(); c++)
+					{
+						ref.ptr<float>(y, x)[2 + c] = invColorStdev * (float)vguide[c].at<uchar>(y, x);
+					}
+				}
+			}
+		}
+		else if (vsrc[0].depth() == CV_32F)
+		{
+			for (int y = 0; y < vsrc[0].rows; y++)
+			{
+				for (int x = 0; x < vsrc[0].cols; x++)
+				{
+					ref.ptr<float>(y, x)[0] = invSpatialStdev * x;
+					ref.ptr<float>(y, x)[1] = invSpatialStdev * y;
+					for (int c = 0; c < vguide.size(); c++)
+					{
+						ref.ptr<float>(y, x)[2 + c] = invColorStdev * vguide[c].at<float>(y, x);
+					}
+				}
+			}
+		}
+
+		// Filter the input with respect to the position vectors. 
+		if (vsrc[0].depth() == CV_8U)
+		{
+			Mat src; merge(vsrc, src);
+			Mat src32f; src.convertTo(src32f, CV_32F);
+			
+			Mat dst32f(src.size(), src32f.type());
+			GKDTree::filter(src32f, ref, dst32f);
+			dst32f.convertTo(dest, CV_8U);
+		}
+		else
+		{
+			Mat src; merge(vsrc, src);
+			GKDTree::filter(src, ref, dest);
+		}
 	}
 
 	void highDimensionalGaussianFilterGaussianKDTreeTile(const Mat& src, const Mat& guide, Mat& dest, const float sigma_color, const float sigma_space, const Size div, const float truncateBoundary)
