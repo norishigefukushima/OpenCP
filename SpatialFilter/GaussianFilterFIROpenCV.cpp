@@ -30,6 +30,7 @@ namespace cp
 
 	void GaussianFilterFIROpenCV::body(const cv::Mat& src, cv::Mat& dst, const int borderType)
 	{
+		this->imgSize = src.size();
 		this->d = 2 * this->radius + 1;
 
 		if (dest_depth == src.depth() && this->depth == src.depth())
@@ -50,7 +51,6 @@ namespace cp
 		this->sigma = sigma;
 		this->gf_order = order;
 		this->radius = (gf_order == 0) ? radius : (int)ceil(gf_order * sigma);
-
 		body(_src, dst, borderType);
 	}
 }
