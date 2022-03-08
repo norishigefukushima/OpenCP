@@ -34,7 +34,8 @@ namespace cp
 
 	CP_EXPORT void cvtColorPCA(cv::InputArray src, cv::OutputArray dest, const int dest_channels);
 	CP_EXPORT void cvtColorPCA(cv::InputArray src, cv::OutputArray dest, const int dest_channels, cv::Mat& evec, cv::Mat& eval, cv::Mat& mean);
-	CP_EXPORT void cvtColorPCA(std::vector<cv::Mat>& src, std::vector<cv::Mat>& dest, const int dest_channels);
+	CP_EXPORT void cvtColorPCA(const std::vector<cv::Mat>& src, std::vector<cv::Mat>& dest, const int dest_channels, cv::Mat& projectionMatrix);
+	CP_EXPORT void cvtColorPCA(const std::vector<cv::Mat>& src, std::vector<cv::Mat>& dest, const int dest_channels);
 
 	CP_EXPORT void cvtColorPCA2(cv::InputArray src, cv::OutputArray dest, const int dest_channels);
 	CP_EXPORT void cvtColorPCA2(cv::InputArray src, cv::OutputArray dest, const int dest_channels, cv::Mat& evec, cv::Mat& eval, cv::Mat& mean);
@@ -44,7 +45,7 @@ namespace cp
 	CP_EXPORT void guiSplit(cv::InputArray src, std::string wname = "split");
 
 	//convert hyperspectral image to BGR by simple average
-	CP_EXPORT void cvtColorHSI2BGR(cv::Mat& src, cv::Mat& dest);
+	CP_EXPORT void cvtColorHSI2BGR(cv::Mat& src, cv::Mat& dest, const int depth = CV_8U);
 	//convert hyperspectral image to BGR by simple average (now not implemented)
 	//CP_EXPORT void cvtColorHSI2BGR(std::vector<cv::Mat>& src, cv::Mat& dest);
 

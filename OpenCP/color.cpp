@@ -3377,7 +3377,7 @@ namespace cp
 			w[i] = pow(eval.at<T>(i),4);
 		}*/
 
-		double etotal = 1.0+ pow(eval.at<T>(dest_channels)/eval.at<T>(dest_channels - 1),1.8);
+		double etotal = 1.0 + pow(eval.at<T>(dest_channels) / eval.at<T>(dest_channels - 1), 1.8);
 
 		if (dest_channels == src.rows)etotal = 1.0;
 		/*for (int i = dest_channels - 1; i < src.rows; i++)
@@ -3546,7 +3546,7 @@ namespace cp
 		return cvtColorPCAErrorPSNR(vsrc, dest_channels);
 	}
 
-	void cvtColorPCA(vector<Mat>& src, vector<Mat>& dest, const int dest_channels)
+	void cvtColorPCA(const vector<Mat>& src, vector<Mat>& dest, const int dest_channels, cv::Mat& projectionMatrix)
 	{
 		CV_Assert(src[0].depth() == CV_32F);
 
@@ -3579,15 +3579,19 @@ namespace cp
 		Mat eval, evec;
 		eigen(cov, eval, evec);
 
-		Mat transmat;
-		evec(Rect(0, 0, evec.cols, channels)).convertTo(transmat, CV_32F);
-		if (src.size() == 2) projectPCA_2xN(src, dest, transmat);
-		else if (src.size() == 3) projectPCA_3xN(src, dest, transmat);
-		else if (src.size() == 4) projectPCA_4xN(src, dest, transmat);
-		else if (src.size() == 5) projectPCA_5xN(src, dest, transmat);
-		else if (src.size() == 6) projectPCA_6xN(src, dest, transmat);
-		else if (src.size() == 33) projectPCA_MxN<33>(src, dest, transmat);
-		else  projectPCA_MxN(src, dest, transmat);
+		evec(Rect(0, 0, evec.cols, channels)).convertTo(projectionMatrix, CV_32F);
+		if (src.size() == 2) projectPCA_2xN(src, dest, projectionMatrix);
+		else if (src.size() == 3) projectPCA_3xN(src, dest, projectionMatrix);
+		else if (src.size() == 4) projectPCA_4xN(src, dest, projectionMatrix);
+		else if (src.size() == 5) projectPCA_5xN(src, dest, projectionMatrix);
+		else if (src.size() == 6) projectPCA_6xN(src, dest, projectionMatrix);
+		else if (src.size() == 33) projectPCA_MxN<33>(src, dest, projectionMatrix);
+		else  projectPCA_MxN(src, dest, projectionMatrix);
+	}
+
+	void cvtColorPCA(const std::vector<cv::Mat>& src, std::vector<cv::Mat>& dest, const int dest_channels)
+	{
+		cvtColorPCA(src, dest, dest_channels, Mat());
 	}
 
 	void guiSplit(InputArray src, string wname)
@@ -3607,77 +3611,88 @@ namespace cp
 		destroyWindow(wname);
 	}
 
-	void cvtColorHSI2BGR(Mat& src, Mat& dest)
+	template<typename S, typename D>
+	void cvtColorHSI2BGR_round(Mat& src, Mat& dest)
 	{
-		dest.create(src.size(), CV_8UC3);
 		const int channel = src.channels();
 
 		const int bc = channel / 3;
 		const int gc = 2 * bc;
 		const int size = src.size().area();
-		if (src.depth() == CV_32F)
-		{
-			float* s = src.ptr<float>();
-			uchar* d = dest.ptr<uchar>();
+
+		S* s = src.ptr <S>();
+		D* d = dest.ptr<D>();
 #pragma omp parallel for
-			for (int i = 0; i < size; i++)
-			{
-				float b = 0.f;
-				float g = 0.f;
-				float r = 0.f;
-				for (int c = 0; c < bc; c++)
-				{
-					b += s[channel * i + c];
-					g += s[channel * i + c + bc];
-					r += s[channel * i + c + gc];
-				}
-				d[3 * i + 0] = cvRound(b / bc);
-				d[3 * i + 1] = cvRound(g / bc);
-				d[3 * i + 2] = cvRound(r / bc);
-			}
-		}
-		else if (src.depth() == CV_64F)
+		for (int i = 0; i < size; i++)
 		{
-			double* s = src.ptr <double>();
-			uchar* d = dest.ptr<uchar>();
-#pragma omp parallel for
-			for (int i = 0; i < size; i++)
+			double b = 0.0;
+			double g = 0.0;
+			double r = 0.0;
+			for (int c = 0; c < bc; c++)
 			{
-				double b = 0.0;
-				double g = 0.0;
-				double r = 0.0;
-				for (int c = 0; c < bc; c++)
-				{
-					b += s[channel * i + c + 0];
-					g += s[channel * i + c + bc];
-					r += s[channel * i + c + gc];
-				}
-				d[3 * i + 0] = cvRound(b / bc);
-				d[3 * i + 1] = cvRound(g / bc);
-				d[3 * i + 2] = cvRound(r / bc);
+				b += (double)s[channel * i + c + 0];
+				g += (double)s[channel * i + c + bc];
+				r += (double)s[channel * i + c + gc];
 			}
+			d[3 * i + 0] = (D)cvRound(b / bc);
+			d[3 * i + 1] = (D)cvRound(g / bc);
+			d[3 * i + 2] = (D)cvRound(r / bc);
 		}
-		else if (src.depth() == CV_8U)
+	}
+
+	template<typename S, typename D>
+	void cvtColorHSI2BGR_(Mat& src, Mat& dest)
+	{
+		const int channel = src.channels();
+
+		const int bc = channel / 3;
+		const int gc = 2 * bc;
+		const int size = src.size().area();
+
+		S* s = src.ptr <S>();
+		D* d = dest.ptr<D>();
+#pragma omp parallel for
+		for (int i = 0; i < size; i++)
 		{
-			uchar* s = src.ptr <uchar>();
-			uchar* d = dest.ptr<uchar>();
-#pragma omp parallel for
-			for (int i = 0; i < size; i++)
+			double b = 0.0;
+			double g = 0.0;
+			double r = 0.0;
+			for (int c = 0; c < bc; c++)
 			{
-				float b = 0.f;
-				float g = 0.f;
-				float r = 0.f;
-				for (int c = 0; c < bc; c++)
-				{
-					b += s[channel * i + c + 0];
-					g += s[channel * i + c + bc];
-					r += s[channel * i + c + gc];
-				}
-				d[3 * i + 0] = cvRound(b / bc);
-				d[3 * i + 1] = cvRound(g / bc);
-				d[3 * i + 2] = cvRound(r / bc);
+				b += (double)s[channel * i + c + 0];
+				g += (double)s[channel * i + c + bc];
+				r += (double)s[channel * i + c + gc];
 			}
+			d[3 * i + 0] = (D)(b / bc);
+			d[3 * i + 1] = (D)(g / bc);
+			d[3 * i + 2] = (D)(r / bc);
 		}
+	}
+
+	void cvtColorHSI2BGR(Mat& src, Mat& dest, const int depth)
+	{	
+		CV_Assert(src.depth() == CV_8U || src.depth() == CV_32F || src.depth() == CV_64F);
+		CV_Assert(depth == CV_8U || depth == CV_32F || depth == CV_64F);
+		dest.create(src.size(), CV_MAKETYPE(depth, 3));
+		
+		if (depth == CV_8U)
+		{
+			if (src.depth() == CV_8U)cvtColorHSI2BGR_round<uchar, uchar>(src, dest);
+			else if (src.depth() == CV_32F)cvtColorHSI2BGR_round<float, uchar>(src, dest);
+			else if (src.depth() == CV_64F)cvtColorHSI2BGR_round<double, uchar>(src, dest);
+		}
+		else if (depth == CV_32F)
+		{
+			if (src.depth() == CV_8U)cvtColorHSI2BGR_<uchar, float>(src, dest);
+			else if (src.depth() == CV_32F)cvtColorHSI2BGR_<float, float>(src, dest);
+			else if (src.depth() == CV_64F)cvtColorHSI2BGR_<double, float>(src, dest);
+		}
+		else if (depth == CV_64F)
+		{
+			if (src.depth() == CV_8U)cvtColorHSI2BGR_<uchar, double>(src, dest);
+			else if (src.depth() == CV_32F)cvtColorHSI2BGR_<float, double>(src, dest);
+			else if (src.depth() == CV_64F)cvtColorHSI2BGR_<double, double>(src, dest);
+		}	
 	}
 
 #pragma endregion
@@ -3877,7 +3892,7 @@ namespace cp
 		cvReleaseMat(&y);
 		cvReleaseMat(&A);
 		cvReleaseMat(&cmat);
-			}
+	}
 
 	void findColorMatrix(Mat& src_point_crowd1, Mat& src_point_crowd2, Mat& C)
 	{
@@ -3886,4 +3901,4 @@ namespace cp
 		xcvFindColorMatrix(&CvMat(src_point_crowd1), &CvMat(src_point_crowd2), &CvMat(C));
 	}
 #endif
-		}
+}
