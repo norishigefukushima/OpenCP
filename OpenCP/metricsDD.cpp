@@ -23,15 +23,15 @@ namespace cp
 		{
 			return 0;
 		}
-		else if (cvIsNaN(mse) || cvIsInf(mse))
+		else if (cvIsNaN(mse))
 		{
-			std::cout << "mse = NaN" << std::endl;
-			return 0;
+			//std::cout << "mse = NaN" << std::endl;
+			return mse;
 		}
 		else if (cvIsInf(mse))
 		{
-			std::cout << "mse = Inf" << std::endl;
-			return 0;
+			//std::cout << "mse = Inf" << std::endl;
+			return mse;
 		}
 
 		return 10.0 * log10(255.0 * 255.0 / mse);
@@ -140,15 +140,15 @@ namespace cp
 		{
 			return 0.0;
 		}
-		else if (cvIsNaN(mse) || cvIsInf(mse))
+		else if (cvIsNaN(mse))
 		{
-			std::cout << "mse = NaN" << std::endl;
-			return 0.0;
+			//std::cout << "mse = NaN" << std::endl;
+			return mse;
 		}
 		else if (cvIsInf(mse))
 		{
-			std::cout << "mse = Inf" << std::endl;
-			return 0.0;
+			//std::cout << "mse = Inf" << std::endl;
+			return mse;
 		}
 
 		return 10.0 * log10(255.0 * 255.0 / mse);
