@@ -21,6 +21,17 @@ namespace cp
 		lineSpaceSize = size;
 	}
 
+	void ConsoleImage::setWindowName(string wname)
+	{
+		destroyWindow(wname);
+		this->windowName = wname;
+	}
+
+	void ConsoleImage::setImageSize(Size size)
+	{
+		image = Mat::zeros(size, CV_8UC3);
+	}
+
 	void ConsoleImage::init(Size size, string wname, const bool isNamedWindow)
 	{
 		if (isNamedWindow)namedWindow(wname);

@@ -19,7 +19,8 @@ namespace cp
 		void setFont(std::string fontName = "Consolas");
 		void setFontSize(int size);
 		void setLineSpaceSize(int size);
-
+		void setWindowName(std::string wname);
+		void setImageSize(cv::Size size);
 		void setIsLineNumber(bool isLine = true);
 		bool getIsLineNumber();
 		cv::Mat image;
