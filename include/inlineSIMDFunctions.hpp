@@ -9,6 +9,8 @@
 #define AVX_ALIGN 32
 #define AVX512_ALIGN 64
 
+#define STATIC_INLINE static __forceinline
+
 //0 src1 low, 1 src1 high, //2 src2 low, 3 src2 high, 
 #define _MM_SELECT4(x,y) (((y)<<4) + (x))
 
@@ -18,7 +20,7 @@
 //template for array
 //const int CV_DECL_ALIGNED(AVX_ALIGN) a[10]
 #pragma region loop manipulation
-inline int get_loop_end(int begin, int end, int step)
+STATIC_INLINE int get_loop_end(int begin, int end, int step)
 {
 	const int rem = ((end - begin) % step == 0) ? 0 : 1;
 	const int count = (end - begin) / step + rem;
@@ -35,17 +37,17 @@ inline int get_loop_end(int begin, int end, int step)
 	return ret;
 }
 
-inline int get_simd_ceil(const int val, const int simdwidth)
+STATIC_INLINE int get_simd_ceil(const int val, const int simdwidth)
 {
 	return (val % simdwidth == 0) ? val : (val / simdwidth + 1) * simdwidth;
 }
 
-inline int get_simd_floor(const int val, const int simdwidth)
+STATIC_INLINE int get_simd_floor(const int val, const int simdwidth)
 {
 	return (val / simdwidth) * simdwidth;
 }
 
-inline void get_simd_width_end(const int cv_depth, const int channels, const int vector_length, const int image_width, int& dest_endwidth, int& dest_pad_pixels)
+STATIC_INLINE void get_simd_width_end(const int cv_depth, const int channels, const int vector_length, const int image_width, int& dest_endwidth, int& dest_pad_pixels)
 {
 	if (cv_depth == CV_32F && image_width % vector_length == 0)
 	{
@@ -64,7 +66,7 @@ inline void get_simd_width_end(const int cv_depth, const int channels, const int
 	}
 }
 
-inline __m256i get_simd_residualmask_epi32(const int width)
+STATIC_INLINE __m256i get_simd_residualmask_epi32(const int width)
 {
 	const int rem = width - get_simd_floor(width, 8);
 	__m256i ret = _mm256_undefined_si256();
@@ -82,7 +84,7 @@ inline __m256i get_simd_residualmask_epi32(const int width)
 	return ret;
 }
 
-inline __m256 get_simd_residualmask_ps(const int width)
+STATIC_INLINE __m256 get_simd_residualmask_ps(const int width)
 {
 	const int rem = width - get_simd_floor(width, 8);
 	__m256 ret = _mm256_undefined_ps();
@@ -100,7 +102,7 @@ inline __m256 get_simd_residualmask_ps(const int width)
 	return ret;
 }
 
-inline __m256d get_simd_residualmask_pd(const int width)
+STATIC_INLINE __m256d get_simd_residualmask_pd(const int width)
 {
 	const int rem = width - get_simd_floor(width, 4);
 	__m256d ret = _mm256_undefined_pd();
@@ -119,7 +121,7 @@ inline __m256d get_simd_residualmask_pd(const int width)
 #pragma endregion
 
 #pragma region transpose
-inline void _mm_transposel_epi8(__m128i& s0, __m128i& s1, __m128i& s2, __m128i& s3, __m128i& s4, __m128i& s5, __m128i& s6, __m128i& s7)
+STATIC_INLINE void _mm_transposel_epi8(__m128i& s0, __m128i& s1, __m128i& s2, __m128i& s3, __m128i& s4, __m128i& s5, __m128i& s6, __m128i& s7)
 {
 	__m128i t[8];
 	for (int i = 0; i < 8; i++)
@@ -237,13 +239,13 @@ inline void _mm_transposel_epi8(__m128i& s0, __m128i& s1, __m128i& s2, __m128i& 
     (in_row7) = (tmp7);													\
 }
 
-inline void _mm256_transpose8_ps(__m256* in_row, __m256* out_row)
+STATIC_INLINE void _mm256_transpose8_ps(__m256* in_row, __m256* out_row)
 {
 	_MM256_TRANSPOSE8_PS(in_row[0], in_row[1], in_row[2], in_row[3], in_row[4], in_row[5], in_row[6], in_row[7]
 		, out_row[0], out_row[1], out_row[2], out_row[3], out_row[4], out_row[5], out_row[6], out_row[7]);
 }
 
-inline void _mm256_transpose8_ps(__m256* in_row)
+STATIC_INLINE void _mm256_transpose8_ps(__m256* in_row)
 {
 	//_MM256_TRANSPOSE8_PS(in_row[0], in_row[1], in_row[2], in_row[3], in_row[4], in_row[5], in_row[6], in_row[7]
 	//	, in_row[0], in_row[1], in_row[2], in_row[3], in_row[4], in_row[5], in_row[6], in_row[7]);
@@ -251,7 +253,7 @@ inline void _mm256_transpose8_ps(__m256* in_row)
 }
 
 #ifdef CV_AVX_512
-inline void _mm512_transpose16_ps(__m512* in_row)
+STATIC_INLINE void _mm512_transpose16_ps(__m512* in_row)
 {
 	__m512i t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, ta, tb, tc, td, te, tf;
 	__m512i* r0, * r1, * r2, * r3, * r4, * r5, * r6, * r7, * r8, * r9, * ra, * rb, * rc, * rd, * re, * rf;
@@ -348,7 +350,7 @@ void show_patch(__m256* patch);
 
 
 
-inline void _mm256_storepatch_ph(short* base, __m256* patch, const int index)
+STATIC_INLINE void _mm256_storepatch_ph(short* base, __m256* patch, const int index)
 {
 	_mm_store_si128((__m128i*)(base + 0 * index), _mm256_cvtps_ph(patch[0], 0));
 	_mm_store_si128((__m128i*)(base + 1 * index), _mm256_cvtps_ph(patch[1], 0));
@@ -360,7 +362,7 @@ inline void _mm256_storepatch_ph(short* base, __m256* patch, const int index)
 	_mm_store_si128((__m128i*)(base + 7 * index), _mm256_cvtps_ph(patch[7], 0));
 }
 
-inline void _mm256_storeupatch_ph(short* base, __m256* patch, const int index)
+STATIC_INLINE void _mm256_storeupatch_ph(short* base, __m256* patch, const int index)
 {
 	_mm_storeu_si128((__m128i*)(base + 0 * index), _mm256_cvtps_ph(patch[0], 0));
 	_mm_storeu_si128((__m128i*)(base + 1 * index), _mm256_cvtps_ph(patch[1], 0));
@@ -372,7 +374,7 @@ inline void _mm256_storeupatch_ph(short* base, __m256* patch, const int index)
 	_mm_storeu_si128((__m128i*)(base + 7 * index), _mm256_cvtps_ph(patch[7], 0));
 }
 
-inline void _mm256_storepatch_ps(float* base, __m256* patch, const int index)
+STATIC_INLINE void _mm256_storepatch_ps(float* base, __m256* patch, const int index)
 {
 	_mm256_store_ps(base, patch[0]);
 	_mm256_store_ps(base + index, patch[1]);
@@ -384,7 +386,7 @@ inline void _mm256_storepatch_ps(float* base, __m256* patch, const int index)
 	_mm256_store_ps(base + 7 * index, patch[7]);
 }
 
-inline void _mm256_storeupatch_ps(float* base, __m256* patch, const int index)
+STATIC_INLINE void _mm256_storeupatch_ps(float* base, __m256* patch, const int index)
 {
 	_mm256_storeu_ps(base, patch[0]);
 	_mm256_storeu_ps(base + index, patch[1]);
@@ -397,7 +399,7 @@ inline void _mm256_storeupatch_ps(float* base, __m256* patch, const int index)
 }
 
 #ifdef CV_AVX_512
-inline void _mm512_storeupatch_ps(float* base, __m512* patch, const int index)
+STATIC_INLINE void _mm512_storeupatch_ps(float* base, __m512* patch, const int index)
 {
 	_mm512_storeu_ps(base, patch[0]);
 	_mm512_storeu_ps(base + index, patch[1]);
@@ -417,7 +419,7 @@ inline void _mm512_storeupatch_ps(float* base, __m512* patch, const int index)
 	_mm512_storeu_ps(base + 15 * index, patch[15]);
 }
 #endif
-inline void _mm256_addstorepatch_ps(float* base, __m256* patch, const int index)
+STATIC_INLINE void _mm256_addstorepatch_ps(float* base, __m256* patch, const int index)
 {
 	_mm256_store_ps(base, _mm256_add_ps(*(__m256*) base, patch[0]));
 	_mm256_store_ps(base + index, _mm256_add_ps(*(__m256*)(base + index), patch[1]));
@@ -429,7 +431,7 @@ inline void _mm256_addstorepatch_ps(float* base, __m256* patch, const int index)
 	_mm256_store_ps(base + 7 * index, _mm256_add_ps(*(__m256*)(base + 7 * index), patch[7]));
 }
 
-inline void show_patch(__m256* patch)
+STATIC_INLINE void show_patch(__m256* patch)
 {
 	std::cout << std::fixed;
 	for (int i = 0; i < 8; ++i)
@@ -458,17 +460,17 @@ inline void show_patch(__m256* patch)
 }
 
 //for 64F
-inline void _mm256_transpose4_pd(__m256d* in_row, __m256d* out_row)
+STATIC_INLINE void _mm256_transpose4_pd(__m256d* in_row, __m256d* out_row)
 {
 	_MM256_TRANSPOSE4_PD(in_row[0], in_row[1], in_row[2], in_row[3], out_row[0], out_row[1], out_row[2], out_row[3]);
 }
 
-inline void _mm256_transpose4_pd(__m256d* inout_row)
+STATIC_INLINE void _mm256_transpose4_pd(__m256d* inout_row)
 {
 	_MM256_TRANSPOSE4INPLACE_PD(inout_row[0], inout_row[1], inout_row[2], inout_row[3]);
 }
 
-inline void _mm256_storepatch_pd(double* base, __m256d* patch, const int index)
+STATIC_INLINE void _mm256_storepatch_pd(double* base, __m256d* patch, const int index)
 {
 	_mm256_store_pd(base + 0 * index, patch[0]);
 	_mm256_store_pd(base + 1 * index, patch[1]);
@@ -476,7 +478,7 @@ inline void _mm256_storepatch_pd(double* base, __m256d* patch, const int index)
 	_mm256_store_pd(base + 3 * index, patch[3]);
 }
 
-inline void _mm256_storeupatch_pd(double* base, __m256d* patch, const int index)
+STATIC_INLINE void _mm256_storeupatch_pd(double* base, __m256d* patch, const int index)
 {
 	_mm256_store_pd(base + 0 * index, patch[0]);
 	_mm256_store_pd(base + 1 * index, patch[1]);
@@ -484,7 +486,7 @@ inline void _mm256_storeupatch_pd(double* base, __m256d* patch, const int index)
 	_mm256_store_pd(base + 3 * index, patch[3]);
 }
 
-inline void _mm_storepatch_pdps(float* base, __m256d* patch, const int index)
+STATIC_INLINE void _mm_storepatch_pdps(float* base, __m256d* patch, const int index)
 {
 	*(__m128*) base = _mm256_cvtpd_ps(patch[0]);
 	*(__m128*)(base + index) = _mm256_cvtpd_ps(patch[1]);
@@ -492,7 +494,7 @@ inline void _mm_storepatch_pdps(float* base, __m256d* patch, const int index)
 	*(__m128*)(base + 3 * index) = _mm256_cvtpd_ps(patch[3]);
 }
 
-inline void _mm_storepatch_ps(float* base, __m128* patch, const int index)
+STATIC_INLINE void _mm_storepatch_ps(float* base, __m128* patch, const int index)
 {
 	_mm_storeu_ps(base + 0 * index, patch[0]);
 	_mm_storeu_ps(base + 1 * index, patch[1]);
@@ -500,7 +502,7 @@ inline void _mm_storepatch_ps(float* base, __m128* patch, const int index)
 	_mm_storeu_ps(base + 3 * index, patch[3]);
 }
 
-inline void _mm256_addstorepatch_pd(double* base, __m256d* patch, const int index)
+STATIC_INLINE void _mm256_addstorepatch_pd(double* base, __m256d* patch, const int index)
 {
 	*(__m256d*)base = _mm256_add_pd(*(__m256d*)base, patch[0]);
 	*(__m256d*)(base + index) = _mm256_add_pd(*(__m256d*)(base + index), patch[1]);
@@ -508,7 +510,7 @@ inline void _mm256_addstorepatch_pd(double* base, __m256d* patch, const int inde
 	*(__m256d*)(base + 3 * index) = _mm256_add_pd(*(__m256d*)(base + 3 * index), patch[3]);
 }
 
-inline void show_patch(__m256d* patch)
+STATIC_INLINE void show_patch(__m256d* patch)
 {
 	std::cout << std::fixed;
 	for (int i = 0; i < 4; ++i)
@@ -535,7 +537,7 @@ inline void show_patch(__m256d* patch)
 
 //cast
 //cast ps to ph and then return cast value as float
-inline float cvtps_ph(float v)
+STATIC_INLINE float cvtps_ph(float v)
 {
 	__m256 mv = _mm256_set1_ps(v);
 	__m128i ms = _mm256_cvtps_ph(mv, 0);
@@ -544,146 +546,206 @@ inline float cvtps_ph(float v)
 }
 
 //opencp cast __m256i of hi register ->__m128i
-inline __m128i _mm256_castsi256hi_si128(__m256i src)
+STATIC_INLINE __m128i _mm256_castsi256hi_si128(__m256i src)
 {
 	return _mm256_extractf128_si256(src, 1);
 }
 
-inline __m128 _mm256_castps256hi_ps128(__m256 src)
+STATIC_INLINE __m128 _mm256_castps256hi_ps128(__m256 src)
 {
 	return _mm256_extractf128_ps(src, 1);
 }
 //opencp (same as _mm256_extractf128_si256(src, 1))
 //#define _mm256_castsi256hi_si128(src) *((__m128i*)&(src) + 1)
 
-//opencp uchar->double
-inline __m256d _mm256_cvtepu8_pd(__m128i src)
+//opencp uchar->int (0123)
+STATIC_INLINE __m128i _mm_cvtepu80_epi32(__m128i src)
+{
+	return _mm_cvtepu8_epi32(src);
+}
+
+//opencp uchar->int (4567)
+STATIC_INLINE __m128i _mm_cvtepu81_epi32(__m128i src)
+{
+	return _mm_cvtepu8_epi32(_mm_shuffle_epi32(src, _MM_SHUFFLE(1, 1, 1, 1)));
+}
+
+//opencp uchar->int (891011)
+STATIC_INLINE __m128i _mm_cvtepu82_epi32(__m128i src)
+{
+	return _mm_cvtepu8_epi32(_mm_shuffle_epi32(src, _MM_SHUFFLE(2, 2, 2, 2)));
+}
+
+//opencp uchar->int (12131415)
+STATIC_INLINE __m128i _mm_cvtepu83_epi32(__m128i src)
+{
+	return _mm_cvtepu8_epi32(_mm_shuffle_epi32(src, _MM_SHUFFLE(3, 3, 3, 3)));
+}
+
+//opencp uchar->double (low 4 elements)
+STATIC_INLINE __m256d _mm256_cvtepu8_pd(__m128i src)
 {
 	//_mm256_cvtepi64_pd(_mm256_cvtepu8_epi64(src));AVX512
 	return _mm256_cvtps_pd(_mm_cvtepi32_ps(_mm_cvtepu8_epi32(src)));
 }
 
+//opencp uchar->double (0123 elements): same _mm256_cvtepu8_pd
+STATIC_INLINE __m256d _mm256_cvtepu80_pd(__m128i src)
+{
+	return _mm256_cvtps_pd(_mm_cvtepi32_ps(_mm_cvtepu8_epi32(src)));
+}
+
+//opencp uchar->double (4567 elements) same _mm256_cvtepu8_pd
+STATIC_INLINE __m256d _mm256_cvtepu81_pd(__m128i src)
+{
+	return _mm256_cvtps_pd(_mm_cvtepi32_ps(_mm_cvtepu8_epi32(_mm_shuffle_epi32(src, _MM_SHUFFLE(1, 1, 1, 1)))));
+}
+
+//opencp uchar->double (891011 elements)
+STATIC_INLINE __m256d _mm256_cvtepu82_pd(__m128i src)
+{
+	return _mm256_cvtps_pd(_mm_cvtepi32_ps(_mm_cvtepu8_epi32(_mm_shuffle_epi32(src, _MM_SHUFFLE(2, 2, 2, 2)))));
+}
+
+//opencp uchar->double (12131415 elements)
+STATIC_INLINE __m256d _mm256_cvtepu83_pd(__m128i src)
+{
+	return _mm256_cvtps_pd(_mm_cvtepi32_ps(_mm_cvtepu8_epi32(_mm_shuffle_epi32(src, _MM_SHUFFLE(3, 3, 3, 3)))));
+}
+
+//opencp short->double (low 4 elements)
+STATIC_INLINE __m256d _mm256_cvtepi16_pd(__m128i src)
+{
+	return _mm256_cvtps_pd(_mm_cvtepi32_ps(_mm_cvtepi16_epi32(src)));
+}
+
+//opencp short->double (last low 4 elements)
+STATIC_INLINE __m256d _mm256_cvtepi16hi_pd(__m128i src)
+{
+	return _mm256_cvtps_pd(_mm_cvtepi32_ps(_mm_cvtepi16_epi32(_mm_shuffle_epi32(src, _MM_SHUFFLE(0, 1, 3, 2)))));
+}
+
 //opencp uchar->float
-inline __m256 _mm256_cvtepu8_ps(__m128i src)
+STATIC_INLINE __m256 _mm256_cvtepu8_ps(__m128i src)
 {
 	return _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(src));
 }
 
 //opencp uchar->floatx2
-inline void _mm256_cvtepu8_psx2(__m128i src, __m256& dest0, __m256& dest1)
+STATIC_INLINE void _mm256_cvtepu8_psx2(__m128i src, __m256& dest0, __m256& dest1)
 {
 	dest0 = _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(src));
 	dest1 = _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(_mm_shuffle_epi32(src, _MM_SHUFFLE(1, 0, 3, 2))));
 }
 
 //opencp int ->uchar
-inline __m128i _mm256_cvtepi32_epu8(const __m256i v0)
+STATIC_INLINE __m128i _mm256_cvtepi32_epu8(const __m256i v0)
 {
 	return _mm256_castsi256_si128(_mm256_permutevar8x32_epi32(_mm256_packus_epi16(_mm256_packs_epi32(v0, _mm256_setzero_si256()), _mm256_setzero_si256()), _mm256_setr_epi32(0, 4, 1, 5, 2, 6, 3, 7)));
 }
 
-inline __m128i _mm_cvtepi32_epu8(const __m128i v0)
+STATIC_INLINE __m128i _mm_cvtepi32_epu8(const __m128i v0)
 {
 	return _mm_packus_epi16(_mm_packs_epi32(v0, _mm_setzero_si128()), _mm_setzero_si128());
 }
 
 //opencp float->uchar
-inline __m128i _mm256_cvtps_epu8(const __m256 ms)
+STATIC_INLINE __m128i _mm256_cvtps_epu8(const __m256 ms)
 {
 	return _mm256_cvtepi32_epu8(_mm256_cvtps_epi32(ms));
 }
 
 //opencp floatx2->uchar
-inline __m128i _mm256_cvtpsx2_epu8(const __m256 v0, const __m256 v1)
+STATIC_INLINE __m128i _mm256_cvtpsx2_epu8(const __m256 v0, const __m256 v1)
 {
 	return _mm256_castsi256_si128(_mm256_permutevar8x32_epi32(_mm256_packus_epi16(_mm256_packs_epi32(_mm256_cvtps_epi32(v0), _mm256_cvtps_epi32(v1)), _mm256_setzero_si256()), _mm256_setr_epi32(0, 4, 1, 5, 2, 6, 3, 7)));
 }
 
 //opencp intx2 ->uchar
-inline __m128i _mm256_cvtepi32x2_epu8(const __m256i v0, const __m256i v1)
+STATIC_INLINE __m128i _mm256_cvtepi32x2_epu8(const __m256i v0, const __m256i v1)
 {
 	return _mm256_castsi256_si128(_mm256_permutevar8x32_epi32(_mm256_packus_epi16(_mm256_packs_epi32(v0, v1), _mm256_setzero_si256()), _mm256_setr_epi32(0, 4, 1, 5, 2, 6, 3, 7)));
 }
 
 //opencp intx4 ->uchar
-inline __m256i _mm256_cvtepi32x4_epu8(const __m256i v0, const __m256i v1, const __m256i v2, const __m256i v3)
+STATIC_INLINE __m256i _mm256_cvtepi32x4_epu8(const __m256i v0, const __m256i v1, const __m256i v2, const __m256i v3)
 {
 	static __m256i shlmask = _mm256_setr_epi32(0, 4, 1, 5, 2, 6, 3, 7);
 	return _mm256_permutevar8x32_epi32(_mm256_packus_epi16(_mm256_packs_epi32(v0, v1), _mm256_packs_epi32(v2, v3)), shlmask);
 }
 
 //opencp floatx4 ->uchar
-inline __m256i _mm256_cvtpsx4_epu8(const __m256 v0, const __m256 v1, const __m256 v2, const __m256 v3)
+STATIC_INLINE __m256i _mm256_cvtpsx4_epu8(const __m256 v0, const __m256 v1, const __m256 v2, const __m256 v3)
 {
 	static __m256i shlmask = _mm256_setr_epi32(0, 4, 1, 5, 2, 6, 3, 7);
 	return _mm256_permutevar8x32_epi32(_mm256_packus_epi16(_mm256_packs_epi32(_mm256_cvtps_epi32(v0), _mm256_cvtps_epi32(v1)), _mm256_packs_epi32(_mm256_cvtps_epi32(v2), _mm256_cvtps_epi32(v3))), shlmask);
 }
 
 //_mm256_cvtepi32_epi16 is already defined in zmmintrin.h (AVX512)
-inline __m128i _mm256_cvtepi32_epi16_v2(__m256i src)
+STATIC_INLINE __m128i _mm256_cvtepi32_epi16_v2(__m256i src)
 {
 	return _mm256_castsi256_si128(_mm256_permute4x64_epi64(_mm256_packs_epi32(src, _mm256_setzero_si256()), _MM_SHUFFLE(3, 1, 2, 0)));
 }
 
 //_mm256_cvtepi16_epi8 is already defined in zmmintrin.h (AVX512), but this is ep`u`
-inline __m128i _mm256_cvtepi16_epu8(__m256i src)
+STATIC_INLINE __m128i _mm256_cvtepi16_epu8(__m256i src)
 {
 	return _mm256_castsi256_si128(_mm256_permute4x64_epi64(_mm256_packus_epi16(src, _mm256_setzero_si256()), _MM_SHUFFLE(3, 1, 2, 0)));
 }
 
-inline __m128i _mm256_cvtepi32_epu16(__m256i src)
+STATIC_INLINE __m128i _mm256_cvtepi32_epu16(__m256i src)
 {
 	return _mm256_castsi256_si128(_mm256_permute4x64_epi64(_mm256_packus_epi32(src, _mm256_setzero_si256()), _MM_SHUFFLE(3, 1, 2, 0)));
 }
 
-inline __m256i _mm256_cvepi32x2_epi16(__m256i src1, __m256i src2)
+STATIC_INLINE __m256i _mm256_cvepi32x2_epi16(__m256i src1, __m256i src2)
 {
 	return _mm256_permute4x64_epi64(_mm256_packs_epi32(src1, src2), _MM_SHUFFLE(3, 1, 2, 0));
 }
 
-inline __m256 _mm256_cvtpdx2_ps(__m256d src1, __m256d src2)
+STATIC_INLINE __m256 _mm256_cvtpdx2_ps(__m256d src1, __m256d src2)
 {
 	return _mm256_insertf128_ps(_mm256_castps128_ps256(_mm256_cvtpd_ps(src1)), _mm256_cvtpd_ps(src2), 1);
 }
 #pragma endregion
 
 #pragma region load
-inline __m128 _mm_lddqu_ps(const float* src)
+STATIC_INLINE __m128 _mm_lddqu_ps(const float* src)
 {
 	return _mm_castsi128_ps(_mm_lddqu_si128((__m128i*)src));
 }
 
-inline __m128d _mm_lddqu_pd(const double* src)
+STATIC_INLINE __m128d _mm_lddqu_pd(const double* src)
 {
 	return _mm_castsi128_pd(_mm_lddqu_si128((__m128i*)src));
 }
 
-inline __m128 _mm_stream_load_ps(const float* src)
+STATIC_INLINE __m128 _mm_stream_load_ps(const float* src)
 {
 	return _mm_castsi128_ps(_mm_stream_load_si128((__m128i*)src));
 }
 
-inline __m128d _mm_stream_load_pd(const double* src)
+STATIC_INLINE __m128d _mm_stream_load_pd(const double* src)
 {
 	return _mm_castsi128_pd(_mm_stream_load_si128((__m128i*)src));
 }
 
-inline __m256 _mm256_lddqu_ps(const float* src)
+STATIC_INLINE __m256 _mm256_lddqu_ps(const float* src)
 {
 	return _mm256_castsi256_ps(_mm256_lddqu_si256((__m256i*)src));
 }
 
-inline __m256d _mm256_lddqu_pd(const double* src)
+STATIC_INLINE __m256d _mm256_lddqu_pd(const double* src)
 {
 	return _mm256_castsi256_pd(_mm256_lddqu_si256((__m256i*)src));
 }
 
-inline __m256 _mm256_stream_load_ps(const float* src)
+STATIC_INLINE __m256 _mm256_stream_load_ps(const float* src)
 {
 	return _mm256_castsi256_ps(_mm256_stream_load_si256((__m256i*)src));
 }
 
-inline __m256d _mm256_stream_load_pd(const double* src)
+STATIC_INLINE __m256d _mm256_stream_load_pd(const double* src)
 {
 	return _mm256_castsi256_pd(_mm256_stream_load_si256((__m256i*)src));
 }
@@ -692,25 +754,25 @@ inline __m256d _mm256_stream_load_pd(const double* src)
 
 #pragma region load and cast 
 //opencp: uchar->short
-inline __m256i _mm256_load_epu8cvtepi16(const __m128i* P)
+STATIC_INLINE __m256i _mm256_load_epu8cvtepi16(const __m128i* P)
 {
 	return _mm256_cvtepu8_epi16(_mm_loadu_si128((__m128i*)P));
 }
 
 //opencp: short->int
-inline __m256i _mm256_load_epi16cvtepi32(const __m128i* P)
+STATIC_INLINE __m256i _mm256_load_epi16cvtepi32(const __m128i* P)
 {
 	return _mm256_cvtepi16_epi32(_mm_loadu_si128((__m128i*)P));
 }
 
 //opencp: uchar->int
-inline __m256i _mm256_load_epu8cvtepi32(const __m128i* P)
+STATIC_INLINE __m256i _mm256_load_epu8cvtepi32(const __m128i* P)
 {
 	return _mm256_cvtepu8_epi32(_mm_loadu_si128((__m128i*)P));
 }
 
 //opencp: uchar->intx2
-inline void _mm256_load_epu8cvtepi32x2(const __m128i* P, __m256i& d0, __m256i& d1)
+STATIC_INLINE void _mm256_load_epu8cvtepi32x2(const __m128i* P, __m256i& d0, __m256i& d1)
 {
 	__m128i s = _mm_load_si128((__m128i*)P);
 	d0 = _mm256_cvtepu8_epi32(s);
@@ -718,46 +780,59 @@ inline void _mm256_load_epu8cvtepi32x2(const __m128i* P, __m256i& d0, __m256i& d
 }
 
 //opencp: uchar->float loadu and load is the same intrinsics
-inline __m256 _mm256_load_epu8cvtps(const __m128i* P)
+STATIC_INLINE __m256 _mm256_load_epu8cvtps(const __m128i* P)
 {
 	return _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(_mm_loadl_epi64((__m128i*)P)));
 	//return _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(_mm_loadu_si128((__m128i*)P)));
 }
 
 //opencp: uchar->float loadu and load is the same intrinsics
-inline __m256 _mm256_loadu_epu8cvtps(const __m128i* P)
+STATIC_INLINE __m256 _mm256_loadu_epu8cvtps(const __m128i* P)
 {
 	return _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(_mm_loadl_epi64((__m128i*)P)));
 	//return _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(_mm_loadu_si128((__m128i*)P)));
 }
 
-
 //opencp: uchar->floatx2
-inline void _mm256_load_epu8cvtpsx2(const __m128i* P, __m256& d0, __m256& d1)
+STATIC_INLINE void _mm256_load_epu8cvtpsx2(const __m128i* P, __m256& d0, __m256& d1)
 {
 	__m128i t = _mm_loadu_si128((__m128i*)P);
 	d0 = _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(t));
 	d1 = _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(_mm_shuffle_epi32(t, _MM_SHUFFLE(1, 0, 3, 2))));
 }
 
-inline __m256d _mm256_load_cvtepu8_pd(const uchar* src)
+//opencp: uchar->int
+STATIC_INLINE __m256i _mm256_load_cvtepu8_epi32(const uchar* src)
+{
+	return _mm256_cvtepu8_epi32(_mm_loadl_epi64((__m128i*)(src)));
+}
+
+//opencp: uchar->float
+STATIC_INLINE __m256 _mm256_load_cvtepu8_ps(const uchar* src)
+{
+	return _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(_mm_loadl_epi64((__m128i*)(src))));
+}
+
+//opencp: uchar->double
+STATIC_INLINE __m256d _mm256_load_cvtepu8_pd(const uchar* src)
 {
 	return _mm256_cvtepu8_pd(_mm_loadl_epi64((const __m128i*)src));
 }
 
-inline __m256d _mm256_load_cvtps_pd(const float* src)
+//opencp: float->double
+STATIC_INLINE __m256d _mm256_load_cvtps_pd(const float* src)
 {
 	return _mm256_cvtps_pd(_mm_load_ps(src));
 }
 
-inline __m256d _mm256_loadu_cvtps_pd(const float* src)
+STATIC_INLINE __m256d _mm256_loadu_cvtps_pd(const float* src)
 {
 	return _mm256_cvtps_pd(_mm_loadu_ps(src));
 }
 #pragma endregion
 
 #pragma region color_convert
-inline __m256 _mm256_unpackeven_ps(__m256 src1, __m256 src2)
+STATIC_INLINE __m256 _mm256_unpackeven_ps(__m256 src1, __m256 src2)
 {
 	//__m256i t0 = _mm256_castps_si256(_mm256_shuffle_ps(src1, src2, _MM_SHUFFLE(2, 0, 2, 0)));
 	//return _mm256_castsi256_ps(_mm256_permute4x64_epi64(t0, _MM_SHUFFLE(3, 1, 2, 0)));
@@ -769,7 +844,7 @@ inline __m256 _mm256_unpackeven_ps(__m256 src1, __m256 src2)
 	return _mm256_blend_ps(t0, t1, 0b11110000);
 }
 
-inline void _mm256_load_deinterleave_ps(const float* src, __m256& d0, __m256& d1)
+STATIC_INLINE void _mm256_load_deinterleave_ps(const float* src, __m256& d0, __m256& d1)
 {
 	__m256 v1 = _mm256_load_ps(src);
 	__m256 v2 = _mm256_load_ps(src + 8);
@@ -779,7 +854,7 @@ inline void _mm256_load_deinterleave_ps(const float* src, __m256& d0, __m256& d1
 	d1 = _mm256_permutevar8x32_ps(s2, _mm256_setr_epi32(0, 1, 4, 5, 2, 3, 6, 7));
 }
 
-inline void _mm256_store_interleave_ps(void* dst, const __m256 d0, const __m256 d1)
+STATIC_INLINE void _mm256_store_interleave_ps(void* dst, const __m256 d0, const __m256 d1)
 {
 	__m256 s1 = _mm256_unpacklo_ps(d0, d1);
 	__m256 s2 = _mm256_unpackhi_ps(d0, d1);
@@ -787,7 +862,7 @@ inline void _mm256_store_interleave_ps(void* dst, const __m256 d0, const __m256 
 	_mm256_store_ps((float*)dst + 8, _mm256_permute2f128_ps(s1, s2, 0x31));
 }
 
-inline void _mm256_storeu_interleave_ps(void* dst, const __m256 d0, const __m256 d1)
+STATIC_INLINE void _mm256_storeu_interleave_ps(void* dst, const __m256 d0, const __m256 d1)
 {
 	__m256 s1 = _mm256_unpacklo_ps(d0, d1);
 	__m256 s2 = _mm256_unpackhi_ps(d0, d1);
@@ -795,7 +870,7 @@ inline void _mm256_storeu_interleave_ps(void* dst, const __m256 d0, const __m256
 	_mm256_storeu_ps((float*)dst + 8, _mm256_permute2f128_ps(s1, s2, 0x31));
 }
 
-inline void _mm256_load_cvtpd_bgr2planar_pd(const double* ptr, __m256d& b, __m256d& g, __m256d& r)
+STATIC_INLINE void _mm256_load_cvtpd_bgr2planar_pd(const double* ptr, __m256d& b, __m256d& g, __m256d& r)
 {
 	__m256d bgr0 = _mm256_loadu_pd(ptr);
 	__m256d bgr1 = _mm256_loadu_pd(ptr + 4);
@@ -810,7 +885,7 @@ inline void _mm256_load_cvtpd_bgr2planar_pd(const double* ptr, __m256d& b, __m25
 	b = _mm256_blend_pd(_mm256_blend_pd(s02_high, s02_low, 0b1001), bgr1, 0b0100);
 }
 
-inline void _mm256_load_cvtps_bgr2planar_ps(const float* ptr, __m256& b, __m256& g, __m256& r)
+STATIC_INLINE void _mm256_load_cvtps_bgr2planar_ps(const float* ptr, __m256& b, __m256& g, __m256& r)
 {
 	__m256 bgr0 = _mm256_loadu_ps(ptr);
 	__m256 bgr1 = _mm256_loadu_ps(ptr + 8);
@@ -829,7 +904,7 @@ inline void _mm256_load_cvtps_bgr2planar_ps(const float* ptr, __m256& b, __m256&
 }
 
 //opencp: BGR2Planar (uchar). Same function of OpenCV for SSE4.1.
-inline void _mm_load_cvtepu8bgr2planar_si128(const uchar* ptr, __m128i& b, __m128i& g, __m128i& r)
+STATIC_INLINE void _mm_load_cvtepu8bgr2planar_si128(const uchar* ptr, __m128i& b, __m128i& g, __m128i& r)
 {
 	const __m128i m0 = _mm_setr_epi8(0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0);
 	const __m128i m1 = _mm_setr_epi8(0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0);
@@ -851,7 +926,7 @@ inline void _mm_load_cvtepu8bgr2planar_si128(const uchar* ptr, __m128i& b, __m12
 }
 
 //for SSE4.1
-inline void _mm_load_cvtepu8bgr2planar_epi64(const uchar* ptr, __m128i& b, __m128i& g, __m128i& r)
+STATIC_INLINE void _mm_load_cvtepu8bgr2planar_epi64(const uchar* ptr, __m128i& b, __m128i& g, __m128i& r)
 {
 	//b = _mm_setr_epi8(ptr[0], ptr[3], ptr[6], ptr[9], ptr[12], ptr[15], ptr[18], ptr[21], 0, 0, 0, 0, 0, 0, 0, 0);
 	//g = _mm_setr_epi8(ptr[1], ptr[4], ptr[7], ptr[10], ptr[13], ptr[16], ptr[19], ptr[22], 0, 0, 0, 0, 0, 0, 0, 0);
@@ -878,7 +953,7 @@ inline void _mm_load_cvtepu8bgr2planar_epi64(const uchar* ptr, __m128i& b, __m12
 	r = _mm_blendv_epi8(s1, s0, bmask2);//rrrrrrrr
 }
 //BGR2Planar (uchar). Same function of OpenCV for AVX.
-inline void _mm256_load_cvtepu8bgr2planar_si256(const uchar* ptr, __m256i& b, __m256i& g, __m256i& r)
+STATIC_INLINE void _mm256_load_cvtepu8bgr2planar_si256(const uchar* ptr, __m256i& b, __m256i& g, __m256i& r)
 {
 	__m256i bgr0 = _mm256_load_si256((const __m256i*)ptr);
 	__m256i bgr1 = _mm256_load_si256((const __m256i*)(ptr + 32));
@@ -903,7 +978,7 @@ inline void _mm256_load_cvtepu8bgr2planar_si256(const uchar* ptr, __m256i& b, __
 }
 
 //opencp: BGR2Planar (uchar->float). psx2 is more effective
-inline void _mm256_load_cvtepu8bgr2planar_ps(const uchar* ptr, __m256& b, __m256& g, __m256& r)
+STATIC_INLINE void _mm256_load_cvtepu8bgr2planar_ps(const uchar* ptr, __m256& b, __m256& g, __m256& r)
 {
 	const __m128i m0 = _mm_setr_epi8(0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0);
 	const __m128i m1 = _mm_setr_epi8(-1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0);
@@ -926,7 +1001,7 @@ inline void _mm256_load_cvtepu8bgr2planar_ps(const uchar* ptr, __m256& b, __m256
 }
 
 //opencp: BGR2Planar (uchar->float) SSE shuffle and then cvtepu8_ps. psx4 has almost the same performance.
-inline void _mm256_load_cvtepu8bgr2planar_psx2(const uchar* ptr, __m256& b0, __m256& b1, __m256& g0, __m256& g1, __m256& r0, __m256& r1)
+STATIC_INLINE void _mm256_load_cvtepu8bgr2planar_psx2(const uchar* ptr, __m256& b0, __m256& b1, __m256& g0, __m256& g1, __m256& r0, __m256& r1)
 {
 	const __m128i m0 = _mm_setr_epi8(0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0);
 	const __m128i m1 = _mm_setr_epi8(0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0);
@@ -949,7 +1024,7 @@ inline void _mm256_load_cvtepu8bgr2planar_psx2(const uchar* ptr, __m256& b0, __m
 }
 
 //opencp: BGR2Planar (uchar->float) AVX shuffle and then cvtepu8_ps. psx2 has almost the same performance.
-inline void _mm256_load_cvtepu8bgr2planar_psx4(const uchar* ptr,
+STATIC_INLINE void _mm256_load_cvtepu8bgr2planar_psx4(const uchar* ptr,
 	__m256& b0, __m256& b1, __m256& b2, __m256& b3,
 	__m256& g0, __m256& g1, __m256& g2, __m256& g3,
 	__m256& r0, __m256& r1, __m256& r2, __m256& r3)
@@ -983,7 +1058,7 @@ inline void _mm256_load_cvtepu8bgr2planar_psx4(const uchar* ptr,
 }
 
 
-inline void _mm_store_interleave_epi8_epi64(uchar* dst, __m128i b, __m128i g, __m128i r)
+STATIC_INLINE void _mm_store_interleave_epi8_epi64(uchar* dst, __m128i b, __m128i g, __m128i r)
 {
 	const __m128i sh_a = _mm_setr_epi8(0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10, 5);
 	const __m128i sh_b = _mm_setr_epi8(5, 0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10);
@@ -1001,7 +1076,7 @@ inline void _mm_store_interleave_epi8_epi64(uchar* dst, __m128i b, __m128i g, __
 }
 
 #define _mm_store_epi8_color _mm_store_interleave_epi8_si128
-inline void _mm_store_epi8_color(uchar* dst, __m128i b, __m128i g, __m128i r)
+STATIC_INLINE void _mm_store_epi8_color(uchar* dst, __m128i b, __m128i g, __m128i r)
 {
 	const __m128i sh_a = _mm_setr_epi8(0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10, 5);
 	const __m128i sh_b = _mm_setr_epi8(5, 0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10);
@@ -1020,7 +1095,7 @@ inline void _mm_store_epi8_color(uchar* dst, __m128i b, __m128i g, __m128i r)
 
 
 #define _mm_storeu_epi8_color _mm_storeu_interleave_epi8_si128
-inline void _mm_storeu_epi8_color(uchar* dst, __m128i b, __m128i g, __m128i r)
+STATIC_INLINE void _mm_storeu_epi8_color(uchar* dst, __m128i b, __m128i g, __m128i r)
 {
 	const __m128i sh_a = _mm_setr_epi8(0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10, 5);
 	const __m128i sh_b = _mm_setr_epi8(5, 0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10);
@@ -1038,7 +1113,7 @@ inline void _mm_storeu_epi8_color(uchar* dst, __m128i b, __m128i g, __m128i r)
 }
 
 #define _mm_stream_epi8_color _mm_stream_interleave_epi8_si256
-inline void _mm_stream_epi8_color(uchar* dst, __m128i b, __m128i g, __m128i r)
+STATIC_INLINE void _mm_stream_epi8_color(uchar* dst, __m128i b, __m128i g, __m128i r)
 {
 	const __m128i sh_a = _mm_setr_epi8(0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10, 5);
 	const __m128i sh_b = _mm_setr_epi8(5, 0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10);
@@ -1056,7 +1131,7 @@ inline void _mm_stream_epi8_color(uchar* dst, __m128i b, __m128i g, __m128i r)
 }
 
 #define _mm256_store_epi8_color _mm256_store_interleave_epi8_si256
-inline void _mm256_store_epi8_color(uchar* dst, __m256i b, __m256i g, __m256i r)
+STATIC_INLINE void _mm256_store_epi8_color(uchar* dst, __m256i b, __m256i g, __m256i r)
 {
 	const __m256i sh_b = _mm256_setr_epi8(
 		0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10, 5,
@@ -1125,7 +1200,7 @@ inline void _mm256_store_epi8_color(uchar* dst, __m256i b, __m256i g, __m256i r)
 }
 
 #define _mm256_storeu_epi8_color _mm256_storeu_interleave_epi8_si256
-inline void _mm256_storeu_epi8_color(uchar* dst, __m256i b, __m256i g, __m256i r)
+STATIC_INLINE void _mm256_storeu_epi8_color(uchar* dst, __m256i b, __m256i g, __m256i r)
 {
 	const __m256i sh_b = _mm256_setr_epi8(
 		0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10, 5,
@@ -1194,7 +1269,7 @@ inline void _mm256_storeu_epi8_color(uchar* dst, __m256i b, __m256i g, __m256i r
 }
 
 
-inline void _mm256_storeu_ps2epu8_color(void* dst, __m256 b, __m256 g, __m256 r)
+STATIC_INLINE void _mm256_storeu_ps2epu8_color(void* dst, __m256 b, __m256 g, __m256 r)
 {
 	__m256i mb = _mm256_cvtps_epi32(b);
 	__m256i mg = _mm256_cvtps_epi32(g);
@@ -1210,7 +1285,7 @@ inline void _mm256_storeu_ps2epu8_color(void* dst, __m256 b, __m256 g, __m256 r)
 }
 
 #define  _mm256_stream_ps2epu8_color  _mm256_store_ps2epu8_color
-inline void _mm256_stream_ps2epu8_color(void* dst, __m256 b, __m256 g, __m256 r)
+STATIC_INLINE void _mm256_stream_ps2epu8_color(void* dst, __m256 b, __m256 g, __m256 r)
 {
 	__m256i mb = _mm256_cvtps_epi32(b);
 	__m256i mg = _mm256_cvtps_epi32(g);
@@ -1225,7 +1300,7 @@ inline void _mm256_stream_ps2epu8_color(void* dst, __m256 b, __m256 g, __m256 r)
 	_mm256_store_si256((__m256i*)dst, mb);//interleved data cannot be stream
 }
 
-inline void _mm256_storescalar_ps2epu8_color(void* dst, __m256 b, __m256 g, __m256 r, const int numpixel = 24)
+STATIC_INLINE void _mm256_storescalar_ps2epu8_color(void* dst, __m256 b, __m256 g, __m256 r, const int numpixel = 24)
 {
 	__m256i mb = _mm256_cvtps_epi32(b);
 	__m256i mg = _mm256_cvtps_epi32(g);
@@ -1245,7 +1320,7 @@ inline void _mm256_storescalar_ps2epu8_color(void* dst, __m256 b, __m256 g, __m2
 }
 
 #define _mm256_store_ps_color _mm256_store_interleave_ps
-inline void _mm256_store_ps_color(void* dst, const __m256 b, const __m256 g, const __m256 r)
+STATIC_INLINE void _mm256_store_ps_color(void* dst, const __m256 b, const __m256 g, const __m256 r)
 {
 	__m256 b0 = _mm256_shuffle_ps(b, b, 0x6c);
 	__m256 g0 = _mm256_shuffle_ps(g, g, 0xb1);
@@ -1265,7 +1340,7 @@ inline void _mm256_store_ps_color(void* dst, const __m256 b, const __m256 g, con
 }
 
 #define _mm256_storeu_ps_color _mm256_storeu_interleave_ps
-inline void _mm256_storeu_ps_color(void* dst, const __m256 b, const __m256 g, const __m256 r)
+STATIC_INLINE void _mm256_storeu_ps_color(void* dst, const __m256 b, const __m256 g, const __m256 r)
 {
 	__m256 b0 = _mm256_shuffle_ps(b, b, 0x6c);
 	__m256 g0 = _mm256_shuffle_ps(g, g, 0xb1);
@@ -1284,7 +1359,7 @@ inline void _mm256_storeu_ps_color(void* dst, const __m256 b, const __m256 g, co
 	_mm256_storeu_ps((float*)dst + 16, bgr2);
 }
 
-inline void _mm256_storescalar_ps_color(void* dst, const __m256 b, const __m256 g, const __m256 r, const int numpixel = 8)
+STATIC_INLINE void _mm256_storescalar_ps_color(void* dst, const __m256 b, const __m256 g, const __m256 r, const int numpixel = 8)
 {
 	__m256 b0 = _mm256_shuffle_ps(b, b, 0x6c);
 	__m256 g0 = _mm256_shuffle_ps(g, g, 0xb1);
@@ -1308,7 +1383,7 @@ inline void _mm256_storescalar_ps_color(void* dst, const __m256 b, const __m256 
 }
 
 #define _mm256_stream_ps_color _mm256_stream_interleve_ps
-inline void _mm256_stream_ps_color(void* dst, const __m256 b, const __m256 g, const __m256 r)
+STATIC_INLINE void _mm256_stream_ps_color(void* dst, const __m256 b, const __m256 g, const __m256 r)
 {
 	__m256 b0 = _mm256_shuffle_ps(b, b, 0x6c);
 	__m256 g0 = _mm256_shuffle_ps(g, g, 0xb1);
@@ -1327,7 +1402,7 @@ inline void _mm256_stream_ps_color(void* dst, const __m256 b, const __m256 g, co
 	_mm256_stream_ps((float*)dst + 16, bgr2);
 }
 
-inline void _mm256_stream_ps_color_2(void* dst, const __m256 b, const __m256 g, const __m256 r)
+STATIC_INLINE void _mm256_stream_ps_color_2(void* dst, const __m256 b, const __m256 g, const __m256 r)
 {
 	const int smask1 = _MM_SHUFFLE(1, 2, 3, 0);
 	const int smask2 = _MM_SHUFFLE(2, 3, 0, 1);
@@ -1348,7 +1423,7 @@ inline void _mm256_stream_ps_color_2(void* dst, const __m256 b, const __m256 g, 
 	_mm256_stream_ps((float*)dst + 16, _mm256_permute2f128_ps(rval, gval, pmask3));
 }
 
-void inline _mm256_store_ps_color_v2(void* dst, const __m256 b, const __m256 g, const __m256 r)
+void STATIC_INLINE _mm256_store_ps_color_v2(void* dst, const __m256 b, const __m256 g, const __m256 r)
 {
 	static const int smask1 = _MM_SHUFFLE(1, 2, 3, 0);
 	static const int smask2 = _MM_SHUFFLE(2, 3, 0, 1);
@@ -1370,7 +1445,7 @@ void inline _mm256_store_ps_color_v2(void* dst, const __m256 b, const __m256 g, 
 }
 
 #define _mm256_storeu_pd_color _mm256_storeu_interleave_pd
-inline void _mm256_storeu_pd_color(void* dst, const __m256d b, const __m256d g, const __m256d r)
+STATIC_INLINE void _mm256_storeu_pd_color(void* dst, const __m256d b, const __m256d g, const __m256d r)
 {
 	const __m256d b0 = _mm256_permute2f128_pd(b, b, 0b00000000);
 	const __m256d b1 = _mm256_permute2f128_pd(b, b, 0b00010001);
@@ -1386,7 +1461,7 @@ inline void _mm256_storeu_pd_color(void* dst, const __m256d b, const __m256d g, 
 }
 
 #define _mm256_store_pd_color _mm256_store_interleave_pd
-inline void _mm256_store_pd_color(void* dst, const __m256d b, const __m256d g, const __m256d r)
+STATIC_INLINE void _mm256_store_pd_color(void* dst, const __m256d b, const __m256d g, const __m256d r)
 {
 	const __m256d b0 = _mm256_permute2f128_pd(b, b, 0b00000000);
 	const __m256d b1 = _mm256_permute2f128_pd(b, b, 0b00010001);
@@ -1402,7 +1477,7 @@ inline void _mm256_store_pd_color(void* dst, const __m256d b, const __m256d g, c
 }
 
 #define _mm256_stream_pd_color _mm256_stream_interleave_pd
-inline void _mm256_stream_pd_color(void* dst, const __m256d b, const __m256d g, const __m256d r)
+STATIC_INLINE void _mm256_stream_pd_color(void* dst, const __m256d b, const __m256d g, const __m256d r)
 {
 	const __m256d b0 = _mm256_permute2f128_pd(b, b, 0b00000000);
 	const __m256d b1 = _mm256_permute2f128_pd(b, b, 0b00010001);
@@ -1419,7 +1494,7 @@ inline void _mm256_stream_pd_color(void* dst, const __m256d b, const __m256d g, 
 
 #pragma region gray2bgr
 //gray2bgr: broadcast 3 channels
-inline void _mm_cvtepi8_gray2bgr(const __m128i src, __m128i& d0, __m128i& d1, __m128i& d2)
+STATIC_INLINE void _mm_cvtepi8_gray2bgr(const __m128i src, __m128i& d0, __m128i& d1, __m128i& d2)
 {
 	static const __m128i g2rgbmask0 = _mm_setr_epi8(0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5);
 	static const __m128i g2rgbmask1 = _mm_setr_epi8(5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 9, 9, 9, 10, 10);
@@ -1430,7 +1505,7 @@ inline void _mm_cvtepi8_gray2bgr(const __m128i src, __m128i& d0, __m128i& d1, __
 }
 
 //gray2bgr: broadcast 3 channels
-inline void _mm256_cvtepi8_gray2bgr(const __m256i src, __m256i& d0, __m256i& d1, __m256i& d2)
+STATIC_INLINE void _mm256_cvtepi8_gray2bgr(const __m256i src, __m256i& d0, __m256i& d1, __m256i& d2)
 {
 	static const __m256i g2rgbmask0 = _mm256_setr_epi8(0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 16, 16, 16, 17, 17, 17, 18, 18, 18, 19, 19, 19, 20, 20, 20, 21);
 	static const __m256i g2rgbmask1 = _mm256_setr_epi8(5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 9, 9, 9, 10, 10, 21, 21, 22, 22, 22, 23, 23, 23, 24, 24, 24, 25, 25, 25, 26, 26);
@@ -1445,7 +1520,7 @@ inline void _mm256_cvtepi8_gray2bgr(const __m256i src, __m256i& d0, __m256i& d1,
 }
 
 //gray2bgr: broadcast 3 channels
-inline void _mm256_cvtepi16_gray2bgr(const __m256i src, __m256i& d0, __m256i& d1, __m256i& d2)
+STATIC_INLINE void _mm256_cvtepi16_gray2bgr(const __m256i src, __m256i& d0, __m256i& d1, __m256i& d2)
 {
 	static const __m256i g2rgbmask0 = _mm256_setr_epi8(0, 1, 0, 1, 0, 1, 2, 3, 2, 3, 2, 3, 4, 5, 4, 5,/**/  16, 17, 16, 17, 16, 17, 18, 19, 18, 19, 18, 19, 20, 21, 20, 21);
 	static const __m256i g2rgbmask1 = _mm256_setr_epi8(4, 5, 6, 7, 6, 7, 6, 7, 8, 9, 8, 9, 8, 9, 10, 11,/**/ 20, 21, 22, 23, 22, 23, 22, 23, 24, 25, 24, 25, 24, 25, 26, 27);
@@ -1460,7 +1535,7 @@ inline void _mm256_cvtepi16_gray2bgr(const __m256i src, __m256i& d0, __m256i& d1
 }
 
 //gray2bgr: broadcast 3 channels
-inline void _mm256_cvtepi32_gray2bgr(const __m256i src, __m256i& d0, __m256i& d1, __m256i& d2)
+STATIC_INLINE void _mm256_cvtepi32_gray2bgr(const __m256i src, __m256i& d0, __m256i& d1, __m256i& d2)
 {
 	static const int smask1 = _MM_SHUFFLE(1, 0, 0, 0);
 	static const int smask2 = _MM_SHUFFLE(2, 2, 1, 1);
@@ -1474,7 +1549,7 @@ inline void _mm256_cvtepi32_gray2bgr(const __m256i src, __m256i& d0, __m256i& d1
 }
 
 //gray2bgr: broadcast 3 channels
-inline void _mm256_cvtps_gray2bgr(const __m256 srcf, __m256& d0, __m256& d1, __m256& d2)
+STATIC_INLINE void _mm256_cvtps_gray2bgr(const __m256 srcf, __m256& d0, __m256& d1, __m256& d2)
 {
 	__m256i src = _mm256_castps_si256(srcf);
 	static const int smask1 = _MM_SHUFFLE(1, 0, 0, 0);
@@ -1489,7 +1564,7 @@ inline void _mm256_cvtps_gray2bgr(const __m256 srcf, __m256& d0, __m256& d1, __m
 }
 
 //gray2bgr: broadcast 3 channels
-inline void _mm256_cvtps_gray2bgr_v2(const __m256 src, __m256& d0, __m256& d1, __m256& d2)
+STATIC_INLINE void _mm256_cvtps_gray2bgr_v2(const __m256 src, __m256& d0, __m256& d1, __m256& d2)
 {
 	static const int smask1 = _MM_SHUFFLE(1, 0, 0, 0);
 	static const int smask2 = _MM_SHUFFLE(2, 2, 1, 1);
@@ -1503,7 +1578,7 @@ inline void _mm256_cvtps_gray2bgr_v2(const __m256 src, __m256& d0, __m256& d1, _
 }
 
 //gray2bgr: broadcast 3 channels
-inline void _mm256_cvtps_gray2bgr_v3(const __m256 src, __m256& d0, __m256& d1, __m256& d2)
+STATIC_INLINE void _mm256_cvtps_gray2bgr_v3(const __m256 src, __m256& d0, __m256& d1, __m256& d2)
 {
 	static const __m256i pmask0 = _mm256_setr_epi32(0, 0, 0, 1, 1, 1, 2, 2);
 	static const __m256i pmask1 = _mm256_setr_epi32(2, 3, 3, 3, 4, 4, 4, 5);
@@ -1514,7 +1589,7 @@ inline void _mm256_cvtps_gray2bgr_v3(const __m256 src, __m256& d0, __m256& d1, _
 }
 
 //gray2bgr: broadcast 3 channels
-inline void _mm256_cvtpd_gray2bgr(const __m256d src, __m256d& d0, __m256d& d1, __m256d& d2)
+STATIC_INLINE void _mm256_cvtpd_gray2bgr(const __m256d src, __m256d& d0, __m256d& d1, __m256d& d2)
 {
 	static const int smask1 = _MM_SHUFFLE(1, 0, 0, 0);
 	//static const int smask2 = _MM_SHUFFLE(2, 2, 1, 1);
@@ -1527,7 +1602,7 @@ inline void _mm256_cvtpd_gray2bgr(const __m256d src, __m256d& d0, __m256d& d1, _
 }
 
 //gray2bgr: broadcast 3 channels
-inline void _mm256_cvtpd_gray2bgr_v2(const __m256d src, __m256d& d0, __m256d& d1, __m256d& d2)
+STATIC_INLINE void _mm256_cvtpd_gray2bgr_v2(const __m256d src, __m256d& d0, __m256d& d1, __m256d& d2)
 {
 	const __m256d md0 = _mm256_shuffle_pd(src, src, 0b0000);
 	const __m256d md1 = _mm256_shuffle_pd(src, src, 0b1111);
@@ -1538,7 +1613,7 @@ inline void _mm256_cvtpd_gray2bgr_v2(const __m256d src, __m256d& d0, __m256d& d1
 }
 
 //gray2bgr: broadcast 3 channels
-inline void _mm256_cvtpd_gray2bgr_v3(const __m256d src, __m256d& d0, __m256d& d1, __m256d& d2)
+STATIC_INLINE void _mm256_cvtpd_gray2bgr_v3(const __m256d src, __m256d& d0, __m256d& d1, __m256d& d2)
 {
 	const __m256d md0 = _mm256_shuffle_pd(src, src, 0b0000);
 	const __m256d md1 = _mm256_shuffle_pd(src, src, 0b1111);
@@ -1549,7 +1624,7 @@ inline void _mm256_cvtpd_gray2bgr_v3(const __m256d src, __m256d& d0, __m256d& d1
 #pragma endregion
 
 //plain2bgr: plain b,g,r image to interleave rgb. SoA->AoS
-inline void _mm256_cvtps_planar2bgr(const __m256 b, const __m256 g, const __m256 r, __m256& d0, __m256& d1, __m256& d2)
+STATIC_INLINE void _mm256_cvtps_planar2bgr(const __m256 b, const __m256 g, const __m256 r, __m256& d0, __m256& d1, __m256& d2)
 {
 	const __m256 aa = _mm256_shuffle_ps(b, b, _MM_SHUFFLE(1, 2, 3, 0));
 	const __m256 bb = _mm256_shuffle_ps(g, g, _MM_SHUFFLE(2, 3, 0, 1));
@@ -1566,41 +1641,41 @@ inline void _mm256_cvtps_planar2bgr(const __m256 b, const __m256 g, const __m256
 
 #pragma region arithmetic
 
-inline __m256 _mm256_abs_ps(__m256 src)
+STATIC_INLINE __m256 _mm256_abs_ps(__m256 src)
 {
 	//return _mm256_and_ps(src, _mm256_castsi256_ps(_mm256_set1_epi32(0x7fffffff)));
 	return _mm256_andnot_ps(_mm256_set1_ps(-0.f), src);
 }
 
-inline __m256 _mm256_signinv_ps(__m256 src)
+STATIC_INLINE __m256 _mm256_signinv_ps(__m256 src)
 {
 	return _mm256_xor_ps(src, _mm256_set1_ps(-0.f));
 }
 
-inline __m256 _mm256_signbit_ps(__m256 src)
+STATIC_INLINE __m256 _mm256_signbit_ps(__m256 src)
 {
 	return _mm256_and_ps(_mm256_set1_ps(-0.f), src);
 }
 
-inline __m256 _mm256_signbitinv_ps(__m256 src)
+STATIC_INLINE __m256 _mm256_signbitinv_ps(__m256 src)
 {
 	return _mm256_andnot_ps(src, _mm256_set1_ps(-0.f));
 }
 
-inline __m256 _mm256_sign_ps(__m256 src)
+STATIC_INLINE __m256 _mm256_sign_ps(__m256 src)
 {
 	__m256 mask = _mm256_cmp_ps(src, _mm256_setzero_ps(), _CMP_GE_OS);
 	return _mm256_blendv_ps(_mm256_set1_ps(-1.f), _mm256_set1_ps(1.f), mask);
 }
 
-inline float _mm_reduceadd_ps(__m128 src)
+STATIC_INLINE float _mm_reduceadd_ps(__m128 src)
 {
 	src = _mm_add_ps(src, _mm_shuffle_ps(src, src, _MM_SHUFFLE(2, 3, 0, 1)));
 	src = _mm_add_ps(src, _mm_shuffle_ps(src, src, _MM_SHUFFLE(0, 2, 0, 2)));
 	return _mm_cvtss_f32(src);
 }
 
-inline double _mm256_reduceadd_pspd(__m256 src)
+STATIC_INLINE double _mm256_reduceadd_pspd(__m256 src)
 {
 	float CV_DECL_ALIGNED(32) buff[8];
 	_mm256_store_ps(buff, src);
@@ -1615,20 +1690,20 @@ inline double _mm256_reduceadd_pspd(__m256 src)
 }
 
 //hadd output is same d0 = d1 = a0+a1, d2 = d3 = a2+a3, d4 = d5 = a4+a5, d6 = d7 = a6+a7
-inline __m256 _mm256_hadd_shuffle_ps(__m256 a)
+STATIC_INLINE __m256 _mm256_hadd_shuffle_ps(__m256 a)
 {
 	__m256 ret = _mm256_shuffle_ps(a, a, _MM_SHUFFLE(2, 3, 0, 1));
 	return _mm256_add_ps(a, ret);
 }
 
 //hadd output is same d0 = d2 = a0+a2, d1 = d3 = a1+a3, d4 = d6 = a4+a6, d5 = d7 = a5+a7
-inline __m256 _mm256_hadd_shuffle_evenodd_ps(__m256 a)
+STATIC_INLINE __m256 _mm256_hadd_shuffle_evenodd_ps(__m256 a)
 {
 	__m256 ret = _mm256_shuffle_ps(a, a, _MM_SHUFFLE(1, 0, 3, 2));
 	return _mm256_add_ps(a, ret);
 }
 
-inline float _mm256_reduceadd_ps(__m256 src)
+STATIC_INLINE float _mm256_reduceadd_ps(__m256 src)
 {
 	src = _mm256_hadd_shuffle_ps(src);
 	src = _mm256_hadd_shuffle_evenodd_ps(src);
@@ -1641,7 +1716,7 @@ inline float _mm256_reduceadd_ps(__m256 src)
 	//return _mm256_hadd_ps(src, src).m256_f32[0];
 }
 
-inline void _mm256_reduceadd_highlow_ps(__m256 src, float& low, float& high)
+STATIC_INLINE void _mm256_reduceadd_highlow_ps(__m256 src, float& low, float& high)
 {
 	src = _mm256_hadd_ps(src, src);
 	src = _mm256_hadd_ps(src, src);
@@ -1650,7 +1725,7 @@ inline void _mm256_reduceadd_highlow_ps(__m256 src, float& low, float& high)
 	//low = src.m256_f32[0];
 	//high = src.m256_f32[4];
 }
-inline double _mm256_reduceadd_pd(__m256d src)
+STATIC_INLINE double _mm256_reduceadd_pd(__m256d src)
 {
 	src = _mm256_hadd_pd(src, src);
 	return _mm256_cvtsd_f64(src) + _mm_cvtsd_f64(_mm256_extractf128_pd(src, 1));
@@ -1658,17 +1733,17 @@ inline double _mm256_reduceadd_pd(__m256d src)
 }
 
 #pragma region kahan
-inline __m256d _mm256_cvtkahanlo_pd(const __m256 sum, const __m256 carry)
+STATIC_INLINE __m256d _mm256_cvtkahanlo_pd(const __m256 sum, const __m256 carry)
 {
 	return _mm256_sub_pd(_mm256_cvtps_pd(_mm256_castps256_ps128(sum)), _mm256_cvtps_pd(_mm256_castps256_ps128(carry)));
 }
 
-inline __m256d _mm256_cvtkahanhi_pd(const __m256 sum, const __m256 carry)
+STATIC_INLINE __m256d _mm256_cvtkahanhi_pd(const __m256 sum, const __m256 carry)
 {
 	return _mm256_sub_pd(_mm256_cvtps_pd(_mm256_castps256hi_ps128(sum)), _mm256_cvtps_pd(_mm256_castps256hi_ps128(carry)));
 }
 
-inline double _mm256_reduceadd_kahan_64f(const __m256 src, const __m256 carry, const double v = 0.0)
+STATIC_INLINE double _mm256_reduceadd_kahan_64f(const __m256 src, const __m256 carry, const double v = 0.0)
 {
 	__m256d l = _mm256_cvtkahanlo_pd(src, carry);
 	__m256d h = _mm256_cvtkahanhi_pd(src, carry);
@@ -1679,7 +1754,7 @@ inline double _mm256_reduceadd_kahan_64f(const __m256 src, const __m256 carry, c
 	return v + h.m256d_f64[0] + h.m256d_f64[2];
 }
 
-inline float _mm256_reduceadd_kahan_32f(const __m256 src, const __m256 carry, const float v = 0.f)
+STATIC_INLINE float _mm256_reduceadd_kahan_32f(const __m256 src, const __m256 carry, const float v = 0.f)
 {
 	__m256d l = _mm256_cvtkahanlo_pd(src, carry);
 	__m256d h = _mm256_cvtkahanhi_pd(src, carry);
@@ -1689,7 +1764,7 @@ inline float _mm256_reduceadd_kahan_32f(const __m256 src, const __m256 carry, co
 	return (float)(double(v) + h.m256d_f64[0] + h.m256d_f64[2]);
 }
 
-inline float _mm256_reduceadd_kahanfast_32f(const __m256 src, const __m256 carry, const float v = 0.f)
+STATIC_INLINE float _mm256_reduceadd_kahanfast_32f(const __m256 src, const __m256 carry, const float v = 0.f)
 {
 	float sum = v;
 	float c = 0.f;
@@ -1707,7 +1782,7 @@ inline float _mm256_reduceadd_kahanfast_32f(const __m256 src, const __m256 carry
 	return sum;
 }
 
-inline double _mm256_reduceadd_kahan_64f(const __m256d src, const __m256d carry, const double v = 0.0)
+STATIC_INLINE double _mm256_reduceadd_kahan_64f(const __m256d src, const __m256d carry, const double v = 0.0)
 {
 	double sum = v;
 
@@ -1734,30 +1809,30 @@ inline double _mm256_reduceadd_kahan_64f(const __m256d src, const __m256d carry,
 }
 #pragma endregion
 
-inline __m256 _mm256_div_avoidzerodiv_ps(const __m256 src1, const __m256 src2)
+STATIC_INLINE __m256 _mm256_div_avoidzerodiv_ps(const __m256 src1, const __m256 src2)
 {
 	return _mm256_div_ps(src1, _mm256_blendv_ps(src2, _mm256_set1_ps(FLT_MIN), _mm256_cmp_ps(src2, _mm256_setzero_ps(), 0)));
 	//return _mm256_div_ps(src1, _mm256_max_ps(src2, _mm256_set1_ps(FLT_EPSILON)));
 }
 
-inline __m256 _mm256_div_zerodivzero_ps(const __m256 src1, const __m256 src2)
+STATIC_INLINE __m256 _mm256_div_zerodivzero_ps(const __m256 src1, const __m256 src2)
 {
 	return _mm256_blendv_ps(_mm256_div_ps(src1, src2), _mm256_set1_ps(FLT_MIN), _mm256_cmp_ps(src2, _mm256_setzero_ps(), 0));
 }
 
-inline __m256 _mm256_div_zerodivone_ps(const __m256 src1, const __m256 src2)
+STATIC_INLINE __m256 _mm256_div_zerodivone_ps(const __m256 src1, const __m256 src2)
 {
 	return _mm256_blendv_ps(_mm256_div_ps(src1, src2), _mm256_set1_ps(1.f), _mm256_cmp_ps(src2, _mm256_setzero_ps(), 0));
 }
 
 
-inline __m256 _mm256_ssd_ps(__m256 src, __m256 ref)
+STATIC_INLINE __m256 _mm256_ssd_ps(__m256 src, __m256 ref)
 {
 	__m256 diff = _mm256_sub_ps(src, ref);
 	return _mm256_mul_ps(diff, diff);
 }
 
-inline __m256 _mm256_ssd_ps(__m256 src0, __m256 src1, __m256 src2, __m256 ref0, __m256 ref1, __m256 ref2)
+STATIC_INLINE __m256 _mm256_ssd_ps(__m256 src0, __m256 src1, __m256 src2, __m256 ref0, __m256 ref1, __m256 ref2)
 {
 	__m256 diff = _mm256_sub_ps(src0, ref0);
 	__m256 ret = _mm256_mul_ps(diff, diff);
@@ -1769,14 +1844,14 @@ inline __m256 _mm256_ssd_ps(__m256 src0, __m256 src1, __m256 src2, __m256 ref0, 
 }
 
 //return offset + ssd
-inline __m256 _mm256_ssdadd_ps(__m256 offset, __m256 src, __m256 ref)
+STATIC_INLINE __m256 _mm256_ssdadd_ps(__m256 offset, __m256 src, __m256 ref)
 {
 	__m256 diff = _mm256_sub_ps(src, ref);
 	return _mm256_fmadd_ps(diff, diff, offset);
 }
 
 //return offset + ssd
-inline __m256 _mm256_ssdadd_ps(__m256 offset, __m256 src0, __m256 src1, __m256 src2, __m256 ref0, __m256 ref1, __m256 ref2)
+STATIC_INLINE __m256 _mm256_ssdadd_ps(__m256 offset, __m256 src0, __m256 src1, __m256 src2, __m256 ref0, __m256 ref1, __m256 ref2)
 {
 	__m256 diff = _mm256_sub_ps(src0, ref0);
 	__m256 ret = _mm256_fmadd_ps(diff, diff, offset);
@@ -1787,24 +1862,24 @@ inline __m256 _mm256_ssdadd_ps(__m256 offset, __m256 src0, __m256 src1, __m256 s
 	return ret;
 }
 
-inline __m128i _mm_absdiff_epu8(__m128i src1, __m128i src2)
+STATIC_INLINE __m128i _mm_absdiff_epu8(__m128i src1, __m128i src2)
 {
 	return _mm_max_epu8(_mm_subs_epu8(src1, src2), _mm_subs_epu8(src2, src1));
 }
 
-inline __m256i _mm256_absdiff_epu8(__m256i src1, __m256i src2)
+STATIC_INLINE __m256i _mm256_absdiff_epu8(__m256i src1, __m256i src2)
 {
 	return _mm256_max_epu8(_mm256_subs_epu8(src1, src2), _mm256_subs_epu8(src2, src1));
 }
 
 //rsqrt->rcp
-inline __m256 _mm256_fastsqrt_ps(__m256 x)
+STATIC_INLINE __m256 _mm256_fastsqrt_ps(__m256 x)
 {
 	return _mm256_rcp_ps(_mm256_rsqrt_ps(x));
 }
 
 //rcp with newton-raphson 1-iteration
-inline __m256 _mm256_rcpnr_ps(__m256 x)
+STATIC_INLINE __m256 _mm256_rcpnr_ps(__m256 x)
 {
 	__m256 res = _mm256_rcp_ps(x);
 	//rcp*(2-rcp*x)->(rcp+rcp)-rcp*rcp*x
@@ -1812,7 +1887,7 @@ inline __m256 _mm256_rcpnr_ps(__m256 x)
 }
 
 //rcp with newton-raphson 1-iteration (FMA ver) requided set2
-inline __m256 _mm256_rcpnr_fma_ps(__m256 x, __m256 two = _mm256_set1_ps(2.f))
+STATIC_INLINE __m256 _mm256_rcpnr_fma_ps(__m256 x, __m256 two = _mm256_set1_ps(2.f))
 {
 	__m256 rcp = _mm256_rcp_ps(x);
 	//rcp*(2-rcp*x)
@@ -1823,13 +1898,13 @@ inline __m256 _mm256_rcpnr_fma_ps(__m256 x, __m256 two = _mm256_set1_ps(2.f))
 #pragma endregion
 
 #pragma region compare
-inline __m128i _mm_cmpgt_epu8(__m128i x, __m128i y)
+STATIC_INLINE __m128i _mm_cmpgt_epu8(__m128i x, __m128i y)
 {
 	return _mm_andnot_si128(_mm_cmpeq_epi8(x, y), _mm_cmpeq_epi8(_mm_max_epu8(x, y), x));
 }
 
 
-inline __m256i _mm256_cmpgt_epu8(__m256i x, __m256i y)
+STATIC_INLINE __m256i _mm256_cmpgt_epu8(__m256i x, __m256i y)
 {
 	//return _mm256_andnot_si256(_mm256_cmpeq_epi8(x, y), _mm256_cmpeq_epi8(_mm256_max_epu8(x, y), x));
 	const __m256i highBit = _mm256_set1_epi8(0x80);
@@ -1839,37 +1914,37 @@ inline __m256i _mm256_cmpgt_epu8(__m256i x, __m256i y)
 #pragma endregion
 
 #pragma region bit manipulation
-inline __m256i _mm256_not_si256(__m256i src)
+STATIC_INLINE __m256i _mm256_not_si256(__m256i src)
 {
 	return _mm256_xor_si256(src, _mm256_cmpeq_epi8(src, src));
 	//return _mm256_xor_si256(src, _mm256_cmpeq_epi8(_mm256_setzero_si256(), _mm256_setzero_si256()));
 }
 
-inline __m256 _mm256_not_ps(__m256 src)
+STATIC_INLINE __m256 _mm256_not_ps(__m256 src)
 {
 	return _mm256_xor_ps(src, _mm256_cmp_ps(src, src, 0));
 }
 
-inline __m256d _mm256_not_pd(__m256d src)
+STATIC_INLINE __m256d _mm256_not_pd(__m256d src)
 {
 	return _mm256_xor_pd(src, _mm256_cmp_pd(src, src, 0));
 }
 
 //1: same, 0: not same
-inline int _mm256_testsame_ps(__m256 a, __m256 b)
+STATIC_INLINE int _mm256_testsame_ps(__m256 a, __m256 b)
 {
 	return _mm256_testc_si256(_mm256_castps_si256(a), _mm256_castps_si256(b));
 }
 
 //1: same, 0: not same
-inline int _mm256_testsame_pd(__m256d a, __m256d b)
+STATIC_INLINE int _mm256_testsame_pd(__m256d a, __m256d b)
 {
 	return _mm256_testc_si256(_mm256_castpd_si256(a), _mm256_castpd_si256(b));
 }
 #pragma endregion
 
 #pragma region print
-inline void print(__m128d src)
+STATIC_INLINE void print(__m128d src)
 {
 	printf_s("%5.3f %5.3f\n",
 		((double*)&src)[0], ((double*)&src)[1]);
@@ -1879,12 +1954,12 @@ inline void print(__m128d src)
 
 #define print_m256d(src) printf_s("%s: %6.2f %6.2f | %6.2f %6.2f\n",#src,((double*)&src)[0], ((double*)&src)[1], ((double*)&src)[2], ((double*)&src)[3]);
 
-inline void print(__m256d src)
+STATIC_INLINE void print(__m256d src)
 {
 	printf_s("%6.2f %6.2f %6.2f %6.2f\n", ((double*)&src)[0], ((double*)&src)[1], ((double*)&src)[2], ((double*)&src)[3]);
 }
 
-inline void print(__m128 src)
+STATIC_INLINE void print(__m128 src)
 {
 	printf_s("%5.3f %5.3f %5.3f %5.3f\n",
 		((float*)&src)[0], ((float*)&src)[1], ((float*)&src)[2], ((float*)&src)[3]);
@@ -1894,13 +1969,13 @@ inline void print(__m128 src)
 #define print_m128(src) printf_s("%s: %6.2f %6.2f %6.2f %6.2f\n",#src,((float*)&src)[0], ((float*)&src)[1], ((float*)&src)[2], ((float*)&src)[3]);
 #define print_m256(src) printf_s("%s: %6.2f %6.2f %6.2f %6.2f | %6.2f %6.2f %6.2f %6.2f\n",#src,((float*)&src)[0], ((float*)&src)[1], ((float*)&src)[2], ((float*)&src)[3], ((float*)&src)[4], ((float*)&src)[5], ((float*)&src)[6], ((float*)&src)[7]);
 
-inline void print(__m256 src)
+STATIC_INLINE void print(__m256 src)
 {
 	printf_s("%6.2f %6.2f %6.2f %6.2f %6.2f %6.2f %6.2f %6.2f\n",
 		((float*)&src)[0], ((float*)&src)[1], ((float*)&src)[2], ((float*)&src)[3], ((float*)&src)[4], ((float*)&src)[5], ((float*)&src)[6], ((float*)&src)[7]);
 }
 
-inline void print_char(__m128i src)
+STATIC_INLINE void print_char(__m128i src)
 {
 	char* data = (char*)&src;
 	for (int i = 0; i < 16; i++)
@@ -1910,7 +1985,7 @@ inline void print_char(__m128i src)
 	printf_s("\n");
 }
 
-inline void print_char(__m256i src)
+STATIC_INLINE void print_char(__m256i src)
 {
 	char* data = (char*)&src;
 	for (int i = 0; i < 32; i++)
@@ -1920,7 +1995,7 @@ inline void print_char(__m256i src)
 	printf_s("\n");
 }
 
-inline void print_uchar(__m128i src)
+STATIC_INLINE void print_uchar(__m128i src)
 {
 	uchar* data = (uchar*)&src;
 	for (int i = 0; i < 16; i++)
@@ -1937,7 +2012,7 @@ inline void print_uchar(__m128i src)
 for (int i = 0; i < 32; i++){if(i%8==0)printf_s("|%3d ", ((uchar*)&src)[i]);else printf_s("%3d ", ((uchar*)&src)[i]);}printf_s("|\n");
 
 
-inline void print_short(__m128i src)
+STATIC_INLINE void print_short(__m128i src)
 {
 	short* data = (short*)&src;
 	for (int i = 0; i < 8; i++)
@@ -1953,7 +2028,7 @@ inline void print_short(__m128i src)
 #define print_short(src) std::cout << #src << ": ";\
 for (int i = 0; i < 16; i++){if(i%8==0)printf_s("|%4d ", ((short*)&src)[i]);else printf_s("%4d ", ((short*)&src)[i]);}printf_s("|\n");
 
-inline void print_ushort(__m128i src)
+STATIC_INLINE void print_ushort(__m128i src)
 {
 	ushort* data = (ushort*)&src;
 	for (int i = 0; i < 8; i++)
@@ -1963,7 +2038,7 @@ inline void print_ushort(__m128i src)
 	printf_s("\n");
 }
 
-inline void print_ushort(__m256i src)
+STATIC_INLINE void print_ushort(__m256i src)
 {
 	ushort* data = (ushort*)&src;
 	for (int i = 0; i < 16; i++)
@@ -1976,7 +2051,7 @@ inline void print_ushort(__m256i src)
 #define print_m128i_int(src) printf_s("%s: %3d %3d %3d %3d\n",#src,((int*)&src)[0], ((int*)&src)[1], ((int*)&src)[2], ((int*)&src)[3]);
 #define print_m256i_int(src) printf_s("%s: %3d %3d %3d %3d | %3d %3d %3d %3d\n",#src,((int*)&src)[0], ((int*)&src)[1], ((int*)&src)[2], ((int*)&src)[3], ((int*)&src)[4], ((int*)&src)[5], ((int*)&src)[6], ((int*)&src)[7]);
 
-inline void print_int(__m128i src)
+STATIC_INLINE void print_int(__m128i src)
 {
 	int* data = (int*)&src;
 	for (int i = 0; i < 4; i++)
@@ -1986,7 +2061,7 @@ inline void print_int(__m128i src)
 	printf_s("\n");
 }
 
-inline void print_int(__m256i src)
+STATIC_INLINE void print_int(__m256i src)
 {
 	int* data = (int*)&src;
 	for (int i = 0; i < 8; i++)
@@ -1996,7 +2071,7 @@ inline void print_int(__m256i src)
 	printf_s("\n");
 }
 
-inline void print_uint(__m128i src)
+STATIC_INLINE void print_uint(__m128i src)
 {
 	unsigned int* data = (unsigned int*)&src;
 	for (int i = 0; i < 4; i++)
@@ -2006,7 +2081,7 @@ inline void print_uint(__m128i src)
 	printf_s("\n");
 }
 
-inline void print_uint(__m256i src)
+STATIC_INLINE void print_uint(__m256i src)
 {
 	unsigned int* data = (unsigned int*)&src;
 	for (int i = 0; i < 8; i++)
@@ -2016,7 +2091,7 @@ inline void print_uint(__m256i src)
 	printf_s("\n");
 }
 
-inline void print_long(__m256i src)
+STATIC_INLINE void print_long(__m256i src)
 {
 	long long* data = (long long*)&src;
 	for (int i = 0; i < 4; i++)
@@ -2036,43 +2111,43 @@ __m128 zzzz = _mm_shuffle_ps(first, first, 0xAA); // _MM_SHUFFLE(2, 2, 2, 2)
 __m128 wwww = _mm_shuffle_ps(first, first, 0xFF); // _MM_SHUFFLE(3, 3, 3, 3)
 */
 #pragma region store_auto_color
-inline void _mm256_storeu_auto_color(float* dest, __m256 b, __m256 g, __m256 r)
+STATIC_INLINE void _mm256_storeu_auto_color(float* dest, __m256 b, __m256 g, __m256 r)
 {
 	_mm256_storeu_ps_color(dest, b, g, r);
 }
 
-inline void _mm256_storeu_auto_color(uchar* dest, __m256 b, __m256 g, __m256 r)
+STATIC_INLINE void _mm256_storeu_auto_color(uchar* dest, __m256 b, __m256 g, __m256 r)
 {
 	_mm256_storeu_ps2epu8_color(dest, b, g, r);
 }
 
-inline void _mm256_store_auto_color(float* dest, __m256 b, __m256 g, __m256 r)
+STATIC_INLINE void _mm256_store_auto_color(float* dest, __m256 b, __m256 g, __m256 r)
 {
 	_mm256_store_ps_color(dest, b, g, r);
 }
 
-inline void _mm256_store_auto_color(uchar* dest, __m256 b, __m256 g, __m256 r)
+STATIC_INLINE void _mm256_store_auto_color(uchar* dest, __m256 b, __m256 g, __m256 r)
 {
 	_mm256_store_ps2epu8_color(dest, b, g, r);
 }
 
-inline void _mm256_store_auto_color(uchar* dest, __m256i b, __m256i g, __m256i r)
+STATIC_INLINE void _mm256_store_auto_color(uchar* dest, __m256i b, __m256i g, __m256i r)
 {
 	_mm256_store_epi8_color(dest, b, g, r);
 }
 
-inline void _mm256_storeu_auto_color(uchar* dest, __m256i b, __m256i g, __m256i r)
+STATIC_INLINE void _mm256_storeu_auto_color(uchar* dest, __m256i b, __m256i g, __m256i r)
 {
 	_mm256_storeu_epi8_color(dest, b, g, r);
 }
 
 
-inline void _mm256_stream_auto_color(float* dest, __m256 b, __m256 g, __m256 r)
+STATIC_INLINE void _mm256_stream_auto_color(float* dest, __m256 b, __m256 g, __m256 r)
 {
 	_mm256_stream_ps_color(dest, b, g, r);
 }
 
-inline void _mm256_stream_auto_color(uchar* dest, __m256 b, __m256 g, __m256 r)
+STATIC_INLINE void _mm256_stream_auto_color(uchar* dest, __m256 b, __m256 g, __m256 r)
 {
 	_mm256_stream_ps2epu8_color(dest, b, g, r);
 }
@@ -2080,12 +2155,12 @@ inline void _mm256_stream_auto_color(uchar* dest, __m256 b, __m256 g, __m256 r)
 
 #pragma region store
 
-inline void _mm256_store_cvtps_epu8(__m128i* dest, __m256 ms)
+STATIC_INLINE void _mm256_store_cvtps_epu8(__m128i* dest, __m256 ms)
 {
 	_mm_storel_epi64(dest, _mm256_cvtps_epu8(ms));
 }
 
-inline void _mm256_storescalar_cvtps_epu8(void* dst, __m256 src, const int numpixel)
+STATIC_INLINE void _mm256_storescalar_cvtps_epu8(void* dst, __m256 src, const int numpixel)
 {
 	uchar CV_DECL_ALIGNED(32) buffscalarstore[32];
 	_mm256_store_cvtps_epu8((__m128i*)buffscalarstore, src);
@@ -2094,7 +2169,7 @@ inline void _mm256_storescalar_cvtps_epu8(void* dst, __m256 src, const int numpi
 		dest[i] = buffscalarstore[i];
 }
 
-inline void _mm256_storescalar_pd(uchar* dst, __m256d src, const int numpixel)
+STATIC_INLINE void _mm256_storescalar_pd(uchar* dst, __m256d src, const int numpixel)
 {
 	double CV_DECL_ALIGNED(32) buffscalarstore[4];
 	_mm256_store_pd(buffscalarstore, src);
@@ -2102,7 +2177,7 @@ inline void _mm256_storescalar_pd(uchar* dst, __m256d src, const int numpixel)
 		dst[i] = cv::saturate_cast<uchar>(buffscalarstore[i]);
 }
 
-inline void _mm256_storescalar_pd(float* dst, __m256d src, const int numpixel)
+STATIC_INLINE void _mm256_storescalar_pd(float* dst, __m256d src, const int numpixel)
 {
 	double CV_DECL_ALIGNED(32) buffscalarstore[4];
 	_mm256_store_pd(buffscalarstore, src);
@@ -2110,7 +2185,7 @@ inline void _mm256_storescalar_pd(float* dst, __m256d src, const int numpixel)
 		dst[i] = (float)buffscalarstore[i];
 }
 
-inline void _mm256_storescalar_pd(double* dst, __m256d src, const int numpixel)
+STATIC_INLINE void _mm256_storescalar_pd(double* dst, __m256d src, const int numpixel)
 {
 	double CV_DECL_ALIGNED(32) buffscalarstore[4];
 	_mm256_store_pd(buffscalarstore, src);
@@ -2118,7 +2193,7 @@ inline void _mm256_storescalar_pd(double* dst, __m256d src, const int numpixel)
 		dst[i] = buffscalarstore[i];
 }
 
-inline void _mm256_storescalar_ps(float* dst, __m256 src, const int numpixel)
+STATIC_INLINE void _mm256_storescalar_ps(float* dst, __m256 src, const int numpixel)
 {
 	float CV_DECL_ALIGNED(32) buffscalarstore[8];
 	_mm256_store_ps(buffscalarstore, src);
@@ -2126,7 +2201,7 @@ inline void _mm256_storescalar_ps(float* dst, __m256 src, const int numpixel)
 		dst[i] = buffscalarstore[i];
 }
 
-inline void _mm256_i32scaterscalar_epu8(uchar* dest, __m256i vindex, __m256 src)
+STATIC_INLINE void _mm256_i32scaterscalar_epu8(uchar* dest, __m256i vindex, __m256 src)
 {
 	__m128i v = _mm256_cvtps_epu8(src);
 	dest[((int*)&vindex)[0]] = ((uchar*)&v)[0];
@@ -2139,7 +2214,7 @@ inline void _mm256_i32scaterscalar_epu8(uchar* dest, __m256i vindex, __m256 src)
 	dest[((int*)&vindex)[7]] = ((uchar*)&v)[7];
 }
 
-inline void _mm_i32scaterscalar_ps(float* dest, __m128i vindex, __m128 src)
+STATIC_INLINE void _mm_i32scaterscalar_ps(float* dest, __m128i vindex, __m128 src)
 {
 	dest[((int*)&vindex)[0]] = ((float*)&src)[0];
 	dest[((int*)&vindex)[1]] = ((float*)&src)[1];
@@ -2147,7 +2222,7 @@ inline void _mm_i32scaterscalar_ps(float* dest, __m128i vindex, __m128 src)
 	dest[((int*)&vindex)[3]] = ((float*)&src)[3];
 }
 
-inline void _mm256_i32scaterscalar_ps(float* dest, __m256i vindex, __m256 src)
+STATIC_INLINE void _mm256_i32scaterscalar_ps(float* dest, __m256i vindex, __m256 src)
 {
 	dest[((int*)&vindex)[0]] = ((float*)&src)[0];
 	dest[((int*)&vindex)[1]] = ((float*)&src)[1];
@@ -2159,7 +2234,7 @@ inline void _mm256_i32scaterscalar_ps(float* dest, __m256i vindex, __m256 src)
 	dest[((int*)&vindex)[7]] = ((float*)&src)[7];
 }
 
-inline void _mm256_i32scaterscalar_epu8_color(uchar* dest, __m256i vindex, __m256 b, __m256 g, __m256 r)
+STATIC_INLINE void _mm256_i32scaterscalar_epu8_color(uchar* dest, __m256i vindex, __m256 b, __m256 g, __m256 r)
 {
 	__m128i bb = _mm256_cvtps_epu8(b);
 	__m128i gb = _mm256_cvtps_epu8(g);
@@ -2182,7 +2257,7 @@ inline void _mm256_i32scaterscalar_epu8_color(uchar* dest, __m256i vindex, __m25
 	dest[idx + 0] = ((uchar*)&bb)[7];	dest[idx + 1] = ((uchar*)&gb)[7];	dest[idx + 2] = ((uchar*)&rb)[7];
 }
 
-inline void _mm256_i32scaterscalar_ps_color(float* dest, __m256i vindex, __m256 b, __m256 g, __m256 r)
+STATIC_INLINE void _mm256_i32scaterscalar_ps_color(float* dest, __m256i vindex, __m256 b, __m256 g, __m256 r)
 {
 	int idx = ((int*)&vindex)[0];
 	dest[idx + 0] = ((float*)&b)[0];	dest[idx + 1] = ((float*)&g)[0];	dest[idx + 2] = ((float*)&r)[0];
@@ -2203,27 +2278,27 @@ inline void _mm256_i32scaterscalar_ps_color(float* dest, __m256i vindex, __m256 
 }
 #pragma endregion
 
-inline void _mm256_stream_auto(uchar* dest, __m256 ms)
+STATIC_INLINE void _mm256_stream_auto(uchar* dest, __m256 ms)
 {
 	_mm256_store_cvtps_epu8((__m128i*)dest, ms);
 }
 
-inline void _mm256_stream_auto(float* dest, __m256 ms)
+STATIC_INLINE void _mm256_stream_auto(float* dest, __m256 ms)
 {
 	_mm256_stream_ps(dest, ms);
 }
 
-inline void _mm256_maskstore_auto(float* dest, __m256i mask, __m256 ms)
+STATIC_INLINE void _mm256_maskstore_auto(float* dest, __m256i mask, __m256 ms)
 {
 	_mm256_maskstore_ps(dest, mask, ms);
 }
 
-inline void _mm256_maskstore_auto(double* dest, __m256i mask, __m256d ms)
+STATIC_INLINE void _mm256_maskstore_auto(double* dest, __m256i mask, __m256d ms)
 {
 	_mm256_maskstore_pd(dest, mask, ms);
 }
 
-inline void _mm256_maskstore_auto(uchar* dest, __m256i mask, __m256 ms)
+STATIC_INLINE void _mm256_maskstore_auto(uchar* dest, __m256i mask, __m256 ms)
 {
 	uchar CV_DECL_ALIGNED(32) buffscalarstore[32];
 	_mm256_store_cvtps_epu8((__m128i*)buffscalarstore, ms);
@@ -2233,37 +2308,37 @@ inline void _mm256_maskstore_auto(uchar* dest, __m256i mask, __m256 ms)
 	}
 }
 
-inline void _mm256_storescalar_auto(uchar* dest, __m256 ms, const int numpixel)
+STATIC_INLINE void _mm256_storescalar_auto(uchar* dest, __m256 ms, const int numpixel)
 {
 	_mm256_storescalar_cvtps_epu8(dest, ms, numpixel);
 }
 
-inline void _mm256_storescalar_auto(float* dest, __m256 ms, const int numpixel)
+STATIC_INLINE void _mm256_storescalar_auto(float* dest, __m256 ms, const int numpixel)
 {
 	_mm256_storescalar_ps(dest, ms, numpixel);
 }
 
-inline void _mm256_storescalar_auto(uchar* dest, __m256d ms, const int numpixel)
+STATIC_INLINE void _mm256_storescalar_auto(uchar* dest, __m256d ms, const int numpixel)
 {
 	_mm256_storescalar_pd(dest, ms, numpixel);
 }
 
-inline void _mm256_storescalar_auto(float* dest, __m256d ms, const int numpixel)
+STATIC_INLINE void _mm256_storescalar_auto(float* dest, __m256d ms, const int numpixel)
 {
 	_mm256_storescalar_pd(dest, ms, numpixel);
 }
 
-inline void _mm256_storescalar_auto(double* dest, __m256d ms, const int numpixel)
+STATIC_INLINE void _mm256_storescalar_auto(double* dest, __m256d ms, const int numpixel)
 {
 	_mm256_storescalar_pd(dest, ms, numpixel);
 }
 
-inline void _mm256_storescalar_auto_color(float* dest, __m256 b, __m256 g, __m256 r, const int numpixel)
+STATIC_INLINE void _mm256_storescalar_auto_color(float* dest, __m256 b, __m256 g, __m256 r, const int numpixel)
 {
 	_mm256_storescalar_ps_color(dest, b, g, r, numpixel);
 }
 
-inline void _mm256_storescalar_auto_color(uchar* dest, __m256 b, __m256 g, __m256 r, const int numpixel)
+STATIC_INLINE void _mm256_storescalar_auto_color(uchar* dest, __m256 b, __m256 g, __m256 r, const int numpixel)
 {
 	_mm256_storescalar_ps2epu8_color(dest, b, g, r, numpixel);
 }
@@ -2275,14 +2350,14 @@ inline void _mm256_storescalar_auto_color(uchar* dest, __m256 b, __m256 g, __m25
 
 #pragma region gather-scatter
 //return 8 uchar elements
-inline __m128i _mm_i8gather_epi32(const uchar* src, __m128i idx)
+STATIC_INLINE __m128i _mm_i8gather_epi32(const uchar* src, __m128i idx)
 {
 	return _mm_srli_epi32(_mm_i32gather_epi32(reinterpret_cast<const int*>(&src[-3]), idx, 1), 24);
 	//return _mm_setr_epi8(src[idx.m256i_i32[0]], src[idx.m256i_i32[1]], src[idx.m256i_i32[2]], src[idx.m256i_i32[3]], src[idx.m256i_i32[4]], src[idx.m256i_i32[5]], src[idx.m256i_i32[6]], src[idx.m256i_i32[7]], 0, 0, 0, 0, 0, 0, 0, 0);
 }
 
 //gather bgr interleved uchar data with convert epi32->ps
-inline void _mm256_i32gather_bgr_ps(const uchar* src, __m256i idx, __m256& b, __m256& g, __m256& r)
+STATIC_INLINE void _mm256_i32gather_bgr_ps(const uchar* src, __m256i idx, __m256& b, __m256& g, __m256& r)
 {
 	__m256i v = _mm256_i32gather_epi32((int*)(src), idx, 1);
 
@@ -2291,7 +2366,7 @@ inline void _mm256_i32gather_bgr_ps(const uchar* src, __m256i idx, __m256& b, __
 	r = _mm256_cvtepi32_ps(_mm256_srai_epi32(_mm256_blendv_epi8(v, _mm256_setzero_si256(), _mm256_setr_epi8(0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0xFF, 0xFF, 0, 0xFF)), 16));
 }
 
-inline void _mm256_i32gather_bgr_epi32(const uchar* src, __m256i idx, __m256i& b, __m256i& g, __m256i& r)
+STATIC_INLINE void _mm256_i32gather_bgr_epi32(const uchar* src, __m256i idx, __m256i& b, __m256i& g, __m256i& r)
 {
 	__m256i v = _mm256_i32gather_epi32((int*)(src - 3), idx, 1);
 	b = _mm256_srli_epi32(v, 24);
@@ -2300,94 +2375,94 @@ inline void _mm256_i32gather_bgr_epi32(const uchar* src, __m256i idx, __m256i& b
 }
 
 //gather 8 uchar elements and output 32bit integer
-inline __m256i _mm256_i32gather_epi32(const uchar* src, __m256i idx)
+STATIC_INLINE __m256i _mm256_i32gather_epi32(const uchar* src, __m256i idx)
 {
 	return _mm256_srli_epi32(_mm256_i32gather_epi32(reinterpret_cast<const int*>(&src[-3]), idx, 1), 24);
 	//return _mm256_setr_epi32(src[idx.m256i_i32[0]], src[idx.m256i_i32[1]], src[idx.m256i_i32[2]], src[idx.m256i_i32[3]], src[idx.m256i_i32[4]], src[idx.m256i_i32[5]], src[idx.m256i_i32[6]], src[idx.m256i_i32[7]]);
 }
 
-inline __m128 _mm_i8gather_ps(const uchar* src, __m128i idx)
+STATIC_INLINE __m128 _mm_i8gather_ps(const uchar* src, __m128i idx)
 {
 	return _mm_cvtepi32_ps(_mm_srli_epi32(_mm_i32gather_epi32(reinterpret_cast<const int*>(&src[-3]), idx, 1), 24));
 	//return _mm_setr_epi8(src[idx.m256i_i32[0]], src[idx.m256i_i32[1]], src[idx.m256i_i32[2]], src[idx.m256i_i32[3]], src[idx.m256i_i32[4]], src[idx.m256i_i32[5]], src[idx.m256i_i32[6]], src[idx.m256i_i32[7]], 0, 0, 0, 0, 0, 0, 0, 0);
 }
 
 //gather 4 uchar elements
-inline __m128i _mm_i32gather_epu8(const uchar* src, __m128i idx)
+STATIC_INLINE __m128i _mm_i32gather_epu8(const uchar* src, __m128i idx)
 {
 	return _mm_cvtepi32_epu8(_mm_srli_epi32(_mm_i32gather_epi32(reinterpret_cast<const int*>(&src[-3]), idx, 1), 24));
 	//return _mm_setr_epi8(src[idx.m256i_i32[0]], src[idx.m256i_i32[1]], src[idx.m256i_i32[2]], src[idx.m256i_i32[3]], src[idx.m256i_i32[4]], src[idx.m256i_i32[5]], src[idx.m256i_i32[6]], src[idx.m256i_i32[7]], 0, 0, 0, 0, 0, 0, 0, 0);
 }
 
 //dest: si64
-inline __m128i _mm256_i32gather_epu8(const uchar* src, __m256i idx)
+STATIC_INLINE __m128i _mm256_i32gather_epu8(const uchar* src, __m256i idx)
 {
 	return _mm256_cvtepi32_epu8(_mm256_srli_epi32(_mm256_i32gather_epi32(reinterpret_cast<const int*>(src - 3), idx, 1), 24));
 	//return _mm_setr_epi8(src[idx.m256i_i32[0]], src[idx.m256i_i32[1]], src[idx.m256i_i32[2]], src[idx.m256i_i32[3]], src[idx.m256i_i32[4]], src[idx.m256i_i32[5]], src[idx.m256i_i32[6]], src[idx.m256i_i32[7]], 0, 0, 0, 0, 0, 0, 0, 0);
 }
 
-inline __m256 _mm256_i32gather_auto(float* src, __m256i idx)
+STATIC_INLINE __m256 _mm256_i32gather_auto(float* src, __m256i idx)
 {
 	return _mm256_i32gather_ps(src, idx, 4);
 }
 
-inline __m256 _mm256_i32gather_auto(uchar* src, __m256i idx)
+STATIC_INLINE __m256 _mm256_i32gather_auto(uchar* src, __m256i idx)
 {
 	return _mm256_cvtepi32_ps(_mm256_srli_epi32(_mm256_i32gather_epi32(reinterpret_cast<const int*>(&src[-3]), idx, 1), 24));
 }
 
-inline __m256 _mm256_i32gatherset_auto(uchar* src, __m256i idx)
+STATIC_INLINE __m256 _mm256_i32gatherset_auto(uchar* src, __m256i idx)
 {
 
 	return _mm256_cvtepi32_ps(_mm256_setr_epi8(src[((int*)&idx)[0]], src[((int*)&idx)[1]], src[((int*)&idx)[2]], src[((int*)&idx)[3]], src[((int*)&idx)[4]], src[((int*)&idx)[5]], src[((int*)&idx)[6]], src[((int*)&idx)[7]],
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 }
 
-inline __m256 _mm256_i32gatherset_auto(float* src, __m256i idx)
+STATIC_INLINE __m256 _mm256_i32gatherset_auto(float* src, __m256i idx)
 {
 	return _mm256_setr_ps(src[((int*)&idx)[0]], src[((int*)&idx)[1]], src[((int*)&idx)[2]], src[((int*)&idx)[3]], src[((int*)&idx)[4]], src[((int*)&idx)[5]], src[((int*)&idx)[6]], src[((int*)&idx)[7]]);
 }
 
-inline void _mm256_i32scaterscalar_auto(uchar* dest, __m256i vindex, __m256 src)
+STATIC_INLINE void _mm256_i32scaterscalar_auto(uchar* dest, __m256i vindex, __m256 src)
 {
 	_mm256_i32scaterscalar_epu8(dest, vindex, src);
 }
 
-inline void _mm256_i32scaterscalar_auto(float* dest, __m256i vindex, __m256 src)
+STATIC_INLINE void _mm256_i32scaterscalar_auto(float* dest, __m256i vindex, __m256 src)
 {
 	_mm256_i32scaterscalar_ps(dest, vindex, src);
 }
 
-inline void _mm256_i32scaterscalar_auto_color(uchar* dest, __m256i vindex, __m256 b, __m256 g, __m256 r)
+STATIC_INLINE void _mm256_i32scaterscalar_auto_color(uchar* dest, __m256i vindex, __m256 b, __m256 g, __m256 r)
 {
 	_mm256_i32scaterscalar_epu8_color(dest, vindex, b, g, r);
 }
 
-inline void _mm256_i32scaterscalar_auto_color(float* dest, __m256i vindex, __m256 b, __m256 g, __m256 r)
+STATIC_INLINE void _mm256_i32scaterscalar_auto_color(float* dest, __m256i vindex, __m256 b, __m256 g, __m256 r)
 {
 	_mm256_i32scaterscalar_ps_color(dest, vindex, b, g, r);
 }
 #pragma endregion
 
-inline __m128 _mm_set_step_ps(float v, float step = 1.f)
+STATIC_INLINE __m128 _mm_set_step_ps(float v, float step = 1.f)
 {
 	return _mm_setr_ps(v, v + step, v + 2.f * step, v + 3.f * step);
 }
 
 //_mm256_setr_ps(v + step, v + 2 * step, v + 3 * step, v + 4 * step, v + 5 * step, v + 6 * step, v + 7 * step);
-inline __m256 _mm256_set_step_ps(float v, float step = 1.f)
+STATIC_INLINE __m256 _mm256_set_step_ps(float v, float step = 1.f)
 {
 	return _mm256_setr_ps(v, v + step, v + 2.f * step, v + 3.f * step, v + 4.f * step, v + 5.f * step, v + 6.f * step, v + 7.f * step);
 }
 
-inline __m128i _mm_set_step_epi8(char v, char step = 1)
+STATIC_INLINE __m128i _mm_set_step_epi8(char v, char step = 1)
 {
 	return _mm_setr_epi8(
 		v + 0 * step, v + 1 * step, v + 2 * step, v + 3 * step, v + 4 * step, v + 5 * step, v + 6 * step, v + 7 * step,
 		v + 8 * step, v + 9 * step, v + 10 * step, v + 11 * step, v + 12 * step, v + 13 * step, v + 14 * step, v + 15 * step);
 }
 
-inline __m256i _mm256_set_step_epi8(char v, char step = 1)
+STATIC_INLINE __m256i _mm256_set_step_epi8(char v, char step = 1)
 {
 	return _mm256_setr_epi8(
 		v + 0 * step, v + 1 * step, v + 2 * step, v + 3 * step, v + 4 * step, v + 5 * step, v + 6 * step, v + 7 * step,
@@ -2396,131 +2471,131 @@ inline __m256i _mm256_set_step_epi8(char v, char step = 1)
 		v + 24 * step, v + 25 * step, v + 26 * step, v + 27 * step, v + 28 * step, v + 29 * step, v + 30 * step, v + 31 * step);
 }
 
-inline __m256i _mm256_set_step_epi16(short v, short step = 1)
+STATIC_INLINE __m256i _mm256_set_step_epi16(short v, short step = 1)
 {
 	return _mm256_setr_epi16(
 		v + 0 * step, v + 1 * step, v + 2 * step, v + 3 * step, v + 4 * step, v + 5 * step, v + 6 * step, v + 7 * step,
 		v + 8 * step, v + 9 * step, v + 10 * step, v + 11 * step, v + 12 * step, v + 13 * step, v + 14 * step, v + 15 * step);
 }
 
-inline __m256i _mm256_set_step_epi32(int v, int step = 1)
+STATIC_INLINE __m256i _mm256_set_step_epi32(int v, int step = 1)
 {
 	return _mm256_setr_epi32(v + 0 * step, v + 1 * step, v + 2 * step, v + 3 * step, v + 4 * step, v + 5 * step, v + 6 * step, v + 7 * step);
 }
 
-inline __m256i _mm256_set_step_epi64(long v, long step = 1L)
+STATIC_INLINE __m256i _mm256_set_step_epi64(long v, long step = 1L)
 {
 	return _mm256_setr_epi64x(v + 0 * step, v + 1 * step, v + 2 * step, v + 3 * step);
 }
 
 //_mm256_setr_pd(v + step, v + 2 * step, v + 3 * step);
-inline __m256d _mm256_set_step_pd(double v, double step = 1.0)
+STATIC_INLINE __m256d _mm256_set_step_pd(double v, double step = 1.0)
 {
 	return _mm256_setr_pd(v, v + step, v + 2.0 * step, v + 3.0 * step);
 }
 
-inline __m256 _mm256_reverse_ps(__m256 src)
+STATIC_INLINE __m256 _mm256_reverse_ps(__m256 src)
 {
 	__m256 ret = _mm256_shuffle_ps(src, src, _MM_SHUFFLE(0, 1, 2, 3));
 	ret = _mm256_permute2f128_ps(ret, ret, 1);
 	return ret;
 }
 
-inline __m256 _mm256_load_reverse_ps(const float* src)
+STATIC_INLINE __m256 _mm256_load_reverse_ps(const float* src)
 {
 	__m256 ret = _mm256_load_ps(src);
 	return _mm256_reverse_ps(ret);
 }
 
-inline __m256 _mm256_loadu_reverse_ps(const float* src)
+STATIC_INLINE __m256 _mm256_loadu_reverse_ps(const float* src)
 {
 	__m256 ret = _mm256_loadu_ps(src);
 	return _mm256_reverse_ps(ret);
 }
 
-inline __m256d _mm256_reverse_pd(__m256d src)
+STATIC_INLINE __m256d _mm256_reverse_pd(__m256d src)
 {
 	return _mm256_permute4x64_pd(src, _MM_SHUFFLE(0, 1, 2, 3));
 }
 
-inline __m256d _mm256_load_reverse_pd(const double* src)
+STATIC_INLINE __m256d _mm256_load_reverse_pd(const double* src)
 {
 	__m256d ret = _mm256_load_pd(src);
 	return _mm256_reverse_pd(ret);
 }
 
-inline __m256d _mm256_loadu_reverse_pd(const double* src)
+STATIC_INLINE __m256d _mm256_loadu_reverse_pd(const double* src)
 {
 	__m256d ret = _mm256_loadu_pd(src);
 	return _mm256_reverse_pd(ret);
 }
 
-inline __m256 _mm256_load_auto(const uchar* src)
+STATIC_INLINE __m256 _mm256_load_auto(const uchar* src)
 {
 	return _mm256_load_epu8cvtps((const __m128i*)src);
 }
 
-inline __m256 _mm256_load_auto(const float* src)
+STATIC_INLINE __m256 _mm256_load_auto(const float* src)
 {
 	return _mm256_load_ps(src);
 }
 
-inline __m256d _mm256_load_auto(const double* src)
+STATIC_INLINE __m256d _mm256_load_auto(const double* src)
 {
 	return _mm256_load_pd(src);
 }
 
-inline __m256 _mm256_loadu_auto(const float* src)
+STATIC_INLINE __m256 _mm256_loadu_auto(const float* src)
 {
 	return _mm256_loadu_ps(src);
 }
 
-inline __m256d _mm256_loadu_auto(const double* src)
+STATIC_INLINE __m256d _mm256_loadu_auto(const double* src)
 {
 	return _mm256_loadu_pd(src);
 }
 
-inline __m256 _mm256_loadu_auto(const uchar* src)
+STATIC_INLINE __m256 _mm256_loadu_auto(const uchar* src)
 {
 	return _mm256_load_epu8cvtps((const __m128i*)src);
 }
 
-inline __m256 _mm256_lddqu_auto(const float* src)
+STATIC_INLINE __m256 _mm256_lddqu_auto(const float* src)
 {
 	return _mm256_lddqu_ps(src);
 }
 
-inline __m256d _mm256_lddqu_auto(const double* src)
+STATIC_INLINE __m256d _mm256_lddqu_auto(const double* src)
 {
 	return _mm256_lddqu_pd(src);
 }
 
-inline __m256 _mm256_lddqu_auto(const uchar* src)
+STATIC_INLINE __m256 _mm256_lddqu_auto(const uchar* src)
 {
 	return _mm256_load_epu8cvtps((const __m128i*)src);
 }
 
-inline void _mm256_store_auto(uchar* dest, __m256 src)
+STATIC_INLINE void _mm256_store_auto(uchar* dest, __m256 src)
 {
 	_mm256_store_cvtps_epu8((__m128i*)dest, src);
 }
 
-inline void _mm256_store_auto(float* dest, __m256 src)
+STATIC_INLINE void _mm256_store_auto(float* dest, __m256 src)
 {
 	_mm256_store_ps(dest, src);
 }
 
-inline void _mm256_storeu_auto(uchar* dest, __m256 src)
+STATIC_INLINE void _mm256_storeu_auto(uchar* dest, __m256 src)
 {
 	_mm256_store_cvtps_epu8((__m128i*)dest, src);
 }
 
-inline void _mm256_storeu_auto(float* dest, __m256 src)
+STATIC_INLINE void _mm256_storeu_auto(float* dest, __m256 src)
 {
 	_mm256_storeu_ps(dest, src);
 }
 
-inline void _mm256_storeu_auto(double* dest, __m256d src)
+STATIC_INLINE void _mm256_storeu_auto(double* dest, __m256d src)
 {
 	_mm256_storeu_pd(dest, src);
 }
@@ -2528,7 +2603,7 @@ inline void _mm256_storeu_auto(double* dest, __m256d src)
 
 
 
-inline __m256i _mm256_alphablend_epu8(__m256i a, __m256i b, __m256i ma)
+STATIC_INLINE __m256i _mm256_alphablend_epu8(__m256i a, __m256i b, __m256i ma)
 {
 	__m256i a2 = _mm256_cvtepu8_epi16(_mm256_castsi256_si128(a));
 	__m256i b2 = _mm256_cvtepu8_epi16(_mm256_castsi256_si128(b));
@@ -2540,14 +2615,14 @@ inline __m256i _mm256_alphablend_epu8(__m256i a, __m256i b, __m256i ma)
 	return _mm256_set_m128i(d2, d1);
 }
 
-inline void _mm256_argmin_ps(__m256& src, __m256& minval, __m256& argment, const float index)
+STATIC_INLINE void _mm256_argmin_ps(const __m256 src, __m256& minval, __m256& argment, const float index)
 {
-	__m256 mask = _mm256_cmp_ps(src, minval, 2);
+	const __m256 mask = _mm256_cmp_ps(src, minval, 2);
 	argment = _mm256_blendv_ps(argment, _mm256_set1_ps(index), mask);
 	minval = _mm256_blendv_ps(minval, src, mask);
 }
 
-inline __m256i _mm256_get_gatherIndex_border(int pad, int borderType)
+STATIC_INLINE __m256i _mm256_get_gatherIndex_border(int pad, int borderType)
 {
 	__m256i rem_idx;
 	switch (borderType)
@@ -2603,7 +2678,7 @@ inline __m256i _mm256_get_gatherIndex_border(int pad, int borderType)
 	return rem_idx;
 }
 
-inline __m128i _mm_get_gatherIndex_border(int pad, int borderType)
+STATIC_INLINE __m128i _mm_get_gatherIndex_border(int pad, int borderType)
 {
 	__m128i rem_idx;
 	switch (borderType)
@@ -2654,7 +2729,7 @@ enum class MM_PRINT_EXCEPTION
 	NO_INEXACT,
 };
 
-inline std::vector<std::string> _MM_PRINT_EXCEPTION(std::string mes = "", const MM_PRINT_EXCEPTION isPrint = MM_PRINT_EXCEPTION::ALL)
+STATIC_INLINE std::vector<std::string> _MM_PRINT_EXCEPTION(std::string mes = "", const MM_PRINT_EXCEPTION isPrint = MM_PRINT_EXCEPTION::ALL)
 {
 	if (mes.size() != 0) std::cout << mes << ": " << std::endl;
 	std::vector<std::string> ret;
@@ -2696,19 +2771,19 @@ inline std::vector<std::string> _MM_PRINT_EXCEPTION(std::string mes = "", const 
 }
 
 #ifdef CP_AVX512
-inline __m128i _mm512_cvtps_epu8(const __m512 ms)
+STATIC_INLINE __m128i _mm512_cvtps_epu8(const __m512 ms)
 {
 	//return _mm256_cvtepi32_epu8(_mm512_cvtps_epi32(ms));
 	return _mm512_cvtepi32_epi8(_mm512_cvtps_epi32(ms));
 }
 
-inline __m512 _mm512_ssd_ps(__m512 src, __m512 ref)
+STATIC_INLINE __m512 _mm512_ssd_ps(__m512 src, __m512 ref)
 {
 	__m512 diff = _mm512_sub_ps(src, ref);
 	return _mm512_mul_ps(diff, diff);
 }
 
-inline __m512 _mm512_ssd_ps(__m512 src0, __m512 src1, __m512 src2, __m512 ref0, __m512 ref1, __m512 ref2)
+STATIC_INLINE __m512 _mm512_ssd_ps(__m512 src0, __m512 src1, __m512 src2, __m512 ref0, __m512 ref1, __m512 ref2)
 {
 	__m512 diff = _mm512_sub_ps(src0, ref0);
 	__m512 difft = _mm512_mul_ps(diff, diff);
@@ -2719,99 +2794,99 @@ inline __m512 _mm512_ssd_ps(__m512 src0, __m512 src1, __m512 src2, __m512 ref0, 
 	return difft;
 }
 
-inline __m512 _mm512_load_epu8cvtps(const __m128i* P)
+STATIC_INLINE __m512 _mm512_load_epu8cvtps(const __m128i* P)
 {
 	return _mm512_cvtepi32_ps(_mm512_cvtepu8_epi32(_mm_load_si128((__m128i*)P)));
 	//return _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(_mm_loadu_si128((__m128i*)P)));
 }
 
-inline __m512 _mm512_load_auto(const uchar* src)
+STATIC_INLINE __m512 _mm512_load_auto(const uchar* src)
 {
 	return _mm512_load_epu8cvtps((const __m128i*)src);
 }
 
-inline __m512 _mm512_load_auto(const float* src)
+STATIC_INLINE __m512 _mm512_load_auto(const float* src)
 {
 	return _mm512_load_ps(src);
 }
 
-inline __m512d _mm512_load_auto(const double* src)
+STATIC_INLINE __m512d _mm512_load_auto(const double* src)
 {
 	return _mm512_load_pd(src);
 }
 
-inline __m512 _mm512_loadu_epu8cvtps(const __m128i* P)
+STATIC_INLINE __m512 _mm512_loadu_epu8cvtps(const __m128i* P)
 {
 	return _mm512_cvtepi32_ps(_mm512_cvtepu8_epi32(_mm_loadu_si128((__m128i*)P)));
 	//return _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(_mm_loadu_si128((__m128i*)P)));
 }
 
-inline __m512 _mm512_loadu_auto(const uchar* src)
+STATIC_INLINE __m512 _mm512_loadu_auto(const uchar* src)
 {
 	return _mm512_loadu_epu8cvtps((const __m128i*)src);
 }
 
-inline __m512 _mm512_loadu_auto(const float* src)
+STATIC_INLINE __m512 _mm512_loadu_auto(const float* src)
 {
 	return _mm512_loadu_ps(src);
 }
 
-inline __m512d _mm512_loadu_auto(const double* src)
+STATIC_INLINE __m512d _mm512_loadu_auto(const double* src)
 {
 	return _mm512_loadu_pd(src);
 }
 
-inline void _mm512_store_cvtps_epu8(__m128i* dest, __m512 ms)
+STATIC_INLINE void _mm512_store_cvtps_epu8(__m128i* dest, __m512 ms)
 {
 	_mm_store_si128(dest, _mm512_cvtps_epu8(ms));
 }
 
-inline void _mm512_storeu_cvtps_epu8(__m128i* dest, __m512 ms)
+STATIC_INLINE void _mm512_storeu_cvtps_epu8(__m128i* dest, __m512 ms)
 {
 	_mm_storeu_si128(dest, _mm512_cvtps_epu8(ms));
 }
 
-inline void _mm512_store_auto(uchar* dest, __m512 src)
+STATIC_INLINE void _mm512_store_auto(uchar* dest, __m512 src)
 {
 	_mm512_store_cvtps_epu8((__m128i*)dest, src);
 }
 
-inline void _mm512_store_auto(float* dest, __m512 src)
+STATIC_INLINE void _mm512_store_auto(float* dest, __m512 src)
 {
 	_mm512_store_ps(dest, src);
 }
 
-inline void _mm512_store_auto(double* dest, __m512d src)
+STATIC_INLINE void _mm512_store_auto(double* dest, __m512d src)
 {
 	_mm512_store_pd(dest, src);
 }
 
-inline void _mm512_storeu_auto(uchar* dest, __m512 src)
+STATIC_INLINE void _mm512_storeu_auto(uchar* dest, __m512 src)
 {
 	_mm512_storeu_cvtps_epu8((__m128i*)dest, src);
 }
 
-inline void _mm512_storeu_auto(float* dest, __m512 src)
+STATIC_INLINE void _mm512_storeu_auto(float* dest, __m512 src)
 {
 	_mm512_storeu_ps(dest, src);
 }
 
-inline void _mm512_storeu_auto(double* dest, __m512d src)
+STATIC_INLINE void _mm512_storeu_auto(double* dest, __m512d src)
 {
 	_mm512_storeu_pd(dest, src);
 }
 
-inline void _mm512_stream_auto(uchar* dest, __m512 ms)
+STATIC_INLINE void _mm512_stream_auto(uchar* dest, __m512 ms)
 {
 	_mm512_store_cvtps_epu8((__m128i*)dest, ms);
 }
 
-inline void _mm512_stream_auto(float* dest, __m512 ms)
+STATIC_INLINE void _mm512_stream_auto(float* dest, __m512 ms)
 {
 	_mm512_stream_ps(dest, ms);
 }
 
-inline void _mm512_storescalar_cvtps_epu8(void* dst, __m512 src, const int numpixel)
+STATIC_INLINE void _mm512_storescalar_cvtps_epu8(void* dst, __m512 src, const int numpixel)
 {
 	uchar CV_DECL_ALIGNED(64) buffscalarstore[64];
 	_mm512_store_cvtps_epu8((__m128i*)buffscalarstore, src);
@@ -2820,7 +2895,7 @@ inline void _mm512_storescalar_cvtps_epu8(void* dst, __m512 src, const int numpi
 		dest[i] = buffscalarstore[i];
 }
 
-inline void _mm512_storescalar_pd(uchar* dst, __m512d src, const int numpixel)
+STATIC_INLINE void _mm512_storescalar_pd(uchar* dst, __m512d src, const int numpixel)
 {
 	double CV_DECL_ALIGNED(64) buffscalarstore[8];
 	_mm512_store_pd(buffscalarstore, src);
@@ -2828,7 +2903,7 @@ inline void _mm512_storescalar_pd(uchar* dst, __m512d src, const int numpixel)
 		dst[i] = cv::saturate_cast<uchar>(buffscalarstore[i]);
 }
 
-inline void _mm512_storescalar_pd(float* dst, __m512d src, const int numpixel)
+STATIC_INLINE void _mm512_storescalar_pd(float* dst, __m512d src, const int numpixel)
 {
 	double CV_DECL_ALIGNED(64) buffscalarstore[8];
 	_mm512_store_pd(buffscalarstore, src);
@@ -2836,7 +2911,7 @@ inline void _mm512_storescalar_pd(float* dst, __m512d src, const int numpixel)
 		dst[i] = (float)buffscalarstore[i];
 }
 
-inline void _mm512_storescalar_pd(double* dst, __m512d src, const int numpixel)
+STATIC_INLINE void _mm512_storescalar_pd(double* dst, __m512d src, const int numpixel)
 {
 	double CV_DECL_ALIGNED(64) buffscalarstore[8];
 	_mm512_store_pd(buffscalarstore, src);
@@ -2844,46 +2919,46 @@ inline void _mm512_storescalar_pd(double* dst, __m512d src, const int numpixel)
 		dst[i] = buffscalarstore[i];
 }
 
-inline void _mm512_storescalar_ps(float* dst, __m512 src, const int numpixel)
+STATIC_INLINE void _mm512_storescalar_ps(float* dst, __m512 src, const int numpixel)
 {
 	float CV_DECL_ALIGNED(64) buffscalarstore[16];
 	_mm512_store_ps(buffscalarstore, src);
 	for (int i = 0; i < numpixel; i++)
 		dst[i] = buffscalarstore[i];
 }
-inline void _mm512_storescalar_auto(uchar* dest, __m512 ms, const int numpixel)
+STATIC_INLINE void _mm512_storescalar_auto(uchar* dest, __m512 ms, const int numpixel)
 {
 	_mm512_storescalar_cvtps_epu8(dest, ms, numpixel);
 }
 
-inline void _mm512_storescalar_auto(float* dest, __m512 ms, const int numpixel)
+STATIC_INLINE void _mm512_storescalar_auto(float* dest, __m512 ms, const int numpixel)
 {
 	_mm512_storescalar_ps(dest, ms, numpixel);
 }
 
-inline void _mm512_storescalar_auto(uchar* dest, __m512d ms, const int numpixel)
+STATIC_INLINE void _mm512_storescalar_auto(uchar* dest, __m512d ms, const int numpixel)
 {
 	_mm512_storescalar_pd(dest, ms, numpixel);
 }
 
-inline void _mm512_storescalar_auto(float* dest, __m512d ms, const int numpixel)
+STATIC_INLINE void _mm512_storescalar_auto(float* dest, __m512d ms, const int numpixel)
 {
 	_mm512_storescalar_pd(dest, ms, numpixel);
 }
 
-inline void _mm512_storescalar_auto(double* dest, __m512d ms, const int numpixel)
+STATIC_INLINE void _mm512_storescalar_auto(double* dest, __m512d ms, const int numpixel)
 {
 	_mm512_storescalar_pd(dest, ms, numpixel);
 }
 
 
-inline __m128i _mm512_cvtepi32_epu8(const __m512i v0)
+STATIC_INLINE __m128i _mm512_cvtepi32_epu8(const __m512i v0)
 {
 	return _mm_setr_epi8(((char*)&v0)[0], ((char*)&v0)[1], ((char*)&v0)[2], ((char*)&v0)[3], ((char*)&v0)[4], ((char*)&v0)[5], ((char*)&v0)[6], ((char*)&v0)[7], ((char*)&v0)[8], ((char*)&v0)[9], ((char*)&v0)[10], ((char*)&v0)[11], ((char*)&v0)[12], ((char*)&v0)[13], ((char*)&v0)[14], ((char*)&v0)[15]);
 	//return _mm256_castsi256_si128(_mm256_permutevar8x32_epi32(_mm256_packus_epi16(_mm256_packs_epi32(v0, _mm256_setzero_si256()), _mm256_setzero_si256()), _mm256_setr_epi32(0, 4, 1, 5, 2, 6, 3, 7)));
 }
 
-inline void _mm512_i32scaterscalar_epu8_color(uchar* dest, __m512i vindex, __m512 b, __m512 g, __m512 r)
+STATIC_INLINE void _mm512_i32scaterscalar_epu8_color(uchar* dest, __m512i vindex, __m512 b, __m512 g, __m512 r)
 {
 	__m128i bb = _mm512_cvtps_epu8(b);
 	__m128i gb = _mm512_cvtps_epu8(g);
@@ -2923,14 +2998,14 @@ inline void _mm512_i32scaterscalar_epu8_color(uchar* dest, __m512i vindex, __m51
 	dest[idx + 0] = ((uchar*)&bb)[15];	dest[idx + 1] = ((uchar*)&gb)[15];	dest[idx + 2] = ((uchar*)&rb)[15];
 }
 
-inline void _mm512_i32scater_ps_color(float* dest, __m512i vindex, __m512 b, __m512 g, __m512 r)
+STATIC_INLINE void _mm512_i32scater_ps_color(float* dest, __m512i vindex, __m512 b, __m512 g, __m512 r)
 {
 	_mm512_i32scatter_ps(dest + 0, vindex, b, sizeof(float));
 	_mm512_i32scatter_ps(dest + 1, vindex, g, sizeof(float));
 	_mm512_i32scatter_ps(dest + 2, vindex, r, sizeof(float));
 }
 
-inline void _mm512_i32scaterscalar_ps_color(float* dest, __m512i vindex, __m512 b, __m512 g, __m512 r)
+STATIC_INLINE void _mm512_i32scaterscalar_ps_color(float* dest, __m512i vindex, __m512 b, __m512 g, __m512 r)
 {
 	_mm512_i32scatter_ps(dest + 0, vindex, b, sizeof(float));
 	_mm512_i32scatter_ps(dest + 1, vindex, g, sizeof(float));
@@ -2987,27 +3062,27 @@ inline void _mm512_i32scaterscalar_ps_color(float* dest, __m512i vindex, __m512 
 	dest[idx + 0] = ((float*)&b)[15];	dest[idx + 1] = ((float*)&g)[15];	dest[idx + 2] = ((float*)&r)[15];*/
 }
 
-inline void _mm512_i32scater_auto_color(uchar* dest, __m512i vindex, __m512 b, __m512 g, __m512 r)
+STATIC_INLINE void _mm512_i32scater_auto_color(uchar* dest, __m512i vindex, __m512 b, __m512 g, __m512 r)
 {
 	_mm512_i32scaterscalar_epu8_color(dest, vindex, b, g, r);
 }
 
-inline void _mm512_i32scater_auto_color(float* dest, __m512i vindex, __m512 b, __m512 g, __m512 r)
+STATIC_INLINE void _mm512_i32scater_auto_color(float* dest, __m512i vindex, __m512 b, __m512 g, __m512 r)
 {
 	_mm512_i32scater_ps_color(dest, vindex, b, g, r);
 }
 
-inline void _mm512_i32scaterscalar_auto_color(uchar* dest, __m512i vindex, __m512 b, __m512 g, __m512 r)
+STATIC_INLINE void _mm512_i32scaterscalar_auto_color(uchar* dest, __m512i vindex, __m512 b, __m512 g, __m512 r)
 {
 	_mm512_i32scaterscalar_epu8_color(dest, vindex, b, g, r);
 }
 
-inline void _mm512_i32scaterscalar_auto_color(float* dest, __m512i vindex, __m512 b, __m512 g, __m512 r)
+STATIC_INLINE void _mm512_i32scaterscalar_auto_color(float* dest, __m512i vindex, __m512 b, __m512 g, __m512 r)
 {
 	_mm512_i32scaterscalar_ps_color(dest, vindex, b, g, r);
 }
 
-inline void _mm512_cvtsoa2aos_epi8(const __m512i b, const __m512i g, const __m512i r, __m512i& db, __m512i& dg, __m512i& dr)
+STATIC_INLINE void _mm512_cvtsoa2aos_epi8(const __m512i b, const __m512i g, const __m512i r, __m512i& db, __m512i& dg, __m512i& dr)
 {
 	static const __m512i mask1 = _mm512_set_epi8(
 		5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0,
@@ -3049,7 +3124,7 @@ inline void _mm512_cvtsoa2aos_epi8(const __m512i b, const __m512i g, const __m51
 	dr = _mm512_mask_blend_epi8(blendMask3, _mm512_mask_blend_epi8(blendMask1, aaa, bbb), ccc);
 }
 
-inline void _mm512_store_epi8_color(void* dst, const __m512i b, const __m512i g, const __m512i r)
+STATIC_INLINE void _mm512_store_epi8_color(void* dst, const __m512i b, const __m512i g, const __m512i r)
 {
 	__m512i dr, dg, db;
 	_mm512_cvtsoa2aos_epi8(b, g, r, db, dg, dr);
@@ -3058,7 +3133,7 @@ inline void _mm512_store_epi8_color(void* dst, const __m512i b, const __m512i g,
 	_mm512_store_si512((uchar*)dst + 128, dr);
 }
 
-inline void _mm512_storeu_epi8_color(void* dst, const __m512i b, const __m512i g, const __m512i r)
+STATIC_INLINE void _mm512_storeu_epi8_color(void* dst, const __m512i b, const __m512i g, const __m512i r)
 {
 	__m512i dr, dg, db;
 	_mm512_cvtsoa2aos_epi8(b, g, r, db, dg, dr);
@@ -3067,7 +3142,7 @@ inline void _mm512_storeu_epi8_color(void* dst, const __m512i b, const __m512i g
 	_mm512_storeu_si512((uchar*)dst + 128, dr);
 }
 
-inline void _mm512_stream_epi8_color(void* dst, const __m512i b, const __m512i g, const __m512i r)
+STATIC_INLINE void _mm512_stream_epi8_color(void* dst, const __m512i b, const __m512i g, const __m512i r)
 {
 	__m512i dr, dg, db;
 	_mm512_cvtsoa2aos_epi8(b, g, r, db, dg, dr);
@@ -3076,7 +3151,7 @@ inline void _mm512_stream_epi8_color(void* dst, const __m512i b, const __m512i g
 	_mm512_stream_si512((uchar*)dst + 128, dr);
 }
 
-inline void _mm512_cvtsoa2aos_ps(const __m512 b, const __m512 g, const __m512 r, __m512& db, __m512& dg, __m512& dr)
+STATIC_INLINE void _mm512_cvtsoa2aos_ps(const __m512 b, const __m512 g, const __m512 r, __m512& db, __m512& dg, __m512& dr)
 {
 #if __USE_SCATTER_INSTRUCTION__
 	static const __m512i idx = _mm512_set_epi32(45, 42, 39, 36, 33, 30, 27, 24, 21, 18, 15, 12, 9, 6, 3, 0);
@@ -3104,7 +3179,7 @@ inline void _mm512_cvtsoa2aos_ps(const __m512 b, const __m512 g, const __m512 r,
 
 
 
-inline void _mm512_store_ps_color(void* dst, const __m512 b, const __m512 g, const __m512 r)
+STATIC_INLINE void _mm512_store_ps_color(void* dst, const __m512 b, const __m512 g, const __m512 r)
 {
 	__m512 dr, dg, db;
 	_mm512_cvtsoa2aos_ps(b, g, r, db, dg, dr);
@@ -3113,7 +3188,7 @@ inline void _mm512_store_ps_color(void* dst, const __m512 b, const __m512 g, con
 	_mm512_store_ps((float*)dst + 32, dr);
 }
 
-inline void _mm512_storeu_ps_color(void* dst, const __m512 b, const __m512 g, const __m512 r)
+STATIC_INLINE void _mm512_storeu_ps_color(void* dst, const __m512 b, const __m512 g, const __m512 r)
 {
 	__m512 dr, dg, db;
 	_mm512_cvtsoa2aos_ps(b, g, r, db, dg, dr);
@@ -3122,7 +3197,7 @@ inline void _mm512_storeu_ps_color(void* dst, const __m512 b, const __m512 g, co
 	_mm512_storeu_ps((float*)dst + 32, dr);
 }
 
-inline void _mm512_stream_ps_color(void* dst, const __m512 b, const __m512 g, const __m512 r)
+STATIC_INLINE void _mm512_stream_ps_color(void* dst, const __m512 b, const __m512 g, const __m512 r)
 {
 	__m512 dr, dg, db;
 	_mm512_cvtsoa2aos_ps(b, g, r, db, dg, dr);
@@ -3132,7 +3207,7 @@ inline void _mm512_stream_ps_color(void* dst, const __m512 b, const __m512 g, co
 }
 
 
-inline void _mm512_cvtsoa2aos_pd(const __m512d b, const __m512d g, const __m512d r, __m512d& db, __m512d& dg, __m512d& dr)
+STATIC_INLINE void _mm512_cvtsoa2aos_pd(const __m512d b, const __m512d g, const __m512d r, __m512d& db, __m512d& dg, __m512d& dr)
 {
 #if __USE_SCATTER_INSTRUCTION__
 	static const __m512i idx = _mm512_set_epi64(21, 18, 15, 12, 9, 6, 3, 0);
@@ -3158,7 +3233,7 @@ inline void _mm512_cvtsoa2aos_pd(const __m512d b, const __m512d g, const __m512d
 #endif
 }
 
-inline void _mm512_store_pd_color(void* dst, const __m512d b, const __m512d g, const __m512d r)
+STATIC_INLINE void _mm512_store_pd_color(void* dst, const __m512d b, const __m512d g, const __m512d r)
 {
 	__m512d db, dg, dr;
 	_mm512_cvtsoa2aos_pd(b, g, r, db, dg, dr);
@@ -3168,7 +3243,7 @@ inline void _mm512_store_pd_color(void* dst, const __m512d b, const __m512d g, c
 	_mm512_store_pd((double*)dst + 16, dr);
 }
 
-inline void _mm512_storeu_pd_color(void* dst, const __m512d b, const __m512d g, const __m512d r)
+STATIC_INLINE void _mm512_storeu_pd_color(void* dst, const __m512d b, const __m512d g, const __m512d r)
 {
 	__m512d db, dg, dr;
 	_mm512_cvtsoa2aos_pd(b, g, r, db, dg, dr);
@@ -3178,7 +3253,7 @@ inline void _mm512_storeu_pd_color(void* dst, const __m512d b, const __m512d g, 
 	_mm512_storeu_pd((double*)dst + 16, dr);
 }
 
-inline void _mm512_stream_pd_color(void* dst, const __m512d b, const __m512d g, const __m512d r)
+STATIC_INLINE void _mm512_stream_pd_color(void* dst, const __m512d b, const __m512d g, const __m512d r)
 {
 	__m512d db, dg, dr;
 	_mm512_cvtsoa2aos_pd(b, g, r, db, dg, dr);
@@ -3188,29 +3263,29 @@ inline void _mm512_stream_pd_color(void* dst, const __m512d b, const __m512d g, 
 	_mm512_stream_pd((double*)dst + 16, dr);
 }
 
-inline void _mm512_storeu_auto_color(float* dest, __m512 b, __m512 g, __m512 r)
+STATIC_INLINE void _mm512_storeu_auto_color(float* dest, __m512 b, __m512 g, __m512 r)
 {
 	_mm512_storeu_ps_color(dest, b, g, r);
 }
 
 
 
-inline void _mm512_store_auto_color(float* dest, __m512 b, __m512 g, __m512 r)
+STATIC_INLINE void _mm512_store_auto_color(float* dest, __m512 b, __m512 g, __m512 r)
 {
 	_mm512_store_ps_color(dest, b, g, r);
 }
 
-inline void _mm512_store_auto_color(uchar* dest, __m512i b, __m512i g, __m512i r)
+STATIC_INLINE void _mm512_store_auto_color(uchar* dest, __m512i b, __m512i g, __m512i r)
 {
 	_mm512_store_epi8_color(dest, b, g, r);
 }
 
-inline void _mm512_storeu_auto_color(uchar* dest, __m512i b, __m512i g, __m512i r)
+STATIC_INLINE void _mm512_storeu_auto_color(uchar* dest, __m512i b, __m512i g, __m512i r)
 {
 	_mm512_storeu_epi8_color(dest, b, g, r);
 }
 
-inline void _mm512_storeu_auto_color(uchar* dest, __m512 b, __m512 g, __m512 r)
+STATIC_INLINE void _mm512_storeu_auto_color(uchar* dest, __m512 b, __m512 g, __m512 r)
 {
 	__m512 dr, dg, db;
 	_mm512_cvtsoa2aos_ps(b, g, r, db, dg, dr);
@@ -3219,7 +3294,7 @@ inline void _mm512_storeu_auto_color(uchar* dest, __m512 b, __m512 g, __m512 r)
 	_mm_storeu_si128((__m128i*)(dest + 16), _mm512_cvtps_epu8(dr));
 }
 
-inline void _mm512_store_auto_color(uchar* dest, __m512 b, __m512 g, __m512 r)
+STATIC_INLINE void _mm512_store_auto_color(uchar* dest, __m512 b, __m512 g, __m512 r)
 {
 	__m512 dr, dg, db;
 	_mm512_cvtsoa2aos_ps(b, g, r, db, dg, dr);
@@ -3228,12 +3303,12 @@ inline void _mm512_store_auto_color(uchar* dest, __m512 b, __m512 g, __m512 r)
 	_mm_store_si128((__m128i*)(dest + 16), _mm512_cvtps_epu8(dr));
 }
 
-inline void _mm512_stream_auto_color(float* dest, __m512 b, __m512 g, __m512 r)
+STATIC_INLINE void _mm512_stream_auto_color(float* dest, __m512 b, __m512 g, __m512 r)
 {
 	_mm512_stream_ps_color(dest, b, g, r);
 }
 
-inline void _mm512_stream_auto_color(uchar* dest, __m512 b, __m512 g, __m512 r)
+STATIC_INLINE void _mm512_stream_auto_color(uchar* dest, __m512 b, __m512 g, __m512 r)
 {
 	__m512 dr, dg, db;
 	_mm512_cvtsoa2aos_ps(b, g, r, db, dg, dr);
@@ -3242,7 +3317,7 @@ inline void _mm512_stream_auto_color(uchar* dest, __m512 b, __m512 g, __m512 r)
 	_mm_stream_si128((__m128i*)(dest + 16), _mm512_cvtps_epu8(dr));
 }
 
-inline void _mm512_storescalar_auto_color(float* dest, __m512 b, __m512 g, __m512 r, const int numpixel)
+STATIC_INLINE void _mm512_storescalar_auto_color(float* dest, __m512 b, __m512 g, __m512 r, const int numpixel)
 {
 	__m512 dr, dg, db;
 	_mm512_cvtsoa2aos_ps(b, g, r, db, dg, dr);
@@ -3256,7 +3331,7 @@ inline void _mm512_storescalar_auto_color(float* dest, __m512 b, __m512 g, __m51
 }
 
 //rcp with newton-raphson 1-iteration
-inline __m512 _mm512_rcpnr_ps(__m512 x)
+STATIC_INLINE __m512 _mm512_rcpnr_ps(__m512 x)
 {
 	__m512 res = _mm512_rcp14_ps(x);
 	//rcp*(2-rcp*x)->(rcp+rcp)-rcp*rcp*x
@@ -3264,7 +3339,7 @@ inline __m512 _mm512_rcpnr_ps(__m512 x)
 }
 
 //rcp with newton-raphson 1-iteration (FMA ver) requided set2
-inline __m512 _mm512_rcpnr_fma_ps(__m512 x, __m512 two = _mm512_set1_ps(2.f))
+STATIC_INLINE __m512 _mm512_rcpnr_fma_ps(__m512 x, __m512 two = _mm512_set1_ps(2.f))
 {
 	__m512 rcp = _mm512_rcp14_ps(x);
 	//rcp*(2-rcp*x)
@@ -3272,7 +3347,7 @@ inline __m512 _mm512_rcpnr_fma_ps(__m512 x, __m512 two = _mm512_set1_ps(2.f))
 }
 
 
-inline void _mm512_transpose16_ps(__m512& s00, __m512& s01, __m512& s02, __m512& s03, __m512& s04, __m512& s05, __m512& s06, __m512& s07, __m512& s08, __m512& s09, __m512& s10, __m512& s11, __m512& s12, __m512& s13, __m512& s14, __m512& s15)
+STATIC_INLINE void _mm512_transpose16_ps(__m512& s00, __m512& s01, __m512& s02, __m512& s03, __m512& s04, __m512& s05, __m512& s06, __m512& s07, __m512& s08, __m512& s09, __m512& s10, __m512& s11, __m512& s12, __m512& s13, __m512& s14, __m512& s15)
 {
 	__m512i t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, ta, tb, tc, td, te, tf;
 	__m512i r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, ra, rb, rc, rd, re, rf;
@@ -3365,7 +3440,7 @@ inline void _mm512_transpose16_ps(__m512& s00, __m512& s01, __m512& s02, __m512&
 }
 
 //_mm512_setr_ps(v, v + step, v + 2.f * step, v + 3.f * step, v + 4.f * step, v + 5.f * step, v + 6.f * step, v + 7.f * step, v + 8.f * step, v + 9.f * step, v + 10.f * step, v + 11.f * step, v + 12.f * step, v + 13.f * step, v + 14.f * step, v + 15.f * step);
-inline __m512 _mm512_set_step_ps(float v, float step = 1.f)
+STATIC_INLINE __m512 _mm512_set_step_ps(float v, float step = 1.f)
 {
 	return _mm512_setr_ps(v, v + step, v + 2.f * step, v + 3.f * step, v + 4.f * step, v + 5.f * step, v + 6.f * step, v + 7.f * step, v + 8.f * step, v + 9.f * step, v + 10.f * step, v + 11.f * step, v + 12.f * step, v + 13.f * step, v + 14.f * step, v + 15.f * step);
 }

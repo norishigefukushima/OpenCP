@@ -1184,6 +1184,17 @@ FPPLUS_STATIC_INLINE __m256dd _mm256_mul_pdd(const __m256dd a, const __m256dd b)
 	return product;
 }
 
+FPPLUS_STATIC_INLINE __m256dd _mm256_divw_pdd(const __m256d a, const __m256d b)
+{
+	__m256d mz1 = _mm256_div_pd(a, b);
+	__m256d mz4;
+	__m256d mz3 = _mm256_twoproduct_pd(_mm256_mul_pd(_mm256_set1_pd(-1.0), mz1), b, &mz4);
+	__m256d mz2 = _mm256_div_pd(_mm256_add_pd(_mm256_add_pd(a, mz3), mz4), b);
+	//return __m256dd{ mz1, mz2 };
+	mz3 = _mm256_twosum_pd(mz1, mz2, &mz4);
+	return __m256dd{ mz3, mz4 };
+}
+
 FPPLUS_STATIC_INLINE __m256dd _mm256_div_pdd(const __m256dd a, const __m256dd b)
 {
 	__m256d mz1 = _mm256_div_pd(a.hi, b.hi);
@@ -1362,7 +1373,7 @@ FPPLUS_STATIC_INLINE doubledouble _mm512_reduce_add_pdd(const __m512dd x) {
 
 #endif /* Intel KNC or AVX-512 */
 
-inline void _mm256_addkahan_pdd(const __m256d a, __m256dd& b)
+static inline void _mm256_addkahan_pdd(const __m256d a, __m256dd& b)
 {
 	__m256d y = _mm256_sub_pd(a, b.lo);
 	__m256d t = _mm256_add_pd(b.hi, y);
@@ -1370,14 +1381,14 @@ inline void _mm256_addkahan_pdd(const __m256d a, __m256dd& b)
 	b.hi = t;
 }
 
-inline __m256dd _mm256_addkahan_pdd(const __m256d a, const __m256d bhi, const __m256d blo)
+static inline __m256dd _mm256_addkahan_pdd(const __m256d a, const __m256d bhi, const __m256d blo)
 {
 	__m256d y = _mm256_sub_pd(a, blo);
 	__m256d t = _mm256_add_pd(bhi, y);
 	return { t, _mm256_sub_pd(_mm256_sub_pd(t, bhi), y) };
 }
 
-inline void _mm256_fmakahan_pdd(const __m256d a, const __m256d x, __m256dd& b)
+static inline void _mm256_fmakahan_pdd(const __m256d a, const __m256d x, __m256dd& b)
 {
 	__m256d y = _mm256_fmsub_pd(a, x, b.lo);
 	__m256d t = _mm256_add_pd(b.hi, y);
@@ -1385,7 +1396,7 @@ inline void _mm256_fmakahan_pdd(const __m256d a, const __m256d x, __m256dd& b)
 	b.hi = t;
 }
 
-inline __m256dd _mm256_fmakahan_pdd(const __m256d a, const __m256d x, const __m256d bhi, const __m256d blo)
+static inline __m256dd _mm256_fmakahan_pdd(const __m256d a, const __m256d x, const __m256d bhi, const __m256d blo)
 {
 	__m256d y = _mm256_fmsub_pd(a, x, blo);
 	__m256d t = _mm256_add_pd(bhi, y);

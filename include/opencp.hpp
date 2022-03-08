@@ -147,7 +147,7 @@
 
 //one line fuinctions
 #include "onelineCVFunctions.hpp"
-
+#include "search1D.hpp"
 //template for new files
 /*
 
