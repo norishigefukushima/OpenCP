@@ -9,6 +9,8 @@ void testPlot()
 	{
 		Plot test;
 		test.setPlotTitle(0, "sin(x)");
+		test.setPlotTitle(1, "y=100");
+		test.setPlotTitle(2, "x=0.5");
 		test.setXLabel("x label");
 		test.setYLabel("y label");
 		test.setYRange(-1, 1);
@@ -17,9 +19,10 @@ void testPlot()
 		double scale = 0.95;
 		for (int i = 0; i < int(CV_PI * amp); i++)
 		{
-			test.push_back(i, scale*sin(CV_PI * i * 1.0 / amp));
+			test.push_back(i, scale * sin(CV_PI * i * 1.0 / amp));
 		}
-
+		test.push_back_HLine(0.5, 1);
+		test.push_back_VLine(100, 2);
 		test.plot("test1");
 	}
 

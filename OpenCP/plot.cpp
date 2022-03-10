@@ -237,7 +237,7 @@ namespace cp
 		}
 	}
 
-	void plotLine(OutputArray graphImage_, Point2d data, double xmin, double xmax, double ymin, double ymax,
+	void plotHLine(OutputArray graphImage_, Point2d data, double xmin, double xmax, double ymin, double ymax,
 		Scalar color, int lt, int isLine, int thickness, int pointSize, bool isLogX, bool isLogY)
 	{
 		CV_Assert(!graphImage_.empty());
@@ -264,17 +264,13 @@ namespace cp
 		double y = data.y;
 		if (isLogX) x = log10(max(1.0, x));
 		if (isLogY) y = log10(max(1.0, y));
-		cv::Point p = Point(0, H - cvRound(y_step * (y - ymin)));
-
+		
+		cv::Point point_st = Point(0, H - cvRound(y_step * (y - ymin)));
+		cv::Point point_ed = Point(graph.cols - 1, H - cvRound(y_step * (y - ymin)));
 		{
-			double xn = x;
-			double yn = y;
-
-			if (isLogX) xn = log10(max(1.0, xn));
-			if (isLogY) yn = log10(max(1.0, yn));
 			if (isLine == Plot::LINEAR)
 			{
-				line(graph, p, Point(graph.cols - 1, H - cvRound(y_step * (yn - ymin))), color, thickness);
+				line(graph, point_st, point_ed, color, thickness);
 			}
 		}
 
@@ -284,65 +280,174 @@ namespace cp
 		}
 		else if (lt == Plot::PLUS)
 		{
-			drawPlus(graph, p, 2 * ps + 1, color, thickness);
+			drawPlus(graph, point_st, 2 * ps + 1, color, thickness);
 		}
 		else if (lt == Plot::TIMES)
 		{
-			drawTimes(graph, p, 2 * ps + 1, color, thickness);
+			drawTimes(graph, point_st, 2 * ps + 1, color, thickness);
 		}
 		else if (lt == Plot::ASTERISK)
 		{
-			drawAsterisk(graph, p, 2 * ps + 1, color, thickness);
+			drawAsterisk(graph, point_st, 2 * ps + 1, color, thickness);
 		}
 		else if (lt == Plot::CIRCLE)
 		{
-			circle(graph, p, ps, color, thickness);
+			circle(graph, point_st, ps, color, thickness);
 		}
 		else if (lt == Plot::RECTANGLE)
 		{
-			rectangle(graph, Point(p.x - ps, p.y - ps), Point(p.x + ps, p.y + ps),
+			rectangle(graph, Point(point_st.x - ps, point_st.y - ps), Point(point_st.x + ps, point_st.y + ps),
 				color, thickness);
 		}
 		else if (lt == Plot::CIRCLE_FILL)
 		{
-			circle(graph, p, ps, color, FILLED);
+			circle(graph, point_st, ps, color, FILLED);
 		}
 		else if (lt == Plot::RECTANGLE_FILL)
 		{
-			rectangle(graph, Point(p.x - ps, p.y - ps), Point(p.x + ps, p.y + ps),
+			rectangle(graph, Point(point_st.x - ps, point_st.y - ps), Point(point_st.x + ps, point_st.y + ps),
 				color, FILLED);
 		}
 		else if (lt == Plot::TRIANGLE)
 		{
-			triangle(graph, p, 2 * ps, color, thickness);
+			triangle(graph, point_st, 2 * ps, color, thickness);
 		}
 		else if (lt == Plot::TRIANGLE_FILL)
 		{
-			triangle(graph, p, 2 * ps, color, FILLED);
+			triangle(graph, point_st, 2 * ps, color, FILLED);
 		}
 		else if (lt == Plot::TRIANGLE_INV)
 		{
-			triangleinv(graph, p, 2 * ps, color, thickness);
+			triangleinv(graph, point_st, 2 * ps, color, thickness);
 		}
 		else if (lt == Plot::TRIANGLE_INV_FILL)
 		{
-			triangleinv(graph, p, 2 * ps, color, FILLED);
+			triangleinv(graph, point_st, 2 * ps, color, FILLED);
 		}
 		else if (lt == Plot::DIAMOND)
 		{
-			diamond(graph, p, 2 * ps, color, thickness);
+			diamond(graph, point_st, 2 * ps, color, thickness);
 		}
 		else if (lt == Plot::DIAMOND_FILL)
 		{
-			diamond(graph, p, 2 * ps, color, FILLED);
+			diamond(graph, point_st, 2 * ps, color, FILLED);
 		}
 		else if (lt == Plot::PENTAGON)
 		{
-			pentagon(graph, p, 2 * ps, color, thickness);
+			pentagon(graph, point_st, 2 * ps, color, thickness);
 		}
 		else if (lt == Plot::PENTAGON_FILL)
 		{
-			pentagon(graph, p, 2 * ps, color, FILLED);
+			pentagon(graph, point_st, 2 * ps, color, FILLED);
+		}
+	}
+
+	void plotVLine(OutputArray graphImage_, Point2d data, double xmin, double xmax, double ymin, double ymax,
+		Scalar color, int lt, int isLine, int thickness, int pointSize, bool isLogX, bool isLogY)
+	{
+		CV_Assert(!graphImage_.empty());
+		const int ps = pointSize;
+
+		Mat graph = graphImage_.getMat();
+		if (isLogX)
+		{
+			xmax = log10(max(1.0, xmax));
+			xmin = log10(max(1.0, xmin));
+		}
+		if (isLogY)
+		{
+			ymax = log10(max(1.0, ymax));
+			ymin = log10(max(1.0, ymin));
+		}
+		//cout << xmin << "," << xmax << endl;
+		const double x_step = (double)(graph.cols - 1) / (xmax - xmin);
+		const double y_step = (double)(graph.rows - 1) / (ymax - ymin);
+
+		int H = graph.rows - 1;
+
+		double x = data.x;
+		double y = data.y;
+		if (isLogX) x = log10(max(1.0, x));
+		if (isLogY) y = log10(max(1.0, y));
+
+		double xn = x;
+		double yn = y;
+		if (isLogX) xn = log10(max(1.0, xn));
+		if (isLogY) yn = log10(max(1.0, yn));
+		cv::Point point_st = Point(cvRound(x_step * (xn - xmin)), 0);
+		cv::Point point_ed = Point(cvRound(x_step * (xn - xmin)), graph.cols - 1);
+		{
+			if (isLine == Plot::LINEAR)
+			{
+				line(graph, point_st, point_ed, color, thickness);
+			}
+		}
+
+		if (lt == Plot::NOPOINT)
+		{
+			;
+		}
+		else if (lt == Plot::PLUS)
+		{
+			drawPlus(graph, point_st, 2 * ps + 1, color, thickness);
+		}
+		else if (lt == Plot::TIMES)
+		{
+			drawTimes(graph, point_st, 2 * ps + 1, color, thickness);
+		}
+		else if (lt == Plot::ASTERISK)
+		{
+			drawAsterisk(graph, point_st, 2 * ps + 1, color, thickness);
+		}
+		else if (lt == Plot::CIRCLE)
+		{
+			circle(graph, point_st, ps, color, thickness);
+		}
+		else if (lt == Plot::RECTANGLE)
+		{
+			rectangle(graph, Point(point_st.x - ps, point_st.y - ps), Point(point_st.x + ps, point_st.y + ps),
+				color, thickness);
+		}
+		else if (lt == Plot::CIRCLE_FILL)
+		{
+			circle(graph, point_st, ps, color, FILLED);
+		}
+		else if (lt == Plot::RECTANGLE_FILL)
+		{
+			rectangle(graph, Point(point_st.x - ps, point_st.y - ps), Point(point_st.x + ps, point_st.y + ps),
+				color, FILLED);
+		}
+		else if (lt == Plot::TRIANGLE)
+		{
+			triangle(graph, point_st, 2 * ps, color, thickness);
+		}
+		else if (lt == Plot::TRIANGLE_FILL)
+		{
+			triangle(graph, point_st, 2 * ps, color, FILLED);
+		}
+		else if (lt == Plot::TRIANGLE_INV)
+		{
+			triangleinv(graph, point_st, 2 * ps, color, thickness);
+		}
+		else if (lt == Plot::TRIANGLE_INV_FILL)
+		{
+			triangleinv(graph, point_st, 2 * ps, color, FILLED);
+		}
+		else if (lt == Plot::DIAMOND)
+		{
+			diamond(graph, point_st, 2 * ps, color, thickness);
+		}
+		else if (lt == Plot::DIAMOND_FILL)
+		{
+			diamond(graph, point_st, 2 * ps, color, FILLED);
+		}
+		else if (lt == Plot::PENTAGON)
+		{
+			pentagon(graph, point_st, 2 * ps, color, thickness);
+		}
+		else if (lt == Plot::PENTAGON_FILL)
+		{
+			pentagon(graph, point_st, 2 * ps, color, FILLED);
 		}
 	}
 
@@ -424,6 +529,7 @@ namespace cp
 			pinfo[i].color = c[i % c.size()];
 
 			pinfo[i].title = format("data %02d", i);
+			pinfo[i].parametricLine = 0;
 		}
 
 		setPlotProfile(false, true, false);
@@ -447,11 +553,11 @@ namespace cp
 		xmax_data = -DBL_MAX;
 		xmin_data = DBL_MAX;
 
-		ymaxpt.resize(data_max);
-		yminpt.resize(data_max);
+		ymaxpt.resize(data_labelmax);
+		yminpt.resize(data_labelmax);
 		double y_max_val = -DBL_MAX;
 		double y_min_val = DBL_MAX;
-		for (int i = 0; i < data_max; i++)
+		for (int i = 0; i < data_labelmax; i++)
 		{
 			for (int j = 0; j < pinfo[i].data.size(); j++)
 			{
@@ -724,15 +830,29 @@ namespace cp
 	}
 
 
+	void Plot::push_back_HLine(double y, int plotIndex)
+	{
+		data_labelmax = max(data_labelmax, plotIndex + 1);
+		pinfo[plotIndex].data.push_back(Point2d(0, y));
+		pinfo[plotIndex].parametricLine = 1;
+	}
+
+	void Plot::push_back_VLine(double x, int plotIndex)
+	{
+		data_labelmax = max(data_labelmax, plotIndex + 1);
+		pinfo[plotIndex].data.push_back(Point2d(x, 0));
+		pinfo[plotIndex].parametricLine = 2;
+	}
+
 	void Plot::push_back(double x, double y, int plotIndex)
 	{
-		data_max = max(data_max, plotIndex + 1);
+		data_labelmax = max(data_labelmax, plotIndex + 1);
 		pinfo[plotIndex].data.push_back(Point2d(x, y));
 	}
 
 	void Plot::push_back(std::vector<float>& x, std::vector<float>& y, int plotIndex)
 	{
-		data_max = max(data_max, plotIndex + 1);
+		data_labelmax = max(data_labelmax, plotIndex + 1);
 		for (int i = 0; i < (int)x.size(); i++)
 		{
 			push_back(x[i], y[i], plotIndex);
@@ -741,7 +861,7 @@ namespace cp
 
 	void Plot::push_back(std::vector<double>& x, std::vector<double>& y, int plotIndex)
 	{
-		data_max = max(data_max, plotIndex + 1);
+		data_labelmax = max(data_labelmax, plotIndex + 1);
 		for (int i = 0; i < (int)x.size(); i++)
 		{
 			push_back(x[i], y[i], plotIndex);
@@ -750,7 +870,7 @@ namespace cp
 
 	void Plot::push_back(vector<cv::Point> point, int plotIndex)
 	{
-		data_max = max(data_max, plotIndex + 1);
+		data_labelmax = max(data_labelmax, plotIndex + 1);
 		for (int i = 0; i < (int)point.size(); i++)
 		{
 			push_back(point[i].x, point[i].y, plotIndex);
@@ -759,7 +879,7 @@ namespace cp
 
 	void Plot::push_back(vector<cv::Point2d> point, int plotIndex)
 	{
-		data_max = max(data_max, plotIndex + 1);
+		data_labelmax = max(data_labelmax, plotIndex + 1);
 		for (int i = 0; i < (int)point.size() - 1; i++)
 		{
 			push_back(point[i].x, point[i].y, plotIndex);
@@ -790,7 +910,7 @@ namespace cp
 	{
 		if (datanum < 0)
 		{
-			for (int i = 0; i < data_max; i++)
+			for (int i = 0; i < data_labelmax; i++)
 				pinfo[i].data.clear();
 
 		}
@@ -1081,14 +1201,16 @@ namespace cp
 
 		if (foregroundIndex == 0)
 		{
-			for (int i = 0; i < data_max; i++)
+			for (int i = 0; i < data_labelmax; i++)
 			{
-				plotGraph(plotImage, pinfo[i].data, xmin_plotwindow, xmax_plotwindow, ymin_plotwindow, ymax_plotwindow, pinfo[i].color, pinfo[i].symbolType, pinfo[i].lineType, pinfo[i].lineWidth, symbolSize, isLogScaleX, isLogScaleY);
+				if (pinfo[i].parametricLine == 0) plotGraph(plotImage, pinfo[i].data, xmin_plotwindow, xmax_plotwindow, ymin_plotwindow, ymax_plotwindow, pinfo[i].color, pinfo[i].symbolType, pinfo[i].lineType, pinfo[i].lineWidth, symbolSize, isLogScaleX, isLogScaleY);
+				else if (pinfo[i].parametricLine == 1)plotHLine(plotImage, pinfo[i].data[0], xmin_plotwindow, xmax_plotwindow, ymin_plotwindow, ymax_plotwindow, pinfo[i].color, pinfo[i].symbolType, pinfo[i].lineType, pinfo[i].lineWidth, symbolSize, isLogScaleX, isLogScaleY);
+				else if (pinfo[i].parametricLine == 2)plotVLine(plotImage, pinfo[i].data[0], xmin_plotwindow, xmax_plotwindow, ymin_plotwindow, ymax_plotwindow, pinfo[i].color, pinfo[i].symbolType, pinfo[i].lineType, pinfo[i].lineWidth, symbolSize, isLogScaleX, isLogScaleY);
 			}
 		}
 		else
 		{
-			for (int i = 0; i < data_max; i++)
+			for (int i = 0; i < data_labelmax; i++)
 			{
 				if (i + 1 != foregroundIndex)
 				{
@@ -1150,14 +1272,14 @@ namespace cp
 		FILE* fp = fopen(name.c_str(), "w");
 
 		int dmax = (int)pinfo[0].data.size();
-		for (int i = 1; i < data_max; i++)
+		for (int i = 1; i < data_labelmax; i++)
 		{
 			dmax = max((int)pinfo[i].data.size(), dmax);
 		}
 
 		for (int n = 0; n < dmax; n++)
 		{
-			for (int i = 0; i < data_max; i++)
+			for (int i = 0; i < data_labelmax; i++)
 			{
 				if (n < pinfo[i].data.size())
 				{
@@ -1179,7 +1301,7 @@ namespace cp
 			fprintf(fp, "\n");
 		}
 		if (isPrint)cout << "p ";
-		for (int i = 0; i < data_max; i++)
+		for (int i = 0; i < data_labelmax; i++)
 		{
 			if (isPrint) cout << "'" << name << "'" << " u " << 2 * i + 1 << ":" << 2 * i + 2 << " w lp" << "lt " << i + 1 << " t \"" << pinfo[i].title << "\",";
 		}
@@ -1251,7 +1373,7 @@ namespace cp
 
 		setMouseCallback(wname, (MouseCallback)guiPreviewMousePlot, (void*)&pt);
 
-		generateKeyImage(data_max);
+		generateKeyImage(data_labelmax);
 
 		computeDataMaxMin();
 
@@ -1433,10 +1555,10 @@ namespace cp
 				gplot.setXLabel(xlabel);
 				gplot.setYLabel(ylabel);
 				gplot.setKey(KEY(keyPosition));
-				for (int i = 0; i < data_max; i++)
+				for (int i = 0; i < data_labelmax; i++)
 				{
 					char name[128];
-					if (i != data_max - 1)
+					if (i != data_labelmax - 1)
 						sprintf(name, "'plot' u %d:%d w lp ps 0.5 lt %d t \"%s\",", 2 * i + 1, 2 * i + 2, i + 1, pinfo[i].title.c_str());
 					else
 						sprintf(name, "'plot' u %d:%d w lp ps 0.5 lt %d t \"%s\"", 2 * i + 1, 2 * i + 2, i + 1, pinfo[i].title.c_str());

@@ -20,6 +20,7 @@ namespace cp
 			int lineWidth;
 
 			std::string title;
+			int parametricLine;//0: default, 1: horizontal line, 2: vertical line
 		};
 		std::vector<PlotInfo> pinfo;
 		std::vector<cv::Point2d> ymaxpt;
@@ -28,7 +29,7 @@ namespace cp
 		std::string xlabel = "x";
 		std::string ylabel = "y";
 
-		int data_max = 1;
+		int data_labelmax = 1;
 
 		cv::Scalar background_color = COLOR_WHITE;
 		int gridLevel = 0;
@@ -220,6 +221,8 @@ namespace cp
 		void push_back(std::vector<cv::Point> point, int plotIndex = 0);
 		void push_back(std::vector<cv::Point2d> point, int plotIndex = 0);
 		void push_back(double x, double y, int plotIndex = 0);
+		void push_back_HLine(double y, int plotIndex);
+		void push_back_VLine(double x, int plotIndex);
 
 		void erase(int sampleIndex, int plotIndex = 0);
 		void insert(cv::Point2d v, int sampleIndex, int plotIndex = 0);
