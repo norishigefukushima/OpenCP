@@ -398,7 +398,7 @@ __m256d _mm256_twonsum_pd(
 	const __m256d a_roundoff = _mm256_sub_pd(a, a_virtual);
 	*e = _mm256_sub_pd(a_roundoff, b_roundoff);
 #else
-	* e = _mm256_addre_pd(a, b);
+	*e = _mm256_addre_pd(a, b);
 #endif
 	return x;
 }
