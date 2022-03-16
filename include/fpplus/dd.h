@@ -1165,13 +1165,19 @@ FPPLUS_STATIC_INLINE __m256dd _mm256_mulw_pdd(const __m256dd a, const __m256d b)
 {
 	__m256dd product;
 	product.hi = _mm256_twoproduct_pd(a.hi, b, &product.lo);
-
-#if defined(__FMA__) || defined(__AVX2__)
 	product.lo = _mm256_fmadd_pd(a.lo, b, product.lo);
-#else
-	product.lo = _mm256_macc_pd(a.lo, b.hi, product.lo);
-	product.lo = _mm256_macc_pd(a.hi, b.lo, product.lo);
-#endif
+
+	//product.hi = _mm256_twosumfast_pd(product.hi, product.lo, &product.lo);
+	product.hi = _mm256_twosum_pd(product.hi, product.lo, &product.lo);
+	return product;
+}
+
+FPPLUS_STATIC_INLINE __m256dd _mm256_mulw_pdd(const __m256d a, const __m256dd b)
+{
+	__m256dd product;
+	product.hi = _mm256_twoproduct_pd(a, b.hi, &product.lo);
+	product.lo = _mm256_fmadd_pd(a, b.lo, product.lo);
+
 	//product.hi = _mm256_twosumfast_pd(product.hi, product.lo, &product.lo);
 	product.hi = _mm256_twosum_pd(product.hi, product.lo, &product.lo);
 	return product;
