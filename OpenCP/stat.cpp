@@ -17,7 +17,8 @@ namespace cp
 	{
 		if (getSize() == 0)return 0.0;
 		double minv = DBL_MAX;
-		for (int i = 0; i < getSize(); i++)
+		const int size = getSize();
+		for (int i = 0; i < size; i++)
 		{
 			minv = min(minv, data[i]);
 		}
@@ -28,7 +29,8 @@ namespace cp
 	{
 		if (getSize() == 0)return 0.0;
 		double maxv = DBL_MIN;
-		for (int i = 0; i < getSize(); i++)
+		const int size = getSize();
+		for (int i = 0; i < size; i++)
 		{
 			maxv = max(maxv, data[i]);
 		}
@@ -39,7 +41,8 @@ namespace cp
 	{
 		if (getSize() == 0)return 0.0;
 		double sum = 0.0;
-		for (int i = 0; i < getSize(); i++)
+		const int size = getSize();
+		for (int i = 0; i < size; i++)
 		{
 			sum += data[i];
 		}
@@ -74,12 +77,7 @@ namespace cp
 	{
 		if (getSize() == 0)return 0.0;
 		vector<double> v;
-		vector<double> s;
-		for (int i = 0; i < data.size(); i++)
-		{
-			s.push_back(data[i]);
-		}
-		cv::sort(s, v, cv::SORT_ASCENDING);
+		cv::sort(data, v, cv::SORT_ASCENDING);
 		return v[getSize() / 2];
 	}
 
