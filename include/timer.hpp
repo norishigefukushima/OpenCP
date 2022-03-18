@@ -87,10 +87,15 @@ namespace cp
 
 		void setCountMax(const int value);//set ring buffer max (loop value max) for Stat. Default is infinity.
 		void setIgnoringThreshold(const int value);//if(sample number < value) does not push the value into Stat for ignure cache 
+		void pushLapTime();//push the value to Stat
 		double getTime(bool isPrint = false, std::string message = "");//only getTickCount()
 		double getpushLapTime(bool isPrint = false, std::string message = "");//getTickCount() and push the value to Stat
-		double getLapTimeMedian(bool isPrint = false, std::string message = "");//get median value from Stat
+		
 		double getLapTimeMean(bool isPrint = false, std::string message = "");//get mean value from Stat
+		double getLapTimeMedian(bool isPrint = false, std::string message = "");//get median value from Stat
+		double getLapTimeMin(bool isPrint = false, std::string message = "");//get min value from Stat
+		double getLapTimeMax(bool isPrint = false, std::string message = "");//get max value from Stat
+
 		std::string getUnit();//return string unit
 		int getStatSize();//get the size of Stat
 		void drawDistribution(std::string wname = "Stat distribution", int div = 100);

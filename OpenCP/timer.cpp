@@ -111,6 +111,32 @@ namespace cp
 		}
 	}
 
+	void Timer::pushLapTime()
+	{
+		const double time = (getTickCount() - pre) / (getTickFrequency());
+		countIndex++;
+		if (countIndex >= countIgnoringThreshold)
+		{
+			if (countMax == 0)
+			{
+				stat.push_back(time);
+			}
+			else
+			{
+				if (stat.getSize() < countMax)
+				{
+					stat.push_back(time);
+				}
+				else
+				{
+					countIndex = countIndex % countMax;
+					stat.data[countIndex] = time;
+				}
+			}
+		}
+		start();
+	}
+
 	double Timer::getTime(bool isPrint, std::string message)
 	{
 		cTime = (getTickCount() - pre) / (getTickFrequency());
@@ -149,6 +175,13 @@ namespace cp
 		return cTime;
 	}
 
+	double Timer::getLapTimeMean(bool isPrint, string message)
+	{
+		cTime = stat.getMean();
+		convertTime(isPrint, message);
+		return cTime;
+	}
+
 	double Timer::getLapTimeMedian(bool isPrint, string message)
 	{
 		cTime = stat.getMedian();
@@ -156,9 +189,16 @@ namespace cp
 		return cTime;
 	}
 
-	double Timer::getLapTimeMean(bool isPrint, string message)
+	double Timer::getLapTimeMin(bool isPrint, string message)
 	{
-		cTime = stat.getMean();
+		cTime = stat.getMin();
+		convertTime(isPrint, message);
+		return cTime;
+	}
+
+	double Timer::getLapTimeMax(bool isPrint, string message)
+	{
+		cTime = stat.getMax();
 		convertTime(isPrint, message);
 		return cTime;
 	}
