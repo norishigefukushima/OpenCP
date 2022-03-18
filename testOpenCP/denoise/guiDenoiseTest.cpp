@@ -4,7 +4,7 @@ using namespace std;
 using namespace cv;
 using namespace cp;
 
-static enum class DENOISE_METHOD
+enum class DENOISE_METHOD
 {
 	BILATERAL,
 	GUIDED,
