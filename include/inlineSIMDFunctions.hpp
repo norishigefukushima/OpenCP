@@ -121,6 +121,54 @@ STATIC_INLINE __m256d get_simd_residualmask_pd(const int width)
 #pragma endregion
 
 #pragma region transpose
+static inline __m128i _mm_movehl_si128(const __m128i& xmm0)
+{
+	return _mm_castps_si128(_mm_movehl_ps(_mm_castsi128_ps(xmm0),
+		_mm_castsi128_ps(xmm0)));
+}
+//8 in 8 out
+STATIC_INLINE void _mm_transpose8_epi8(__m128i& s0, __m128i& s1, __m128i& s2, __m128i& s3, __m128i& s4, __m128i& s5, __m128i& s6, __m128i& s7)
+{
+	s0 = _mm_unpacklo_epi8(s0, s1);
+	s1 = _mm_unpacklo_epi8(s2, s3);
+	s2 = _mm_unpacklo_epi8(s4, s5);
+	s3 = _mm_unpacklo_epi8(s6, s7);
+
+	s4 = _mm_unpacklo_epi16(s0, s1);
+	s5 = _mm_unpackhi_epi16(s0, s1);
+	s6 = _mm_unpacklo_epi16(s2, s3);
+	s7 = _mm_unpackhi_epi16(s2, s3);
+
+	s0 = _mm_unpacklo_epi32(s4, s6);
+	s1 = _mm_movehl_si128(s0);
+	s2 = _mm_unpackhi_epi32(s4, s6);
+	s3 = _mm_movehl_si128(s2);
+	s4 = _mm_unpacklo_epi32(s5, s7);
+	s6 = s5;
+	s5 = _mm_movehl_si128(s4);
+	s6 = _mm_unpackhi_epi32(s6, s7);
+	s7 = _mm_movehl_si128(s6);
+}
+
+//x in 4 out(s0, s1, s2, s3)
+STATIC_INLINE void _mm_transpose84_epi8(__m128i& s0, __m128i& s1, __m128i& s2, __m128i& s3, __m128i& s4, __m128i& s5, __m128i& s6, __m128i& s7)
+{
+	s0 = _mm_unpacklo_epi8(s0, s1);
+	s1 = _mm_unpacklo_epi8(s2, s3);
+	s2 = _mm_unpacklo_epi8(s4, s5);
+	s3 = _mm_unpacklo_epi8(s6, s7);
+
+	s4 = _mm_unpacklo_epi16(s0, s1);
+	s5 = _mm_unpackhi_epi16(s0, s1);
+	s6 = _mm_unpacklo_epi16(s2, s3);
+	s7 = _mm_unpackhi_epi16(s2, s3);
+
+	s0 = _mm_unpacklo_epi32(s4, s6);
+	s1 = _mm_unpackhi_epi32(s4, s6);
+	s2 = _mm_unpacklo_epi32(s5, s7);
+	s3 = _mm_unpackhi_epi32(s5, s7);
+}
+
 STATIC_INLINE void _mm_transposel_epi8(__m128i& s0, __m128i& s1, __m128i& s2, __m128i& s3, __m128i& s4, __m128i& s5, __m128i& s6, __m128i& s7)
 {
 	__m128i t[8];
@@ -1843,6 +1891,17 @@ STATIC_INLINE __m256 _mm256_ssd_ps(__m256 src0, __m256 src1, __m256 src2, __m256
 	return ret;
 }
 
+STATIC_INLINE __m256 _mm256_ssdepi32_ps(__m256i src0, __m256i src1, __m256i src2, __m256i ref0, __m256i ref1, __m256i ref2)
+{
+	__m256 diff = _mm256_cvtepi32_ps(_mm256_sub_epi32(src0, ref0));
+	__m256 ret = _mm256_mul_ps(diff, diff);
+	diff = _mm256_cvtepi32_ps(_mm256_sub_epi32(src1, ref1));
+	ret = _mm256_fmadd_ps(diff, diff, ret);
+	diff = _mm256_cvtepi32_ps(_mm256_sub_epi32(src2, ref2));
+	ret = _mm256_fmadd_ps(diff, diff, ret);
+	return ret;
+}
+
 //return offset + ssd
 STATIC_INLINE __m256 _mm256_ssdadd_ps(__m256 offset, __m256 src, __m256 ref)
 {
@@ -1859,6 +1918,15 @@ STATIC_INLINE __m256 _mm256_ssdadd_ps(__m256 offset, __m256 src0, __m256 src1, _
 	ret = _mm256_fmadd_ps(diff, diff, ret);
 	diff = _mm256_sub_ps(src2, ref2);
 	ret = _mm256_fmadd_ps(diff, diff, ret);
+	return ret;
+}
+
+//(s0-r0)^2+(s1-r1)^2+(s2-r2)^2
+STATIC_INLINE __m256 _mm256_quadrance_ps(__m256 src0, __m256 src1, __m256 src2)
+{
+	__m256 ret = _mm256_mul_ps(src0, src0);
+	ret = _mm256_fmadd_ps(src1, src1, ret);
+	ret = _mm256_fmadd_ps(src2, src2, ret);
 	return ret;
 }
 
