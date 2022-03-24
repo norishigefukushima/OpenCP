@@ -28,7 +28,7 @@ namespace cp
 	double Stat::getMax()
 	{
 		if (getSize() == 0)return 0.0;
-		double maxv = DBL_MIN;
+		double maxv = -DBL_MAX;
 		const int size = getSize();
 		for (int i = 0; i < size; i++)
 		{
@@ -203,12 +203,23 @@ namespace cp
 	void Stat::drawPlofilePlot(string wname)
 	{
 		cp::Plot pt;
-		pt.setKey(cp::Plot::NOKEY);
+		pt.setIsDrawMousePosition(false);
+		pt.setPlotTitle(0, "plofile");
+		//pt.setKey(cp::Plot::NOKEY);
 		pt.setPlotSymbolALL(0);
+		double maxv = -DBL_MAX;
+		double minv = DBL_MAX;
 		for (int i = 0; i < getSize(); i++)
 		{
-			pt.push_back(i, data[i]);
+			double v = data[i];
+			maxv = max(maxv, v);
+			minv = min(minv, v);
+			pt.push_back(i, v);
 		}
+		pt.push_back_HLine(maxv, 1);
+		pt.push_back_HLine(minv, 2);
+		pt.setPlotTitle(1, "max " + to_string(maxv));
+		pt.setPlotTitle(2, "min " + to_string(minv));
 		pt.plot(wname, false);
 	}
 
