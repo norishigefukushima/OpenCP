@@ -24,11 +24,11 @@ namespace cp
 		{
 			for (int j = -radiusw; j <= radiusw; j++)
 			{
-				double r = std::sqrt((double)i*i + (double)j*j);
+				double r = std::sqrt((double)i * i + (double)j * j);
 				if (r > radiusw)
 					continue;
 
-				space_ofs_before[maxk++] = (int)(i*sim.cols + j);
+				space_ofs_before[maxk++] = (int)(i * sim.cols + j);
 			}
 		}
 		const int steps = sim.cols;
@@ -39,7 +39,7 @@ namespace cp
 
 		srcType* dst = dest.ptr<srcType>(0);
 
-		srcType th2 = threshold*threshold;
+		srcType th2 = threshold * threshold;
 		for (int i = 0; i < src.rows; i++)
 		{
 			for (int j = 0; j < src.cols; j++)
@@ -55,7 +55,7 @@ namespace cp
 						if (sptr[j + space_ofs_before[k]] == 0) continue;
 
 						const srcType valj = jptr[j + space_ofs_before[k]];
-						int ab = (int)((valj - val0j)*(valj - val0j));
+						int ab = (int)((valj - val0j) * (valj - val0j));
 						if (ab < minv)
 						{
 							minv = ab;
@@ -215,7 +215,7 @@ namespace cp
 			}
 			else if (src.depth() == CV_64F)
 			{
-				fillOcclusionInv_ <double> (src, (double)invalidvalue, 0.f);
+				fillOcclusionInv_ <double>(src, (double)invalidvalue, 0.f);
 			}
 		}
 		else
@@ -644,15 +644,15 @@ namespace cp
 			short* d = dst.ptr<short>(bb);
 			short* s = src.ptr<short>(bb - 1);
 
-			for (j = bb; j<src.rows - bb - 1; j++)
+			for (j = bb; j < src.rows - bb - 1; j++)
 			{
 				int i;
-				for (i = 0; i<src.cols; i++)
+				for (i = 0; i < src.cols; i++)
 				{
 					if (abs(s[i] - s[step2 + i]) <= t2)
 					{
 						short v = (s[i] + s[step2 + i]) >> 1;
-						if (abs(v - d[i])>t2)
+						if (abs(v - d[i]) > t2)
 						{
 							d[i] = v;
 							d[i + istep] = v;
@@ -661,7 +661,7 @@ namespace cp
 					if (abs(s[i] - s[step + i]) <= t2)
 					{
 						short v = (s[i] + s[step + i]) >> 1;
-						if (abs(v - d[i])>t2)
+						if (abs(v - d[i]) > t2)
 							d[i] = v;
 					}
 				}
@@ -675,15 +675,15 @@ namespace cp
 			ushort* d = dst.ptr<ushort>(bb);
 			ushort* s = src.ptr<ushort>(bb - 1);
 
-			for (j = bb; j<src.rows - bb - 1; j++)
+			for (j = bb; j < src.rows - bb - 1; j++)
 			{
 				int i;
-				for (i = 0; i<src.cols; i++)
+				for (i = 0; i < src.cols; i++)
 				{
 					if (abs(s[i] - s[step2 + i]) <= t2)
 					{
 						ushort v = (s[i] + s[step2 + i]) >> 1;
-						if (abs(v - d[i])>t2)
+						if (abs(v - d[i]) > t2)
 						{
 							d[i] = v;
 							d[i + istep] = v;
@@ -692,7 +692,7 @@ namespace cp
 					if (abs(s[i] - s[step + i]) <= t2)
 					{
 						ushort v = (s[i] + s[step + i]) >> 1;
-						if (abs(v - d[i])>t2)
+						if (abs(v - d[i]) > t2)
 							d[i] = v;
 					}
 				}
@@ -735,15 +735,15 @@ namespace cp
 			short* d = dst.ptr<short>(0); d++;
 			short* s = src.ptr<short>(0);
 
-			for (j = 0; j<src.rows; j++)
+			for (j = 0; j < src.rows; j++)
 			{
 				int i;
-				for (i = 2; i<src.cols - 2; i++)
+				for (i = 2; i < src.cols - 2; i++)
 				{
 					if (abs(s[i] - s[3 + i]) <= t2)
 					{
 						short v = (s[i] + s[3 + i]) >> 1;
-						if (abs(v - d[i])>t2)
+						if (abs(v - d[i]) > t2)
 						{
 							d[i] = v;
 							d[i + 1] = v;
@@ -752,7 +752,7 @@ namespace cp
 					if (abs(s[i] - s[2 + i]) <= t2)
 					{
 						short v = (s[i] + s[2 + i]) >> 1;
-						if (abs(v - d[i])>t2)
+						if (abs(v - d[i]) > t2)
 							d[i] = v;
 					}
 				}
@@ -766,15 +766,15 @@ namespace cp
 			ushort* d = dst.ptr<ushort>(0); d++;
 			ushort* s = src.ptr<ushort>(0);
 
-			for (j = 0; j<src.rows; j++)
+			for (j = 0; j < src.rows; j++)
 			{
 				int i;
-				for (i = 2; i<src.cols - 2; i++)
+				for (i = 2; i < src.cols - 2; i++)
 				{
 					if (abs(s[i] - s[3 + i]) <= t2)
 					{
 						ushort v = (s[i] + s[3 + i]) >> 1;
-						if (abs(v - d[i])>t2)
+						if (abs(v - d[i]) > t2)
 						{
 							d[i] = v;
 							d[i + 1] = v;
@@ -783,7 +783,7 @@ namespace cp
 					if (abs(s[i] - s[2 + i]) <= t2)
 					{
 						ushort v = (s[i] + s[2 + i]) >> 1;
-						if (abs(v - d[i])>t2)
+						if (abs(v - d[i]) > t2)
 							d[i] = v;
 					}
 				}
@@ -810,7 +810,7 @@ namespace cp
 		{
 			if (mode == LR_CHECK_DISPARITY_BOTH)
 			{
-				for (int j = 0; j<left_disp.rows; j++)
+				for (int j = 0; j < left_disp.rows; j++)
 				{
 					for (int i = disparity_max; i < left_disp.cols - disparity_max; i++)
 					{
@@ -818,7 +818,7 @@ namespace cp
 						int move = (int)(d);
 						if (i - move > 0)
 						{
-							if (abs(rd[i - move] - d)>disp12diff)
+							if (abs(rd[i - move] - d) > disp12diff)
 							{
 								//drd[i-move]=invalidvalue;
 								dld[i] = invalidvalue;
@@ -827,9 +827,9 @@ namespace cp
 
 						d = rd[i];
 						move = (int)(d);
-						if (i + move<left_disp.cols)
+						if (i + move < left_disp.cols)
 						{
-							if (abs(ld[i + move] - d)>disp12diff)
+							if (abs(ld[i + move] - d) > disp12diff)
 							{
 								//dld[i+move]=invalidvalue;
 								drd[i] = invalidvalue;
@@ -844,7 +844,7 @@ namespace cp
 			}
 			else if (mode == LR_CHECK_DISPARITY_ONLY_L)
 			{
-				for (int j = 0; j<left_disp.rows; j++)
+				for (int j = 0; j < left_disp.rows; j++)
 				{
 					for (int i = disparity_max; i < left_disp.cols - disparity_max; i++)
 					{
@@ -852,7 +852,7 @@ namespace cp
 						const int move = (int)(d);
 						if (i - move > 0)
 						{
-							if (abs(rd[i - move] - d)>disp12diff)
+							if (abs(rd[i - move] - d) > disp12diff)
 							{
 								dld[i] = invalidvalue;
 							}
@@ -871,9 +871,9 @@ namespace cp
 					{
 						const srcType d = rd[i];
 						const int move = (int)(d);
-						if (i + move<left_disp.cols)
+						if (i + move < left_disp.cols)
 						{
-							if (abs(ld[i + move] - d)>disp12diff)
+							if (abs(ld[i + move] - d) > disp12diff)
 							{
 								drd[i] = invalidvalue;
 							}
@@ -888,17 +888,17 @@ namespace cp
 		}
 		else
 		{
-			for (int j = 0; j<left_disp.rows; j++)
+			for (int j = 0; j < left_disp.rows; j++)
 			{
 				if (mode == LR_CHECK_DISPARITY_BOTH)
 				{
 					for (int i = disparity_max; i < left_disp.cols - disparity_max; i++)
 					{
 						srcType d = ld[i];
-						int move = (int)(d*iamp);
+						int move = (int)(d * iamp);
 						if (i - move >= 0)
 						{
-							if (abs(rd[i - move] - d)>disp12diff)
+							if (abs(rd[i - move] - d) > disp12diff)
 							{
 								//drd[i-move]=invalidvalue;
 								dld[i] = invalidvalue;
@@ -910,10 +910,10 @@ namespace cp
 						}
 
 						d = rd[i];
-						move = (int)(d*iamp);
-						if (i + move<left_disp.cols)
+						move = (int)(d * iamp);
+						if (i + move < left_disp.cols)
 						{
-							if (abs(ld[i + move] - d)>disp12diff)
+							if (abs(ld[i + move] - d) > disp12diff)
 							{
 								//dld[i+move]=invalidvalue;
 								drd[i] = invalidvalue;
@@ -934,7 +934,7 @@ namespace cp
 					for (int i = disparity_max; i < left_disp.cols - disparity_max; i++)
 					{
 						const srcType d = ld[i];
-						const int move = (int)(d*iamp);
+						const int move = (int)(d * iamp);
 						if (i - move > 0)
 						{
 							if (abs(rd[i - move] - d) > disp12diff)
@@ -952,10 +952,10 @@ namespace cp
 					for (int i = disparity_max; i < left_disp.cols - disparity_max; i++)
 					{
 						const srcType d = rd[i];
-						const int move = (int)(d*iamp);
-						if (i + move<left_disp.cols)
+						const int move = (int)(d * iamp);
+						if (i + move < left_disp.cols)
 						{
-							if (abs(ld[i + move] - d)>disp12diff)
+							if (abs(ld[i + move] - d) > disp12diff)
 							{
 								drd[i] = invalidvalue;
 							}
@@ -993,7 +993,7 @@ namespace cp
 						tmp[i - d] = (tmp[i - d] < d) ? d : tmp[i - d];
 				}
 			}
-			for (int i = 0; i<disp.cols; i++)
+			for (int i = 0; i < disp.cols; i++)
 			{
 				int d = cvRound(dsp[i]);
 				if (i - d <= 0) dsp[i] = 0;
@@ -1002,7 +1002,7 @@ namespace cp
 					/*if(tmp[i-d]==0){;}
 					else if(abs(tmp[i-d]-dsp[i])>disp12diff)dsp[i] = 0;*/
 
-					if (abs(tmp[i - d] - dsp[i])>disp12diff)dsp[i] = 0;
+					if (abs(tmp[i - d] - dsp[i]) > disp12diff)dsp[i] = 0;
 				}
 			}
 		}
@@ -1044,7 +1044,7 @@ namespace cp
 		Mat ldisp = left_disp.clone();
 		double iamp = 1.0 / amp;
 #pragma omp parallel for
-		for (int j = 0; j<left_disp.rows; j++)
+		for (int j = 0; j < left_disp.rows; j++)
 		{
 			srcType* dld = left_disp.ptr<srcType>(j);
 			srcType* drd = right_disp.ptr<srcType>(j);
@@ -1053,24 +1053,24 @@ namespace cp
 			for (int i = 0; i < left_disp.cols; i++)
 			{
 				srcType d = ld[i];
-				int move = (int)(d*iamp);
+				int move = (int)(d * iamp);
 				if (i - move > 0)
 				{
-					if (abs(rd[i - move] - d)>disp12diff)
+					if (abs(rd[i - move] - d) > disp12diff)
 					{
 						//drd[i-move]=invalidvalue;
-						dld[i] = (srcType)((rd[i - move] + d)*0.5);
+						dld[i] = (srcType)((rd[i - move] + d) * 0.5);
 					}
 				}
 
 				d = rd[i];
-				move = (int)(d*iamp);
-				if (i + move<left_disp.cols)
+				move = (int)(d * iamp);
+				if (i + move < left_disp.cols)
 				{
-					if (abs(ld[i + move] - d)>disp12diff)
+					if (abs(ld[i + move] - d) > disp12diff)
 					{
 						//dld[i+move]=invalidvalue;
-						drd[i] = (srcType)((ld[i + move] + d)*0.5);
+						drd[i] = (srcType)((ld[i + move] + d) * 0.5);
 					}
 				}
 			}
@@ -1137,7 +1137,7 @@ namespace cp
 
 	void cvtDisparityColor(const Mat& src, Mat& dest, const int minDisparity, const int numDisparities, const DISPARITY_COLOR option, const int amp)
 	{
-		const double a = 255.0 / ((double)numDisparities*(double)amp);
+		const double a = 255.0 / ((double)numDisparities * (double)amp);
 		Mat gray8U;
 		src.convertTo(gray8U, CV_8U, a, -minDisparity * 255.0 / (double)numDisparities);
 		if (option == DISPARITY_COLOR::GRAY)
@@ -1147,7 +1147,7 @@ namespace cp
 		else if (option == DISPARITY_COLOR::GRAY_OCC)
 		{
 			Mat mask;
-			cv::compare(src, minDisparity*amp, mask, cv::CMP_LT);
+			cv::compare(src, minDisparity * amp, mask, cv::CMP_LT);
 			cvtColor(gray8U, dest, COLOR_GRAY2BGR);
 			dest.setTo(Scalar(0, 0, 255), mask);
 		}

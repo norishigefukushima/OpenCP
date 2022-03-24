@@ -527,6 +527,7 @@ namespace cp
 			computeWTA(DSI, destDisparityMap, minCostMap);
 		}
 #pragma endregion
+
 #pragma region matching:postfiltering
 		{
 #ifdef TIMER_STEREO_BASE
@@ -825,8 +826,8 @@ namespace cp
 		//pre filter
 		createTrackbar("prefilter: cap", wname, &preFilterCap, 255);
 
-		pixelMatchingMethod = SDEdgeBlend;
-		//PixelMatchingMethod = Pixel_Matching_CENSUS5x5;
+		//pixelMatchingMethod = SDEdgeBlend;
+		pixelMatchingMethod = CENSUS5x5;
 		createTrackbar("pix match: method", wname, &pixelMatchingMethod, Pixel_Matching_Method_Size - 1);
 		createTrackbar("pix match: color method", wname, &color_distance, ColorDistance_Size - 1);
 		createTrackbar("pix match: blend a", wname, &costAlphaImageSobel, 100);
@@ -843,7 +844,8 @@ namespace cp
 		//createTrackbar("Soble alpha p 2", wname, &sobelBlendMapParam2, 255);
 
 		//AggregationMethod = Aggregation_Gauss;
-		aggregationMethod = Guided;
+		//aggregationMethod = Guided;
+		aggregationMethod = Box;
 		createTrackbar("agg: method", wname, &aggregationMethod, Aggregation_Method_Size - 1);
 		createTrackbar("agg: r width", wname, &aggregationRadiusH, 20);
 		createTrackbar("agg: r height", wname, &aggregationRadiusV, 20);
@@ -1604,7 +1606,12 @@ namespace cp
 		}
 	}
 
-	static void censusTrans32S_7x5(Mat& src, Mat& dest)
+	// xxxxx 
+	//xxxxxxx
+	//xxx xxx
+	//xxxxxxx
+	// xxxxx
+	static void censusTrans32S_7x5_30(Mat& src, Mat& dest)
 	{
 		if (dest.empty() || dest.depth() != CV_32S)dest.create(src.size(), CV_32S);
 		const int r = 3;
@@ -1670,6 +1677,87 @@ namespace cp
 				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
 				val = (*sb < *s) ? val | 1 : val; sb++;
 				sb++;
+
+				*(d++) = val;
+				s++;
+			}
+			s += r2;
+		}
+	}
+
+	// 1 2 3 4 5 6 7 8 910111213
+	// x x       x x x       x x
+	//           x   x       
+	// x x       x x x       x x
+	static void censusTrans32S_13x3_16(Mat& src, Mat& dest)
+	{
+		if (dest.empty() || dest.depth() != CV_32S)dest.create(src.size(), CV_32S);
+		const int r = 6;
+		const int r2 = 2 * r;
+		const int D = 2 * r + 1;
+		const int vr = 1;
+		Mat im; copyMakeBorder(src, im, vr, vr, r, r, cv::BORDER_REFLECT101);
+
+		uchar* s = im.ptr<uchar>(vr); s += r;
+		uchar* sb;
+		int* d = dest.ptr<int>();
+
+		const int step1 = -r - vr * im.cols;
+		const int step2 = -D + im.cols;
+		const int w = src.cols;
+		const int h = src.rows;
+		for (int j = 0; j < h; j++)
+		{
+			for (int i = 0; i < w; i++)
+			{
+				int val = 0;//init value
+				sb = s + step1;
+
+				sb += step2;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				sb++;
+				sb++;
+				sb++;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				sb++;
+				sb++;
+				sb++;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+
+				sb += step2;
+				sb++;
+				sb++;
+				sb++;
+				sb++;
+				sb++;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				sb++;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				sb++;
+				sb++;
+				sb++;
+				sb++;
+				sb++;
+
+				sb += step2;
+				sb += step2;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				sb++;
+				sb++;
+				sb++;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				sb++;
+				sb++;
+				sb++;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
+				val = (*sb < *s) ? val | 1 : val; sb++; val <<= 1;
 
 				*(d++) = val;
 				s++;
@@ -1770,12 +1858,12 @@ namespace cp
 			}
 			else if (pixelMatchingMethod == CENSUS7x5Color)
 			{
-				censusTrans32S_7x5(target[0], target[1]);
-				censusTrans32S_7x5(reference[0], reference[1]);
-				censusTrans32S_7x5(target[2], target[3]);
-				censusTrans32S_7x5(reference[2], reference[3]);
-				censusTrans32S_7x5(target[4], target[5]);
-				censusTrans32S_7x5(reference[4], reference[5]);
+				censusTrans32S_7x5_30(target[0], target[1]);
+				censusTrans32S_7x5_30(reference[0], reference[1]);
+				censusTrans32S_7x5_30(target[2], target[3]);
+				censusTrans32S_7x5_30(reference[2], reference[3]);
+				censusTrans32S_7x5_30(target[4], target[5]);
+				censusTrans32S_7x5_30(reference[4], reference[5]);
 			}
 			else
 			{
@@ -1814,8 +1902,13 @@ namespace cp
 			}
 			else if (pixelMatchingMethod == CENSUS7x5)
 			{
-				censusTrans32S_7x5(target[0], target[1]);
-				censusTrans32S_7x5(reference[0], reference[1]);
+				censusTrans32S_7x5_30(target[0], target[1]);
+				censusTrans32S_7x5_30(reference[0], reference[1]);
+			}
+			else if (pixelMatchingMethod == CENSUS13x3)
+			{
+				censusTrans32S_13x3_16(target[0], target[1]);
+				censusTrans32S_13x3_16(reference[0], reference[1]);
 			}
 			else
 			{
@@ -1842,7 +1935,8 @@ namespace cp
 
 	void StereoBase::computeGuideImageForAggregation(Mat& input)
 	{
-		cvtColorBGR2GRAY_AVG(input, guideImage);
+		if (input.channels() == 3) cvtColorBGR2GRAY_AVG(input, guideImage);
+		else input.copyTo(guideImage);
 		//cvtColor(input, guideImage, COLOR_BGR2BGRA);
 		//Mat temp;
 		//cv::decolor(input, guideImage, temp);
@@ -2463,7 +2557,6 @@ namespace cp
 			for (int i = 0; i < disparity; i++)
 			{
 				d[i] = _mm_popcnt_u32((s1[i] ^ s2[0]));
-
 			}
 			/* for AVX512
 						for (int i = disparity; i < WIDTH; i += 32)
@@ -2486,7 +2579,7 @@ namespace cp
 
 	string StereoBase::getCostMethodName(const Cost method)
 	{
-		string mes;
+		string mes="";
 		switch (method)
 		{
 		case SD:					mes = "SD"; break;
@@ -2505,6 +2598,7 @@ namespace cp
 		case CENSUS5x5:				mes = "CENSUS5x5"; break;
 		case CENSUS7x5:				mes = "CENSUS7x5"; break;
 		case CENSUS9x1:				mes = "CENSUS9x1"; break;
+		case CENSUS13x3:				mes = "CENSUS13x3_16"; break;
 
 		case SDColor:				mes = "SDColor"; break;
 		case SDEdgeColor:			mes = "SDEdgeColor"; break;
@@ -2540,7 +2634,7 @@ namespace cp
 		color_distance = method;
 	}
 
-	std::string StereoBase::getCostColorDistanceName(ColorDistance method)
+	string StereoBase::getCostColorDistanceName(ColorDistance method)
 	{
 		std::string ret;
 		switch (method)
@@ -2615,7 +2709,7 @@ namespace cp
 		{
 			HammingDistance32S_8UC1<uchar>(target[1], reference[1], d, dest);
 		}
-		else if (pixelMatchingMethod == CENSUS5x5 || pixelMatchingMethod == CENSUS7x5)
+		else if (pixelMatchingMethod == CENSUS5x5 || pixelMatchingMethod == CENSUS7x5|| pixelMatchingMethod == CENSUS13x3)
 		{
 			HammingDistance32S_8UC1<int>(target[1], reference[1], d, dest);
 		}

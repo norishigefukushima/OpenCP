@@ -14,7 +14,7 @@ using namespace cv;
 
 namespace cp
 {
-	
+
 	void boundaryBlur(Mat& src, int tap, int direction)
 	{
 		Mat val = src.clone();
@@ -114,7 +114,7 @@ namespace cp
 						continue;
 					}
 
-					const int dest = (int)(disp*amp + 0.5);
+					const int dest = (int)(disp * amp + 0.5);
 					//const int dest = (int)(disp*amp);
 
 					if (i - dest >= 0)
@@ -155,7 +155,7 @@ namespace cp
 						m[i] = 0;
 						continue;
 					}
-					const int dest = (int)((-amp*disp) + 0.5);
+					const int dest = (int)((-amp * disp) + 0.5);
 					//const int dest = (int)((-amp*disp));
 
 					if (i + dest < srcdisp.cols)
@@ -206,7 +206,7 @@ namespace cp
 						continue;
 					}
 
-					const int dest = (int)(disp*amp + 0.5f);
+					const int dest = (int)(disp * amp + 0.5f);
 					dim[3 * (i)+0] = sim[3 * (i - dest) + 0];
 					dim[3 * (i)+1] = sim[3 * (i - dest) + 1];
 					dim[3 * (i)+2] = sim[3 * (i - dest) + 2];
@@ -231,7 +231,7 @@ namespace cp
 						continue;
 					}
 
-					const int dest = (int)(-amp*disp + 0.5f);//ïÑçÜ
+					const int dest = (int)(-amp * disp + 0.5f);//ïÑçÜ
 
 					dim[3 * (i)+0] = sim[3 * (i + dest) + 0];
 					dim[3 * (i)+1] = sim[3 * (i + dest) + 1];
@@ -251,9 +251,9 @@ namespace cp
 		const float cubic = -1.0f;
 		//const float cubic = -0.7f;
 		const float c1 = cubic;
-		const float c2 = -5.f*cubic;
-		const float c3 = 8.f*cubic;
-		const float c4 = -4.f*cubic;
+		const float c2 = -5.f * cubic;
+		const float c3 = 8.f * cubic;
+		const float c4 = -4.f * cubic;
 		const float c5 = 2.f + cubic;
 		const float c6 = -(cubic + 3.f);
 
@@ -264,29 +264,29 @@ namespace cp
 		{
 			for (int i = 0; i < 256; i++)
 			{
-				const int dest = (int)(i*amp);
-				const float ia = (float)((i*amp) - dest);
+				const int dest = (int)(i * amp);
+				const float ia = (float)((i * amp) - dest);
 				const float a = 1.f - ia;
 
-				lut[4 * i + 0] = c1*(1.f + a)*(1.f + a)*(1.f + a) + c2*(1.f + a)*(1.f + a) + c3*(1.f + a) + c4;
-				lut[4 * i + 1] = c5* a* a* a + c6* a* a + 1.f;
-				lut[4 * i + 2] = c5*ia*ia*ia + c6*ia*ia + 1.f;
-				lut[4 * i + 3] = c1*(1.f + ia)*(1.f + ia)*(1.f + ia) + c2*(1.f + ia)*(1.f + ia) + c3*(1.f + ia) + c4;
+				lut[4 * i + 0] = c1 * (1.f + a) * (1.f + a) * (1.f + a) + c2 * (1.f + a) * (1.f + a) + c3 * (1.f + a) + c4;
+				lut[4 * i + 1] = c5 * a * a * a + c6 * a * a + 1.f;
+				lut[4 * i + 2] = c5 * ia * ia * ia + c6 * ia * ia + 1.f;
+				lut[4 * i + 3] = c1 * (1.f + ia) * (1.f + ia) * (1.f + ia) + c2 * (1.f + ia) * (1.f + ia) + c3 * (1.f + ia) + c4;
 			}
 		}
 		else if (amp < 0)
 		{
 			for (int i = 0; i < 256; i++)
 			{
-				const int dest = (int)(i*-amp);
-				const float ia = (float)((-amp*i) - dest);
+				const int dest = (int)(i * -amp);
+				const float ia = (float)((-amp * i) - dest);
 				const float a = 1.f - ia;
 
 
-				lut[4 * i + 0] = c1*(1.f + a)*(1.f + a)*(1.f + a) + c2*(1.f + a)*(1.f + a) + c3*(1.f + a) + c4;
-				lut[4 * i + 1] = c5* a* a* a + c6* a* a + 1.f;
-				lut[4 * i + 2] = c5*ia*ia*ia + c6*ia*ia + 1.f;
-				lut[4 * i + 3] = c1*(1.f + ia)*(1.f + ia)*(1.f + ia) + c2*(1.f + ia)*(1.f + ia) + c3*(1.f + ia) + c4;
+				lut[4 * i + 0] = c1 * (1.f + a) * (1.f + a) * (1.f + a) + c2 * (1.f + a) * (1.f + a) + c3 * (1.f + a) + c4;
+				lut[4 * i + 1] = c5 * a * a * a + c6 * a * a + 1.f;
+				lut[4 * i + 2] = c5 * ia * ia * ia + c6 * ia * ia + 1.f;
+				lut[4 * i + 3] = c1 * (1.f + ia) * (1.f + ia) * (1.f + ia) + c2 * (1.f + ia) * (1.f + ia) + c3 * (1.f + ia) + c4;
 			}
 		}
 
@@ -310,8 +310,8 @@ namespace cp
 						continue;
 					}
 
-					const int dest = (int)(disp*amp);
-					const float ia = (float)((disp*amp) - dest);
+					const int dest = (int)(disp * amp);
+					const float ia = (float)((disp * amp) - dest);
 
 					if (ia == 0.f)
 					{
@@ -324,36 +324,36 @@ namespace cp
 						const float iaa = lut[idx + 1];
 						const float aa = lut[idx + 2];
 						const float vaa = lut[idx + 3];
-						dim[3 * (i)+0] = saturate_cast<uchar>(vaa*sim[3 * (i - dest + 1) + 0] + aa*sim[3 * (i - dest) + 0] + iaa*sim[3 * (i - dest - 1) + 0] + viaa*sim[3 * (i - dest - 2) + 0]);
-						dim[3 * (i)+1] = saturate_cast<uchar>(vaa*sim[3 * (i - dest + 1) + 1] + aa*sim[3 * (i - dest) + 1] + iaa*sim[3 * (i - dest - 1) + 1] + viaa*sim[3 * (i - dest - 2) + 1]);
-						dim[3 * (i)+2] = saturate_cast<uchar>(vaa*sim[3 * (i - dest + 1) + 2] + aa*sim[3 * (i - dest) + 2] + iaa*sim[3 * (i - dest - 1) + 2] + viaa*sim[3 * (i - dest - 2) + 2]);
+						dim[3 * (i)+0] = saturate_cast<uchar>(vaa * sim[3 * (i - dest + 1) + 0] + aa * sim[3 * (i - dest) + 0] + iaa * sim[3 * (i - dest - 1) + 0] + viaa * sim[3 * (i - dest - 2) + 0]);
+						dim[3 * (i)+1] = saturate_cast<uchar>(vaa * sim[3 * (i - dest + 1) + 1] + aa * sim[3 * (i - dest) + 1] + iaa * sim[3 * (i - dest - 1) + 1] + viaa * sim[3 * (i - dest - 2) + 1]);
+						dim[3 * (i)+2] = saturate_cast<uchar>(vaa * sim[3 * (i - dest + 1) + 2] + aa * sim[3 * (i - dest) + 2] + iaa * sim[3 * (i - dest - 1) + 2] + viaa * sim[3 * (i - dest - 2) + 2]);
 
 						/*		dim[3*(i)+0]=saturate_cast<uchar>(vaa*sim[3*(i-dest+1)+0] + aa*sim[3*(i-dest)+0]+iaa*sim[3*(i-dest-1)+0]+viaa*sim[3*(i-dest-2)+0]+0.5f);
 							dim[3*(i)+1]=saturate_cast<uchar>(vaa*sim[3*(i-dest+1)+1] + aa*sim[3*(i-dest)+1]+iaa*sim[3*(i-dest-1)+1]+viaa*sim[3*(i-dest-2)+1]+0.5f);
 							dim[3*(i)+2]=saturate_cast<uchar>(vaa*sim[3*(i-dest+1)+2] + aa*sim[3*(i-dest)+2]+iaa*sim[3*(i-dest-1)+2]+viaa*sim[3*(i-dest-2)+2]+0.5f);*/
 
 
-						/*__m128 mlut = _mm_load_ps(lut+idx);
+							/*__m128 mlut = _mm_load_ps(lut+idx);
 
-						__m128 mcoeff = _mm_shuffle_ps(mlut, mlut, 0x00);
-						__m128 mdst =           _mm_mul_ps(mcoeff, _mm_set_ps(0.f, sim[3*(i-dest+1)+2],sim[3*(i-dest+1)+1],sim[3*(i-dest+1)+0]));
+							__m128 mcoeff = _mm_shuffle_ps(mlut, mlut, 0x00);
+							__m128 mdst =           _mm_mul_ps(mcoeff, _mm_set_ps(0.f, sim[3*(i-dest+1)+2],sim[3*(i-dest+1)+1],sim[3*(i-dest+1)+0]));
 
-						mcoeff = _mm_shuffle_ps(mlut, mlut, 0x55);
-						mdst = _mm_add_ps(mdst, _mm_mul_ps(mcoeff, _mm_set_ps(0.f, sim[3*(i-dest  )+2],sim[3*(i-dest  )+1],sim[3*(i-dest  )+0])));
+							mcoeff = _mm_shuffle_ps(mlut, mlut, 0x55);
+							mdst = _mm_add_ps(mdst, _mm_mul_ps(mcoeff, _mm_set_ps(0.f, sim[3*(i-dest  )+2],sim[3*(i-dest  )+1],sim[3*(i-dest  )+0])));
 
-						mcoeff = _mm_shuffle_ps(mlut, mlut, 0xAA);
-						mdst = _mm_add_ps(mdst, _mm_mul_ps(mcoeff, _mm_set_ps(0.f, sim[3*(i-dest-1)+2],sim[3*(i-dest-1)+1],sim[3*(i-dest-1)+0])));
+							mcoeff = _mm_shuffle_ps(mlut, mlut, 0xAA);
+							mdst = _mm_add_ps(mdst, _mm_mul_ps(mcoeff, _mm_set_ps(0.f, sim[3*(i-dest-1)+2],sim[3*(i-dest-1)+1],sim[3*(i-dest-1)+0])));
 
-						mcoeff = _mm_shuffle_ps(mlut, mlut, 0xFF);
-						mdst = _mm_add_ps(mdst, _mm_mul_ps(mcoeff, _mm_set_ps(0.f, sim[3*(i-dest-2)+2],sim[3*(i-dest-2)+1],sim[3*(i-dest-2)+0])));
+							mcoeff = _mm_shuffle_ps(mlut, mlut, 0xFF);
+							mdst = _mm_add_ps(mdst, _mm_mul_ps(mcoeff, _mm_set_ps(0.f, sim[3*(i-dest-2)+2],sim[3*(i-dest-2)+1],sim[3*(i-dest-2)+0])));
 
-						//__m128i midst =  _mm_cvtps_epi32(mdst);
-						//_mm_store_si128((__m128i*) buff, midst);
-						_mm_store_ps( bufff, mdst);
+							//__m128i midst =  _mm_cvtps_epi32(mdst);
+							//_mm_store_si128((__m128i*) buff, midst);
+							_mm_store_ps( bufff, mdst);
 
-						dim[3*(i)+0]=saturate_cast<uchar>(bufff[0]);
-						dim[3*(i)+1]=saturate_cast<uchar>(bufff[1]);
-						dim[3*(i)+2]=saturate_cast<uchar>(bufff[2]);*/
+							dim[3*(i)+0]=saturate_cast<uchar>(bufff[0]);
+							dim[3*(i)+1]=saturate_cast<uchar>(bufff[1]);
+							dim[3*(i)+2]=saturate_cast<uchar>(bufff[2]);*/
 					}
 				}
 			}
@@ -377,8 +377,8 @@ namespace cp
 						continue;
 					}
 
-					const int dest = (int)(-amp*disp);//ïÑçÜ
-					const float ia = (float)((-amp*disp) - dest);
+					const int dest = (int)(-amp * disp);//ïÑçÜ
+					const float ia = (float)((-amp * disp) - dest);
 					if (ia == 0.f)
 					{
 						memcpy(dim + 3 * i, sim + 3 * (i + dest), 3);
@@ -391,9 +391,9 @@ namespace cp
 						const float aa = lut[idx + 2];
 						const float vaa = lut[idx + 3];
 
-						dim[3 * (i)+0] = saturate_cast<uchar>(vaa*sim[3 * (i + dest - 1) + 0] + aa*sim[3 * (i + dest) + 0] + iaa*sim[3 * (i + dest + 1) + 0] + viaa*sim[3 * (i + dest + 2) + 0]);
-						dim[3 * (i)+1] = saturate_cast<uchar>(vaa*sim[3 * (i + dest - 1) + 1] + aa*sim[3 * (i + dest) + 1] + iaa*sim[3 * (i + dest + 1) + 1] + viaa*sim[3 * (i + dest + 2) + 1]);
-						dim[3 * (i)+2] = saturate_cast<uchar>(vaa*sim[3 * (i + dest - 1) + 2] + aa*sim[3 * (i + dest) + 2] + iaa*sim[3 * (i + dest + 1) + 2] + viaa*sim[3 * (i + dest + 2) + 2]);
+						dim[3 * (i)+0] = saturate_cast<uchar>(vaa * sim[3 * (i + dest - 1) + 0] + aa * sim[3 * (i + dest) + 0] + iaa * sim[3 * (i + dest + 1) + 0] + viaa * sim[3 * (i + dest + 2) + 0]);
+						dim[3 * (i)+1] = saturate_cast<uchar>(vaa * sim[3 * (i + dest - 1) + 1] + aa * sim[3 * (i + dest) + 1] + iaa * sim[3 * (i + dest + 1) + 1] + viaa * sim[3 * (i + dest + 2) + 1]);
+						dim[3 * (i)+2] = saturate_cast<uchar>(vaa * sim[3 * (i + dest - 1) + 2] + aa * sim[3 * (i + dest) + 2] + iaa * sim[3 * (i + dest + 1) + 2] + viaa * sim[3 * (i + dest + 2) + 2]);
 						/*dim[3*(i)+0]=saturate_cast<uchar>(vaa*sim[3*(i+dest-1)+0] + aa*sim[3*(i+dest)+0]+iaa*sim[3*(i+dest+1)+0]+viaa*sim[3*(i+dest+2)+0]+0.5f);
 						dim[3*(i)+1]=saturate_cast<uchar>(vaa*sim[3*(i+dest-1)+1] + aa*sim[3*(i+dest)+1]+iaa*sim[3*(i+dest+1)+1]+viaa*sim[3*(i+dest+2)+1]+0.5f);
 						dim[3*(i)+2]=saturate_cast<uchar>(vaa*sim[3*(i+dest-1)+2] + aa*sim[3*(i+dest)+2]+iaa*sim[3*(i+dest+1)+2]+viaa*sim[3*(i+dest+2)+2]+0.5f);*/
@@ -413,9 +413,9 @@ namespace cp
 		const float cubic = -1.f;
 
 		const float c1 = cubic;
-		const float c2 = -5.f*cubic;
-		const float c3 = 8.f*cubic;
-		const float c4 = -4.f*cubic;
+		const float c2 = -5.f * cubic;
+		const float c3 = 8.f * cubic;
+		const float c4 = -4.f * cubic;
 		const float c5 = 2.f + cubic;
 		const float c6 = -(cubic + 3.f);
 
@@ -438,8 +438,8 @@ namespace cp
 						continue;
 					}
 
-					const int dest = (int)(disp*amp);
-					const float ia = (float)((disp*amp) - dest);
+					const int dest = (int)(disp * amp);
+					const float ia = (float)((disp * amp) - dest);
 					const float a = 1.f - ia;
 
 					if (ia == 0.0)
@@ -448,14 +448,14 @@ namespace cp
 					}
 					else
 					{
-						const float viaa = c1*(1.f + a)*(1.f + a)*(1.f + a) + c2*(1.f + a)*(1.f + a) + c3*(1.f + a) + c4;
-						const float iaa = c5* a* a* a + c6* a* a + 1.f;
-						const float aa = c5*ia*ia*ia + c6*ia*ia + 1.f;
-						const float vaa = c1*(1.f + ia)*(1.f + ia)*(1.f + ia) + c2*(1.f + ia)*(1.f + ia) + c3*(1.f + ia) + c4;
+						const float viaa = c1 * (1.f + a) * (1.f + a) * (1.f + a) + c2 * (1.f + a) * (1.f + a) + c3 * (1.f + a) + c4;
+						const float iaa = c5 * a * a * a + c6 * a * a + 1.f;
+						const float aa = c5 * ia * ia * ia + c6 * ia * ia + 1.f;
+						const float vaa = c1 * (1.f + ia) * (1.f + ia) * (1.f + ia) + c2 * (1.f + ia) * (1.f + ia) + c3 * (1.f + ia) + c4;
 
-						dim[3 * (i)+0] = saturate_cast<uchar>(vaa*sim[3 * (i - dest + 1) + 0] + aa*sim[3 * (i - dest) + 0] + iaa*sim[3 * (i - dest - 1) + 0] + viaa*sim[3 * (i - dest - 2) + 0]);
-						dim[3 * (i)+1] = saturate_cast<uchar>(vaa*sim[3 * (i - dest + 1) + 1] + aa*sim[3 * (i - dest) + 1] + iaa*sim[3 * (i - dest - 1) + 1] + viaa*sim[3 * (i - dest - 2) + 1]);
-						dim[3 * (i)+2] = saturate_cast<uchar>(vaa*sim[3 * (i - dest + 1) + 2] + aa*sim[3 * (i - dest) + 2] + iaa*sim[3 * (i - dest - 1) + 2] + viaa*sim[3 * (i - dest - 2) + 2]);
+						dim[3 * (i)+0] = saturate_cast<uchar>(vaa * sim[3 * (i - dest + 1) + 0] + aa * sim[3 * (i - dest) + 0] + iaa * sim[3 * (i - dest - 1) + 0] + viaa * sim[3 * (i - dest - 2) + 0]);
+						dim[3 * (i)+1] = saturate_cast<uchar>(vaa * sim[3 * (i - dest + 1) + 1] + aa * sim[3 * (i - dest) + 1] + iaa * sim[3 * (i - dest - 1) + 1] + viaa * sim[3 * (i - dest - 2) + 1]);
+						dim[3 * (i)+2] = saturate_cast<uchar>(vaa * sim[3 * (i - dest + 1) + 2] + aa * sim[3 * (i - dest) + 2] + iaa * sim[3 * (i - dest - 1) + 2] + viaa * sim[3 * (i - dest - 2) + 2]);
 						//dim[3*(i)+0]=saturate_cast<uchar>(vaa*sim[3*(i-dest+1)+0] + aa*sim[3*(i-dest)+0]+iaa*sim[3*(i-dest-1)+0]+viaa*sim[3*(i-dest-2)+0]+0.5);
 						//dim[3*(i)+1]=saturate_cast<uchar>(vaa*sim[3*(i-dest+1)+1] + aa*sim[3*(i-dest)+1]+iaa*sim[3*(i-dest-1)+1]+viaa*sim[3*(i-dest-2)+1]+0.5);
 						//dim[3*(i)+2]=saturate_cast<uchar>(vaa*sim[3*(i-dest+1)+2] + aa*sim[3*(i-dest)+2]+iaa*sim[3*(i-dest-1)+2]+viaa*sim[3*(i-dest-2)+2]+0.5);
@@ -481,8 +481,8 @@ namespace cp
 						continue;
 					}
 
-					const int dest = (int)(-amp*disp);//ïÑçÜ
-					const float ia = (float)((-amp*disp) - dest);
+					const int dest = (int)(-amp * disp);//ïÑçÜ
+					const float ia = (float)((-amp * disp) - dest);
 					const float a = 1.f - ia;
 
 					if (ia == 0.0)
@@ -491,14 +491,14 @@ namespace cp
 					}
 					else
 					{
-						const float viaa = c1*(1.f + a)*(1.f + a)*(1.f + a) + c2*(1.f + a)*(1.f + a) + c3*(1.f + a) + c4;
-						const float iaa = c5* a* a* a + c6* a* a + 1.f;
-						const float aa = c5*ia*ia*ia + c6*ia*ia + 1.f;
-						const float vaa = c1*(1.f + ia)*(1.f + ia)*(1.f + ia) + c2*(1.f + ia)*(1.f + ia) + c3*(1.f + ia) + c4;
+						const float viaa = c1 * (1.f + a) * (1.f + a) * (1.f + a) + c2 * (1.f + a) * (1.f + a) + c3 * (1.f + a) + c4;
+						const float iaa = c5 * a * a * a + c6 * a * a + 1.f;
+						const float aa = c5 * ia * ia * ia + c6 * ia * ia + 1.f;
+						const float vaa = c1 * (1.f + ia) * (1.f + ia) * (1.f + ia) + c2 * (1.f + ia) * (1.f + ia) + c3 * (1.f + ia) + c4;
 
-						dim[3 * (i)+0] = saturate_cast<uchar>(vaa*sim[3 * (i + dest - 1) + 0] + aa*sim[3 * (i + dest) + 0] + iaa*sim[3 * (i + dest + 1) + 0] + viaa*sim[3 * (i + dest + 2) + 0]);
-						dim[3 * (i)+1] = saturate_cast<uchar>(vaa*sim[3 * (i + dest - 1) + 1] + aa*sim[3 * (i + dest) + 1] + iaa*sim[3 * (i + dest + 1) + 1] + viaa*sim[3 * (i + dest + 2) + 1]);
-						dim[3 * (i)+2] = saturate_cast<uchar>(vaa*sim[3 * (i + dest - 1) + 2] + aa*sim[3 * (i + dest) + 2] + iaa*sim[3 * (i + dest + 1) + 2] + viaa*sim[3 * (i + dest + 2) + 2]);
+						dim[3 * (i)+0] = saturate_cast<uchar>(vaa * sim[3 * (i + dest - 1) + 0] + aa * sim[3 * (i + dest) + 0] + iaa * sim[3 * (i + dest + 1) + 0] + viaa * sim[3 * (i + dest + 2) + 0]);
+						dim[3 * (i)+1] = saturate_cast<uchar>(vaa * sim[3 * (i + dest - 1) + 1] + aa * sim[3 * (i + dest) + 1] + iaa * sim[3 * (i + dest + 1) + 1] + viaa * sim[3 * (i + dest + 2) + 1]);
+						dim[3 * (i)+2] = saturate_cast<uchar>(vaa * sim[3 * (i + dest - 1) + 2] + aa * sim[3 * (i + dest) + 2] + iaa * sim[3 * (i + dest + 1) + 2] + viaa * sim[3 * (i + dest + 2) + 2]);
 						/*dim[3*(i)+0]=saturate_cast<uchar>(vaa*sim[3*(i+dest-1)+0] + aa*sim[3*(i+dest)+0]+iaa*sim[3*(i+dest+1)+0]+viaa*sim[3*(i+dest+2)+0]+0.5);
 						dim[3*(i)+1]=saturate_cast<uchar>(vaa*sim[3*(i+dest-1)+1] + aa*sim[3*(i+dest)+1]+iaa*sim[3*(i+dest+1)+1]+viaa*sim[3*(i+dest+2)+1]+0.5);
 						dim[3*(i)+2]=saturate_cast<uchar>(vaa*sim[3*(i+dest-1)+2] + aa*sim[3*(i+dest)+2]+iaa*sim[3*(i+dest+1)+2]+viaa*sim[3*(i+dest+2)+2]+0.5);*/
@@ -518,9 +518,9 @@ namespace cp
 		const float cubic = -1.f;
 
 		const float c1 = cubic;
-		const float c2 = -5.f*cubic;
-		const float c3 = 8.f*cubic;
-		const float c4 = -4.f*cubic;
+		const float c2 = -5.f * cubic;
+		const float c3 = 8.f * cubic;
+		const float c4 = -4.f * cubic;
 		const float c5 = 2.f + cubic;
 		const float c6 = -(cubic + 3.f);
 
@@ -549,8 +549,8 @@ namespace cp
 						continue;
 					}
 
-					const int dest = (int)(disp*amp);
-					const float ia = (float)((disp*amp) - dest);
+					const int dest = (int)(disp * amp);
+					const float ia = (float)((disp * amp) - dest);
 					const float a = 1.f - ia;
 					if (i >= dest)
 					{
@@ -562,14 +562,14 @@ namespace cp
 						}
 						else
 						{
-							const float viaa = c1*(1.f + a)*(1.f + a)*(1.f + a) + c2*(1.f + a)*(1.f + a) + c3*(1.f + a) + c4;
-							const float iaa = c5* a* a* a + c6* a* a + 1.f;
-							const float aa = c5*ia*ia*ia + c6*ia*ia + 1.f;
-							const float vaa = c1*(1.f + ia)*(1.f + ia)*(1.f + ia) + c2*(1.f + ia)*(1.f + ia) + c3*(1.f + ia) + c4;
+							const float viaa = c1 * (1.f + a) * (1.f + a) * (1.f + a) + c2 * (1.f + a) * (1.f + a) + c3 * (1.f + a) + c4;
+							const float iaa = c5 * a * a * a + c6 * a * a + 1.f;
+							const float aa = c5 * ia * ia * ia + c6 * ia * ia + 1.f;
+							const float vaa = c1 * (1.f + ia) * (1.f + ia) * (1.f + ia) + c2 * (1.f + ia) * (1.f + ia) + c3 * (1.f + ia) + c4;
 
-							dim[3 * (i)+0] = saturate_cast<uchar>(vaa*sim[3 * (i - dest + 1) + 0] + aa*sim[3 * (i - dest) + 0] + iaa*sim[3 * (i - dest - 1) + 0] + viaa*sim[3 * (i - dest - 2) + 0]);
-							dim[3 * (i)+1] = saturate_cast<uchar>(vaa*sim[3 * (i - dest + 1) + 1] + aa*sim[3 * (i - dest) + 1] + iaa*sim[3 * (i - dest - 1) + 1] + viaa*sim[3 * (i - dest - 2) + 1]);
-							dim[3 * (i)+2] = saturate_cast<uchar>(vaa*sim[3 * (i - dest + 1) + 2] + aa*sim[3 * (i - dest) + 2] + iaa*sim[3 * (i - dest - 1) + 2] + viaa*sim[3 * (i - dest - 2) + 2]);
+							dim[3 * (i)+0] = saturate_cast<uchar>(vaa * sim[3 * (i - dest + 1) + 0] + aa * sim[3 * (i - dest) + 0] + iaa * sim[3 * (i - dest - 1) + 0] + viaa * sim[3 * (i - dest - 2) + 0]);
+							dim[3 * (i)+1] = saturate_cast<uchar>(vaa * sim[3 * (i - dest + 1) + 1] + aa * sim[3 * (i - dest) + 1] + iaa * sim[3 * (i - dest - 1) + 1] + viaa * sim[3 * (i - dest - 2) + 1]);
+							dim[3 * (i)+2] = saturate_cast<uchar>(vaa * sim[3 * (i - dest + 1) + 2] + aa * sim[3 * (i - dest) + 2] + iaa * sim[3 * (i - dest - 1) + 2] + viaa * sim[3 * (i - dest - 2) + 2]);
 						}
 					}
 					else
@@ -606,8 +606,8 @@ namespace cp
 						continue;
 					}
 
-					const int dest = (int)(-amp*disp);//ïÑçÜ
-					const float ia = (float)((-amp*disp) - dest);
+					const int dest = (int)(-amp * disp);//ïÑçÜ
+					const float ia = (float)((-amp * disp) - dest);
 					const float a = 1.f - ia;
 
 					if (i + dest < srcdisp.cols)
@@ -620,18 +620,18 @@ namespace cp
 						}
 						else
 						{
-							const float viaa = c1*(1.f + a)*(1.f + a)*(1.f + a) + c2*(1.f + a)*(1.f + a) + c3*(1.f + a) + c4;
-							const float iaa = c5* a* a* a + c6* a* a + 1.f;
-							const float aa = c5*ia*ia*ia + c6*ia*ia + 1.f;
-							const float vaa = c1*(1.f + ia)*(1.f + ia)*(1.f + ia) + c2*(1.f + ia)*(1.f + ia) + c3*(1.f + ia) + c4;
+							const float viaa = c1 * (1.f + a) * (1.f + a) * (1.f + a) + c2 * (1.f + a) * (1.f + a) + c3 * (1.f + a) + c4;
+							const float iaa = c5 * a * a * a + c6 * a * a + 1.f;
+							const float aa = c5 * ia * ia * ia + c6 * ia * ia + 1.f;
+							const float vaa = c1 * (1.f + ia) * (1.f + ia) * (1.f + ia) + c2 * (1.f + ia) * (1.f + ia) + c3 * (1.f + ia) + c4;
 							/*	const float viaa= lut[0];
 							const float iaa = lut[1];
 							const float aa  = lut[2];
 							const float vaa = lut[3];*/
 
-							dim[3 * (i)+0] = saturate_cast<uchar>(vaa*sim[3 * (i + dest - 1) + 0] + aa*sim[3 * (i + dest) + 0] + iaa*sim[3 * (i + dest + 1) + 0] + viaa*sim[3 * (i + dest + 2) + 0]);
-							dim[3 * (i)+1] = saturate_cast<uchar>(vaa*sim[3 * (i + dest - 1) + 1] + aa*sim[3 * (i + dest) + 1] + iaa*sim[3 * (i + dest + 1) + 1] + viaa*sim[3 * (i + dest + 2) + 1]);
-							dim[3 * (i)+2] = saturate_cast<uchar>(vaa*sim[3 * (i + dest - 1) + 2] + aa*sim[3 * (i + dest) + 2] + iaa*sim[3 * (i + dest + 1) + 2] + viaa*sim[3 * (i + dest + 2) + 2]);
+							dim[3 * (i)+0] = saturate_cast<uchar>(vaa * sim[3 * (i + dest - 1) + 0] + aa * sim[3 * (i + dest) + 0] + iaa * sim[3 * (i + dest + 1) + 0] + viaa * sim[3 * (i + dest + 2) + 0]);
+							dim[3 * (i)+1] = saturate_cast<uchar>(vaa * sim[3 * (i + dest - 1) + 1] + aa * sim[3 * (i + dest) + 1] + iaa * sim[3 * (i + dest + 1) + 1] + viaa * sim[3 * (i + dest + 2) + 1]);
+							dim[3 * (i)+2] = saturate_cast<uchar>(vaa * sim[3 * (i + dest - 1) + 2] + aa * sim[3 * (i + dest) + 2] + iaa * sim[3 * (i + dest + 1) + 2] + viaa * sim[3 * (i + dest + 2) + 2]);
 						}
 					}
 					else
@@ -674,18 +674,18 @@ namespace cp
 						continue;
 					}
 
-					const int dest = (int)(disp*amp);
+					const int dest = (int)(disp * amp);
 
 
-					const float ia = (float)((disp*amp) - dest);
+					const float ia = (float)((disp * amp) - dest);
 					const float a = 1.f - ia;
 
 					/*dim[3*(i)+0]=saturate_cast<uchar>(a*sim[3*(i-dest)+0]+ia*sim[3*(i-dest-1)+0]+0.5f);
 					dim[3*(i)+1]=saturate_cast<uchar>(a*sim[3*(i-dest)+1]+ia*sim[3*(i-dest-1)+1]+0.5f);
 					dim[3*(i)+2]=saturate_cast<uchar>(a*sim[3*(i-dest)+2]+ia*sim[3*(i-dest-1)+2]+0.5f);*/
-					dim[3 * (i)+0] = saturate_cast<uchar>(a*sim[3 * (i - dest) + 0] + ia*sim[3 * (i - dest - 1) + 0]);
-					dim[3 * (i)+1] = saturate_cast<uchar>(a*sim[3 * (i - dest) + 1] + ia*sim[3 * (i - dest - 1) + 1]);
-					dim[3 * (i)+2] = saturate_cast<uchar>(a*sim[3 * (i - dest) + 2] + ia*sim[3 * (i - dest - 1) + 2]);
+					dim[3 * (i)+0] = saturate_cast<uchar>(a * sim[3 * (i - dest) + 0] + ia * sim[3 * (i - dest - 1) + 0]);
+					dim[3 * (i)+1] = saturate_cast<uchar>(a * sim[3 * (i - dest) + 1] + ia * sim[3 * (i - dest - 1) + 1]);
+					dim[3 * (i)+2] = saturate_cast<uchar>(a * sim[3 * (i - dest) + 2] + ia * sim[3 * (i - dest - 1) + 2]);
 				}
 			}
 		}
@@ -708,17 +708,17 @@ namespace cp
 						continue;
 					}
 
-					const int dest = (int)(-amp*disp);//ïÑçÜ
-					const float ia = (-amp*disp) - dest;
+					const int dest = (int)(-amp * disp);//ïÑçÜ
+					const float ia = (-amp * disp) - dest;
 					const float a = 1.f - ia;
 
 					/*dim[3*(i)+0]=saturate_cast<uchar>(a*sim[3*(i+dest)+0]+ia*sim[3*(i+dest+1)+0]+0.5f);
 					dim[3*(i)+1]=saturate_cast<uchar>(a*sim[3*(i+dest)+1]+ia*sim[3*(i+dest+1)+1]+0.5f);
 					dim[3*(i)+2]=saturate_cast<uchar>(a*sim[3*(i+dest)+2]+ia*sim[3*(i+dest+1)+2]+0.5f);*/
 
-					dim[3 * (i)+0] = saturate_cast<uchar>(a*sim[3 * (i + dest) + 0] + ia*sim[3 * (i + dest + 1) + 0]);
-					dim[3 * (i)+1] = saturate_cast<uchar>(a*sim[3 * (i + dest) + 1] + ia*sim[3 * (i + dest + 1) + 1]);
-					dim[3 * (i)+2] = saturate_cast<uchar>(a*sim[3 * (i + dest) + 2] + ia*sim[3 * (i + dest + 1) + 2]);
+					dim[3 * (i)+0] = saturate_cast<uchar>(a * sim[3 * (i + dest) + 0] + ia * sim[3 * (i + dest + 1) + 0]);
+					dim[3 * (i)+1] = saturate_cast<uchar>(a * sim[3 * (i + dest) + 1] + ia * sim[3 * (i + dest + 1) + 1]);
+					dim[3 * (i)+2] = saturate_cast<uchar>(a * sim[3 * (i + dest) + 2] + ia * sim[3 * (i + dest + 1) + 2]);
 				}
 			}
 		}
@@ -756,15 +756,15 @@ namespace cp
 						continue;
 					}
 
-					const int dest = (int)(disp*amp);
-					const double ia = (disp*amp) - dest;
+					const int dest = (int)(disp * amp);
+					const double ia = (disp * amp) - dest;
 					const double a = 1.0 - ia;
 
 					if (i >= dest)
 					{
-						dim[3 * (i)+0] = saturate_cast<uchar>(a*sim[3 * (i - dest) + 0] + ia*sim[3 * (i - dest - 1) + 0]);
-						dim[3 * (i)+1] = saturate_cast<uchar>(a*sim[3 * (i - dest) + 1] + ia*sim[3 * (i - dest - 1) + 1]);
-						dim[3 * (i)+2] = saturate_cast<uchar>(a*sim[3 * (i - dest) + 2] + ia*sim[3 * (i - dest - 1) + 2]);
+						dim[3 * (i)+0] = saturate_cast<uchar>(a * sim[3 * (i - dest) + 0] + ia * sim[3 * (i - dest - 1) + 0]);
+						dim[3 * (i)+1] = saturate_cast<uchar>(a * sim[3 * (i - dest) + 1] + ia * sim[3 * (i - dest - 1) + 1]);
+						dim[3 * (i)+2] = saturate_cast<uchar>(a * sim[3 * (i - dest) + 2] + ia * sim[3 * (i - dest - 1) + 2]);
 					}
 					else
 					{
@@ -800,15 +800,15 @@ namespace cp
 						continue;
 					}
 
-					const int dest = (int)(-amp*disp);//ïÑçÜ
-					const double ia = (-amp*disp) - dest;
+					const int dest = (int)(-amp * disp);//ïÑçÜ
+					const double ia = (-amp * disp) - dest;
 					const double a = 1.0 - ia;
 
 					if (i + dest < srcdisp.cols)
 					{
-						dim[3 * (i)+0] = saturate_cast<uchar>(a*sim[3 * (i + dest) + 0] + ia*sim[3 * (i + dest + 1) + 0]);
-						dim[3 * (i)+1] = saturate_cast<uchar>(a*sim[3 * (i + dest) + 1] + ia*sim[3 * (i + dest + 1) + 1]);
-						dim[3 * (i)+2] = saturate_cast<uchar>(a*sim[3 * (i + dest) + 2] + ia*sim[3 * (i + dest + 1) + 2]);
+						dim[3 * (i)+0] = saturate_cast<uchar>(a * sim[3 * (i + dest) + 0] + ia * sim[3 * (i + dest + 1) + 0]);
+						dim[3 * (i)+1] = saturate_cast<uchar>(a * sim[3 * (i + dest) + 1] + ia * sim[3 * (i + dest + 1) + 1]);
+						dim[3 * (i)+2] = saturate_cast<uchar>(a * sim[3 * (i + dest) + 2] + ia * sim[3 * (i + dest + 1) + 2]);
 					}
 					else
 					{
@@ -892,8 +892,8 @@ namespace cp
 					const srcType disp = s[i];
 					const int sub = (int)(abs(disp - s[i - 1]));
 
-					bool issub = (sub <= sub_gap && sub>0) ? true : false;
-					const int dest = (int)(disp*amp);
+					bool issub = (sub <= sub_gap && sub > 0) ? true : false;
+					const int dest = (int)(disp * amp);
 
 					if (disp > d[i - dest])
 					{
@@ -902,13 +902,13 @@ namespace cp
 						{
 							if (disp > d[i - dest - 1])
 							{
-								d[i - dest - 1] = (srcType)((disp + s[i - 1])*0.5);
+								d[i - dest - 1] = (srcType)((disp + s[i - 1]) * 0.5);
 								//d[i-dest-1]=disp;
 							}
 						}
 					}
 				}
-				memcpy(destdisp.ptr<srcType>(j), d, sizeof(srcType)*destdisp.cols);
+				memcpy(destdisp.ptr<srcType>(j), d, sizeof(srcType) * destdisp.cols);
 			}
 		}
 		else if (amp < 0)
@@ -923,10 +923,10 @@ namespace cp
 				{
 					const srcType disp = s[i];
 					const int sub = (int)(abs(disp - s[i + 1]));
-					bool issub = (sub <= sub_gap && sub>0) ? true : false;
+					bool issub = (sub <= sub_gap && sub > 0) ? true : false;
 					//bool issub = (sub<=sub_gap)?true:false;
 
-					const int dest = (int)(-amp*disp);
+					const int dest = (int)(-amp * disp);
 
 					if (disp > d[i + dest])
 					{
@@ -935,13 +935,13 @@ namespace cp
 						{
 							if (disp > d[i + dest + 1])
 							{
-								d[i + dest + 1] = (srcType)((disp + s[i + 1])*0.5);
+								d[i + dest + 1] = (srcType)((disp + s[i + 1]) * 0.5);
 								//d[i+dest+1]=(disp);
 							}
 						}
 					}
 				}
-				memcpy(destdisp.ptr<srcType>(j), d, sizeof(srcType)*destdisp.cols);
+				memcpy(destdisp.ptr<srcType>(j), d, sizeof(srcType) * destdisp.cols);
 			}
 		}
 		else
@@ -976,8 +976,8 @@ namespace cp
 					const srcType disp = s[i];
 					const int sub = (int)(abs(disp - s[i - 1]));
 
-					bool issub = (sub <= sub_gap && sub>0) ? true : false;
-					const int dest = (int)(disp*amp);
+					bool issub = (sub <= sub_gap && sub > 0) ? true : false;
+					const int dest = (int)(disp * amp);
 
 					if (sub > ljump || abs(disp - s[i + 1]) > ljump)
 						//if(s[i-1]-disp>ljump)
@@ -993,18 +993,18 @@ namespace cp
 						{
 							if (disp > d[i - dest - 1])
 							{
-								d[i - dest - 1] = (srcType)((disp + s[i - 1])*0.5);
+								d[i - dest - 1] = (srcType)((disp + s[i - 1]) * 0.5);
 								//d[i-dest-1]=disp;
 							}
 						}
 					}
 				}
-				memcpy(destdisp.ptr<srcType>(j), d, sizeof(srcType)*destdisp.cols);
+				memcpy(destdisp.ptr<srcType>(j), d, sizeof(srcType) * destdisp.cols);
 			}
 		}
-		else if (amp<0)
+		else if (amp < 0)
 		{
-			for (int j = 0; j<srcdisp.rows; j++)
+			for (int j = 0; j < srcdisp.rows; j++)
 			{
 				dst.setTo(0);
 				srcType* s = dsp.ptr<srcType>(j); s += 1;
@@ -1013,11 +1013,11 @@ namespace cp
 				{
 					const srcType disp = s[i];
 					const int sub = (int)(abs(disp - s[i + 1]));
-					bool issub = (sub <= sub_gap && sub>0) ? true : false;
+					bool issub = (sub <= sub_gap && sub > 0) ? true : false;
 
-					const int dest = (int)(-amp*disp);
+					const int dest = (int)(-amp * disp);
 
-					if (abs(disp - s[i - 1])>ljump || abs(disp - s[i + 1])>ljump)
+					if (abs(disp - s[i - 1]) > ljump || abs(disp - s[i + 1]) > ljump)
 					{
 						i += ij;
 						continue;
@@ -1030,12 +1030,12 @@ namespace cp
 						{
 							if (disp > d[i + dest + 1])
 							{
-								d[i + dest + 1] = (srcType)((disp + s[i + 1])*0.5);
+								d[i + dest + 1] = (srcType)((disp + s[i + 1]) * 0.5);
 							}
 						}
 					}
 				}
-				memcpy(destdisp.ptr<srcType>(j), d, sizeof(srcType)*destdisp.cols);
+				memcpy(destdisp.ptr<srcType>(j), d, sizeof(srcType) * destdisp.cols);
 			}
 		}
 		else
@@ -1072,9 +1072,9 @@ namespace cp
 					const srcType disp = s[i];
 					int sub = (int)(abs(disp - s[i - 1]));
 
-					bool issub = (sub <= sub_gap && sub>0) ? true : false;
+					bool issub = (sub <= sub_gap && sub > 0) ? true : false;
 					//bool issub = (sub<=sub_gap)?true:false;
-					const int dest = (int)(disp*amp);
+					const int dest = (int)(disp * amp);
 
 					if (sub > ljump || abs(disp - s[i + 1]) > ljump)
 						//if(s[i-1]-disp>ljump)
@@ -1093,20 +1093,20 @@ namespace cp
 						if (disp > d[i - dest - 1])
 						{
 							m[i - dest - 1] = 255;
-							d[i - dest - 1] = (srcType)((disp + s[i - 1])*0.5);
+							d[i - dest - 1] = (srcType)((disp + s[i - 1]) * 0.5);
 							//d[i-dest-1]=disp;
 						}
 					}
 				}
-				memcpy(destdisp.ptr<srcType>(j), d, sizeof(srcType)*destdisp.cols);
-				memcpy(mask.ptr<uchar>(j), m, sizeof(uchar)*destdisp.cols);
+				memcpy(destdisp.ptr<srcType>(j), d, sizeof(srcType) * destdisp.cols);
+				memcpy(mask.ptr<uchar>(j), m, sizeof(uchar) * destdisp.cols);
 			}
 			//imshowNormalize("amp>0",destdisp);
 		}
-		else if (amp<0)
+		else if (amp < 0)
 		{
 			//#pragma omp parallel for
-			for (int j = 0; j<srcdisp.rows; j++)
+			for (int j = 0; j < srcdisp.rows; j++)
 			{
 				dst.setTo(0); msk.setTo(0);
 				uchar* m = msk.ptr<uchar>(0);
@@ -1116,12 +1116,12 @@ namespace cp
 				{
 					const srcType disp = s[i];
 					int sub = (int)(abs(disp - s[i + 1]));
-					bool issub = (sub <= sub_gap && sub>0) ? true : false;
+					bool issub = (sub <= sub_gap && sub > 0) ? true : false;
 					//bool issub = (sub<=sub_gap)?true:false;
 
-					const int dest = (int)(-amp*disp);
+					const int dest = (int)(-amp * disp);
 
-					if (abs(disp - s[i - 1])>ljump || abs(disp - s[i + 1])>ljump)
+					if (abs(disp - s[i - 1]) > ljump || abs(disp - s[i + 1]) > ljump)
 					{
 						i += ij;
 						continue;
@@ -1137,13 +1137,13 @@ namespace cp
 						if (disp > d[i + dest + 1])
 						{
 							m[i + dest + 1] = 255;
-							d[i + dest + 1] = (srcType)((disp + s[i + 1])*0.5);
+							d[i + dest + 1] = (srcType)((disp + s[i + 1]) * 0.5);
 							//d[i+dest+1]=(disp);
 						}
 					}
 				}
-				memcpy(destdisp.ptr<srcType>(j), d, sizeof(srcType)*destdisp.cols);
-				memcpy(mask.ptr<uchar>(j), m, sizeof(uchar)*destdisp.cols);
+				memcpy(destdisp.ptr<srcType>(j), d, sizeof(srcType) * destdisp.cols);
+				memcpy(mask.ptr<uchar>(j), m, sizeof(uchar) * destdisp.cols);
 			}
 			//imshowNormalize("amp<0",destdisp);
 		}
@@ -1177,7 +1177,7 @@ namespace cp
 					const srcType disp = s[i];
 					int sub = (int)(abs(disp - s[i - 1]));
 					bool issub = (sub <= sub_gap) ? true : false;
-					const int dest = (int)(disp*amp + 0.5);
+					const int dest = (int)(disp * amp + 0.5);
 					//const int dest = (int)(disp*amp);
 
 					if (sub > ljump || abs(disp - s[i + 1]) > ljump)
@@ -1212,7 +1212,7 @@ namespace cp
 		else if (amp < 0)
 		{
 			//#pragma omp parallel for
-			for (int j = 0; j<srcdisp.rows; j++)
+			for (int j = 0; j < srcdisp.rows; j++)
 			{
 				uchar* sim = srcim.ptr<uchar>(j);
 				uchar* dim = destim.ptr<uchar>(j);
@@ -1220,15 +1220,15 @@ namespace cp
 
 				srcType* s = srcdisp.ptr<srcType>(j);
 				srcType* d = destdisp.ptr<srcType>(j);
-				for (int i = 0; i<srcdisp.cols; i++)
+				for (int i = 0; i < srcdisp.cols; i++)
 				{
 					const srcType disp = s[i];
 					int sub = (int)(abs(disp - s[i + 1]));
 					bool issub = (sub <= sub_gap) ? true : false;
-					const int dest = (int)((-amp*disp) + 0.5);
+					const int dest = (int)((-amp * disp) + 0.5);
 					//const int dest = (int)((-amp*disp));
 
-					if (abs(disp - s[i - 1])>ljump || abs(disp - s[i + 1])>ljump)
+					if (abs(disp - s[i - 1]) > ljump || abs(disp - s[i + 1]) > ljump)
 					{
 						i += ij;
 						continue;
@@ -1272,9 +1272,9 @@ namespace cp
 		//	cout<<"Cubic"<<endl;
 		const double cubic = -1.0;
 		const double c1 = cubic;
-		const double c2 = -5.0*cubic;
-		const double c3 = 8.0*cubic;
-		const double c4 = -4.0*cubic;
+		const double c2 = -5.0 * cubic;
+		const double c3 = 8.0 * cubic;
+		const double c4 = -4.0 * cubic;
 		const double c5 = 2.0 + cubic;
 		const double c6 = -(cubic + 3.0);
 
@@ -1293,8 +1293,8 @@ namespace cp
 				{
 					const srcType disp = s[i];
 
-					const int dest = (int)(disp*amp);
-					const double ia = ((double)disp*amp) - dest;
+					const int dest = (int)(disp * amp);
+					const double ia = ((double)disp * amp) - dest;
 					const double a = 1.0 - ia;
 
 
@@ -1312,16 +1312,16 @@ namespace cp
 							}
 							else
 							{
-								const double viaa = c1*(1.0 + a)*(1.0 + a)*(1.0 + a) + c2*(1.0 + a)*(1.0 + a) + c3*(1.0 + a) + c4;
-								const double iaa = c5* a* a* a + c6* a* a + 1.0;
-								const double aa = c5*ia*ia*ia + c6*ia*ia + 1.0;
-								const double vaa = c1*(1.0 + ia)*(1.0 + ia)*(1.0 + ia) + c2*(1.0 + ia)*(1.0 + ia) + c3*(1.0 + ia) + c4;
+								const double viaa = c1 * (1.0 + a) * (1.0 + a) * (1.0 + a) + c2 * (1.0 + a) * (1.0 + a) + c3 * (1.0 + a) + c4;
+								const double iaa = c5 * a * a * a + c6 * a * a + 1.0;
+								const double aa = c5 * ia * ia * ia + c6 * ia * ia + 1.0;
+								const double vaa = c1 * (1.0 + ia) * (1.0 + ia) * (1.0 + ia) + c2 * (1.0 + ia) * (1.0 + ia) + c3 * (1.0 + ia) + c4;
 
 								m[i - dest] = 255;
 								d[i - dest] = disp;
-								dim[3 * (i - dest) + 0] = saturate_cast<uchar>(vaa*sim[3 * i - 3] + aa*sim[3 * i + 0] + iaa*sim[3 * i + 3] + viaa*sim[3 * i + 6]);
-								dim[3 * (i - dest) + 1] = saturate_cast<uchar>(vaa*sim[3 * i - 2] + aa*sim[3 * i + 1] + iaa*sim[3 * i + 4] + viaa*sim[3 * i + 7]);
-								dim[3 * (i - dest) + 2] = saturate_cast<uchar>(vaa*sim[3 * i - 1] + aa*sim[3 * i + 2] + iaa*sim[3 * i + 5] + viaa*sim[3 * i + 8]);
+								dim[3 * (i - dest) + 0] = saturate_cast<uchar>(vaa * sim[3 * i - 3] + aa * sim[3 * i + 0] + iaa * sim[3 * i + 3] + viaa * sim[3 * i + 6]);
+								dim[3 * (i - dest) + 1] = saturate_cast<uchar>(vaa * sim[3 * i - 2] + aa * sim[3 * i + 1] + iaa * sim[3 * i + 4] + viaa * sim[3 * i + 7]);
+								dim[3 * (i - dest) + 2] = saturate_cast<uchar>(vaa * sim[3 * i - 1] + aa * sim[3 * i + 2] + iaa * sim[3 * i + 5] + viaa * sim[3 * i + 8]);
 							}
 						}
 					}
@@ -1343,8 +1343,8 @@ namespace cp
 				{
 					const srcType disp = s[i];
 
-					const int dest = (int)(-amp*disp);//ïÑçÜ
-					const double ia = (-(double)disp*amp) - dest;
+					const int dest = (int)(-amp * disp);//ïÑçÜ
+					const double ia = (-(double)disp * amp) - dest;
 					const double a = 1.0 - ia;
 
 					if (i + dest + 1 >= 0 && i + dest + 1 < srcdisp.cols - 1)
@@ -1361,16 +1361,16 @@ namespace cp
 							}
 							else
 							{
-								const double viaa = c1*(1.0 + a)*(1.0 + a)*(1.0 + a) + c2*(1.0 + a)*(1.0 + a) + c3*(1.0 + a) + c4;
-								const double iaa = c5* a* a* a + c6* a* a + 1.0;
-								const double aa = c5*ia*ia*ia + c6*ia*ia + 1.0;
-								const double vaa = c1*(1.0 + ia)*(1.0 + ia)*(1.0 + ia) + c2*(1.0 + ia)*(1.0 + ia) + c3*(1.0 + ia) + c4;
+								const double viaa = c1 * (1.0 + a) * (1.0 + a) * (1.0 + a) + c2 * (1.0 + a) * (1.0 + a) + c3 * (1.0 + a) + c4;
+								const double iaa = c5 * a * a * a + c6 * a * a + 1.0;
+								const double aa = c5 * ia * ia * ia + c6 * ia * ia + 1.0;
+								const double vaa = c1 * (1.0 + ia) * (1.0 + ia) * (1.0 + ia) + c2 * (1.0 + ia) * (1.0 + ia) + c3 * (1.0 + ia) + c4;
 								m[i + dest] = 255;
 								d[i + dest] = disp;
 
-								dim[3 * (i + dest) + 0] = saturate_cast<uchar>(vaa*sim[3 * i + 3] + aa*sim[3 * i + 0] + iaa*sim[3 * i - 3] + viaa*sim[3 * i - 6]);
-								dim[3 * (i + dest) + 1] = saturate_cast<uchar>(vaa*sim[3 * i + 4] + aa*sim[3 * i + 1] + iaa*sim[3 * i - 2] + viaa*sim[3 * i - 5]);
-								dim[3 * (i + dest) + 2] = saturate_cast<uchar>(vaa*sim[3 * i + 5] + aa*sim[3 * i + 2] + iaa*sim[3 * i - 1] + viaa*sim[3 * i - 4]);
+								dim[3 * (i + dest) + 0] = saturate_cast<uchar>(vaa * sim[3 * i + 3] + aa * sim[3 * i + 0] + iaa * sim[3 * i - 3] + viaa * sim[3 * i - 6]);
+								dim[3 * (i + dest) + 1] = saturate_cast<uchar>(vaa * sim[3 * i + 4] + aa * sim[3 * i + 1] + iaa * sim[3 * i - 2] + viaa * sim[3 * i - 5]);
+								dim[3 * (i + dest) + 2] = saturate_cast<uchar>(vaa * sim[3 * i + 5] + aa * sim[3 * i + 2] + iaa * sim[3 * i - 1] + viaa * sim[3 * i - 4]);
 							}
 						}
 					}
@@ -1391,9 +1391,9 @@ namespace cp
 	{
 		const double cubic = -1.0;
 		const double c1 = cubic;
-		const double c2 = -5.0*cubic;
-		const double c3 = 8.0*cubic;
-		const double c4 = -4.0*cubic;
+		const double c2 = -5.0 * cubic;
+		const double c3 = 8.0 * cubic;
+		const double c4 = -4.0 * cubic;
 		const double c5 = 2.0 + cubic;
 		const double c6 = -(cubic + 3.0);
 
@@ -1417,8 +1417,8 @@ namespace cp
 					const srcType disp = s[i];
 					int sub = (int)(abs(disp - s[i - 1]));
 					bool issub = (sub <= sub_gap) ? true : false;
-					const int dest = (int)(disp*amp);
-					const double ia = ((double)disp*amp) - dest;
+					const int dest = (int)(disp * amp);
+					const double ia = ((double)disp * amp) - dest;
 					const double a = 1.0 - ia;
 
 					if (sub > ljump || abs(disp - s[i + 1]) > ljump)
@@ -1449,23 +1449,23 @@ namespace cp
 							}
 							else
 							{
-								const double viaa = c1*(1.0 + a)*(1.0 + a)*(1.0 + a) + c2*(1.0 + a)*(1.0 + a) + c3*(1.0 + a) + c4;
-								const double iaa = c5* a* a* a + c6* a* a + 1.0;
-								const double aa = c5*ia*ia*ia + c6*ia*ia + 1.0;
-								const double vaa = c1*(1.0 + ia)*(1.0 + ia)*(1.0 + ia) + c2*(1.0 + ia)*(1.0 + ia) + c3*(1.0 + ia) + c4;
+								const double viaa = c1 * (1.0 + a) * (1.0 + a) * (1.0 + a) + c2 * (1.0 + a) * (1.0 + a) + c3 * (1.0 + a) + c4;
+								const double iaa = c5 * a * a * a + c6 * a * a + 1.0;
+								const double aa = c5 * ia * ia * ia + c6 * ia * ia + 1.0;
+								const double vaa = c1 * (1.0 + ia) * (1.0 + ia) * (1.0 + ia) + c2 * (1.0 + ia) * (1.0 + ia) + c3 * (1.0 + ia) + c4;
 
 								m[i - dest] = 255;
 								d[i - dest] = disp;
-								dim[3 * (i - dest) + 0] = saturate_cast<uchar>(vaa*sim[3 * i - 3] + aa*sim[3 * i + 0] + iaa*sim[3 * i + 3] + viaa*sim[3 * i + 6]);
-								dim[3 * (i - dest) + 1] = saturate_cast<uchar>(vaa*sim[3 * i - 2] + aa*sim[3 * i + 1] + iaa*sim[3 * i + 4] + viaa*sim[3 * i + 7]);
-								dim[3 * (i - dest) + 2] = saturate_cast<uchar>(vaa*sim[3 * i - 1] + aa*sim[3 * i + 2] + iaa*sim[3 * i + 5] + viaa*sim[3 * i + 8]);
+								dim[3 * (i - dest) + 0] = saturate_cast<uchar>(vaa * sim[3 * i - 3] + aa * sim[3 * i + 0] + iaa * sim[3 * i + 3] + viaa * sim[3 * i + 6]);
+								dim[3 * (i - dest) + 1] = saturate_cast<uchar>(vaa * sim[3 * i - 2] + aa * sim[3 * i + 1] + iaa * sim[3 * i + 4] + viaa * sim[3 * i + 7]);
+								dim[3 * (i - dest) + 2] = saturate_cast<uchar>(vaa * sim[3 * i - 1] + aa * sim[3 * i + 2] + iaa * sim[3 * i + 5] + viaa * sim[3 * i + 8]);
 								if (issub)
 								{
 									m[i - dest - 1] = 255;
 									d[i - dest - 1] = disp;
-									dim[3 * (i - dest - 1) + 0] = saturate_cast<uchar>(vaa*sim[3 * i - 6] + aa*sim[3 * i - 3] + iaa*sim[3 * i + 0] + viaa*sim[3 * i + 3]);
-									dim[3 * (i - dest - 1) + 1] = saturate_cast<uchar>(vaa*sim[3 * i - 5] + aa*sim[3 * i - 2] + iaa*sim[3 * i + 1] + viaa*sim[3 * i + 4]);
-									dim[3 * (i - dest - 1) + 2] = saturate_cast<uchar>(vaa*sim[3 * i - 4] + aa*sim[3 * i - 1] + iaa*sim[3 * i + 2] + viaa*sim[3 * i + 5]);
+									dim[3 * (i - dest - 1) + 0] = saturate_cast<uchar>(vaa * sim[3 * i - 6] + aa * sim[3 * i - 3] + iaa * sim[3 * i + 0] + viaa * sim[3 * i + 3]);
+									dim[3 * (i - dest - 1) + 1] = saturate_cast<uchar>(vaa * sim[3 * i - 5] + aa * sim[3 * i - 2] + iaa * sim[3 * i + 1] + viaa * sim[3 * i + 4]);
+									dim[3 * (i - dest - 1) + 2] = saturate_cast<uchar>(vaa * sim[3 * i - 4] + aa * sim[3 * i - 1] + iaa * sim[3 * i + 2] + viaa * sim[3 * i + 5]);
 								}
 							}
 						}
@@ -1477,7 +1477,7 @@ namespace cp
 		{
 			Mat im; copyMakeBorder(srcim, im, 0, 0, 2, 1, BORDER_REPLICATE);
 			//#pragma omp parallel for
-			for (int j = 0; j<srcdisp.rows; j++)
+			for (int j = 0; j < srcdisp.rows; j++)
 			{
 				uchar* sim = im.ptr<uchar>(j); sim += 6;
 				uchar* dim = destim.ptr<uchar>(j);
@@ -1485,16 +1485,16 @@ namespace cp
 
 				srcType* s = srcdisp.ptr<srcType>(j);
 				srcType* d = destdisp.ptr<srcType>(j);
-				for (int i = 0; i<srcdisp.cols; i++)
+				for (int i = 0; i < srcdisp.cols; i++)
 				{
 					const srcType disp = s[i];
 					int sub = (int)(abs(disp - s[i + 1]));
 					bool issub = (sub <= sub_gap) ? true : false;
-					const int dest = (int)(-amp*disp);//ïÑçÜ
-					const double ia = (-(double)disp*amp) - dest;
+					const int dest = (int)(-amp * disp);//ïÑçÜ
+					const double ia = (-(double)disp * amp) - dest;
 					const double a = 1.0 - ia;
 
-					if (abs(disp - s[i - 1])>ljump || abs(disp - s[i + 1])>ljump)
+					if (abs(disp - s[i - 1]) > ljump || abs(disp - s[i + 1]) > ljump)
 					{
 						i += ij;
 						continue;
@@ -1522,24 +1522,24 @@ namespace cp
 							}
 							else
 							{
-								const double viaa = c1*(1.0 + a)*(1.0 + a)*(1.0 + a) + c2*(1.0 + a)*(1.0 + a) + c3*(1.0 + a) + c4;
-								const double iaa = c5* a* a* a + c6* a* a + 1.0;
-								const double aa = c5*ia*ia*ia + c6*ia*ia + 1.0;
-								const double vaa = c1*(1.0 + ia)*(1.0 + ia)*(1.0 + ia) + c2*(1.0 + ia)*(1.0 + ia) + c3*(1.0 + ia) + c4;
+								const double viaa = c1 * (1.0 + a) * (1.0 + a) * (1.0 + a) + c2 * (1.0 + a) * (1.0 + a) + c3 * (1.0 + a) + c4;
+								const double iaa = c5 * a * a * a + c6 * a * a + 1.0;
+								const double aa = c5 * ia * ia * ia + c6 * ia * ia + 1.0;
+								const double vaa = c1 * (1.0 + ia) * (1.0 + ia) * (1.0 + ia) + c2 * (1.0 + ia) * (1.0 + ia) + c3 * (1.0 + ia) + c4;
 								m[i + dest] = 255;
 								d[i + dest] = disp;
 
-								dim[3 * (i + dest) + 0] = saturate_cast<uchar>(vaa*sim[3 * i + 3] + aa*sim[3 * i + 0] + iaa*sim[3 * i - 3] + viaa*sim[3 * i - 6]);
-								dim[3 * (i + dest) + 1] = saturate_cast<uchar>(vaa*sim[3 * i + 4] + aa*sim[3 * i + 1] + iaa*sim[3 * i - 2] + viaa*sim[3 * i - 5]);
-								dim[3 * (i + dest) + 2] = saturate_cast<uchar>(vaa*sim[3 * i + 5] + aa*sim[3 * i + 2] + iaa*sim[3 * i - 1] + viaa*sim[3 * i - 4]);
+								dim[3 * (i + dest) + 0] = saturate_cast<uchar>(vaa * sim[3 * i + 3] + aa * sim[3 * i + 0] + iaa * sim[3 * i - 3] + viaa * sim[3 * i - 6]);
+								dim[3 * (i + dest) + 1] = saturate_cast<uchar>(vaa * sim[3 * i + 4] + aa * sim[3 * i + 1] + iaa * sim[3 * i - 2] + viaa * sim[3 * i - 5]);
+								dim[3 * (i + dest) + 2] = saturate_cast<uchar>(vaa * sim[3 * i + 5] + aa * sim[3 * i + 2] + iaa * sim[3 * i - 1] + viaa * sim[3 * i - 4]);
 								if (issub)
 								{
 									m[i + dest + 1] = 255;
 									d[i + dest + 1] = (srcType)disp;
 
-									dim[3 * (i + dest + 1) + 0] = saturate_cast<uchar>(vaa*sim[3 * i + 6] + aa*sim[3 * i + 3] + iaa*sim[3 * i + 0] + viaa*sim[3 * i - 3]);
-									dim[3 * (i + dest + 1) + 1] = saturate_cast<uchar>(vaa*sim[3 * i + 7] + aa*sim[3 * i + 4] + iaa*sim[3 * i + 1] + viaa*sim[3 * i - 2]);
-									dim[3 * (i + dest + 1) + 2] = saturate_cast<uchar>(vaa*sim[3 * i + 8] + aa*sim[3 * i + 5] + iaa*sim[3 * i + 2] + viaa*sim[3 * i - 1]);
+									dim[3 * (i + dest + 1) + 0] = saturate_cast<uchar>(vaa * sim[3 * i + 6] + aa * sim[3 * i + 3] + iaa * sim[3 * i + 0] + viaa * sim[3 * i - 3]);
+									dim[3 * (i + dest + 1) + 1] = saturate_cast<uchar>(vaa * sim[3 * i + 7] + aa * sim[3 * i + 4] + iaa * sim[3 * i + 1] + viaa * sim[3 * i - 2]);
+									dim[3 * (i + dest + 1) + 2] = saturate_cast<uchar>(vaa * sim[3 * i + 8] + aa * sim[3 * i + 5] + iaa * sim[3 * i + 2] + viaa * sim[3 * i - 1]);
 								}
 							}
 						}
@@ -1579,8 +1579,8 @@ namespace cp
 					const srcType disp = s[i];
 					int sub = (int)(abs(disp - s[i - 1]));
 					bool issub = (sub <= sub_gap) ? true : false;
-					const int dest = (int)(disp*amp);
-					const double ia = (double)(disp*amp) - dest;
+					const int dest = (int)(disp * amp);
+					const double ia = (double)(disp * amp) - dest;
 					const double a = 1.0 - ia;
 
 					if (sub > ljump || abs(disp - s[i + 1]) > ljump)
@@ -1596,9 +1596,9 @@ namespace cp
 							m[i - dest] = 255;
 							d[i - dest] = disp;
 
-							dim[3 * (i - dest) + 0] = saturate_cast<uchar>(a*sim[3 * i + 0] + ia*sim[3 * i + 3]);
-							dim[3 * (i - dest) + 1] = saturate_cast<uchar>(a*sim[3 * i + 1] + ia*sim[3 * i + 4]);
-							dim[3 * (i - dest) + 2] = saturate_cast<uchar>(a*sim[3 * i + 2] + ia*sim[3 * i + 5]);
+							dim[3 * (i - dest) + 0] = saturate_cast<uchar>(a * sim[3 * i + 0] + ia * sim[3 * i + 3]);
+							dim[3 * (i - dest) + 1] = saturate_cast<uchar>(a * sim[3 * i + 1] + ia * sim[3 * i + 4]);
+							dim[3 * (i - dest) + 2] = saturate_cast<uchar>(a * sim[3 * i + 2] + ia * sim[3 * i + 5]);
 
 							if (issub)
 							{
@@ -1606,9 +1606,9 @@ namespace cp
 								m[i - dest - 1] = 255;
 								d[i - dest - 1] = disp;
 
-								dim[3 * (i - dest - 1) + 0] = saturate_cast<uchar>(a*sim[3 * i - 3] + ia*sim[3 * i + 0]);
-								dim[3 * (i - dest - 1) + 1] = saturate_cast<uchar>(a*sim[3 * i - 2] + ia*sim[3 * i + 1]);
-								dim[3 * (i - dest - 1) + 2] = saturate_cast<uchar>(a*sim[3 * i - 1] + ia*sim[3 * i + 2]);
+								dim[3 * (i - dest - 1) + 0] = saturate_cast<uchar>(a * sim[3 * i - 3] + ia * sim[3 * i + 0]);
+								dim[3 * (i - dest - 1) + 1] = saturate_cast<uchar>(a * sim[3 * i - 2] + ia * sim[3 * i + 1]);
+								dim[3 * (i - dest - 1) + 2] = saturate_cast<uchar>(a * sim[3 * i - 1] + ia * sim[3 * i + 2]);
 							}
 						}
 					}
@@ -1619,7 +1619,7 @@ namespace cp
 		{
 			Mat im; copyMakeBorder(srcim, im, 0, 0, 1, 1, BORDER_REPLICATE);
 			//#pragma omp parallel for
-			for (int j = 0; j<srcdisp.rows; j++)
+			for (int j = 0; j < srcdisp.rows; j++)
 			{
 				uchar* sim = im.ptr<uchar>(j); sim += 3;
 				uchar* dim = destim.ptr<uchar>(j);
@@ -1627,16 +1627,16 @@ namespace cp
 
 				srcType* s = srcdisp.ptr<srcType>(j);
 				srcType* d = destdisp.ptr<srcType>(j);
-				for (int i = 0; i<srcdisp.cols; i++)
+				for (int i = 0; i < srcdisp.cols; i++)
 				{
 					const srcType disp = s[i];
 					int sub = (int)(abs(disp - s[i + 1]));
 					bool issub = (sub <= sub_gap) ? true : false;
-					const int dest = (int)(-amp*disp);//ïÑçÜ
-					const double ia = (-(double)disp*amp) - dest;
+					const int dest = (int)(-amp * disp);//ïÑçÜ
+					const double ia = (-(double)disp * amp) - dest;
 					const double a = 1.0 - ia;
 
-					if (abs(disp - s[i - 1])>ljump || abs(disp - s[i + 1])>ljump)
+					if (abs(disp - s[i - 1]) > ljump || abs(disp - s[i + 1]) > ljump)
 					{
 						i += ij;
 						continue;
@@ -1649,18 +1649,18 @@ namespace cp
 							m[i + dest] = 255;
 							d[i + dest] = (srcType)disp;
 
-							dim[3 * (i + dest) + 0] = saturate_cast<uchar>(a*sim[3 * i + 0] + ia*sim[3 * i - 3]);
-							dim[3 * (i + dest) + 1] = saturate_cast<uchar>(a*sim[3 * i + 1] + ia*sim[3 * i - 2]);
-							dim[3 * (i + dest) + 2] = saturate_cast<uchar>(a*sim[3 * i + 2] + ia*sim[3 * i - 1]);
+							dim[3 * (i + dest) + 0] = saturate_cast<uchar>(a * sim[3 * i + 0] + ia * sim[3 * i - 3]);
+							dim[3 * (i + dest) + 1] = saturate_cast<uchar>(a * sim[3 * i + 1] + ia * sim[3 * i - 2]);
+							dim[3 * (i + dest) + 2] = saturate_cast<uchar>(a * sim[3 * i + 2] + ia * sim[3 * i - 1]);
 
 							if (issub)
 							{
 								m[i + dest + 1] = 255;
 								d[i + dest + 1] = (srcType)disp;
 
-								dim[3 * (i + dest + 1) + 0] = saturate_cast<uchar>(a*sim[3 * i + 3] + ia*sim[3 * i + 0]);
-								dim[3 * (i + dest + 1) + 1] = saturate_cast<uchar>(a*sim[3 * i + 4] + ia*sim[3 * i + 1]);
-								dim[3 * (i + dest + 1) + 2] = saturate_cast<uchar>(a*sim[3 * i + 5] + ia*sim[3 * i + 2]);
+								dim[3 * (i + dest + 1) + 0] = saturate_cast<uchar>(a * sim[3 * i + 3] + ia * sim[3 * i + 0]);
+								dim[3 * (i + dest + 1) + 1] = saturate_cast<uchar>(a * sim[3 * i + 4] + ia * sim[3 * i + 1]);
+								dim[3 * (i + dest + 1) + 2] = saturate_cast<uchar>(a * sim[3 * i + 5] + ia * sim[3 * i + 2]);
 							}
 						}
 					}
@@ -1852,7 +1852,7 @@ namespace cp
 
 						uchar ce[3];
 						srcType dd;
-						if (s[i - 1]<s[t])
+						if (s[i - 1] < s[t])
 						{
 							dd = s[i - 1];
 
@@ -1860,7 +1860,7 @@ namespace cp
 							int r = ims[3 * i - 3];
 							int g = ims[3 * i - 2];
 							int b = ims[3 * i - 1];
-							if (s[i - 1 - src.cols]>invalidvalue)
+							if (s[i - 1 - src.cols] > invalidvalue)
 							{
 								r += ims[3 * (i - 1 - src.cols) + 0];
 								g += ims[3 * (i - 1 - src.cols) + 1];
@@ -2300,13 +2300,13 @@ namespace cp
 					if (t == src.cols - 1)
 					{
 						memcpy(ims + 3 * i, imref + 3 * i, 3 * (src.cols - 1 - i));
-						memcpy(s + sizeof(srcType)*i, dref + sizeof(srcType)*i, sizeof(srcType)*(src.cols - 1 - i));
+						memcpy(s + sizeof(srcType) * i, dref + sizeof(srcType) * i, sizeof(srcType) * (src.cols - 1 - i));
 						continue;
 					}
 					if (i == 1)
 					{
 						memcpy(ims, imref, 3 * t);
-						memcpy(s, dref, sizeof(srcType)*t);
+						memcpy(s, dref, sizeof(srcType) * t);
 						i = t;
 						continue;
 					}
@@ -2408,13 +2408,13 @@ namespace cp
 					if (t == src.cols - 1)
 					{
 						memcpy(ims + 3 * i, imref + 3 * i, 3 * (src.cols - 1 - i));
-						memcpy(s + sizeof(srcType)*i, dref + sizeof(srcType)*i, sizeof(srcType)*(src.cols - 1 - i));
+						memcpy(s + sizeof(srcType) * i, dref + sizeof(srcType) * i, sizeof(srcType) * (src.cols - 1 - i));
 						continue;
 					}
 					if (i == 1)
 					{
 						memcpy(ims, imref, 3 * t);
-						memcpy(s, dref, sizeof(srcType)*t);
+						memcpy(s, dref, sizeof(srcType) * t);
 						i = t;
 						continue;
 					}
@@ -2853,10 +2853,10 @@ namespace cp
 				{
 					if (abs(dl[i] - dr[i]) < dth)
 					{
-						dd[i] = (srcType)((dl[i] + dr[i])*0.5);
-						d[3 * i + 0] = saturate_cast<uchar>(ia*l[3 * i + 0] + a*r[3 * i + 0]);
-						d[3 * i + 1] = saturate_cast<uchar>(ia*l[3 * i + 1] + a*r[3 * i + 1]);
-						d[3 * i + 2] = saturate_cast<uchar>(ia*l[3 * i + 2] + a*r[3 * i + 2]);
+						dd[i] = (srcType)((dl[i] + dr[i]) * 0.5);
+						d[3 * i + 0] = saturate_cast<uchar>(ia * l[3 * i + 0] + a * r[3 * i + 0]);
+						d[3 * i + 1] = saturate_cast<uchar>(ia * l[3 * i + 1] + a * r[3 * i + 1]);
+						d[3 * i + 2] = saturate_cast<uchar>(ia * l[3 * i + 2] + a * r[3 * i + 2]);
 					}
 					else if (dl[i] > dr[i])
 					{
@@ -2925,10 +2925,10 @@ namespace cp
 			{
 				if (dl[i] != invalid && dr[i] != invalid)
 				{
-					dd[i] = (srcType)((dl[i] + dr[i])*0.5);
-					d[3 * i + 0] = saturate_cast<uchar>(ia*l[3 * i + 0] + a*r[3 * i + 0] + 0.5f);
-					d[3 * i + 1] = saturate_cast<uchar>(ia*l[3 * i + 1] + a*r[3 * i + 1] + 0.5f);
-					d[3 * i + 2] = saturate_cast<uchar>(ia*l[3 * i + 2] + a*r[3 * i + 2] + 0.5f);
+					dd[i] = (srcType)((dl[i] + dr[i]) * 0.5);
+					d[3 * i + 0] = saturate_cast<uchar>(ia * l[3 * i + 0] + a * r[3 * i + 0] + 0.5f);
+					d[3 * i + 1] = saturate_cast<uchar>(ia * l[3 * i + 1] + a * r[3 * i + 1] + 0.5f);
+					d[3 * i + 2] = saturate_cast<uchar>(ia * l[3 * i + 2] + a * r[3 * i + 2] + 0.5f);
 				}
 				else if (dl[i] != invalid)
 				{
@@ -2979,9 +2979,9 @@ namespace cp
 					/*l[3*i+0] = saturate_cast<uchar>(ia*l[3*i+0]+a*r[3*i+0]+0.5);
 					l[3*i+1] = saturate_cast<uchar>(ia*l[3*i+1]+a*r[3*i+1]+0.5);
 					l[3*i+2] = saturate_cast<uchar>(ia*l[3*i+2]+a*r[3*i+2]+0.5);*/
-					l[3 * i + 0] = saturate_cast<uchar>((IA*l[3 * i + 0] + A*r[3 * i + 0]) >> shift);
-					l[3 * i + 1] = saturate_cast<uchar>((IA*l[3 * i + 1] + A*r[3 * i + 1]) >> shift);
-					l[3 * i + 2] = saturate_cast<uchar>((IA*l[3 * i + 2] + A*r[3 * i + 2]) >> shift);
+					l[3 * i + 0] = saturate_cast<uchar>((IA * l[3 * i + 0] + A * r[3 * i + 0]) >> shift);
+					l[3 * i + 1] = saturate_cast<uchar>((IA * l[3 * i + 1] + A * r[3 * i + 1]) >> shift);
+					l[3 * i + 2] = saturate_cast<uchar>((IA * l[3 * i + 2] + A * r[3 * i + 2]) >> shift);
 				}
 				else if (dr[i] != invalid)
 				{
@@ -3019,10 +3019,10 @@ namespace cp
 			{
 				if (ml[i] == 255 && mr[i] == 255)
 				{
-					dd[i] = (srcType)((dl[i] + dr[i])*0.5);
-					d[3 * i + 0] = saturate_cast<uchar>(ia*l[3 * i + 0] + a*r[3 * i + 0] + 0.5);
-					d[3 * i + 1] = saturate_cast<uchar>(ia*l[3 * i + 1] + a*r[3 * i + 1] + 0.5);
-					d[3 * i + 2] = saturate_cast<uchar>(ia*l[3 * i + 2] + a*r[3 * i + 2] + 0.5);
+					dd[i] = (srcType)((dl[i] + dr[i]) * 0.5);
+					d[3 * i + 0] = saturate_cast<uchar>(ia * l[3 * i + 0] + a * r[3 * i + 0] + 0.5);
+					d[3 * i + 1] = saturate_cast<uchar>(ia * l[3 * i + 1] + a * r[3 * i + 1] + 0.5);
+					d[3 * i + 2] = saturate_cast<uchar>(ia * l[3 * i + 2] + a * r[3 * i + 2] + 0.5);
 				}
 				else if (ml[i] == 255)
 				{
@@ -3070,31 +3070,31 @@ namespace cp
 
 			for (int i = 0; i < iml.cols; i++)
 			{
-				if (dl[i] != invalid &&dr[i] != invalid)
+				if (dl[i] != invalid && dr[i] != invalid)
 				{
 					if (abs(dr[i] - dl[i]) <= dth)
 					{
-						dd[i] = (srcType)((dl[i] + dr[i])*0.5);
+						dd[i] = (srcType)((dl[i] + dr[i]) * 0.5);
 
-						d[3 * i + 0] = saturate_cast<uchar>(ia*l[3 * i + 0] + a*r[3 * i + 0] + 0.5);
-						d[3 * i + 1] = saturate_cast<uchar>(ia*l[3 * i + 1] + a*r[3 * i + 1] + 0.5);
-						d[3 * i + 2] = saturate_cast<uchar>(ia*l[3 * i + 2] + a*r[3 * i + 2] + 0.5);
+						d[3 * i + 0] = saturate_cast<uchar>(ia * l[3 * i + 0] + a * r[3 * i + 0] + 0.5);
+						d[3 * i + 1] = saturate_cast<uchar>(ia * l[3 * i + 1] + a * r[3 * i + 1] + 0.5);
+						d[3 * i + 2] = saturate_cast<uchar>(ia * l[3 * i + 2] + a * r[3 * i + 2] + 0.5);
 					}
 					else if (abs(mdr[i] - dl[i]) <= dth)
 					{
-						dd[i] = (srcType)((dl[i] + mdr[i])*0.5);
+						dd[i] = (srcType)((dl[i] + mdr[i]) * 0.5);
 
-						d[3 * i + 0] = saturate_cast<uchar>(ia*l[3 * i + 0] + a*r[3 * i + 0] + 0.5);
-						d[3 * i + 1] = saturate_cast<uchar>(ia*l[3 * i + 1] + a*r[3 * i + 1] + 0.5);
-						d[3 * i + 2] = saturate_cast<uchar>(ia*l[3 * i + 2] + a*r[3 * i + 2] + 0.5);
+						d[3 * i + 0] = saturate_cast<uchar>(ia * l[3 * i + 0] + a * r[3 * i + 0] + 0.5);
+						d[3 * i + 1] = saturate_cast<uchar>(ia * l[3 * i + 1] + a * r[3 * i + 1] + 0.5);
+						d[3 * i + 2] = saturate_cast<uchar>(ia * l[3 * i + 2] + a * r[3 * i + 2] + 0.5);
 					}
 					else  if (abs(dr[i] - mdl[i]) <= dth)
 					{
-						dd[i] = (srcType)((mdl[i] + dr[i])*0.5);
+						dd[i] = (srcType)((mdl[i] + dr[i]) * 0.5);
 
-						d[3 * i + 0] = saturate_cast<uchar>(ia*l[3 * i + 0] + a*r[3 * i + 0] + 0.5);
-						d[3 * i + 1] = saturate_cast<uchar>(ia*l[3 * i + 1] + a*r[3 * i + 1] + 0.5);
-						d[3 * i + 2] = saturate_cast<uchar>(ia*l[3 * i + 2] + a*r[3 * i + 2] + 0.5);
+						d[3 * i + 0] = saturate_cast<uchar>(ia * l[3 * i + 0] + a * r[3 * i + 0] + 0.5);
+						d[3 * i + 1] = saturate_cast<uchar>(ia * l[3 * i + 1] + a * r[3 * i + 1] + 0.5);
+						d[3 * i + 2] = saturate_cast<uchar>(ia * l[3 * i + 2] + a * r[3 * i + 2] + 0.5);
 					}
 
 					else if (dl[i] - dr[i] > dth)
@@ -3149,11 +3149,11 @@ namespace cp
 			srcType* dr = dispR.ptr<srcType>(j);
 
 
-			for (int i = 0; i<iml.cols; i++)
+			for (int i = 0; i < iml.cols; i++)
 			{
-				if (dl[i] != invalid &&dr[i] != invalid)
+				if (dl[i] != invalid && dr[i] != invalid)
 				{
-					if (dl[i] - dr[i]>dth)
+					if (dl[i] - dr[i] > dth)
 					{
 						dd[i] = dl[i];
 						d[3 * i + 0] = l[3 * i + 0];
@@ -3169,10 +3169,10 @@ namespace cp
 					}
 					else
 					{
-						dd[i] = (srcType)((dl[i] + dr[i])*0.5);
-						d[3 * i + 0] = saturate_cast<uchar>(ia*l[3 * i + 0] + a*r[3 * i + 0] + 0.5);
-						d[3 * i + 1] = saturate_cast<uchar>(ia*l[3 * i + 1] + a*r[3 * i + 1] + 0.5);
-						d[3 * i + 2] = saturate_cast<uchar>(ia*l[3 * i + 2] + a*r[3 * i + 2] + 0.5);
+						dd[i] = (srcType)((dl[i] + dr[i]) * 0.5);
+						d[3 * i + 0] = saturate_cast<uchar>(ia * l[3 * i + 0] + a * r[3 * i + 0] + 0.5);
+						d[3 * i + 1] = saturate_cast<uchar>(ia * l[3 * i + 1] + a * r[3 * i + 1] + 0.5);
+						d[3 * i + 2] = saturate_cast<uchar>(ia * l[3 * i + 2] + a * r[3 * i + 2] + 0.5);
 					}
 				}
 				else if (dl[i] != invalid)
@@ -3214,11 +3214,11 @@ namespace cp
 			uchar* ml = maskL.ptr<uchar>(j);
 			uchar* mr = maskR.ptr<uchar>(j);
 
-			for (int i = 0; i<iml.cols; i++)
+			for (int i = 0; i < iml.cols; i++)
 			{
 				if (ml[i] == 255 && mr[i] == 255)
 				{
-					if (dl[i] - dr[i]>dth)
+					if (dl[i] - dr[i] > dth)
 					{
 						dd[i] = dl[i];
 						mr[i] = 0;
@@ -3236,10 +3236,10 @@ namespace cp
 					}
 					else
 					{
-						dd[i] = (srcType)((dl[i] + dr[i])*0.5);
-						d[3 * i + 0] = saturate_cast<uchar>(ia*l[3 * i + 0] + a*r[3 * i + 0] + 0.5);
-						d[3 * i + 1] = saturate_cast<uchar>(ia*l[3 * i + 1] + a*r[3 * i + 1] + 0.5);
-						d[3 * i + 2] = saturate_cast<uchar>(ia*l[3 * i + 2] + a*r[3 * i + 2] + 0.5);
+						dd[i] = (srcType)((dl[i] + dr[i]) * 0.5);
+						d[3 * i + 0] = saturate_cast<uchar>(ia * l[3 * i + 0] + a * r[3 * i + 0] + 0.5);
+						d[3 * i + 1] = saturate_cast<uchar>(ia * l[3 * i + 1] + a * r[3 * i + 1] + 0.5);
+						d[3 * i + 2] = saturate_cast<uchar>(ia * l[3 * i + 2] + a * r[3 * i + 2] + 0.5);
 					}
 				}
 				else if (ml[i] == 255)
@@ -3346,9 +3346,9 @@ namespace cp
 	{
 		const double cubic = -1.0;
 		const double c1 = cubic;
-		const double c2 = -5.0*cubic;
-		const double c3 = 8.0*cubic;
-		const double c4 = -4.0*cubic;
+		const double c2 = -5.0 * cubic;
+		const double c3 = 8.0 * cubic;
+		const double c4 = -4.0 * cubic;
 		const double c5 = 2.0 + cubic;
 		const double c6 = -(cubic + 3.0);
 
@@ -3358,10 +3358,10 @@ namespace cp
 		{
 			a = 1.0 - a;
 			const double ia = 1.0 - a;
-			const double viaa = c1*(1.0 + a)*(1.0 + a)*(1.0 + a) + c2*(1.0 + a)*(1.0 + a) + c3*(1.0 + a) + c4;
-			const double iaa = c5* a* a* a + c6* a* a + 1.0;
-			const double aa = c5*ia*ia*ia + c6*ia*ia + 1.0;
-			const double vaa = c1*(1.0 + ia)*(1.0 + ia)*(1.0 + ia) + c2*(1.0 + ia)*(1.0 + ia) + c3*(1.0 + ia) + c4;
+			const double viaa = c1 * (1.0 + a) * (1.0 + a) * (1.0 + a) + c2 * (1.0 + a) * (1.0 + a) + c3 * (1.0 + a) + c4;
+			const double iaa = c5 * a * a * a + c6 * a * a + 1.0;
+			const double aa = c5 * ia * ia * ia + c6 * ia * ia + 1.0;
+			const double vaa = c1 * (1.0 + ia) * (1.0 + ia) * (1.0 + ia) + c2 * (1.0 + ia) * (1.0 + ia) + c3 * (1.0 + ia) + c4;
 
 			Mat im; cv::copyMakeBorder(src, im, 0, 0, 1, 2, BORDER_REPLICATE);
 			//#pragma omp parallel for
@@ -3372,9 +3372,9 @@ namespace cp
 
 				for (int i = 0; i < src.cols; i++)
 				{
-					d[3 * (i)+0] = saturate_cast<uchar>(vaa*sim[3 * i - 3] + aa*sim[3 * i + 0] + iaa*sim[3 * i + 3] + viaa*sim[3 * i + 6]);
-					d[3 * (i)+1] = saturate_cast<uchar>(vaa*sim[3 * i - 2] + aa*sim[3 * i + 1] + iaa*sim[3 * i + 4] + viaa*sim[3 * i + 7]);
-					d[3 * (i)+2] = saturate_cast<uchar>(vaa*sim[3 * i - 1] + aa*sim[3 * i + 2] + iaa*sim[3 * i + 5] + viaa*sim[3 * i + 8]);
+					d[3 * (i)+0] = saturate_cast<uchar>(vaa * sim[3 * i - 3] + aa * sim[3 * i + 0] + iaa * sim[3 * i + 3] + viaa * sim[3 * i + 6]);
+					d[3 * (i)+1] = saturate_cast<uchar>(vaa * sim[3 * i - 2] + aa * sim[3 * i + 1] + iaa * sim[3 * i + 4] + viaa * sim[3 * i + 7]);
+					d[3 * (i)+2] = saturate_cast<uchar>(vaa * sim[3 * i - 1] + aa * sim[3 * i + 2] + iaa * sim[3 * i + 5] + viaa * sim[3 * i + 8]);
 				}
 			}
 		}
@@ -3382,10 +3382,10 @@ namespace cp
 		{
 			a = 1.0 + a;
 			const double ia = 1.0 - a;
-			const double viaa = c1*(1.0 + a)*(1.0 + a)*(1.0 + a) + c2*(1.0 + a)*(1.0 + a) + c3*(1.0 + a) + c4;
-			const double iaa = c5* a* a* a + c6* a* a + 1.0;
-			const double aa = c5*ia*ia*ia + c6*ia*ia + 1.0;
-			const double vaa = c1*(1.0 + ia)*(1.0 + ia)*(1.0 + ia) + c2*(1.0 + ia)*(1.0 + ia) + c3*(1.0 + ia) + c4;
+			const double viaa = c1 * (1.0 + a) * (1.0 + a) * (1.0 + a) + c2 * (1.0 + a) * (1.0 + a) + c3 * (1.0 + a) + c4;
+			const double iaa = c5 * a * a * a + c6 * a * a + 1.0;
+			const double aa = c5 * ia * ia * ia + c6 * ia * ia + 1.0;
+			const double vaa = c1 * (1.0 + ia) * (1.0 + ia) * (1.0 + ia) + c2 * (1.0 + ia) * (1.0 + ia) + c3 * (1.0 + ia) + c4;
 
 			Mat im; cv::copyMakeBorder(src, im, 0, 0, 2, 1, BORDER_REPLICATE);
 			//#pragma omp parallel for
@@ -3396,9 +3396,9 @@ namespace cp
 
 				for (int i = 0; i < src.cols; i++)
 				{
-					d[3 * (i)+0] = saturate_cast<uchar>(vaa*sim[3 * i + 3] + aa*sim[3 * i + 0] + iaa*sim[3 * i - 3] + viaa*sim[3 * i - 6]);
-					d[3 * (i)+1] = saturate_cast<uchar>(vaa*sim[3 * i + 4] + aa*sim[3 * i + 1] + iaa*sim[3 * i - 2] + viaa*sim[3 * i - 5]);
-					d[3 * (i)+2] = saturate_cast<uchar>(vaa*sim[3 * i + 5] + aa*sim[3 * i + 2] + iaa*sim[3 * i - 1] + viaa*sim[3 * i - 4]);
+					d[3 * (i)+0] = saturate_cast<uchar>(vaa * sim[3 * i + 3] + aa * sim[3 * i + 0] + iaa * sim[3 * i - 3] + viaa * sim[3 * i - 6]);
+					d[3 * (i)+1] = saturate_cast<uchar>(vaa * sim[3 * i + 4] + aa * sim[3 * i + 1] + iaa * sim[3 * i - 2] + viaa * sim[3 * i - 5]);
+					d[3 * (i)+2] = saturate_cast<uchar>(vaa * sim[3 * i + 5] + aa * sim[3 * i + 2] + iaa * sim[3 * i - 1] + viaa * sim[3 * i - 4]);
 				}
 			}
 		}
@@ -3424,9 +3424,9 @@ namespace cp
 
 				for (int i = 0; i < src.cols; i++)
 				{
-					d[3 * (i)+0] = saturate_cast<uchar>(a*sim[3 * i + 0] + ia*sim[3 * i + 3]);
-					d[3 * (i)+1] = saturate_cast<uchar>(a*sim[3 * i + 1] + ia*sim[3 * i + 4]);
-					d[3 * (i)+2] = saturate_cast<uchar>(a*sim[3 * i + 2] + ia*sim[3 * i + 5]);
+					d[3 * (i)+0] = saturate_cast<uchar>(a * sim[3 * i + 0] + ia * sim[3 * i + 3]);
+					d[3 * (i)+1] = saturate_cast<uchar>(a * sim[3 * i + 1] + ia * sim[3 * i + 4]);
+					d[3 * (i)+2] = saturate_cast<uchar>(a * sim[3 * i + 2] + ia * sim[3 * i + 5]);
 				}
 			}
 		}
@@ -3443,9 +3443,9 @@ namespace cp
 
 				for (int i = 0; i < src.cols; i++)
 				{
-					d[3 * (i)+0] = saturate_cast<uchar>(a*sim[3 * i + 0] + ia*sim[3 * i - 3]);
-					d[3 * (i)+1] = saturate_cast<uchar>(a*sim[3 * i + 1] + ia*sim[3 * i - 2]);
-					d[3 * (i)+2] = saturate_cast<uchar>(a*sim[3 * i + 2] + ia*sim[3 * i - 1]);
+					d[3 * (i)+0] = saturate_cast<uchar>(a * sim[3 * i + 0] + ia * sim[3 * i - 3]);
+					d[3 * (i)+1] = saturate_cast<uchar>(a * sim[3 * i + 1] + ia * sim[3 * i - 2]);
+					d[3 * (i)+2] = saturate_cast<uchar>(a * sim[3 * i + 2] + ia * sim[3 * i - 1]);
 				}
 			}
 		}
@@ -3472,7 +3472,7 @@ namespace cp
 			fillOcclusionImDisp(rref, rdref);
 			for (int i = -10; i <= 10; i++)
 			{
-				double move = i*0.05;
+				double move = i * 0.05;
 				warpShiftSubpix_cubic(lref, lsub[i + 10], move);
 				warpShiftSubpix_cubic(rref, rsub[i + 10], -move);
 				//gui(lsub[i+5],rsub[i+5]);
@@ -3509,7 +3509,7 @@ namespace cp
 			{
 				if (ml[i] == 255 && mr[i] == 255)
 				{
-					dd[i] = (srcType)((dl[i] + dr[i])*0.5);
+					dd[i] = (srcType)((dl[i] + dr[i]) * 0.5);
 					int emax = INT_MAX;
 					int argn = 0;
 					for (int n = 0; n < 11; n++)
@@ -3525,9 +3525,9 @@ namespace cp
 					}
 					resmap.at<uchar>(j, i) = argn * 10;
 					//argn=5;
-					d[3 * i + 0] = saturate_cast<uchar>(ia*ls[argn][3 * i + 0] + a*rs[argn][3 * i + 0]);
-					d[3 * i + 1] = saturate_cast<uchar>(ia*ls[argn][3 * i + 1] + a*rs[argn][3 * i + 1]);
-					d[3 * i + 2] = saturate_cast<uchar>(ia*ls[argn][3 * i + 2] + a*rs[argn][3 * i + 2]);
+					d[3 * i + 0] = saturate_cast<uchar>(ia * ls[argn][3 * i + 0] + a * rs[argn][3 * i + 0]);
+					d[3 * i + 1] = saturate_cast<uchar>(ia * ls[argn][3 * i + 1] + a * rs[argn][3 * i + 1]);
+					d[3 * i + 2] = saturate_cast<uchar>(ia * ls[argn][3 * i + 2] + a * rs[argn][3 * i + 2]);
 
 					/*d[3*i+0] = saturate_cast<uchar>(ia*l[3*i+0]+a*r[3*i+0]);
 					d[3*i+1] = saturate_cast<uchar>(ia*l[3*i+1]+a*r[3*i+1]);
@@ -3568,7 +3568,7 @@ namespace cp
 			copyMakeBorder(imlP, il, 1, 1, 0, 0, BORDER_REPLICATE);
 			for (int i = -10; i <= 10; i++)
 			{
-				double move = i*0.05;
+				double move = i * 0.05;
 
 				warpShiftSubpix_cubic(il, lsub[i + 10], move);
 				warpShiftSubpix_cubic(ir, rsub[i + 10], -move);
@@ -3606,7 +3606,7 @@ namespace cp
 			{
 				if (ml[i] == 255 && mr[i] == 255)
 				{
-					dd[i] = (srcType)((dl[i] + dr[i])*0.5);
+					dd[i] = (srcType)((dl[i] + dr[i]) * 0.5);
 
 					//cout<<dl[i]<<","<<dr[i]<<endl;
 					int disp = dd[i] / 16.0;
@@ -3615,7 +3615,7 @@ namespace cp
 					for (int n = 0; n < 21; n++)
 					{
 						int e = INT_MAX;
-						if (i + disp<iml.cols&& i>disp)
+						if (i + disp<iml.cols && i>disp)
 						{
 
 							e = (int)abs(ls[n][3 * (i + disp) + 0] - rs[n][3 * (i - disp) + 0]) + 3 * (int)abs(ls[n][3 * (i + disp) + 1] - rs[n][3 * (i - disp) + 1]) + (int)abs(ls[n][3 * (i + disp) + 2] - rs[n][3 * (i - disp) + 2]);
@@ -3635,9 +3635,9 @@ namespace cp
 
 					resmap.at<uchar>(j, i) = argn * 10;
 					//cout<<"!"<<i<<","<<disp<<","<<argn<<endl;
-					d[3 * i + 0] = saturate_cast<uchar>(ia*ls[argn][3 * (i + disp) + 0] + a*rs[argn][3 * (i - disp) + 0]);
-					d[3 * i + 1] = saturate_cast<uchar>(ia*ls[argn][3 * (i + disp) + 1] + a*rs[argn][3 * (i - disp) + 1]);
-					d[3 * i + 2] = saturate_cast<uchar>(ia*ls[argn][3 * (i + disp) + 2] + a*rs[argn][3 * (i - disp) + 2]);
+					d[3 * i + 0] = saturate_cast<uchar>(ia * ls[argn][3 * (i + disp) + 0] + a * rs[argn][3 * (i - disp) + 0]);
+					d[3 * i + 1] = saturate_cast<uchar>(ia * ls[argn][3 * (i + disp) + 1] + a * rs[argn][3 * (i - disp) + 1]);
+					d[3 * i + 2] = saturate_cast<uchar>(ia * ls[argn][3 * (i + disp) + 2] + a * rs[argn][3 * (i - disp) + 2]);
 
 					/*d[3*i+0] = saturate_cast<uchar>(ia*l[3*i+0]+a*r[3*i+0]);
 					d[3*i+1] = saturate_cast<uchar>(ia*l[3*i+1]+a*r[3*i+1]);
@@ -3828,16 +3828,16 @@ namespace cp
 			const int step = srcdisp.cols;
 			srcType* s = srcdisp.ptr<srcType>(0);
 			srcType* d = destdisp.ptr<srcType>(0);
-			for (int j = 0; j<srcdisp.rows; j++)
+			for (int j = 0; j < srcdisp.rows; j++)
 			{
 				for (int i = srcdisp.cols - 1; i >= 0; i--)
 				{
 					const srcType disp = s[i];
 					int sub = (int)(abs(disp - s[i - 1]));
 					bool issub = (sub <= sub_gap) ? true : false;
-					const int dest = (int)(disp*amp);
+					const int dest = (int)(disp * amp);
 
-					if (abs(disp - s[i - 1])>ljump || abs(disp - s[i + 1]) > ljump)
+					if (abs(disp - s[i - 1]) > ljump || abs(disp - s[i + 1]) > ljump)
 					{
 						continue;
 					}
@@ -3861,16 +3861,16 @@ namespace cp
 			const int step = srcdisp.cols;
 			srcType* s = srcdisp.ptr<srcType>(0);
 			srcType* d = destdisp.ptr<srcType>(0);
-			for (int j = 0; j<srcdisp.rows; j++)
+			for (int j = 0; j < srcdisp.rows; j++)
 			{
-				for (int i = 0; i<srcdisp.cols; i++)
+				for (int i = 0; i < srcdisp.cols; i++)
 				{
 					const srcType disp = s[i];
 					int sub = (int)(abs(disp - s[i + 1]));
 					bool issub = (sub <= sub_gap) ? true : false;
-					const int dest = (int)(-disp*amp);
+					const int dest = (int)(-disp * amp);
 
-					if (abs(disp - s[i - 1])>ljump || abs(disp - s[i + 1])>ljump)
+					if (abs(disp - s[i - 1]) > ljump || abs(disp - s[i + 1]) > ljump)
 					{
 						continue;
 					}
@@ -3946,7 +3946,7 @@ namespace cp
 				{
 					if (s[i - 1] != invalidvalue && s[i + 1] != invalidvalue)
 					{
-						d[i] = (srcType)((s[i - 1] + s[i + 1])*0.5);
+						d[i] = (srcType)((s[i - 1] + s[i + 1]) * 0.5);
 					}
 				}
 			}
@@ -4019,7 +4019,7 @@ namespace cp
 			if (depthfiltermode == DEPTH_FILTER_SPECKLE)
 			{
 				medianBlur(depth, depth2, warpedMedianKernel);
-				filterSpeckles(depth2, 0, warpedSpeckesWindow, (int)(warpedSpeckesRange*disp_amp));
+				filterSpeckles(depth2, 0, warpedSpeckesWindow, (int)(warpedSpeckesRange * disp_amp));
 			}
 			else if (depthfiltermode == DEPTH_FILTER_MEDIAN)
 			{
@@ -4054,7 +4054,7 @@ namespace cp
 			if (depthfiltermode == DEPTH_FILTER_SPECKLE)
 			{
 				medianBlur(depth, depth2, warpedMedianKernel);
-				filterSpeckles(depth2, 0, warpedSpeckesWindow, (int)(warpedSpeckesRange*disp_amp));
+				filterSpeckles(depth2, 0, warpedSpeckesWindow, (int)(warpedSpeckesRange * disp_amp));
 				compare(depth, depth2, mask, cv::CMP_NE);
 			}
 			else if (depthfiltermode == DEPTH_FILTER_MEDIAN)
@@ -4310,7 +4310,7 @@ namespace cp
 		{
 			//CalcTime t("warp");
 
-			shiftImDisp<uchar>(srcL, dispL, dest, temp, alpha*disp_amp, disp_amp, large_jump, maskL);
+			shiftImDisp<uchar>(srcL, dispL, dest, temp, alpha * disp_amp, disp_amp, large_jump, maskL);
 			//			fillOcclusion(temp);////////////
 			depthfilter(temp, destdisp, maskL2, cvRound(abs(alpha)), disp_amp);
 			Mat m;  compare(destdisp, 0, m, cv::CMP_EQ);
@@ -4318,11 +4318,11 @@ namespace cp
 			maskL.setTo(0, m);
 			maskL2.setTo(0, m);
 
-			shiftImInvWithMask_<uchar>(srcL, destdisp, dest, -alpha*disp_amp, maskL2);
+			shiftImInvWithMask_<uchar>(srcL, destdisp, dest, -alpha * disp_amp, maskL2);
 			maskL = maskL + maskL2;
 
 			temp.setTo(0);
-			shiftImDisp<uchar>(srcR, dispR, destR, temp, -disp_amp*(1.0 - alpha), disp_amp, large_jump, maskR);
+			shiftImDisp<uchar>(srcR, dispR, destR, temp, -disp_amp * (1.0 - alpha), disp_amp, large_jump, maskR);
 
 			depthfilter(temp, destdispR, maskL2, cvRound(abs(alpha)), disp_amp);
 			//filterDepth(temp,destdispR,maskL2);
@@ -4330,27 +4330,52 @@ namespace cp
 			destR.setTo(0, m2);
 			maskR.setTo(0, m2);
 			maskL2.setTo(0, m2);
-			shiftImInvWithMask_<uchar>(srcR, destdispR, destR, disp_amp*(1.0 - alpha), maskL2);
+			shiftImInvWithMask_<uchar>(srcR, destdispR, destR, disp_amp * (1.0 - alpha), maskL2);
 			filterSpeckles(destR, 0, 255, 255);
 
 			maskR = maskR + maskL2;
 		}
 
-	{
-		//	CalcTime t("blend");			
-		//blendLRS<uchar>(dest,destR,destdisp,destdispR,destR,destdispR,maskL,maskR,alpha);
-		blendLR<uchar>(dest, destR, destdisp, destdispR, destR, destdispR, maskL, maskR, alpha, 32);
-		//guiAlphaBlend(maskL,maskR);
-		//	imwrite("im.bmp",destR);
-		//			imwrite("binp_dp.bmp",destdispR);
-	}
-	if (postFilterMethod == POST_GAUSSIAN_FILL)
-	{
 		{
-			//CalcTime t("inpaint");
-			//fillBoundingBoxDepthIm<uchar>(destR,destdispR,0);
+			//	CalcTime t("blend");			
+			//blendLRS<uchar>(dest,destR,destdisp,destdispR,destR,destdispR,maskL,maskR,alpha);
+			blendLR<uchar>(dest, destR, destdisp, destdispR, destR, destdispR, maskL, maskR, alpha, 32);
+			//guiAlphaBlend(maskL,maskR);
+			//	imwrite("im.bmp",destR);
+			//			imwrite("binp_dp.bmp",destdispR);
+		}
+		if (postFilterMethod == POST_GAUSSIAN_FILL)
+		{
+			{
+				//CalcTime t("inpaint");
+				//fillBoundingBoxDepthIm<uchar>(destR,destdispR,0);
 
-			//depthBasedInpaint<uchar>(destR,destdispR,dest,destdisp,0);
+				//depthBasedInpaint<uchar>(destR,destdispR,dest,destdisp,0);
+				Mat m;  compare(destdispR, 0, m, cv::CMP_EQ);
+				fillOcclusionImDisp(destR, destdispR, invalidvalue, FILL_OCCLUSION_LINE);
+				destdispR.copyTo(destdisp);
+				destR.copyTo(dest);
+
+				Mat dest2;
+				boxFilter(dest, dest2, -1, occBlurSize);
+				dest2.copyTo(dest, m);
+				//	imwrite("im_occ.bmp",dest);
+			}
+			Mat edge;
+			cv::Canny(destdisp, edge, canny_t1, canny_t2);
+			//imshow("ee",edge);
+			//dilate(edge,edge,Mat(),Point(-1,-1),2);
+
+			Mat a;
+			GaussianBlur(dest, a, boundaryKernelSize, boundarySigma);
+			a.copyTo(destR, edge);
+			double aa = (alpha > 1.0) ? 1.0 : alpha;
+			aa = (alpha < 0.0) ? 0.0 : aa;
+			aa = (0.5 - abs(aa - 0.5)) * 2.0;
+			addWeighted(dest, 1.0 - aa, destR, aa, 0.0, dest);
+		}
+		else if (postFilterMethod == POST_FILL)
+		{
 			Mat m;  compare(destdispR, 0, m, cv::CMP_EQ);
 			fillOcclusionImDisp(destR, destdispR, invalidvalue, FILL_OCCLUSION_LINE);
 			destdispR.copyTo(destdisp);
@@ -4359,37 +4384,12 @@ namespace cp
 			Mat dest2;
 			boxFilter(dest, dest2, -1, occBlurSize);
 			dest2.copyTo(dest, m);
-			//	imwrite("im_occ.bmp",dest);
 		}
-		Mat edge;
-		cv::Canny(destdisp, edge, canny_t1, canny_t2);
-		//imshow("ee",edge);
-		//dilate(edge,edge,Mat(),Point(-1,-1),2);
-
-		Mat a;
-		GaussianBlur(dest, a, boundaryKernelSize, boundarySigma);
-		a.copyTo(destR, edge);
-		double aa = (alpha > 1.0) ? 1.0 : alpha;
-		aa = (alpha < 0.0) ? 0.0 : aa;
-		aa = (0.5 - abs(aa - 0.5))*2.0;
-		addWeighted(dest, 1.0 - aa, destR, aa, 0.0, dest);
-	}
-	else if (postFilterMethod == POST_FILL)
-	{
-		Mat m;  compare(destdispR, 0, m, cv::CMP_EQ);
-		fillOcclusionImDisp(destR, destdispR, invalidvalue, FILL_OCCLUSION_LINE);
-		destdispR.copyTo(destdisp);
-		destR.copyTo(dest);
-
-		Mat dest2;
-		boxFilter(dest, dest2, -1, occBlurSize);
-		dest2.copyTo(dest, m);
-	}
-	else
-	{
-		destdispR.copyTo(destdisp);
-		destR.copyTo(dest);
-	}
+		else
+		{
+			destdispR.copyTo(destdisp);
+			destR.copyTo(dest);
+		}
 	}
 
 	void StereoViewSynthesis::analyzeSynthesizedView(Mat& srcsynth, Mat& ref)
@@ -4443,7 +4443,7 @@ namespace cp
 		Mat temp(srcL.size(), dispL.depth());
 
 
-		shiftDisp(dispL, temp, (float)(alpha / disp_amp), (float)sub_gap, (int)(large_jump*disp_amp), maskL);
+		shiftDisp(dispL, temp, (float)(alpha / disp_amp), (float)sub_gap, (int)(large_jump * disp_amp), maskL);
 		depthfilter(temp, destdisp, maskTemp, cvRound(abs(alpha)), disp_amp);
 		compare(destdisp, 0, maskL, cv::CMP_NE);
 		dest.setTo(0);
@@ -4451,7 +4451,7 @@ namespace cp
 
 		draw.push_back(dest.clone());
 
-		shiftDisp(dispR, temp, (float)((alpha - 1.0) / disp_amp), (float)sub_gap, (int)(large_jump*disp_amp), maskR);
+		shiftDisp(dispR, temp, (float)((alpha - 1.0) / disp_amp), (float)sub_gap, (int)(large_jump * disp_amp), maskR);
 		depthfilter(temp, destdispR, maskTemp, cvRound(abs(alpha)), disp_amp);
 		compare(destdispR, 0, maskR, cv::CMP_NE);
 		destR.setTo(0);
@@ -4522,7 +4522,7 @@ namespace cp
 		Mat temp(srcL.size(), dispL.depth());
 
 
-		shiftDisp(dispL, temp, (float)(alpha / disp_amp), (float)sub_gap, (int)(large_jump*disp_amp), maskL);
+		shiftDisp(dispL, temp, (float)(alpha / disp_amp), (float)sub_gap, (int)(large_jump * disp_amp), maskL);
 		depthfilter(temp, destdisp, maskTemp, cvRound(abs(alpha)), disp_amp);
 		compare(destdisp, 0, maskL, cv::CMP_NE);
 		dest.setTo(0);
@@ -4530,7 +4530,7 @@ namespace cp
 
 		draw.push_back(dest.clone());
 
-		shiftDisp(dispR, temp, (float)((alpha - 1.0) / disp_amp), (float)sub_gap, (int)(large_jump*disp_amp), maskR);
+		shiftDisp(dispR, temp, (float)((alpha - 1.0) / disp_amp), (float)sub_gap, (int)(large_jump * disp_amp), maskR);
 		depthfilter(temp, destdispR, maskTemp, cvRound(abs(alpha)), disp_amp);
 		compare(destdispR, 0, maskR, cv::CMP_NE);
 		destR.setTo(0);
@@ -4630,49 +4630,49 @@ namespace cp
 			CalcTime t("warp");
 #endif
 			Mat maskdummy;
-			shiftDisp(dispL, temp, (float)(alpha / disp_amp), (float)sub_gap, (int)(large_jump*disp_amp), maskdummy);
+			shiftDisp(dispL, temp, (float)(alpha / disp_amp), (float)sub_gap, (int)(large_jump * disp_amp), maskdummy);
 			depthfilter(temp, destdisp, maskdummy, cvRound(abs(alpha)), disp_amp);
 			shiftImInv(srcL, destdisp, dest, (float)(-alpha / disp_amp), 0, warpInterpolationMethod);
 
 
 			{
 				//	CalcTime t("shift");
-				shiftDisp(dispR, temp, (float)((alpha - 1.0) / disp_amp), (float)sub_gap, (int)(large_jump*disp_amp), maskdummy);
+				shiftDisp(dispR, temp, (float)((alpha - 1.0) / disp_amp), (float)sub_gap, (int)(large_jump * disp_amp), maskdummy);
 			}
-		{
-			//	CalcTime t("filter");
-			depthfilter(temp, destdispR, maskdummy, cvRound(abs(alpha)), disp_amp);
+			{
+				//	CalcTime t("filter");
+				depthfilter(temp, destdispR, maskdummy, cvRound(abs(alpha)), disp_amp);
+			}
+			{
+				//CalcTime t("inter");
+				//shiftImInv_<T>(srcR,destdispR,destR,(1.0-alpha)/disp_amp,maskR,0,warpInterpolationMethod);
+				shiftImInv(srcR, destdispR, destR, (float)((1.0 - alpha) / disp_amp), 0, warpInterpolationMethod);
+			}
+
+			//with mask
+			/*
+			//	shiftDisp<T>(dispL,temp,alpha/disp_amp,sub_gap,large_jump*disp_amp,maskL);
+			shiftDisp<T>(dispL,temp,alpha/disp_amp,sub_gap,(int)(large_jump*disp_amp));
+
+			depthfilter(temp,destdisp,maskTemp,cvRound(abs(alpha)),disp_amp);
+
+			compare(destdisp,0,maskL,cv::CMP_NE);
+			dest.setTo(0);
+
+			shiftImInv_<T>(srcL,destdisp,dest,-alpha/disp_amp,maskL,0,warpInterpolationMethod);
+
+			//shiftDisp<T>(dispR,temp,(alpha-1.0)/disp_amp,sub_gap,large_jump*disp_amp,maskR);
+			shiftDisp<T>(dispR,temp,(alpha-1.0)/disp_amp,sub_gap,large_jump*disp_amp);
+
+
+			depthfilter(temp,destdispR,maskTemp,cvRound(abs(alpha)),disp_amp);
+			compare(destdispR,0,maskR,cv::CMP_NE);
+
+			destR.setTo(0);
+
+			shiftImInv_<T>(srcR,destdispR,destR,(1.0-alpha)/disp_amp,maskR,0,warpInterpolationMethod);
+			*/
 		}
-		{
-			//CalcTime t("inter");
-			//shiftImInv_<T>(srcR,destdispR,destR,(1.0-alpha)/disp_amp,maskR,0,warpInterpolationMethod);
-			shiftImInv(srcR, destdispR, destR, (float)((1.0 - alpha) / disp_amp), 0, warpInterpolationMethod);
-		}
-
-		//with mask
-		/*
-		//	shiftDisp<T>(dispL,temp,alpha/disp_amp,sub_gap,large_jump*disp_amp,maskL);
-		shiftDisp<T>(dispL,temp,alpha/disp_amp,sub_gap,(int)(large_jump*disp_amp));
-
-		depthfilter(temp,destdisp,maskTemp,cvRound(abs(alpha)),disp_amp);
-
-		compare(destdisp,0,maskL,cv::CMP_NE);
-		dest.setTo(0);
-
-		shiftImInv_<T>(srcL,destdisp,dest,-alpha/disp_amp,maskL,0,warpInterpolationMethod);
-
-		//shiftDisp<T>(dispR,temp,(alpha-1.0)/disp_amp,sub_gap,large_jump*disp_amp,maskR);
-		shiftDisp<T>(dispR,temp,(alpha-1.0)/disp_amp,sub_gap,large_jump*disp_amp);
-
-
-		depthfilter(temp,destdispR,maskTemp,cvRound(abs(alpha)),disp_amp);
-		compare(destdispR,0,maskR,cv::CMP_NE);
-
-		destR.setTo(0);
-
-		shiftImInv_<T>(srcR,destdispR,destR,(1.0-alpha)/disp_amp,maskR,0,warpInterpolationMethod);
-		*/
-	}
 
 		{
 #ifdef VIS_SYNTH_INFO
@@ -4692,14 +4692,14 @@ namespace cp
 			}
 			else
 			{
-				if (blendMethod == 0) blendLR<srcType>(dest, destR, destdisp, destdispR, destR, destdisp, alpha, (srcType)(blend_z_thresh*disp_amp), invalidvalue);//
-				else blendLR_NearestMax<srcType>(dest, destR, destdisp, destdispR, destR, destdisp, alpha, (srcType)(blend_z_thresh*disp_amp), invalidvalue);//
+				if (blendMethod == 0) blendLR<srcType>(dest, destR, destdisp, destdispR, destR, destdisp, alpha, (srcType)(blend_z_thresh * disp_amp), invalidvalue);//
+				else blendLR_NearestMax<srcType>(dest, destR, destdisp, destdispR, destR, destdisp, alpha, (srcType)(blend_z_thresh * disp_amp), invalidvalue);//
 				//blendLR<T>(dest,destR,destdisp,destdispR,destR,destdisp,alpha, (T)(blend_z_thresh*disp_amp),invalidvalue);//
 				//blendLR<T>(dest,destR,destdisp,destdispR,destR,destdispR,maskL,maskR,alpha, (T)(blend_z_thresh*disp_amp));//
 
 				//blendLRRes2<T>(dest,destR, srcL, srcR,destdisp,destdispR,destR,destdispR,maskL,maskR,alpha);
 			}
-}
+		}
 
 		if (postFilterMethod == POST_GAUSSIAN_FILL)
 		{
@@ -4723,45 +4723,45 @@ namespace cp
 				}
 			}
 
-		{
-			//CalcTime t("blur");
-			blur(destR, dest, occBlurSize);
-			dest.copyTo(destR, m);
-		}
+			{
+				//CalcTime t("blur");
+				blur(destR, dest, occBlurSize);
+				dest.copyTo(destR, m);
+			}
 
-		{
-			//CalcTime t("canny");
-			destdisp.convertTo(disp8Ubuff, CV_8U, 1.0 / disp_amp);
-			cv::Canny(disp8Ubuff, edge, canny_t1, canny_t2);
-		}
+			{
+				//CalcTime t("canny");
+				destdisp.convertTo(disp8Ubuff, CV_8U, 1.0 / disp_amp);
+				cv::Canny(disp8Ubuff, edge, canny_t1, canny_t2);
+			}
 
 
-		//imshow("ee",edge);//waitKey();
+			//imshow("ee",edge);//waitKey();
 #ifdef VIS_SYNTH_INFO
-		vis.setTo(128, edge);
+			vis.setTo(128, edge);
 #endif
 
 
-		if (alpha == 0.5 &&boundaryGaussianRatio == 1.0)
-		{
-			GaussianFilterwithMask(destR, dest, boundaryKernelSize.width / 2, (float)boundarySigma, FILTER_SLOWEST, edge);
+			if (alpha == 0.5 && boundaryGaussianRatio == 1.0)
+			{
+				GaussianFilterwithMask(destR, dest, boundaryKernelSize.width / 2, (float)boundarySigma, FILTER_SLOWEST, edge);
+			}
+			else
+			{
+				Mat dst = destR.clone(); //used for destR as temp buffer
+
+				GaussianFilterwithMask(dst, dst, boundaryKernelSize.width / 2, (float)boundarySigma, FILTER_SLOWEST, edge);
+				//	GaussianBlur(dst,dest,boundaryKernelSize, boundarySigma);
+				//dest.copyTo(dst,edge);
+
+				double aa = (alpha > 1.0) ? 1.0 : alpha;
+				aa = (alpha < 0.0) ? 0.0 : aa;
+				aa = (0.5 - abs(aa - 0.5)) * 2.0;
+				aa *= boundaryGaussianRatio;
+				addWeighted(destR, 1.0 - aa, dst, aa, 0.0, dest);
+			}
+
 		}
-		else
-		{
-			Mat dst = destR.clone(); //used for destR as temp buffer
-
-			GaussianFilterwithMask(dst, dst, boundaryKernelSize.width / 2, (float)boundarySigma, FILTER_SLOWEST, edge);
-			//	GaussianBlur(dst,dest,boundaryKernelSize, boundarySigma);
-			//dest.copyTo(dst,edge);
-
-			double aa = (alpha > 1.0) ? 1.0 : alpha;
-			aa = (alpha < 0.0) ? 0.0 : aa;
-			aa = (0.5 - abs(aa - 0.5))*2.0;
-			aa *= boundaryGaussianRatio;
-			addWeighted(destR, 1.0 - aa, dst, aa, 0.0, dest);
-		}
-
-	}
 		else if (postFilterMethod == POST_FILL)
 		{
 #ifdef VIS_SYNTH_INFO
@@ -4775,7 +4775,7 @@ namespace cp
 			dest.copyTo(destR, m); //imshow("ee",m);//waitKey();
 
 			destR.copyTo(dest);
-	}
+		}
 		else
 		{
 #ifdef VIS_SYNTH_INFO
@@ -4786,14 +4786,14 @@ namespace cp
 #ifdef VIS_SYNTH_INFO
 		imshow("vis", vis);
 #endif
-}
+	}
 
 
 	template <class srcType>
 	void shiftImDispNN3_(const Mat& srcim, const Mat& srcdisp, Mat& destim, Mat& destdisp, double amp, Mat& mask, const int large_jump, const int sub_gap)
 	{
 		int ij = 0;
-		const int ljump = large_jump*sub_gap * 1;
+		const int ljump = large_jump * sub_gap * 1;
 		//const int iamp=cvRound(amp);
 		if (amp > 0)
 		{
@@ -4810,7 +4810,7 @@ namespace cp
 					const srcType disp = s[i];
 					int sub = (int)(abs(disp - s[i - 1]));
 					bool issub = (sub <= sub_gap) ? true : false;
-					const int dest = (int)(disp*amp);
+					const int dest = (int)(disp * amp);
 					//				const double ia = (disp*amp)-dest;
 					//				const double a = 1.0-ia;
 
@@ -4846,7 +4846,7 @@ namespace cp
 		}
 		else if (amp < 0)
 		{
-			for (int j = 0; j<srcdisp.rows; j++)
+			for (int j = 0; j < srcdisp.rows; j++)
 			{
 				const uchar* sim = srcim.ptr<uchar>(j);
 				uchar* dim = destim.ptr<uchar>(j);
@@ -4854,17 +4854,17 @@ namespace cp
 
 				const srcType* s = srcdisp.ptr<srcType>(j);
 				srcType* d = destdisp.ptr<srcType>(j);
-				for (int i = 1; i<srcdisp.cols; i++)
+				for (int i = 1; i < srcdisp.cols; i++)
 				{
 					const srcType disp = s[i];
 					int sub = (int)(abs(disp - s[i + 1]));
 					bool issub = (sub <= sub_gap) ? true : false;
-					const int dest = (int)(-amp*disp);//ïÑçÜ
+					const int dest = (int)(-amp * disp);//ïÑçÜ
 					//				const double ia = (-amp*disp)-dest;
 					//				const double a = 1.0-ia;
 
 
-					if (abs(disp - s[i - 1])>ljump || abs(disp - s[i + 1])>ljump)
+					if (abs(disp - s[i - 1]) > ljump || abs(disp - s[i + 1]) > ljump)
 					{
 						i += ij;
 						continue;
@@ -4933,7 +4933,7 @@ namespace cp
 
 		Mat zero_ = Mat::zeros(src.size(), CV_8U);
 		Mat maskdummy;//empty;
-		shiftDisp(disp, temp, (float)(alpha / disp_amp), (float)sub_gap, (int)(large_jump*disp_amp), maskdummy);
+		shiftDisp(disp, temp, (float)(alpha / disp_amp), (float)sub_gap, (int)(large_jump * disp_amp), maskdummy);
 		depthfilter(temp, destdisp, maskdummy, cvRound(abs(alpha)), disp_amp);
 		//shiftImInv_<T>(src,destdisp,dest,(float)(-alpha/disp_amp),0,warpInterpolationMethod); 
 		shiftImInv(src, destdisp, dest, (float)(-alpha / disp_amp), 0, INTER_NEAREST);
@@ -5012,7 +5012,7 @@ namespace cp
 
 			double aa = (alpha > 1.0) ? 1.0 : alpha;
 			aa = (alpha < 0.0) ? 0.0 : aa;
-			aa = (0.5 - abs(aa - 0.5))*2.0;
+			aa = (0.5 - abs(aa - 0.5)) * 2.0;
 			addWeighted(dest, aa, destR, 1.0 - aa, 0.0, dest);
 		}
 		else if (postFilterMethod == POST_FILL)
@@ -5115,7 +5115,7 @@ namespace cp
 			//shiftViewSynthesisFilter(src,disp,dest,destdisp,vp,0,1.0/disp_amp);
 
 			Mat dshow;
-			Mat dtemp; Mat(destdisp*255.0 / maxv).convertTo(dtemp, CV_8U);
+			Mat dtemp; Mat(destdisp * 255.0 / maxv).convertTo(dtemp, CV_8U);
 			//applyColorMap(dtemp,dshow,2);
 
 			alphaBlend(dshow, dest, alpha / 100.0, dest);
@@ -5154,7 +5154,7 @@ namespace cp
 			float p = pslice.at<float>(j);
 			float m = mslice.at<float>(j);
 
-			float md = ((p + m - (2.f*f))*2.f);
+			float md = ((p + m - (2.f * f)) * 2.f);
 			if (md != 0)
 			{
 				float dd;
@@ -5164,11 +5164,11 @@ namespace cp
 				else
 					dd = (float)d;
 				//cout<<d<<":"<<dd<<","<<md<<endl;getchar();
-				disp[j] = (srcType)(disp_amp*dd + 0.5f);
+				disp[j] = (srcType)(disp_amp * dd + 0.5f);
 			}
 			else
 			{
-				disp[j] = (srcType)(disp_amp*d + 0.5f);
+				disp[j] = (srcType)(disp_amp * d + 0.5f);
 			}
 		}
 	}
@@ -5196,15 +5196,15 @@ namespace cp
 		}
 		else if (metric == 2)
 		{
-			int t2 = truncate*truncate;
+			int t2 = truncate * truncate;
 			for (int i = 0; i < size; i++)
 			{
 				if (s2[3 * i] == 0) d[i] = 0;
 				else
 				{
-					d[i] = (float)(min((s1[3 * i + 0] - s2[3 * i + 0])*(s1[3 * i + 0] - s2[3 * i + 0]), t2)
-						+ min((s1[3 * i + 1] - s2[3 * i + 1])*(s1[3 * i + 1] - s2[3 * i + 1]), t2)
-						+ min((s1[3 * i + 2] - s2[3 * i + 2])*(s1[3 * i + 2] - s2[3 * i + 2]), t2));
+					d[i] = (float)(min((s1[3 * i + 0] - s2[3 * i + 0]) * (s1[3 * i + 0] - s2[3 * i + 0]), t2)
+						+ min((s1[3 * i + 1] - s2[3 * i + 1]) * (s1[3 * i + 1] - s2[3 * i + 1]), t2)
+						+ min((s1[3 * i + 2] - s2[3 * i + 2]) * (s1[3 * i + 2] - s2[3 * i + 2]), t2));
 				}
 			}
 		}
@@ -5226,8 +5226,8 @@ namespace cp
 			{
 				if (a.at<uchar>(i) != 0 && b.at<uchar>(i) != 0)
 				{
-					int e = a.at<uchar>(i)-b.at<uchar>(i);
-					v += e*e;
+					int e = a.at<uchar>(i) - b.at<uchar>(i);
+					v += e * e;
 					count++;
 				}
 			}
@@ -5239,7 +5239,7 @@ namespace cp
 			{
 				if (a.at<uchar>(i) != 0 && b.at<uchar>(i) != 0)
 				{
-					int e = a.at<uchar>(i)-b.at<uchar>(i);
+					int e = a.at<uchar>(i) - b.at<uchar>(i);
 					v += abs(e);
 					count++;
 				}
@@ -5352,7 +5352,7 @@ namespace cp
 		int d = 7;
 		int nrm = 1;
 		int trunc = 30;
-		int t2 = (int)(trunc*trunc / 10.0);
+		int t2 = (int)(trunc * trunc / 10.0);
 
 
 		Mat srightdisp = Mat::zeros(leftdisp.size(), CV_16S);
@@ -5438,8 +5438,8 @@ namespace cp
 		Mat cost;
 
 
-		Mat costL = Mat::ones(leftdisp.size(), CV_32F)*FLT_MAX;
-		Mat costR = Mat::ones(leftdisp.size(), CV_32F)*FLT_MAX;
+		Mat costL = Mat::ones(leftdisp.size(), CV_32F) * FLT_MAX;
+		Mat costR = Mat::ones(leftdisp.size(), CV_32F) * FLT_MAX;
 		Mat dispL = Mat::ones(leftdisp.size(), CV_8U) * 10;
 		Mat dispR = Mat::ones(leftdisp.size(), CV_8U) * 10;
 
@@ -5494,11 +5494,11 @@ namespace cp
 		//guiAlphaBlend(rightdisp,maskL);
 		for (int i = 0; i < leftdisp.size().area(); i++)
 		{
-			if (maskR.at<uchar>(i) != 0) srightdisp.at<short>(i) = (short)((rd.at<uchar>(i)+(dispR.at<uchar>(i)-10) / 10.0)*AMP + 0.5);
-			else srightdisp.at<short>(i) = (short)(rightdisp.at<uchar>(i) / (double)disp_amp*AMP + 0.5);
+			if (maskR.at<uchar>(i) != 0) srightdisp.at<short>(i) = (short)((rd.at<uchar>(i) + (dispR.at<uchar>(i) - 10) / 10.0) * AMP + 0.5);
+			else srightdisp.at<short>(i) = (short)(rightdisp.at<uchar>(i) / (double)disp_amp * AMP + 0.5);
 
-			if (maskL.at<uchar>(i) != 0) sleftdisp.at<short>(i) = (short)((ld.at<uchar>(i)+(dispL.at<uchar>(i)-10) / 10.0)*AMP + 0.5);
-			else sleftdisp.at<short>(i) = (short)(leftdisp.at<uchar>(i) / (double)disp_amp*AMP + 0.5);
+			if (maskL.at<uchar>(i) != 0) sleftdisp.at<short>(i) = (short)((ld.at<uchar>(i) + (dispL.at<uchar>(i) - 10) / 10.0) * AMP + 0.5);
+			else sleftdisp.at<short>(i) = (short)(leftdisp.at<uchar>(i) / (double)disp_amp * AMP + 0.5);
 		}
 
 		cout << "ref E L: " << calcReprojectionError(leftim, rightim, sleftdisp, srightdisp, AMP, true) << endl;

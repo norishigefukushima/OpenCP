@@ -22,6 +22,7 @@ namespace cp
 		FILL_OCCLUSION_IM_HV = FILL_OCCLUSION_HV,
 	};
 	CP_EXPORT void fillOcclusionImDisp(cv::InputOutputArray im_, cv::InputOutputArray disp_, int invalidvalue, int mode = FILL_OCCLUSION_IM_LINE);
+	CP_EXPORT void shiftDisp(const cv::Mat& srcdisp, cv::Mat& destdisp, float amp, float sub_gap, const int large_jump, cv::Mat& mask);
 
 	class CP_EXPORT DepthMapSubpixelRefinment
 	{
@@ -148,6 +149,5 @@ namespace cp
 		void preview(cv::Mat& srcL, cv::Mat& srcR, cv::Mat& dispL, cv::Mat& dispR, int invalidvalue, double disp_amp);
 		void preview(cv::Mat& src, cv::Mat& disp, int invalidvalue, double disp_amp);
 	};
-
 
 }

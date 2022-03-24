@@ -51,6 +51,12 @@ namespace cp
 			CENSUS7x5Color,
 			CENSUS9x1,
 			CENSUS9x1Color,
+			CENSUS13x3,
+			CENSUS13x3Color,
+			CENSUS7x3,
+			CENSUS7x3Color,
+			CENSUSTEST,
+			CENSUSTESTColor,
 			//Pixel_Matching_SAD_TextureBlend,
 			//Pixel_Matching_BT_TextureBlend,
 
@@ -216,7 +222,7 @@ namespace cp
 		std::string getLRCheckMethodName(const LRCHECK method);
 		void setLRCheckMethod(const LRCHECK method);
 		int LRCheckMethod = (int)LRCHECK::WITH_MINCOST;
-		bool isProcessLBorder = false;
+		bool isProcessLBorder = true;
 		int disp12diff = 1;
 		void fastLRCheck(cv::Mat& costMap, cv::Mat& dest);
 		void fastLRCheck(cv::Mat& dest);
