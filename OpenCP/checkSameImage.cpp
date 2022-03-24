@@ -233,6 +233,6 @@ namespace cp
 	{
 		CheckSameImage csi;
 		csi.setUsePrev(false);
-		return csi.isSame(src, ref, num_check_points);
+		return csi.isSame(src, ref, num_check_points, isShowMessage, ok_mes, ng_mes);
 	}
 }
