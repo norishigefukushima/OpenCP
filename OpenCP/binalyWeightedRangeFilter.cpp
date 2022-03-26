@@ -1923,10 +1923,8 @@ namespace cp
 			int cn = dest->channels();
 			Size size = dest->size();
 
-#if CV_SSE4_1
 			const int CV_DECL_ALIGNED(16) v32f_absmask[] = { 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff };
 			bool haveSSE4 = checkHardwareSupport(CV_CPU_SSE4_1);
-#endif
 			if (cn == 1)
 			{
 				float* sptr = (float*)temp->ptr<float>(range.start + radiusV) + 4 * (radiusH / 4 + 1);
@@ -1938,8 +1936,7 @@ namespace cp
 				for (i = range.start; i != range.end; i++, dptr += dstep, sptr += sstep)
 				{
 					j = 0;
-#if CV_SSE4_1
-					if (haveSSE4)
+					/*if (haveSSE4)
 					{
 						const __m128 mth = _mm_set1_ps(threshold);
 						const __m128 ones = _mm_set1_ps(1.f);
@@ -1969,8 +1966,7 @@ namespace cp
 							tval = _mm_div_ps(tval, wval);
 							_mm_stream_ps((dptr + j), tval);
 						}
-					}
-#endif
+					}*/
 					for (; j < size.width; j++)
 					{
 						const float val0 = sptr[j];
