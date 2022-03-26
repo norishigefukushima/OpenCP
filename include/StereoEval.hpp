@@ -15,6 +15,7 @@ namespace cp
 		bool skip_disc = false;
 	public:
 		int ignoreLeftBoundary;
+		int boundingBox;
 		bool isInit = false;
 		std::string message;
 		cv::Mat state_all;
@@ -37,12 +38,12 @@ namespace cp
 		double discMSE;
 
 		void init(cv::Mat& groundtruth, cv::Mat& maskNonocc, cv::Mat& maskAll, cv::Mat& maskDisc, double amp);
-		void init(cv::Mat& groundtruth, const double amp, const int ignoreLeftBoundary);
+		void init(cv::Mat& groundtruth, const double amp, const int ignoreLeftBoundary, const int boundingBox);
 
 		StereoEval();
 		StereoEval(std::string groundtruthPath, std::string maskNonoccPath, std::string maskAllPath, std::string maskDiscPath, double amp);
 		StereoEval(cv::Mat& groundtruth, cv::Mat& maskNonocc, cv::Mat& maskAll, cv::Mat& maskDisc, double amp);
-		StereoEval(cv::Mat& groundtruth, const double amp, const int ignoreLeftBoundary = 0);
+		StereoEval(cv::Mat& groundtruth, const double amp, const int ignoreLeftBoundary = 0, const int boundingBox = 0);
 
 		std::string getBadPixel(cv::Mat& src, double threshold = 1.0, bool isPrint = true);
 		std::string getMSE(cv::Mat& src, const int disparity_scale = 1, const bool isPrint = true);

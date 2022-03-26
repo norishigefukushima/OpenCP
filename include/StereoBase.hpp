@@ -141,6 +141,7 @@ namespace cp
 		void matching(cv::Mat& leftim, cv::Mat& rightim, cv::Mat& dest, const bool isFeedback = false);
 		void operator()(cv::Mat& leftim, cv::Mat& rightim, cv::Mat& dest);
 		void gui(cv::Mat& leftim, cv::Mat& rightim, cv::Mat& dest, StereoEval& eval);
+		void gui(cv::Mat& leftim, cv::Mat& rightim, cv::Mat& dest, StereoEval& eval, cv::Mat& dmapC);
 
 		void imshowDisparity(std::string wname, cv::Mat& disp, int option, cv::Mat& output, int mindis, int range);
 		void imshowDisparity(std::string wname, cv::Mat& disp, int option, cv::OutputArray output = cv::noArray());
@@ -232,7 +233,9 @@ namespace cp
 		int speckleRange;
 
 		bool isMinCostFilter = false;
-		void minCostFilter(const cv::Mat& costMap, cv::Mat& dest);
+		uchar minCostThreshold = 4;
+		void minCostSwapFilter(const cv::Mat& costMap, cv::Mat& dest);
+		void minCostThresholdFilter(const cv::Mat& costMap, cv::Mat& dest, const uchar threshold);
 
 		int holeFillingMethod = 1;
 		void computeValidRatio(const cv::Mat& disparityMap);

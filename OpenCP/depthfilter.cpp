@@ -100,7 +100,7 @@ namespace cp
 	template <class srcType>
 	static void fillOcclusion_(Mat& src, const srcType invalidvalue, const srcType maxval)
 	{
-		const int MAX_LENGTH = (int)(src.cols);
+		const int MAX_LENGTH = (int)(src.cols - 3);
 		//#pragma omp parallel for
 		for (int j = 0; j < src.rows; ++j)
 		{
@@ -117,7 +117,7 @@ namespace cp
 					do
 					{
 						t++;
-						if (t > src.cols - 1)break;
+						if (t > src.cols - 1) break;
 					} while (s[t] == invalidvalue);
 
 					const srcType dd = min(s[i - 1], s[t]);

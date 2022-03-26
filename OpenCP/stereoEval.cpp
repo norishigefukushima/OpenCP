@@ -148,7 +148,7 @@ namespace cp
 		state_disc = Mat::zeros(ground_truth.size(), CV_8UC3);
 	}
 
-	void StereoEval::init(Mat& ground_truth, const double amp, const int ignoreLeftBoundary)
+	void StereoEval::init(Mat& ground_truth, const double amp, const int ignoreLeftBoundary, const int boundingBox)
 	{
 		CV_Assert(!ground_truth.empty());
 		this->ground_truth = ground_truth;
@@ -161,14 +161,26 @@ namespace cp
 		skip_disc = true;
 		mask_disc = Mat::zeros(ground_truth.size(), ground_truth.type());//under construction
 		this->ignoreLeftBoundary = ignoreLeftBoundary;
+		this->boundingBox = boundingBox;
 		if (ignoreLeftBoundary > 0)
 		{
 			Rect roi = Rect(0, 0, ignoreLeftBoundary, ground_truth.rows);
 			mask_all(roi).setTo(0);
 			mask_nonocc(roi).setTo(0);
 			mask_disc(roi).setTo(0);
-			
+			if (boundingBox > 0)
+			{
+				Rect roi = Rect(boundingBox, boundingBox, ground_truth.cols - boundingBox * 2, ground_truth.rows - boundingBox * 2);
+				Mat temp = Mat::zeros(ground_truth.size(), CV_8U);
+				mask_all(roi).copyTo(temp(roi));
+				temp.copyTo(mask_all);
+				mask_nonocc(roi).copyTo(temp(roi));
+				temp.copyTo(mask_nonocc);
+				mask_disc(roi).copyTo(temp(roi));
+				temp.copyTo(mask_disc);
+			}
 		}
+
 		threshmap_init();
 	}
 
@@ -193,9 +205,9 @@ namespace cp
 		init(ground_truth_, mask_nonocc_, mask_all_, mask_disc_, amp_);
 	}
 
-	StereoEval::StereoEval(Mat& ground_truth, const double amp, const int ignoreLeftBoundary)
+	StereoEval::StereoEval(Mat& ground_truth, const double amp, const int ignoreLeftBoundary, const int boundingBox)
 	{
-		init(ground_truth, amp, ignoreLeftBoundary);
+		init(ground_truth, amp, ignoreLeftBoundary, boundingBox);
 	}
 
 	string StereoEval::getBadPixel(Mat& src, double threshold, bool isPrint)
@@ -213,7 +225,7 @@ namespace cp
 		message = format("%5.2f, %5.2f, %5.2f", nonocc, all, disc);
 		if (isPrint)
 		{
-			cout << "nonocc,all,disc: "+message << endl;
+			cout << "nonocc,all,disc: " + message << endl;
 		}
 		return message;
 	}
@@ -234,7 +246,7 @@ namespace cp
 		message = format("%5.2f, %5.2f, %5.2f", nonoccMSE, allMSE, discMSE);
 		if (isPrint)
 		{
-			cout << "nonocc,all,disc: "+message << endl;
+			cout << "nonocc,all,disc: " + message << endl;
 		}
 		return message;
 	}

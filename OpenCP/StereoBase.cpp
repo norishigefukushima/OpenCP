@@ -563,7 +563,10 @@ namespace cp
 				Timer t("Post: mincost");
 #endif
 				if (isMinCostFilter)
-					minCostFilter(minCostMap, destDisparityMap);
+				{
+					minCostThresholdFilter(minCostMap, destDisparityMap, minCostThreshold);
+					//minCostSwapFilter(minCostMap, destDisparityMap);
+				}
 			}
 			{
 #ifdef TIMER_STEREO_BASE
@@ -682,7 +685,7 @@ namespace cp
 					const Size ksize = Size(2 * refinementWeightR + 1, 2 * refinementWeightR + 1);
 
 					Mat bim;
-					
+
 					Mat sim; destDisparityMap.convertTo(sim, CV_32F);
 					//cp::bilateralFilter(sim, bim, ksize, 100, refinementWeightR / 3.0);
 					cv::bilateralFilter(sim, bim, 2 * refinementWeightR + 1, 100, refinementWeightR / 3.0);
@@ -694,7 +697,7 @@ namespace cp
 						float diff = (disp[i] - dispb[i]) * (disp[i] - dispb[i]) / (-2.f * 16 * 16 * refinementWeightSigma * refinementWeightSigma);
 						s[i] = exp(diff);
 					}
-							
+
 					/*
 					 //min cost weight map
 					uchar* minc = minCostMap.ptr<uchar>();
@@ -717,7 +720,7 @@ namespace cp
 				{
 					weightMap.create(leftim.size(), CV_32F);
 					const Size ksize = Size(4 * refinementWeightR + 1, 4 * refinementWeightR + 1);
-					
+
 					cp::bilateralWeightMap(destDisparityMap, weightMap, Size(2 * rrad + 1, 2 * rrad + 1), sr1, ss, 0, 1);
 
 					Mat a, b;
@@ -732,7 +735,7 @@ namespace cp
 				{
 					weightMap.create(leftim.size(), CV_32F);
 					const Size ksize = Size(4 * refinementWeightR + 1, 4 * refinementWeightR + 1);
-					
+
 					cp::dualBilateralWeightMap(destDisparityMap, leftim, weightMap, Size(2 * rrad + 1, 2 * rrad + 1), sr1, sr2, 100000, 0, 1);
 
 					Mat a, b;
@@ -1072,7 +1075,7 @@ namespace cp
 				cp::warpShift(leftim, L, x);
 				cp::warpShift(rightim, R, x);
 				cp::warpShift(gt, GT, x);
-				eval.init(GT, evalamp, igb + x);
+				eval.init(GT, evalamp, igb + x, 0);
 			}
 			else
 			{
@@ -1080,7 +1083,7 @@ namespace cp
 				rightim.copyTo(R);
 
 				if (!cp::isSame(gt, eval.ground_truth))
-					eval.init(gt, evalamp, igb);
+					eval.init(gt, evalamp, igb, 0);
 			}
 			if (isNoise)
 			{
@@ -2579,7 +2582,7 @@ namespace cp
 
 	string StereoBase::getCostMethodName(const Cost method)
 	{
-		string mes="";
+		string mes = "";
 		switch (method)
 		{
 		case SD:					mes = "SD"; break;
@@ -2709,7 +2712,7 @@ namespace cp
 		{
 			HammingDistance32S_8UC1<uchar>(target[1], reference[1], d, dest);
 		}
-		else if (pixelMatchingMethod == CENSUS5x5 || pixelMatchingMethod == CENSUS7x5|| pixelMatchingMethod == CENSUS13x3)
+		else if (pixelMatchingMethod == CENSUS5x5 || pixelMatchingMethod == CENSUS7x5 || pixelMatchingMethod == CENSUS13x3)
 		{
 			HammingDistance32S_8UC1<int>(target[1], reference[1], d, dest);
 		}
@@ -3518,43 +3521,46 @@ namespace cp
 	}
 
 
-	void StereoBase::minCostFilter(const Mat& minCostMap, Mat& dest)
+	void StereoBase::minCostSwapFilter(const Mat& minCostMap, Mat& destDisparity)
 	{
-		const int imsize = dest.size().area();
-		Mat disptemp = dest.clone();
-		const int step = dest.cols;
-		short* disptempPtr = disptemp.ptr<short>();
-		short* destPtr = dest.ptr<short>(0);
-		const uchar* costPtr = minCostMap.ptr<uchar>();
-		//for(int j=0;j<imsize-step;j++)
-		for (int j = 0; j < imsize; j++)
-		{
-			/*if( disp[0]!=0 && disp[step]!=0 && abs(disp[step]-disp[0])>=16)
-			{
-			if(cost[step]<cost[0])
-			{
-			disp[0]=disp2[step];
-			}
-			else
-			{
-			disp[step]=disp2[0];
-			}
-			}*/
-			if (destPtr[0] != 0 && destPtr[-1] != 0 && abs(destPtr[-1] - destPtr[0]) >= 16)
-			{
-				if (costPtr[-1] < costPtr[0])
-				{
-					destPtr[0] = disptempPtr[-1];
-				}
-				else
-				{
-					destPtr[-1] = disptempPtr[0];
-				}
-			}
+		Mat disptemp = destDisparity.clone();
+		const int step = destDisparity.cols;
 
-			destPtr++;
-			disptempPtr++;
-			costPtr++;
+		for (int j = 0; j < minCostMap.rows; j++)
+		{
+			short* tempdisp = disptemp.ptr<short>(j);
+			short* destdisp = destDisparity.ptr<short>(j);
+			const uchar* costPtr = minCostMap.ptr<uchar>(j);
+			for (int i = 1; i < minCostMap.cols; i++)
+			{
+				if (destdisp[0] != 0 && destdisp[-1] != 0 && abs(destdisp[-1] - destdisp[0]) >= 16)
+				{
+					if (costPtr[-1] < costPtr[0])
+					{
+						destdisp[0] = tempdisp[-1];
+					}
+					else
+					{
+						destdisp[-1] = tempdisp[0];
+					}
+				}
+
+				destdisp++;
+				tempdisp++;
+				costPtr++;
+			}
+		}
+	}
+
+	void StereoBase::minCostThresholdFilter(const Mat& minCostMap, Mat& destDisparity, const uchar threshold)
+	{
+		const int size = minCostMap.size().area();
+		const uchar* cost = minCostMap.ptr<uchar>();
+		short* destdisp = destDisparity.ptr<short>();
+		for (int i = 0; i < size; i++)
+		{
+			*destdisp = (*cost > threshold) ? 0 : *destdisp;
+			destdisp++; cost++;
 		}
 	}
 

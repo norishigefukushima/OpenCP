@@ -1584,7 +1584,6 @@ namespace cp
 
 	void PointCloudShow::filterDepth(cv::InputArray src, cv::OutputArray dest)
 	{
-
 		src.copyTo(dest);
 	}
 
@@ -2035,7 +2034,7 @@ namespace cp
 		;
 	}
 
-	void PointCloudShow::loopDepth(cv::InputArray image__, cv::InputArray srcDepth__, float focal, int loopcount)
+	void PointCloudShow::loopDepth(cv::InputArray image__, cv::InputArray srcDepth__, float focalLengthDepthCamera, int loopcount)
 	{
 		Mat image_ = image__.getMat();
 		Mat srcDepth_ = srcDepth__.getMat();
@@ -2048,7 +2047,7 @@ namespace cp
 
 		Mat disp;
 
-		divide(1.0, srcDepth, disp, focal, CV_32F);
+		divide(1.0, srcDepth, disp, focalLengthDepthCamera, CV_32F);
 		double maxv, minv;
 		minMaxLoc(disp, &minv, &maxv);
 		disp.convertTo(dshow, CV_8U, 255 / maxv);
@@ -2092,7 +2091,7 @@ namespace cp
 			fillOcclusion(tr, 0);
 			transpose(tr, srcDepth);
 
-			depth2XYZ(srcDepth, focal);
+			depth2XYZ(srcDepth, focalLengthDepthCamera);
 			Size sz = image.size();
 			look = get3DPointfromXYZ(xyz, sz, pt);
 
@@ -2120,7 +2119,7 @@ namespace cp
 		Mat destImage(image.size(), CV_8UC3);	//rendered image
 		Mat view;//drawed image
 
-		Mat k = Mat::eye(3, 3, CV_64F) * focal;
+		Mat k = Mat::eye(3, 3, CV_64F) * focalLengthDepthCamera;
 		k.at<double>(0, 2) = (image.cols - 1) * 0.5;
 		k.at<double>(1, 2) = (image.rows - 1) * 0.5;
 		k.at<double>(2, 2) = 1.0;
@@ -2131,7 +2130,7 @@ namespace cp
 		fillOcclusion(tr, 0);
 		transpose(tr, srcDepth);
 
-		depth2XYZ(srcDepth, focal);
+		depth2XYZ(srcDepth, focalLengthDepthCamera);
 
 		int count = 0;
 		Timer tm("total");
@@ -2153,7 +2152,7 @@ namespace cp
 			//{
 			//	//CalcTime t(" depth2xyz projection");
 			filterDepth(srcDepth, filteredDepth);
-			depth2XYZ(filteredDepth, focal);
+			depth2XYZ(filteredDepth, focalLengthDepthCamera);
 			//}
 
 			Mat R = Mat::eye(3, 3, CV_64F);
@@ -2251,7 +2250,7 @@ namespace cp
 			}
 			if (key == 'd')
 			{
-				depth2XYZ(srcDepth, focal);
+				depth2XYZ(srcDepth, focalLengthDepthCamera);
 			}
 			if (key == 'r')
 			{
