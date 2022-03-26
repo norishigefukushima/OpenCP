@@ -61,6 +61,7 @@ namespace cp
 		minValue = argMin[result_index];
 		maxValue = argMax[result_index];
 	}
+
 	void CSV::initFilter()
 	{
 		filter.clear();
@@ -69,6 +70,7 @@ namespace cp
 			filter.push_back(true);
 		}
 	}
+
 	void CSV::filterClear()
 	{
 		for (int i = 0; i < data.size(); i++)
@@ -76,6 +78,7 @@ namespace cp
 			filter[i] = true;
 		}
 	}
+
 	void CSV::makeFilter(int index, double val, double emax)
 	{
 		for (int i = 0; i < data.size(); i++)
@@ -87,6 +90,7 @@ namespace cp
 			}
 		}
 	}
+
 	void CSV::readHeader()
 	{
 		fseek(fp, 0, SEEK_END);
@@ -105,6 +109,7 @@ namespace cp
 		}
 		width = countSep + 1;
 	}
+
 	void CSV::readData()
 	{
 		char vv[100];
@@ -187,13 +192,15 @@ namespace cp
 			}
 		}
 	}
+
 	CSV::CSV()
 	{
-		fp = NULL;
+		fp = nullptr;
 	}
+
 	CSV::CSV(string name, bool isWrite, bool isClear)
 	{
-		fp = NULL;
+		fp = nullptr;
 		init(name, isWrite, isClear);
 	}
 
@@ -208,6 +215,7 @@ namespace cp
 		//	file2.put(ch);
 		//}
 	}
+
 	void CSV::write(string v)
 	{
 		if (isTop)
