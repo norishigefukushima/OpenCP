@@ -5,10 +5,10 @@ using namespace cv;
 
 namespace cp
 {
-	cv::Mat convert(cv::Mat& src, const int depth, const double alpha, const double beta)
+	cv::Mat convert(cv::InputArray& src, const int depth, const double alpha, const double beta)
 	{
 		cv::Mat ret;
-		src.convertTo(ret, depth, alpha, beta);
+		src.getMat().convertTo(ret, depth, alpha, beta);
 		return ret;
 	}
 
@@ -16,6 +16,20 @@ namespace cp
 	{
 		Mat ret;
 		src.getMat().convertTo(ret, depth, a, -a * b + b);
+		return ret;
+	}
+
+	cv::Mat convertGray(cv::InputArray& src, const int depth, const double alpha, const double beta)
+	{
+		cv::Mat ret;
+		Mat s = src.getMat();
+		if(s.channels()==1)s.convertTo(ret, depth, alpha, beta);
+		else
+		{
+			cvtColor(s, ret, COLOR_BGR2GRAY);
+			ret.convertTo(ret, depth, alpha, beta);
+		}
+		
 		return ret;
 	}
 
