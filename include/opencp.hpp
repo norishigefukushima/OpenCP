@@ -117,6 +117,7 @@
 #include "disparityFitPlane.hpp"
 #include "MultiCameraCalibrator.hpp"
 #include "pointcloud.hpp"
+#include "poissonDiskSampling.hpp"
 #include "rectifyMultiCollinear.hpp"
 #include "stereo_core.hpp"
 #include "StereoBase.hpp"

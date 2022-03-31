@@ -244,12 +244,20 @@ class CP_EXPORT Plot2D
 class CP_EXPORT RGBHistogram
 ```
 
+## [Todo] poissonDiskSampling.hpp
+poissonDiskSampling
+
+```cpp
+class CP_EXPORT PoissonDiskSampling
+```
+
 ## [Todo] randomizedQueue.hpp
 乱択Queueのクラス
 
 ```cpp
 class CP_EXPORT RandomizedQueue
 ```
+
 ## RankOrderCorrelationCoefficient.hpp
 順位相関係数を計算するクラス
 [Todo] KORCCを作成する必要あり
