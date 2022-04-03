@@ -7,11 +7,11 @@
 using namespace std;
 using namespace cv;
 
+//#define _CALC_TIME_
 namespace cp
 {
 
 	//point cloud rendering
-#if CV_SSE4_1
 	void myProjectPoint_SSE(const Mat& xyz, const Mat& R, const Mat& t, const Mat& K, vector<Point2f>& dest)
 	{
 		float r[3][3];
@@ -106,7 +106,7 @@ namespace cp
 			dst++;
 		}
 	}
-#endif
+
 	void myProjectPoint_BF(const Mat& xyz, const Mat& R, const Mat& t, const Mat& K, vector<Point2f>& dest, const bool isRotationThenTranspose)
 	{
 		float* data = (float*)xyz.ptr<float>(0);
@@ -355,12 +355,9 @@ namespace cp
 
 	void projectPointsSimple(const Mat& xyz, const Mat& R, const Mat& t, const Mat& K, vector<Point2f>& dest, bool isRotationThenTranspose)
 	{
-#ifdef CV_SSE4_1
 		//myProjectPoint_SSE(xyz, R, t, K, dest);//SSE implimentation
 		myProjectPoint_BF(xyz, R, t, K, dest, isRotationThenTranspose);//normal implementation
-#else
-		myProjectPoint_BF(xyz, R, t, K, dest);//normal implementation
-#endif
+		//myProjectPoint_BF(xyz, R, t, K, dest);//normal implementation
 	}
 
 	void projectPointsSimpleWithZ(const Mat& xyz, const Mat& R, const Mat& t, const Mat& K, vector<Point3f>& dest, bool isRotationThenTranspose)
@@ -811,11 +808,11 @@ namespace cp
 
 		{
 #ifdef _CALC_TIME_
-			CalcTime t1("depth projection to other viewpoint");
+			Timer t1("depth projection to other viewpoint");
 #endif
 			if (dist_.empty())
 			{
-				//no distortionj
+				//no distortion
 				projectPointsSimple(xyz, R, t, K, pt, isRotationThenTranspose);
 			}
 			else
@@ -825,8 +822,9 @@ namespace cp
 				//projectPoints(xyz, R, t, K, dist, pt);
 			}
 		}
+
 #ifdef _CALC_TIME_
-		CalcTime tm("rendering");
+		Timer tm("rendering");
 #endif
 
 		Point2f* ptxy = &pt[0];
@@ -856,8 +854,6 @@ namespace cp
 					zbuff = depth.ptr<float>(y) + x;
 					const float z = xyzdata[2];
 
-					//cout<<format("%d %d %d %d %d %d \n",j,y, (int)ptxy[image.cols].y,i,x,(int)ptxy[1].x);
-					//	getchar();
 					if (*zbuff > z)
 					{
 						uchar* dst = destimage.data + wstep * y + 3 * x;
@@ -1610,6 +1606,7 @@ namespace cp
 		}
 		return ret / (double)count;
 	}
+
 
 	void PointCloudShow::loopXYZMulti(cv::InputArray images, cv::InputArray xyzs, cv::InputArray K_, cv::InputArray R_, cv::InputArray t_, int loopcount)
 	{
@@ -2610,15 +2607,15 @@ namespace cp
 		}
 	}
 
-	void PointCloudShow::loop(Mat& image_, Mat& srcDisparity_, float disp_amp, float focal, float baseline, int loopcount)
+	void PointCloudShow::loop(cv::InputArray image_, cv::InputArray srcDisparity_, const float disp_amp, const float focal, const float baseline, const int loopcount)
 	{
-		Mat srcDisparity = srcDisparity_.clone();
+		Mat srcDisparity = srcDisparity_.getMat().clone();
 		Mat image;
-		if (image_.channels() == 3)image = image_;
+		if (image_.channels() == 3)image = image_.getMat();
 		else cvtColor(image_, image, COLOR_GRAY2BGR);
 
 		Mat dshow;
-		srcDisparity.convertTo(dshow, CV_8U, 1 / disp_amp);
+		srcDisparity.convertTo(dshow, CV_8U, 1.0 / (double)disp_amp);
 		namedWindow(wname);
 
 		const int xmax = (int)(baseline * 16);
@@ -2842,6 +2839,8 @@ namespace cp
 			num_loop++;
 			if (loopcount > 0 && num_loop > loopcount) break;
 		}
+
+		destroyWindow(wname);
 	}
 
 }

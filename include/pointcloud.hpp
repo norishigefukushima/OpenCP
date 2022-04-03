@@ -47,7 +47,7 @@ namespace cp
 
 		void setIsRotationThenTranspose(bool flag);
 
-		void loop(cv::Mat& image, cv::Mat& srcDisparity, float disp_amp, float focal, float baseline, int loopcount);
+		void loop(cv::InputArray image, cv::InputArray srcDisparity, const float disp_amp, const float focal, const float baseline, const int loopcount);
 		void loopXYZ(cv::InputArray image, cv::InputArray xyzPoints, cv::InputArray K, cv::InputArray R, cv::InputArray t, int loopcount);
 		void loopXYZMulti(cv::InputArray image, cv::InputArray xyzPoints, cv::InputArray K, cv::InputArray R, cv::InputArray t, int loopcount);
 		void loopDepth(cv::InputArray image, cv::InputArray srcDepth, cv::InputArray K, cv::InputArray dist, int loopcount);
