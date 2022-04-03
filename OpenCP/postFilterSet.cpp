@@ -1,5 +1,5 @@
 #include "postFilterSet.hpp"
-#include "binalyWeightedRangeFilter.hpp"
+#include "binaryWeightedRangeFilter.hpp"
 #include "depth2disparity.hpp"
 #include "statisticalFilter.hpp"
 
@@ -33,7 +33,7 @@ namespace cp
 
 		disp8U2depth32F(buff, bufff, (float)(focus*baseline), (float)amp, 0.f);
 
-		binalyWeightedRangeFilter(bufff, bufff, Size(2 * brange_r + 1, 2 * brange_r + 1), brange_th, brange_method);
+		binaryWeightedRangeFilter(bufff, bufff, Size(2 * brange_r + 1, 2 * brange_r + 1), brange_th, brange_method);
 
 		bufff.convertTo(dest, CV_16U);
 	}
@@ -46,7 +46,7 @@ namespace cp
 
 		disp8U2depth32F(buff, bufff, (float)(focus*baseline), (float)amp, 0.f);
 
-		binalyWeightedRangeFilter(bufff, dest, Size(2 * brange_r + 1, 2 * brange_r + 1), brange_th, brange_method);
+		binaryWeightedRangeFilter(bufff, dest, Size(2 * brange_r + 1, 2 * brange_r + 1), brange_th, brange_method);
 	}
 
 	void PostFilterSet::filterDisp8U2Disp32F(Mat& src, Mat& dest, int median_r, int gaussian_r, int minmax_r, int brange_r, float brange_th, int brange_method)
@@ -56,7 +56,7 @@ namespace cp
 		blurRemoveMinMax(buff, buff, minmax_r);
 
 		buff.convertTo(bufff, CV_32F);
-		binalyWeightedRangeFilter(bufff, bufff, Size(2 * brange_r + 1, 2 * brange_r + 1), brange_th, brange_method);
+		binaryWeightedRangeFilter(bufff, bufff, Size(2 * brange_r + 1, 2 * brange_r + 1), brange_th, brange_method);
 
 		bufff.convertTo(dest, CV_16U);
 	}
@@ -66,6 +66,6 @@ namespace cp
 		medianBlur(src, buff, 2 * median_r + 1);
 		smallGaussianBlur(buff, buff, 2 * gaussian_r + 1, gaussian_r + 0.5);
 		blurRemoveMinMax(buff, buff, minmax_r);
-		binalyWeightedRangeFilter(buff, dest, Size(2 * brange_r + 1, 2 * brange_r + 1), (float)brange_th, brange_method);
+		binaryWeightedRangeFilter(buff, dest, Size(2 * brange_r + 1, 2 * brange_r + 1), (float)brange_th, brange_method);
 	}
 }

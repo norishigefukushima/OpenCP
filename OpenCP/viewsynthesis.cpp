@@ -1,7 +1,7 @@
 #include "viewsynthesis.hpp"
 #include "depthfilter.hpp"
 #include "GaussianFilter.hpp"
-#include "binalyWeightedRangeFilter.hpp"
+#include "binaryWeightedRangeFilter.hpp"
 #include "statisticalFilter.hpp"
 #include "shiftImage.hpp"
 #include "blend.hpp"
@@ -4011,7 +4011,53 @@ namespace cp
 		compare(depth, depth2, mask2, cv::CMP_NE);
 	}
 
-
+	template<typename T>
+	static void generateCenterDisparity_(InputArray disparityMapL, InputArray disparityMapR, OutputArray destDisparityMap, const float amp, const int D, const float thresh)
+	{
+		const Mat dmapL = disparityMapL.getMat();
+		const Mat dmapR = disparityMapR.getMat();
+		Mat dest = destDisparityMap.getMat();
+		Mat temp;
+		Mat dshift1; cp::shiftDisp(dmapL, dshift1, 0.5f * amp, 2, 5, temp);
+		Mat dshift2; cp::shiftDisp(dmapR, dshift2, -0.5f * amp, 2, 5, temp);
+		const uchar* d1 = dshift1.ptr<uchar>();
+		const uchar* d2 = dshift2.ptr<uchar>();
+		T* d = dest.ptr<T>();
+		for (int i = 0; i < dmapL.size().area(); i++)
+		{
+			if (d1[i] != 0 && d2[i] != 0)d[i] = T((((int)d1[i] + (int)d2[i]) * 0.5) / amp);
+			else if (d1[i] == 0 && d2[i] != 0)d[i] = (T)d2[i] / amp;
+			else if (d1[i] != 0 && d2[i] == 0)d[i] = (T)d1[i] / amp;
+			else d[i] = T(0.0);
+		}
+		cp::fillOcclusion(dest);
+		cp::binaryWeightedRangeFilter(dest, dest, D, thresh * amp, 2);
+	}
+	
+	void generateCenterDisparity(InputArray disparityMapL, InputArray disparityMapR, OutputArray dest, const float amp, int depth, const int D, const float thresh)
+	{
+		switch (depth)
+		{
+		case CV_8U:
+			dest.create(disparityMapL.size(), CV_8U);
+			generateCenterDisparity_<uchar>(disparityMapL, disparityMapR, dest, amp, D, thresh);
+			break;
+		case CV_16S:
+			dest.create(disparityMapL.size(), CV_16S);
+			generateCenterDisparity_<short>(disparityMapL, disparityMapR, dest, amp, D, thresh);
+			break;
+		case CV_64F:
+			dest.create(disparityMapL.size(), CV_64F);
+			generateCenterDisparity_<double>(disparityMapL, disparityMapR, dest, amp, D, thresh);
+			break;
+		default:
+		case CV_32F:
+			dest.create(disparityMapL.size(), CV_32F);
+			generateCenterDisparity_<float>(disparityMapL, disparityMapR, dest, amp, D, thresh);
+			break;
+		}
+	}
+#pragma region StereoViewSynthesis
 	void StereoViewSynthesis::depthfilter(Mat& depth, Mat& depth2, Mat& mask, int viewstep, double disp_amp)
 	{
 		if (mask.empty())
@@ -4088,7 +4134,6 @@ namespace cp
 		}
 	}
 
-
 	void StereoViewSynthesis::init(int preset)
 	{
 		warpMethod = WAPR_IMG_INV;
@@ -4137,6 +4182,7 @@ namespace cp
 			inpaintMethod = FILL_OCCLUSION_HV;
 		}
 	}
+
 	StereoViewSynthesis::StereoViewSynthesis(int preset)
 	{
 		init(preset);
@@ -4202,8 +4248,6 @@ namespace cp
 			key = waitKey(1);
 		}
 	}
-
-
 
 	void StereoViewSynthesis::check(Mat& src, Mat& disp, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp, Mat& ref)
 	{
@@ -4274,10 +4318,12 @@ namespace cp
 			key = waitKey(1);
 		}
 	}
+
 	void StereoViewSynthesis::noFilter(Mat& srcL, Mat& srcR, Mat& dispL, Mat& dispR, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp)
 	{
 		;
 	}
+
 	void StereoViewSynthesis::alphaSynth(Mat& srcL, Mat& srcR, Mat& dispL, Mat& dispR, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp)
 	{
 		if (alpha == 0.0)
@@ -5050,6 +5096,7 @@ namespace cp
 			cout << "not support" << endl;
 		}
 	}
+
 	void StereoViewSynthesis::operator()(Mat& src, Mat& disp, Mat& dest, Mat& destdisp, double alpha, int invalidvalue, double disp_amp)
 	{
 		int type = disp.depth();
@@ -5126,15 +5173,9 @@ namespace cp
 		destroyWindow(wname);
 	}
 
+#pragma endregion
 
-
-
-
-
-
-
-
-
+#pragma region DepthMapSubpixelRefinment
 	DepthMapSubpixelRefinment::DepthMapSubpixelRefinment()
 	{
 		;
@@ -5395,8 +5436,8 @@ namespace cp
 
 		cout << "ref E L: " << calcReprojectionError(leftim, rightim, sleftdisp, srightdisp, AMP, true) << endl;
 		cout << "ref E R: " << calcReprojectionError(leftim, rightim, sleftdisp, srightdisp, AMP, false) << endl;
-		binalyWeightedRangeFilter(sleftdisp, leftdest, Size(5, 5), 16);
-		binalyWeightedRangeFilter(srightdisp, rightdest, Size(5, 5), 16);
+		binaryWeightedRangeFilter(sleftdisp, leftdest, Size(5, 5), 16);
+		binaryWeightedRangeFilter(srightdisp, rightdest, Size(5, 5), 16);
 
 		cout << "sub E L: " << calcReprojectionError(leftim, rightim, leftdest, rightdest, AMP, true) << endl;
 		cout << "sub E R: " << calcReprojectionError(leftim, rightim, leftdest, rightdest, AMP, false) << endl;
@@ -5456,7 +5497,7 @@ namespace cp
 			warpShiftSubpix(wrightim, pwrightim, i / 10.0, 0.0, BORDER_REPLICATE);
 			bluidCostSlice(leftim, pwrightim, cost, nrm, trunc);
 
-			jointBinalyWeightedRangeFilter(cost, lf, cost, Size(d, d), 2);
+			jointBinaryWeightedRangeFilter(cost, lf, cost, Size(d, d), 2);
 			//blur(cost,cost,Size(d,d));
 
 			compare(cost, costL, mask, CMP_LT);
@@ -5469,7 +5510,7 @@ namespace cp
 			bluidCostSlice(rightim, pwleftim, cost, nrm, trunc);
 
 			//blur(cost,cost,Size(d,d));
-			jointBinalyWeightedRangeFilter(cost, rf, cost, Size(d, d), 2);
+			jointBinaryWeightedRangeFilter(cost, rf, cost, Size(d, d), 2);
 
 			compare(cost, costR, mask, CMP_LT);
 			cost.copyTo(costR, mask);
@@ -5503,11 +5544,12 @@ namespace cp
 
 		cout << "ref E L: " << calcReprojectionError(leftim, rightim, sleftdisp, srightdisp, AMP, true) << endl;
 		cout << "ref E R: " << calcReprojectionError(leftim, rightim, sleftdisp, srightdisp, AMP, false) << endl;
-		binalyWeightedRangeFilter(sleftdisp, leftdest, Size(3, 3), 16);
-		binalyWeightedRangeFilter(srightdisp, rightdest, Size(3, 3), 16);
+		binaryWeightedRangeFilter(sleftdisp, leftdest, Size(3, 3), 16);
+		binaryWeightedRangeFilter(srightdisp, rightdest, Size(3, 3), 16);
 
 		cout << "sub E L: " << calcReprojectionError(leftim, rightim, leftdest, rightdest, AMP, true) << endl;
 		cout << "sub E R: " << calcReprojectionError(leftim, rightim, leftdest, rightdest, AMP, false) << endl;
 		cout << endl;
 	}
+#pragma endregion 
 }

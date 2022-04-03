@@ -61,7 +61,7 @@
  filter
 *************************************************************/
 #include "bilateralFilter.hpp"
-#include "binalyWeightedRangeFilter.hpp"
+#include "binaryWeightedRangeFilter.hpp"
 #include "boundaryReconstructionFilter.hpp"
 #include "boxFilter.hpp"
 #include "costVolumeFilter.hpp"

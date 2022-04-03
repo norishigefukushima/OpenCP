@@ -7,7 +7,7 @@
 #include "bilateralFilter.hpp"
 #include "jointBilateralFilter.hpp"
 #include "dualBilateralFilter.hpp"
-#include "binalyWeightedRangeFilter.hpp"
+#include "binaryWeightedRangeFilter.hpp"
 #include "jointNearestFilter.hpp"
 #include "weightedHistogramFilter.hpp"
 #include "statisticalFilter.hpp"
@@ -545,7 +545,7 @@ namespace cp
 				Timer t("Post: subpix");
 #endif
 				subpixelInterpolation(destDisparityMap, (SUBPIXEL)subpixelInterpolationMethod);
-				if (isRangeFilterSubpix) binalyWeightedRangeFilter(destDisparityMap, destDisparityMap, subpixelRangeFilterWindow, (float)subpixelRangeFilterCap);
+				if (isRangeFilterSubpix) binaryWeightedRangeFilter(destDisparityMap, destDisparityMap, subpixelRangeFilterWindow, (float)subpixelRangeFilterCap);
 			}
 			//R depth map;
 
@@ -3388,7 +3388,7 @@ namespace cp
 
 					}
 
-					disp[j] = saturate_cast<short>(16.f * (float)d + md);
+					disp[j] = saturate_cast<short>(16.f * (float)(d + md));
 				}
 			}
 		}

@@ -410,7 +410,7 @@
     <ClCompile Include="blend.cpp" />
     <ClCompile Include="arithmetic.cpp" />
     <ClCompile Include="bilateralFilter.cpp" />
-    <ClCompile Include="binalyWeightedRangeFilter.cpp" />
+    <ClCompile Include="binaryWeightedRangeFilter.cpp" />
     <ClCompile Include="bitconvert.cpp" />
     <ClCompile Include="boundaryReconstructionFilter.cpp" />
     <ClCompile Include="box\boxFilter.cpp" />
@@ -646,7 +646,7 @@
     <ClInclude Include="..\include\blend.hpp" />
     <ClInclude Include="..\include\arithmetic.hpp" />
     <ClInclude Include="..\include\bilateralFilter.hpp" />
-    <ClInclude Include="..\include\binalyWeightedRangeFilter.hpp" />
+    <ClInclude Include="..\include\binaryWeightedRangeFilter.hpp" />
     <ClInclude Include="..\include\bitconvert.hpp" />
     <ClInclude Include="..\include\boundaryReconstructionFilter.hpp" />
     <ClInclude Include="..\include\boxFilter.hpp" />

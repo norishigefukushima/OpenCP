@@ -6,6 +6,16 @@ using namespace cv;
 
 namespace cp
 {
+	
+	void computeDisparityMinMax(InputArray disparity, const int amp, int& minv, int& maxv)
+	{
+		double nv, xv;
+		Point np, xp;
+		minMaxLoc(disparity, &nv, &xv, &np, &xp, disparity);
+		minv = (int)floor(nv / amp);
+		maxv = (int)ceil(xv / amp);
+	}
+
 	void createDisparityALLMask(Mat& src, Mat& dest)
 	{
 		compare(src, 0, dest, CMP_NE);

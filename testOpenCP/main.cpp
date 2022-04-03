@@ -316,7 +316,7 @@ void rangeBlurFilter_(const Mat& src, Mat& dst, const int r, const float sigma_r
 			const __m256 ma1 = _mm256_lddqu_ps(aptr + i + 8);
 			const __m256 ma2 = _mm256_lddqu_ps(aptr + i + 16);
 			const __m256 ma3 = _mm256_lddqu_ps(aptr + i + 24);
-			
+
 			__m256 mv0 = _mm256_setzero_ps();
 			__m256 mv1 = _mm256_setzero_ps();
 			__m256 mv2 = _mm256_setzero_ps();
@@ -410,11 +410,11 @@ void rangeBlurFilterRef_(const Mat& src, Mat& dst, const int r, const float sigm
 				for (int k = -r; k <= r; k++)
 				{
 					const float vvv = kptr[i + k] - a;
-					w += exp(vvv *vvv* coeff);
+					w += exp(vvv * vvv * coeff);
 				}
 			}
-			float v = s* w;
-			if constexpr (postprocess == 0) dptr[i] = v/w;
+			float v = s * w;
+			if constexpr (postprocess == 0) dptr[i] = v / w;
 			else if constexpr (postprocess == 1) dptr[i] = v / w * stddev.at<float>(j, i);
 			else if constexpr (postprocess == 2) dptr[i] = exp(-1.f * v / (w * stddev.at<float>(j, i)));
 		}
@@ -434,7 +434,12 @@ int main(int argc, char** argv)
 	__m256i b = _mm256_set_step_epi32(8);
 	__m256i c = _mm256_set_step_epi32(16);
 	__m256i d = _mm256_set_step_epi32(24);
-	print_uchar(_mm256_packus_epi16(_mm256_packus_epi32(a, b), _mm256_packus_epi32(c, d)));
+
+	__m256i w = _mm256_cmpgt_epi32(a, _mm256_set1_epi32(2));
+	print_int(w);
+	print_int(_mm256_andnot_si256(w, b));
+
+	//print_uchar(_mm256_packus_epi16(_mm256_packus_epi32(a, b), _mm256_packus_epi32(c, d)));
 	return 0;*/
 	/*
 	cout << getInformation() << endl; return 0;
@@ -478,7 +483,7 @@ int main(int argc, char** argv)
 	//testsimd(); return 0;
 
 	//testHistogram(); return 0;
-	testPlot(); return 0;
+	//testPlot(); return 0;
 	//testPlot2D(); return 0;
 
 	//guiHazeRemoveTest();
@@ -516,7 +521,7 @@ int main(int argc, char** argv)
 
 #pragma region filter
 	//testGuidedImageFilter(Mat(), Mat()); return 0;
-	highDimentionalGaussianFilterTest(img); return 0;
+	//highDimentionalGaussianFilterTest(img); return 0;
 	//highDimentionalGaussianFilterHSITest(); return 0;
 	guiDenoiseTest(img);
 	//testWeightedHistogramFilterDisparity(); return 0;
@@ -568,7 +573,7 @@ int main(int argc, char** argv)
 
 	//Mat src = imread("img/stereo/Dolls/view1.png");
 	//guiDenoiseTest(src);
-	//guiBilateralFilterTest(src);
+	guiBilateralFilterTest(src);
 	Mat ref = imread("img/stereo/Dolls/view6.png");
 	//guiColorCorrectionTest(src, ref); return 0;
 	//Mat src = imread("img/flower.png");

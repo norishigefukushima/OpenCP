@@ -1,7 +1,7 @@
 #include "StereoEx.hpp"
 #include "viewsynthesis.hpp"
 #include "depthfilter.hpp"
-#include "binalyWeightedRangeFilter.hpp"
+#include "binaryWeightedRangeFilter.hpp"
 #include "statisticalFilter.hpp"
 #include "noise.hpp"
 #include "stat.hpp"
@@ -460,7 +460,7 @@ namespace cp
 			//medianBlur(disp,disp,2*(medianKernel>>1)+1);
 		}
 		if (subpixel_r != 0)
-			binalyWeightedRangeFilter(disp, disp, Size(subpixel_r * 2 + 1, subpixel_r * 2 + 1), (float)subpixel_th);
+			binaryWeightedRangeFilter(disp, disp, Size(subpixel_r * 2 + 1, subpixel_r * 2 + 1), (float)subpixel_th);
 		if (isOcclusion)
 		{
 			fillOcclusion(disp);
@@ -524,7 +524,7 @@ namespace cp
 			//medianBlur(disp,disp,2*(medianKernel>>1)+1);
 		}
 		if (subpixel_r != 0)
-			binalyWeightedRangeFilter(disp, disp, Size(subpixel_r * 2 + 1, subpixel_r * 2 + 1), (float)subpixel_th);
+			binaryWeightedRangeFilter(disp, disp, Size(subpixel_r * 2 + 1, subpixel_r * 2 + 1), (float)subpixel_th);
 		if (isOcclusion)
 		{
 			fillOcclusion(disp);
@@ -617,10 +617,10 @@ namespace cp
 
 				maxFilter(dispR, dispR, Size(2 * k + 1, 2 * k + 1));
 
-				binalyWeightedRangeFilter(dispL, dispL, Size(9, 9), 32);
-				binalyWeightedRangeFilter(dispR, dispR, Size(9, 9), 32);
-				binalyWeightedRangeFilter(dispL, dispL, Size(9, 9), 16);
-				binalyWeightedRangeFilter(dispR, dispR, Size(9, 9), 16);
+				binaryWeightedRangeFilter(dispL, dispL, Size(9, 9), 32);
+				binaryWeightedRangeFilter(dispR, dispR, Size(9, 9), 32);
+				binaryWeightedRangeFilter(dispL, dispL, Size(9, 9), 16);
+				binaryWeightedRangeFilter(dispR, dispR, Size(9, 9), 16);
 				dcomp = max(dcomp, 1);
 				if (isSub)
 				{

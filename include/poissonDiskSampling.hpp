@@ -4,6 +4,7 @@
 
 namespace cp
 {
+	//R. Bridson "Fast Poisson Disk Sampling in Arbitrary Dimensions," Proc. ACM SIGGRAPH sketches, 2007
 	class CP_EXPORT PoissonDiskSampling
 	{
 	private:

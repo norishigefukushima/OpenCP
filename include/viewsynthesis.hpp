@@ -23,6 +23,7 @@ namespace cp
 	};
 	CP_EXPORT void fillOcclusionImDisp(cv::InputOutputArray im_, cv::InputOutputArray disp_, int invalidvalue, int mode = FILL_OCCLUSION_IM_LINE);
 	CP_EXPORT void shiftDisp(const cv::Mat& srcdisp, cv::Mat& destdisp, float amp, float sub_gap, const int large_jump, cv::Mat& mask);
+	CP_EXPORT void generateCenterDisparity(cv::InputArray disparityMapL, cv::InputArray disparityMapR, cv::OutputArray dest, const float amp, int depth = CV_32F, const int D = 7, const float thresh = 2);
 
 	class CP_EXPORT DepthMapSubpixelRefinment
 	{
@@ -39,7 +40,6 @@ namespace cp
 		void operator()(const cv::Mat& leftim, const cv::Mat& rightim, const cv::Mat& leftdisp, const cv::Mat& rightdisp, int disp_amp, cv::Mat& leftdest, cv::Mat& rightdest);
 		void naive(const cv::Mat& leftim, const cv::Mat& rightim, const cv::Mat& leftdisp, const cv::Mat& rightdisp, int disp_amp, cv::Mat& leftdest, cv::Mat& rightdest);
 	};
-
 
 	class CP_EXPORT StereoViewSynthesis
 	{

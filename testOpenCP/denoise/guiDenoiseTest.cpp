@@ -57,8 +57,9 @@ void guiDenoiseTest(Mat& src)
 
 	int a = 0; createTrackbar("a", wname, &a, 100);
 	int type = 0; createTrackbar("type:8u/32f", wname, &type, 1);
-	int color = 1; createTrackbar("color", wname, &color, 1);
-	int sw = (int)DENOISE_METHOD::NONLOCAL; createTrackbar("switch", wname, &sw, (int)DENOISE_METHOD::SIZE - 1);
+	int color = 0; createTrackbar("color", wname, &color, 1);
+	int sw = (int)DENOISE_METHOD::NONLOCAL; 
+	createTrackbar("switch", wname, &sw, (int)DENOISE_METHOD::SIZE - 1);
 	int sigma_color10 = 850; createTrackbar("sigma_color", wname, &sigma_color10, 5000);
 	int sigma_space10 = 100; createTrackbar("sigma_space", wname, &sigma_space10, 200);
 	int r = 4; createTrackbar("r", wname, &r, 100);
@@ -114,8 +115,15 @@ void guiDenoiseTest(Mat& src)
 			cp::unnormalizedBilateralFilterCenterBlur(noise, dest, r, sigma_color, sigma_space, sigma_space2, false); break;
 			//cp::unnormalizedBilateralFilter(noise, dest, r, sigma_color, sigma_space, false); break;
 		case DENOISE_METHOD::NONLOCAL:
-			if(isSep) nonLocalMeansFilterSeparable(noise, dest, td, d, sigma_color, powexp); 
-			else nonLocalMeansFilter(noise, dest, td, d, sigma_color, powexp); break;
+			//if(isSep) nonLocalMeansFilterSeparable(noise, dest, td, d, sigma_color, powexp); 
+			//else nonLocalMeansFilter(noise, dest, td, d, sigma_color, powexp); break;
+		{
+			Mat a = convert(noise, CV_16S);
+			Mat b;
+			binaryWeightedRangeFilter(a, b, d, sigma_color, 2);
+			b.convertTo(dest, noise.type());
+			break;
+		}
 		case DENOISE_METHOD::JOINTNONLOCAL:
 			if (isSep) jointNonLocalMeansFilterSeparable(noise, ref, dest, td, d, sigma_color, powexp, 2); 
 			else jointNonLocalMeansFilter(noise, ref, dest, td, d, sigma_color, powexp, 2); break;

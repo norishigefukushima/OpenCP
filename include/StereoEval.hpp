@@ -4,6 +4,8 @@
 
 namespace cp
 {
+	//compute min/max disparity value from disparity map (d_min=floor(min(d)/amp), d_max=ceil(max(d)/amp))
+	CP_EXPORT void computeDisparityMinMax(cv::InputArray disparity, const int amp, int& min_d, int& max_d);
 	CP_EXPORT double calcBadPixel(cv::InputArray groundtruth, cv::InputArray disparityImage, cv::InputArray mask, double th, double amp);
 	CP_EXPORT double calcBadPixel(cv::InputArray groundtruth, cv::InputArray disparityImage, cv::InputArray mask, double th, double amp, cv::OutputArray outErr);
 	CP_EXPORT void createDisparityALLMask(cv::Mat& src, cv::Mat& dest);

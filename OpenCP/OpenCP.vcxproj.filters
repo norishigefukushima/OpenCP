@@ -321,9 +321,6 @@
     <ClCompile Include="adaptiveManifold.cpp">
       <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
     </ClCompile>
-    <ClCompile Include="binalyWeightedRangeFilter.cpp">
-      <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
-    </ClCompile>
     <ClCompile Include="bilateralFilter.cpp">
       <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
     </ClCompile>
@@ -603,6 +600,9 @@
     <ClCompile Include="poissonDiskSampling.cpp">
       <Filter>ソース ファイル\core</Filter>
     </ClCompile>
+    <ClCompile Include="binaryWeightedRangeFilter.cpp">
+      <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libGaussian\gaussian_conv.h">
@@ -618,9 +618,6 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="..\include\bilateralFilter.hpp">
-      <Filter>ヘッダー ファイル\filter</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\binalyWeightedRangeFilter.hpp">
       <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\boundaryReconstructionFilter.hpp">
@@ -1084,6 +1081,9 @@
     </ClInclude>
     <ClInclude Include="..\include\poissonDiskSampling.hpp">
       <Filter>ヘッダー ファイル\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\binaryWeightedRangeFilter.hpp">
+      <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
