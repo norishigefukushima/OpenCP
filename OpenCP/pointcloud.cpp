@@ -2108,11 +2108,6 @@ namespace cp
 		createTrackbar("render Opt", wname, &renderOpt, 3);
 		createTrackbar("sw", wname, &viewSW, 2);
 
-		createTrackbar("brad", wname, &br, 20);
-		createTrackbar("bth", wname, &bth, 200);
-		createTrackbar("maxr", wname, &maxr, 5);
-
-
 		Mat destImage(image.size(), CV_8UC3);	//rendered image
 		Mat view;//drawed image
 
@@ -2365,10 +2360,6 @@ namespace cp
 		int va = 50; createTrackbar("alpha", wname, &va, 100);
 		createTrackbar("render Opt", wname, &renderOpt, 3);
 		createTrackbar("sw", wname, &viewSW, 2);
-
-		createTrackbar("brad", wname, &br, 20);
-		createTrackbar("bth", wname, &bth, 200);
-		createTrackbar("maxr", wname, &maxr, 5);
 
 		int pit = 0, ro = 0, ya = 0, xx = 0, yy = 0, zz = 0;
 		createTrackbar("pi", "", &pit, 180);
@@ -2675,11 +2666,6 @@ namespace cp
 
 		createTrackbar("render Opt", wname, &renderOpt, 3);
 		createTrackbar("sw", wname, &viewSW, 2);
-
-		createTrackbar("brad", wname, &br, 20);
-		createTrackbar("bth", wname, &bth, 200);
-		createTrackbar("maxr", wname, &maxr, 5);
-
 
 		Mat destImage(image.size(), CV_8UC3);	//rendered image
 		Mat view;//drawed image
