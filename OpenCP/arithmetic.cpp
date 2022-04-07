@@ -83,7 +83,7 @@ namespace cp
 
 		for (int i = simd_width; i < src.total(); i++)
 		{
-			d[i] = -pow(max(s[i],0.f), v);
+			d[i] = -pow(max(s[i], 0.f), v);
 		}
 	}
 
@@ -416,6 +416,11 @@ namespace cp
 	void bitshiftRight(cv::InputArray src_, cv::OutputArray dest_, const int shift)
 	{
 		CV_Assert(src_.depth() == CV_8U);
+		if (shift == 0)
+		{
+			if (&src_ == &dest_)return;
+			else src_.copyTo(dest_);
+		}
 
 		Mat src = src_.getMat();
 		if (dest_.empty()) dest_.create(src.size(), src.type());
@@ -816,7 +821,7 @@ namespace cp
 		}
 		for (int i = simdsize; i < size; i++)
 		{
-			dptr[i] = std::min(std::max(sptr[i], minval),maxval);
+			dptr[i] = std::min(std::max(sptr[i], minval), maxval);
 		}
 	}
 
@@ -907,12 +912,12 @@ namespace cp
 		Mat s = src.getMat();
 		dst.create(src.size(), src.type());
 		Mat d = dst.getMat();
-		if (src.depth() == CV_8U)clip<uchar>(s,d, uchar(minval), uchar(maxval));
+		if (src.depth() == CV_8U)clip<uchar>(s, d, uchar(minval), uchar(maxval));
 		if (src.depth() == CV_8S)clip<char>(s, d, char(minval), char(maxval));
 		if (src.depth() == CV_16U)clip<ushort>(s, d, ushort(minval), ushort(maxval));
 		if (src.depth() == CV_16S)clip<short>(s, d, short(minval), short(maxval));
 		if (src.depth() == CV_32S)clip<int>(s, d, int(minval), int(maxval));
 		if (src.depth() == CV_32F)clip<float>(s, d, float(minval), float(maxval));
-		if (src.depth() == CV_64F)clip <double> (s, d, double(minval), double(maxval));
+		if (src.depth() == CV_64F)clip <double>(s, d, double(minval), double(maxval));
 	}
 }
