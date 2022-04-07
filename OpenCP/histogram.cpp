@@ -20,14 +20,23 @@ namespace cp
 
 		int image_num = 1;      // number of input image
 		int channels[] = { 0 }; // index of channels 
-		cv::MatND histogram;         // output histogram
+		cv::MatND histogram;    // output histogram
 		int dim_num = 1;        // output histogram dimension
-		int bin_num = 256;       // number of bin
+		int bin_num = 256;      // number of bin
 		int bin_nums[] = { bin_num };
 		float range[] = { 0, 256 * 1 };// range
 		const float *ranges[] = { range }; // 
 		Mat src_ = src.getMat();
-		cv::calcHist(&src_, image_num, channels, cv::Mat(), histogram, dim_num, bin_nums, ranges);
+		if (src_.depth() == CV_8U || src_.depth() == CV_16U || src_.depth() == CV_32F)
+		{
+			cv::calcHist(&src_, image_num, channels, cv::Mat(), histogram, dim_num, bin_nums, ranges);
+		}
+		else
+		{
+			Mat temp;
+			src_.convertTo(temp, CV_32F);
+			cv::calcHist(&temp, image_num, channels, cv::Mat(), histogram, dim_num, bin_nums, ranges);
+		}
 
 		double minVal;
 		double maxVal;

@@ -1755,8 +1755,7 @@ STATIC_INLINE float _mm256_reduceadd_ps(__m256 src)
 {
 	src = _mm256_hadd_shuffle_ps(src);
 	src = _mm256_hadd_shuffle_evenodd_ps(src);
-	__m256 high = _mm256_permute2f128_ps(src, src, 1);
-	return _mm256_cvtss_f32(_mm256_add_ps(src, high));
+	return _mm256_cvtss_f32(_mm256_add_ps(src, _mm256_permute2f128_ps(src, src, 1)));
 	//return (src.m256_f32[0] + src.m256_f32[4]);
 
 	//__m256 rsum = _mm256_permute2f128_ps(src, src, 0 << 4 | 1);
@@ -2462,7 +2461,7 @@ STATIC_INLINE __m128i _mm_i32gather_epu8(const uchar* src, __m128i idx)
 	//return _mm_setr_epi8(src[idx.m256i_i32[0]], src[idx.m256i_i32[1]], src[idx.m256i_i32[2]], src[idx.m256i_i32[3]], src[idx.m256i_i32[4]], src[idx.m256i_i32[5]], src[idx.m256i_i32[6]], src[idx.m256i_i32[7]], 0, 0, 0, 0, 0, 0, 0, 0);
 }
 
-//dest: si64
+//dest: 8 uchar elements
 STATIC_INLINE __m128i _mm256_i32gather_epu8(const uchar* src, __m256i idx)
 {
 	return _mm256_cvtepi32_epu8(_mm256_srli_epi32(_mm256_i32gather_epi32(reinterpret_cast<const int*>(src - 3), idx, 1), 24));
