@@ -2273,6 +2273,8 @@ namespace cp
 			num_loop++;
 			if (loopcount > 0 && num_loop > loopcount) break;
 		}
+
+		destroyWindow(wname);
 	}
 
 	void PointCloudShow::loopDepth(cv::InputArray image_, cv::InputArray srcDepth_, cv::InputArray image2_, cv::InputArray srcDepth2_, float focal, cv::InputArray oR_, cv::InputArray ot_, cv::InputArray K_, int loopcount)
