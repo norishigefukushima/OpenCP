@@ -173,14 +173,16 @@ namespace cp
 	bool CheckSameImage::isSame(cv::InputArray src, const int num_check_points)
 	{
 		CV_Assert(src.channels() == 1 || src.channels() == 3);
+		cv::Mat s = src.getMat();
 		bool ret = false;
 		if (samples.size() != num_check_points)
 		{
-			generateRandomSamplePoints(src.getMat(), num_check_points);
+
+			generateRandomSamplePoints(s, num_check_points);
 		}
 		else
 		{
-			ret = checkSamplePoints(src.getMat());
+			ret = checkSamplePoints(s);
 		}
 
 		return ret;
@@ -205,13 +207,15 @@ namespace cp
 		bool ret = false;
 		if (num_check_points <= 0)
 		{
-			if(isUsePrev)ref.copyTo(prev);
+			if (isUsePrev)ref.copyTo(prev);
 			ret = isSameFull(src, ref);
 		}
 		else
 		{
-			generateRandomSamplePoints(ref.getMat(), num_check_points);
-			ret = checkSamplePoints(src.getMat());
+			cv::Mat r = ref.getMat();
+			cv::Mat s = src.getMat();
+			generateRandomSamplePoints(r, num_check_points);
+			ret = checkSamplePoints(s);
 		}
 
 		std::string m;

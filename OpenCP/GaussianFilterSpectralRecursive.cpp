@@ -823,7 +823,7 @@ namespace cp
 
 					//output with transposition
 
-					_MM256_TRANSPOSE8_PS(qv[0], qv[1], qv[2], qv[3], qv[4], qv[5], qv[6], qv[7]);
+					_MM256_TRANSPOSE8INPLACE_PS(qv[0], qv[1], qv[2], qv[3], qv[4], qv[5], qv[6], qv[7]);
 					_mm256_storeu_ps(&dst[w * (y + 0)], qv[0]);
 					_mm256_storeu_ps(&dst[w * (y + 1)], qv[1]);
 					_mm256_storeu_ps(&dst[w * (y + 2)], qv[2]);
@@ -934,7 +934,7 @@ namespace cp
 					a2 = _mm256_sub_ps(_mm256_add_ps(_mm256_mul_ps(_mm256_set1_ps(cfR2), delta), _mm256_mul_ps(_mm256_set1_ps(cf12), b2)), a2);
 
 					//output with transposition
-					_MM256_TRANSPOSE8_PS(qv[0], qv[1], qv[2], qv[3], qv[4], qv[5], qv[6], qv[7]);
+					_MM256_TRANSPOSE8INPLACE_PS(qv[0], qv[1], qv[2], qv[3], qv[4], qv[5], qv[6], qv[7]);
 					_mm256_storeu_ps(&dst[w * (y + 0) + x], qv[0]);
 					_mm256_storeu_ps(&dst[w * (y + 1) + x], qv[1]);
 					_mm256_storeu_ps(&dst[w * (y + 2) + x], qv[2]);
@@ -1102,7 +1102,7 @@ namespace cp
 					a2 = _mm256_sub_ps(_mm256_add_ps(_mm256_mul_ps(_mm256_set1_ps(cfR2), delta), _mm256_mul_ps(_mm256_set1_ps(cf12), b2)), a2);
 
 					//output with transposition
-					_MM256_TRANSPOSE8_PS(qv[0], qv[1], qv[2], qv[3], qv[4], qv[5], qv[6], qv[7]);
+					_MM256_TRANSPOSE8INPLACE_PS(qv[0], qv[1], qv[2], qv[3], qv[4], qv[5], qv[6], qv[7]);
 					_mm256_storeu_ps(&dst[w * (y + 0)], qv[0]);
 					_mm256_storeu_ps(&dst[w * (y + 1)], qv[1]);
 					_mm256_storeu_ps(&dst[w * (y + 2)], qv[2]);
@@ -1213,7 +1213,7 @@ namespace cp
 					a2 = _mm256_sub_ps(_mm256_add_ps(_mm256_mul_ps(_mm256_set1_ps(cfR2), delta), _mm256_mul_ps(_mm256_set1_ps(cf12), b2)), a2);
 
 					//output with transposition
-					_MM256_TRANSPOSE8_PS(qv[0], qv[1], qv[2], qv[3], qv[4], qv[5], qv[6], qv[7]);
+					_MM256_TRANSPOSE8INPLACE_PS(qv[0], qv[1], qv[2], qv[3], qv[4], qv[5], qv[6], qv[7]);
 					_mm256_storeu_ps(&dst[w * (y + 0) + x], qv[0]);
 					_mm256_storeu_ps(&dst[w * (y + 1) + x], qv[1]);
 					_mm256_storeu_ps(&dst[w * (y + 2) + x], qv[2]);

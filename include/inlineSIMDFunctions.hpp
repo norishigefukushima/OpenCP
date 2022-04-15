@@ -9,7 +9,8 @@
 #define AVX_ALIGN 32
 #define AVX512_ALIGN 64
 
-#define STATIC_INLINE static __forceinline
+//#define STATIC_INLINE static __forceinline
+#define STATIC_INLINE static inline
 
 //0 src1 low, 1 src1 high, //2 src2 low, 3 src2 high, 
 #define _MM_SELECT4(x,y) (((y)<<4) + (x))
@@ -208,45 +209,34 @@ STATIC_INLINE void _mm_transposel_epi8(__m128i& s0, __m128i& s1, __m128i& s2, __
 	(out_row0) = _mm256_permute2f128_pd(tmp2, tmp3,0x20);			\
 }
 
-#define ___MM256_TRANSPOSE8_PS(in0, in1, in2, in3, in4, in5, in6, in7, out0, out1, out2, out3, out4, out5, out6, out7, __in0, __in1, __in2, __in3, __in4, __in5, __in6, __in7, __out0, __out1, __out2, __out3, __out4, __out5, __out6, __out7, __tmp0, __tmp1, __tmp2, __tmp3, __tmp4, __tmp5, __tmp6, __tmp7, __tmpp0, __tmpp1, __tmpp2, __tmpp3, __tmpp4, __tmpp5, __tmpp6, __tmpp7) \
-  do { \
-    __m256 __in0 = (in0), __in1 = (in1), __in2 = (in2), __in3 = (in3), __in4 = (in4), __in5 = (in5), __in6 = (in6), __in7 = (in7); \
-    __m256 __tmp0, __tmp1, __tmp2, __tmp3, __tmp4, __tmp5, __tmp6, __tmp7; \
-    __m256 __tmpp0, __tmpp1, __tmpp2, __tmpp3, __tmpp4, __tmpp5, __tmpp6, __tmpp7; \
-    __m256 __out0, __out1, __out2, __out3, __out4, __out5, __out6, __out7; \
-    __tmp0  = _mm256_unpacklo_ps(__in0, __in1); \
-    __tmp1  = _mm256_unpackhi_ps(__in0, __in1); \
-    __tmp2  = _mm256_unpacklo_ps(__in2, __in3); \
-    __tmp3  = _mm256_unpackhi_ps(__in2, __in3); \
-    __tmp4  = _mm256_unpacklo_ps(__in4, __in5); \
-    __tmp5  = _mm256_unpackhi_ps(__in4, __in5); \
-    __tmp6  = _mm256_unpacklo_ps(__in6, __in7); \
-    __tmp7  = _mm256_unpackhi_ps(__in6, __in7); \
-    __tmpp0 = _mm256_shuffle_ps(__tmp0, __tmp2, 0x44); \
-    __tmpp1 = _mm256_shuffle_ps(__tmp0, __tmp2, 0xEE); \
-    __tmpp2 = _mm256_shuffle_ps(__tmp1, __tmp3, 0x44); \
-    __tmpp3 = _mm256_shuffle_ps(__tmp1, __tmp3, 0xEE); \
-    __tmpp4 = _mm256_shuffle_ps(__tmp4, __tmp6, 0x44); \
-    __tmpp5 = _mm256_shuffle_ps(__tmp4, __tmp6, 0xEE); \
-    __tmpp6 = _mm256_shuffle_ps(__tmp5, __tmp7, 0x44); \
-    __tmpp7 = _mm256_shuffle_ps(__tmp5, __tmp7, 0xEE); \
-    __out0  = _mm256_permute2f128_ps(__tmpp0, __tmpp4, 0x20); \
-    __out1  = _mm256_permute2f128_ps(__tmpp1, __tmpp5, 0x20); \
-    __out2  = _mm256_permute2f128_ps(__tmpp2, __tmpp6, 0x20); \
-    __out3  = _mm256_permute2f128_ps(__tmpp3, __tmpp7, 0x20); \
-    __out4  = _mm256_permute2f128_ps(__tmpp0, __tmpp4, 0x31); \
-    __out5  = _mm256_permute2f128_ps(__tmpp1, __tmpp5, 0x31); \
-    __out6  = _mm256_permute2f128_ps(__tmpp2, __tmpp6, 0x31); \
-    __out7  = _mm256_permute2f128_ps(__tmpp3, __tmpp7, 0x31); \
-    (out0)  = __out0, (out1) = __out1, (out2) = __out2, (out3) = __out3, (out4) = __out4, (out5) = __out5, (out6) = __out6, (out7) = __out7; \
-          } while (0)
-#define _MM256_TRANSPOSE8_PS(in0, in1, in2, in3, in4, in5, in6, in7) \
-      ___MM256_TRANSPOSE8_PS(in0, in1, in2, in3, in4, in5, in6, in7, in0, in1, in2, in3, in4, in5, in6, in7, \
-          __in0##__LINE__, __in1##__LINE__, __in2##__LINE__, __in3##__LINE__, __in4##__LINE__, __in5##__LINE__, __in6##__LINE__, __in7##__LINE__, \
-          __out0##__LINE__, __out1##__LINE__, __out2##__LINE__, __out3##__LINE__, __out4##__LINE__, __out5##__LINE__, __out6##__LINE__, __out7##__LINE__, \
-          __tmp0##__LINE__, __tmp1##__LINE__, __tmp2##__LINE__, __tmp3##__LINE__, __tmp4##__LINE__, __tmp5##__LINE__, __tmp6##__LINE__, __tmp7##__LINE__, \
-          __tmpp0##__LINE__, __tmpp1##__LINE__, __tmpp2##__LINE__, __tmpp3##__LINE__, __tmpp4##__LINE__, __tmpp5##__LINE__, __tmpp6##__LINE__, __tmpp7##__LINE__)
 
+
+#define _MM256_TRANSPOSE8_PS(in0, in1, in2, in3, in4, in5, in6, in7, out0, out1, out2, out3, out4, out5, out6, out7){	\
+__m256 __tmp0 = _mm256_unpacklo_ps((in0), (in1)); \
+__m256 __tmp1 = _mm256_unpackhi_ps((in0), (in1)); \
+__m256 __tmp2 = _mm256_unpacklo_ps((in2), (in3)); \
+__m256 __tmp3 = _mm256_unpackhi_ps((in2), (in3)); \
+__m256 __tmp4 = _mm256_unpacklo_ps((in4), (in5)); \
+__m256 __tmp5 = _mm256_unpackhi_ps((in4), (in5)); \
+__m256 __tmp6 = _mm256_unpacklo_ps((in6), (in7)); \
+__m256 __tmp7 = _mm256_unpackhi_ps((in6), (in7)); \
+__m256 __tmpp0 = _mm256_shuffle_ps(__tmp0, __tmp2, 0x44); \
+__m256 __tmpp1 = _mm256_shuffle_ps(__tmp0, __tmp2, 0xEE); \
+__m256 __tmpp2 = _mm256_shuffle_ps(__tmp1, __tmp3, 0x44); \
+__m256 __tmpp3 = _mm256_shuffle_ps(__tmp1, __tmp3, 0xEE); \
+__m256 __tmpp4 = _mm256_shuffle_ps(__tmp4, __tmp6, 0x44); \
+__m256 __tmpp5 = _mm256_shuffle_ps(__tmp4, __tmp6, 0xEE); \
+__m256 __tmpp6 = _mm256_shuffle_ps(__tmp5, __tmp7, 0x44); \
+__m256 __tmpp7 = _mm256_shuffle_ps(__tmp5, __tmp7, 0xEE); \
+(out0) = _mm256_permute2f128_ps(__tmpp0, __tmpp4, 0x20); \
+(out1) = _mm256_permute2f128_ps(__tmpp1, __tmpp5, 0x20); \
+(out2) = _mm256_permute2f128_ps(__tmpp2, __tmpp6, 0x20); \
+(out3) = _mm256_permute2f128_ps(__tmpp3, __tmpp7, 0x20); \
+(out4) = _mm256_permute2f128_ps(__tmpp0, __tmpp4, 0x31); \
+(out5) = _mm256_permute2f128_ps(__tmpp1, __tmpp5, 0x31); \
+(out6) = _mm256_permute2f128_ps(__tmpp2, __tmpp6, 0x31); \
+(out7) = _mm256_permute2f128_ps(__tmpp3, __tmpp7, 0x31); \
+}
 
 #define _MM256_TRANSPOSE8INPLACE_PS(in_row0, in_row1, in_row2, in_row3, in_row4, in_row5, in_row6, in_row7){	\
 	__m256 tmp0, tmp1,tmp2,tmp3,tmp4,tmp5,tmp6,tmp7;														\
@@ -289,8 +279,8 @@ STATIC_INLINE void _mm_transposel_epi8(__m128i& s0, __m128i& s1, __m128i& s2, __
 
 STATIC_INLINE void _mm256_transpose8_ps(__m256* in_row, __m256* out_row)
 {
-	_MM256_TRANSPOSE8_PS(in_row[0], in_row[1], in_row[2], in_row[3], in_row[4], in_row[5], in_row[6], in_row[7]
-		, out_row[0], out_row[1], out_row[2], out_row[3], out_row[4], out_row[5], out_row[6], out_row[7]);
+	_MM256_TRANSPOSE8_PS(in_row[0], in_row[1], in_row[2], in_row[3], in_row[4], in_row[5], in_row[6], in_row[7],
+		out_row[0], out_row[1], out_row[2], out_row[3], out_row[4], out_row[5], out_row[6], out_row[7]);
 }
 
 STATIC_INLINE void _mm256_transpose8_ps(__m256* in_row)
@@ -1798,7 +1788,7 @@ STATIC_INLINE double _mm256_reduceadd_kahan_64f(const __m256 src, const __m256 c
 	h = _mm256_hadd_pd(h, l);
 	h = _mm256_add_pd(h, _mm256_shuffle_pd(h, h, 0b0101));
 
-	return v + h.m256d_f64[0] + h.m256d_f64[2];
+	return v + ((double*)&h)[0] + ((double*)&h)[2];
 }
 
 STATIC_INLINE float _mm256_reduceadd_kahan_32f(const __m256 src, const __m256 carry, const float v = 0.f)
@@ -1808,7 +1798,7 @@ STATIC_INLINE float _mm256_reduceadd_kahan_32f(const __m256 src, const __m256 ca
 
 	h = _mm256_hadd_pd(h, l);
 	h = _mm256_add_pd(h, _mm256_shuffle_pd(h, h, 0b0101));
-	return (float)(double(v) + h.m256d_f64[0] + h.m256d_f64[2]);
+	return (float)(double(v) + ((double*)&h)[0] + ((double*)&h)[2]);
 }
 
 STATIC_INLINE float _mm256_reduceadd_kahanfast_32f(const __m256 src, const __m256 carry, const float v = 0.f)
@@ -1816,11 +1806,12 @@ STATIC_INLINE float _mm256_reduceadd_kahanfast_32f(const __m256 src, const __m25
 	float sum = v;
 	float c = 0.f;
 	for (int i = 0; i < 8; i++)
-		c += carry.m256_f32[i];
+		((float*)&carry)[i];
+
 
 	for (int i = 0; i < 8; i++)
 	{
-		float y = src.m256_f32[i] - c;
+		float y = ((float*)&src)[i] - c;
 		float t = sum + y;
 		c = (t - sum) - y;
 		sum = t;
@@ -1832,8 +1823,7 @@ STATIC_INLINE float _mm256_reduceadd_kahanfast_32f(const __m256 src, const __m25
 STATIC_INLINE double _mm256_reduceadd_kahan_64f(const __m256d src, const __m256d carry, const double v = 0.0)
 {
 	double sum = v;
-
-	double c = carry.m256d_f64[0] + carry.m256d_f64[1] + carry.m256d_f64[2] + carry.m256d_f64[3];
+	double c = ((double*)&carry)[0] + ((double*)&carry)[1] + ((double*)&carry)[2] + ((double*)&carry)[3];
 	/*
 	* double c = 0.0;
 	for (int i = 0; i < 4; i++)
@@ -1846,7 +1836,7 @@ STATIC_INLINE double _mm256_reduceadd_kahan_64f(const __m256d src, const __m256d
 
 	for (int i = 0; i < 4; i++)
 	{
-		double y = src.m256d_f64[i] - c;
+		double y = ((double*)&src)[i] - c;
 		double t = sum + y;
 		c = (t - sum) - y;
 		sum = t;
@@ -2442,7 +2432,8 @@ STATIC_INLINE void _mm256_i32gather_bgr_epi32(const uchar* src, __m256i idx, __m
 }
 
 //gather 8 uchar elements and output 32bit integer
-STATIC_INLINE __m256i _mm256_i32gather_epi32(const uchar* src, __m256i idx)
+//old STATIC_INLINE __m256i _mm256_i32gather_epi32(const uchar* src, __m256i idx)
+STATIC_INLINE __m256i _mm256_i32gather_epi8epi32(const uchar* src, __m256i idx)
 {
 	return _mm256_srli_epi32(_mm256_i32gather_epi32(reinterpret_cast<const int*>(&src[-3]), idx, 1), 24);
 	//return _mm256_setr_epi32(src[idx.m256i_i32[0]], src[idx.m256i_i32[1]], src[idx.m256i_i32[2]], src[idx.m256i_i32[3]], src[idx.m256i_i32[4]], src[idx.m256i_i32[5]], src[idx.m256i_i32[6]], src[idx.m256i_i32[7]]);

@@ -419,7 +419,11 @@ namespace cp
 		if (shift == 0)
 		{
 			if (&src_ == &dest_)return;
-			else src_.copyTo(dest_);
+			else
+			{
+				src_.copyTo(dest_);
+				return;
+			}
 		}
 
 		Mat src = src_.getMat();
