@@ -2,7 +2,11 @@
 #include "jointBilateralFilter.hpp"
 #include "guidedFilter.hpp"
 #include "timer.hpp"
-#include<intrin.h>
+
+#include "inlineSIMDFunctions.hpp"
+#include "consoleImage.hpp"
+#include "metrics.hpp"
+#include "blend.hpp"
 
 using namespace cv;
 using namespace std;
@@ -21,7 +25,7 @@ namespace cp
 			for (int i = 1; i < src.cols - 1; i++)
 			{
 				//float diff = abs(s[i - 1] - s[i]) + abs(s[i - v] - s[i]);
-				float diff = sqrt((s[i - 1] - s[i])*(s[i - 1] - s[i]) + (s[i - v] - s[i])*(s[i - v] - s[i]));
+				float diff = sqrt((s[i - 1] - s[i]) * (s[i - 1] - s[i]) + (s[i - v] - s[i]) * (s[i - v] - s[i]));
 
 				/*float diff = abs(s[i - 1] - s[i]);
 					+ abs(s[i + 1] - s[i])
@@ -82,33 +86,43 @@ namespace cp
 	}
 
 
-	void fma(const Mat& src, const Mat&  lambda, Mat& dest)
+	void fma(const Mat& src, const Mat& lambda, Mat& dest)
 	{
-		const float* s = src.ptr<float>(0);
-		const float* l = lambda.ptr<float>(0);
-		float* d = dest.ptr<float>(0);
+		const int size = get_simd_floor(src.size().area(), 32);
 
-		for (int i = 0; i < src.size().area(); i += 8)
+		const float* s = src.ptr<float>();
+		float* d = dest.ptr<float>();
+		const float* l = lambda.ptr<float>();
+		for (int i = 0; i < size; i += 32)
 		{
-			__m256 ma = _mm256_load_ps(l + i);
-			__m256 ms = _mm256_load_ps(s + i);
-			__m256 md = _mm256_load_ps(d + i);
-			md = _mm256_fmadd_ps(ma, ms, md);
-			_mm256_store_ps(d + i, md);
+			_mm256_store_ps(d + i + 0, _mm256_fmadd_ps(_mm256_load_ps(l + i + 0), _mm256_load_ps(s + i + 0), _mm256_load_ps(d + i + 0)));
+			_mm256_store_ps(d + i + 8, _mm256_fmadd_ps(_mm256_load_ps(l + i + 8), _mm256_load_ps(s + i + 8), _mm256_load_ps(d + i + 8)));
+			_mm256_store_ps(d + i + 16, _mm256_fmadd_ps(_mm256_load_ps(l + i + 16), _mm256_load_ps(s + i + 16), _mm256_load_ps(d + i + 16)));
+			_mm256_store_ps(d + i + 24, _mm256_fmadd_ps(_mm256_load_ps(l + i + 24), _mm256_load_ps(s + i + 24), _mm256_load_ps(d + i + 24)));
+		}
+		for (int i = size; i < src.size().area(); i++)
+		{
+			d[i] += l[i] * s[i];
 		}
 	}
 
 	void fma(const Mat& src, const float a, Mat& dest)
 	{
-		const float* s = src.ptr<float>(0);
-		float* d = dest.ptr<float>(0);
-		__m256 ma = _mm256_set1_ps(a);
-		for (int i = 0; i < src.size().area(); i += 8)
+		const int size = get_simd_floor(src.size().area(), 32);
+
+		const float* s = src.ptr<float>();
+		float* d = dest.ptr<float>();
+		const __m256 ma = _mm256_set1_ps(a);
+		for (int i = 0; i < size; i += 32)
 		{
-			__m256 ms = _mm256_load_ps(s + i);
-			__m256 md = _mm256_load_ps(d + i);
-			md = _mm256_fmadd_ps(ma, ms, md);
-			_mm256_store_ps(d + i, md);
+			_mm256_store_ps(d + i + 0, _mm256_fmadd_ps(ma, _mm256_load_ps(s + i + 0), _mm256_load_ps(d + i + 0)));
+			_mm256_store_ps(d + i + 8, _mm256_fmadd_ps(ma, _mm256_load_ps(s + i + 8), _mm256_load_ps(d + i + 8)));
+			_mm256_store_ps(d + i + 16, _mm256_fmadd_ps(ma, _mm256_load_ps(s + i + 16), _mm256_load_ps(d + i + 16)));
+			_mm256_store_ps(d + i + 24, _mm256_fmadd_ps(ma, _mm256_load_ps(s + i + 24), _mm256_load_ps(d + i + 24)));
+		}
+		for (int i = size; i < src.size().area(); i++)
+		{
+			d[i] += a * s[i];
 		}
 	}
 
@@ -116,7 +130,7 @@ namespace cp
 	{
 		const int v = error.cols;
 		float sigma = th;
-		const float sigmap = -0.5f / (sigma*sigma);
+		const float sigmap = -0.5f / (sigma * sigma);
 #pragma omp parallel for
 		for (int j = 1; j < error.rows - 1; j++)
 		{
@@ -131,7 +145,7 @@ namespace cp
 					+ abs(r[i - v] - r[i]);
 
 
-				e[i] *= (1.f - exp(diff*sigmap));
+				e[i] *= (1.f - exp(diff * sigmap));
 				//if (diff < th) error.at<float>(j, i) = 0.f;
 			}
 		}
@@ -207,7 +221,7 @@ namespace cp
 			{
 				//d[i] = lambda +s0[i] / s1[i];
 				//d[i] = lambda + min(2.f, 1.f*abs(s0[i]-s1[i]));
-				d[i] = min(3.f, lambda + 1.f*abs(s0[i] - s1[i]));
+				d[i] = min(3.f, lambda + 1.f * abs(s0[i] - s1[i]));
 			}
 		}
 	}
@@ -251,7 +265,7 @@ namespace cp
 		}
 		destf.convertTo(dest, CV_8UC3);
 
-		imshow("step", step*0.333);
+		imshow("step", step * 0.333);
 	}
 
 	void iterativeBackProjectionDeblurGaussian(const Mat& src, Mat& dest, const Size ksize, const float sigma, const float backprojection_sigma, const float lambda, const int iteration, Mat& init)
@@ -295,6 +309,53 @@ namespace cp
 		iterativeBackProjectionDeblurGaussian(src, dest, ksize, sigma, backprojection_sigma, lambda, iteration, temp);
 	}
 
+
+	void iterativeBackProjectionDeblurBoxGaussian(const Mat& src, Mat& dest, const int d, const Size ksize, const float backprojection_sigma, const float lambda, const int iteration, Mat& init)
+	{
+		Mat srcf;
+		Mat destf;
+		Mat subf;
+		src.convertTo(srcf, CV_32F);
+
+		if (init.empty()) src.convertTo(destf, CV_32F);
+		else init.convertTo(destf, CV_32F);
+		Mat bdest;
+
+		//float lambdaamp = 0.99;
+		//float l = lambda;
+
+		Mat kernel = Mat::ones(d, d, CV_32F);
+		kernel /= (d * d);
+		if (d % 2 == 0)copyMakeBorder(kernel, kernel, 1, 0, 1, 0, BORDER_CONSTANT, Scalar::all(0));
+		//if (d % 2 == 0)copyMakeBorder(kernel, kernel, 0, 1, 0, 1, BORDER_CONSTANT, Scalar::all(0));
+		for (int i = 0; i < iteration; i++)
+		{
+			filter2D(destf, bdest, -1, kernel);
+			//blur(destf, bdest, ksize);
+			subtract(srcf, bdest, subf);
+			//double e = norm(subf);
+
+			if (backprojection_sigma > 0.f)
+				GaussianBlur(subf, subf, ksize, backprojection_sigma);
+
+
+			//destf += lambda*subf;
+			/*if(i==0)fma(subf, 3, destf);
+			else if (i==1)fma(subf, 2, destf);
+			else	fma(subf, lambda, destf);*/
+			fma(subf, lambda, destf);
+
+			//l *= lambdaamp;
+		}
+		destf.convertTo(dest, src.depth());
+	}
+
+	void iterativeBackProjectionDeblurBoxGaussian(const Mat& src, Mat& dest, const int d, const Size ksize, const float backprojection_sigma, const float lambda, const int iteration)
+	{
+		Mat temp;
+		iterativeBackProjectionDeblurBoxGaussian(src, dest, d, ksize, backprojection_sigma, lambda, iteration, temp);
+	}
+
 	void iterativeBackProjectionDeblurBilateral(const cv::Mat& src, cv::Mat& dest, const cv::Size ksize, const float sigma, const float backprojection_sigma_space, const float backprojection_sigma_color, const float lambda, const int iteration, cv::Mat& init)
 	{
 		Mat srcf;
@@ -314,7 +375,7 @@ namespace cp
 			jointBilateralFilter(subf, destf, subf, ksize, backprojection_sigma_color, backprojection_sigma_space);
 
 			//fma(subf, lambda, destf);
-			destf += ((float)lambda)*subf;
+			destf += ((float)lambda) * subf;
 
 		}
 		destf.convertTo(dest, src.type());
@@ -428,5 +489,34 @@ namespace cp
 			//}
 		}
 		destf.convertTo(dest, CV_8UC3);
+	}
+
+
+	void guiIBP(Mat& src, Mat& ref, string wname)
+	{
+		namedWindow(wname);
+		cp::ConsoleImage ci;
+		int d = 2; createTrackbar("d", wname, &d, 10);
+		int r = 2; createTrackbar("r", wname, &r, 10);
+		int sigma = 10; createTrackbar("sigma10", wname, &sigma, 100);
+		int back_sigma = 10; createTrackbar("back_sigma10", wname, &back_sigma, 100);
+		int lambda = 100; createTrackbar("lambda100", wname, &lambda, 100);
+		int iteration = 10; createTrackbar("iteration", wname, &iteration, 100);
+		int key = 0;
+		Mat dest;
+		while (key != 'q')
+		{
+			Size ksize(2 * r + 1, 2 * r + 1);
+			iterativeBackProjectionDeblurBoxGaussian(src, dest, d, ksize, back_sigma * 0.1f, lambda * 0.01f, iteration);
+			ci("src %f dB", getPSNR(src, ref));
+			ci("IBP %f dB", getPSNR(dest, ref));
+			ci.show();
+			imshow(wname, dest);
+			key = waitKey(1);
+			if (key == 'd')guiAlphaBlend(dest, ref);
+			if (key == 'c')guiAlphaBlend(src, ref);
+		}
+		destroyWindow(wname);
+		destroyWindow("console");
 	}
 }

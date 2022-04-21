@@ -16,6 +16,10 @@ namespace cp
 		std::vector<cv::Mat> dest_border;
 		std::vector<cv::Mat> image_border;
 	public:
+		
+		//threshold if(var>threshold) computeNEDI
+		//windowSize
+		//method 0: LU, 1 LUOpt
 		void upsample(cv::InputArray src, cv::OutputArray dest, const int scale, const float threshold, const int WindowSize, int method);
 	};
 }

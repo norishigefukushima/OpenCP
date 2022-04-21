@@ -1679,6 +1679,12 @@ STATIC_INLINE void _mm256_cvtps_planar2bgr(const __m256 b, const __m256 g, const
 
 #pragma region arithmetic
 
+STATIC_INLINE __m128 _mm_abs_ps(__m128 src)
+{
+	//return _mm256_and_ps(src, _mm256_castsi256_ps(_mm256_set1_epi32(0x7fffffff)));
+	return _mm_andnot_ps(_mm_set1_ps(-0.f), src);
+}
+
 STATIC_INLINE __m256 _mm256_abs_ps(__m256 src)
 {
 	//return _mm256_and_ps(src, _mm256_castsi256_ps(_mm256_set1_epi32(0x7fffffff)));
@@ -1927,6 +1933,26 @@ STATIC_INLINE __m128i _mm_absdiff_epu8(__m128i src1, __m128i src2)
 STATIC_INLINE __m256i _mm256_absdiff_epu8(__m256i src1, __m256i src2)
 {
 	return _mm256_max_epu8(_mm256_subs_epu8(src1, src2), _mm256_subs_epu8(src2, src1));
+}
+
+STATIC_INLINE __m128i _mm_absdiff_epi32(__m128i src1, __m128i src2)
+{
+	return _mm_abs_epi32(_mm_sub_epi32(src1, src2));
+}
+
+STATIC_INLINE __m256i _mm256_absdiff_epi32(__m256i src1, __m256i src2)
+{
+	return _mm256_abs_epi32(_mm256_sub_epi32(src1, src2));
+}
+
+STATIC_INLINE __m128 _mm_absdiff_ps(__m128 src1, __m128 src2)
+{
+	return _mm_abs_ps(_mm_sub_ps(src1, src2));
+}
+
+STATIC_INLINE __m256 _mm256_absdiff_ps(__m256 src1, __m256 src2)
+{
+	return _mm256_abs_ps(_mm256_sub_ps(src1, src2));
 }
 
 //rsqrt->rcp

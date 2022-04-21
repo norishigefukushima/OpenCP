@@ -605,20 +605,36 @@ namespace cp
 		if (src.channels() == 1)
 		{
 			src.getMat().convertTo(srcfImg, CV_32FC1, 1.0f / 255);
+
 			for (int i = 0; i < level; i++)
 			{
 				if (i == 0)
 				{
-					copyMakeBorder(srcfImg, image_border[i], WindowSize + 1, WindowSize + 1, WindowSize + 1, WindowSize + 1, BORDER_REPLICATE);
-					dest_border[i].create(srcfImg.size() * 2, CV_32FC1);
+					copyMakeBorder(srcfImg, image_border[i], WindowSize + 1, WindowSize + 1, WindowSize + 1, WindowSize + 1, border);
+					dest_border[i].create(image_border[i].size() * 2, CV_32FC1);
+					dest_border[i].setTo(0);
 				}
 				else
 				{
-					copyMakeBorder(dest_border[i - 1], image_border[i], WindowSize + 1, WindowSize + 1, WindowSize + 1, WindowSize + 1, BORDER_REPLICATE);
-					dest_border[i].create(srcfImg.size() * 2, CV_32FC1);
+					Mat crop = dest_border[i - 1](Rect((WindowSize + 1) * 2, (WindowSize + 1) * 2, dest_border[i - 1].cols - (WindowSize + 1) * 4, dest_border[i - 1].rows - (WindowSize + 1) * 4));
+
+					copyMakeBorder(crop, image_border[i], WindowSize + 1, WindowSize + 1, WindowSize + 1, WindowSize + 1, border);
+					dest_border[i].create(image_border[i].size() * 2, CV_32FC1);
+					dest_border[i].setTo(0);
 				}
-				//upsampleGrayDouble(image_border[i], dest_border[i], threshold, WindowSize);
+
+				if (method == 0)upsampleGrayDoubleLU(image_border[i], dest_border[i], threshold, WindowSize, float(eps * 1.0 / 2560.0));
+				else if (method == 1)
+				{
+					//upsampleGrayDoubleLU(image_border[i], dest_border[i], threshold, WindowSize);
+					upsampleGrayDoubleLUOpt(image_border[i], dest_border[i], threshold, WindowSize, float(eps * 1.0 / 2560.0));
+				}
 			}
+
+			int i = level - 1;
+			dest_border[i](Rect((WindowSize + 1) * 2, (WindowSize + 1) * 2, dest_border[i].cols - (WindowSize + 1) * 4, dest_border[i].rows - (WindowSize + 1) * 4)).copyTo(destf);
+			cout<<destf.size() << endl;
+			destf.convertTo(dest, src.depth(), 255);
 		}
 		else if (src.channels() == 3)
 		{
@@ -713,7 +729,7 @@ void NEDI16(const Mat& srcImg, Mat& dstImg_, int n_pow, float threshold, int Win
 			dstImg = Mat::zeros(srcfImg.size() * 2, CV_32FC1);
 		}
 
-//#pragma omp parallel for
+		//#pragma omp parallel for
 		for (int y = 0; y < srcfImg.rows; ++y)
 		{
 			float* src = srcfImg.ptr<float>(y);
@@ -846,8 +862,8 @@ void NEDI16(const Mat& srcImg, Mat& dstImg_, int n_pow, float threshold, int Win
 							matC[3] = window[point + 2];
 
 							vecY[count++] = window[point];
-						}
 					}
+				}
 
 					solve(matrixC.t() * matrixC, matrixC.t() * vectorY.t(), alpha_coeff, DECOMP_LU);//MMSE
 
@@ -861,13 +877,13 @@ void NEDI16(const Mat& srcImg, Mat& dstImg_, int n_pow, float threshold, int Win
 					{
 						dst[x] = alpha[0] * dst[x - 1] + alpha[1] * dst[x - width] + alpha[2] * dst[x + width] + alpha[3] * dst[x + 1];
 					}
-				}
 			}
 		}
+	}
 
 		dstImg = dstImg(Rect((WindowSize + 4) * 2, (WindowSize + 4) * 2, dstImg.cols - (WindowSize + 4) * 4, dstImg.rows - (WindowSize + 4) * 4));
 
-	}
+}
 
 	dstImg.convertTo(dstImg_, srcType, 255);
 

@@ -97,10 +97,11 @@
 //GaussianFilter
 #include "GaussianBlurIPOL.hpp"
 //resize
-#include "downsample.hpp"
-#include "depthUpsample.hpp"
-#include "jointBilateralUpsample.hpp"
 #include "bilateralGuidedUpsample.hpp"
+#include "depthUpsample.hpp"
+#include "downsample.hpp"
+#include "jointBilateralUpsample.hpp"
+#include "NEDI.hpp"
 #include "upsample.hpp"
 
 /*************************************************************

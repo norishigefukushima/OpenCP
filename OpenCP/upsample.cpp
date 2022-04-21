@@ -394,7 +394,7 @@ namespace cp
 #endif
 #pragma endregion
 
-#pragma region
+#pragma region linear
 	inline int linearinterpolate_(int lt, int rt, int lb, int rb, double a, double b)
 	{
 		return (int)((b * a * lt + b * (1.0 - a) * rt + (1.0 - b) * a * lb + (1.0 - b) * (1.0 - a) * rb) + 0.5);
@@ -438,15 +438,37 @@ namespace cp
 
 	void upsampleLinear(InputArray src_, OutputArray dest_, const int scale)
 	{
-		Mat dest = dest_.getMat();
-		Mat src = src_.getMat();
+		if (src_.channels() == 1)
+		{
+			Mat dest = dest_.getMat();
+			Mat src = src_.getMat();
 
-		if (src.depth() == CV_8U)       upsampleLinear_<uchar>(src, dest, scale);
-		else if (src.depth() == CV_16S) upsampleLinear_<short>(src, dest, scale);
-		else if (src.depth() == CV_16U) upsampleLinear_<ushort>(src, dest, scale);
-		else if (src.depth() == CV_32S) upsampleLinear_<int>(src, dest, scale);
-		else if (src.depth() == CV_32F) upsampleLinear_<float>(src, dest, scale);
-		else if (src.depth() == CV_64F) upsampleLinear_<double>(src, dest, scale);
+			if (src.depth() == CV_8U)       upsampleLinear_<uchar>(src, dest, scale);
+			else if (src.depth() == CV_16S) upsampleLinear_<short>(src, dest, scale);
+			else if (src.depth() == CV_16U) upsampleLinear_<ushort>(src, dest, scale);
+			else if (src.depth() == CV_32S) upsampleLinear_<int>(src, dest, scale);
+			else if (src.depth() == CV_32F) upsampleLinear_<float>(src, dest, scale);
+			else if (src.depth() == CV_64F) upsampleLinear_<double>(src, dest, scale);
+		}
+		else
+		{
+			vector<Mat> s;
+			vector<Mat> d(src_.channels());
+			split(src_, s);
+			for (int c = 0; c < src_.channels(); c++)
+			{
+				Mat src = s[c];
+				Size sz = src.size() * scale;
+				d[c].create(sz, src.depth());
+				if (src.depth() == CV_8U)       upsampleLinear_<uchar>(src, d[c], scale);
+				else if (src.depth() == CV_16S) upsampleLinear_<short>(src, d[c], scale);
+				else if (src.depth() == CV_16U) upsampleLinear_<ushort>(src, d[c], scale);
+				else if (src.depth() == CV_32S) upsampleLinear_<int>(src, d[c], scale);
+				else if (src.depth() == CV_32F) upsampleLinear_<float>(src, d[c], scale);
+				else if (src.depth() == CV_64F) upsampleLinear_<double>(src, d[c], scale);
+			}
+			merge(d, dest_);
+		}
 	}
 #pragma endregion
 
