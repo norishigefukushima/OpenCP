@@ -3,6 +3,7 @@
 #include "inlineSIMDFunctions.hpp"
 #include "arithmetic.hpp"
 #include "updateCheck.hpp"
+#include "color.hpp"
 #include "debugcp.hpp"
 
 using namespace std;
@@ -25,6 +26,8 @@ namespace cp
 			ret = "PSNR_G"; break;
 		case PSNR_R:
 			ret = "PSNR_R"; break;
+		case PSNR_Y_INTEGER:
+			ret = "PSNR_Y_INTEGER"; break;
 		default:
 			ret = "NO SUPPORT"; break;
 		}
@@ -102,8 +105,8 @@ namespace cp
 				mmse = _mm256_fmadd_pd(t, t, mmse);
 			}
 		}
-		MSE +=_mm256_reduceadd_pd(mmse);
-		
+		MSE += _mm256_reduceadd_pd(mmse);
+
 
 		//for (int i = 0; i < pixels; ++i)
 		for (int i = simdsize; i < pixels; ++i)
@@ -144,7 +147,7 @@ namespace cp
 		}
 
 		MSE = (double)_mm256_reduceadd_ps(mmse);
-		
+
 		//for (int i = 0; i < pixels; ++i)
 		for (int i = simdsize; i < pixels; ++i)
 		{
@@ -183,7 +186,7 @@ namespace cp
 			mmse = _mm256_fmadd_ps(t, t, mmse);
 		}
 		MSE = (double)_mm256_reduceadd_ps(mmse);
-		
+
 		//for (int i = 0; i < pixels; ++i)
 		for (int i = simdsize; i < pixels; ++i)
 		{
@@ -212,6 +215,10 @@ namespace cp
 				cv::Matx13d mt(0.114, 0.587, 0.299);
 				cv::transform(src, dest, mt);
 				break;
+			}
+			case PSNR_Y_INTEGER:
+			{
+				cp::cvtColorIntegerY(src, dest); break;
 			}
 			case PSNR_B:
 			{
@@ -242,6 +249,11 @@ namespace cp
 			case PSNR_Y:
 			{
 				cvtColor(src, temp, COLOR_BGR2GRAY);
+				temp.convertTo(dest, CV_64F); break;
+			}
+			case PSNR_Y_INTEGER:
+			{
+				cp::cvtColorIntegerY(src, dest); 
 				temp.convertTo(dest, CV_64F); break;
 			}
 			case PSNR_B:
@@ -279,6 +291,10 @@ namespace cp
 			{
 				cvtColor(src, dest, COLOR_BGR2GRAY); break;
 			}
+			case PSNR_Y_INTEGER:
+			{
+				cp::cvtColorIntegerY(src, dest); break;
+			}
 			case PSNR_B:
 			{
 				cv::split(src, vtemp);
@@ -308,8 +324,12 @@ namespace cp
 			case PSNR_Y:
 			{
 				src.convertTo(temp, CV_32F);
-				cvtColor(temp, dest, COLOR_BGR2GRAY);
-				break;
+				cvtColor(temp, dest, COLOR_BGR2GRAY); break;
+			}
+			case PSNR_Y_INTEGER:
+			{
+				src.convertTo(temp, CV_32F);
+				cp::cvtColorIntegerY(temp, dest); break;
 			}
 			case PSNR_B:
 			{
@@ -346,6 +366,10 @@ namespace cp
 			{
 				cvtColor(src, dest, COLOR_BGR2GRAY); break;
 			}
+			case PSNR_Y_INTEGER:
+			{
+				cp::cvtColorIntegerY(src, dest); break;
+			}
 			case PSNR_B:
 			{
 				cv::split(src, vtemp);
@@ -377,6 +401,11 @@ namespace cp
 				src.convertTo(temp, CV_8U);
 				cvtColor(temp, dest, COLOR_BGR2GRAY);
 				break;
+			}
+			case PSNR_Y_INTEGER:
+			{
+				src.convertTo(temp, CV_8U);
+				cp::cvtColorIntegerY(temp, dest); break;
 			}
 			case PSNR_B:
 			{
@@ -944,7 +973,7 @@ namespace cp
 		for (int i = 0; i < src.channels(); i++)
 		{
 			cv::Mat hist;
-			const int hdims[] = { USHRT_MAX+1 };
+			const int hdims[] = { USHRT_MAX + 1 };
 			const float hranges[] = { SHRT_MIN, SHRT_MAX };
 			const float* ranges[] = { hranges };
 

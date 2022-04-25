@@ -11,6 +11,7 @@ namespace cp
 		PSNR_B,
 		PSNR_G,
 		PSNR_R,
+		PSNR_Y_INTEGER,
 
 		PSNR_CHANNEL_SIZE
 	};
@@ -54,8 +55,8 @@ namespace cp
 		/// <param name="src">src image</param>
 		/// <param name="ref">reference image</param>
 		/// <param name="boundingBox">bonding box ignoring outside region. default is 0.</param>
-		/// <param name="precision">computing precision. Default: PSNR_UP_CAST(0). Other: PSNR_8U(0),PSNR_32F(1), PSNR_64F(2), PSNR_KAHAN_64F(3)</param>
-		/// <param name="compare_channel">computing channlel. Default: compute MSE all channele PSNR_ALL(0). Other: PSNR_Y(1), PSNR_B(2), PSNR_G(3), PSNR_R(4)</param>
+		/// <param name="precision">computing precision. Default: PSNR_UP_CAST(0). Other: PSNR_8U(1),PSNR_32F(2), PSNR_64F(3), PSNR_KAHAN_64F(4)</param>
+		/// <param name="compare_channel">computing channlel. Default: compute MSE all channele PSNR_ALL(0). Other: PSNR_Y(1), PSNR_B(2), PSNR_G(3), PSNR_R(4), PSNR_Y_INTEGER(5)</param>
 		/// <returns>MSE value</returns>
 		double getMSE(cv::InputArray src, cv::InputArray ref, const int boundingBox = 0, const int precision = PSNR_UP_CAST, const int compare_channel = PSNR_ALL);
 
@@ -65,8 +66,8 @@ namespace cp
 		/// <param name="src">src image</param>
 		/// <param name="ref">reference image</param>
 		/// <param name="boundingBox">bonding box ignoring outside region. default is 0.</param>
-		/// <param name="precision">computing precision. Default: PSNR_UP_CAST(0). Other: PSNR_8U(0),PSNR_32F(1), PSNR_64F(2), PSNR_KAHAN_64F(3)</param>
-		/// <param name="compare_channel">computing channlel. Default: compute MSE all channele and then logged PSNR_ALL(0). Other: PSNR_Y(1), PSNR_B(2), PSNR_G(3), PSNR_R(4)</param>
+		/// <param name="precision">computing precision. Default: PSNR_UP_CAST(0). Other: PSNR_8U(1),PSNR_32F(2), PSNR_64F(3), PSNR_KAHAN_64F(4)</param>
+		/// <param name="compare_channel">computing channlel. Default: compute MSE all channele PSNR_ALL(0). Other: PSNR_Y(1), PSNR_B(2), PSNR_G(3), PSNR_R(4), PSNR_Y_INTEGER(5)</param>
 		/// <returns>PSNR value, 0: same, -1: NaN, -2: Inf</returns>
 		double getPSNR(cv::InputArray src, cv::InputArray ref, const int boundingBox = 0, const int precision = PSNR_UP_CAST, const int compare_channel = PSNR_ALL);
 
@@ -105,8 +106,8 @@ namespace cp
 	/// <param name="src">Src image</param>
 	/// <param name="reference">Reference image</param>
 	/// <param name="boundingBox">bonding box ignoring outside region. Default is 0.</param>
-	/// <param name="precision">Computing precision. Default: PSNR_UP_CAST(0). Other: PSNR_8U(0),PSNR_32F(1), PSNR_64F(2), PSNR_KAHAN_64F(3)</param>
-	/// <param name="compare_channel">Computing channlel. Default: compute MSE all channele and then logged PSNR_ALL(0). Other: PSNR_Y(1), PSNR_B(2), PSNR_G(3), PSNR_R(4)</param>
+	/// <param name="precision">computing precision. Default: PSNR_UP_CAST(0). Other: PSNR_8U(1),PSNR_32F(2), PSNR_64F(3), PSNR_KAHAN_64F(4)</param>
+		/// <param name="compare_channel">computing channlel. Default: compute MSE all channele PSNR_ALL(0). Other: PSNR_Y(1), PSNR_B(2), PSNR_G(3), PSNR_R(4), PSNR_Y_INTEGER(5)</param>
 	/// <returns>PSNR value</returns>
 	CP_EXPORT double getPSNR(cv::InputArray src, cv::InputArray reference, const int boundingBox = 0, const int precision = PSNR_UP_CAST, const int compare_channel = PSNR_ALL);
 
