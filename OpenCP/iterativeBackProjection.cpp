@@ -356,6 +356,61 @@ namespace cp
 		iterativeBackProjectionDeblurBoxGaussian(src, dest, d, ksize, backprojection_sigma, lambda, iteration, temp);
 	}
 
+
+	void iterativeBackProjectionDeblurPascal3x3Gaussian(const Mat& src, Mat& dest, const Size ksize, const float backprojection_sigma, const float lambda, const int iteration, Mat& init)
+	{
+		Mat srcf;
+		Mat destf;
+		Mat subf;
+		src.convertTo(srcf, CV_32FC3);
+
+		if (init.empty()) src.convertTo(destf, CV_32FC3);
+		else init.convertTo(destf, CV_32F);
+		Mat bdest;
+
+		//float lambdaamp = 0.99;
+		//float l = lambda;
+		Mat kernel = Mat::ones(3, 3, CV_32F);
+		kernel.at<float>(0, 0) = 1.f;
+		kernel.at<float>(0, 1) = 2.f;
+		kernel.at<float>(0, 2) = 1.f;
+		kernel.at<float>(1, 0) = 2.f;
+		kernel.at<float>(1, 1) = 4.f;
+		kernel.at<float>(1, 2) = 2.f;
+		kernel.at<float>(2, 0) = 1.f;
+		kernel.at<float>(2, 1) = 2.f;
+		kernel.at<float>(2, 2) = 1.f;
+		kernel /= 16.f;
+		
+		//if (d % 2 == 0)copyMakeBorder(kernel, kernel, 0, 1, 0, 1, BORDER_CONSTANT, Scalar::all(0));
+		for (int i = 0; i < iteration; i++)
+		{
+			filter2D(destf, bdest, -1, kernel);
+			subtract(srcf, bdest, subf);
+			//double e = norm(subf);
+
+			if (backprojection_sigma > 0.f)
+				GaussianBlur(subf, subf, ksize, backprojection_sigma);
+
+
+			//destf += lambda*subf;
+			/*if(i==0)fma(subf, 3, destf);
+			else if (i==1)fma(subf, 2, destf);
+			else	fma(subf, lambda, destf);*/
+			fma(subf, lambda, destf);
+
+			//l *= lambdaamp;
+		}
+		destf.convertTo(dest, src.depth());
+	}
+
+	void iterativeBackProjectionDeblurPascal3x3Gaussian(const Mat& src, Mat& dest, const Size ksize, const float backprojection_sigma, const float lambda, const int iteration)
+	{
+		Mat temp;
+		iterativeBackProjectionDeblurPascal3x3Gaussian(src, dest, ksize, backprojection_sigma, lambda, iteration, temp);
+	}
+
+
 	void iterativeBackProjectionDeblurBilateral(const cv::Mat& src, cv::Mat& dest, const cv::Size ksize, const float sigma, const float backprojection_sigma_space, const float backprojection_sigma_color, const float lambda, const int iteration, cv::Mat& init)
 	{
 		Mat srcf;
@@ -507,7 +562,9 @@ namespace cp
 		while (key != 'q')
 		{
 			Size ksize(2 * r + 1, 2 * r + 1);
-			iterativeBackProjectionDeblurBoxGaussian(src, dest, d, ksize, back_sigma * 0.1f, lambda * 0.01f, iteration);
+			//iterativeBackProjectionDeblurBoxGaussian(src, dest, d, ksize, back_sigma * 0.1f, lambda * 0.01f, iteration);
+			//iterativeBackProjectionDeblurGaussian(src, dest, ksize, sigma * 0.1f, back_sigma * 0.1f, lambda * 0.01f, iteration);
+			iterativeBackProjectionDeblurPascal3x3Gaussian(src, dest, ksize, back_sigma * 0.1f, lambda * 0.01f, iteration);
 			ci("src %f dB", getPSNR(src, ref));
 			ci("IBP %f dB", getPSNR(dest, ref));
 			ci.show();
