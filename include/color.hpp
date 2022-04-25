@@ -31,6 +31,7 @@ namespace cp
 	CP_EXPORT void mergeConvert(cv::InputArrayOfArrays src, cv::OutputArray dest, const int depth = -1, const double scale = 1.0, const double offset = 0.0, const bool isCache = true);
 
 	CP_EXPORT void cvtColorAverageGray(cv::InputArray src, cv::OutputArray dest, const bool isKeepDistance = false);
+	CP_EXPORT void cvtColorIntegerY(cv::InputArray src, cv::OutputArray dest);
 
 	CP_EXPORT void cvtColorPCA(cv::InputArray src, cv::OutputArray dest, const int dest_channels);
 	CP_EXPORT void cvtColorPCA(cv::InputArray src, cv::OutputArray dest, const int dest_channels, cv::Mat& evec, cv::Mat& eval, cv::Mat& mean);

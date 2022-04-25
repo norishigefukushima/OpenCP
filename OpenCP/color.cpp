@@ -1779,6 +1779,58 @@ namespace cp
 		}
 	}
 
+#pragma region cvtColorIntegerY
+	static void cvtColorIntegerY_32F(Mat& src, Mat& dest)
+	{
+		CV_Assert(src.type() == CV_32FC3);
+
+		float* sptr = src.ptr<float>();
+		float* dptr = dest.ptr<float>();
+		const int size = src.size().area() / 8;
+		const __m256 rc = _mm256_set1_ps(66.f / 256.f);
+		const __m256 gc = _mm256_set1_ps(129.f / 256.f);
+		const __m256 bc = _mm256_set1_ps(25.f / 256.f);
+		const __m256 base = _mm256_set1_ps(16.f);
+		__m256 b, g, r;
+		for (int i = 0; i < size; i++)
+		{
+			_mm256_load_cvtps_bgr2planar_ps(sptr, b, g, r);
+			_mm256_store_ps(dptr, _mm256_fmadd_ps(bc, b, _mm256_fmadd_ps(gc, g, _mm256_fmadd_ps(rc, r, base))));
+			sptr += 24;
+			dptr += 8;
+		}
+		sptr = src.ptr<float>();
+		dptr = dest.ptr<float>();
+		for (int i = size * 8; i < src.size().area(); i++)
+		{
+			dptr[i] = 66.f / 256.f * sptr[3 * i + 2] + 129.f / 256.f * sptr[3 * i + 1] + 25.f / 256.f * sptr[3 * i + 0];
+		}
+	}
+
+	void cvtColorIntegerY(InputArray src_, OutputArray dest)
+	{
+		if (src_.channels() == 1)
+		{
+			src_.copyTo(dest);
+			return;
+		}
+
+		if (src_.depth() == CV_32F)
+		{
+			Mat a=src_.getMat();
+			dest.create(src_.size(), CV_32F);
+			Mat b = dest.getMat();
+			cvtColorIntegerY_32F(a, b);
+		}
+		else
+		{
+			Mat a;
+			src_.getMat().convertTo(a, CV_32F);
+			Mat b(src_.size(), CV_32F);
+			cvtColorIntegerY_32F(a, b);
+			b.convertTo(dest, src_.depth());
+		}
+	}
 #pragma region PCA
 	static void cvtColorPCAOpenCVPCA(Mat& src, Mat& dest, const int dest_channels)
 	{
@@ -3670,11 +3722,11 @@ namespace cp
 	}
 
 	void cvtColorHSI2BGR(Mat& src, Mat& dest, const int depth)
-	{	
+	{
 		CV_Assert(src.depth() == CV_8U || src.depth() == CV_32F || src.depth() == CV_64F);
 		CV_Assert(depth == CV_8U || depth == CV_32F || depth == CV_64F);
 		dest.create(src.size(), CV_MAKETYPE(depth, 3));
-		
+
 		if (depth == CV_8U)
 		{
 			if (src.depth() == CV_8U)cvtColorHSI2BGR_round<uchar, uchar>(src, dest);
@@ -3692,8 +3744,11 @@ namespace cp
 			if (src.depth() == CV_8U)cvtColorHSI2BGR_<uchar, double>(src, dest);
 			else if (src.depth() == CV_32F)cvtColorHSI2BGR_<float, double>(src, dest);
 			else if (src.depth() == CV_64F)cvtColorHSI2BGR_<double, double>(src, dest);
-		}	
+		}
 	}
+
+#pragma endregion
+
 
 #pragma endregion
 	//TODO: support OpenCV 4
