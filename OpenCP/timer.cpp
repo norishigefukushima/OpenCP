@@ -49,6 +49,23 @@ namespace cp
 		}
 	}
 
+	double Timer::getTimeNormalizeAmp(const int mode)
+	{
+		double ret = 0.0;
+		switch (mode)
+		{
+		case TIME_MSEC:
+		default:			ret = 1000.0; break;
+		case TIME_MICROSEC: ret = 1000000.0; break;
+		case TIME_NSEC:		ret = 1000000000.0; break;
+		case TIME_SEC:		ret = 1.0; break;
+		case TIME_MIN:		ret = 1.0 / 60.0; break;
+		case TIME_HOUR:		ret = 1.0 / (60.0 * 60.0); break;
+		case TIME_DAY:		ret = 1.0 / (60.0 * 60.0 * 24.0); break;
+		}
+		return ret;
+	}
+
 	void Timer::convertTime(bool isPrint, std::string message)
 	{
 		int mode = timeMode;
@@ -58,31 +75,7 @@ namespace cp
 			autoMode = mode;
 		}
 
-		switch (mode)
-		{
-		case TIME_SEC:
-			cTime *= 1.0;
-			break;
-		case TIME_MIN:
-			cTime /= (60.0);
-			break;
-		case TIME_HOUR:
-			cTime /= (60 * 60);
-			break;
-		case TIME_DAY:
-			cTime /= (60 * 60 * 24);
-			break;
-		case TIME_NSEC:
-			cTime *= 1000000000.0;
-			break;
-		case TIME_MICROSEC:
-			cTime *= 1000000.0;
-			break;
-		case TIME_MSEC:
-		default:
-			cTime *= 1000.0;
-			break;
-		}
+		cTime *= getTimeNormalizeAmp(mode);
 
 		if (isPrint)
 		{
@@ -225,10 +218,12 @@ namespace cp
 
 	void Timer::drawPlofilePlot(string wname)
 	{
+		const int mode = (timeMode == TIME_AUTO) ? getAutoTimeMode() : timeMode;
+
 		if (stat.getSize() > 1)
-		stat.drawPlofilePlot(wname);
+			stat.drawPlofilePlot(wname, getTimeNormalizeAmp(mode));
 	}
-	
+
 	void Timer::setMessage(string& src)
 	{
 		mes = src;
@@ -430,7 +425,7 @@ namespace cp
 	inline int getOrder(int order, int index)
 	{
 		if (index == 0 && order == 1) return 0;
-		else if (index == 1 && order == 2||(index == 1 && order == 3)) return 1;
+		else if (index == 1 && order == 2 || (index == 1 && order == 3)) return 1;
 		else if (index == 2 && order == 3) return 2;
 		else return order;
 	}
@@ -648,7 +643,7 @@ namespace cp
 		/*
 		//double time = cvtTick2Time((double)(time_stamp[0] - last_tick));
 		//print(time, "Actual ");
-		
+
 		//print(time, "diff from 1st prediction ");
 		cp::Plot pt;
 		pt.setKey(cp::Plot::LEFT_TOP);
@@ -693,7 +688,7 @@ namespace cp
 
 			pt.plot("pred", false);
 			pt.clear();
-			waitKey();			
+			waitKey();
 		}
 		*/
 	}
