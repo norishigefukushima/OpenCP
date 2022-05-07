@@ -206,8 +206,8 @@ void detailTest()
 	while (key != 'q')
 	{
 		const int d = 2 * (ss * 3) + 1;
-		cv::bilateralFilter(src, smooth, d, sr, ss);
-		edgePreservingFilter(src, smooth2, 1, ss, sr / 255.0);
+		cv::bilateralFilter(src, smooth, d, (double)sr, (double)ss);
+		edgePreservingFilter(src, smooth2, 1, (float)ss, sr / 255.f);
 		//cp::highDimensionalGaussianFilterPermutohedralLattice(src, smooth2, sr, ss);
 
 		detailBoost(src, smooth, show, boost * 0.01, sigma, method);

@@ -855,7 +855,7 @@ namespace cp
 
 			if (isVideo)video << show;
 
-			key = waitKey(33);
+			key = waitKey(1);
 			if (key == 'd')
 			{
 				guiDiff(src1, src2);
