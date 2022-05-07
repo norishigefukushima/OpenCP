@@ -2478,6 +2478,20 @@ STATIC_INLINE __m128i _mm_i32gather_epu8(const uchar* src, __m128i idx)
 	//return _mm_setr_epi8(src[idx.m256i_i32[0]], src[idx.m256i_i32[1]], src[idx.m256i_i32[2]], src[idx.m256i_i32[3]], src[idx.m256i_i32[4]], src[idx.m256i_i32[5]], src[idx.m256i_i32[6]], src[idx.m256i_i32[7]], 0, 0, 0, 0, 0, 0, 0, 0);
 }
 
+//gather 16 uchar elements
+STATIC_INLINE __m128i _mm_i8gather_epu8(const uchar* src, __m128i idx)
+{
+	const char* i = (char*)&idx;
+	return _mm_setr_epi8(src[i[0]], src[i[1]], src[i[2]], src[i[3]], src[i[4]], src[i[5]], src[i[6]], src[i[7]], src[i[8]], src[i[9]], src[i[10]], src[i[11]], src[i[12]], src[i[13]], src[i[14]], src[i[15]]);
+}
+
+//gather 16 uchar elements
+STATIC_INLINE __m128i _mm256_i16gather_epu8(const uchar* src, __m256i idx)
+{
+	const short* i = (short*)&idx;
+	return _mm_setr_epi8(src[i[0]], src[i[1]], src[i[2]], src[i[3]], src[i[4]], src[i[5]], src[i[6]], src[i[7]], src[i[8]], src[i[9]], src[i[10]], src[i[11]], src[i[12]], src[i[13]], src[i[14]], src[i[15]]);
+}
+
 //dest: 8 uchar elements
 STATIC_INLINE __m128i _mm256_i32gather_epu8(const uchar* src, __m256i idx)
 {
@@ -2855,29 +2869,113 @@ STATIC_INLINE std::vector<std::string> _MM_PRINT_EXCEPTION(std::string mes = "",
 }
 
 #ifdef CP_AVX512
+//cvt
 STATIC_INLINE __m128i _mm512_cvtps_epu8(const __m512 ms)
 {
 	//return _mm256_cvtepi32_epu8(_mm512_cvtps_epi32(ms));
 	return _mm512_cvtepi32_epi8(_mm512_cvtps_epi32(ms));
 }
 
-STATIC_INLINE __m512 _mm512_ssd_ps(__m512 src, __m512 ref)
+STATIC_INLINE __m128i _mm512_cvtepi32_epu8(const __m512i v0)
 {
-	__m512 diff = _mm512_sub_ps(src, ref);
-	return _mm512_mul_ps(diff, diff);
+	return _mm_setr_epi8(((char*)&v0)[0], ((char*)&v0)[1], ((char*)&v0)[2], ((char*)&v0)[3], ((char*)&v0)[4], ((char*)&v0)[5], ((char*)&v0)[6], ((char*)&v0)[7], ((char*)&v0)[8], ((char*)&v0)[9], ((char*)&v0)[10], ((char*)&v0)[11], ((char*)&v0)[12], ((char*)&v0)[13], ((char*)&v0)[14], ((char*)&v0)[15]);
+	//return _mm256_castsi256_si128(_mm256_permutevar8x32_epi32(_mm256_packus_epi16(_mm256_packs_epi32(v0, _mm256_setzero_si256()), _mm256_setzero_si256()), _mm256_setr_epi32(0, 4, 1, 5, 2, 6, 3, 7)));
 }
 
-STATIC_INLINE __m512 _mm512_ssd_ps(__m512 src0, __m512 src1, __m512 src2, __m512 ref0, __m512 ref1, __m512 ref2)
+STATIC_INLINE void _mm512_cvtsoa2aos_ps(const __m512 b, const __m512 g, const __m512 r, __m512& db, __m512& dg, __m512& dr)
 {
-	__m512 diff = _mm512_sub_ps(src0, ref0);
-	__m512 difft = _mm512_mul_ps(diff, diff);
-	diff = _mm512_sub_ps(src1, ref1);
-	difft = _mm512_fmadd_ps(diff, diff, difft);
-	diff = _mm512_sub_ps(src2, ref2);
-	difft = _mm512_fmadd_ps(diff, diff, difft);
-	return difft;
+#if __USE_SCATTER_INSTRUCTION__
+	static const __m512i idx = _mm512_set_epi32(45, 42, 39, 36, 33, 30, 27, 24, 21, 18, 15, 12, 9, 6, 3, 0);
+	_mm512_i32scatter_ps((float*)dst + 0, idx, b, 4);
+	_mm512_i32scatter_ps((float*)dst + 1, idx, g, 4);
+	_mm512_i32scatter_ps((float*)dst + 2, idx, r, 4);
+#else
+	static const __m512i permuteIndexB = _mm512_setr_epi32(0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10, 5);
+	static const __m512i permuteIndexG = _mm512_setr_epi32(5, 0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10);
+	static const __m512i permuteIndexR = _mm512_setr_epi32(10, 5, 0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15);
+
+	static const __mmask16 blendMask1 = 0x4924;
+	static const __mmask16 blendMask2 = 0x2492;
+	static const __mmask16 blendMask3 = 0x9249;
+
+	const __m512 aa = _mm512_permutexvar_ps(permuteIndexB, b);
+	const __m512 bb = _mm512_permutexvar_ps(permuteIndexG, g);
+	const __m512 cc = _mm512_permutexvar_ps(permuteIndexR, r);
+
+	db = _mm512_mask_blend_ps(blendMask1, _mm512_mask_blend_ps(blendMask2, aa, bb), cc);
+	dg = _mm512_mask_blend_ps(blendMask2, _mm512_mask_blend_ps(blendMask3, aa, bb), cc);
+	dr = _mm512_mask_blend_ps(blendMask3, _mm512_mask_blend_ps(blendMask1, aa, bb), cc);
+#endif
 }
 
+STATIC_INLINE void _mm512_cvtsoa2aos_pd(const __m512d b, const __m512d g, const __m512d r, __m512d& db, __m512d& dg, __m512d& dr)
+{
+#if __USE_SCATTER_INSTRUCTION__
+	static const __m512i idx = _mm512_set_epi64(21, 18, 15, 12, 9, 6, 3, 0);
+	_mm512_i64scatter_pd((double*)dst + 0, idx, b, 8);
+	_mm512_i64scatter_pd((double*)dst + 1, idx, g, 8);
+	_mm512_i64scatter_pd((double*)dst + 2, idx, r, 8);
+#else
+	static const __m512i permuteIndexB = _mm512_setr_epi64(0, 3, 6, 1, 4, 7, 2, 5);
+	static const __m512i permuteIndexG = _mm512_setr_epi64(5, 0, 3, 6, 1, 4, 7, 2);
+	static const __m512i permuteIndexR = _mm512_setr_epi64(2, 5, 0, 3, 6, 1, 4, 7);
+
+	static const __mmask16 blendMask1 = 0b00100100;
+	static const __mmask16 blendMask2 = 0b10010010;
+	static const __mmask16 blendMask3 = 0b01001001;
+
+	const __m512d aa = _mm512_permutexvar_pd(permuteIndexB, b);
+	const __m512d bb = _mm512_permutexvar_pd(permuteIndexG, g);
+	const __m512d cc = _mm512_permutexvar_pd(permuteIndexR, r);
+
+	db = _mm512_mask_blend_pd(blendMask1, _mm512_mask_blend_pd(blendMask2, aa, bb), cc);
+	dg = _mm512_mask_blend_pd(blendMask3, _mm512_mask_blend_pd(blendMask1, aa, bb), cc);
+	dr = _mm512_mask_blend_pd(blendMask2, _mm512_mask_blend_pd(blendMask3, aa, bb), cc);
+#endif
+}
+
+STATIC_INLINE void _mm512_cvtsoa2aos_epi8(const __m512i b, const __m512i g, const __m512i r, __m512i& db, __m512i& dg, __m512i& dr)
+{
+	static const __m512i mask1 = _mm512_set_epi8(
+		5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0,
+		5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0
+	);
+	static const __m512i mask2 = _mm512_set_epi8(
+		10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5,
+		10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5
+	);
+	static const __m512i mask3 = _mm512_set_epi8(
+		15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5, 10,
+		15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5, 10
+	);
+	static const __m512i pmask1 = _mm512_set_epi64(3, 2, 1, 0, 1, 0, 1, 0);
+	static const __m512i pmask2 = _mm512_set_epi64(5, 4, 5, 4, 3, 2, 3, 2);
+	static const __m512i pmask3 = _mm512_set_epi64(7, 6, 7, 6, 7, 6, 5, 4);
+
+	static const __mmask64 blendMask1 = 0x4924924924924924;
+	static const __mmask64 blendMask2 = 0x2492492492492492;
+	static const __mmask64 blendMask3 = 0x9249249249249249;
+
+	const __m512i aa = _mm512_shuffle_epi8(b, mask1);
+	const __m512i bb = _mm512_shuffle_epi8(g, mask2);
+	const __m512i cc = _mm512_shuffle_epi8(r, mask3);
+
+	__m512i aaa = _mm512_permutexvar_epi64(pmask1, aa);
+	__m512i bbb = _mm512_permutexvar_epi64(pmask1, bb);
+	__m512i ccc = _mm512_permutexvar_epi64(pmask1, cc);
+	db = _mm512_mask_blend_epi8(blendMask1, _mm512_mask_blend_epi8(blendMask2, aaa, bbb), ccc);
+
+	aaa = _mm512_permutexvar_epi64(pmask2, aa);
+	bbb = _mm512_permutexvar_epi64(pmask2, bb);
+	ccc = _mm512_permutexvar_epi64(pmask2, cc);
+	dg = _mm512_mask_blend_epi8(blendMask2, _mm512_mask_blend_epi8(blendMask3, aaa, bbb), ccc);
+
+	aaa = _mm512_permutexvar_epi64(pmask3, aa);
+	bbb = _mm512_permutexvar_epi64(pmask3, bb);
+	ccc = _mm512_permutexvar_epi64(pmask3, cc);
+	dr = _mm512_mask_blend_epi8(blendMask3, _mm512_mask_blend_epi8(blendMask1, aaa, bbb), ccc);
+}
+#pragma region load
 STATIC_INLINE __m512 _mm512_load_epu8cvtps(const __m128i* P)
 {
 	return _mm512_cvtepi32_ps(_mm512_cvtepu8_epi32(_mm_load_si128((__m128i*)P)));
@@ -2920,6 +3018,19 @@ STATIC_INLINE __m512d _mm512_loadu_auto(const double* src)
 	return _mm512_loadu_pd(src);
 }
 
+
+STATIC_INLINE __m512 _mm512_i32gather_auto(const float* src, __m512i idx)
+{
+	return _mm512_i32gather_ps(idx, src, 4);
+}
+
+STATIC_INLINE __m512 _mm512_i32gather_auto(const uchar* src, __m512i idx)
+{
+	return _mm512_cvtepi32_ps(_mm512_srli_epi32(_mm512_i32gather_epi32(idx, reinterpret_cast<const int*>(&src[-3]), 1), 24));
+}
+#pragma endregion
+
+#pragma region store
 STATIC_INLINE void _mm512_store_cvtps_epu8(__m128i* dest, __m512 ms)
 {
 	_mm_store_si128(dest, _mm512_cvtps_epu8(ms));
@@ -3010,6 +3121,7 @@ STATIC_INLINE void _mm512_storescalar_ps(float* dst, __m512 src, const int numpi
 	for (int i = 0; i < numpixel; i++)
 		dst[i] = buffscalarstore[i];
 }
+
 STATIC_INLINE void _mm512_storescalar_auto(uchar* dest, __m512 ms, const int numpixel)
 {
 	_mm512_storescalar_cvtps_epu8(dest, ms, numpixel);
@@ -3035,11 +3147,198 @@ STATIC_INLINE void _mm512_storescalar_auto(double* dest, __m512d ms, const int n
 	_mm512_storescalar_pd(dest, ms, numpixel);
 }
 
-
-STATIC_INLINE __m128i _mm512_cvtepi32_epu8(const __m512i v0)
+STATIC_INLINE void _mm512_store_epi8_color(void* dst, const __m512i b, const __m512i g, const __m512i r)
 {
-	return _mm_setr_epi8(((char*)&v0)[0], ((char*)&v0)[1], ((char*)&v0)[2], ((char*)&v0)[3], ((char*)&v0)[4], ((char*)&v0)[5], ((char*)&v0)[6], ((char*)&v0)[7], ((char*)&v0)[8], ((char*)&v0)[9], ((char*)&v0)[10], ((char*)&v0)[11], ((char*)&v0)[12], ((char*)&v0)[13], ((char*)&v0)[14], ((char*)&v0)[15]);
-	//return _mm256_castsi256_si128(_mm256_permutevar8x32_epi32(_mm256_packus_epi16(_mm256_packs_epi32(v0, _mm256_setzero_si256()), _mm256_setzero_si256()), _mm256_setr_epi32(0, 4, 1, 5, 2, 6, 3, 7)));
+	__m512i dr, dg, db;
+	_mm512_cvtsoa2aos_epi8(b, g, r, db, dg, dr);
+	_mm512_store_si512((uchar*)dst + 0, db);
+	_mm512_store_si512((uchar*)dst + 64, dg);
+	_mm512_store_si512((uchar*)dst + 128, dr);
+}
+
+STATIC_INLINE void _mm512_storeu_epi8_color(void* dst, const __m512i b, const __m512i g, const __m512i r)
+{
+	__m512i dr, dg, db;
+	_mm512_cvtsoa2aos_epi8(b, g, r, db, dg, dr);
+	_mm512_storeu_si512((uchar*)dst + 0, db);
+	_mm512_storeu_si512((uchar*)dst + 64, dg);
+	_mm512_storeu_si512((uchar*)dst + 128, dr);
+}
+
+STATIC_INLINE void _mm512_stream_epi8_color(void* dst, const __m512i b, const __m512i g, const __m512i r)
+{
+	__m512i dr, dg, db;
+	_mm512_cvtsoa2aos_epi8(b, g, r, db, dg, dr);
+	_mm512_stream_si512((uchar*)dst + 0, db);
+	_mm512_stream_si512((uchar*)dst + 64, dg);
+	_mm512_stream_si512((uchar*)dst + 128, dr);
+}
+
+STATIC_INLINE void _mm512_store_ps_color(void* dst, const __m512 b, const __m512 g, const __m512 r)
+{
+	__m512 dr, dg, db;
+	_mm512_cvtsoa2aos_ps(b, g, r, db, dg, dr);
+	_mm512_store_ps((float*)dst + 0, db);
+	_mm512_store_ps((float*)dst + 16, dg);
+	_mm512_store_ps((float*)dst + 32, dr);
+}
+
+STATIC_INLINE void _mm512_storeu_ps_color(void* dst, const __m512 b, const __m512 g, const __m512 r)
+{
+	__m512 dr, dg, db;
+	_mm512_cvtsoa2aos_ps(b, g, r, db, dg, dr);
+	_mm512_storeu_ps((float*)dst + 0, db);
+	_mm512_storeu_ps((float*)dst + 16, dg);
+	_mm512_storeu_ps((float*)dst + 32, dr);
+}
+
+STATIC_INLINE void _mm512_stream_ps_color(void* dst, const __m512 b, const __m512 g, const __m512 r)
+{
+	__m512 dr, dg, db;
+	_mm512_cvtsoa2aos_ps(b, g, r, db, dg, dr);
+	_mm512_stream_ps((float*)dst + 0, db);
+	_mm512_stream_ps((float*)dst + 16, dg);
+	_mm512_stream_ps((float*)dst + 32, dr);
+}
+
+STATIC_INLINE void _mm512_store_pd_color(void* dst, const __m512d b, const __m512d g, const __m512d r)
+{
+	__m512d db, dg, dr;
+	_mm512_cvtsoa2aos_pd(b, g, r, db, dg, dr);
+
+	_mm512_store_pd((double*)dst + 0, db);
+	_mm512_store_pd((double*)dst + 8, dg);
+	_mm512_store_pd((double*)dst + 16, dr);
+}
+
+STATIC_INLINE void _mm512_storeu_pd_color(void* dst, const __m512d b, const __m512d g, const __m512d r)
+{
+	__m512d db, dg, dr;
+	_mm512_cvtsoa2aos_pd(b, g, r, db, dg, dr);
+
+	_mm512_storeu_pd((double*)dst + 0, db);
+	_mm512_storeu_pd((double*)dst + 8, dg);
+	_mm512_storeu_pd((double*)dst + 16, dr);
+}
+
+STATIC_INLINE void _mm512_stream_pd_color(void* dst, const __m512d b, const __m512d g, const __m512d r)
+{
+	__m512d db, dg, dr;
+	_mm512_cvtsoa2aos_pd(b, g, r, db, dg, dr);
+
+	_mm512_stream_pd((double*)dst + 0, db);
+	_mm512_stream_pd((double*)dst + 8, dg);
+	_mm512_stream_pd((double*)dst + 16, dr);
+}
+
+STATIC_INLINE void _mm512_storeu_auto_color(float* dest, __m512 b, __m512 g, __m512 r)
+{
+	_mm512_storeu_ps_color(dest, b, g, r);
+}
+
+STATIC_INLINE void _mm512_store_auto_color(float* dest, __m512 b, __m512 g, __m512 r)
+{
+	_mm512_store_ps_color(dest, b, g, r);
+}
+
+STATIC_INLINE void _mm512_store_auto_color(uchar* dest, __m512i b, __m512i g, __m512i r)
+{
+	_mm512_store_epi8_color(dest, b, g, r);
+}
+
+STATIC_INLINE void _mm512_storeu_auto_color(uchar* dest, __m512i b, __m512i g, __m512i r)
+{
+	_mm512_storeu_epi8_color(dest, b, g, r);
+}
+
+STATIC_INLINE void _mm512_storeu_auto_color(uchar* dest, __m512 b, __m512 g, __m512 r)
+{
+	__m512 dr, dg, db;
+	_mm512_cvtsoa2aos_ps(b, g, r, db, dg, dr);
+	_mm_storeu_si128((__m128i*)(dest), _mm512_cvtps_epu8(db));
+	_mm_storeu_si128((__m128i*)(dest + 8), _mm512_cvtps_epu8(dg));
+	_mm_storeu_si128((__m128i*)(dest + 16), _mm512_cvtps_epu8(dr));
+}
+
+STATIC_INLINE void _mm512_store_auto_color(uchar* dest, __m512 b, __m512 g, __m512 r)
+{
+	__m512 dr, dg, db;
+	_mm512_cvtsoa2aos_ps(b, g, r, db, dg, dr);
+	_mm_store_si128((__m128i*)(dest), _mm512_cvtps_epu8(db));
+	_mm_store_si128((__m128i*)(dest + 8), _mm512_cvtps_epu8(dg));
+	_mm_store_si128((__m128i*)(dest + 16), _mm512_cvtps_epu8(dr));
+}
+
+STATIC_INLINE void _mm512_stream_auto_color(float* dest, __m512 b, __m512 g, __m512 r)
+{
+	_mm512_stream_ps_color(dest, b, g, r);
+}
+
+STATIC_INLINE void _mm512_stream_auto_color(uchar* dest, __m512 b, __m512 g, __m512 r)
+{
+	__m512 dr, dg, db;
+	_mm512_cvtsoa2aos_ps(b, g, r, db, dg, dr);
+	_mm_stream_si128((__m128i*)(dest), _mm512_cvtps_epu8(db));
+	_mm_stream_si128((__m128i*)(dest + 8), _mm512_cvtps_epu8(dg));
+	_mm_stream_si128((__m128i*)(dest + 16), _mm512_cvtps_epu8(dr));
+}
+
+STATIC_INLINE void _mm512_storescalar_auto_color(uchar* dest, __m512 b, __m512 g, __m512 r, const int numpixel)
+{
+	__m512 dr, dg, db;
+	_mm512_cvtsoa2aos_ps(b, g, r, db, dg, dr);
+	uchar CV_DECL_ALIGNED(64) buffscalarstore[48];
+	
+	_mm_store_si128((__m128i*)(buffscalarstore + 0), _mm512_cvtps_epu8(db));
+	_mm_store_si128((__m128i*)(buffscalarstore + 16), _mm512_cvtps_epu8(dg));
+	_mm_store_si128((__m128i*)(buffscalarstore + 32), _mm512_cvtps_epu8(dr));
+	for (int i = 0; i < numpixel; i++)
+		dest[i] = buffscalarstore[i];
+}
+
+STATIC_INLINE void _mm512_storescalar_auto_color(float* dest, __m512 b, __m512 g, __m512 r, const int numpixel)
+{
+	__m512 dr, dg, db;
+	_mm512_cvtsoa2aos_ps(b, g, r, db, dg, dr);
+	float CV_DECL_ALIGNED(64) buffscalarstore[48];
+	_mm512_store_ps(buffscalarstore + 0, db);
+	_mm512_store_ps(buffscalarstore + 16, dg);
+	_mm512_store_ps(buffscalarstore + 32, dr);
+
+	for (int i = 0; i < numpixel; i++)
+		dest[i] = buffscalarstore[i];
+}
+
+
+STATIC_INLINE void _mm512_i32scaterscalar_epu8(uchar* dest, __m512i vindex, __m512 src)
+{
+	__m128i v = _mm512_cvtps_epu8(src);
+	dest[((int*)&vindex)[0]] = ((uchar*)&v)[0];
+	dest[((int*)&vindex)[1]] = ((uchar*)&v)[1];
+	dest[((int*)&vindex)[2]] = ((uchar*)&v)[2];
+	dest[((int*)&vindex)[3]] = ((uchar*)&v)[3];
+	dest[((int*)&vindex)[4]] = ((uchar*)&v)[4];
+	dest[((int*)&vindex)[5]] = ((uchar*)&v)[5];
+	dest[((int*)&vindex)[6]] = ((uchar*)&v)[6];
+	dest[((int*)&vindex)[7]] = ((uchar*)&v)[7];
+	dest[((int*)&vindex)[8]] = ((uchar*)&v)[8];
+	dest[((int*)&vindex)[9]] = ((uchar*)&v)[9];
+	dest[((int*)&vindex)[10]] = ((uchar*)&v)[10];
+	dest[((int*)&vindex)[11]] = ((uchar*)&v)[11];
+	dest[((int*)&vindex)[12]] = ((uchar*)&v)[12];
+	dest[((int*)&vindex)[13]] = ((uchar*)&v)[13];
+	dest[((int*)&vindex)[14]] = ((uchar*)&v)[14];
+	dest[((int*)&vindex)[15]] = ((uchar*)&v)[15];
+}
+
+STATIC_INLINE void _mm512_i32scaterscalar_auto(uchar* dest, __m512i vindex, __m512 src)
+{
+	_mm512_i32scaterscalar_epu8(dest, vindex, src);
+}
+
+STATIC_INLINE void _mm512_i32scaterscalar_auto(float* dest, __m512i vindex, __m512 src)
+{
+	_mm512_i32scatter_ps(dest, vindex, src, sizeof(float));
 }
 
 STATIC_INLINE void _mm512_i32scaterscalar_epu8_color(uchar* dest, __m512i vindex, __m512 b, __m512 g, __m512 r)
@@ -3166,252 +3465,36 @@ STATIC_INLINE void _mm512_i32scaterscalar_auto_color(float* dest, __m512i vindex
 	_mm512_i32scaterscalar_ps_color(dest, vindex, b, g, r);
 }
 
-STATIC_INLINE void _mm512_cvtsoa2aos_epi8(const __m512i b, const __m512i g, const __m512i r, __m512i& db, __m512i& dg, __m512i& dr)
+#pragma endregion
+
+#pragma region arithmetic
+STATIC_INLINE __m512 _mm256_abs_ps(__m512 src)
 {
-	static const __m512i mask1 = _mm512_set_epi8(
-		5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0,
-		5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0
-	);
-	static const __m512i mask2 = _mm512_set_epi8(
-		10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5,
-		10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5
-	);
-	static const __m512i mask3 = _mm512_set_epi8(
-		15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5, 10,
-		15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11, 0, 5, 10
-	);
-	static const __m512i pmask1 = _mm512_set_epi64(3, 2, 1, 0, 1, 0, 1, 0);
-	static const __m512i pmask2 = _mm512_set_epi64(5, 4, 5, 4, 3, 2, 3, 2);
-	static const __m512i pmask3 = _mm512_set_epi64(7, 6, 7, 6, 7, 6, 5, 4);
-
-	static const __mmask64 blendMask1 = 0x4924924924924924;
-	static const __mmask64 blendMask2 = 0x2492492492492492;
-	static const __mmask64 blendMask3 = 0x9249249249249249;
-
-	const __m512i aa = _mm512_shuffle_epi8(b, mask1);
-	const __m512i bb = _mm512_shuffle_epi8(g, mask2);
-	const __m512i cc = _mm512_shuffle_epi8(r, mask3);
-
-	__m512i aaa = _mm512_permutexvar_epi64(pmask1, aa);
-	__m512i bbb = _mm512_permutexvar_epi64(pmask1, bb);
-	__m512i ccc = _mm512_permutexvar_epi64(pmask1, cc);
-	db = _mm512_mask_blend_epi8(blendMask1, _mm512_mask_blend_epi8(blendMask2, aaa, bbb), ccc);
-
-	aaa = _mm512_permutexvar_epi64(pmask2, aa);
-	bbb = _mm512_permutexvar_epi64(pmask2, bb);
-	ccc = _mm512_permutexvar_epi64(pmask2, cc);
-	dg = _mm512_mask_blend_epi8(blendMask2, _mm512_mask_blend_epi8(blendMask3, aaa, bbb), ccc);
-
-	aaa = _mm512_permutexvar_epi64(pmask3, aa);
-	bbb = _mm512_permutexvar_epi64(pmask3, bb);
-	ccc = _mm512_permutexvar_epi64(pmask3, cc);
-	dr = _mm512_mask_blend_epi8(blendMask3, _mm512_mask_blend_epi8(blendMask1, aaa, bbb), ccc);
+	//return _mm256_and_ps(src, _mm256_castsi256_ps(_mm256_set1_epi32(0x7fffffff)));
+	static __m512 mask = _mm512_set1_ps(-0.f); return _mm512_andnot_ps(mask, src);
+	//return _mm512_andnot_ps(_mm512_set1_ps(-0.f), src);
 }
 
-STATIC_INLINE void _mm512_store_epi8_color(void* dst, const __m512i b, const __m512i g, const __m512i r)
+STATIC_INLINE __m512 _mm512_absdiff_ps(__m512 src1, __m512 src2)
 {
-	__m512i dr, dg, db;
-	_mm512_cvtsoa2aos_epi8(b, g, r, db, dg, dr);
-	_mm512_store_si512((uchar*)dst + 0, db);
-	_mm512_store_si512((uchar*)dst + 64, dg);
-	_mm512_store_si512((uchar*)dst + 128, dr);
+	return _mm512_abs_ps(_mm512_sub_ps(src1, src2));
 }
 
-STATIC_INLINE void _mm512_storeu_epi8_color(void* dst, const __m512i b, const __m512i g, const __m512i r)
+STATIC_INLINE __m512 _mm512_ssd_ps(__m512 src, __m512 ref)
 {
-	__m512i dr, dg, db;
-	_mm512_cvtsoa2aos_epi8(b, g, r, db, dg, dr);
-	_mm512_storeu_si512((uchar*)dst + 0, db);
-	_mm512_storeu_si512((uchar*)dst + 64, dg);
-	_mm512_storeu_si512((uchar*)dst + 128, dr);
+	__m512 diff = _mm512_sub_ps(src, ref);
+	return _mm512_mul_ps(diff, diff);
 }
 
-STATIC_INLINE void _mm512_stream_epi8_color(void* dst, const __m512i b, const __m512i g, const __m512i r)
+STATIC_INLINE __m512 _mm512_ssd_ps(__m512 src0, __m512 src1, __m512 src2, __m512 ref0, __m512 ref1, __m512 ref2)
 {
-	__m512i dr, dg, db;
-	_mm512_cvtsoa2aos_epi8(b, g, r, db, dg, dr);
-	_mm512_stream_si512((uchar*)dst + 0, db);
-	_mm512_stream_si512((uchar*)dst + 64, dg);
-	_mm512_stream_si512((uchar*)dst + 128, dr);
-}
-
-STATIC_INLINE void _mm512_cvtsoa2aos_ps(const __m512 b, const __m512 g, const __m512 r, __m512& db, __m512& dg, __m512& dr)
-{
-#if __USE_SCATTER_INSTRUCTION__
-	static const __m512i idx = _mm512_set_epi32(45, 42, 39, 36, 33, 30, 27, 24, 21, 18, 15, 12, 9, 6, 3, 0);
-	_mm512_i32scatter_ps((float*)dst + 0, idx, b, 4);
-	_mm512_i32scatter_ps((float*)dst + 1, idx, g, 4);
-	_mm512_i32scatter_ps((float*)dst + 2, idx, r, 4);
-#else
-	static const __m512i permuteIndexB = _mm512_setr_epi32(0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10, 5);
-	static const __m512i permuteIndexG = _mm512_setr_epi32(5, 0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10);
-	static const __m512i permuteIndexR = _mm512_setr_epi32(10, 5, 0, 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15);
-
-	static const __mmask16 blendMask1 = 0x4924;
-	static const __mmask16 blendMask2 = 0x2492;
-	static const __mmask16 blendMask3 = 0x9249;
-
-	const __m512 aa = _mm512_permutexvar_ps(permuteIndexB, b);
-	const __m512 bb = _mm512_permutexvar_ps(permuteIndexG, g);
-	const __m512 cc = _mm512_permutexvar_ps(permuteIndexR, r);
-
-	db = _mm512_mask_blend_ps(blendMask1, _mm512_mask_blend_ps(blendMask2, aa, bb), cc);
-	dg = _mm512_mask_blend_ps(blendMask2, _mm512_mask_blend_ps(blendMask3, aa, bb), cc);
-	dr = _mm512_mask_blend_ps(blendMask3, _mm512_mask_blend_ps(blendMask1, aa, bb), cc);
-#endif
-}
-
-
-
-STATIC_INLINE void _mm512_store_ps_color(void* dst, const __m512 b, const __m512 g, const __m512 r)
-{
-	__m512 dr, dg, db;
-	_mm512_cvtsoa2aos_ps(b, g, r, db, dg, dr);
-	_mm512_store_ps((float*)dst + 0, db);
-	_mm512_store_ps((float*)dst + 16, dg);
-	_mm512_store_ps((float*)dst + 32, dr);
-}
-
-STATIC_INLINE void _mm512_storeu_ps_color(void* dst, const __m512 b, const __m512 g, const __m512 r)
-{
-	__m512 dr, dg, db;
-	_mm512_cvtsoa2aos_ps(b, g, r, db, dg, dr);
-	_mm512_storeu_ps((float*)dst + 0, db);
-	_mm512_storeu_ps((float*)dst + 16, dg);
-	_mm512_storeu_ps((float*)dst + 32, dr);
-}
-
-STATIC_INLINE void _mm512_stream_ps_color(void* dst, const __m512 b, const __m512 g, const __m512 r)
-{
-	__m512 dr, dg, db;
-	_mm512_cvtsoa2aos_ps(b, g, r, db, dg, dr);
-	_mm512_stream_ps((float*)dst + 0, db);
-	_mm512_stream_ps((float*)dst + 16, dg);
-	_mm512_stream_ps((float*)dst + 32, dr);
-}
-
-
-STATIC_INLINE void _mm512_cvtsoa2aos_pd(const __m512d b, const __m512d g, const __m512d r, __m512d& db, __m512d& dg, __m512d& dr)
-{
-#if __USE_SCATTER_INSTRUCTION__
-	static const __m512i idx = _mm512_set_epi64(21, 18, 15, 12, 9, 6, 3, 0);
-	_mm512_i64scatter_pd((double*)dst + 0, idx, b, 8);
-	_mm512_i64scatter_pd((double*)dst + 1, idx, g, 8);
-	_mm512_i64scatter_pd((double*)dst + 2, idx, r, 8);
-#else
-	static const __m512i permuteIndexB = _mm512_setr_epi64(0, 3, 6, 1, 4, 7, 2, 5);
-	static const __m512i permuteIndexG = _mm512_setr_epi64(5, 0, 3, 6, 1, 4, 7, 2);
-	static const __m512i permuteIndexR = _mm512_setr_epi64(2, 5, 0, 3, 6, 1, 4, 7);
-
-	static const __mmask16 blendMask1 = 0b00100100;
-	static const __mmask16 blendMask2 = 0b10010010;
-	static const __mmask16 blendMask3 = 0b01001001;
-
-	const __m512d aa = _mm512_permutexvar_pd(permuteIndexB, b);
-	const __m512d bb = _mm512_permutexvar_pd(permuteIndexG, g);
-	const __m512d cc = _mm512_permutexvar_pd(permuteIndexR, r);
-
-	db = _mm512_mask_blend_pd(blendMask1, _mm512_mask_blend_pd(blendMask2, aa, bb), cc);
-	dg = _mm512_mask_blend_pd(blendMask3, _mm512_mask_blend_pd(blendMask1, aa, bb), cc);
-	dr = _mm512_mask_blend_pd(blendMask2, _mm512_mask_blend_pd(blendMask3, aa, bb), cc);
-#endif
-}
-
-STATIC_INLINE void _mm512_store_pd_color(void* dst, const __m512d b, const __m512d g, const __m512d r)
-{
-	__m512d db, dg, dr;
-	_mm512_cvtsoa2aos_pd(b, g, r, db, dg, dr);
-
-	_mm512_store_pd((double*)dst + 0, db);
-	_mm512_store_pd((double*)dst + 8, dg);
-	_mm512_store_pd((double*)dst + 16, dr);
-}
-
-STATIC_INLINE void _mm512_storeu_pd_color(void* dst, const __m512d b, const __m512d g, const __m512d r)
-{
-	__m512d db, dg, dr;
-	_mm512_cvtsoa2aos_pd(b, g, r, db, dg, dr);
-
-	_mm512_storeu_pd((double*)dst + 0, db);
-	_mm512_storeu_pd((double*)dst + 8, dg);
-	_mm512_storeu_pd((double*)dst + 16, dr);
-}
-
-STATIC_INLINE void _mm512_stream_pd_color(void* dst, const __m512d b, const __m512d g, const __m512d r)
-{
-	__m512d db, dg, dr;
-	_mm512_cvtsoa2aos_pd(b, g, r, db, dg, dr);
-
-	_mm512_stream_pd((double*)dst + 0, db);
-	_mm512_stream_pd((double*)dst + 8, dg);
-	_mm512_stream_pd((double*)dst + 16, dr);
-}
-
-STATIC_INLINE void _mm512_storeu_auto_color(float* dest, __m512 b, __m512 g, __m512 r)
-{
-	_mm512_storeu_ps_color(dest, b, g, r);
-}
-
-
-
-STATIC_INLINE void _mm512_store_auto_color(float* dest, __m512 b, __m512 g, __m512 r)
-{
-	_mm512_store_ps_color(dest, b, g, r);
-}
-
-STATIC_INLINE void _mm512_store_auto_color(uchar* dest, __m512i b, __m512i g, __m512i r)
-{
-	_mm512_store_epi8_color(dest, b, g, r);
-}
-
-STATIC_INLINE void _mm512_storeu_auto_color(uchar* dest, __m512i b, __m512i g, __m512i r)
-{
-	_mm512_storeu_epi8_color(dest, b, g, r);
-}
-
-STATIC_INLINE void _mm512_storeu_auto_color(uchar* dest, __m512 b, __m512 g, __m512 r)
-{
-	__m512 dr, dg, db;
-	_mm512_cvtsoa2aos_ps(b, g, r, db, dg, dr);
-	_mm_storeu_si128((__m128i*)(dest), _mm512_cvtps_epu8(db));
-	_mm_storeu_si128((__m128i*)(dest + 8), _mm512_cvtps_epu8(dg));
-	_mm_storeu_si128((__m128i*)(dest + 16), _mm512_cvtps_epu8(dr));
-}
-
-STATIC_INLINE void _mm512_store_auto_color(uchar* dest, __m512 b, __m512 g, __m512 r)
-{
-	__m512 dr, dg, db;
-	_mm512_cvtsoa2aos_ps(b, g, r, db, dg, dr);
-	_mm_store_si128((__m128i*)(dest), _mm512_cvtps_epu8(db));
-	_mm_store_si128((__m128i*)(dest + 8), _mm512_cvtps_epu8(dg));
-	_mm_store_si128((__m128i*)(dest + 16), _mm512_cvtps_epu8(dr));
-}
-
-STATIC_INLINE void _mm512_stream_auto_color(float* dest, __m512 b, __m512 g, __m512 r)
-{
-	_mm512_stream_ps_color(dest, b, g, r);
-}
-
-STATIC_INLINE void _mm512_stream_auto_color(uchar* dest, __m512 b, __m512 g, __m512 r)
-{
-	__m512 dr, dg, db;
-	_mm512_cvtsoa2aos_ps(b, g, r, db, dg, dr);
-	_mm_stream_si128((__m128i*)(dest), _mm512_cvtps_epu8(db));
-	_mm_stream_si128((__m128i*)(dest + 8), _mm512_cvtps_epu8(dg));
-	_mm_stream_si128((__m128i*)(dest + 16), _mm512_cvtps_epu8(dr));
-}
-
-STATIC_INLINE void _mm512_storescalar_auto_color(float* dest, __m512 b, __m512 g, __m512 r, const int numpixel)
-{
-	__m512 dr, dg, db;
-	_mm512_cvtsoa2aos_ps(b, g, r, db, dg, dr);
-	float CV_DECL_ALIGNED(64) buffscalarstore[48];
-	_mm512_store_ps(buffscalarstore + 0, db);
-	_mm512_store_ps(buffscalarstore + 8, dg);
-	_mm512_store_ps(buffscalarstore + 16, dr);
-
-	for (int i = 0; i < numpixel; i++)
-		dest[i] = buffscalarstore[i];
+	__m512 diff = _mm512_sub_ps(src0, ref0);
+	__m512 difft = _mm512_mul_ps(diff, diff);
+	diff = _mm512_sub_ps(src1, ref1);
+	difft = _mm512_fmadd_ps(diff, diff, difft);
+	diff = _mm512_sub_ps(src2, ref2);
+	difft = _mm512_fmadd_ps(diff, diff, difft);
+	return difft;
 }
 
 //rcp with newton-raphson 1-iteration
@@ -3429,7 +3512,7 @@ STATIC_INLINE __m512 _mm512_rcpnr_fma_ps(__m512 x, __m512 two = _mm512_set1_ps(2
 	//rcp*(2-rcp*x)
 	return _mm512_mul_ps(rcp, _mm512_fnmadd_ps(x, rcp, two));
 }
-
+#pragma endregion
 
 STATIC_INLINE void _mm512_transpose16_ps(__m512& s00, __m512& s01, __m512& s02, __m512& s03, __m512& s04, __m512& s05, __m512& s06, __m512& s07, __m512& s08, __m512& s09, __m512& s10, __m512& s11, __m512& s12, __m512& s13, __m512& s14, __m512& s15)
 {
@@ -3523,11 +3606,19 @@ STATIC_INLINE void _mm512_transpose16_ps(__m512& s00, __m512& s01, __m512& s02, 
 	s15 = _mm512_castsi512_ps(_mm512_shuffle_i32x4(t7, tf, 0xdd)); //  15  31  47  63  79  96 111 127 ... 255
 }
 
+//util
 //_mm512_setr_ps(v, v + step, v + 2.f * step, v + 3.f * step, v + 4.f * step, v + 5.f * step, v + 6.f * step, v + 7.f * step, v + 8.f * step, v + 9.f * step, v + 10.f * step, v + 11.f * step, v + 12.f * step, v + 13.f * step, v + 14.f * step, v + 15.f * step);
 STATIC_INLINE __m512 _mm512_set_step_ps(float v, float step = 1.f)
 {
 	return _mm512_setr_ps(v, v + step, v + 2.f * step, v + 3.f * step, v + 4.f * step, v + 5.f * step, v + 6.f * step, v + 7.f * step, v + 8.f * step, v + 9.f * step, v + 10.f * step, v + 11.f * step, v + 12.f * step, v + 13.f * step, v + 14.f * step, v + 15.f * step);
 }
 
+STATIC_INLINE __m512i _mm512_set_step_epi32(int v, int step = 1)
+{
+	return _mm512_setr_epi32(v, v + step, v + 2 * step, v + 3 * step, v + 4 * step, v + 5 * step, v + 6 * step, v + 7 * step, v + 8 * step, v + 9 * step, v + 10 * step, v + 11 * step, v + 12 * step, v + 13 * step, v + 14 * step, v + 15 * step);
+}
+
 #define print_m512(src) printf_s("%s: %6.2f %6.2f %6.2f %6.2f | %6.2f %6.2f %6.2f %6.2f | %6.2f %6.2f %6.2f %6.2f | %6.2f %6.2f %6.2f %6.2f\n",#src,((float*)&src)[0], ((float*)&src)[1], ((float*)&src)[2], ((float*)&src)[3], ((float*)&src)[4], ((float*)&src)[5], ((float*)&src)[6], ((float*)&src)[7], ((float*)&src)[8], ((float*)&src)[9], ((float*)&src)[10], ((float*)&src)[11], ((float*)&src)[12], ((float*)&src)[13], ((float*)&src)[14], ((float*)&src)[15]);
+#define print_m512i_int(src) printf_s("%s: %d %d %d %d | %d %d %d %d | %d %d %d %d | %d %d %d %d\n",#src,((int*)&src)[0], ((int*)&src)[1], ((int*)&src)[2], ((int*)&src)[3], ((int*)&src)[4], ((int*)&src)[5], ((int*)&src)[6], ((int*)&src)[7], ((int*)&src)[8], ((int*)&src)[9], ((int*)&src)[10], ((int*)&src)[11], ((int*)&src)[12], ((int*)&src)[13], ((int*)&src)[14], ((int*)&src)[15]);
+#define print_m512i_uchar(src) printf_s("%s: %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d\n",#src,((uchar*)&src)[0], ((uchar*)&src)[1], ((uchar*)&src)[2], ((uchar*)&src)[3], ((uchar*)&src)[4], ((uchar*)&src)[5], ((uchar*)&src)[6], ((uchar*)&src)[7], ((uchar*)&src)[8], ((uchar*)&src)[9], ((uchar*)&src)[10], ((uchar*)&src)[11], ((uchar*)&src)[12], ((uchar*)&src)[13], ((uchar*)&src)[14], ((uchar*)&src)[15],((uchar*)&src)[16], ((uchar*)&src)[17], ((uchar*)&src)[18], ((uchar*)&src)[19], ((uchar*)&src)[20], ((uchar*)&src)[21], ((uchar*)&src)[22], ((uchar*)&src)[23], ((uchar*)&src)[24], ((uchar*)&src)[25], ((uchar*)&src)[26], ((uchar*)&src)[27], ((uchar*)&src)[28], ((uchar*)&src)[29], ((uchar*)&src)[30], ((uchar*)&src)[31],((uchar*)&src)[32], ((uchar*)&src)[33], ((uchar*)&src)[34], ((uchar*)&src)[35], ((uchar*)&src)[36], ((uchar*)&src)[37], ((uchar*)&src)[38], ((uchar*)&src)[39], ((uchar*)&src)[40], ((uchar*)&src)[41], ((uchar*)&src)[42], ((uchar*)&src)[43], ((uchar*)&src)[44], ((uchar*)&src)[45], ((uchar*)&src)[46], ((uchar*)&src)[47],((uchar*)&src)[48], ((uchar*)&src)[49], ((uchar*)&src)[50], ((uchar*)&src)[51], ((uchar*)&src)[52], ((uchar*)&src)[53], ((uchar*)&src)[54], ((uchar*)&src)[55], ((uchar*)&src)[56], ((uchar*)&src)[57], ((uchar*)&src)[58], ((uchar*)&src)[59], ((uchar*)&src)[60], ((uchar*)&src)[61], ((uchar*)&src)[62], ((uchar*)&src)[63]);
 #endif
