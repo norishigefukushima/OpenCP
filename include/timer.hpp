@@ -73,6 +73,7 @@ namespace cp
 		int countMax = 0;
 		int countIndex = 0;
 
+		double getTimeNormalizeAmp(const int unit);
 		void convertTime(bool isShow, std::string message);
 	public:
 

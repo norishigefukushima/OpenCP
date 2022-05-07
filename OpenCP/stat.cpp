@@ -200,7 +200,7 @@ namespace cp
 		imshow(wname, draw);
 	}
 
-	void Stat::drawPlofilePlot(string wname)
+	void Stat::drawPlofilePlot(string wname, const double amp)
 	{
 		cp::Plot pt;
 		pt.setIsDrawMousePosition(false);
@@ -211,7 +211,7 @@ namespace cp
 		double minv = DBL_MAX;
 		for (int i = 0; i < getSize(); i++)
 		{
-			double v = data[i];
+			const double v = data[i] * amp;
 			maxv = max(maxv, v);
 			minv = min(minv, v);
 			pt.push_back(i, v);
