@@ -421,7 +421,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseModerateOpt|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseCompileFast|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="timeDiv.cpp" />
+    <ClCompile Include="tileDiv.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\spatialfilter\SpatialFilter.hpp" />

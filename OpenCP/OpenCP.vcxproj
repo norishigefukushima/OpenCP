@@ -447,6 +447,7 @@
     <ClCompile Include="dct_simd.cpp" />
     <ClCompile Include="depth2disparity.cpp" />
     <ClCompile Include="depthUpsample.cpp" />
+    <ClCompile Include="dithering.cpp" />
     <ClCompile Include="downsample.cpp" />
     <ClCompile Include="GaussianKDTree.cpp" />
     <ClCompile Include="highDimensionalGaussianFilter.cpp" />
@@ -665,6 +666,7 @@
     <ClInclude Include="..\include\dctFilter.hpp" />
     <ClInclude Include="..\include\depth2disparity.hpp" />
     <ClInclude Include="..\include\depthUpsample.hpp" />
+    <ClInclude Include="..\include\dithering.hpp" />
     <ClInclude Include="..\include\downsample.hpp" />
     <ClInclude Include="..\include\GaussianKDTree.hpp" />
     <ClInclude Include="..\include\highDimensionalGaussianFilter.hpp" />

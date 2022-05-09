@@ -45,6 +45,7 @@
 #include "contrast.hpp"
 #include "detailEnhancement.hpp"
 #include "diffPixel.hpp"
+#include "dithering.hpp"
 #include "hazeRemove.hpp"
 #include "iterativeBackProjection.hpp"
 #include "metrics.hpp"

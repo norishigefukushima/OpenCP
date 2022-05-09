@@ -75,7 +75,7 @@
     <ClCompile Include="SpatialFilterSlidingDCT7_AVX.cpp">
       <Filter>ソース ファイル\SlidingDCT</Filter>
     </ClCompile>
-    <ClCompile Include="timeDiv.cpp">
+    <ClCompile Include="tileDiv.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="GaussianFilterFIRSep2DOpenCV.cpp">
