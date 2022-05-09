@@ -48,6 +48,7 @@
 #include "dithering.hpp"
 #include "hazeRemove.hpp"
 #include "iterativeBackProjection.hpp"
+#include "mediancut.hpp"
 #include "metrics.hpp"
 #include "metricsDD.hpp"
 #include "pixelization.hpp"

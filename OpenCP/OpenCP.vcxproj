@@ -452,6 +452,7 @@
     <ClCompile Include="GaussianKDTree.cpp" />
     <ClCompile Include="highDimensionalGaussianFilter.cpp" />
     <ClCompile Include="kmeans.cpp" />
+    <ClCompile Include="mediancut.cpp" />
     <ClCompile Include="metricsDD.cpp" />
     <ClCompile Include="NEDI.cpp" />
     <ClCompile Include="onelineCVFunctions.cpp" />
@@ -672,6 +673,7 @@
     <ClInclude Include="..\include\highDimensionalGaussianFilter.hpp" />
     <ClInclude Include="..\include\inlineCVFunctions.hpp" />
     <ClInclude Include="..\include\kmeans.hpp" />
+    <ClInclude Include="..\include\mediancut.hpp" />
     <ClInclude Include="..\include\metricsDD.hpp" />
     <ClInclude Include="..\include\NEDI.hpp" />
     <ClInclude Include="..\include\onelineCVFunctions.hpp" />
