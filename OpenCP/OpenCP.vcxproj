@@ -460,6 +460,7 @@
     <ClCompile Include="poissonDiskSampling.cpp" />
     <ClCompile Include="RankOrderCorrelationCoefficient.cpp" />
     <ClCompile Include="separableFilterCore.cpp" />
+    <ClCompile Include="statistic.cpp" />
     <ClCompile Include="stereoEval.cpp" />
     <ClCompile Include="depthfilter.cpp" />
     <ClCompile Include="detailEnhancement.cpp" />
@@ -638,6 +639,7 @@
     <ClCompile Include="viewsynthesis.cpp" />
     <ClCompile Include="weightedHistogramFilter.cpp" />
     <ClCompile Include="Wiener2.cpp" />
+    <ClCompile Include="xmeans.cpp" />
     <ClCompile Include="yuvio.cpp" />
     <ClCompile Include="crop.cpp" />
     <ClCompile Include="VideoSubtitle.cpp" />
@@ -682,6 +684,7 @@
     <ClInclude Include="..\include\search1D.hpp" />
     <ClInclude Include="..\include\RankOrderCorrelationCoefficient.hpp" />
     <ClInclude Include="..\include\separableFilterCore.hpp" />
+    <ClInclude Include="..\include\statistic.hpp" />
     <ClInclude Include="..\include\StereoEval.hpp" />
     <ClInclude Include="..\include\depthfilter.hpp" />
     <ClInclude Include="..\include\detailEnhancement.hpp" />
@@ -760,6 +763,7 @@
     <ClInclude Include="..\include\viewsynthesis.hpp" />
     <ClInclude Include="..\include\weightedHistogramFilter.hpp" />
     <ClInclude Include="..\include\Wiener2.hpp" />
+    <ClInclude Include="..\include\xmeans.hpp" />
     <ClInclude Include="..\include\yuvio.hpp" />
     <ClInclude Include="..\include\crop.hpp" />
     <ClInclude Include="box\boxFilterBase.hpp" />

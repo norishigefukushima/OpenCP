@@ -28,6 +28,7 @@
 #include "randomizedQueue.hpp"
 #include "RankOrderCorrelationCoefficient.hpp"
 #include "stat.hpp"
+#include "statistic.hpp"
 #include "stencil.hpp"
 #include "stream.hpp"
 #include "timer.hpp"
@@ -35,6 +36,7 @@
 #include "updateCheck.hpp"
 #include "video.hpp"
 #include "VideoSubtitle.hpp"
+#include "xmeans.hpp"
 #include "yuvio.hpp"
 
 /*************************************************************
