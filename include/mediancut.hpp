@@ -10,6 +10,6 @@ namespace cp
 		MIN,
 		MAX
 	};
-	void mediancut(cv::InputArray src, const int K, cv::OutputArray destLabels, cv::OutputArray destColor, const MedianCutMethod cmethod = MedianCutMethod::MEDIAN);
+	CP_EXPORT void mediancut(cv::InputArray src, const int K, cv::OutputArray destLabels, cv::OutputArray destColor, const MedianCutMethod cmethod = MedianCutMethod::MEDIAN);
 }
 
