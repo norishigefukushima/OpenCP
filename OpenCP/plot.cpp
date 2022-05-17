@@ -730,6 +730,22 @@ namespace cp
 		ymax_plotwindow = ymax;
 	}
 
+	void Plot::unsetXRange()
+	{
+		isSetXRange = false;
+	}
+
+	void Plot::unsetYRange()
+	{
+		isSetYRange = false;
+	}
+
+	void Plot::unsetXYRange()
+	{
+		isSetXRange = false;
+		isSetYRange = false;
+	}
+
 	void Plot::setLogScaleX(const bool flag)
 	{
 		isLogScaleX = flag;

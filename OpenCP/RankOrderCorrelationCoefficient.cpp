@@ -75,6 +75,7 @@ namespace cp
 	template<typename T>
 	void SpearmanRankOrderCorrelationCoefficient::Rank(vector<T>& vec, vector<T>& orig_vect, vector<T>& dest)
 	{
+		assert(vec.size() == orig_vect.size());
 		const int size = (int)vec.size();
 		vector<double> R(size);
 		vector<int> Indices;
@@ -118,6 +119,7 @@ namespace cp
 			searchList(vect2, size, orig_vect[k], Indices);
 			nPosition = Indices[0]; // just need one ocurrence		
 			// Get the respective postion in sorted list then pushback in rank		
+			if (nPosition == 0)cout << "zero" << endl;
 			dest.push_back(T(R[(int)nPosition - 1]));
 		}
 	}
@@ -180,15 +182,17 @@ namespace cp
 		}
 	}
 
-	void SpearmanRankOrderCorrelationCoefficient::plot(const bool isWait)
+	void SpearmanRankOrderCorrelationCoefficient::plot(const bool isWait, const double rawMin, const double rawMax)
 	{
 		pt.setPlotLineType(0, Plot::LINE::NOLINE);
-
+		pt.setKey(Plot::KEY::NOKEY);
 		pt.push_back(plotsRAW);
-		pt.plot("ROCC-RAW", isWait);
+		if (rawMin != 0.0 || rawMax != 0.0) pt.setYRange(rawMin, rawMax);
+		pt.plot("SROCC-RAW", isWait);
 		pt.clear();
+		pt.unsetXYRange();
 		pt.push_back(plotsRANK);
-		pt.plot("ROCC-RANK", isWait);
+		pt.plot("SROCC-RANK", isWait);
 		pt.clear();
 	}
 

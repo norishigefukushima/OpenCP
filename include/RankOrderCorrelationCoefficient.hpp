@@ -33,6 +33,6 @@ namespace cp
 
 		double spearman(std::vector<float> v1, std::vector<float> v2);//compute SROCC (vector<float>). 
 		double spearman(std::vector<double> v1, std::vector<double> v2);//compute SROCC ((vector<double>)). 
-		void plot(const bool isWait = true);
+		void plot(const bool isWait = true, const double rawMin = 0.0, const double rawMax = 0.0);
 	};
 }
