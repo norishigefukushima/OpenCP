@@ -3,6 +3,21 @@
 #include <cmath>
 namespace cp
 {
+	inline double combination(const int N, const int  n)
+	{
+		double numer = N;
+		double denom = n;
+		double comb = 1.0;
+		if (n != 0)
+		{
+			for (int i = 0; i < n; ++i)
+			{
+				comb *= (numer-- / denom--);
+			}
+		}
+		return comb;
+	}
+
 	inline void indexToXY(const int index, const int imstep, int& x, int& y)
 	{
 		x = index % imstep;

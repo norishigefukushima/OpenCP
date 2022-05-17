@@ -798,7 +798,7 @@ namespace cp
 	void setGaussKernelHalf(cv::Mat& dest, const int R, const double sigma, bool isNormalize);
 	void generateCosKernel(double* dest, double& totalInv, const int dctType, const double* Gk, const int radius, const int order);
 
-	CP_EXPORT bool  optimizeSpectrum(const double sigma, const int K, const int R, const int dcttype, double* destSpect, const int M = 0);
+	CP_EXPORT bool optimizeSpectrum(const double sigma, const int K, const int R, const int dcttype, double* destSpect, const int M = 0);
 	//K+1 loop
 	CP_EXPORT void computeSpectrumGaussianClosedForm(const double sigma, const int K, const int R, const int dcttype, double* destSpect);
 	//spect: K+1 size

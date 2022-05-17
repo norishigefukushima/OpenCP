@@ -3288,7 +3288,7 @@ STATIC_INLINE void _mm512_storescalar_auto_color(uchar* dest, __m512 b, __m512 g
 	__m512 dr, dg, db;
 	_mm512_cvtsoa2aos_ps(b, g, r, db, dg, dr);
 	uchar CV_DECL_ALIGNED(64) buffscalarstore[48];
-	
+
 	_mm_store_si128((__m128i*)(buffscalarstore + 0), _mm512_cvtps_epu8(db));
 	_mm_store_si128((__m128i*)(buffscalarstore + 16), _mm512_cvtps_epu8(dg));
 	_mm_store_si128((__m128i*)(buffscalarstore + 32), _mm512_cvtps_epu8(dr));
@@ -3480,6 +3480,11 @@ STATIC_INLINE __m512 _mm512_absdiff_ps(__m512 src1, __m512 src2)
 	return _mm512_abs_ps(_mm512_sub_ps(src1, src2));
 }
 
+STATIC_INLINE __m512i _mm512_absdiff_epu8(__m512i src1, __m512i src2)
+{
+	return _mm512_max_epu8(_mm512_subs_epu8(src1, src2), _mm512_subs_epu8(src2, src1));
+}
+
 STATIC_INLINE __m512 _mm512_ssd_ps(__m512 src, __m512 ref)
 {
 	__m512 diff = _mm512_sub_ps(src, ref);
@@ -3611,6 +3616,16 @@ STATIC_INLINE void _mm512_transpose16_ps(__m512& s00, __m512& s01, __m512& s02, 
 STATIC_INLINE __m512 _mm512_set_step_ps(float v, float step = 1.f)
 {
 	return _mm512_setr_ps(v, v + step, v + 2.f * step, v + 3.f * step, v + 4.f * step, v + 5.f * step, v + 6.f * step, v + 7.f * step, v + 8.f * step, v + 9.f * step, v + 10.f * step, v + 11.f * step, v + 12.f * step, v + 13.f * step, v + 14.f * step, v + 15.f * step);
+}
+
+STATIC_INLINE __m512i _mm512_set_step_epi8(char v, char step = 1)
+{
+	return _mm512_setr_epi8(
+		v +  0 * step, v +  1 * step, v + 2 * step, v + 3 * step, v + 4 * step, v + 5 * step, v + 6 * step, v + 7 * step, v + 8 * step, v + 9 * step, v + 10 * step, v + 11 * step, v + 12 * step, v + 13 * step, v + 14 * step, v + 15 * step,
+		v + 16 * step, v + 17 * step, v +18 * step, v +19 * step, v +20 * step, v +21 * step, v +22 * step, v +23 * step, v +24 * step, v +25 * step, v + 26 * step, v + 27 * step, v + 28 * step, v + 29 * step, v + 30 * step, v + 31 * step,
+		v + 32 * step, v + 33 * step, v +34 * step, v +35 * step, v +36 * step, v +37 * step, v +38 * step, v +39 * step, v +40 * step, v +41 * step, v + 42 * step, v + 43 * step, v + 44 * step, v + 45 * step, v + 46 * step, v + 47 * step,
+		v + 48 * step, v + 49 * step, v +50 * step, v +51 * step, v +52 * step, v +53 * step, v +54 * step, v +55 * step, v +56 * step, v +57 * step, v + 58 * step, v + 59 * step, v + 60 * step, v + 61 * step, v + 62 * step, v + 63 * step
+	);
 }
 
 STATIC_INLINE __m512i _mm512_set_step_epi32(int v, int step = 1)

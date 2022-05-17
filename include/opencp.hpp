@@ -28,6 +28,7 @@
 #include "randomizedQueue.hpp"
 #include "RankOrderCorrelationCoefficient.hpp"
 #include "stat.hpp"
+#include "statistic.hpp"
 #include "stencil.hpp"
 #include "stream.hpp"
 #include "timer.hpp"
@@ -35,6 +36,7 @@
 #include "updateCheck.hpp"
 #include "video.hpp"
 #include "VideoSubtitle.hpp"
+#include "xmeans.hpp"
 #include "yuvio.hpp"
 
 /*************************************************************
@@ -45,8 +47,10 @@
 #include "contrast.hpp"
 #include "detailEnhancement.hpp"
 #include "diffPixel.hpp"
+#include "dithering.hpp"
 #include "hazeRemove.hpp"
 #include "iterativeBackProjection.hpp"
+#include "mediancut.hpp"
 #include "metrics.hpp"
 #include "metricsDD.hpp"
 #include "pixelization.hpp"

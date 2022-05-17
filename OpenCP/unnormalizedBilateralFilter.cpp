@@ -25,7 +25,7 @@ namespace cp
 		//float k = 2.f * detail_param;
 		float k = 1.f * boost;
 		//ret = (float)exp(pow(abs(v), n) / (-n * pow(sigma_range, n)));
-		ret = (float)k * exp(pow(abs(v), n) / (-n * pow(sigma_range, n)));
+		ret = (float)(k * exp(pow(abs(v), n) / (-n * pow(sigma_range, n))));
 		//ret = 2*cos(std::min(1.5f	, v / sigma_range) * CV_PI);
 		//float alpha = 0.5;
 		/*if (v < sigma_range)

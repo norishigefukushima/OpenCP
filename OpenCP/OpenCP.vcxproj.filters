@@ -603,6 +603,18 @@
     <ClCompile Include="binaryWeightedRangeFilter.cpp">
       <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
     </ClCompile>
+    <ClCompile Include="dithering.cpp">
+      <Filter>ソース ファイル\imgproc</Filter>
+    </ClCompile>
+    <ClCompile Include="mediancut.cpp">
+      <Filter>ソース ファイル\imgproc</Filter>
+    </ClCompile>
+    <ClCompile Include="xmeans.cpp">
+      <Filter>ソース ファイル\core</Filter>
+    </ClCompile>
+    <ClCompile Include="statistic.cpp">
+      <Filter>ソース ファイル\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libGaussian\gaussian_conv.h">
@@ -1043,9 +1055,6 @@
     <ClInclude Include="..\include\separableFilterCore.hpp">
       <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\common.hpp">
-      <Filter>ヘッダー ファイル\core</Filter>
-    </ClInclude>
     <ClInclude Include="debugcp.hpp">
       <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
@@ -1084,6 +1093,21 @@
     </ClInclude>
     <ClInclude Include="..\include\binaryWeightedRangeFilter.hpp">
       <Filter>ヘッダー ファイル\filter</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\common.hpp">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\dithering.hpp">
+      <Filter>ヘッダー ファイル\imgproc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\mediancut.hpp">
+      <Filter>ヘッダー ファイル\imgproc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\xmeans.hpp">
+      <Filter>ヘッダー ファイル\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\statistic.hpp">
+      <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
