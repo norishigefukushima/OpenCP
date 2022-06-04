@@ -31,7 +31,7 @@ namespace cp
 		void write(std::string v);
 		void write(double v);
 		void write(int v);
-		void end();
+		void end();//endl;
 	};
 
 	void CP_EXPORT writeCSV(std::string name, cv::InputArray src);

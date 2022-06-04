@@ -1,5 +1,6 @@
 #include "RankOrderCorrelationCoefficient.hpp"
 #include <numeric>
+#include <timer.hpp>
 
 using namespace cv;
 using namespace std;
@@ -97,7 +98,7 @@ namespace cp
 			Indices.clear();
 			searchList(vect2, size, vec[k], Indices);
 			// Find mean position
-			double sum = 0;
+			double sum = 0.0;
 			for (int i = 0; i < Indices.size(); i++)
 			{
 				sum += R[Indices[i] - 1];
@@ -124,8 +125,47 @@ namespace cp
 		}
 	}
 
+	
+	template<>
+	void SpearmanRankOrderCorrelationCoefficient::rankTransformIgnoreTie<float>(vector<float>& src, vector<int>& dst)
+	{
+		const int n = (int)src.size();
+		dst.resize(n);
+		sporder32f.resize(n);
+		//vector<SpearmanOrder<T>> data(n);
+		for (int i = 0; i < n; i++)
+		{
+			sporder32f[i].data = src[i];
+			sporder32f[i].order = i;
+		}
+		sort(sporder32f.begin(), sporder32f.end(), [](const SpearmanOrder<float>& ls, const SpearmanOrder<float>& rs) {return ls.data < rs.data; });//ascending order
+		for (int i = 0; i < n; i++)
+		{
+			dst[sporder32f[i].order] = i;
+		}
+	}
+
+	template<>
+	void SpearmanRankOrderCorrelationCoefficient::rankTransformIgnoreTie<double>(vector<double>& src, vector<int>& dst)
+	{
+		const int n = (int)src.size();
+		dst.resize(n);
+		sporder64f.resize(n);
+		//vector<SpearmanOrder<T>> data(n);
+		for (int i = 0; i < n; i++)
+		{
+			sporder64f[i].data = src[i];
+			sporder64f[i].order = i;
+		}
+		sort(sporder64f.begin(), sporder64f.end(), [](const SpearmanOrder<double>& ls, const SpearmanOrder<double>& rs) {return ls.data < rs.data; });//ascending order
+		for (int i = 0; i < n; i++)
+		{
+			dst[sporder64f[i].order] = i;
+		}
+	}
+
 	template<typename T>
-	double SpearmanRankOrderCorrelationCoefficient::spearman_(vector<T>& v1, vector<T>& v2)
+	double SpearmanRankOrderCorrelationCoefficient::spearman_(vector<T>& v1, vector<T>& v2, const bool ignoreTie, const bool isPlot)
 	{
 		CV_Assert(v1.size() == v2.size());
 
@@ -133,19 +173,58 @@ namespace cp
 		vector<T> R1;
 		vector<T> R2;
 		vector<T> d;
-		vector<T> vector1(v1); // original vector v1
-		vector<T> vector2(v2); // original vector v2
 
-		sort(v1.begin(), v1.end());//ascending order
-		sort(v2.begin(), v2.end());
-
-		Rank(v1, vector1, R1);
-		Rank(v2, vector2, R2);
-
+		if (ignoreTie)
+		{
+			vector<SpearmanOrder<T>> data1(n);
+			vector<SpearmanOrder<T>> data2(n);
+			for (int i = 0; i < n; i++)
+			{
+				data1[i].data = v1[i];
+				data1[i].order = i;
+				data2[i].data = v2[i];
+				data2[i].order = i;
+			}
+			sort(data1.begin(), data1.end(), [](const SpearmanOrder<T>& ls, const SpearmanOrder<T>& rs) {return ls.data < rs.data; });//ascending order
+			sort(data2.begin(), data2.end(), [](const SpearmanOrder<T>& ls, const SpearmanOrder<T>& rs) {return ls.data < rs.data; });//ascending order
+			vector<int> r1(n);
+			vector<int> r2(n);
+			for (int i = 0; i < n; i++)
+			{
+				r1[data1[i].order] = i;
+				r2[data2[i].order] = i;
+			}
+			double D2 = 0.0;
+			for (int i = 0; i < n; i++)
+			{
+				//cout << R1[i] << "," << R2[i] << endl;
+				const double sub = r1[i] - r2[i];
+				D2 += sub * sub;
+			}
+			return 1.0 - 6.0 * D2 / (pow(n, 3.0) - (double)n);
+		}
+		else
+		{
+			vector<T> vector1(v1); // original vector v1
+			vector<T> vector2(v2); // original vector v2
+			{
+				//Timer t("sort");
+				sort(v1.begin(), v1.end());//ascending order
+				sort(v2.begin(), v2.end());
+			}
+			//Timer t("Rank");
+			Rank(v1, vector1, R1);
+			Rank(v2, vector2, R2);
+		}
 		//Method 1:  Pearson correlation coefficient, but applied to the rank variables.
 		//cout << "Spearman correlation = " << pearson(R1,R2) <<endl;
-		setPlotData(R1, R2, plotsRANK);
-		return pearson(R1, R2);
+		if (isPlot)setPlotData(R1, R2, plotsRANK);
+		double ret = 0.0;
+		{
+			//Timer t("pearson");
+			ret = pearson(R1, R2);
+		}
+		return ret;
 
 		//Method 2 : Use the spearman correlation formular( Only if all n ranks are distinct integers)
 		for (int k = 0; k < n; k++)
@@ -196,15 +275,51 @@ namespace cp
 		pt.clear();
 	}
 
-	double SpearmanRankOrderCorrelationCoefficient::spearman(vector<float> v1, vector<float> v2)
+	double SpearmanRankOrderCorrelationCoefficient::spearman(vector<float> v1, vector<float> v2, const bool ignoreTie, const bool isPlot)
 	{
-		setPlotData(v1, v2, plotsRAW);
-		return spearman_<float>(v1, v2);
+		if (isPlot)setPlotData(v1, v2, plotsRAW);
+		return spearman_<float>(v1, v2, ignoreTie, isPlot);
 	}
 
-	double SpearmanRankOrderCorrelationCoefficient::spearman(vector<double> v1, vector<double> v2)
+	double SpearmanRankOrderCorrelationCoefficient::spearman(vector<double> v1, vector<double> v2, const bool ignoreTie, const bool isPlot)
 	{
-		setPlotData(v1, v2, plotsRAW);
-		return spearman_<double>(v1, v2);
+		if (isPlot)setPlotData(v1, v2, plotsRAW);
+		return spearman_<double>(v1, v2, ignoreTie, isPlot);
+	}
+
+	void SpearmanRankOrderCorrelationCoefficient::setReference(std::vector<float>& ref)
+	{
+		rankTransformIgnoreTie<float>(ref, refRank);
+	}
+
+	void SpearmanRankOrderCorrelationCoefficient::setReference(std::vector<double>& ref)
+	{
+		rankTransformIgnoreTie<double>(ref, refRank);
+	}
+
+	double SpearmanRankOrderCorrelationCoefficient::spearmanUsingReference(std::vector<float>& src)
+	{
+		const int n = (int)src.size();
+		rankTransformIgnoreTie(src, srcRank);
+		double D2 = 0.0;
+		for (int i = 0; i < n; i++)
+		{
+			const double sub = srcRank[i] - refRank[i];
+			D2 += sub * sub;
+		}
+		return 1.0 - 6.0 * D2 / (pow(n, 3.0) - (double)n);
+	}
+
+	double SpearmanRankOrderCorrelationCoefficient::spearmanUsingReference(std::vector<double>& src)
+	{
+		const int n = (int)src.size();
+		rankTransformIgnoreTie(src, srcRank);
+		double D2 = 0.0;
+		for (int i = 0; i < n; i++)
+		{
+			const double sub = srcRank[i] - refRank[i];
+			D2 += sub * sub;
+		}
+		return 1.0 - 6.0 * D2 / (pow(n, 3.0) - (double)n);
 	}
 }
