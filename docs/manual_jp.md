@@ -258,11 +258,12 @@ class CP_EXPORT PoissonDiskSampling
 class CP_EXPORT RandomizedQueue
 ```
 
-## RankOrderCorrelationCoefficient.hpp
-順位相関係数を計算するクラス
-[Todo] KORCCを作成する必要あり
+## correlationCoefficient.hpp
+相関係数を計算するクラス
 
-* [class SpearmanRankOrderCorrelationCoefficient](core/RankOrderCorrelationCoefficient_jp.md "#class SpearmanRankOrderCorrelationCoefficient")
+* [class PearsonCorrelationCoefficient](core/correlationCoefficient_jp.md "#class PearsonCorrelationCoefficient")
+* [class SpearmanRankOrderCorrelationCoefficient](core/correlationCoefficient_jp.md "#class SpearmanRankOrderCorrelationCoefficient")
+* [class KendallRankOrderCorrelationCoefficient](core/correlationCoefficient_jp.md "#class KendallRankOrderCorrelationCoefficient")
 
 ## stat.hpp
 統計情報を計算するクラス

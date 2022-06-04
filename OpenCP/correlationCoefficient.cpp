@@ -1,4 +1,4 @@
-#include "RankOrderCorrelationCoefficient.hpp"
+#include "correlationCoefficient.hpp"
 #include <numeric>
 #include <timer.hpp>
 

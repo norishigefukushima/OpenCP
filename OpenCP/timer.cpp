@@ -604,7 +604,7 @@ namespace cp
 		double ret = 0.0;
 		int64 cstamp = getTickCount();
 		time_stamp.push_back(cstamp);
-		double per = (time_stamp.size() - 1) / (double)(loopMax);
+		double per = (time_stamp.size()) / (double)(loopMax);
 		//print_debug2(time_stamp.size(), destCount);
 		double pred_stamp = predict_endstamp((int)time_stamp.size() - 1, order, isDiff);
 		double etime = cvtTick2Time(pred_stamp);
@@ -612,7 +612,7 @@ namespace cp
 
 		if (isPrint)
 		{
-			cout << format("%4.1f %%, ", 100.0 * per);
+			cout << format("%4.1f %% %d/%d, ", 100.0 * per, time_stamp.size(), loopMax);
 			printTime(ctime, "current");
 			printTime(etime - ctime, " | last");
 			printTime(etime, " | estimated ");
