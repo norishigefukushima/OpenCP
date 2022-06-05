@@ -7,7 +7,7 @@ namespace cp
 	{
 		FILE* fp = NULL;
 		bool isTop;
-		long fileSize;
+		size_t fileSize;
 		std::string filename;
 		bool isCommaSeparator = true;
 	public:
@@ -23,6 +23,7 @@ namespace cp
 		void makeFilter(int index, double val, double emax = 0.00000001);
 		void readHeader();
 		void readData();
+		void readDataLineByLine();
 
 		void init(std::string name, bool isWrite, bool isClear);
 		CSV();

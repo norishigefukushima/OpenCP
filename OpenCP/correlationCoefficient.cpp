@@ -140,7 +140,9 @@ namespace cp
 	{
 		const int n = (int)src.size();
 		if (dst.size() != n)dst.resize(n);
-		if (sporder32i.size() != n)sporder32i.resize(n);
+		if (sporder32i.size() != n + 1)sporder32i.resize(n + 1);
+		sporder32i[n].data = INT_MIN;
+
 		for (int i = 0; i < n; i++)
 		{
 			sporder32i[i].data = src[i];
@@ -176,8 +178,10 @@ namespace cp
 	double SpearmanRankOrderCorrelationCoefficient::rankTransformUsingAverageTieScore<float>(vector<float>& src, vector<float>& dst)
 	{
 		const int n = (int)src.size();
-		if (dst.size() != n)dst.resize(n);
-		if (sporder32f.size() != n)sporder32f.resize(n);
+		if (dst.size() != n)dst.resize(n + 1);
+		if (sporder32f.size() != n + 1)sporder32f.resize(n);
+		sporder32f[n].data = FLT_MIN;
+
 		for (int i = 0; i < n; i++)
 		{
 			sporder32f[i].data = src[i];
@@ -214,7 +218,9 @@ namespace cp
 	{
 		const int n = (int)src.size();
 		if (dst.size() != n)dst.resize(n);
-		if (sporder64f.size() != n)sporder64f.resize(n);
+		if (sporder64f.size() != n + 1)sporder64f.resize(n + 1);
+		sporder64f[n].data = DBL_MIN;//boundary
+
 		for (int i = 0; i < n; i++)
 		{
 			sporder64f[i].data = src[i];
