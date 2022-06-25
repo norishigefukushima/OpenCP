@@ -178,8 +178,8 @@ namespace cp
 	double SpearmanRankOrderCorrelationCoefficient::rankTransformUsingAverageTieScore<float>(vector<float>& src, vector<float>& dst)
 	{
 		const int n = (int)src.size();
-		if (dst.size() != n)dst.resize(n + 1);
-		if (sporder32f.size() != n + 1)sporder32f.resize(n);
+		if (dst.size() != n)dst.resize(n);
+		if (sporder32f.size() != n + 1)sporder32f.resize(n + 1);
 		sporder32f[n].data = FLT_MIN;
 
 		for (int i = 0; i < n; i++)
