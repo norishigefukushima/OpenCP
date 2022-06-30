@@ -20,6 +20,7 @@ void consoleImageTest();
 void testAddNoise(cv::Mat& src);
 void testConcat();
 void copyMakeBorderTest(cv::Mat& src);
+void testCorrelationCoefficient();
 void testCropZoom();
 void testHistogram();
 void testHistogram2(cv::Mat& src);

@@ -579,7 +579,7 @@
     <ClCompile Include="pixelization.cpp">
       <Filter>ソース ファイル\imgproc</Filter>
     </ClCompile>
-    <ClCompile Include="RankOrderCorrelationCoefficient.cpp">
+    <ClCompile Include="correlationCoefficient.cpp">
       <Filter>ソース ファイル\core</Filter>
     </ClCompile>
     <ClCompile Include="highDimensionalGaussianFilter.cpp">
@@ -1046,7 +1046,7 @@
     <ClInclude Include="..\include\pixelization.hpp">
       <Filter>ヘッダー ファイル\imgproc</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\RankOrderCorrelationCoefficient.hpp">
+    <ClInclude Include="..\include\correlationCoefficient.hpp">
       <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\GaussianKDTree.hpp">

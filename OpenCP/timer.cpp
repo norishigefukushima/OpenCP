@@ -281,7 +281,7 @@ namespace cp
 #pragma endregion
 
 #pragma region DestinationTimePrediction
-	int DestinationTimePrediction::getAutoTimeMode(double cTime)
+	int DestinationTimePrediction::getAutoTimeMode(const double cTime)
 	{
 		if (cTime > 60.0 * 60.0 * 24.0)
 		{
@@ -313,7 +313,7 @@ namespace cp
 		}
 	}
 
-	void DestinationTimePrediction::printTime(double time, string mes)
+	void DestinationTimePrediction::printTime(const double time, const string mes)
 	{
 		double cTime = time;
 
@@ -604,15 +604,15 @@ namespace cp
 		double ret = 0.0;
 		int64 cstamp = getTickCount();
 		time_stamp.push_back(cstamp);
-		double per = (time_stamp.size() - 1) / (double)(loopMax);
+		double per = (time_stamp.size()) / (double)(loopMax);
 		//print_debug2(time_stamp.size(), destCount);
-		double pred_stamp = predict_endstamp((int)time_stamp.size() - 1, order, isDiff);
-		double etime = cvtTick2Time(pred_stamp);
-		double ctime = cvtTick2Time(double(cstamp - time_stamp[0]), false);
+		const double pred_stamp = predict_endstamp((int)time_stamp.size() - 1, order, isDiff);
+		const double etime = cvtTick2Time(pred_stamp);
+		const double ctime = cvtTick2Time(double(cstamp - time_stamp[0]), false);
 
 		if (isPrint)
 		{
-			cout << format("%4.1f %%, ", 100.0 * per);
+			cout << format("%4.1f %% %d/%d, ", 100.0 * per, (int)time_stamp.size() - 1, loopMax);
 			printTime(ctime, "current");
 			printTime(etime - ctime, " | last");
 			printTime(etime, " | estimated ");
@@ -622,7 +622,7 @@ namespace cp
 		return ret;
 	}
 
-	void DestinationTimePrediction::init(int loopMax)
+	void DestinationTimePrediction::init(const int loopMax)
 	{
 		this->loopMax = loopMax;
 		time_stamp.push_back(getTickCount());
@@ -633,7 +633,7 @@ namespace cp
 		;
 	}
 
-	DestinationTimePrediction::DestinationTimePrediction(int loopMax)
+	DestinationTimePrediction::DestinationTimePrediction(const int loopMax)
 	{
 		init(loopMax);
 	}
