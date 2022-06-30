@@ -553,7 +553,7 @@ void testSpearmanRankOrderCorrelationCoefficient()
 
 int main(int argc, char** argv)
 {
-	testSpearmanRankOrderCorrelationCoefficient(); return 0;
+	//testSpearmanRankOrderCorrelationCoefficient(); return 0;
 	/*__m256i a = _mm256_set_step_epi32(0);
 	__m256i b = _mm256_set_step_epi32(8);
 	__m256i c = _mm256_set_step_epi32(16);
@@ -647,13 +647,13 @@ int main(int argc, char** argv)
 	//testGuidedImageFilter(Mat(), Mat()); return 0;
 	//highDimentionalGaussianFilterTest(img); return 0;
 	//highDimentionalGaussianFilterHSITest(); return 0;
-	guiDenoiseTest(img);
+	//guiDenoiseTest(img);
 	//testWeightedHistogramFilterDisparity(); return 0;
 	//testWeightedHistogramFilter();return 0;
 #pragma endregion 
 
 	//guiUpsampleTest(img); return 0;
-	//guiDomainTransformFilterTest(img);
+	guiDomainTransformFilterTest(img);
 	//guiMedianFilterTest(img);
 	//VisualizeDenormalKernel vdk;
 	//vdk.run(img);

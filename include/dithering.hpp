@@ -8,10 +8,11 @@ namespace cp
 	enum DITHER_METHOD
 	{
 		OSTROMOUKHOW,
-		FLOYD_STEINBERG,
+		FLOYD_STEINBERG, //Robert W. Floyd and Louis Steinberg, An Adaptive 		Algorithm for Spatial Grayscale.Proceedings of the Society		for Information Display 17 (2) 75 - 77, 1976 
+		FAN, //(Floyd-Steinberg derivative) Zhigang Fan, A simple modification of error-diffusion weights. In the Proceedings of SPIE'92.
 		SIERRA2,
 		SIERRA3,
-		JARVIS,
+		JARVIS,//J. F. Jarvis, C. N. Judice and W. H. Ninke, A Survey of 		Techniques for the Display of Continuous Tone Pictures on 		Bi - level Displays.Computer Graphics and Image Processing, 5 13 - 40, 1976.
 		STUCKI,
 		BURKES,
 		STEAVENSON,

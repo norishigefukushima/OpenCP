@@ -16,6 +16,7 @@ namespace cp
 		{
 		case OSTROMOUKHOW:		ret = "OSTROMOUKHOW"; break;
 		case FLOYD_STEINBERG:	ret = "FLOYD_STEINBERG"; break;
+		case FAN:				ret = "FAN"; break;
 		case SIERRA2:			ret = "SIERRA2"; break;
 		case SIERRA3:			ret = "SIERRA3"; break;
 		case JARVIS:			ret = "JARVIS"; break;
@@ -1065,10 +1066,10 @@ namespace cp
 		return sample_num;
 	}
 
+	//  x 7
+	//3 5 1
 	int ditheringFloydSteinberg(Mat& remap, Mat& dest, int process_order)
 	{
-		//  x 7
-		//3 5 1
 		CV_Assert(remap.depth() == CV_32F);
 
 		int sample_num = 0;
@@ -3128,6 +3129,308 @@ namespace cp
 
 				}
 			}
+		}
+		return sample_num;
+	}
+
+	//    x 7
+	//1 3 5 
+	int ditheringFan(Mat& remap, Mat& dest, int process_order)
+	{
+		CV_Assert(remap.depth() == CV_32F);
+
+		int sample_num = 0;
+
+		const int coeff1 = 1;
+		const int coeff3 = 3;
+		const int coeff5 = 5;
+		const int coeff7 = 7;
+
+		float total = 1.f / (coeff1 + coeff3 + coeff5 + coeff7);
+		const float coeff7_16 = coeff7 * total;
+		const float coeff5_16 = coeff5 * total;
+		const float coeff3_16 = coeff3 * total;
+		const float coeff1_16 = coeff1 * total;
+
+		if (process_order == MEANDERING)
+		{
+			for (int y = 0; y < remap.rows - 1; y++)
+			{
+				float* s = remap.ptr<float>(y);
+				float* s_next = remap.ptr<float>(y + 1);
+				uchar* d = dest.ptr<uchar>(y);
+				float e;//error
+
+				int x = 0;
+				if (y % 2 == 1) //odd
+				{
+					x = 0;
+					{
+						if (s[x] >= 0.5f)
+						{
+							e = s[x] - 1.f;
+							d[x] = 255;
+							sample_num++;
+						}
+						else
+						{
+							e = s[x];
+							d[x] = 0;
+						}
+
+						s[x + 1] = s[x + 1] + e * coeff7_16;
+						s_next[x] = s_next[x] + e * coeff5_16;
+						s_next[x + 1] = s_next[x + 1] + e * coeff1_16;
+					}
+					for (x = 1; x < remap.cols - 1; x++)
+					{
+						if (s[x] >= 0.5f)
+						{
+							e = s[x] - 1.f;
+							d[x] = 255;
+							sample_num++;
+						}
+						else
+						{
+							e = s[x];
+							d[x] = 0;
+						}
+
+						s[x + 1] = s[x + 1] + e * coeff7_16;
+						s_next[x - 1] = s_next[x - 1] + e * coeff3_16;
+						s_next[x] = s_next[x] + e * coeff5_16;
+						s_next[x + 1] = s_next[x + 1] + e * coeff1_16;
+					}
+					//end of x
+					x = remap.cols - 1;
+					{
+						if (s[x] >= 0.5f)
+						{
+							e = s[x] - 1.f;
+							d[x] = 255;
+							sample_num++;
+						}
+						else
+						{
+							e = s[x];
+							d[x] = 0;
+						}
+						//s_next[x - 1] = s_next[x - 1] + e * coeff3_16;
+						//s_next[x] = s_next[x] + e * coeff7_16;
+						s_next[x - 1] = s_next[x - 1] + e * 0.5f;
+						s_next[x] = s_next[x] + e * 0.5f;
+					}
+				}
+				else //even
+				{
+					x = remap.cols - 1;
+					{
+						if (s[x] >= 0.5f)
+						{
+							e = s[x] - 1.f;
+							d[x] = 255;
+							sample_num++;
+						}
+						else
+						{
+							e = s[x];
+							d[x] = 0;
+						}
+
+						s[x - 1] = s[x - 1] + e * coeff7_16;
+						s_next[x] = s_next[x] + e * coeff5_16;
+						s_next[x - 1] = s_next[x - 1] + e * coeff1_16;
+					}
+					for (x = remap.cols - 2; x > 0; x--)
+					{
+						if (s[x] >= 0.5f)
+						{
+							e = s[x] - 1.f;
+							d[x] = 255;
+							sample_num++;
+						}
+						else
+						{
+							e = s[x];
+							d[x] = 0;
+						}
+
+						s[x - 1] = s[x - 1] + e * coeff7_16;
+						s_next[x + 1] = s_next[x + 1] + e * coeff3_16;
+						s_next[x] = s_next[x] + e * coeff5_16;
+						s_next[x - 1] = s_next[x - 1] + e * coeff1_16;
+					}
+
+					//start of x
+					x = 0;
+					{
+						if (s[x] >= 0.5f)
+						{
+							e = s[x] - 1.f;
+							d[x] = 255;
+							sample_num++;
+						}
+						else
+						{
+							e = s[x];
+							d[x] = 0;
+						}
+						///s_next[x + 1] = s_next[x + 1] + e * coeff3_16;
+						//s_next[x] = s_next[x] + e * coeff7_16;
+						s_next[x + 1] = s_next[x + 1] + e * 0.5f;
+						s_next[x] = s_next[x] + e * 0.5f;
+					}
+				}
+			}
+			// bottom y loop
+			{
+				float* s = remap.ptr<float>(remap.rows - 1);
+				uchar* d = dest.ptr<uchar>(remap.rows - 1);
+				float e;//error
+				for (int x = 0; x < remap.cols - 1; x++)
+				{
+					if (s[x] >= 0.5f)
+					{
+						e = s[x] - 1.f;
+						//e = 1.f - s[x];
+						d[x] = 255;
+						sample_num++;
+					}
+					else
+					{
+						e = s[x];
+						d[x] = 0;
+					}
+					s[x + 1] = s[x + 1] + e * coeff7_16;
+				}
+
+				//x=remap.cols - 1
+				if (s[remap.cols - 1] >= 0.5f)
+				{
+					d[remap.cols - 1] = 255;
+					sample_num++;
+				}
+				else
+				{
+					d[remap.cols - 1] = 0;
+				}
+			}
+		}
+		else if (process_order == FORWARD)
+		{
+			for (int y = 0; y < remap.rows - 1; y++)
+			{
+				float* s = remap.ptr<float>(y);
+				float* s_next = remap.ptr<float>(y + 1);
+				uchar* d = dest.ptr<uchar>(y);
+				float e;//error
+
+				int x = 0;
+				//(x,y)=(0,0)
+				{
+					if (s[x] > 0.5f)
+					{
+						e = s[x] - 1.f;
+						d[x] = 255;
+						sample_num++;
+					}
+					else
+					{
+						e = s[x];
+						d[x] = 0;
+					}
+
+					s[x + 1] = s[x + 1] + e * coeff7_16;
+					s_next[x] = s_next[x] + e * coeff5_16;
+					s_next[x + 1] = s_next[x + 1] + e * coeff1_16;
+				}
+
+				for (x = 1; x < remap.cols - 1; x++)
+				{
+					if (s[x] > 0.5f)
+					{
+						e = s[x] - 1.f;
+						d[x] = 255;
+						sample_num++;
+					}
+					else
+					{
+						e = s[x];
+						d[x] = 0;
+					}
+
+					s[x + 1] = s[x + 1] + e * coeff7_16;
+					s_next[x - 1] = s_next[x - 1] + e * coeff3_16;
+					s_next[x] = s_next[x] + e * coeff5_16;
+					s_next[x + 1] = s_next[x + 1] + e * coeff1_16;
+				}
+
+				x = remap.cols - 1;
+				{
+					if (s[x] > 0.5f)
+					{
+						e = s[x] - 1.f;
+						d[x] = 255;
+						sample_num++;
+					}
+					else
+					{
+						e = s[x];
+						d[x] = 0;
+					}
+					s_next[x - 1] = s_next[x - 1] + e * coeff3_16;
+					s_next[x] = s_next[x] + e * coeff5_16;
+				}
+			}
+			// bottom y loop
+			{
+				float* s = remap.ptr<float>(remap.rows - 1);
+				uchar* d = dest.ptr<uchar>(remap.rows - 1);
+				float e;//error
+				for (int x = 0; x < remap.cols - 1; x++)
+				{
+					if (s[x] > 0.5f)
+					{
+						e = s[x] - 1.f;
+						//e = 1.f - s[x];
+						d[x] = 255;
+						sample_num++;
+					}
+					else
+					{
+						e = s[x];
+						d[x] = 0;
+					}
+					s[x + 1] = s[x + 1] + e * coeff7_16;
+				}
+
+				//x=remap.cols - 1
+				if (s[remap.cols - 1] > 0.5f)
+				{
+					d[remap.cols - 1] = 255;
+					sample_num++;
+				}
+				else
+				{
+					d[remap.cols - 1] = 0;
+				}
+			}
+		}
+		else if (process_order == IN2OUT)
+		{
+			;
+		}
+		else if (process_order == OUT2IN)
+		{
+			;
+		}
+		else if (process_order == FOURDIRECTION)
+		{
+			;
+		}
+		else if (process_order == FOURDIRECTIONIN2OUT)
+		{
+			;
 		}
 		return sample_num;
 	}
