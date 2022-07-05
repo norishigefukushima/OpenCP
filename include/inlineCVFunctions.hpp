@@ -41,7 +41,7 @@ inline void print_mat_format(cv::Mat& src, std::string mes = "", std::string for
 	printf("\n");
 }
 
-#define print_mat(a) print_mat_format(a, #a)
+#define print_mat(a) print_mat_format(Mat(a), #a)
 
 template<int borderType> int ref_lb(int n);
 template<int borderType> int ref_rb(int n, int width);
