@@ -33,7 +33,7 @@ inline void print_mat_format(cv::Mat& src, std::string mes = "", std::string for
 		{
 			for (int i = 0; i < src.cols; i++)
 			{
-				printf(format.c_str(), src.at<double>(j, i));
+				printf(format.c_str(), src.at<float>(j, i));
 			}
 			printf("\n");
 		}
