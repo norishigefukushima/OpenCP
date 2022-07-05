@@ -1778,6 +1778,7 @@ namespace cp
 			else cout << "do not support this depth (cvtColorAverageGray)" << endl;
 		}
 	}
+#pragma endregion
 
 #pragma region cvtColorIntegerY
 	static void cvtColorIntegerY_32F(Mat& src, Mat& dest)
@@ -1831,6 +1832,7 @@ namespace cp
 			b.convertTo(dest, src_.depth());
 		}
 	}
+#pragma endregion
 #pragma region PCA
 	static void cvtColorPCAOpenCVPCA(Mat& src, Mat& dest, const int dest_channels)
 	{
@@ -3749,8 +3751,6 @@ namespace cp
 
 #pragma endregion
 
-
-#pragma endregion
 	//TODO: support OpenCV 4
 #if CV_MAJOR_VERSION == 3
 	void xcvFindWhiteBlanceMatrix(IplImage* src, CvMat* C, IplImage* mask)
