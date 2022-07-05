@@ -16,13 +16,27 @@
 inline void print_mat_format(cv::Mat& src, std::string mes = "", std::string format = "%8.2f ")
 {
 	printf("%s:\n", mes.c_str());
-	for (int j = 0; j < src.rows; j++)
+	if (src.depth() == CV_64F)
 	{
-		for (int i = 0; i < src.cols; i++)
+		for (int j = 0; j < src.rows; j++)
 		{
-			printf(format.c_str(), src.at<double>(j, i));
+			for (int i = 0; i < src.cols; i++)
+			{
+				printf(format.c_str(), src.at<double>(j, i));
+			}
+			printf("\n");
 		}
-		printf("\n");
+	}
+	else if (src.depth() == CV_32F)
+	{
+		for (int j = 0; j < src.rows; j++)
+		{
+			for (int i = 0; i < src.cols; i++)
+			{
+				printf(format.c_str(), src.at<double>(j, i));
+			}
+			printf("\n");
+		}
 	}
 	printf("\n");
 }
