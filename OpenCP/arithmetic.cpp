@@ -522,6 +522,7 @@ namespace cp
 		}
 	}
 
+
 	double average(const Mat& src, const int left, const int right, const int top, const int bottom, const bool isNormalize)
 	{
 		CV_Assert(src.type() == CV_32FC1);
@@ -537,17 +538,28 @@ namespace cp
 		if (isFull)
 		{
 			const float* sptr = src.ptr<float>();
-			const int simdSize = get_simd_floor(size, 32);
-			for (int i = 0; i < simdSize; i += 32)
+
+			const int simdX = 256;
+			const int simdY = size / simdX;
+			const int remSt = simdY * simdX;
+			for (int j = 0; j < simdY; j++)
 			{
-				msum1 = _mm256_add_ps(_mm256_load_ps(sptr + i + 0), msum1);
-				msum2 = _mm256_add_ps(_mm256_load_ps(sptr + i + 8), msum2);
-				msum3 = _mm256_add_ps(_mm256_load_ps(sptr + i + 16), msum3);
-				msum4 = _mm256_add_ps(_mm256_load_ps(sptr + i + 24), msum4);
+				msum1 = _mm256_setzero_ps();
+				msum2 = _mm256_setzero_ps();
+				msum3 = _mm256_setzero_ps();
+				msum4 = _mm256_setzero_ps();
+				const float* sptr2 = sptr + simdX * j;
+				for (int i = 0; i < simdX; i += 32)
+				{
+					msum1 = _mm256_add_ps(_mm256_load_ps(sptr2 + i + 0), msum1);
+					msum2 = _mm256_add_ps(_mm256_load_ps(sptr2 + i + 8), msum2);
+					msum3 = _mm256_add_ps(_mm256_load_ps(sptr2 + i + 16), msum3);
+					msum4 = _mm256_add_ps(_mm256_load_ps(sptr2 + i + 24), msum4);
+				}
+				sum += _mm256_reduceadd_pspd(msum1) + _mm256_reduceadd_pspd(msum2) + _mm256_reduceadd_pspd(msum3) + _mm256_reduceadd_pspd(msum4);
 			}
-			sum = _mm256_reduceadd_pspd(msum1) + _mm256_reduceadd_pspd(msum2) + _mm256_reduceadd_pspd(msum3) + _mm256_reduceadd_pspd(msum4);
-			float rem = 0.f;
-			for (int i = simdSize; i < size; i++)
+			double rem = 0.0;
+			for (int i = remSt; i < size; i++)
 			{
 				rem += sptr[i];
 			}
@@ -571,7 +583,7 @@ namespace cp
 					msum4 = _mm256_add_ps(_mm256_loadu_ps(sptr + i + 24), msum4);
 				}
 				sum += _mm256_reduceadd_pspd(msum1) + _mm256_reduceadd_pspd(msum2) + _mm256_reduceadd_pspd(msum3) + _mm256_reduceadd_pspd(msum4);
-				float rem = 0.f;
+				double rem = 0.0;
 				for (int i = simdend; i < src.cols - right; i++)
 				{
 					rem += sptr[i];

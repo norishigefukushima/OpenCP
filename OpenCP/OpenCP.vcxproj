@@ -50,7 +50,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -77,7 +77,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>false</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -91,7 +91,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseCompileFast|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>false</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -374,7 +374,8 @@
       <AdditionalIncludeDirectories>../include</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <SDLCheck>false</SDLCheck>
+      <SDLCheck>
+      </SDLCheck>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <OmitFramePointers>false</OmitFramePointers>
@@ -637,6 +638,7 @@
     <ClCompile Include="upsample.cpp" />
     <ClCompile Include="video.cpp" />
     <ClCompile Include="viewsynthesis.cpp" />
+    <ClCompile Include="webp.cpp" />
     <ClCompile Include="weightedHistogramFilter.cpp" />
     <ClCompile Include="Wiener2.cpp" />
     <ClCompile Include="xmeans.cpp" />
@@ -761,6 +763,7 @@
     <ClInclude Include="..\include\video.hpp" />
     <ClInclude Include="..\include\VideoSubtitle.hpp" />
     <ClInclude Include="..\include\viewsynthesis.hpp" />
+    <ClInclude Include="..\include\webp.hpp" />
     <ClInclude Include="..\include\weightedHistogramFilter.hpp" />
     <ClInclude Include="..\include\Wiener2.hpp" />
     <ClInclude Include="..\include\xmeans.hpp" />

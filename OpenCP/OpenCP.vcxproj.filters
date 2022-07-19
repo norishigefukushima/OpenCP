@@ -615,6 +615,9 @@
     <ClCompile Include="statistic.cpp">
       <Filter>ソース ファイル\core</Filter>
     </ClCompile>
+    <ClCompile Include="webp.cpp">
+      <Filter>ソース ファイル\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libGaussian\gaussian_conv.h">
@@ -1107,6 +1110,9 @@
       <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\statistic.hpp">
+      <Filter>ヘッダー ファイル\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\webp.hpp">
       <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
   </ItemGroup>

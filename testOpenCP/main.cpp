@@ -458,6 +458,15 @@ int main(int argc, char** argv)
 #pragma region setup
 	//Mat img = imread("img/lenna.png");
 	Mat img = imread("img/Kodak/kodim07.png");
+	
+	vector<Mat> a(256);
+	for (int i = 0; i < 256; i++)
+	{
+		add(img, Scalar::all(i), a[i]);
+		putText(a[i], format("%d", i), Point(img.cols / 2, img.rows / 2), cv::FONT_HERSHEY_SIMPLEX, 3, COLOR_BLACK, 3);
+		
+	}
+	cp::imwriteAnimationWebp("out.webp", a); return 0;
 	Mat imgg; cvtColor(img, imgg, COLOR_BGR2GRAY);
 
 	Mat aa = convert(imgg, CV_32F);
