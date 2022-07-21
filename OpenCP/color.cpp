@@ -1660,6 +1660,19 @@ namespace cp
 		cmat.at<double>(1, 3) = -std1.val[1] / std2.val[1] * mean2.val[1] + mean1.val[1];
 		cmat.at<double>(2, 3) = -std1.val[2] / std2.val[2] * mean2.val[2] + mean1.val[2];
 	}
+
+	void correctColor(InputArray src, InputArray targetcolor, OutputArray dest)
+	{
+		Mat va = targetcolor.getMat().reshape(1, targetcolor.size().area());
+		Mat vb = src.getMat().reshape(1, src.size().area());
+
+		va.convertTo(va, CV_64F);
+		vb.convertTo(vb, CV_64F);
+		Mat c = va.t() * vb * (vb.t() * vb).inv();
+
+		transform(src, dest, c);
+	}
+
 #pragma endregion
 
 #pragma region cvtColorAverageGray
@@ -1778,6 +1791,7 @@ namespace cp
 			else cout << "do not support this depth (cvtColorAverageGray)" << endl;
 		}
 	}
+#pragma endregion
 
 #pragma region cvtColorIntegerY
 	static void cvtColorIntegerY_32F(Mat& src, Mat& dest)
@@ -1831,6 +1845,8 @@ namespace cp
 			b.convertTo(dest, src_.depth());
 		}
 	}
+#pragma endregion
+
 #pragma region PCA
 	static void cvtColorPCAOpenCVPCA(Mat& src, Mat& dest, const int dest_channels)
 	{
@@ -3749,8 +3765,6 @@ namespace cp
 
 #pragma endregion
 
-
-#pragma endregion
 	//TODO: support OpenCV 4
 #if CV_MAJOR_VERSION == 3
 	void xcvFindWhiteBlanceMatrix(IplImage* src, CvMat* C, IplImage* mask)

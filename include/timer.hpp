@@ -91,7 +91,7 @@ namespace cp
 		void pushLapTime();//push the value to Stat
 		double getTime(bool isPrint = false, std::string message = "");//only getTickCount()
 		double getpushLapTime(bool isPrint = false, std::string message = "");//getTickCount() and push the value to Stat
-		
+
 		double getLapTimeMean(bool isPrint = false, std::string message = "");//get mean value from Stat
 		double getLapTimeMedian(bool isPrint = false, std::string message = "");//get median value from Stat
 		double getLapTimeMin(bool isPrint = false, std::string message = "");//get min value from Stat
@@ -102,7 +102,7 @@ namespace cp
 		void drawDistribution(std::string wname = "Stat distribution", int div = 100);
 		void drawDistribution(std::string wname, int div, double minv, double maxv);
 		void drawPlofilePlot(std::string wname);
-		
+
 
 		Timer(std::string message, int mode = TIME_AUTO, bool isShow = true);
 		Timer(char* message, int mode = TIME_AUTO, bool isShow = true);
@@ -114,7 +114,7 @@ namespace cp
 	class CP_EXPORT DestinationTimePrediction
 	{
 		cv::Mat coefficients;
-		int getAutoTimeMode(double cTime);
+		int getAutoTimeMode(const double cTime);
 		std::string unit = "";
 		int timeMode = 0;
 		std::vector<int64> time_stamp;
@@ -122,15 +122,15 @@ namespace cp
 		int loopMax = 0;
 		double predict_endstamp(const int idx, const int order = 1, const bool isDiff = true);
 		int64 getTime(std::string mes);
-		void printTime(double time, std::string mes);
+		void printTime(const double time, const std::string mes);
 		double cvtTick2Time(const double tick, const bool isStateChange = true);
 	public:
+		//order=0: average prediction
+		double predict(const int order = 0, const bool isDiff = false, const bool isPrint = true);
 
-		double predict(const int order, const bool isDiff, const bool isPrint = true);
-
-		void init(int DestinationCount);
+		void init(const int loopCountMax);
 		DestinationTimePrediction();
-		DestinationTimePrediction(int loopCountMax);
+		DestinationTimePrediction(const int loopCountMax);
 		~DestinationTimePrediction();
 	};
 }

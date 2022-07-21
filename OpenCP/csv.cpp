@@ -93,14 +93,32 @@ namespace cp
 
 	void CSV::readHeader()
 	{
-		fseek(fp, 0, SEEK_END);
-		fileSize = ftell(fp);
-		fseek(fp, 0, SEEK_SET);
+		int ret = 0;
+		//ret = fseek(fp, 0, SEEK_END);
+		ret = _fseeki64(fp, 0, SEEK_END);
+		if (ret != 0)cout << "fseek error: readHeader" << endl;
+		//fileSize = ftell(fp);
+		fileSize = _ftelli64(fp);
+		if (fileSize == -1)cout << "ftell error: readHeader" << endl;
+		//ret = fseek(fp, 0, SEEK_SET);
+		ret = _fseeki64(fp, 0, SEEK_SET);
+		if (ret != 0)cout << "fseek error: readHeader" << endl;
+
+		/*char buff[1000];
+		size_t line = 0;
+		while (fgets(buff, 1000, fp) != NULL)
+		{
+			line++;
+		}
+		cout << line << endl;
+		ret = _fseeki64(fp, 0, SEEK_SET);*/
 
 		int countSep = 0;
 		char str[1000];
 		fgets(str, 1000, fp);
-		for (int i = 0; i < strlen(str); i++)
+		size_t size = strlen(str);
+
+		for (int i = 0; i < size; i++)
 		{
 			switch (str[i])
 			{
@@ -110,15 +128,75 @@ namespace cp
 		width = countSep + 1;
 	}
 
+	void CSV::readDataLineByLine()
+	{
+		char vv[1024];
+		char str[1024];
+		size_t line = 0;
+		vector<double> v;
+		while (fgets(str, 1024, fp) != NULL)
+		{
+			size_t size = strlen(str);
+			int c = 0;
+			for (size_t i = 0; i < size; i++)
+			{
+				if (str[i] == ',')
+				{
+					vv[c] = '\0';
+					double d = atof(vv);
+					c = 0;
+					v.push_back(d);
+				}
+				else if (str[i] == '\n')
+				{
+					vv[c] = '\0';
+					double d = atof(vv);
+					c = 0;
+					v.push_back(d);
+
+					data.push_back(v);
+					v.clear();
+					break;
+				}
+				else
+				{
+					vv[c] = str[i];
+					c++;
+				}
+			}
+			line++;
+		}	
+		cout <<"line "<< line << endl;
+	}
+
 	void CSV::readData()
 	{
-		char vv[100];
-		char* str = new char[fileSize];
-		fileSize = (long)fread(str, sizeof(char), fileSize, fp);
+		char buff[1000];
+		size_t line = 0;
+		while (fgets(buff, 1000, fp) != NULL)
+		{
+			line++;
+		}
+		//cout << line << endl;
+		_fseeki64(fp, 0, SEEK_SET);
+
+		char vv[1024];
+		char* str = nullptr;
+		try
+		{
+			str = new char[fileSize];
+		}
+		catch (bad_alloc)
+		{
+			cerr << "bad_alloc " << fileSize << endl;
+		}
+
+		size_t ret = fread(str, sizeof(char), fileSize, fp);
+		//cout << ret << "/"<<fileSize << endl;
 
 		int c = 0;
-		vector<double> v;
-		for (int i = 0; i < fileSize; i++)
+		vector<double> v(width);
+		for (size_t i = 0; i < fileSize; i++)
 		{
 			if (str[i] == ',')
 			{
@@ -129,6 +207,8 @@ namespace cp
 			}
 			else if (str[i] == '\n')
 			{
+				if (data.size() % 1000000 == 0)cout << data.size()<<"/" << line << endl;
+				if (data.size() - 1 == line)break;
 				vv[c] = '\0';
 				double d = atof(vv);
 				c = 0;

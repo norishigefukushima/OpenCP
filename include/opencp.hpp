@@ -26,7 +26,7 @@
 #include "noise.hpp"
 #include "plot.hpp"
 #include "randomizedQueue.hpp"
-#include "RankOrderCorrelationCoefficient.hpp"
+#include "correlationCoefficient.hpp"
 #include "stat.hpp"
 #include "statistic.hpp"
 #include "stencil.hpp"
@@ -36,6 +36,7 @@
 #include "updateCheck.hpp"
 #include "video.hpp"
 #include "VideoSubtitle.hpp"
+#include "webp.hpp"
 #include "xmeans.hpp"
 #include "yuvio.hpp"
 

@@ -198,10 +198,23 @@ namespace cp
 
 	void varianceFilter(InputArray src, OutputArray dest, const cv::Size kernelSize)
 	{
-		blur(src, dest, kernelSize);
-		subtract(src, dest, dest);
-		multiply(dest, dest, dest);
-		blur(dest, dest, kernelSize);
+		if (src.depth() == CV_32F || src.depth() == CV_64F)
+		{
+			Mat s = src.getMat().clone();//for inplace
+			
+			blur(s, dest, kernelSize);
+			subtract(s, dest, dest);
+			multiply(dest, dest, dest);
+			blur(dest, dest, kernelSize);
+		}
+		else
+		{
+			Mat temp;
+			boxFilter(src, temp, CV_32F, kernelSize, Point(-1, -1), true);
+			subtract(src, temp, temp, noArray(), CV_32F);
+			multiply(temp, temp, temp);
+			boxFilter(temp, dest, src.depth(), kernelSize, Point(-1, -1), true);
+		}
 	}
 
 	void varianceFilter(InputArray src, OutputArray dest, const int radius)

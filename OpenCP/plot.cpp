@@ -109,8 +109,9 @@ namespace cp
 
 #pragma endregion
 
-	void plotGraph(OutputArray graphImage_, vector<Point2d>& data, double xmin, double xmax, double ymin, double ymax,
-		Scalar color, int lt, int isLine, int thickness, int pointSize, bool isLogX, bool isLogY)
+	template<int lt>
+	void plotGraph_(OutputArray graphImage_, vector<Point2d>& data, double xmin, double xmax, double ymin, double ymax,
+		Scalar color, int isLine, int thickness, int pointSize, bool isLogX, bool isLogY)
 	{
 		CV_Assert(!graphImage_.empty());
 		const int ps = pointSize;
@@ -133,12 +134,11 @@ namespace cp
 		int H = graph.rows - 1;
 		const int size = (int)data.size();
 
+#pragma omp parallel for
 		for (int i = 0; i < size; i++)
 		{
-			double x = data[i].x;
-			double y = data[i].y;
-			if (isLogX) x = log10(max(1.0, x));
-			if (isLogY) y = log10(max(1.0, y));
+			const double x = isLogX ? log10(max(1.0, data[i].x)) : data[i].x;
+			const double y = isLogY ? log10(max(1.0, data[i].y)) : data[i].y;
 			cv::Point p = Point(cvRound(x_step * (x - xmin)), H - cvRound(y_step * (y - ymin)));
 
 			if (isLine == Plot::NOLINE)
@@ -167,73 +167,100 @@ namespace cp
 					line(graph, Point(p.x, H - cvRound(y_step * (yn - ymin))), Point(cvRound(x_step * (xn - xmin)), H - cvRound(y_step * (yn - ymin))), color, thickness);
 				}
 			}
+			
 
-			if (lt == Plot::NOPOINT)
+			if constexpr (lt == Plot::NOPOINT)
 			{
 				;
 			}
-			else if (lt == Plot::PLUS)
+			else if constexpr (lt == Plot::PLUS)
 			{
 				drawPlus(graph, p, 2 * ps + 1, color, thickness);
 			}
-			else if (lt == Plot::TIMES)
+			else if constexpr (lt == Plot::TIMES)
 			{
 				drawTimes(graph, p, 2 * ps + 1, color, thickness);
 			}
-			else if (lt == Plot::ASTERISK)
+			else if constexpr (lt == Plot::ASTERISK)
 			{
 				drawAsterisk(graph, p, 2 * ps + 1, color, thickness);
 			}
-			else if (lt == Plot::CIRCLE)
+			else if constexpr (lt == Plot::CIRCLE)
 			{
 				circle(graph, p, ps, color, thickness);
 			}
-			else if (lt == Plot::RECTANGLE)
+			else if constexpr (lt == Plot::RECTANGLE)
 			{
 				rectangle(graph, Point(p.x - ps, p.y - ps), Point(p.x + ps, p.y + ps),
 					color, thickness);
 			}
-			else if (lt == Plot::CIRCLE_FILL)
+			else if constexpr (lt == Plot::CIRCLE_FILL)
 			{
 				circle(graph, p, ps, color, FILLED);
 			}
-			else if (lt == Plot::RECTANGLE_FILL)
+			else if constexpr (lt == Plot::RECTANGLE_FILL)
 			{
 				rectangle(graph, Point(p.x - ps, p.y - ps), Point(p.x + ps, p.y + ps),
 					color, FILLED);
 			}
-			else if (lt == Plot::TRIANGLE)
+			else if constexpr (lt == Plot::TRIANGLE)
 			{
 				triangle(graph, p, 2 * ps, color, thickness);
 			}
-			else if (lt == Plot::TRIANGLE_FILL)
+			else if constexpr (lt == Plot::TRIANGLE_FILL)
 			{
 				triangle(graph, p, 2 * ps, color, FILLED);
 			}
-			else if (lt == Plot::TRIANGLE_INV)
+			else if constexpr (lt == Plot::TRIANGLE_INV)
 			{
 				triangleinv(graph, p, 2 * ps, color, thickness);
 			}
-			else if (lt == Plot::TRIANGLE_INV_FILL)
+			else if constexpr (lt == Plot::TRIANGLE_INV_FILL)
 			{
 				triangleinv(graph, p, 2 * ps, color, FILLED);
 			}
-			else if (lt == Plot::DIAMOND)
+			else if constexpr (lt == Plot::DIAMOND)
 			{
 				diamond(graph, p, 2 * ps, color, thickness);
 			}
-			else if (lt == Plot::DIAMOND_FILL)
+			else if constexpr (lt == Plot::DIAMOND_FILL)
 			{
 				diamond(graph, p, 2 * ps, color, FILLED);
 			}
-			else if (lt == Plot::PENTAGON)
+			else if constexpr (lt == Plot::PENTAGON)
 			{
 				pentagon(graph, p, 2 * ps, color, thickness);
 			}
-			else if (lt == Plot::PENTAGON_FILL)
+			else if constexpr (lt == Plot::PENTAGON_FILL)
 			{
 				pentagon(graph, p, 2 * ps, color, FILLED);
 			}
+		}
+	}
+
+	void plotGraph(OutputArray graphImage, vector<Point2d>& data, double xmin, double xmax, double ymin, double ymax,
+		Scalar color, int lt, int isLine, int thickness, int pointSize, bool isLogX, bool isLogY)
+	{
+		switch (lt)
+		{
+		case Plot::NOPOINT: plotGraph_<Plot::NOPOINT>(graphImage, data, xmin, xmax, ymin, ymax, color, isLine, thickness, pointSize, isLogX, isLogY); break;
+		case Plot::PLUS: plotGraph_<Plot::PLUS>(graphImage, data, xmin, xmax, ymin, ymax, color, isLine, thickness, pointSize, isLogX, isLogY); break;
+		case Plot::TIMES: plotGraph_<Plot::TIMES>(graphImage, data, xmin, xmax, ymin, ymax, color, isLine, thickness, pointSize, isLogX, isLogY); break;
+		case Plot::ASTERISK: plotGraph_<Plot::ASTERISK>(graphImage, data, xmin, xmax, ymin, ymax, color, isLine, thickness, pointSize, isLogX, isLogY); break;
+		case Plot::CIRCLE: plotGraph_<Plot::CIRCLE>(graphImage, data, xmin, xmax, ymin, ymax, color, isLine, thickness, pointSize, isLogX, isLogY); break;
+		case Plot::RECTANGLE: plotGraph_<Plot::RECTANGLE>(graphImage, data, xmin, xmax, ymin, ymax, color, isLine, thickness, pointSize, isLogX, isLogY); break;
+		case Plot::CIRCLE_FILL: plotGraph_<Plot::CIRCLE_FILL>(graphImage, data, xmin, xmax, ymin, ymax, color, isLine, thickness, pointSize, isLogX, isLogY); break;
+		case Plot::RECTANGLE_FILL: plotGraph_<Plot::RECTANGLE_FILL>(graphImage, data, xmin, xmax, ymin, ymax, color, isLine, thickness, pointSize, isLogX, isLogY); break;
+		case Plot::TRIANGLE: plotGraph_<Plot::TRIANGLE>(graphImage, data, xmin, xmax, ymin, ymax, color, isLine, thickness, pointSize, isLogX, isLogY); break;
+		case Plot::TRIANGLE_FILL: plotGraph_<Plot::TRIANGLE_FILL>(graphImage, data, xmin, xmax, ymin, ymax, color, isLine, thickness, pointSize, isLogX, isLogY); break;
+		case Plot::TRIANGLE_INV: plotGraph_<Plot::TRIANGLE_INV>(graphImage, data, xmin, xmax, ymin, ymax, color, isLine, thickness, pointSize, isLogX, isLogY); break;
+		case Plot::TRIANGLE_INV_FILL: plotGraph_<Plot::TRIANGLE_INV_FILL>(graphImage, data, xmin, xmax, ymin, ymax, color, isLine, thickness, pointSize, isLogX, isLogY); break;
+		case Plot::DIAMOND: plotGraph_<Plot::DIAMOND>(graphImage, data, xmin, xmax, ymin, ymax, color, isLine, thickness, pointSize, isLogX, isLogY); break;
+		case Plot::DIAMOND_FILL: plotGraph_<Plot::DIAMOND_FILL>(graphImage, data, xmin, xmax, ymin, ymax, color, isLine, thickness, pointSize, isLogX, isLogY); break;
+		case Plot::PENTAGON: plotGraph_<Plot::PENTAGON>(graphImage, data, xmin, xmax, ymin, ymax, color, isLine, thickness, pointSize, isLogX, isLogY); break;
+		case Plot::PENTAGON_FILL: plotGraph_<Plot::PENTAGON_FILL>(graphImage, data, xmin, xmax, ymin, ymax, color, isLine, thickness, pointSize, isLogX, isLogY); break;
+		default:
+			break;
 		}
 	}
 
@@ -264,7 +291,7 @@ namespace cp
 		double y = data.y;
 		if (isLogX) x = log10(max(1.0, x));
 		if (isLogY) y = log10(max(1.0, y));
-		
+
 		cv::Point point_st = Point(0, H - cvRound(y_step * (y - ymin)));
 		cv::Point point_ed = Point(graph.cols - 1, H - cvRound(y_step * (y - ymin)));
 		{
@@ -884,21 +911,47 @@ namespace cp
 		}
 	}
 
-	void Plot::push_back(vector<cv::Point> point, int plotIndex)
+	void Plot::push_back(vector<cv::Point>& point, int plotIndex)
 	{
 		data_labelmax = max(data_labelmax, plotIndex + 1);
-		for (int i = 0; i < (int)point.size(); i++)
+		const int size = point.size();
+		if (pinfo[plotIndex].data.size() == 0)
 		{
-			push_back(point[i].x, point[i].y, plotIndex);
+			pinfo[plotIndex].data.resize(size);
+			for (int i = 0; i < size; i++)
+			{
+				pinfo[plotIndex].data[i].x = point[i].x;
+				pinfo[plotIndex].data[i].y = point[i].y;
+			}
+		}
+		else
+		{
+			for (int i = 0; i < (int)point.size(); i++)
+			{
+				push_back(point[i].x, point[i].y, plotIndex);
+			}
 		}
 	}
 
-	void Plot::push_back(vector<cv::Point2d> point, int plotIndex)
+	void Plot::push_back(vector<cv::Point2d>& point, int plotIndex)
 	{
 		data_labelmax = max(data_labelmax, plotIndex + 1);
-		for (int i = 0; i < (int)point.size() - 1; i++)
+		const int size = point.size();
+		if (pinfo[plotIndex].data.size() == 0)
 		{
-			push_back(point[i].x, point[i].y, plotIndex);
+			pinfo[plotIndex].data.resize(size);
+			for (int i = 0; i < size; i++)
+			{
+				pinfo[plotIndex].data[i].x = point[i].x;
+				pinfo[plotIndex].data[i].y = point[i].y;
+			}
+		}
+		else
+		{
+			for (int i = 0; i < size; i++)
+			{
+				push_back(point[i].x, point[i].y, plotIndex);
+			}
 		}
 	}
 
@@ -1508,6 +1561,7 @@ namespace cp
 
 			imshow(wname, render);
 
+#pragma region keyborad
 			if (keyboard == '?')
 			{
 				cout << "*** Help message ***" << endl;
@@ -1600,6 +1654,7 @@ namespace cp
 			{
 				isWait = false;
 			}
+#pragma endregion
 
 			if (!isWait) break;
 			keyboard = waitKey(1);
