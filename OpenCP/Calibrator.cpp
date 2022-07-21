@@ -109,7 +109,9 @@ namespace cp
 	{
 		vector<Point2f> tmp;
 
-		bool ret = findChessboardCorners(im, patternSize, tmp);
+		bool ret = findChessboardCorners(im, patternSize, tmp, CALIB_CB_FAST_CHECK);
+		if (!ret)return false;
+		ret = findChessboardCorners(im, patternSize, tmp);
 		if (!ret) ret = findChessboardCorners(im, patternSize, tmp, CALIB_CB_ADAPTIVE_THRESH);
 
 		im.copyTo(dest);

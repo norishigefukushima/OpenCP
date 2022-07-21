@@ -6113,7 +6113,7 @@ namespace cp
 		pt.setIsDrawMousePosition(true);
 		pt.setGrid(2);
 		//pt.plot(wname, false, "", format("err. total: %2.2f, err. current: %2.2f, (min,max)=(%d  %d)", error, errort, Imin, Imax));
-		pt.plot(wname, false, "", format("Kernel Err: %6.2f dB (min,max)=(%d, %d)", error, Imin, Imax));
+		pt.plot(wname, false, "", cv::format("Kernel Err: %6.2lf dB (min,max)=(%d, %d)", error, Imin, Imax));
 	}
 
 	void LocalMultiScaleFilterFourier::initRangeFourier(const int order, const float sigma_range, const float boost)
