@@ -129,7 +129,7 @@ namespace cp
 
 	void ConsoleImage::operator()(cv::Scalar color, string src)
 	{
-		if (isLineNumber)strings.push_back(format("%2d ", count) + src);
+		if (isLineNumber)strings.push_back(cv::format("%2d ", count) + src);
 		else strings.push_back(src);
 
 		int skip = fontSize + lineSpaceSize;

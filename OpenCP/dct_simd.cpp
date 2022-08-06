@@ -1008,7 +1008,7 @@ void fDCT2x2_32f_and_threshold(float* src, float* dest, float* temp, float thres
 void dct4x4_1d_llm_fwd_sse(float* s, float* d)//8add, 4 mul
 {
 	const __m128 c2 = _mm_set1_ps(1.30656f);//cos(CV_PI*2/16.0)*sqrt(2);
-	const __m128 c6 = _mm_set1_ps(0.541196);//cos(CV_PI*6/16.0)*sqrt(2);
+	const __m128 c6 = _mm_set1_ps(0.541196f);//cos(CV_PI*6/16.0)*sqrt(2);
 
 	__m128 s0 = _mm_load_ps(s); s += 4;
 	__m128 s1 = _mm_load_ps(s); s += 4;
@@ -1029,7 +1029,7 @@ void dct4x4_1d_llm_fwd_sse(float* s, float* d)//8add, 4 mul
 void dct4x4_1d_llm_fwd_sse_and_transpose(float* s, float* d)//8add, 4 mul
 {
 	const __m128 c2 = _mm_set1_ps(1.30656f);//cos(CV_PI*2/16.0)*sqrt(2);
-	const __m128 c6 = _mm_set1_ps(0.541196);//cos(CV_PI*6/16.0)*sqrt(2);
+	const __m128 c6 = _mm_set1_ps(0.541196f);//cos(CV_PI*6/16.0)*sqrt(2);
 
 	__m128 s0 = _mm_load_ps(s); s += 4;
 	__m128 s1 = _mm_load_ps(s); s += 4;
@@ -1055,7 +1055,7 @@ void dct4x4_1d_llm_fwd_sse_and_transpose(float* s, float* d)//8add, 4 mul
 void dct4x4_1d_llm_inv_sse(float* s, float* d)
 {
 	const __m128 c2 = _mm_set1_ps(1.30656f);//cos(CV_PI*2/16.0)*sqrt(2);
-	const __m128 c6 = _mm_set1_ps(0.541196);//cos(CV_PI*6/16.0)*sqrt(2);
+	const __m128 c6 = _mm_set1_ps(0.541196f);//cos(CV_PI*6/16.0)*sqrt(2);
 
 	__m128 s0 = _mm_load_ps(s); s += 4;
 	__m128 s1 = _mm_load_ps(s); s += 4;
@@ -1077,7 +1077,7 @@ void dct4x4_1d_llm_inv_sse(float* s, float* d)
 void dct4x4_1d_llm_inv_sse_and_transpose(float* s, float* d)
 {
 	const __m128 c2 = _mm_set1_ps(1.30656f);//cos(CV_PI*2/16.0)*sqrt(2);
-	const __m128 c6 = _mm_set1_ps(0.541196);//cos(CV_PI*6/16.0)*sqrt(2);
+	const __m128 c6 = _mm_set1_ps(0.541196f);//cos(CV_PI*6/16.0)*sqrt(2);
 
 	__m128 s0 = _mm_load_ps(s); s += 4;
 	__m128 s1 = _mm_load_ps(s); s += 4;
@@ -1134,7 +1134,7 @@ void fDCT2D4x4_and_threshold_keep00_32f(float* s, float* d, float thresh)
 	const __m128 mth = _mm_set1_ps(thresh);
 	const __m128 zeros = _mm_setzero_ps();
 	const __m128 c2 = _mm_set1_ps(1.30656f);//cos(CV_PI*2/16.0)*sqrt(2);
-	const __m128 c6 = _mm_set1_ps(0.541196);//cos(CV_PI*6/16.0)*sqrt(2);
+	const __m128 c6 = _mm_set1_ps(0.541196f);//cos(CV_PI*6/16.0)*sqrt(2);
 
 	__m128 s0 = _mm_load_ps(s); s += 4;
 	__m128 s1 = _mm_load_ps(s); s += 4;
@@ -1175,7 +1175,7 @@ void fDCT2D4x4_and_threshold_32f(float* s, float* d, float thresh)
 	const __m128 mth = _mm_set1_ps(thresh);
 	const __m128 zeros = _mm_setzero_ps();
 	const __m128 c2 = _mm_set1_ps(1.30656f);//cos(CV_PI*2/16.0)*sqrt(2);
-	const __m128 c6 = _mm_set1_ps(0.541196);//cos(CV_PI*6/16.0)*sqrt(2);
+	const __m128 c6 = _mm_set1_ps(0.541196f);//cos(CV_PI*6/16.0)*sqrt(2);
 
 	__m128 s0 = _mm_load_ps(s); s += 4;
 	__m128 s1 = _mm_load_ps(s); s += 4;

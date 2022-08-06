@@ -3479,7 +3479,7 @@ namespace cp
 
 		for (int i = 0; i <= order; i++)
 		{
-			pt.setPlotTitle(i, format("order %d", i));
+			pt.setPlotTitle(i, cv::format("order %d", i));
 		}
 		pt.setPlotTitle(totalIndex, "total");
 #endif
@@ -3761,7 +3761,7 @@ namespace cp
 
 		for (int i = 0; i <= order; i++)
 		{
-			pt.setPlotTitle(i, format("order %d", i));
+			pt.setPlotTitle(i, cv::format("order %d", i));
 		}
 		pt.setPlotTitle(totalIndex, "total");
 #endif

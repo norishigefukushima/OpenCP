@@ -10,7 +10,7 @@ boxFilterIntegralScalar::boxFilterIntegralScalar(cv::Mat& _src, cv::Mat& _dest, 
 	ksize = 2 * r + 1;
 	cn = src.channels();
 	copyMakeBorder(src, copy, r, r, r, r, BOX_FILTER_BORDER_TYPE);
-	integral(copy, sum, CV_32F);
+	cv::integral(copy, sum, CV_32F);
 }
 
 /*

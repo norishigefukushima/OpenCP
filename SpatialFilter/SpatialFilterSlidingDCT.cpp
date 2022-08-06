@@ -43,7 +43,7 @@ namespace cp
 		int key = 0;
 		for (int k = 0; k <= order; k++)
 		{
-			p.setPlotTitle(k, format("order %d", k));
+			p.setPlotTitle(k, cv::format("order %d", k));
 		}
 		p.setPlotTitle(order + 1, "total");
 
@@ -99,7 +99,7 @@ namespace cp
 						}
 					}
 				}
-				p.plot(wname, false, "", format("10log10(1/mse) %f", 10 * log10(1 / error)));
+				p.plot(wname, false, "", cv::format("10log10(1/mse) %f", 10 * log10(1 / error)));
 				p.clear();
 				key = waitKey(1);
 				if (!isWait)break;
@@ -167,7 +167,7 @@ namespace cp
 						}
 					}
 				}
-				p.plot(wname, false, "", format("10log10(1/mse) %f", 10 * log10(1 / error)));
+				p.plot(wname, false, "", cv::format("10log10(1/mse) %f", 10 * log10(1 / error)));
 
 				p.clear();
 				key = waitKey(1);

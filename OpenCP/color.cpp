@@ -388,7 +388,7 @@ namespace cp
 		_mm256_stream_ps(dst, src);
 	}
 
-	template<int store_method>
+	template<int store_method, typename srcType, typename dstType>
 	void splitConvert_(Mat& src, vector<Mat>& dst, const int unroll = 4)
 	{
 		CV_Assert(src.channels() == 3);
@@ -1771,7 +1771,8 @@ namespace cp
 
 			dest.create(src[0].size(), src[0].depth());
 			const float normalize = (isKeepDistance) ? 1.f / sqrt((float)src.size()) : 1.f / (float)src.size();
-			if (src[0].depth() == CV_32F) cvtColorAverageGray_32F(src, dest.getMat(), normalize);
+			Mat dst = dest.getMat();
+			if (src[0].depth() == CV_32F) cvtColorAverageGray_32F(src, dst, normalize);
 			else cout << "do not support this depth (cvtColorAverageGray)" << endl;
 		}
 		else
@@ -1786,8 +1787,9 @@ namespace cp
 			dest.create(src_.size(), src.depth());
 
 			const float normalize = (isKeepDistance) ? 1.f / sqrt(3.f) : 1.f / 3.f;
-			if (src.depth() == CV_32F)cvtColorAverageGray_32F(src, dest.getMat(), normalize);
-			else if (src.depth() == CV_8U)cvtColorAverageGray_8U(src, dest.getMat(), normalize);
+			Mat dst = dest.getMat();
+			if (src.depth() == CV_32F)cvtColorAverageGray_32F(src, dst, normalize);
+			else if (src.depth() == CV_8U)cvtColorAverageGray_8U(src, dst, normalize);
 			else cout << "do not support this depth (cvtColorAverageGray)" << endl;
 		}
 	}
@@ -3659,7 +3661,8 @@ namespace cp
 
 	void cvtColorPCA(const std::vector<cv::Mat>& src, std::vector<cv::Mat>& dest, const int dest_channels)
 	{
-		cvtColorPCA(src, dest, dest_channels, Mat());
+		Mat temp;
+		cvtColorPCA(src, dest, dest_channels, temp);
 	}
 
 	void guiSplit(InputArray src, string wname)

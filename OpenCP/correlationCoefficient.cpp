@@ -156,7 +156,7 @@ namespace cp
 			int pre = sporder32i[i].data;
 			int j = 1;
 			float ave_rank = float(i);
-			for (; j < n; j++)
+			for (; j < n - i; j++)
 			{
 				if (pre != sporder32i[i + j].data) break;
 				ave_rank += float(i + j);
@@ -195,7 +195,7 @@ namespace cp
 			float pre = sporder32f[i].data;
 			int j = 1;
 			float ave_rank = float(i);
-			for (; j < n; j++)
+			for (; j < n - i; j++)
 			{
 				if (pre != sporder32f[i + j].data) break;
 				ave_rank += float(i + j);

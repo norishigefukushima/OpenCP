@@ -850,7 +850,7 @@ namespace cp
 		{
 			alphaBlend(s1, s2, 1.0 - a / 100.0, show);
 
-			if (printAlpha) addText(show, format("a = %3d", a), Point(20, 30), "Consolas", 16);
+			if (printAlpha) addText(show, cv::format("a = %3d", a), Point(20, 30), "Consolas", 16);
 			cv::imshow("alphaBlend", show);
 
 			if (isVideo)video << show;

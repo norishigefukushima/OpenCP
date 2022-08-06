@@ -2028,7 +2028,7 @@ namespace cp
 	}
 
 #pragma region getter/setter
-	void MultiScaleFilter::setAdaptive(const bool adaptiveMethod, cv::Mat& adaptiveSigmaMap, cv::Mat& adaptiveBoostMap, const int level)
+	void MultiScaleFilter::setAdaptive(const bool adaptive_method, cv::Mat& adaptiveSigmaMap, cv::Mat& adaptiveBoostMap, const int level)
 	{
 		this->adaptiveMethod = adaptiveMethod ? AdaptiveMethod::ADAPTIVE : AdaptiveMethod::FIX;
 		if (this->adaptiveMethod == AdaptiveMethod::FIX)return;
@@ -3089,7 +3089,7 @@ namespace cp
 	}
 
 
-	template<bool isUseTable, int D>
+	template<bool is_use_table, int D>
 	void LocalMultiScaleFilterInterpolation::remapGaussDownIgnoreBoundary(const Mat& src, Mat& remapIm, Mat& dest, const float g, const float sigma_range, const float boost)
 	{
 		CV_Assert(src.depth() == CV_32F);
@@ -3121,7 +3121,7 @@ namespace cp
 			const int size = width * (D - 1);
 			const int REMAPSIZE32 = get_simd_floor(size, 32);
 			const int REMAPSIZE8 = get_simd_ceil(size, 8);
-			if constexpr (isUseTable)
+			if constexpr (is_use_table)
 			{
 				//float* rt = &rangeTable[0];
 				float* rt = integerSampleTable;
@@ -3204,7 +3204,7 @@ namespace cp
 				const int size = 2 * width;
 				const int REMAPSIZE32 = get_simd_floor(size, 32);
 				const int REMAPSIZE8 = get_simd_ceil(size, 8);
-				if constexpr (isUseTable)
+				if constexpr (is_use_table)
 				{
 					//float* rt = &rangeTable[0];
 					float* rt = integerSampleTable;
@@ -3364,7 +3364,7 @@ namespace cp
 		_mm_free(W);
 	}
 
-	template<bool isUseTable>
+	template<bool is_use_table>
 	void LocalMultiScaleFilterInterpolation::remapGaussDownIgnoreBoundary(const Mat& src, Mat& remapIm, Mat& dest, const float g, const float sigma_range, const float boost)
 	{
 		CV_Assert(src.depth() == CV_32F);
@@ -3396,7 +3396,7 @@ namespace cp
 			const int size = width * (D - 1);
 			const int REMAPSIZE32 = get_simd_floor(size, 32);
 			const int REMAPSIZE8 = get_simd_ceil(size, 8);
-			if constexpr (isUseTable)
+			if constexpr (is_use_table)
 			{
 				//float* rt = &rangeTable[0];
 				float* rt = integerSampleTable;
@@ -3479,7 +3479,7 @@ namespace cp
 				const int size = 2 * width;
 				const int REMAPSIZE32 = get_simd_floor(size, 32);
 				const int REMAPSIZE8 = get_simd_ceil(size, 8);
-				if constexpr (isUseTable)
+				if constexpr (is_use_table)
 				{
 					//float* rt = &rangeTable[0];
 					float* rt = integerSampleTable;
@@ -6318,7 +6318,7 @@ namespace cp
 		}
 	}
 
-	template<bool isInit, bool adaptiveMethod, bool isUseFourierTable0, bool isUseFourierTableLevel, int D, int D2>
+	template<bool isInit, bool adaptive_method, bool is_use_fourier_table0, bool is_use_fourier_table_level, int D, int D2>
 	void LocalMultiScaleFilterFourier::buildLaplacianFourierPyramidIgnoreBoundary(const vector<Mat>& GaussianPyramid, const Mat& src8u, vector<Mat>& destPyramid, const int k, const int level, vector<Mat>& FourierPyramidCos, vector<Mat>& FourierPyramidSin)
 	{
 		const int rs = radius >> 1;
@@ -6766,7 +6766,7 @@ namespace cp
 #pragma region Laplacian0
 			float* stable = nullptr;
 			float* ctable = nullptr;
-			if constexpr (isUseFourierTable0)
+			if constexpr (is_use_fourier_table0)
 			{
 				stable = &sinTable[FourierTableSize * k];
 				ctable = &cosTable[FourierTableSize * k];
@@ -6933,7 +6933,7 @@ namespace cp
 #endif
 
 				//h filter
-				if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+				if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 				{
 					adaptiveSigma_e = (__m256*)adaptiveSigmaBorder[0].ptr<float>(j + radius, radius);
 					adaptiveBoost_e = (__m256*)adaptiveBoostBorder[0].ptr<float>(j + radius, radius);
@@ -6984,7 +6984,7 @@ namespace cp
 					__m256 sin1 = _mm256_permute2f128_ps(s1, s2, 0x31);
 
 					__m256 msin, mcos;
-					if constexpr (isUseFourierTable0)
+					if constexpr (is_use_fourier_table0)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpye_0 + I));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -6996,7 +6996,7 @@ namespace cp
 						msin = _mm256_sin_ps(ms);
 						mcos = _mm256_cos_ps(ms);
 					}
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						mevenodd_alpha_k = _mm256_mul_ps(mevenoddratio, getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_e++, *adaptiveBoost_e++));
 					}
@@ -7009,7 +7009,7 @@ namespace cp
 						_mm256_storeu_ps(dste + I, _mm256_fmadd_ps(mevenodd_alpha_k, _mm256_fmsub_ps(msin, cos0, _mm256_mul_ps(mcos, sin0)), _mm256_loadu_ps(dste + I)));
 					}
 
-					if constexpr (isUseFourierTable0)
+					if constexpr (is_use_fourier_table0)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpye_0 + I + 8));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -7021,7 +7021,7 @@ namespace cp
 						msin = _mm256_sin_ps(ms);
 						mcos = _mm256_cos_ps(ms);
 					}
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						mevenodd_alpha_k = _mm256_mul_ps(mevenoddratio, getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_e++, *adaptiveBoost_e++));
 					}
@@ -7043,7 +7043,7 @@ namespace cp
 					sin0 = _mm256_permute2f128_ps(s1, s2, 0x20);
 					sin1 = _mm256_permute2f128_ps(s1, s2, 0x31);
 
-					if constexpr (isUseFourierTable0)
+					if constexpr (is_use_fourier_table0)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpyo_0 + I));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -7055,7 +7055,7 @@ namespace cp
 						msin = _mm256_sin_ps(ms);
 						mcos = _mm256_cos_ps(ms);
 					}
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						mevenodd_alpha_k = _mm256_mul_ps(mevenoddratio, getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_o++, *adaptiveBoost_o++));
 					}
@@ -7067,7 +7067,7 @@ namespace cp
 					{
 						_mm256_storeu_ps(dsto + I, _mm256_fmadd_ps(mevenodd_alpha_k, _mm256_fmsub_ps(msin, cos0, _mm256_mul_ps(mcos, sin0)), _mm256_loadu_ps(dsto + I)));
 					}
-					if constexpr (isUseFourierTable0)
+					if constexpr (is_use_fourier_table0)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpyo_0 + I + 8));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -7079,7 +7079,7 @@ namespace cp
 						msin = _mm256_sin_ps(ms);
 						mcos = _mm256_cos_ps(ms);
 					}
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						mevenodd_alpha_k = _mm256_mul_ps(mevenoddratio, getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_o++, *adaptiveBoost_o++));
 					}
@@ -7137,7 +7137,7 @@ namespace cp
 					__m256 sin1 = _mm256_permute2f128_ps(s1, s2, 0x31);
 
 					__m256 msin, mcos;
-					if constexpr (isUseFourierTable0)
+					if constexpr (is_use_fourier_table0)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpye_0 + I));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -7149,7 +7149,7 @@ namespace cp
 						msin = _mm256_sin_ps(ms);
 						mcos = _mm256_cos_ps(ms);
 					}
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						mevenodd_alpha_k = _mm256_mul_ps(mevenoddratio, getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_e++, *adaptiveBoost_e++));
 					}
@@ -7162,7 +7162,7 @@ namespace cp
 						_mm256_maskstore_ps(dste + I, maskhendll, _mm256_fmadd_ps(mevenodd_alpha_k, _mm256_fmsub_ps(msin, cos0, _mm256_mul_ps(mcos, sin0)), _mm256_loadu_ps(dste + I)));
 					}
 
-					if constexpr (isUseFourierTable0)
+					if constexpr (is_use_fourier_table0)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpye_0 + I + 8));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -7174,7 +7174,7 @@ namespace cp
 						msin = _mm256_sin_ps(ms);
 						mcos = _mm256_cos_ps(ms);
 					}
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						mevenodd_alpha_k = _mm256_mul_ps(mevenoddratio, getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_e++, *adaptiveBoost_e++));
 					}
@@ -7196,7 +7196,7 @@ namespace cp
 					sin0 = _mm256_permute2f128_ps(s1, s2, 0x20);
 					sin1 = _mm256_permute2f128_ps(s1, s2, 0x31);
 
-					if constexpr (isUseFourierTable0)
+					if constexpr (is_use_fourier_table0)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpyo_0 + I));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -7208,7 +7208,7 @@ namespace cp
 						msin = _mm256_sin_ps(ms);
 						mcos = _mm256_cos_ps(ms);
 					}
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						mevenodd_alpha_k = _mm256_mul_ps(mevenoddratio, getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_o++, *adaptiveBoost_o++));
 					}
@@ -7220,7 +7220,7 @@ namespace cp
 					{
 						_mm256_maskstore_ps(dsto + I, maskhendll, _mm256_fmadd_ps(mevenodd_alpha_k, _mm256_fmsub_ps(msin, cos0, _mm256_mul_ps(mcos, sin0)), _mm256_loadu_ps(dsto + I)));
 					}
-					if constexpr (isUseFourierTable0)
+					if constexpr (is_use_fourier_table0)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpyo_0 + I + 8));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -7232,7 +7232,7 @@ namespace cp
 						msin = _mm256_sin_ps(ms);
 						mcos = _mm256_cos_ps(ms);
 					}
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						mevenodd_alpha_k = _mm256_mul_ps(mevenoddratio, getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_o++, *adaptiveBoost_o++));
 					}
@@ -7278,7 +7278,7 @@ namespace cp
 					const int I = i << 1;
 					float os = omega[k] * gpye_0[I];
 
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[0].at<float>(j + radius, radius + I), adaptiveBoostBorder[0].at<float>(j + radius, radius + I));
 					}
@@ -7291,7 +7291,7 @@ namespace cp
 						dste[I] += alphak * evenratio * (sin(os) * sumcee - cos(os) * sumsee);
 					}
 					os = omega[k] * gpye_0[I + 1];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[0].at<float>(j + radius, radius + I + 1), adaptiveBoostBorder[0].at<float>(j + radius, radius + I + 1));
 					}
@@ -7304,7 +7304,7 @@ namespace cp
 						dste[I + 1] += alphak * oddratio * (sin(os) * sumcoe - cos(os) * sumsoe);
 					}
 					os = omega[k] * gpyo_0[I];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[0].at<float>(j + radius + 1, radius + I), adaptiveBoostBorder[0].at<float>(j + radius + 1, radius + I));
 					}
@@ -7317,7 +7317,7 @@ namespace cp
 						dsto[I] += alphak * evenratio * (sin(os) * sumceo - cos(os) * sumseo);
 					}
 					os = omega[k] * gpyo_0[I + 1];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[0].at<float>(j + radius + 1, radius + I + 1), adaptiveBoostBorder[0].at<float>(j + radius + 1, radius + I + 1));
 					}
@@ -7461,7 +7461,7 @@ namespace cp
 #pragma region LaplacianLevel
 			float* stable = nullptr;
 			float* ctable = nullptr;
-			if constexpr (isUseFourierTableLevel)
+			if constexpr (is_use_fourier_table_level)
 			{
 				stable = &sinTable[FourierTableSize * k];
 				ctable = &cosTable[FourierTableSize * k];
@@ -7556,7 +7556,7 @@ namespace cp
 #endif
 
 				//h filter
-				if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+				if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 				{
 					adaptiveSigma_e = (__m256*)adaptiveSigmaBorder[l].ptr<float>(j + radius, radius);
 					adaptiveBoost_e = (__m256*)adaptiveBoostBorder[l].ptr<float>(j + radius, radius);
@@ -7608,7 +7608,7 @@ namespace cp
 					sin1 = _mm256_permute2f128_ps(temp0, temp1, 0x31);
 
 					__m256 msin, mcos;
-					if constexpr (isUseFourierTableLevel)
+					if constexpr (is_use_fourier_table_level)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpye_l + I));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -7622,7 +7622,7 @@ namespace cp
 					}
 					cos0 = _mm256_fmsub_ps(mevenoddratio, cos0, _mm256_loadu_ps(ppye_cos + I));
 					sin0 = _mm256_fmsub_ps(mevenoddratio, sin0, _mm256_loadu_ps(ppye_sin + I));
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						malpha_k = getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_e++, *adaptiveBoost_e++);
 					}
@@ -7635,7 +7635,7 @@ namespace cp
 						_mm256_storeu_ps(dste + I, _mm256_fmadd_ps(malpha_k, _mm256_fmsub_ps(msin, cos0, _mm256_mul_ps(mcos, sin0)), _mm256_loadu_ps(dste + I)));
 					}
 
-					if constexpr (isUseFourierTableLevel)
+					if constexpr (is_use_fourier_table_level)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpye_l + I + 8));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -7649,7 +7649,7 @@ namespace cp
 					}
 					cos1 = _mm256_fmsub_ps(mevenoddratio, cos1, _mm256_loadu_ps(ppye_cos + I + 8));
 					sin1 = _mm256_fmsub_ps(mevenoddratio, sin1, _mm256_loadu_ps(ppye_sin + I + 8));
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						malpha_k = getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_e++, *adaptiveBoost_e++);
 					}
@@ -7672,7 +7672,7 @@ namespace cp
 					sin0 = _mm256_permute2f128_ps(temp0, temp1, 0x20);
 					sin1 = _mm256_permute2f128_ps(temp0, temp1, 0x31);
 
-					if constexpr (isUseFourierTableLevel)
+					if constexpr (is_use_fourier_table_level)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpyo_l + I));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -7686,7 +7686,7 @@ namespace cp
 					}
 					cos0 = _mm256_fmsub_ps(mevenoddratio, cos0, _mm256_loadu_ps(ppyo_cos + I));
 					sin0 = _mm256_fmsub_ps(mevenoddratio, sin0, _mm256_loadu_ps(ppyo_sin + I));
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						malpha_k = getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_o++, *adaptiveBoost_o++);
 					}
@@ -7699,7 +7699,7 @@ namespace cp
 						_mm256_storeu_ps(dsto + I, _mm256_fmadd_ps(malpha_k, _mm256_fmsub_ps(msin, cos0, _mm256_mul_ps(mcos, sin0)), _mm256_loadu_ps(dsto + I)));
 					}
 
-					if constexpr (isUseFourierTableLevel)
+					if constexpr (is_use_fourier_table_level)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpyo_l + I + 8));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -7713,7 +7713,7 @@ namespace cp
 					}
 					cos1 = _mm256_fmsub_ps(mevenoddratio, cos1, _mm256_loadu_ps(ppyo_cos + I + 8));
 					sin1 = _mm256_fmsub_ps(mevenoddratio, sin1, _mm256_loadu_ps(ppyo_sin + I + 8));
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						malpha_k = getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_o++, *adaptiveBoost_o++);
 					}
@@ -7774,7 +7774,7 @@ namespace cp
 					sin1 = _mm256_permute2f128_ps(temp0, temp1, 0x31);
 
 					__m256 msin, mcos;
-					if constexpr (isUseFourierTableLevel)
+					if constexpr (is_use_fourier_table_level)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpye_l + I));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -7788,7 +7788,7 @@ namespace cp
 					}
 					cos0 = _mm256_fmsub_ps(mevenoddratio, cos0, _mm256_loadu_ps(ppye_cos + I));
 					sin0 = _mm256_fmsub_ps(mevenoddratio, sin0, _mm256_loadu_ps(ppye_sin + I));
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						malpha_k = getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_e++, *adaptiveBoost_e++);
 					}
@@ -7801,7 +7801,7 @@ namespace cp
 						_mm256_maskstore_ps(dste + I, maskhendll, _mm256_fmadd_ps(malpha_k, _mm256_fmsub_ps(msin, cos0, _mm256_mul_ps(mcos, sin0)), _mm256_loadu_ps(dste + I)));
 					}
 
-					if constexpr (isUseFourierTableLevel)
+					if constexpr (is_use_fourier_table_level)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpye_l + I + 8));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -7815,7 +7815,7 @@ namespace cp
 					}
 					cos1 = _mm256_fmsub_ps(mevenoddratio, cos1, _mm256_loadu_ps(ppye_cos + I + 8));
 					sin1 = _mm256_fmsub_ps(mevenoddratio, sin1, _mm256_loadu_ps(ppye_sin + I + 8));
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						malpha_k = getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_e++, *adaptiveBoost_e++);
 					}
@@ -7838,7 +7838,7 @@ namespace cp
 					sin0 = _mm256_permute2f128_ps(temp0, temp1, 0x20);
 					sin1 = _mm256_permute2f128_ps(temp0, temp1, 0x31);
 
-					if constexpr (isUseFourierTableLevel)
+					if constexpr (is_use_fourier_table_level)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpyo_l + I));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -7852,7 +7852,7 @@ namespace cp
 					}
 					cos0 = _mm256_fmsub_ps(mevenoddratio, cos0, _mm256_loadu_ps(ppyo_cos + I));
 					sin0 = _mm256_fmsub_ps(mevenoddratio, sin0, _mm256_loadu_ps(ppyo_sin + I));
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						malpha_k = getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_o++, *adaptiveBoost_o++);
 					}
@@ -7865,7 +7865,7 @@ namespace cp
 						_mm256_maskstore_ps(dsto + I, maskhendll, _mm256_fmadd_ps(malpha_k, _mm256_fmsub_ps(msin, cos0, _mm256_mul_ps(mcos, sin0)), _mm256_loadu_ps(dsto + I)));
 					}
 
-					if constexpr (isUseFourierTableLevel)
+					if constexpr (is_use_fourier_table_level)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpyo_l + I + 8));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -7879,7 +7879,7 @@ namespace cp
 					}
 					cos1 = _mm256_fmsub_ps(mevenoddratio, cos1, _mm256_loadu_ps(ppyo_cos + I + 8));
 					sin1 = _mm256_fmsub_ps(mevenoddratio, sin1, _mm256_loadu_ps(ppyo_sin + I + 8));
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						malpha_k = getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_o++, *adaptiveBoost_o++);
 					}
@@ -7924,7 +7924,7 @@ namespace cp
 					}
 					const int I = i << 1;
 					float os = omega[k] * gpye_l[I];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[l].at<float>(j + radius, radius + I), adaptiveBoostBorder[l].at<float>(j + radius, radius + I));
 					}
@@ -7937,7 +7937,7 @@ namespace cp
 						dste[I] += alphak * (sin(os) * (evenratio * sumcee - ppye_cos[I]) - cos(os) * (evenratio * sumsee - ppye_sin[I]));
 					}
 					os = omega[k] * gpye_l[I + 1];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[l].at<float>(j + radius, radius + I + 1), adaptiveBoostBorder[l].at<float>(j + radius, radius + I + 1));
 					}
@@ -7950,7 +7950,7 @@ namespace cp
 						dste[I + 1] += alphak * (sin(os) * (oddratio * sumcoe - ppye_cos[I + 1]) - cos(os) * (oddratio * sumsoe - ppye_sin[I + 1]));
 					}
 					os = omega[k] * gpyo_l[I];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[l].at<float>(j + radius + 1, radius + I), adaptiveBoostBorder[l].at<float>(j + radius + 1, radius + I));
 					}
@@ -7963,7 +7963,7 @@ namespace cp
 						dsto[I] += alphak * (sin(os) * (evenratio * sumceo - ppyo_cos[I]) - cos(os) * (evenratio * sumseo - ppyo_sin[I]));
 					}
 					os = omega[k] * gpyo_l[I + 1];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[l].at<float>(j + radius + 1, radius + I + 1), adaptiveBoostBorder[l].at<float>(j + radius + 1, radius + I + 1));
 					}
@@ -7995,7 +7995,7 @@ namespace cp
 		_mm_free(W);
 	}
 
-	template<bool isInit, bool adaptiveMethod, bool isUseFourierTable0, bool isUseFourierTableLevel>
+	template<bool isInit, bool adaptive_method, bool is_use_fourier_table0, bool is_use_fourier_table_level>
 	void LocalMultiScaleFilterFourier::buildLaplacianFourierPyramidIgnoreBoundary(const vector<Mat>& GaussianPyramid, const Mat& src8u, vector<Mat>& destPyramid, const int k, const int level, vector<Mat>& FourierPyramidCos, vector<Mat>& FourierPyramidSin)
 	{
 		const int rs = radius >> 1;
@@ -8443,7 +8443,7 @@ namespace cp
 #pragma region Laplacian0
 			float* stable = nullptr;
 			float* ctable = nullptr;
-			if constexpr (isUseFourierTable0)
+			if constexpr (is_use_fourier_table0)
 			{
 				stable = &sinTable[FourierTableSize * k];
 				ctable = &cosTable[FourierTableSize * k];
@@ -8610,7 +8610,7 @@ namespace cp
 #endif
 
 				//h filter
-				if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+				if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 				{
 					adaptiveSigma_e = (__m256*)adaptiveSigmaBorder[0].ptr<float>(j + radius, radius);
 					adaptiveBoost_e = (__m256*)adaptiveBoostBorder[0].ptr<float>(j + radius, radius);
@@ -8661,7 +8661,7 @@ namespace cp
 					__m256 sin1 = _mm256_permute2f128_ps(s1, s2, 0x31);
 
 					__m256 msin, mcos;
-					if constexpr (isUseFourierTable0)
+					if constexpr (is_use_fourier_table0)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpye_0 + I));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -8673,7 +8673,7 @@ namespace cp
 						msin = _mm256_sin_ps(ms);
 						mcos = _mm256_cos_ps(ms);
 					}
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						mevenodd_alpha_k = _mm256_mul_ps(mevenoddratio, getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_e++, *adaptiveBoost_e++));
 					}
@@ -8686,7 +8686,7 @@ namespace cp
 						_mm256_storeu_ps(dste + I, _mm256_fmadd_ps(mevenodd_alpha_k, _mm256_fmsub_ps(msin, cos0, _mm256_mul_ps(mcos, sin0)), _mm256_loadu_ps(dste + I)));
 					}
 
-					if constexpr (isUseFourierTable0)
+					if constexpr (is_use_fourier_table0)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpye_0 + I + 8));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -8698,7 +8698,7 @@ namespace cp
 						msin = _mm256_sin_ps(ms);
 						mcos = _mm256_cos_ps(ms);
 					}
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						mevenodd_alpha_k = _mm256_mul_ps(mevenoddratio, getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_e++, *adaptiveBoost_e++));
 					}
@@ -8720,7 +8720,7 @@ namespace cp
 					sin0 = _mm256_permute2f128_ps(s1, s2, 0x20);
 					sin1 = _mm256_permute2f128_ps(s1, s2, 0x31);
 
-					if constexpr (isUseFourierTable0)
+					if constexpr (is_use_fourier_table0)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpyo_0 + I));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -8732,7 +8732,7 @@ namespace cp
 						msin = _mm256_sin_ps(ms);
 						mcos = _mm256_cos_ps(ms);
 					}
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						mevenodd_alpha_k = _mm256_mul_ps(mevenoddratio, getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_o++, *adaptiveBoost_o++));
 					}
@@ -8744,7 +8744,7 @@ namespace cp
 					{
 						_mm256_storeu_ps(dsto + I, _mm256_fmadd_ps(mevenodd_alpha_k, _mm256_fmsub_ps(msin, cos0, _mm256_mul_ps(mcos, sin0)), _mm256_loadu_ps(dsto + I)));
 					}
-					if constexpr (isUseFourierTable0)
+					if constexpr (is_use_fourier_table0)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpyo_0 + I + 8));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -8756,7 +8756,7 @@ namespace cp
 						msin = _mm256_sin_ps(ms);
 						mcos = _mm256_cos_ps(ms);
 					}
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						mevenodd_alpha_k = _mm256_mul_ps(mevenoddratio, getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_o++, *adaptiveBoost_o++));
 					}
@@ -8814,7 +8814,7 @@ namespace cp
 					__m256 sin1 = _mm256_permute2f128_ps(s1, s2, 0x31);
 
 					__m256 msin, mcos;
-					if constexpr (isUseFourierTable0)
+					if constexpr (is_use_fourier_table0)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpye_0 + I));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -8826,7 +8826,7 @@ namespace cp
 						msin = _mm256_sin_ps(ms);
 						mcos = _mm256_cos_ps(ms);
 					}
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						mevenodd_alpha_k = _mm256_mul_ps(mevenoddratio, getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_e++, *adaptiveBoost_e++));
 					}
@@ -8839,7 +8839,7 @@ namespace cp
 						_mm256_maskstore_ps(dste + I, maskhendll, _mm256_fmadd_ps(mevenodd_alpha_k, _mm256_fmsub_ps(msin, cos0, _mm256_mul_ps(mcos, sin0)), _mm256_loadu_ps(dste + I)));
 					}
 
-					if constexpr (isUseFourierTable0)
+					if constexpr (is_use_fourier_table0)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpye_0 + I + 8));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -8851,7 +8851,7 @@ namespace cp
 						msin = _mm256_sin_ps(ms);
 						mcos = _mm256_cos_ps(ms);
 					}
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						mevenodd_alpha_k = _mm256_mul_ps(mevenoddratio, getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_e++, *adaptiveBoost_e++));
 					}
@@ -8873,7 +8873,7 @@ namespace cp
 					sin0 = _mm256_permute2f128_ps(s1, s2, 0x20);
 					sin1 = _mm256_permute2f128_ps(s1, s2, 0x31);
 
-					if constexpr (isUseFourierTable0)
+					if constexpr (is_use_fourier_table0)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpyo_0 + I));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -8885,7 +8885,7 @@ namespace cp
 						msin = _mm256_sin_ps(ms);
 						mcos = _mm256_cos_ps(ms);
 					}
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						mevenodd_alpha_k = _mm256_mul_ps(mevenoddratio, getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_o++, *adaptiveBoost_o++));
 					}
@@ -8897,7 +8897,7 @@ namespace cp
 					{
 						_mm256_maskstore_ps(dsto + I, maskhendll, _mm256_fmadd_ps(mevenodd_alpha_k, _mm256_fmsub_ps(msin, cos0, _mm256_mul_ps(mcos, sin0)), _mm256_loadu_ps(dsto + I)));
 					}
-					if constexpr (isUseFourierTable0)
+					if constexpr (is_use_fourier_table0)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpyo_0 + I + 8));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -8909,7 +8909,7 @@ namespace cp
 						msin = _mm256_sin_ps(ms);
 						mcos = _mm256_cos_ps(ms);
 					}
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						mevenodd_alpha_k = _mm256_mul_ps(mevenoddratio, getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_o++, *adaptiveBoost_o++));
 					}
@@ -8955,7 +8955,7 @@ namespace cp
 					const int I = i << 1;
 					float os = omega[k] * gpye_0[I];
 
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[0].at<float>(j + radius, radius + I), adaptiveBoostBorder[0].at<float>(j + radius, radius + I));
 					}
@@ -8968,7 +8968,7 @@ namespace cp
 						dste[I] += alphak * evenratio * (sin(os) * sumcee - cos(os) * sumsee);
 					}
 					os = omega[k] * gpye_0[I + 1];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[0].at<float>(j + radius, radius + I + 1), adaptiveBoostBorder[0].at<float>(j + radius, radius + I + 1));
 					}
@@ -8981,7 +8981,7 @@ namespace cp
 						dste[I + 1] += alphak * oddratio * (sin(os) * sumcoe - cos(os) * sumsoe);
 					}
 					os = omega[k] * gpyo_0[I];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[0].at<float>(j + radius + 1, radius + I), adaptiveBoostBorder[0].at<float>(j + radius + 1, radius + I));
 					}
@@ -8994,7 +8994,7 @@ namespace cp
 						dsto[I] += alphak * evenratio * (sin(os) * sumceo - cos(os) * sumseo);
 					}
 					os = omega[k] * gpyo_0[I + 1];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[0].at<float>(j + radius + 1, radius + I + 1), adaptiveBoostBorder[0].at<float>(j + radius + 1, radius + I + 1));
 					}
@@ -9139,7 +9139,7 @@ namespace cp
 #pragma region LaplacianLevel
 			float* stable = nullptr;
 			float* ctable = nullptr;
-			if constexpr (isUseFourierTableLevel)
+			if constexpr (is_use_fourier_table_level)
 			{
 				stable = &sinTable[FourierTableSize * k];
 				ctable = &cosTable[FourierTableSize * k];
@@ -9234,7 +9234,7 @@ namespace cp
 #endif
 
 				//h filter
-				if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+				if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 				{
 					adaptiveSigma_e = (__m256*)adaptiveSigmaBorder[l].ptr<float>(j + radius, radius);
 					adaptiveBoost_e = (__m256*)adaptiveBoostBorder[l].ptr<float>(j + radius, radius);
@@ -9286,7 +9286,7 @@ namespace cp
 					sin1 = _mm256_permute2f128_ps(temp0, temp1, 0x31);
 
 					__m256 msin, mcos;
-					if constexpr (isUseFourierTableLevel)
+					if constexpr (is_use_fourier_table_level)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpye_l + I));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -9300,7 +9300,7 @@ namespace cp
 					}
 					cos0 = _mm256_fmsub_ps(mevenoddratio, cos0, _mm256_loadu_ps(ppye_cos + I));
 					sin0 = _mm256_fmsub_ps(mevenoddratio, sin0, _mm256_loadu_ps(ppye_sin + I));
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						malpha_k = getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_e++, *adaptiveBoost_e++);
 					}
@@ -9313,7 +9313,7 @@ namespace cp
 						_mm256_storeu_ps(dste + I, _mm256_fmadd_ps(malpha_k, _mm256_fmsub_ps(msin, cos0, _mm256_mul_ps(mcos, sin0)), _mm256_loadu_ps(dste + I)));
 					}
 
-					if constexpr (isUseFourierTableLevel)
+					if constexpr (is_use_fourier_table_level)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpye_l + I + 8));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -9327,7 +9327,7 @@ namespace cp
 					}
 					cos1 = _mm256_fmsub_ps(mevenoddratio, cos1, _mm256_loadu_ps(ppye_cos + I + 8));
 					sin1 = _mm256_fmsub_ps(mevenoddratio, sin1, _mm256_loadu_ps(ppye_sin + I + 8));
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						malpha_k = getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_e++, *adaptiveBoost_e++);
 					}
@@ -9350,7 +9350,7 @@ namespace cp
 					sin0 = _mm256_permute2f128_ps(temp0, temp1, 0x20);
 					sin1 = _mm256_permute2f128_ps(temp0, temp1, 0x31);
 
-					if constexpr (isUseFourierTableLevel)
+					if constexpr (is_use_fourier_table_level)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpyo_l + I));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -9364,7 +9364,7 @@ namespace cp
 					}
 					cos0 = _mm256_fmsub_ps(mevenoddratio, cos0, _mm256_loadu_ps(ppyo_cos + I));
 					sin0 = _mm256_fmsub_ps(mevenoddratio, sin0, _mm256_loadu_ps(ppyo_sin + I));
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						malpha_k = getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_o++, *adaptiveBoost_o++);
 					}
@@ -9377,7 +9377,7 @@ namespace cp
 						_mm256_storeu_ps(dsto + I, _mm256_fmadd_ps(malpha_k, _mm256_fmsub_ps(msin, cos0, _mm256_mul_ps(mcos, sin0)), _mm256_loadu_ps(dsto + I)));
 					}
 
-					if constexpr (isUseFourierTableLevel)
+					if constexpr (is_use_fourier_table_level)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpyo_l + I + 8));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -9391,7 +9391,7 @@ namespace cp
 					}
 					cos1 = _mm256_fmsub_ps(mevenoddratio, cos1, _mm256_loadu_ps(ppyo_cos + I + 8));
 					sin1 = _mm256_fmsub_ps(mevenoddratio, sin1, _mm256_loadu_ps(ppyo_sin + I + 8));
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						malpha_k = getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_o++, *adaptiveBoost_o++);
 					}
@@ -9452,7 +9452,7 @@ namespace cp
 					sin1 = _mm256_permute2f128_ps(temp0, temp1, 0x31);
 
 					__m256 msin, mcos;
-					if constexpr (isUseFourierTableLevel)
+					if constexpr (is_use_fourier_table_level)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpye_l + I));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -9466,7 +9466,7 @@ namespace cp
 					}
 					cos0 = _mm256_fmsub_ps(mevenoddratio, cos0, _mm256_loadu_ps(ppye_cos + I));
 					sin0 = _mm256_fmsub_ps(mevenoddratio, sin0, _mm256_loadu_ps(ppye_sin + I));
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						malpha_k = getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_e++, *adaptiveBoost_e++);
 					}
@@ -9479,7 +9479,7 @@ namespace cp
 						_mm256_maskstore_ps(dste + I, maskhendll, _mm256_fmadd_ps(malpha_k, _mm256_fmsub_ps(msin, cos0, _mm256_mul_ps(mcos, sin0)), _mm256_loadu_ps(dste + I)));
 					}
 
-					if constexpr (isUseFourierTableLevel)
+					if constexpr (is_use_fourier_table_level)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpye_l + I + 8));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -9493,7 +9493,7 @@ namespace cp
 					}
 					cos1 = _mm256_fmsub_ps(mevenoddratio, cos1, _mm256_loadu_ps(ppye_cos + I + 8));
 					sin1 = _mm256_fmsub_ps(mevenoddratio, sin1, _mm256_loadu_ps(ppye_sin + I + 8));
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						malpha_k = getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_e++, *adaptiveBoost_e++);
 					}
@@ -9516,7 +9516,7 @@ namespace cp
 					sin0 = _mm256_permute2f128_ps(temp0, temp1, 0x20);
 					sin1 = _mm256_permute2f128_ps(temp0, temp1, 0x31);
 
-					if constexpr (isUseFourierTableLevel)
+					if constexpr (is_use_fourier_table_level)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpyo_l + I));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -9530,7 +9530,7 @@ namespace cp
 					}
 					cos0 = _mm256_fmsub_ps(mevenoddratio, cos0, _mm256_loadu_ps(ppyo_cos + I));
 					sin0 = _mm256_fmsub_ps(mevenoddratio, sin0, _mm256_loadu_ps(ppyo_sin + I));
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						malpha_k = getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_o++, *adaptiveBoost_o++);
 					}
@@ -9543,7 +9543,7 @@ namespace cp
 						_mm256_maskstore_ps(dsto + I, maskhendll, _mm256_fmadd_ps(malpha_k, _mm256_fmsub_ps(msin, cos0, _mm256_mul_ps(mcos, sin0)), _mm256_loadu_ps(dsto + I)));
 					}
 
-					if constexpr (isUseFourierTableLevel)
+					if constexpr (is_use_fourier_table_level)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpyo_l + I + 8));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -9557,7 +9557,7 @@ namespace cp
 					}
 					cos1 = _mm256_fmsub_ps(mevenoddratio, cos1, _mm256_loadu_ps(ppyo_cos + I + 8));
 					sin1 = _mm256_fmsub_ps(mevenoddratio, sin1, _mm256_loadu_ps(ppyo_sin + I + 8));
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						malpha_k = getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_o++, *adaptiveBoost_o++);
 					}
@@ -9602,7 +9602,7 @@ namespace cp
 					}
 					const int I = i << 1;
 					float os = omega[k] * gpye_l[I];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[l].at<float>(j + radius, radius + I), adaptiveBoostBorder[l].at<float>(j + radius, radius + I));
 					}
@@ -9615,7 +9615,7 @@ namespace cp
 						dste[I] += alphak * (sin(os) * (evenratio * sumcee - ppye_cos[I]) - cos(os) * (evenratio * sumsee - ppye_sin[I]));
 					}
 					os = omega[k] * gpye_l[I + 1];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[l].at<float>(j + radius, radius + I + 1), adaptiveBoostBorder[l].at<float>(j + radius, radius + I + 1));
 					}
@@ -9628,7 +9628,7 @@ namespace cp
 						dste[I + 1] += alphak * (sin(os) * (oddratio * sumcoe - ppye_cos[I + 1]) - cos(os) * (oddratio * sumsoe - ppye_sin[I + 1]));
 					}
 					os = omega[k] * gpyo_l[I];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[l].at<float>(j + radius + 1, radius + I), adaptiveBoostBorder[l].at<float>(j + radius + 1, radius + I));
 					}
@@ -9641,7 +9641,7 @@ namespace cp
 						dsto[I] += alphak * (sin(os) * (evenratio * sumceo - ppyo_cos[I]) - cos(os) * (evenratio * sumseo - ppyo_sin[I]));
 					}
 					os = omega[k] * gpyo_l[I + 1];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[l].at<float>(j + radius + 1, radius + I + 1), adaptiveBoostBorder[l].at<float>(j + radius + 1, radius + I + 1));
 					}
@@ -9676,7 +9676,7 @@ namespace cp
 
 
 
-	template<bool isInit, bool adaptiveMethod, bool isUseFourierTable0, bool isUseFourierTableLevel, int D, int D2>
+	template<bool isInit, bool adaptive_method, bool is_use_fourier_table0, bool is_use_fourier_table_level, int D, int D2>
 	void LocalMultiScaleFilterFourier::buildLaplacianSinPyramidIgnoreBoundary(const vector<Mat>& GaussianPyramid, const Mat& src8u, vector<Mat>& destPyramid, const int k, const int level, vector<Mat>& FourierPyramidSin)
 	{
 		const int rs = radius >> 1;
@@ -9845,7 +9845,7 @@ namespace cp
 
 #pragma region Laplacian0
 			float* ctable = nullptr;
-			if constexpr (isUseFourierTable0)
+			if constexpr (is_use_fourier_table0)
 			{
 				ctable = &cosTable[FourierTableSize * k];
 			}
@@ -9892,7 +9892,7 @@ namespace cp
 				}
 
 				//h filter
-				if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+				if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 				{
 					adaptiveSigma_e = (__m256*)adaptiveSigmaBorder[0].ptr<float>(j + radius, radius);
 					adaptiveBoost_e = (__m256*)adaptiveBoostBorder[0].ptr<float>(j + radius, radius);
@@ -9925,7 +9925,7 @@ namespace cp
 					__m256 sin1 = _mm256_permute2f128_ps(s1, s2, 0x31);
 
 					__m256 mcos;
-					if constexpr (isUseFourierTable0)
+					if constexpr (is_use_fourier_table0)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpye_0 + I));
 						mcos = _mm256_i32gather_ps(ctable, idx, sizeof(float));
@@ -9935,7 +9935,7 @@ namespace cp
 						const __m256 ms = _mm256_mul_ps(momega_k, _mm256_loadu_ps(gpye_0 + I));
 						mcos = _mm256_cos_ps(ms);
 					}
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						mevenodd_alpha_k = _mm256_mul_ps(mevenoddratio, getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_e++, *adaptiveBoost_e++));
 					}
@@ -9948,7 +9948,7 @@ namespace cp
 						_mm256_storeu_ps(dste + I, _mm256_fmadd_ps(mevenodd_alpha_k, _mm256_mul_ps(mcos, sin0), _mm256_loadu_ps(dste + I)));
 					}
 
-					if constexpr (isUseFourierTable0)
+					if constexpr (is_use_fourier_table0)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpye_0 + I + 8));
 						mcos = _mm256_i32gather_ps(ctable, idx, sizeof(float));
@@ -9958,7 +9958,7 @@ namespace cp
 						const __m256 ms = _mm256_mul_ps(momega_k, _mm256_loadu_ps(gpye_0 + I + 8));
 						mcos = _mm256_cos_ps(ms);
 					}
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						mevenodd_alpha_k = _mm256_mul_ps(mevenoddratio, getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_e++, *adaptiveBoost_e++));
 					}
@@ -9976,7 +9976,7 @@ namespace cp
 					sin0 = _mm256_permute2f128_ps(s1, s2, 0x20);
 					sin1 = _mm256_permute2f128_ps(s1, s2, 0x31);
 
-					if constexpr (isUseFourierTable0)
+					if constexpr (is_use_fourier_table0)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpyo_0 + I));
 						mcos = _mm256_i32gather_ps(ctable, idx, sizeof(float));
@@ -9986,7 +9986,7 @@ namespace cp
 						const __m256 ms = _mm256_mul_ps(momega_k, _mm256_loadu_ps(gpyo_0 + I));
 						mcos = _mm256_cos_ps(ms);
 					}
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						mevenodd_alpha_k = _mm256_mul_ps(mevenoddratio, getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_o++, *adaptiveBoost_o++));
 					}
@@ -9998,7 +9998,7 @@ namespace cp
 					{
 						_mm256_storeu_ps(dsto + I, _mm256_fmadd_ps(mevenodd_alpha_k, _mm256_mul_ps(mcos, sin0), _mm256_loadu_ps(dsto + I)));
 					}
-					if constexpr (isUseFourierTable0)
+					if constexpr (is_use_fourier_table0)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpyo_0 + I + 8));
 						mcos = _mm256_i32gather_ps(ctable, idx, sizeof(float));
@@ -10008,7 +10008,7 @@ namespace cp
 						const __m256 ms = _mm256_mul_ps(momega_k, _mm256_loadu_ps(gpyo_0 + I + 8));
 						mcos = _mm256_cos_ps(ms);
 					}
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						mevenodd_alpha_k = _mm256_mul_ps(mevenoddratio, getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_o++, *adaptiveBoost_o++));
 					}
@@ -10042,7 +10042,7 @@ namespace cp
 					const int I = i << 1;
 					float os = omega[k] * gpye_0[I];
 
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[0].at<float>(j + radius, radius + I), adaptiveBoostBorder[0].at<float>(j + radius, radius + I));
 					}
@@ -10055,7 +10055,7 @@ namespace cp
 						dste[I] += alphak * evenratio * cos(os) * sumsee;
 					}
 					os = omega[k] * gpye_0[I + 1];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[0].at<float>(j + radius, radius + I + 1), adaptiveBoostBorder[0].at<float>(j + radius, radius + I + 1));
 					}
@@ -10068,7 +10068,7 @@ namespace cp
 						dste[I + 1] += alphak * oddratio * cos(os) * sumsoe;
 					}
 					os = omega[k] * gpyo_0[I];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[0].at<float>(j + radius + 1, radius + I), adaptiveBoostBorder[0].at<float>(j + radius + 1, radius + I));
 					}
@@ -10081,7 +10081,7 @@ namespace cp
 						dsto[I] += alphak * evenratio * cos(os) * sumseo;
 					}
 					os = omega[k] * gpyo_0[I + 1];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[0].at<float>(j + radius + 1, radius + I + 1), adaptiveBoostBorder[0].at<float>(j + radius + 1, radius + I + 1));
 					}
@@ -10176,7 +10176,7 @@ namespace cp
 #pragma region LaplacianLevel
 
 			float* ctable = nullptr;
-			if constexpr (isUseFourierTableLevel)
+			if constexpr (is_use_fourier_table_level)
 			{
 				ctable = &cosTable[FourierTableSize * k];
 			}
@@ -10226,7 +10226,7 @@ namespace cp
 				}
 
 				//h filter
-				if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+				if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 				{
 					adaptiveSigma_e = (__m256*)adaptiveSigmaBorder[l].ptr<float>(j + radius, radius);
 					adaptiveBoost_e = (__m256*)adaptiveBoostBorder[l].ptr<float>(j + radius, radius);
@@ -10260,7 +10260,7 @@ namespace cp
 					__m256 sin1 = _mm256_permute2f128_ps(temp0, temp1, 0x31);
 
 					__m256 mcos;
-					if constexpr (isUseFourierTableLevel)
+					if constexpr (is_use_fourier_table_level)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpye_l + I));
 						mcos = _mm256_i32gather_ps(ctable, idx, sizeof(float));
@@ -10271,7 +10271,7 @@ namespace cp
 						mcos = _mm256_cos_ps(ms);
 					}
 					sin0 = _mm256_fmsub_ps(mevenoddratio, sin0, _mm256_loadu_ps(ppye_sin + I));
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						malpha_k = getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_e++, *adaptiveBoost_e++);
 					}
@@ -10284,7 +10284,7 @@ namespace cp
 						_mm256_storeu_ps(dste + I, _mm256_fmadd_ps(malpha_k, _mm256_mul_ps(mcos, sin0), _mm256_loadu_ps(dste + I)));
 					}
 
-					if constexpr (isUseFourierTableLevel)
+					if constexpr (is_use_fourier_table_level)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpye_l + I + 8));
 						mcos = _mm256_i32gather_ps(ctable, idx, sizeof(float));
@@ -10295,7 +10295,7 @@ namespace cp
 						mcos = _mm256_cos_ps(ms);
 					}
 					sin1 = _mm256_fmsub_ps(mevenoddratio, sin1, _mm256_loadu_ps(ppye_sin + I + 8));
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						malpha_k = getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_e++, *adaptiveBoost_e++);
 					}
@@ -10314,7 +10314,7 @@ namespace cp
 					sin0 = _mm256_permute2f128_ps(temp0, temp1, 0x20);
 					sin1 = _mm256_permute2f128_ps(temp0, temp1, 0x31);
 
-					if constexpr (isUseFourierTableLevel)
+					if constexpr (is_use_fourier_table_level)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpyo_l + I));
 						mcos = _mm256_i32gather_ps(ctable, idx, sizeof(float));
@@ -10325,7 +10325,7 @@ namespace cp
 						mcos = _mm256_cos_ps(ms);
 					}
 					sin0 = _mm256_fmsub_ps(mevenoddratio, sin0, _mm256_loadu_ps(ppyo_sin + I));
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						malpha_k = getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_o++, *adaptiveBoost_o++);
 					}
@@ -10338,7 +10338,7 @@ namespace cp
 						_mm256_storeu_ps(dsto + I, _mm256_fmadd_ps(malpha_k, _mm256_mul_ps(mcos, sin0), _mm256_loadu_ps(dsto + I)));
 					}
 
-					if constexpr (isUseFourierTableLevel)
+					if constexpr (is_use_fourier_table_level)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpyo_l + I + 8));
 						mcos = _mm256_i32gather_ps(ctable, idx, sizeof(float));
@@ -10349,7 +10349,7 @@ namespace cp
 						mcos = _mm256_cos_ps(ms);
 					}
 					sin1 = _mm256_fmsub_ps(mevenoddratio, sin1, _mm256_loadu_ps(ppyo_sin + I + 8));
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						malpha_k = getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_o++, *adaptiveBoost_o++);
 					}
@@ -10382,7 +10382,7 @@ namespace cp
 					}
 					const int I = i << 1;
 					float os = omega[k] * gpye_l[I];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[l].at<float>(j + radius, radius + I), adaptiveBoostBorder[l].at<float>(j + radius, radius + I));
 					}
@@ -10395,7 +10395,7 @@ namespace cp
 						dste[I] += alphak * (cos(os) * (evenratio * sumsee - ppye_sin[I]));
 					}
 					os = omega[k] * gpye_l[I + 1];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[l].at<float>(j + radius, radius + I + 1), adaptiveBoostBorder[l].at<float>(j + radius, radius + I + 1));
 					}
@@ -10408,7 +10408,7 @@ namespace cp
 						dste[I + 1] += alphak * (cos(os) * (oddratio * sumsoe - ppye_sin[I + 1]));
 					}
 					os = omega[k] * gpyo_l[I];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[l].at<float>(j + radius + 1, radius + I), adaptiveBoostBorder[l].at<float>(j + radius + 1, radius + I));
 					}
@@ -10421,7 +10421,7 @@ namespace cp
 						dsto[I] += alphak * (cos(os) * (evenratio * sumseo - ppyo_sin[I]));
 					}
 					os = omega[k] * gpyo_l[I + 1];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[l].at<float>(j + radius + 1, radius + I + 1), adaptiveBoostBorder[l].at<float>(j + radius + 1, radius + I + 1));
 					}
@@ -10450,7 +10450,7 @@ namespace cp
 		_mm_free(W);
 	}
 
-	template<bool isInit, bool adaptiveMethod, bool isUseFourierTable0, bool isUseFourierTableLevel>
+	template<bool isInit, bool adaptive_method, bool is_use_fourier_table0, bool is_use_fourier_table_level>
 	void LocalMultiScaleFilterFourier::buildLaplacianSinPyramidIgnoreBoundary(const vector<Mat>& GaussianPyramid, const Mat& src8u, vector<Mat>& destPyramid, const int k, const int level, vector<Mat>& FourierPyramidSin)
 	{
 		const int rs = radius >> 1;
@@ -10619,7 +10619,7 @@ namespace cp
 
 #pragma region Laplacian0
 			float* ctable = nullptr;
-			if constexpr (isUseFourierTable0)
+			if constexpr (is_use_fourier_table0)
 			{
 				ctable = &cosTable[FourierTableSize * k];
 			}
@@ -10666,7 +10666,7 @@ namespace cp
 				}
 
 				//h filter
-				if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+				if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 				{
 					adaptiveSigma_e = (__m256*)adaptiveSigmaBorder[0].ptr<float>(j + radius, radius);
 					adaptiveBoost_e = (__m256*)adaptiveBoostBorder[0].ptr<float>(j + radius, radius);
@@ -10699,7 +10699,7 @@ namespace cp
 					__m256 sin1 = _mm256_permute2f128_ps(s1, s2, 0x31);
 
 					__m256 mcos;
-					if constexpr (isUseFourierTable0)
+					if constexpr (is_use_fourier_table0)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpye_0 + I));
 						mcos = _mm256_i32gather_ps(ctable, idx, sizeof(float));
@@ -10709,7 +10709,7 @@ namespace cp
 						const __m256 ms = _mm256_mul_ps(momega_k, _mm256_loadu_ps(gpye_0 + I));
 						mcos = _mm256_cos_ps(ms);
 					}
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						mevenodd_alpha_k = _mm256_mul_ps(mevenoddratio, getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_e++, *adaptiveBoost_e++));
 					}
@@ -10722,7 +10722,7 @@ namespace cp
 						_mm256_storeu_ps(dste + I, _mm256_fmadd_ps(mevenodd_alpha_k, _mm256_mul_ps(mcos, sin0), _mm256_loadu_ps(dste + I)));
 					}
 
-					if constexpr (isUseFourierTable0)
+					if constexpr (is_use_fourier_table0)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpye_0 + I + 8));
 						mcos = _mm256_i32gather_ps(ctable, idx, sizeof(float));
@@ -10732,7 +10732,7 @@ namespace cp
 						const __m256 ms = _mm256_mul_ps(momega_k, _mm256_loadu_ps(gpye_0 + I + 8));
 						mcos = _mm256_cos_ps(ms);
 					}
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						mevenodd_alpha_k = _mm256_mul_ps(mevenoddratio, getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_e++, *adaptiveBoost_e++));
 					}
@@ -10750,7 +10750,7 @@ namespace cp
 					sin0 = _mm256_permute2f128_ps(s1, s2, 0x20);
 					sin1 = _mm256_permute2f128_ps(s1, s2, 0x31);
 
-					if constexpr (isUseFourierTable0)
+					if constexpr (is_use_fourier_table0)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpyo_0 + I));
 						mcos = _mm256_i32gather_ps(ctable, idx, sizeof(float));
@@ -10760,7 +10760,7 @@ namespace cp
 						const __m256 ms = _mm256_mul_ps(momega_k, _mm256_loadu_ps(gpyo_0 + I));
 						mcos = _mm256_cos_ps(ms);
 					}
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						mevenodd_alpha_k = _mm256_mul_ps(mevenoddratio, getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_o++, *adaptiveBoost_o++));
 					}
@@ -10772,7 +10772,7 @@ namespace cp
 					{
 						_mm256_storeu_ps(dsto + I, _mm256_fmadd_ps(mevenodd_alpha_k, _mm256_mul_ps(mcos, sin0), _mm256_loadu_ps(dsto + I)));
 					}
-					if constexpr (isUseFourierTable0)
+					if constexpr (is_use_fourier_table0)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpyo_0 + I + 8));
 						mcos = _mm256_i32gather_ps(ctable, idx, sizeof(float));
@@ -10782,7 +10782,7 @@ namespace cp
 						const __m256 ms = _mm256_mul_ps(momega_k, _mm256_loadu_ps(gpyo_0 + I + 8));
 						mcos = _mm256_cos_ps(ms);
 					}
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						mevenodd_alpha_k = _mm256_mul_ps(mevenoddratio, getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_o++, *adaptiveBoost_o++));
 					}
@@ -10816,7 +10816,7 @@ namespace cp
 					const int I = i << 1;
 					float os = omega[k] * gpye_0[I];
 
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[0].at<float>(j + radius, radius + I), adaptiveBoostBorder[0].at<float>(j + radius, radius + I));
 					}
@@ -10829,7 +10829,7 @@ namespace cp
 						dste[I] += alphak * evenratio * cos(os) * sumsee;
 					}
 					os = omega[k] * gpye_0[I + 1];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[0].at<float>(j + radius, radius + I + 1), adaptiveBoostBorder[0].at<float>(j + radius, radius + I + 1));
 					}
@@ -10842,7 +10842,7 @@ namespace cp
 						dste[I + 1] += alphak * oddratio * cos(os) * sumsoe;
 					}
 					os = omega[k] * gpyo_0[I];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[0].at<float>(j + radius + 1, radius + I), adaptiveBoostBorder[0].at<float>(j + radius + 1, radius + I));
 					}
@@ -10855,7 +10855,7 @@ namespace cp
 						dsto[I] += alphak * evenratio * cos(os) * sumseo;
 					}
 					os = omega[k] * gpyo_0[I + 1];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[0].at<float>(j + radius + 1, radius + I + 1), adaptiveBoostBorder[0].at<float>(j + radius + 1, radius + I + 1));
 					}
@@ -10950,7 +10950,7 @@ namespace cp
 #pragma region LaplacianLevel
 
 			float* ctable = nullptr;
-			if constexpr (isUseFourierTableLevel)
+			if constexpr (is_use_fourier_table_level)
 			{
 				ctable = &cosTable[FourierTableSize * k];
 			}
@@ -11000,7 +11000,7 @@ namespace cp
 				}
 
 				//h filter
-				if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+				if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 				{
 					adaptiveSigma_e = (__m256*)adaptiveSigmaBorder[l].ptr<float>(j + radius, radius);
 					adaptiveBoost_e = (__m256*)adaptiveBoostBorder[l].ptr<float>(j + radius, radius);
@@ -11034,7 +11034,7 @@ namespace cp
 					__m256 sin1 = _mm256_permute2f128_ps(temp0, temp1, 0x31);
 
 					__m256 mcos;
-					if constexpr (isUseFourierTableLevel)
+					if constexpr (is_use_fourier_table_level)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpye_l + I));
 						mcos = _mm256_i32gather_ps(ctable, idx, sizeof(float));
@@ -11045,7 +11045,7 @@ namespace cp
 						mcos = _mm256_cos_ps(ms);
 					}
 					sin0 = _mm256_fmsub_ps(mevenoddratio, sin0, _mm256_loadu_ps(ppye_sin + I));
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						malpha_k = getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_e++, *adaptiveBoost_e++);
 					}
@@ -11058,7 +11058,7 @@ namespace cp
 						_mm256_storeu_ps(dste + I, _mm256_fmadd_ps(malpha_k, _mm256_mul_ps(mcos, sin0), _mm256_loadu_ps(dste + I)));
 					}
 
-					if constexpr (isUseFourierTableLevel)
+					if constexpr (is_use_fourier_table_level)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpye_l + I + 8));
 						mcos = _mm256_i32gather_ps(ctable, idx, sizeof(float));
@@ -11069,7 +11069,7 @@ namespace cp
 						mcos = _mm256_cos_ps(ms);
 					}
 					sin1 = _mm256_fmsub_ps(mevenoddratio, sin1, _mm256_loadu_ps(ppye_sin + I + 8));
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						malpha_k = getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_e++, *adaptiveBoost_e++);
 					}
@@ -11088,7 +11088,7 @@ namespace cp
 					sin0 = _mm256_permute2f128_ps(temp0, temp1, 0x20);
 					sin1 = _mm256_permute2f128_ps(temp0, temp1, 0x31);
 
-					if constexpr (isUseFourierTableLevel)
+					if constexpr (is_use_fourier_table_level)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpyo_l + I));
 						mcos = _mm256_i32gather_ps(ctable, idx, sizeof(float));
@@ -11099,7 +11099,7 @@ namespace cp
 						mcos = _mm256_cos_ps(ms);
 					}
 					sin0 = _mm256_fmsub_ps(mevenoddratio, sin0, _mm256_loadu_ps(ppyo_sin + I));
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						malpha_k = getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_o++, *adaptiveBoost_o++);
 					}
@@ -11112,7 +11112,7 @@ namespace cp
 						_mm256_storeu_ps(dsto + I, _mm256_fmadd_ps(malpha_k, _mm256_mul_ps(mcos, sin0), _mm256_loadu_ps(dsto + I)));
 					}
 
-					if constexpr (isUseFourierTableLevel)
+					if constexpr (is_use_fourier_table_level)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpyo_l + I + 8));
 						mcos = _mm256_i32gather_ps(ctable, idx, sizeof(float));
@@ -11123,7 +11123,7 @@ namespace cp
 						mcos = _mm256_cos_ps(ms);
 					}
 					sin1 = _mm256_fmsub_ps(mevenoddratio, sin1, _mm256_loadu_ps(ppyo_sin + I + 8));
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						malpha_k = getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_o++, *adaptiveBoost_o++);
 					}
@@ -11156,7 +11156,7 @@ namespace cp
 					}
 					const int I = i << 1;
 					float os = omega[k] * gpye_l[I];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[l].at<float>(j + radius, radius + I), adaptiveBoostBorder[l].at<float>(j + radius, radius + I));
 					}
@@ -11169,7 +11169,7 @@ namespace cp
 						dste[I] += alphak * (cos(os) * (evenratio * sumsee - ppye_sin[I]));
 					}
 					os = omega[k] * gpye_l[I + 1];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[l].at<float>(j + radius, radius + I + 1), adaptiveBoostBorder[l].at<float>(j + radius, radius + I + 1));
 					}
@@ -11182,7 +11182,7 @@ namespace cp
 						dste[I + 1] += alphak * (cos(os) * (oddratio * sumsoe - ppye_sin[I + 1]));
 					}
 					os = omega[k] * gpyo_l[I];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[l].at<float>(j + radius + 1, radius + I), adaptiveBoostBorder[l].at<float>(j + radius + 1, radius + I));
 					}
@@ -11195,7 +11195,7 @@ namespace cp
 						dsto[I] += alphak * (cos(os) * (evenratio * sumseo - ppyo_sin[I]));
 					}
 					os = omega[k] * gpyo_l[I + 1];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[l].at<float>(j + radius + 1, radius + I + 1), adaptiveBoostBorder[l].at<float>(j + radius + 1, radius + I + 1));
 					}
@@ -11225,7 +11225,7 @@ namespace cp
 	}
 
 
-	template<bool isInit, bool adaptiveMethod, bool isUseFourierTable0, bool isUseFourierTableLevel>
+	template<bool isInit, bool adaptive_method, bool is_use_fourier_table0, bool is_use_fourier_table_level>
 	void LocalMultiScaleFilterFourier::buildLaplacianCosPyramidIgnoreBoundary(const vector<Mat>& GaussianPyramid, const Mat& src8u, vector<Mat>& destPyramid, const int k, const int level, vector<Mat>& FourierPyramidCos)
 	{
 		const int rs = radius >> 1;
@@ -11394,7 +11394,7 @@ namespace cp
 
 #pragma region Laplacian0
 			float* stable = nullptr;
-			if constexpr (isUseFourierTable0)
+			if constexpr (is_use_fourier_table0)
 			{
 				stable = &sinTable[FourierTableSize * k];
 			}
@@ -11441,7 +11441,7 @@ namespace cp
 				}
 
 				//h filter
-				if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+				if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 				{
 					adaptiveSigma_e = (__m256*)adaptiveSigmaBorder[0].ptr<float>(j + radius, radius);
 					adaptiveBoost_e = (__m256*)adaptiveBoostBorder[0].ptr<float>(j + radius, radius);
@@ -11474,7 +11474,7 @@ namespace cp
 					__m256 cos1 = _mm256_permute2f128_ps(s1, s2, 0x31);
 
 					__m256 msin;
-					if constexpr (isUseFourierTable0)
+					if constexpr (is_use_fourier_table0)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpye_0 + I));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -11484,7 +11484,7 @@ namespace cp
 						const __m256 ms = _mm256_mul_ps(momega_k, _mm256_loadu_ps(gpye_0 + I));
 						msin = _mm256_sin_ps(ms);
 					}
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						mevenodd_alpha_k = _mm256_mul_ps(mevenoddratio, getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_e++, *adaptiveBoost_e++));
 					}
@@ -11497,7 +11497,7 @@ namespace cp
 						_mm256_storeu_ps(dste + I, _mm256_fmadd_ps(mevenodd_alpha_k, _mm256_mul_ps(msin, cos0), _mm256_loadu_ps(dste + I)));
 					}
 
-					if constexpr (isUseFourierTable0)
+					if constexpr (is_use_fourier_table0)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpye_0 + I + 8));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -11507,7 +11507,7 @@ namespace cp
 						const __m256 ms = _mm256_mul_ps(momega_k, _mm256_loadu_ps(gpye_0 + I + 8));
 						msin = _mm256_sin_ps(ms);
 					}
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						mevenodd_alpha_k = _mm256_mul_ps(mevenoddratio, getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_e++, *adaptiveBoost_e++));
 					}
@@ -11525,7 +11525,7 @@ namespace cp
 					cos0 = _mm256_permute2f128_ps(s1, s2, 0x20);
 					cos1 = _mm256_permute2f128_ps(s1, s2, 0x31);
 
-					if constexpr (isUseFourierTable0)
+					if constexpr (is_use_fourier_table0)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpyo_0 + I));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -11535,7 +11535,7 @@ namespace cp
 						const __m256 ms = _mm256_mul_ps(momega_k, _mm256_loadu_ps(gpyo_0 + I));
 						msin = _mm256_sin_ps(ms);
 					}
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						mevenodd_alpha_k = _mm256_mul_ps(mevenoddratio, getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_o++, *adaptiveBoost_o++));
 					}
@@ -11547,7 +11547,7 @@ namespace cp
 					{
 						_mm256_storeu_ps(dsto + I, _mm256_fmadd_ps(mevenodd_alpha_k, _mm256_mul_ps(msin, cos0), _mm256_loadu_ps(dsto + I)));
 					}
-					if constexpr (isUseFourierTable0)
+					if constexpr (is_use_fourier_table0)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpyo_0 + I + 8));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -11557,7 +11557,7 @@ namespace cp
 						const __m256 ms = _mm256_mul_ps(momega_k, _mm256_loadu_ps(gpyo_0 + I + 8));
 						msin = _mm256_sin_ps(ms);
 					}
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						mevenodd_alpha_k = _mm256_mul_ps(mevenoddratio, getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_o++, *adaptiveBoost_o++));
 					}
@@ -11589,7 +11589,7 @@ namespace cp
 					const int I = i << 1;
 					float os = omega[k] * gpye_0[I];
 
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[0].at<float>(j + radius, radius + I), adaptiveBoostBorder[0].at<float>(j + radius, radius + I));
 					}
@@ -11602,7 +11602,7 @@ namespace cp
 						dste[I] += alphak * evenratio * sin(os) * sumcee;
 					}
 					os = omega[k] * gpye_0[I + 1];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[0].at<float>(j + radius, radius + I + 1), adaptiveBoostBorder[0].at<float>(j + radius, radius + I + 1));
 					}
@@ -11615,7 +11615,7 @@ namespace cp
 						dste[I + 1] += alphak * oddratio * sin(os) * sumcoe;
 					}
 					os = omega[k] * gpyo_0[I];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[0].at<float>(j + radius + 1, radius + I), adaptiveBoostBorder[0].at<float>(j + radius + 1, radius + I));
 					}
@@ -11628,7 +11628,7 @@ namespace cp
 						dsto[I] += alphak * evenratio * sin(os) * sumceo;
 					}
 					os = omega[k] * gpyo_0[I + 1];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[0].at<float>(j + radius + 1, radius + I + 1), adaptiveBoostBorder[0].at<float>(j + radius + 1, radius + I + 1));
 					}
@@ -11722,7 +11722,7 @@ namespace cp
 
 #pragma region LaplacianLevel
 			float* stable = nullptr;
-			if constexpr (isUseFourierTableLevel)
+			if constexpr (is_use_fourier_table_level)
 			{
 				stable = &sinTable[FourierTableSize * k];
 			}
@@ -11772,7 +11772,7 @@ namespace cp
 				}
 
 				//h filter
-				if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+				if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 				{
 					adaptiveSigma_e = (__m256*)adaptiveSigmaBorder[l].ptr<float>(j + radius, radius);
 					adaptiveBoost_e = (__m256*)adaptiveBoostBorder[l].ptr<float>(j + radius, radius);
@@ -11806,7 +11806,7 @@ namespace cp
 					__m256 cos1 = _mm256_permute2f128_ps(temp0, temp1, 0x31);
 
 					__m256 msin;
-					if constexpr (isUseFourierTableLevel)
+					if constexpr (is_use_fourier_table_level)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpye_l + I));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -11817,7 +11817,7 @@ namespace cp
 						msin = _mm256_sin_ps(ms);
 					}
 					cos0 = _mm256_fmsub_ps(mevenoddratio, cos0, _mm256_loadu_ps(ppye_cos + I));
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						malpha_k = getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_e++, *adaptiveBoost_e++);
 					}
@@ -11830,7 +11830,7 @@ namespace cp
 						_mm256_storeu_ps(dste + I, _mm256_fmadd_ps(malpha_k, _mm256_mul_ps(msin, cos0), _mm256_loadu_ps(dste + I)));
 					}
 
-					if constexpr (isUseFourierTableLevel)
+					if constexpr (is_use_fourier_table_level)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpye_l + I + 8));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -11841,7 +11841,7 @@ namespace cp
 						msin = _mm256_sin_ps(ms);
 					}
 					cos1 = _mm256_fmsub_ps(mevenoddratio, cos1, _mm256_loadu_ps(ppye_cos + I + 8));
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						malpha_k = getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_e++, *adaptiveBoost_e++);
 					}
@@ -11860,7 +11860,7 @@ namespace cp
 					cos0 = _mm256_permute2f128_ps(temp0, temp1, 0x20);
 					cos1 = _mm256_permute2f128_ps(temp0, temp1, 0x31);
 
-					if constexpr (isUseFourierTableLevel)
+					if constexpr (is_use_fourier_table_level)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpyo_l + I));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -11871,7 +11871,7 @@ namespace cp
 						msin = _mm256_sin_ps(ms);
 					}
 					cos0 = _mm256_fmsub_ps(mevenoddratio, cos0, _mm256_loadu_ps(ppyo_cos + I));
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						malpha_k = getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_o++, *adaptiveBoost_o++);
 					}
@@ -11884,7 +11884,7 @@ namespace cp
 						_mm256_storeu_ps(dsto + I, _mm256_fmadd_ps(malpha_k, _mm256_mul_ps(msin, cos0), _mm256_loadu_ps(dsto + I)));
 					}
 
-					if constexpr (isUseFourierTableLevel)
+					if constexpr (is_use_fourier_table_level)
 					{
 						const __m256i idx = _mm256_cvtps_epi32(_mm256_loadu_ps(gpyo_l + I + 8));
 						msin = _mm256_i32gather_ps(stable, idx, sizeof(float));
@@ -11895,7 +11895,7 @@ namespace cp
 						msin = _mm256_sin_ps(ms);
 					}
 					cos1 = _mm256_fmsub_ps(mevenoddratio, cos1, _mm256_loadu_ps(ppyo_cos + I + 8));
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						malpha_k = getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_o++, *adaptiveBoost_o++);
 					}
@@ -11927,7 +11927,7 @@ namespace cp
 					}
 					const int I = i << 1;
 					float os = omega[k] * gpye_l[I];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[l].at<float>(j + radius, radius + I), adaptiveBoostBorder[l].at<float>(j + radius, radius + I));
 					}
@@ -11940,7 +11940,7 @@ namespace cp
 						dste[I] += alphak * (sin(os) * (evenratio * sumcee - ppye_cos[I]));
 					}
 					os = omega[k] * gpye_l[I + 1];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[l].at<float>(j + radius, radius + I + 1), adaptiveBoostBorder[l].at<float>(j + radius, radius + I + 1));
 					}
@@ -11953,7 +11953,7 @@ namespace cp
 						dste[I + 1] += alphak * (sin(os) * (oddratio * sumcoe - ppye_cos[I + 1]));
 					}
 					os = omega[k] * gpyo_l[I];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[l].at<float>(j + radius + 1, radius + I), adaptiveBoostBorder[l].at<float>(j + radius + 1, radius + I));
 					}
@@ -11966,7 +11966,7 @@ namespace cp
 						dsto[I] += alphak * (sin(os) * (evenratio * sumceo - ppyo_cos[I]));
 					}
 					os = omega[k] * gpyo_l[I + 1];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[l].at<float>(j + radius + 1, radius + I + 1), adaptiveBoostBorder[l].at<float>(j + radius + 1, radius + I + 1));
 					}
@@ -11995,7 +11995,7 @@ namespace cp
 		_mm_free(W);
 	}
 
-	template<bool isInit, bool adaptiveMethod, bool isUseFourierTable0, bool isUseFourierTableLevel, int D, int D2>
+	template<bool isInit, bool adaptive_method, bool is_use_fourier_table0, bool is_use_fourier_table_level, int D, int D2>
 	void LocalMultiScaleFilterFourier::buildLaplacianCosPyramidIgnoreBoundary(const vector<Mat>& GaussianPyramid, const Mat& src8u, vector<Mat>& destPyramid, const int k, const int level, vector<Mat>& FourierPyramidCos)
 	{
 		const int rs = radius >> 1;
@@ -12207,7 +12207,7 @@ namespace cp
 				}
 
 				//h filter
-				if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+				if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 				{
 					adaptiveSigma_e = (__m256*)adaptiveSigmaBorder[0].ptr<float>(j + radius, radius);
 					adaptiveBoost_e = (__m256*)adaptiveBoostBorder[0].ptr<float>(j + radius, radius);
@@ -12241,7 +12241,7 @@ namespace cp
 
 					__m256 ms = _mm256_mul_ps(momega_k, _mm256_loadu_ps(gpye_0 + I));
 					__m256 msin = _mm256_sin_ps(ms);
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						mevenodd_alpha_k = _mm256_mul_ps(mevenoddratio, getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_e++, *adaptiveBoost_e++));
 					}
@@ -12256,7 +12256,7 @@ namespace cp
 
 					ms = _mm256_mul_ps(momega_k, _mm256_loadu_ps(gpye_0 + I + 8));
 					msin = _mm256_sin_ps(ms);
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						mevenodd_alpha_k = _mm256_mul_ps(mevenoddratio, getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_e++, *adaptiveBoost_e++));
 					}
@@ -12276,7 +12276,7 @@ namespace cp
 
 					ms = _mm256_mul_ps(momega_k, _mm256_loadu_ps(gpyo_0 + I));
 					msin = _mm256_sin_ps(ms);
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						mevenodd_alpha_k = _mm256_mul_ps(mevenoddratio, getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_o++, *adaptiveBoost_o++));
 					}
@@ -12290,7 +12290,7 @@ namespace cp
 					}
 					ms = _mm256_mul_ps(momega_k, _mm256_loadu_ps(gpyo_0 + I + 8));
 					msin = _mm256_sin_ps(ms);
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						mevenodd_alpha_k = _mm256_mul_ps(mevenoddratio, getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_o++, *adaptiveBoost_o++));
 					}
@@ -12322,7 +12322,7 @@ namespace cp
 					const int I = i << 1;
 					float os = omega[k] * gpye_0[I];
 
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[0].at<float>(j + radius, radius + I), adaptiveBoostBorder[0].at<float>(j + radius, radius + I));
 					}
@@ -12335,7 +12335,7 @@ namespace cp
 						dste[I] += alphak * evenratio * sin(os) * sumcee;
 					}
 					os = omega[k] * gpye_0[I + 1];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[0].at<float>(j + radius, radius + I + 1), adaptiveBoostBorder[0].at<float>(j + radius, radius + I + 1));
 					}
@@ -12348,7 +12348,7 @@ namespace cp
 						dste[I + 1] += alphak * oddratio * sin(os) * sumcoe;
 					}
 					os = omega[k] * gpyo_0[I];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[0].at<float>(j + radius + 1, radius + I), adaptiveBoostBorder[0].at<float>(j + radius + 1, radius + I));
 					}
@@ -12361,7 +12361,7 @@ namespace cp
 						dsto[I] += alphak * evenratio * sin(os) * sumceo;
 					}
 					os = omega[k] * gpyo_0[I + 1];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[0].at<float>(j + radius + 1, radius + I + 1), adaptiveBoostBorder[0].at<float>(j + radius + 1, radius + I + 1));
 					}
@@ -12500,7 +12500,7 @@ namespace cp
 				}
 
 				//h filter
-				if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+				if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 				{
 					adaptiveSigma_e = (__m256*)adaptiveSigmaBorder[l].ptr<float>(j + radius, radius);
 					adaptiveBoost_e = (__m256*)adaptiveBoostBorder[l].ptr<float>(j + radius, radius);
@@ -12536,7 +12536,7 @@ namespace cp
 					__m256 ms = _mm256_mul_ps(momega_k, _mm256_loadu_ps(gpye_l + I));
 					__m256 msin = _mm256_sin_ps(ms);
 					cos0 = _mm256_fmsub_ps(mevenoddratio, cos0, _mm256_loadu_ps(ppye_cos + I));
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						malpha_k = getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_e++, *adaptiveBoost_e++);
 					}
@@ -12552,7 +12552,7 @@ namespace cp
 					ms = _mm256_mul_ps(momega_k, _mm256_loadu_ps(gpye_l + I + 8));
 					msin = _mm256_sin_ps(ms);
 					cos1 = _mm256_fmsub_ps(mevenoddratio, cos1, _mm256_loadu_ps(ppye_cos + I + 8));
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						malpha_k = getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_e++, *adaptiveBoost_e++);
 					}
@@ -12574,7 +12574,7 @@ namespace cp
 					ms = _mm256_mul_ps(momega_k, _mm256_loadu_ps(gpyo_l + I));
 					msin = _mm256_sin_ps(ms);
 					cos0 = _mm256_fmsub_ps(mevenoddratio, cos0, _mm256_loadu_ps(ppyo_cos + I));
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						malpha_k = getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_o++, *adaptiveBoost_o++);
 					}
@@ -12590,7 +12590,7 @@ namespace cp
 					ms = _mm256_mul_ps(momega_k, _mm256_loadu_ps(gpyo_l + I + 8));
 					msin = _mm256_sin_ps(ms);
 					cos1 = _mm256_fmsub_ps(mevenoddratio, cos1, _mm256_loadu_ps(ppyo_cos + I + 8));
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						malpha_k = getAdaptiveAlpha(momega_k, mbase, *adaptiveSigma_o++, *adaptiveBoost_o++);
 					}
@@ -12622,7 +12622,7 @@ namespace cp
 					}
 					const int I = i << 1;
 					float os = omega[k] * gpye_l[I];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[l].at<float>(j + radius, radius + I), adaptiveBoostBorder[l].at<float>(j + radius, radius + I));
 					}
@@ -12635,7 +12635,7 @@ namespace cp
 						dste[I] += alphak * (sin(os) * (evenratio * sumcee - ppye_cos[I]));
 					}
 					os = omega[k] * gpye_l[I + 1];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[l].at<float>(j + radius, radius + I + 1), adaptiveBoostBorder[l].at<float>(j + radius, radius + I + 1));
 					}
@@ -12648,7 +12648,7 @@ namespace cp
 						dste[I + 1] += alphak * (sin(os) * (oddratio * sumcoe - ppye_cos[I + 1]));
 					}
 					os = omega[k] * gpyo_l[I];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[l].at<float>(j + radius + 1, radius + I), adaptiveBoostBorder[l].at<float>(j + radius + 1, radius + I));
 					}
@@ -12661,7 +12661,7 @@ namespace cp
 						dsto[I] += alphak * (sin(os) * (evenratio * sumceo - ppyo_cos[I]));
 					}
 					os = omega[k] * gpyo_l[I + 1];
-					if constexpr (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
+					if constexpr (adaptive_method == AdaptiveMethod::ADAPTIVE)
 					{
 						alphak = getAdaptiveAlpha(omega[k], base, adaptiveSigmaBorder[l].at<float>(j + radius + 1, radius + I + 1), adaptiveBoostBorder[l].at<float>(j + radius + 1, radius + I + 1));
 					}
