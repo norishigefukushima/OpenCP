@@ -1,5 +1,6 @@
 #include "color.hpp"
 #include "arithmetic.hpp"
+#include "statistic.hpp"
 #include "inlineSIMDfunctions.hpp"
 #include "metrics.hpp"
 #include "concat.hpp"
