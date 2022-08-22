@@ -618,6 +618,12 @@
     <ClCompile Include="webp.cpp">
       <Filter>ソース ファイル\core</Filter>
     </ClCompile>
+    <ClCompile Include="remappedDither.cpp">
+      <Filter>ソース ファイル\imgproc</Filter>
+    </ClCompile>
+    <ClCompile Include="IM2COL.cpp">
+      <Filter>ソース ファイル\imgproc</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libGaussian\gaussian_conv.h">
@@ -1113,6 +1119,12 @@
       <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\webp.hpp">
+      <Filter>ヘッダー ファイル\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\remappedDither.hpp">
+      <Filter>ヘッダー ファイル\imgproc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\IM2COL.hpp">
       <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
   </ItemGroup>

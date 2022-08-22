@@ -459,7 +459,8 @@ int main(int argc, char** argv)
 	//Mat img = imread("img/lenna.png");
 	Mat img = imread("img/Kodak/kodim07.png");
 	
-	vector<Mat> a(256);
+	//Webp test
+	/*vector<Mat> a(256);
 	for (int i = 0; i < 256; i++)
 	{
 		add(img, Scalar::all(i), a[i]);
@@ -471,6 +472,8 @@ int main(int argc, char** argv)
 
 	Mat aa = convert(imgg, CV_32F);
 	Mat t0, t1;
+	*/
+
 	//rangeBlurFilterRef(aa, t0, 5, 3);
 	//rangeBlurFilter(aa, t1, 5, 3);
 	//guiAlphaBlend(convert(t0,CV_8U), convert(t1,CV_8U));
@@ -485,7 +488,7 @@ int main(int argc, char** argv)
 	//guiPixelizationTest();
 	//testStreamConvert8U(); return 0;
 	//testKMeans(img); return 0;
-	//testTiling(img); return 0;
+	testTiling(img); return 0;
 	//copyMakeBorderTest(img); return 0;
 	//testSplitMerge(img); return 0;
 	//consoleImageTest(); return 0;
@@ -531,7 +534,7 @@ int main(int argc, char** argv)
 
 #pragma region filter
 	//testGuidedImageFilter(Mat(), Mat()); return 0;
-	//highDimentionalGaussianFilterTest(img); return 0;
+	highDimentionalGaussianFilterTest(img); return 0;
 	//highDimentionalGaussianFilterHSITest(); return 0;
 	//guiDenoiseTest(img);
 	//testWeightedHistogramFilterDisparity(); return 0;

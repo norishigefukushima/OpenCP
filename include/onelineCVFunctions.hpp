@@ -16,4 +16,6 @@ namespace cp
 	CP_EXPORT cv::Mat border(cv::Mat& src, const int top, const int bottom, const int left, const int right, const int borderType = cv::BORDER_DEFAULT);
 	//copyMakeBorder with one parameter
 	CP_EXPORT cv::Mat border(cv::Mat& src, const int r, const int borderType = cv::BORDER_DEFAULT);
+
+	CP_EXPORT void printMinMax(cv::InputArray src);
 }

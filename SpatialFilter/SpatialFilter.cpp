@@ -280,7 +280,8 @@ namespace cp
 				return cv::Ptr<cp::SpatialFilterBase>(new GaussianFilterFIRKahan(dest_depth)); break;
 			case SpatialFilterAlgorithm::FIR_SEPARABLE:
 			{
-				int schedule = GaussianFilterSeparableFIR::HV_BorderD;
+				//int schedule = GaussianFilterSeparableFIR::HV_BorderD;
+				int schedule = GaussianFilterSeparableFIR::VHI_Border;
 				return cv::Ptr<cp::SpatialFilterBase>(new GaussianFilterSeparableFIR(schedule, CV_64F)); break;
 			}
 

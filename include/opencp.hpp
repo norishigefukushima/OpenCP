@@ -18,6 +18,7 @@
 #include "draw.hpp"
 #include "highguiex.hpp"
 #include "histogram.hpp"
+#include "IM2COL.hpp"
 #include "imagediff.hpp"
 #include "imshowExtension.hpp"
 #include "kmeans.hpp"
@@ -56,6 +57,7 @@
 #include "metricsDD.hpp"
 #include "pixelization.hpp"
 #include "ppmx.hpp"
+#include "remappedDither.hpp"
 #include "shiftImage.hpp"
 #include "slic.hpp"
 #include "speckle.hpp"
@@ -165,8 +167,6 @@ using namespace cv;
 
 namespace cp
 {
-
-
 
 }
 */
