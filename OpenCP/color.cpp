@@ -1834,7 +1834,7 @@ namespace cp
 
 		if (src_.depth() == CV_32F)
 		{
-			Mat a=src_.getMat();
+			Mat a = src_.getMat();
 			dest.create(src_.size(), CV_32F);
 			Mat b = dest.getMat();
 			cvtColorIntegerY_32F(a, b);
@@ -3617,7 +3617,8 @@ namespace cp
 		return cvtColorPCAErrorPSNR(vsrc, dest_channels);
 	}
 
-	void cvtColorPCA(const vector<Mat>& src, vector<Mat>& dest, const int dest_channels, cv::Mat& projectionMatrix)
+
+	void cvtColorPCA(const vector<Mat>& src, vector<Mat>& dest, const int dest_channels, Mat& projectionMatrix, Mat& eval, Mat& mean)
 	{
 		CV_Assert(src[0].depth() == CV_32F);
 
@@ -3647,7 +3648,7 @@ namespace cp
 			else calcCovarMatrixN_(src, cov);
 		}
 
-		Mat eval, evec;
+		Mat evec;
 		eigen(cov, eval, evec);
 
 		evec(Rect(0, 0, evec.cols, channels)).convertTo(projectionMatrix, CV_32F);
@@ -3660,10 +3661,23 @@ namespace cp
 		else  projectPCA_MxN(src, dest, projectionMatrix);
 	}
 
+	void cvtColorPCA(const vector<Mat>& src, vector<Mat>& dest, const int dest_channels, Mat& projectionMatrix, Mat& eval)
+	{
+		Mat mean;
+		cvtColorPCA(src, dest, dest_channels, projectionMatrix, eval, mean);
+	}
+	void cvtColorPCA(const vector<Mat>& src, vector<Mat>& dest, const int dest_channels, Mat& projectionMatrix)
+	{
+		Mat mean;
+		Mat eval;
+		cvtColorPCA(src, dest, dest_channels, projectionMatrix, eval, mean);
+	}
 	void cvtColorPCA(const std::vector<cv::Mat>& src, std::vector<cv::Mat>& dest, const int dest_channels)
 	{
-		Mat temp;
-		cvtColorPCA(src, dest, dest_channels, temp);
+		Mat projectionMatrix;
+		Mat eval;
+		Mat mean;
+		cvtColorPCA(src, dest, dest_channels, projectionMatrix, eval, mean);
 	}
 
 	void guiSplit(InputArray src, string wname)
@@ -3682,6 +3696,7 @@ namespace cp
 		}
 		destroyWindow(wname);
 	}
+
 
 	template<typename S, typename D>
 	void cvtColorHSI2BGR_round(Mat& src, Mat& dest)
@@ -3972,6 +3987,6 @@ namespace cp
 		if (C.empty())C.create(3, 4, CV_64F);
 
 		xcvFindColorMatrix(&CvMat(src_point_crowd1), &CvMat(src_point_crowd2), &CvMat(C));
-	}
+}
 #endif
 }
