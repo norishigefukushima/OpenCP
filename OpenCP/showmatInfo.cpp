@@ -14,9 +14,9 @@ namespace cp
 			return;
 		}
 
-		cout << "size    : " << src.size() << endl;
-		cout << "channel : " << src.channels() << endl;
-		cout << "depth   : ";
+		cout << "size[WxH]: " << src.size() << endl;
+		cout << "channel  : " << src.channels() << endl;
+		cout << "depth    : ";
 		if (src.depth() == CV_8U)cout << "8U" << endl;
 		else if (src.depth() == CV_8S)cout << "8S" << endl;
 		else if (src.depth() == CV_16S)cout << "16S" << endl;
