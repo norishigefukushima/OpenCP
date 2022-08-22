@@ -125,7 +125,7 @@ void highDimentionalGaussianFilterTest(Mat& src)
 	namedWindow(wname);
 
 	int a = 0; createTrackbar("a", wname, &a, 100);
-	int sw = 2; createTrackbar("switch", wname, &sw, 2);
+	int sw = 1; createTrackbar("switch", wname, &sw, 2);
 	//int r = 20; createTrackbar("r", wname, &r, 200);
 	int space = 36; createTrackbar("space", wname, &space, 200);
 	int color = 200; createTrackbar("color", wname, &color, 2550);
@@ -139,7 +139,7 @@ void highDimentionalGaussianFilterTest(Mat& src)
 	cp::Stat st;
 	Timer t;
 	Mat ref;
-
+	Mat src64 = cp::convert(srcf, CV_64F);
 	while (key != 'q')
 	{
 		//cout<<"r="<<r<<": "<<"please change 'sw' for changing the type of implimentations."<<endl;
@@ -173,7 +173,8 @@ void highDimentionalGaussianFilterTest(Mat& src)
 		{
 			method = "cp::bilateralFilterPermutohedralLattice";
 			t.start();
-			cp::highDimensionalGaussianFilterPermutohedralLattice(srcf, dest, sigma_color, sigma_space);
+			cp::highDimensionalGaussianFilter(src64, src64, dest, Size(d, d), sigma_color, sigma_space, BORDER_DEFAULT);
+			//cp::highDimensionalGaussianFilterPermutohedralLattice(srcf, dest, sigma_color, sigma_space);
 			//cp::highDimensionalGaussianFilterPermutohedralLattice(srcf, dest, sigma_color, sigma_space);
 			//cp::highDimensionalGaussianFilterPermutohedralLatticeTile(srcf, srcf, dest, sigma_color, sigma_space, Size(4, 4));
 			//cp::highDimensionalGaussianFilterPermutohedralLatticePCATile(srcf, srcf, dest, sigma_color, sigma_space, 1,Size(4, 4));
