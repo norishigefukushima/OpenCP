@@ -2035,6 +2035,7 @@ STATIC_INLINE void print(__m128d src)
 	//src.m128d_f64[0], src.m128d_f64[1]);
 }
 
+#define print_m128d(src) printf_s("%s: %6.2f %6.2f\n",#src,((double*)&src)[0], ((double*)&src)[1]);
 #define print_m256d(src) printf_s("%s: %6.2f %6.2f | %6.2f %6.2f\n",#src,((double*)&src)[0], ((double*)&src)[1], ((double*)&src)[2], ((double*)&src)[3]);
 
 STATIC_INLINE void print(__m256d src)
@@ -2183,6 +2184,16 @@ STATIC_INLINE void print_long(__m256i src)
 	}
 	printf_s("\n");
 }
+
+STATIC_INLINE void print_simd(__m128 src)  { print_m128(src);}
+STATIC_INLINE void print_simd(__m128i src) { print_int(src); }
+STATIC_INLINE void print_simd(__m128d src) { print_m128d(src); }
+STATIC_INLINE void print_simd(__m256i src) { print_int(src); }
+STATIC_INLINE void print_simd(__m256  src) { print_m256(src); }
+STATIC_INLINE void print_simd(__m256d src) { print_m256d(src); }
+STATIC_INLINE void print_simd(__m512  src) {}
+STATIC_INLINE void print_simd(__m512d src) {}
+STATIC_INLINE void print_simd(__m512i src) {}
 #pragma endregion
 
 
@@ -3621,10 +3632,10 @@ STATIC_INLINE __m512 _mm512_set_step_ps(float v, float step = 1.f)
 STATIC_INLINE __m512i _mm512_set_step_epi8(char v, char step = 1)
 {
 	return _mm512_setr_epi8(
-		v +  0 * step, v +  1 * step, v + 2 * step, v + 3 * step, v + 4 * step, v + 5 * step, v + 6 * step, v + 7 * step, v + 8 * step, v + 9 * step, v + 10 * step, v + 11 * step, v + 12 * step, v + 13 * step, v + 14 * step, v + 15 * step,
-		v + 16 * step, v + 17 * step, v +18 * step, v +19 * step, v +20 * step, v +21 * step, v +22 * step, v +23 * step, v +24 * step, v +25 * step, v + 26 * step, v + 27 * step, v + 28 * step, v + 29 * step, v + 30 * step, v + 31 * step,
-		v + 32 * step, v + 33 * step, v +34 * step, v +35 * step, v +36 * step, v +37 * step, v +38 * step, v +39 * step, v +40 * step, v +41 * step, v + 42 * step, v + 43 * step, v + 44 * step, v + 45 * step, v + 46 * step, v + 47 * step,
-		v + 48 * step, v + 49 * step, v +50 * step, v +51 * step, v +52 * step, v +53 * step, v +54 * step, v +55 * step, v +56 * step, v +57 * step, v + 58 * step, v + 59 * step, v + 60 * step, v + 61 * step, v + 62 * step, v + 63 * step
+		v + 0 * step, v + 1 * step, v + 2 * step, v + 3 * step, v + 4 * step, v + 5 * step, v + 6 * step, v + 7 * step, v + 8 * step, v + 9 * step, v + 10 * step, v + 11 * step, v + 12 * step, v + 13 * step, v + 14 * step, v + 15 * step,
+		v + 16 * step, v + 17 * step, v + 18 * step, v + 19 * step, v + 20 * step, v + 21 * step, v + 22 * step, v + 23 * step, v + 24 * step, v + 25 * step, v + 26 * step, v + 27 * step, v + 28 * step, v + 29 * step, v + 30 * step, v + 31 * step,
+		v + 32 * step, v + 33 * step, v + 34 * step, v + 35 * step, v + 36 * step, v + 37 * step, v + 38 * step, v + 39 * step, v + 40 * step, v + 41 * step, v + 42 * step, v + 43 * step, v + 44 * step, v + 45 * step, v + 46 * step, v + 47 * step,
+		v + 48 * step, v + 49 * step, v + 50 * step, v + 51 * step, v + 52 * step, v + 53 * step, v + 54 * step, v + 55 * step, v + 56 * step, v + 57 * step, v + 58 * step, v + 59 * step, v + 60 * step, v + 61 * step, v + 62 * step, v + 63 * step
 	);
 }
 
