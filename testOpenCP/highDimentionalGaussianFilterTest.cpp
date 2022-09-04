@@ -119,13 +119,16 @@ void highDimentionalGaussianFilterTest(Mat& src)
 {
 	//resize(src, src, Size(4000, 3000));
 	Mat srcf = convert(src, CV_32F);
+	Mat tmp;
+	cp::cvtColorAverageGray(srcf, tmp);
+	srcf = tmp.clone();
 	Mat dest, dest2;
 
 	string wname = "highDimentionalGaussianFilter";
 	namedWindow(wname);
 
 	int a = 0; createTrackbar("a", wname, &a, 100);
-	int sw = 1; createTrackbar("switch", wname, &sw, 2);
+	int sw = 0; createTrackbar("switch", wname, &sw, 2);
 	//int r = 20; createTrackbar("r", wname, &r, 200);
 	int space = 36; createTrackbar("space", wname, &space, 200);
 	int color = 200; createTrackbar("color", wname, &color, 2550);
@@ -166,6 +169,7 @@ void highDimentionalGaussianFilterTest(Mat& src)
 			//cp::nonLocalMeansFilter(srcf, dest, Size(6, 6), Size(22, 22), sigma_color, sigma_space, 0);
 			t.start();
 			cp::highDimensionalGaussianFilter(srcf, srcf, dest, Size(d, d), sigma_color, sigma_space, BORDER_DEFAULT);
+			//cp::highDimensionalGaussianFilter(srcf, srcf, srcf, dest, Size(d, d), sigma_color, sigma_space, BORDER_DEFAULT);
 			//cp::highDimensionalGaussianFilterPermutohedralLattice(srcf, dest, sigma_color, sigma_space);
 			t.getpushLapTime();
 		}
@@ -173,7 +177,10 @@ void highDimentionalGaussianFilterTest(Mat& src)
 		{
 			method = "cp::bilateralFilterPermutohedralLattice";
 			t.start();
+			//cp::highDimensionalGaussianFilter(srcf, srcf, dest, Size(d, d), sigma_color, sigma_space, BORDER_DEFAULT);
+
 			cp::highDimensionalGaussianFilter(src64, src64, dest, Size(d, d), sigma_color, sigma_space, BORDER_DEFAULT);
+			//cp::highDimensionalGaussianFilter(src64, src64, src64, dest, Size(d, d), sigma_color, sigma_space, BORDER_DEFAULT);
 			//cp::highDimensionalGaussianFilterPermutohedralLattice(srcf, dest, sigma_color, sigma_space);
 			//cp::highDimensionalGaussianFilterPermutohedralLattice(srcf, dest, sigma_color, sigma_space);
 			//cp::highDimensionalGaussianFilterPermutohedralLatticeTile(srcf, srcf, dest, sigma_color, sigma_space, Size(4, 4));
@@ -196,7 +203,7 @@ void highDimentionalGaussianFilterTest(Mat& src)
 		ci("PSNR %f %f %f dB", getPSNR(dest, ref), st.getMin(), st.getMax());
 		ci.show();
 		if (key == 'd')guiDiff(dest, ref);
-		alphaBlend(src, dest, a / 100.0, show);
+		alphaBlend(ref, dest, a / 100.0, show);
 		imshowScale(wname, show);
 		key = waitKey(1);
 	}

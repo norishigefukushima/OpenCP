@@ -31,11 +31,13 @@ namespace cp
 		*/
 		HashTablePermutohedral(int kd_, int vd_) : kd(kd_), vd(vd_)
 		{
-			capacity = 1 << 15;
+			//capacity = 1 << 15;
 			filled = 0;
 			entries = new Entry[capacity];
 			keys = (short*)_mm_malloc(sizeof(short) * kd * capacity / 2, SSE_ALIGN);
 			values = (float*)_mm_malloc(sizeof(float) * vd * capacity / 2, SSE_ALIGN);
+			//keys = (short*)_mm_malloc(sizeof(short) * kd * capacity, SSE_ALIGN);
+			//values = (float*)_mm_malloc(sizeof(float) * vd * capacity, SSE_ALIGN);
 			memset(values, 0, sizeof(float) * vd * capacity / 2);
 		}
 
@@ -63,7 +65,6 @@ namespace cp
 		*/
 		int lookupOffset(short* key, size_t h, bool create = true)
 		{
-
 			// Double hash table size if necessary
 			if (filled >= (capacity / 2) - 1) { grow(); }
 
@@ -174,7 +175,8 @@ namespace cp
 		short* keys;
 		float* values;
 		Entry* entries;
-		size_t capacity, filled;
+		size_t capacity = (1 << 15);
+		size_t filled;
 		int kd, vd;
 	};
 
@@ -759,7 +761,7 @@ namespace cp
 			AutoBuffer<short> neighbor2(gdim + 1);
 			AutoBuffer<float> zero(shdim);
 			for (int k = 0; k < shdim; k++) zero[k] = 0.f;
-
+			//print_debug(hashTable.size());
 			float* newValue = (float*)_mm_malloc(sizeof(float) * shdim * hashTable.size(), SSE_ALIGN);
 			float* oldValue = hashTable.getValues();
 			float* hashTableBase = oldValue;
@@ -786,10 +788,10 @@ namespace cp
 					float* newVal = newValue + i * shdim;
 
 					float* vm1 = hashTable.lookup(neighbor1, false); // look up first neighbor
-					vm1 = (vm1) ? vm1 - hashTableBase + oldValue : zero;
+					vm1 = (vm1 != nullptr) ? vm1 - hashTableBase + oldValue : zero;
 
 					float* vp1 = hashTable.lookup(neighbor2, false); // look up second neighbor	  
-					vp1 = (vp1) ? vp1 - hashTableBase + oldValue : zero;
+					vp1 = (vp1 != nullptr) ? vp1 - hashTableBase + oldValue : zero;
 
 					// Mix values of the three vertices
 					for (int k = 0; k < shdim; k++)
