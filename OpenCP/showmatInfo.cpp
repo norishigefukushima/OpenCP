@@ -36,7 +36,7 @@ namespace cp
 			Scalar v, stdv;
 			cv::meanStdDev(src, v, stdv);
 			
-			if (v.val[0] == 0 && v.val[1] == 0 && v.val[2] == 0 && v.val[3] == 0)
+			if (v.val[0] == 0.0 && v.val[1] == 0.0 && v.val[2] == 0.0 && v.val[3] == 0.0)
 			{
 				cout << "zero set" << endl;
 			}
@@ -49,6 +49,19 @@ namespace cp
 					double minv, maxv;
 					minMaxLoc(src, &minv, &maxv);
 					cout << "minmax: " << minv << "," << maxv << endl;
+				}
+				else if (src.channels() == 2)
+				{
+					cout << "mean  : " << v.val[0] << ", " << v.val[1] << endl;
+					cout << "std   : " << stdv.val[0] << ", " << stdv.val[1] << endl;
+
+					vector<Mat> vv;
+					split(src, vv);
+					double minv, maxv;
+					minMaxLoc(vv[0], &minv, &maxv);
+					cout << "minmax0: " << minv << ", " << maxv << endl;
+					minMaxLoc(vv[1], &minv, &maxv);
+					cout << "minmax1: " << minv << ", " << maxv << endl;
 				}
 				else if (src.channels() == 3)
 				{
@@ -64,6 +77,23 @@ namespace cp
 					cout << "minmax1: " << minv << "," << maxv << endl;
 					minMaxLoc(vv[2], &minv, &maxv);
 					cout << "minmax2: " << minv << "," << maxv << endl;
+				}
+				else if (src.channels() == 4)
+				{
+					cout << "mean  : " << v.val[0] << ", " << v.val[1] << ", " << v.val[2] << ", " << v.val[3] << endl;
+					cout << "std   : " << stdv.val[0] << ", " << stdv.val[1] << ", " << stdv.val[2] << ", " << stdv.val[3] << endl;
+
+					vector<Mat> vv;
+					split(src, vv);
+					double minv, maxv;
+					minMaxLoc(vv[0], &minv, &maxv);
+					cout << "minmax0: " << minv << "," << maxv << endl;
+					minMaxLoc(vv[1], &minv, &maxv);
+					cout << "minmax1: " << minv << "," << maxv << endl;
+					minMaxLoc(vv[2], &minv, &maxv);
+					cout << "minmax2: " << minv << "," << maxv << endl;
+					minMaxLoc(vv[3], &minv, &maxv);
+					cout << "minmax3: " << minv << "," << maxv << endl;
 				}
 			}
 		}
