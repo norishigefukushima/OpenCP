@@ -3618,6 +3618,54 @@ namespace cp
 	}
 
 
+	static void sortEigenVecVal(Mat& vec, Mat& val)
+	{
+		//ordering check
+		bool ret = true;
+		for (int i = 0; i < val.size().area() - 1; i++)
+		{
+			if (abs(val.at<double>(i)) < abs(val.at<double>(i + 1)))
+			{
+				ret = false;
+			}
+		}
+		if (ret)return;
+
+		Mat a = vec.clone();
+		Mat b = val.clone();
+		for (int j = 0; j < b.size().area(); j++)
+		{
+			double maxval = 0.0;
+			int argmax = 0;
+			for (int i = 0; i < b.size().area(); i++)
+			{
+				if (maxval < abs(b.at<double>(i)))
+				{
+					maxval = abs(b.at<double>(i));
+					argmax = i;
+				}
+			}
+			val.at <double>(j) = abs(b.at<double>(argmax));
+			double* src = a.ptr<double>(argmax);
+			double* dst = vec.ptr<double>(j);
+			if (b.at<double>(argmax) >= 0)
+			{
+				for (int i = 0; i < val.cols; i++)
+				{
+					dst[i] = src[i];
+				}
+			}
+			else
+			{
+				for (int i = 0; i < val.cols; i++)
+				{
+					dst[i] = -src[i];
+				}
+			}
+			b.at<double>(argmax) = 0.0;
+		}
+	}
+
 	void cvtColorPCA(const vector<Mat>& src, vector<Mat>& dest, const int dest_channels, Mat& projectionMatrix, Mat& eval, Mat& mean)
 	{
 		CV_Assert(src[0].depth() == CV_32F);
@@ -3650,6 +3698,7 @@ namespace cp
 
 		Mat evec;
 		eigen(cov, eval, evec);
+		sortEigenVecVal(evec, eval);
 
 		evec(Rect(0, 0, evec.cols, channels)).convertTo(projectionMatrix, CV_32F);
 		if (src.size() == 2) projectPCA_2xN(src, dest, projectionMatrix);
@@ -3987,6 +4036,6 @@ namespace cp
 		if (C.empty())C.create(3, 4, CV_64F);
 
 		xcvFindColorMatrix(&CvMat(src_point_crowd1), &CvMat(src_point_crowd2), &CvMat(C));
-}
+	}
 #endif
 }
