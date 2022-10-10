@@ -239,42 +239,42 @@ __m256 __tmpp7 = _mm256_shuffle_ps(__tmp5, __tmp7, 0xEE); \
 }
 
 #define _MM256_TRANSPOSE8INPLACE_PS(in_row0, in_row1, in_row2, in_row3, in_row4, in_row5, in_row6, in_row7){	\
-	__m256 tmp0, tmp1,tmp2,tmp3,tmp4,tmp5,tmp6,tmp7;														\
-																											\
-	tmp0 = _mm256_unpackhi_ps((in_row0), (in_row2));													\
-	tmp1 = _mm256_unpackhi_ps((in_row1), (in_row3));													\
-	tmp2 = _mm256_unpacklo_ps((in_row0), (in_row2));													\
-	tmp3 = _mm256_unpacklo_ps((in_row1), (in_row3));													\
-	tmp4 = _mm256_unpackhi_ps((in_row4), (in_row6));													\
-	tmp5 = _mm256_unpackhi_ps((in_row5), (in_row7));													\
-	tmp6 = _mm256_unpacklo_ps((in_row4), (in_row6));													\
-	tmp7 = _mm256_unpacklo_ps((in_row5), (in_row7));													\
-																											\
-	in_row0 = _mm256_unpackhi_ps(tmp0, tmp1);															\
-	in_row1 = _mm256_unpacklo_ps(tmp0, tmp1);															\
-	in_row2 = _mm256_unpackhi_ps(tmp2, tmp3);															\
-	in_row3 = _mm256_unpacklo_ps(tmp2, tmp3);															\
-	in_row4 = _mm256_unpackhi_ps(tmp4, tmp5);															\
-	in_row5 = _mm256_unpacklo_ps(tmp4, tmp5);															\
-	in_row6 = _mm256_unpackhi_ps(tmp6, tmp7);															\
-	in_row7 = _mm256_unpacklo_ps(tmp6, tmp7);															\
-																											\
-	(tmp7) = _mm256_permute2f128_ps(in_row0, in_row4, 0x31);													\
-	(tmp6) = _mm256_permute2f128_ps(in_row1, in_row5, 0x31);													\
-	(tmp5) = _mm256_permute2f128_ps(in_row2, in_row6, 0x31);													\
-	(tmp4) = _mm256_permute2f128_ps(in_row3, in_row7, 0x31);													\
-	(tmp3) = _mm256_permute2f128_ps(in_row0, in_row4, 0x20);													\
-	(tmp2) = _mm256_permute2f128_ps(in_row1, in_row5, 0x20);													\
-	(tmp1) = _mm256_permute2f128_ps(in_row2, in_row6, 0x20);													\
-	(tmp0) = _mm256_permute2f128_ps(in_row3, in_row7, 0x20);													\
-    (in_row0) = (tmp0);													\
-    (in_row1) = (tmp1);													\
-    (in_row2) = (tmp2);													\
-    (in_row3) = (tmp3);													\
-    (in_row4) = (tmp4);													\
-    (in_row5) = (tmp5);													\
-    (in_row6) = (tmp6);													\
-    (in_row7) = (tmp7);													\
+	__m256 tmp0, tmp1,tmp2,tmp3,tmp4,tmp5,tmp6,tmp7;		\
+															\
+	tmp0 = _mm256_unpackhi_ps((in_row0), (in_row2));		\
+	tmp1 = _mm256_unpackhi_ps((in_row1), (in_row3));		\
+	tmp2 = _mm256_unpacklo_ps((in_row0), (in_row2));		\
+	tmp3 = _mm256_unpacklo_ps((in_row1), (in_row3));		\
+	tmp4 = _mm256_unpackhi_ps((in_row4), (in_row6));		\
+	tmp5 = _mm256_unpackhi_ps((in_row5), (in_row7));		\
+	tmp6 = _mm256_unpacklo_ps((in_row4), (in_row6));		\
+	tmp7 = _mm256_unpacklo_ps((in_row5), (in_row7));		\
+															\
+	in_row0 = _mm256_unpackhi_ps(tmp0, tmp1);				\
+	in_row1 = _mm256_unpacklo_ps(tmp0, tmp1);				\
+	in_row2 = _mm256_unpackhi_ps(tmp2, tmp3);				\
+	in_row3 = _mm256_unpacklo_ps(tmp2, tmp3);				\
+	in_row4 = _mm256_unpackhi_ps(tmp4, tmp5);				\
+	in_row5 = _mm256_unpacklo_ps(tmp4, tmp5);				\
+	in_row6 = _mm256_unpackhi_ps(tmp6, tmp7);				\
+	in_row7 = _mm256_unpacklo_ps(tmp6, tmp7);				\
+															\
+	(tmp7) = _mm256_permute2f128_ps(in_row0, in_row4, 0x31);\
+	(tmp6) = _mm256_permute2f128_ps(in_row1, in_row5, 0x31);\
+	(tmp5) = _mm256_permute2f128_ps(in_row2, in_row6, 0x31);\
+	(tmp4) = _mm256_permute2f128_ps(in_row3, in_row7, 0x31);\
+	(tmp3) = _mm256_permute2f128_ps(in_row0, in_row4, 0x20);\
+	(tmp2) = _mm256_permute2f128_ps(in_row1, in_row5, 0x20);\
+	(tmp1) = _mm256_permute2f128_ps(in_row2, in_row6, 0x20);\
+	(tmp0) = _mm256_permute2f128_ps(in_row3, in_row7, 0x20);\
+    (in_row0) = (tmp0);										\
+    (in_row1) = (tmp1);										\
+    (in_row2) = (tmp2);										\
+    (in_row3) = (tmp3);										\
+    (in_row4) = (tmp4);										\
+    (in_row5) = (tmp5);										\
+    (in_row6) = (tmp6);										\
+    (in_row7) = (tmp7);										\
 }
 
 STATIC_INLINE void _mm256_transpose8_ps(__m256* in_row, __m256* out_row)
@@ -2191,9 +2191,11 @@ STATIC_INLINE void print_simd(__m128d src) { print_m128d(src); }
 STATIC_INLINE void print_simd(__m256i src) { print_int(src); }
 STATIC_INLINE void print_simd(__m256  src) { print_m256(src); }
 STATIC_INLINE void print_simd(__m256d src) { print_m256d(src); }
+#ifdef CP_AVX512
 STATIC_INLINE void print_simd(__m512  src) {}
 STATIC_INLINE void print_simd(__m512d src) {}
 STATIC_INLINE void print_simd(__m512i src) {}
+#endif
 #pragma endregion
 
 
