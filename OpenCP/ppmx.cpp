@@ -5,6 +5,19 @@ using namespace cv;
 
 namespace cp
 {
+	void imwritePPMX(string filename, cv::Mat& img)
+	{
+		using namespace std;
+		FILE* fp = fopen(filename.c_str(), "wb");
+		if (fp == NULL)cout << " file open error" << filename << endl;
+		else
+		{
+			fprintf(fp, "FP\n");
+			fprintf(fp, "%d %d\n", img.cols, img.rows);
+			fwrite(img.data, sizeof(float), img.size().area(), fp);
+		}
+		fclose(fp);
+	}
 
 	Mat imreadPPMX(string filename)
 	{
@@ -26,16 +39,10 @@ namespace cp
 		}
 		fgets(buff, 256, fp);
 		Mat ret = Mat::zeros(Size(width, height), CV_32F);
-		fread(ret.data, sizeof(float), width*height, fp);
+		fread(ret.data, sizeof(float), width * height, fp);
 
 		fclose(fp);
 
 		return ret;
 	}
-
-	Mat imreadPFM(string filename)
-	{
-		return imreadPPMX(filename);
-	}
-
 }
