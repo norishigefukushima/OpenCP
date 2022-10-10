@@ -23,6 +23,7 @@ namespace cp
 		void makeFilter(int index, double val, double emax = 0.00000001);
 		void readHeader();
 		void readData();
+		cv::Mat getMat();
 		void readDataLineByLine();
 
 		void init(std::string name, bool isWrite, bool isClear);

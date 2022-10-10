@@ -180,7 +180,7 @@ namespace cp
 		//cout << line << endl;
 		_fseeki64(fp, 0, SEEK_SET);
 
-		char vv[1024];
+		char localBuffer[1024];
 		char* str = nullptr;
 		try
 		{
@@ -195,13 +195,13 @@ namespace cp
 		//cout << ret << "/"<<fileSize << endl;
 
 		int c = 0;
-		vector<double> v(width);
+		vector<double> v;
 		for (size_t i = 0; i < fileSize; i++)
 		{
 			if (str[i] == ',')
 			{
-				vv[c] = '\0';
-				double d = atof(vv);
+				localBuffer[c] = '\0';
+				const double d = atof(localBuffer);
 				c = 0;
 				v.push_back(d);
 			}
@@ -209,8 +209,8 @@ namespace cp
 			{
 				if (data.size() % 1000000 == 0)cout << data.size()<<"/" << line << endl;
 				if (data.size() - 1 == line)break;
-				vv[c] = '\0';
-				double d = atof(vv);
+				localBuffer[c] = '\0';
+				const double d = atof(localBuffer);
 				c = 0;
 				v.push_back(d);
 
@@ -223,12 +223,26 @@ namespace cp
 			}
 			else
 			{
-				vv[c] = str[i];
+				localBuffer[c] = str[i];
 				c++;
 			}
 		}
 
 		delete[] str;
+	}
+
+	cv::Mat CSV::getMat()
+	{
+		readData();
+		cv::Mat_<double> ret(data.size()-1, data[0].size());
+		for (int j = 0; j < data.size()-1; j++)
+		{
+			for (int i = 0; i < data[0].size(); i++)
+			{
+				ret(j, i) = data[j][i];
+			}
+		}
+		return ret;
 	}
 
 	void CSV::init(string name, bool isWrite, bool isClear)
