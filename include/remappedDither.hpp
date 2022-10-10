@@ -56,8 +56,8 @@ namespace cp
 		float compute_s(const cv::Mat& src);
 		int body(const cv::Mat& src, cv::Mat& dest);
 		cv::Mat imagebuff;
-		void remap(const cv::Mat& src, cv::Mat& dest);
 	public:
+		void remap(const cv::Mat& src, cv::Mat& dest);
 		IntensityRemappedDither(cv::Size image_size, const float sampling_ratio, const int dither_method = cp::DITHER_METHOD::OSTROMOUKHOW, const int dither_scanorder = cp::DITHER_SCANORDER::MEANDERING, const int dither_postprocess = DITHER_POSTPROCESS::RANDOM_ROTATION);
 		int generate(const cv::Mat& src, cv::Mat& destMask, const float ratio);
 	};
