@@ -38,6 +38,7 @@
 #include "video.hpp"
 #include "VideoSubtitle.hpp"
 #include "webp.hpp"
+#include "windowFunction.hpp"
 #include "xmeans.hpp"
 #include "yuvio.hpp"
 

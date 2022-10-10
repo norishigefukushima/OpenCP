@@ -428,8 +428,223 @@ void rangeBlurFilterRef(const Mat& src, Mat& dst, const int r, const float sigma
 	if (postProcessType == 2)rangeBlurFilterRef_<2>(src, dst, r, sigma_range);
 }
 
+vector<Mat> readYUV420(string fname, Size size)
+{
+	Mat temp = Mat::zeros(Size(size.width, cvRound(size.height * 1.5)), CV_8U);
+	FILE* fp = fopen(fname.c_str(), "rb");
+	if (fp == NULL)cout << fname << " open error\n";
+	const int fsize = size.area() + size.area() * 2 / 4;
+	fread(temp.data, sizeof(char), cvRound(size.area() * 1.5), fp);
+
+	Mat Y(size, CV_8U);
+	Size hsize = size / 2;
+	Mat U(hsize, CV_8U);
+	Mat V(hsize, CV_8U);
+	vector<Mat> ret;
+	for (int i = 0; i < size.area(); i++)
+	{
+		Y.at<uchar>(i) = temp.at<uchar>(i);
+	}
+	for (int i = 0; i < hsize.area(); i++)
+	{
+		U.at<uchar>(i) = temp.at<uchar>(i + size.area());
+	}
+	for (int i = 0; i < hsize.area(); i++)
+	{
+		V.at<uchar>(i) = temp.at<uchar>(i + size.area() + hsize.area());
+	}
+
+	ret.push_back(Y);
+	ret.push_back(U);
+	ret.push_back(V);
+	fclose(fp);
+	//imshow("aa",dest);waitKey();
+	return ret;
+}
+
+void JPEG(string name)
+{
+	FILE* fp = fopen(name.c_str(), "rb");
+	uchar* buff = new uchar[1024 * 768 * 3];
+	const size_t size = fread(buff, sizeof(uchar), 1024 * 768 * 3, fp);
+
+	print_debug(size);
+	for (int i = 0; i < size - 1; i++)
+	{
+		if (buff[i] == 0xFF && buff[i + 1] == 0xFF)
+		{
+			cout << "FFFF" << endl;
+			//i++;
+			//continue;
+		}
+		/*else if(buff[i] == 0xFF && buff[i + 1] != 0xFF)
+		{
+			printf("%x\n", buff[i + 1]);
+		}*/
+
+		/*
+		if (buff[i] == 0xFF && buff[i + 1] == 0xE0)
+		{
+			cout << "APP: FFE0　　　　　　　　　| " << i << endl;
+		}
+		if (buff[i] == 0xFF && buff[i + 1] == 0xE1)
+		{
+			cout << "APP: FFE1　　　　　　　　　| " << i << endl;
+		}
+		if (buff[i] == 0xFF && buff[i + 1] == 0xE2)
+		{
+			cout << "APP: FFE2　　　　　　　　　| " << i << endl;
+		}
+		if (buff[i] == 0xFF && buff[i + 1] == 0xE3)
+		{
+			cout << "APP: FFE3　　　　　　　　　| " << i << endl;
+		}
+
+
+		if (buff[i] == 0xFF && buff[i] == 0xC0)
+		{
+			cout << "SoF: FFC0　　　　　　　　　| " << i << endl;
+		}
+		if (buff[i] == 0xFF && buff[i] == 0xC1)
+		{
+			cout << "SoF: FFC1　　　　　　　　　| " << i << endl;
+		}
+		if (buff[i] == 0xFF && buff[i] == 0xC2)
+		{
+			cout << "SoF: FFC2　　　　　　　　　| " << i << endl;
+		}
+		if (buff[i] == 0xFF && buff[i] == 0xC3)
+		{
+			cout << "SoF: FFC3　　　　　　　　　| " << i << endl;
+		}
+		if (buff[i] == 0xFF && buff[i] == 0xC8)
+		{
+			cout << "SoF: FFC8（JPEG拡張） 　　　| " << i << endl;
+		}
+
+		if (buff[i] == 0xFF && buff[i + 1] == 0xD8)
+		{
+			cout << "SOI: FFD8（画像開始）　　　| " << i << endl;
+		}
+		if (buff[i] == 0xFF && buff[i + 1] == 0xD9)
+		{
+			cout << "EOI: FFD9(画像終了)　　　　| " << i+1 << endl;
+		}
+		if (buff[i] == 0xFF && buff[i + 1] == 0xDA)
+		{
+			cout << "SOS: FFDA(スキャン開始)　　| " << i + 1 << endl;
+		}
+
+		if (buff[i] == 0xFF && buff[i + 1] == 0xDE)
+		{
+			cout << "DHP: FFDE(階層行定義)　　　| " << i + 1 << endl;
+		}
+		if (buff[i] == 0xFF && buff[i + 1] == 0xDF)
+		{
+			cout << "EXP: FFDF(拡張参照)　　　　| " << i + 1 << endl;
+		}
+
+
+		if (buff[i] == 0xFF && buff[i + 1] == 0xDB)
+		{
+			cout << "DQT: FFDB(量子化テーブル)　| " << i << endl;
+		}
+		if (buff[i] == 0xFF && buff[i + 1] == 0xC4)
+		{
+			cout << "DHT: FFC4(ハフマンテーブル)| " << i << endl;
+		}
+
+
+		if (buff[i] == 0xFF && buff[i + 1] == 0xD0)
+		{
+			cout << "RST: FFD0　　　　　　　　　| " << i << endl;
+		}
+		if (buff[i] == 0xFF && buff[i + 1] == 0xD1)
+		{
+			cout << "RST: FFD1　　　　　　　　　| " << i << endl;
+		}
+		if (buff[i] == 0xFF && buff[i + 1] == 0xD2)
+		{
+			cout << "RST: FFD2　　　　　　　　　| " << i << endl;
+		}
+		if (buff[i] == 0xFF && buff[i + 1] == 0xD3)
+		{
+			cout << "RST: FFD3　　　　　　　　　| " << i << endl;
+		}
+		if (buff[i] == 0xFF && buff[i + 1] == 0xD4)
+		{
+			cout << "RST: FFD4　　　　　　　　　| " << i << endl;
+		}
+		if (buff[i] == 0xFF && buff[i + 1] == 0xD5)
+		{
+			cout << "RST: FFD5　　　　　　　　　| " << i << endl;
+		}
+		if (buff[i] == 0xFF && buff[i + 1] == 0xD6)
+		{
+			cout << "RST: FFD6　　　　　　　　　| " << i << endl;
+		}
+		if (buff[i] == 0xFF && buff[i + 1] == 0xD7)
+		{
+			cout << "RST: FFD7　　　　　　　　　| " << i << endl;
+		}
+		*/
+
+		
+	}
+
+	{
+		FILE* fp = fopen("test1.jpg", "wb");
+
+		//fwrite(buff + 860921, sizeof(char), 560698 - 2332 + 2, fp);
+		fwrite(buff, sizeof(char), 860926, fp);
+	}
+	delete[] buff;
+
+}
+
+
+
 int main(int argc, char** argv)
 {
+	vector<Mat> desttt;
+	cv::imreadmulti("FLIR0201.tiff", desttt);
+	print_matinfo_detail(desttt);
+	return 0;
+	/*//JPEG("fir.jpg"); return 0;
+	JPEG("FLIR0201.jpg"); return 0;
+	
+	vector<Mat> destt = readYUV420("out.yuv", Size(1024, 768));
+	print_matinfo_detail(destt);
+	guiAlphaBlend(destt[1], destt[2]);*/
+
+	Mat vv = imread("FLIR0201.jpg", IMREAD_UNCHANGED);
+	Mat vv2 = imread("FLIR02012.jpg", IMREAD_UNCHANGED);
+	cout << getPSNR(vv, vv2) << endl;
+	print_matinfo_detail(vv);
+
+	cp::CSV csv("FLIR0201.csv", false);
+	Mat a = csv.getMat();
+	a.convertTo(a, CV_32F);
+	print_matinfo_detail(a);
+
+	normalize(a, a, 0, 255, NORM_MINMAX);
+
+	Mat aa; a.convertTo(aa, CV_8U);
+	Mat histo;
+	cp::drawHistogramImage(aa, histo, COLOR_RED);
+	imshow("histo", histo);
+
+
+	cp::guiContrast(a);
+
+	imwritePFM("fir0.pfm", a);
+	Mat b = imreadPFM("fir0.pfm");
+	print_matinfo_detail(b);
+	normalize(b, b, 0, 255, NORM_MINMAX);
+	cp::guiContrast(b);
+	return 0;
+
+
 	//testSpearmanRankOrderCorrelationCoefficient(); return 0;
 	/*__m256i a = _mm256_set_step_epi32(0);
 	__m256i b = _mm256_set_step_epi32(8);
@@ -458,14 +673,14 @@ int main(int argc, char** argv)
 #pragma region setup
 	//Mat img = imread("img/lenna.png");
 	Mat img = imread("img/Kodak/kodim07.png");
-	
+
 	//Webp test
 	/*vector<Mat> a(256);
 	for (int i = 0; i < 256; i++)
 	{
 		add(img, Scalar::all(i), a[i]);
 		putText(a[i], format("%d", i), Point(img.cols / 2, img.rows / 2), cv::FONT_HERSHEY_SIMPLEX, 3, COLOR_BLACK, 3);
-		
+
 	}
 	cp::imwriteAnimationWebp("out.webp", a); return 0;
 	Mat imgg; cvtColor(img, imgg, COLOR_BGR2GRAY);
@@ -520,6 +735,7 @@ int main(int argc, char** argv)
 	//guiContrast(img);
 	//guiContrast(guiCropZoom(img));
 	//testVideoSubtitle();
+	//guiWindowFunction();
 #pragma endregion
 
 #pragma region imgproc

@@ -645,6 +645,7 @@
     <ClCompile Include="webp.cpp" />
     <ClCompile Include="weightedHistogramFilter.cpp" />
     <ClCompile Include="Wiener2.cpp" />
+    <ClCompile Include="windowFunction.cpp" />
     <ClCompile Include="xmeans.cpp" />
     <ClCompile Include="yuvio.cpp" />
     <ClCompile Include="crop.cpp" />
@@ -772,6 +773,7 @@
     <ClInclude Include="..\include\webp.hpp" />
     <ClInclude Include="..\include\weightedHistogramFilter.hpp" />
     <ClInclude Include="..\include\Wiener2.hpp" />
+    <ClInclude Include="..\include\windowFunction.hpp" />
     <ClInclude Include="..\include\xmeans.hpp" />
     <ClInclude Include="..\include\yuvio.hpp" />
     <ClInclude Include="..\include\crop.hpp" />

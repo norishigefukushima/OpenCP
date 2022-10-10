@@ -38,6 +38,7 @@ void testDestinationTimePrediction(cv::Mat& src);
 void testTiling(cv::Mat& src);
 void testLocalPSNR(cv::Mat& ref);
 void testVideoSubtitle();
+void testWindowFunction();
 
 //imgproc
 void guiPixelizationTest();
