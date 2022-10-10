@@ -157,7 +157,20 @@ namespace cp
 		srcMat = srcMat / norm(srcMat);
 
 		Mat rotaxis = srcMat.cross(destMat);
-		double angle = acos(srcMat.dot(destMat));
+		const double angle = acos(srcMat.dot(destMat));
+		//normalize cross product and multiply rotation angle
+		rotaxis = rotaxis / norm(rotaxis) * angle;
+		Rodrigues(rotaxis, destR);
+	}
+
+	void lookat(const Point3f& from, const Point3f& to, Mat& destR)
+	{
+		Mat destMat = Mat(Point3f(0.f, 0.f, 1.f));
+		Mat srcMat = Mat(from + to);
+		srcMat = srcMat / norm(srcMat);
+
+		Mat rotaxis = srcMat.cross(destMat);
+		const float angle = acos(srcMat.dot(destMat));
 		//normalize cross product and multiply rotation angle
 		rotaxis = rotaxis / norm(rotaxis) * angle;
 		Rodrigues(rotaxis, destR);
