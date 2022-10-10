@@ -265,13 +265,18 @@ namespace cp
 		dest.at<double>(0, 0) = 1.0;//u=0
 		sum += 1.0;//u=0
 
-		const int rend = int(10.0 * sigma);
+#if 1
+		const int rend = 10.0 * sigma;
 		double eout = 0.0;
 		for (int i = R + 1; i <= rend; i++)
 		{
 			const double v = exp(i * i * coeff);
 			eout += v;
 		}
+#else
+		//add outer to (Gauss integral - sum)/2
+		const double eout = (sqrt(CV_2PI) * sigma - sum) * 0.5;
+#endif
 		dest.at<double>(R, 0) += eout;
 
 		if (isNormalize)
