@@ -26,9 +26,9 @@ namespace cp
 		cv::Mat getMat();
 		void readDataLineByLine();
 
-		void init(std::string name, bool isWrite, bool isClear);
+		void init(std::string name, bool isWrite, bool isClear, bool isHeader);
 		CSV();
-		CSV(std::string name, bool isWrite = true, bool isClear = true);
+		CSV(std::string name, bool isWrite = true, bool isClear = true, bool isHeader=true);
 		~CSV();
 		void write(std::string v);
 		void write(double v);
