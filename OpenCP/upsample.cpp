@@ -1812,7 +1812,7 @@ namespace cp
 				vector<Mat> d(v.size());
 				for (int i = 0; i < v.size(); i++)
 				{
-					upsampleCubicGray(v[0], d[0], scale, a);
+					upsampleCubicGray(v[i], d[i], scale, a);
 				}
 				merge(d, dest_);
 			}
