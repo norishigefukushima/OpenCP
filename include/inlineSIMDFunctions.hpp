@@ -1,6 +1,6 @@
 #pragma once
 #pragma warning(disable:4309)
-#include <intrin.h>
+
 #include <opencv2/core.hpp>
 #include <iostream>
 #include <iomanip>
