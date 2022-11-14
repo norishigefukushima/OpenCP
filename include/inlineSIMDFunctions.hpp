@@ -719,6 +719,16 @@ STATIC_INLINE __m256i _mm256_cvtpsx4_epu8(const __m256 v0, const __m256 v1, cons
 	return _mm256_permutevar8x32_epi32(_mm256_packus_epi16(_mm256_packs_epi32(_mm256_cvtps_epi32(v0), _mm256_cvtps_epi32(v1)), _mm256_packs_epi32(_mm256_cvtps_epi32(v2), _mm256_cvtps_epi32(v3))), shlmask);
 }
 
+STATIC_INLINE __m256i _mm256_cvtepu16x2_epi8(__m256i a, __m256i b)
+{
+	return _mm256_permute4x64_epi64(_mm256_packus_epi16(a, b), _MM_SHUFFLE(3, 1, 2, 0));
+}
+
+STATIC_INLINE __m256i _mm256_cvtepi16x2_epi8(__m256i a, __m256i b)
+{
+	return _mm256_permute4x64_epi64(_mm256_packs_epi16(a, b), _MM_SHUFFLE(3, 1, 2, 0));
+}
+
 //_mm256_cvtepi32_epi16 is already defined in zmmintrin.h (AVX512)
 STATIC_INLINE __m128i _mm256_cvtepi32_epi16_v2(__m256i src)
 {
@@ -2091,6 +2101,7 @@ STATIC_INLINE void print_uchar(__m128i src)
 
 #define print_m128i_uchar(src) printf_s("%s: %3d %3d %3d %3d;%3d %3d %3d %3d;%3d %3d %3d %3d;%3d %3d %3d %3d\n",#src,((uchar*)&src)[0], ((uchar*)&src)[1], ((uchar*)&src)[2], ((uchar*)&src)[3], ((uchar*)&src)[4], ((uchar*)&src)[5], ((uchar*)&src)[6], ((uchar*)&src)[7],((uchar*)&src)[8], ((uchar*)&src)[9], ((uchar*)&src)[10], ((uchar*)&src)[11], ((uchar*)&src)[12], ((uchar*)&src)[13], ((uchar*)&src)[14], ((uchar*)&src)[15]);
 #define print_m256i_uchar(src) printf_s("%s: %3d %3d %3d %3d;%3d %3d %3d %3d;%3d %3d %3d %3d;%3d %3d %3d %3d|%3d %3d %3d %3d;%3d %3d %3d %3d;%3d %3d %3d %3d;%3d %3d %3d %3d\n",#src,((uchar*)&src)[0], ((uchar*)&src)[1], ((uchar*)&src)[2], ((uchar*)&src)[3], ((uchar*)&src)[4], ((uchar*)&src)[5], ((uchar*)&src)[6], ((uchar*)&src)[7],((uchar*)&src)[8], ((uchar*)&src)[9], ((uchar*)&src)[10], ((uchar*)&src)[11], ((uchar*)&src)[12], ((uchar*)&src)[13], ((uchar*)&src)[14], ((uchar*)&src)[15],((uchar*)&src)[16], ((uchar*)&src)[17], ((uchar*)&src)[18], ((uchar*)&src)[19], ((uchar*)&src)[20], ((uchar*)&src)[21], ((uchar*)&src)[22], ((uchar*)&src)[23],((uchar*)&src)[24], ((uchar*)&src)[25], ((uchar*)&src)[26], ((uchar*)&src)[27], ((uchar*)&src)[28], ((uchar*)&src)[29], ((uchar*)&src)[30], ((uchar*)&src)[31]);
+#define print_m256i_char(src) printf_s("%s: %4d %4d %4d %4d;%4d %4d %4d %4d;%4d %4d %4d %4d;%4d %4d %4d %4d|%4d %4d %4d %4d;%4d %4d %4d %4d;%4d %4d %4d %4d;%4d %4d %4d %4d\n",#src,((char*)&src)[0], ((char*)&src)[1], ((char*)&src)[2], ((char*)&src)[3], ((char*)&src)[4], ((char*)&src)[5], ((char*)&src)[6], ((char*)&src)[7],((char*)&src)[8], ((char*)&src)[9], ((char*)&src)[10], ((char*)&src)[11], ((char*)&src)[12], ((char*)&src)[13], ((char*)&src)[14], ((char*)&src)[15],((char*)&src)[16], ((char*)&src)[17], ((char*)&src)[18], ((char*)&src)[19], ((char*)&src)[20], ((char*)&src)[21], ((char*)&src)[22], ((char*)&src)[23],((char*)&src)[24], ((char*)&src)[25], ((char*)&src)[26], ((char*)&src)[27], ((char*)&src)[28], ((char*)&src)[29], ((char*)&src)[30], ((char*)&src)[31]);
 
 #define print_uchar(src) std::cout << #src << ": ";\
 for (int i = 0; i < 32; i++){if(i%8==0)printf_s("|%3d ", ((uchar*)&src)[i]);else printf_s("%3d ", ((uchar*)&src)[i]);}printf_s("|\n");
