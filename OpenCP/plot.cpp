@@ -1627,11 +1627,15 @@ namespace cp
 				gplot.setKey(KEY(keyPosition));
 				for (int i = 0; i < data_labelmax; i++)
 				{
-					char name[128];
+					char name[256];
 					if (i != data_labelmax - 1)
+					{
 						sprintf(name, "'plot' u %d:%d w lp ps 0.5 lt %d t \"%s\",", 2 * i + 1, 2 * i + 2, i + 1, pinfo[i].title.c_str());
+					}
 					else
+					{
 						sprintf(name, "'plot' u %d:%d w lp ps 0.5 lt %d t \"%s\"", 2 * i + 1, 2 * i + 2, i + 1, pinfo[i].title.c_str());
+					}
 					a += name;
 				}
 				gplot.plotPDF(a);
