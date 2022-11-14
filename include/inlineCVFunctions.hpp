@@ -38,6 +38,28 @@ inline void print_mat_format(cv::Mat& src, std::string mes = "", std::string for
 			printf("\n");
 		}
 	}
+	else if (src.depth() == CV_8U)
+	{
+		for (int j = 0; j < src.rows; j++)
+		{
+			for (int i = 0; i < src.cols; i++)
+			{
+				printf(format.c_str(), src.at<uchar>(j, i));
+			}
+			printf("\n");
+		}
+	}
+	else if (src.depth() == CV_32S)
+	{
+		for (int j = 0; j < src.rows; j++)
+		{
+			for (int i = 0; i < src.cols; i++)
+			{
+				printf(format.c_str(), src.at<int>(j, i));
+			}
+			printf("\n");
+		}
+	}
 	printf("\n");
 }
 
