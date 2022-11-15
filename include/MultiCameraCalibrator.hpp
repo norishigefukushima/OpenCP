@@ -23,7 +23,7 @@ namespace cp
 		void initRemap();
 
 	public:
-		int flag;
+		int flag = cv::CALIB_FIX_K3 | cv::CALIB_FIX_K4 | cv::CALIB_FIX_K5 | cv::CALIB_FIX_K6 | cv::CALIB_ZERO_TANGENT_DIST | cv::CALIB_SAME_FOCAL_LENGTH | cv::CALIB_FIX_ASPECT_RATIO;
 		int numofcamera;
 		cv::Size imageSize;
 		std::vector<cv::Mat> intrinsic;
@@ -50,6 +50,8 @@ namespace cp
 		//MultiCameraCalibrator cloneParameters();
 		bool findChess(std::vector<cv::Mat>& im);
 		bool findChess(std::vector<cv::Mat>& im, std::vector <cv::Mat>& dest);
+		void pushImagePoint(const std::vector<std::vector<cv::Point2f>>& point);
+		void pushObjectPoint(const std::vector<cv::Point3f>& point);
 
 		void printParameters();
 
@@ -59,6 +61,7 @@ namespace cp
 		double getRectificationError();
 
 		//Calibration
+		void calibration(const int flags, int refCamera1 = 0, int refCamera2 = 0);
 		void operator ()(bool isFixIntrinsic = false, int refCamera1 = 0, int refCamera2 = 0);
 		void rectifyImageRemap(cv::Mat& src, cv::Mat& dest, int numofcamera);
 	};

@@ -10,10 +10,14 @@ namespace cp
 	void MultiCameraCalibrator::generatechessboard3D()
 	{
 		for (int j = 0; j < patternSize.height; ++j)
+		{
 			for (int i = 0; i < patternSize.width; ++i)
-				chessboard3D.push_back(Point3f(lengthofchess*(float)i, lengthofchess*(float)j, 0.0));
-
+			{
+				chessboard3D.push_back(Point3f(lengthofchess * (float)i, lengthofchess * (float)j, 0.0));
+			}
+		}
 	}
+
 	void MultiCameraCalibrator::initRemap()
 	{
 		for (int i = 0; i < numofcamera; i++)
@@ -90,6 +94,7 @@ namespace cp
 		fs["Q"] >> Q;
 		initRemap();
 	}
+
 	void MultiCameraCalibrator::writeParameter(char* name)
 	{
 		FileStorage fs(name, FileStorage::WRITE);
@@ -118,6 +123,7 @@ namespace cp
 		fs << "F" << F;
 		fs << "Q" << Q;
 	}
+
 	void MultiCameraCalibrator::init(Size imageSize_, Size patternSize_, float lengthofchess_, int numofcamera_)
 	{
 		numofcamera = numofcamera_;
@@ -145,9 +151,7 @@ namespace cp
 			reR.push_back(Mat::eye(3, 3, CV_64F));
 		}
 
-		//flag = CALIB_FIX_INTRINSIC;
 		flag = CALIB_FIX_K3 | CALIB_FIX_K4 | CALIB_FIX_K5 | CALIB_FIX_K6 | CALIB_ZERO_TANGENT_DIST | CALIB_SAME_FOCAL_LENGTH | CALIB_FIX_ASPECT_RATIO;
-		//flag = CALIB_USE_INTRINSIC_GUESS;
 		generatechessboard3D();
 	}
 
@@ -155,7 +159,9 @@ namespace cp
 	{
 		init(imageSize_, patternSize_, lengthofchess_, numofcamera_);
 	}
+
 	MultiCameraCalibrator::MultiCameraCalibrator(){ ; }
+
 	MultiCameraCalibrator::~MultiCameraCalibrator(){ ; }
 
 
@@ -175,7 +181,6 @@ namespace cp
 
 		if (ret)
 		{
-			;
 			numofchessboards++;
 
 			for (int i = 0; i < numofcamera; i++)
@@ -194,8 +199,23 @@ namespace cp
 		return findChess(im, dest);
 	}
 	
+	void MultiCameraCalibrator::pushImagePoint(const vector<vector<Point2f>>& point)
+	{
+		numofchessboards++;
+		for (int i = 0; i < imagePoints.size(); i++)
+		{
+			imagePoints[i].push_back(point[i]);
+		}
+	}
+
+	void MultiCameraCalibrator::pushObjectPoint(const vector<Point3f>& point)
+	{
+		objectPoints.push_back(point);
+	}
+
 	void MultiCameraCalibrator::printParameters()
 	{
+		cout << "===========================" << endl;
 		for (int i = 0; i < numofcamera; i++)
 		{
 			std::cout << i << " camera" << std::endl;
@@ -206,6 +226,7 @@ namespace cp
 			cout << R[i] << endl;
 			std::cout << "Projection" << std::endl;
 			cout << P[i] << endl;
+			cout<<"===========================" << endl;
 		}
 	}
 
@@ -316,6 +337,7 @@ namespace cp
 		te /= (double)numofchessboards;
 		return te;
 	}
+
 	double MultiCameraCalibrator::getRectificationError()
 	{
 		vector<double> error;
@@ -354,6 +376,7 @@ namespace cp
 		te /= (double)numofchessboards;
 		return te;
 	}
+
 	void MultiCameraCalibrator::operator ()(bool isFixIntrinsic, int refCamera1, int refCamera2)
 	{
 		if (refCamera1 == 0 && refCamera2 == 0)
@@ -361,13 +384,25 @@ namespace cp
 			refCamera2 = numofcamera - 1;
 		}
 
-		if (!isFixIntrinsic)
+		if (numofchessboards < 2)
 		{
-			if (numofchessboards < 2)
+			std::cout << "input 3 or more chessboards" << std::endl;
+			return;
+		}
+
+		if (isFixIntrinsic)
+		{
+			flag = CALIB_FIX_INTRINSIC;
+			for (int i = 1; i < numofcamera; i++)
 			{
-				std::cout << "input 3 or more chessboards" << std::endl;
-				return;
-			}
+				stereoCalibrate(objectPoints, imagePoints[refCamera1], imagePoints[i], intrinsic[refCamera1], distortion[refCamera1], intrinsic[i], distortion[i], imageSize, reR[i], reT[i], E, F,
+					flag,
+					TermCriteria(TermCriteria::COUNT + TermCriteria::EPS, 30, 1e-6)
+				);
+			}			
+		}
+		else
+		{
 			for (int i = 1; i < numofcamera; i++)
 			{
 				stereoCalibrate(objectPoints, imagePoints[refCamera1], imagePoints[i], intrinsic[refCamera1], distortion[refCamera1], intrinsic[i], distortion[i], imageSize, reR[i], reT[i], E, F,
@@ -375,28 +410,19 @@ namespace cp
 					TermCriteria(TermCriteria::COUNT + TermCriteria::EPS, 30, 1e-6));
 			}
 		}
-		else
-		{
-			for (int i = 1; i < numofcamera; i++)
-			{
-				flag = CALIB_USE_INTRINSIC_GUESS;
-				//flag = CALIB_FIX_INTRINSIC;
-				stereoCalibrate(objectPoints, imagePoints[refCamera1], imagePoints[i], intrinsic[refCamera1], distortion[refCamera1], intrinsic[i], distortion[i], imageSize, reR[i], reT[i], E, F,
-					flag,
-					TermCriteria(TermCriteria::COUNT + TermCriteria::EPS, 30, 1e-6)
-					);
-			}
-		}
 
 		rectifyMultiCollinear(intrinsic, distortion, refCamera1, refCamera2, imagePoints, imageSize, reR, reT, R, P, Q, -1.0, imageSize, 0, 0, CALIB_ZERO_DISPARITY);
-
-
 		initRemap();
+	}
+
+	void MultiCameraCalibrator::calibration(const int flags, int refCamera1, int refCamera2)
+	{
+		this->flag = flags;
+		operator()(false, refCamera1, refCamera2);
 	}
 
 	void MultiCameraCalibrator::rectifyImageRemap(Mat& src, Mat& dest, int numofcamera)
 	{
 		remap(src, dest, mapu[numofcamera], mapv[numofcamera], INTER_LINEAR);
-
 	}
 }

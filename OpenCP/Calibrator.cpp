@@ -1,10 +1,37 @@
 #include "Calibrator.hpp"
-
+#include "draw.hpp"
 using namespace std;
 using namespace cv;
 
 namespace cp
 {
+	void drawPatternIndexNumbers(cv::Mat& dest, const std::vector<cv::Point>& points, const double scale, const Scalar color)
+	{
+		for (int i = 0; i < points.size(); i++)
+		{
+			drawPlus(dest, points[i], 1);
+			putText(dest, format("%d", i), points[i], cv::FONT_HERSHEY_SIMPLEX, scale, color);
+		}
+	}
+
+	void drawPatternIndexNumbers(cv::Mat& dest, const std::vector<cv::Point2f>& points, const double scale, const Scalar color)
+	{
+		const int size = (int)points.size();
+		vector<Point> p(size);
+		for (int i = 0; i < size; i++)
+		{
+			p[i] = points[i];
+		}
+		drawPatternIndexNumbers(dest, p, scale, color);
+	}
+
+	void drawDetectedPattern(const cv::Mat& src, cv::Mat& dest, const cv::Size patternSize, const std::vector<cv::Point2f>& points, const bool flag, const double numberFontSize, const cv::Scalar numberFontColor)
+	{
+		if (src.channels() == 3)src.copyTo(dest);
+		else cvtColor(src, dest, COLOR_GRAY2BGR);
+		cv::drawChessboardCorners(dest, patternSize, points, flag);
+		drawPatternIndexNumbers(dest, points, numberFontSize, numberFontColor);
+	}
 
 	void Calibrator::generatechessboard3D()
 	{
@@ -57,9 +84,6 @@ namespace cp
 
 		intrinsic = Mat::eye(3, 3, CV_64F);
 		getDefaultNewCameraMatrix(intrinsic, imageSize, true);
-
-		flag = CALIB_FIX_K3 | CALIB_FIX_K4 | CALIB_FIX_K5 | CALIB_FIX_K6 | CALIB_ZERO_TANGENT_DIST | CALIB_FIX_ASPECT_RATIO;
-
 		generatechessboard3D();
 	}
 
@@ -126,24 +150,16 @@ namespace cp
 		}
 		return ret;
 	}
-	void Calibrator::pushImagePoint(vector<Point2f> point)
+
+	void Calibrator::pushImagePoint(const vector<Point2f>& point)
 	{
 		numofchessboards++;
 		imagePoints.push_back(point);
 	}
 
-	void Calibrator::pushObjectPoint(vector<Point3f> point)
+	void Calibrator::pushObjectPoint(const vector<Point3f>& point)
 	{
 		objectPoints.push_back(point);
-	}
-
-
-	void Calibrator::printParameters()
-	{
-		std::cout << "intrinsic" << std::endl;
-		cout << intrinsic << endl;
-
-		cout << distortion << endl;
 	}
 
 	void check(InputArrayOfArrays a)
@@ -151,6 +167,11 @@ namespace cp
 		cout << a.total() << endl;
 		Mat b = a.getMat();
 
+	}
+
+	void Calibrator::undistort(Mat& src, Mat& dest)
+	{
+		remap(src, dest, mapu, mapv, INTER_LINEAR);
 	}
 
 	double Calibrator::operator()()
@@ -171,8 +192,36 @@ namespace cp
 		return operator()();
 	}
 
-	void Calibrator::undistort(Mat& src, Mat& dest)
+	void Calibrator::printParameters()
 	{
-		remap(src, dest, mapu, mapv, INTER_LINEAR);
+		std::cout << "intrinsic" << std::endl;
+		cout << intrinsic << endl;
+
+		cout << distortion << endl;
+	}
+
+	void Calibrator::drawReprojectionError()
+	{
+		int length = 200;
+		Size imsize(2*length+1, 2*length+1);
+		Point center(imsize.width / 2, imsize.height / 2);
+		Mat show = Mat::zeros(imsize, CV_8UC3);
+
+		float scale = 1000.f;
+
+		for (int i = 0; i < objectPoints.size(); i++)
+		{
+			vector<Point2f> reprojectPoints;
+			projectPoints(objectPoints[i], rt[i], tv[i], intrinsic, distortion, reprojectPoints);
+			for (int n = 0; n < reprojectPoints.size(); n++)
+			{
+				float dx = imagePoints[i][n].x - reprojectPoints[n].x;
+				float dy = imagePoints[i][n].y - reprojectPoints[n].y;
+				drawPlus(show, center + Point(cvRound(dx * scale), cvRound(dy * scale)), 1);
+			}
+			imshow("error", show);
+			waitKey();
+		}
+		
 	}
 }
