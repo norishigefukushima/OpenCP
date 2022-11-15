@@ -1,5 +1,7 @@
 #include "Calibrator.hpp"
 #include "draw.hpp"
+#include "debugcp.hpp"
+
 using namespace std;
 using namespace cv;
 
@@ -92,9 +94,9 @@ namespace cp
 		init(imageSize_, patternSize_, lengthofchess_);
 	}
 
-	Calibrator::Calibrator(){ ; }
+	Calibrator::Calibrator() { ; }
 
-	Calibrator::~Calibrator(){ ; }
+	Calibrator::~Calibrator() { ; }
 
 	Point2f Calibrator::getImagePoint(const int number_of_chess, const int index)
 	{
@@ -202,26 +204,38 @@ namespace cp
 
 	void Calibrator::drawReprojectionError()
 	{
-		int length = 200;
-		Size imsize(2*length+1, 2*length+1);
+		int length = 300;
+		Size imsize(2 * length + 1, 2 * length + 1);
 		Point center(imsize.width / 2, imsize.height / 2);
-		Mat show = Mat::zeros(imsize, CV_8UC3);
+		Mat show(imsize, CV_8UC3);
+		show.setTo(200);
 
 		float scale = 1000.f;
 
+		double terror = 0.0;
+		Mat_<uchar> graybar = Mat(256, 1, CV_8U);
+		Mat colorbar;
+		for (int i = 0; i < 256; i++) graybar(i) = i;
+		cv::applyColorMap(graybar, colorbar, COLORMAP_JET);
+		int step = 256 / (int)objectPoints.size();
+
 		for (int i = 0; i < objectPoints.size(); i++)
 		{
+			Scalar color = Scalar(colorbar.ptr<uchar>(i * step)[0], colorbar.ptr<uchar>(i * step)[1], colorbar.ptr<uchar>(i * step)[2], 0.0);
 			vector<Point2f> reprojectPoints;
 			projectPoints(objectPoints[i], rt[i], tv[i], intrinsic, distortion, reprojectPoints);
 			for (int n = 0; n < reprojectPoints.size(); n++)
 			{
 				float dx = imagePoints[i][n].x - reprojectPoints[n].x;
 				float dy = imagePoints[i][n].y - reprojectPoints[n].y;
-				drawPlus(show, center + Point(cvRound(dx * scale), cvRound(dy * scale)), 1);
+				terror = fma(dx, dx, fma(dy, dy, terror));
+				drawPlus(show, center + Point(cvRound(dx * scale), cvRound(dy * scale)), 2, color,2);
 			}
 			imshow("error", show);
-			waitKey();
+			//waitKey();
 		}
-		
+		imshow("error", show);
+		print_debug(rep_error);
+		//print_debug(sqrt(terror / (objectPoints.size() * objectPoints[0].size())));
 	}
 }
