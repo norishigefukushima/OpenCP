@@ -35,7 +35,7 @@ namespace cp
 			double y1 = imgpt3[i].y, y2 = imgpt1[i].y;
 
 			y1_ += y1; y2_ += y2;
-			y1y1_ += y1*y1; y1y2_ += y1*y2;
+			y1y1_ += y1 * y1; y1y2_ += y1 * y2;
 		}
 
 		y1_ /= n;
@@ -43,13 +43,13 @@ namespace cp
 		y1y1_ /= n;
 		y1y2_ /= n;
 
-		double a = (y1y2_ - y1_*y2_) / (y1y1_ - y1_*y1_);
-		double b = y2_ - a*y1_;
+		double a = (y1y2_ - y1_ * y2_) / (y1y1_ - y1_ * y1_);
+		double b = y2_ - a * y1_;
 
 		destP.at<double>(0, 0) *= a;
 		destP.at<double>(1, 1) *= a;
 		destP.at<double>(0, 2) *= a;
-		destP.at<double>(1, 2) = destP.at<double>(1, 2)*a + b;
+		destP.at<double>(1, 2) = destP.at<double>(1, 2) * a + b;
 		destP.at<double>(0, 3) *= a;
 		destP.at<double>(1, 3) *= a;
 
@@ -63,36 +63,45 @@ namespace cp
 		const vector<Mat>& distCoeffs,
 		const int anchorView1,
 		const int anchorView2,
-		const vector<vector<vector<Point2f>> >& anchorpt,
+		const vector<vector<vector<Point2f>>>& anchorpt,
 		Size imageSize, const vector<Mat>& relativeR, const vector<Mat>& relativeT,
 		vector<Mat>& R, vector<Mat>& P, Mat& Q,
 		double alpha, Size /*newImgSize*/,
 		Rect* anchorROI1, Rect* anchorROI2, int flags)
 	{
 		// first, rectify the 1-2 stereo pair
-		stereoRectify(cameraMatrix[anchorView1], distCoeffs[anchorView1], cameraMatrix[anchorView2], distCoeffs[anchorView2],
+		cv::stereoRectify(cameraMatrix[anchorView1], distCoeffs[anchorView1], cameraMatrix[anchorView2], distCoeffs[anchorView2],
 			imageSize, relativeR[anchorView2], relativeT[anchorView2],
-			R[anchorView1], R[anchorView2], P[anchorView1], P[anchorView2], Q, CALIB_ZERO_DISPARITY, alpha, imageSize, anchorROI1, anchorROI2);
+			R[anchorView1], R[anchorView2], P[anchorView1], P[anchorView2], Q, flags, alpha, imageSize, anchorROI1, anchorROI2);
 
-		// recompute rectification transforms for cameras 1 & 2.
+		if (cameraMatrix.size() == 2) return 0;
+			// recompute rectification transforms from cameras 1 & 2.
 
-		vector<Mat> r_r1(cameraMatrix.size());
+			vector<Mat> r_r1(cameraMatrix.size());
 		for (int i = 0; i < (int)cameraMatrix.size(); i++)
 		{
 			if (i != anchorView1 && i != anchorView2)
 			{
 				if (relativeR[i].size() != Size(3, 3))
+				{
 					Rodrigues(relativeR[i], r_r1[i]);
+				}
 				else
+				{
 					relativeR[i].copyTo(r_r1[i]);
+				}
 			}
 		}
 
 		Mat om;
 		if (relativeR[anchorView2].size() == Size(3, 3))
+		{
 			Rodrigues(relativeR[anchorView2], om);
+		}
 		else
+		{
 			relativeR[anchorView2].copyTo(om);
+		}
 
 		om *= -0.5;
 		Mat r_r;
@@ -115,7 +124,7 @@ namespace cp
 			if (i != anchorView1 && i != anchorView2)
 			{
 				// now rotate camera 3 to make its optical axis parallel to cameras 1 and 2.
-				R[i] = wR*r_r.t()*r_r1[i].t();
+				R[i] = wR * r_r.t() * r_r1[i].t();
 				Mat_<double> t13 = R[i] * relativeT[i];
 
 				P[anchorView2].copyTo(P[i]);

@@ -25,6 +25,7 @@ namespace cp
 		static int diff_a = 0; createTrackbar("a", wname, &diff_a, 100);
 		static int diff_channel = 3; createTrackbar("channel", wname, &diff_channel, 4);
 		static int diff_boost = 10; createTrackbar("boost*0.1", wname, &diff_boost, 1000);
+		static int diff_boostx = 1; createTrackbar("boost*boost", wname, &diff_boostx, 1000);
 		static int diff_abs_sw = 1; createTrackbar("diff_abs_sw", wname, &diff_abs_sw, 1);
 		static int diff_res = 0; createTrackbar("resizeshow pow2", wname, &diff_res, 5);
 
@@ -63,6 +64,7 @@ namespace cp
 			int res = (int)pow(2, diff_res);
 			Mat diff;
 			string text = "";
+			const float bst = 0.1f * diff_boost * diff_boostx;
 			if (diff_abs_sw == 0)
 			{
 				if (diff_channel < 3)
@@ -70,18 +72,18 @@ namespace cp
 					if (diff_channel == 0)text = "B";
 					if (diff_channel == 1)text = "G";
 					if (diff_channel == 2)text = "R";
-					diff = 0.1f*diff_boost * (vsf[diff_channel] - vrf[diff_channel]) + 128.f;
+					diff = bst * (vsf[diff_channel] - vrf[diff_channel]) + 128.f;
 				}
 				else if (diff_channel == 3)
 				{
 					text = "Y";
-					diff = 0.1f*diff_boost * (grayr - grays) + 128.f;
+					diff = bst * (grayr - grays) + 128.f;
 				}
 				else if (diff_channel == 4)
 				{
 					text = "All";
 					subtract(sf, rf, diff);
-					diff = 0.1f*diff_boost * diff + Scalar::all(128.f);
+					diff = bst * diff + Scalar::all(128.f);
 				}
 			}
 			else
@@ -91,18 +93,18 @@ namespace cp
 					if (diff_channel == 0)text = "B";
 					if (diff_channel == 1)text = "G";
 					if (diff_channel == 2)text = "R";
-					diff = 0.1*diff_boost * abs(vsf[diff_channel] - vrf[diff_channel]);
+					diff = bst * abs(vsf[diff_channel] - vrf[diff_channel]);
 				}
 				else if (diff_channel == 3)
 				{
 					text = "Y";
-					diff = 0.1*diff_boost * abs(grayr - grays);
+					diff = bst * abs(grayr - grays);
 				}
 				else if (diff_channel == 4)
 				{
 					text = "All";
 					subtract(sf, rf, diff);
-					diff = 0.1*diff_boost * abs(diff);
+					diff = bst * abs(diff);
 				}
 			}
 

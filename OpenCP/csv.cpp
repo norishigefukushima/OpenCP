@@ -114,8 +114,8 @@ namespace cp
 		ret = _fseeki64(fp, 0, SEEK_SET);*/
 
 		int countSep = 0;
-		char str[1000];
-		fgets(str, 1000, fp);
+		cv::AutoBuffer<char> str(INT_MAX);
+		fgets(str, INT_MAX, fp);
 		size_t size = strlen(str);
 
 		for (int i = 0; i < size; i++)
@@ -165,20 +165,24 @@ namespace cp
 				}
 			}
 			line++;
-		}	
-		cout <<"line "<< line << endl;
+		}
+		cout << "line " << line << endl;
 	}
 
 	void CSV::readData()
 	{
-		char buff[1000];
-		size_t line = 0;
-		while (fgets(buff, 1000, fp) != NULL)
+		/*size_t line = 1;
 		{
-			line++;
-		}
-		//cout << line << endl;
-		_fseeki64(fp, 0, SEEK_SET);
+			//line count
+			cv::AutoBuffer<char> buff(8);
+			while (fgets(buff, 8, fp) != NULL)
+			{
+				line++;
+			}
+		}*/
+
+		int code = _fseeki64(fp, 0, SEEK_SET);
+		if (code != 0)cout << "fseek error: readData Init" << endl;
 
 		char localBuffer[1024];
 		char* str = nullptr;
@@ -192,23 +196,34 @@ namespace cp
 		}
 
 		size_t ret = fread(str, sizeof(char), fileSize, fp);
-		//cout << ret << "/"<<fileSize << endl;
-
+		cout << "ret fread/fileSize: "<<ret << "/"<<fileSize<<"| "<<fileSize-ret << endl;
+		/*for (int i = 0; i < 20; i++)
+		{
+			cout << str[i] << " ";
+		}
+		 cout<< endl;
+		*/
 		int c = 0;
 		vector<double> v;
-		for (size_t i = 0; i < fileSize; i++)
+		//int start = 3;//with BOM
+		int start = 0;//with BOM
+		for (size_t i = start; i < ret; i++)
 		{
 			if (str[i] == ',')
 			{
 				localBuffer[c] = '\0';
 				const double d = atof(localBuffer);
+				if (d < 2)
+				{
+					cout << i << endl;
+					cout << d << endl; getchar();
+				}
 				c = 0;
 				v.push_back(d);
 			}
 			else if (str[i] == '\n')
 			{
-				if (data.size() % 1000000 == 0)cout << data.size()<<"/" << line << endl;
-				if (data.size() - 1 == line)break;
+				//if (data.size() % 1000000 == 0)cout << data.size() << "/" << line << endl;
 				localBuffer[c] = '\0';
 				const double d = atof(localBuffer);
 				c = 0;
@@ -221,21 +236,28 @@ namespace cp
 				data.push_back(v);
 				v.clear();
 			}
+			else if (i == ret - 1)
+			{
+				localBuffer[c] = '\0';
+				const double d = atof(localBuffer);
+				v.push_back(d);
+				data.push_back(v);
+			}
 			else
 			{
 				localBuffer[c] = str[i];
 				c++;
 			}
 		}
-
+		
 		delete[] str;
 	}
 
 	cv::Mat CSV::getMat()
 	{
 		readData();
-		cv::Mat_<double> ret(data.size()-1, data[0].size());
-		for (int j = 0; j < data.size()-1; j++)
+		cv::Mat_<double> ret(data.size(), data[0].size());
+		for (int j = 0; j < data.size(); j++)
 		{
 			for (int i = 0; i < data[0].size(); i++)
 			{
@@ -245,7 +267,7 @@ namespace cp
 		return ret;
 	}
 
-	void CSV::init(string name, bool isWrite, bool isClear)
+	void CSV::init(string name, bool isWrite, bool isClear, bool isHeader)
 	{
 		isTop = true;
 		if (isWrite)
@@ -282,6 +304,7 @@ namespace cp
 			}
 			else
 			{
+				//if(isHeader) 
 				readHeader();
 			}
 		}
@@ -292,10 +315,10 @@ namespace cp
 		fp = nullptr;
 	}
 
-	CSV::CSV(string name, bool isWrite, bool isClear)
+	CSV::CSV(string name, bool isWrite, bool isClear, bool isHeader)
 	{
 		fp = nullptr;
-		init(name, isWrite, isClear);
+		init(name, isWrite, isClear, isHeader);
 	}
 
 	CSV::~CSV()

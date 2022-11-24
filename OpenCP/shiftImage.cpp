@@ -332,6 +332,12 @@ namespace cp
 				y--;
 				setTrackbarPos("y", window_name, y);
 			}
+
+			if (key == '?')
+			{
+				cout << "i,j,k,l: move xy" << endl;
+				cout << "f: flip alpha" << endl;
+			}
 		}
 		destroyWindow(window_name);
 	}
