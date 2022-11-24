@@ -437,6 +437,7 @@
     <ClCompile Include="box\boxFilter_SSAT_VtV.cpp" />
     <ClCompile Include="Calibrator.cpp" />
     <ClCompile Include="checkSameImage.cpp" />
+    <ClCompile Include="circleFilter.cpp" />
     <ClCompile Include="color.cpp" />
     <ClCompile Include="concat.cpp" />
     <ClCompile Include="consoleImage.cpp" />
@@ -663,6 +664,7 @@
     <ClInclude Include="..\include\boxFilter.hpp" />
     <ClInclude Include="..\include\Calibrator.hpp" />
     <ClInclude Include="..\include\checkSameImage.hpp" />
+    <ClInclude Include="..\include\circleFilter.hpp" />
     <ClInclude Include="..\include\color.hpp" />
     <ClInclude Include="..\include\common.hpp" />
     <ClInclude Include="..\include\concat.hpp" />

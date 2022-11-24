@@ -630,6 +630,9 @@
     <ClCompile Include="rectifyMultiCollinear.cpp">
       <Filter>ソース ファイル\stereo\Calibration</Filter>
     </ClCompile>
+    <ClCompile Include="circleFilter.cpp">
+      <Filter>ソース ファイル\filter</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libGaussian\gaussian_conv.h">
@@ -1135,6 +1138,9 @@
     </ClInclude>
     <ClInclude Include="..\include\windowFunction.hpp">
       <Filter>ヘッダー ファイル\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\circleFilter.hpp">
+      <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

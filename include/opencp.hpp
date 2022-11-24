@@ -72,6 +72,7 @@
 #include "binaryWeightedRangeFilter.hpp"
 #include "boundaryReconstructionFilter.hpp"
 #include "boxFilter.hpp"
+#include "circleFilter.hpp"
 #include "costVolumeFilter.hpp"
 #include "crossBasedLocalFilter.hpp"
 #include "crossBasedLocalMultipointFilter.hpp"
