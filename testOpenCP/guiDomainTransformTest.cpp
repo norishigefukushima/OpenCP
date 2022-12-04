@@ -73,7 +73,7 @@ void guiDomainTransformFilterTest(Mat& src_)
 		{
 			Timer t("domain transform in opencp");
 			//ximgproc::jointBilateralFilter(src, aa, dest, (sigma_space*3)*2+1, sigma_color, sigma_space);//NC, RF, IC
-			cp::jointBilateralFilter(aa, src, dest, (sigma_space * 3) * 2 + 1, sigma_color, sigma_space);
+			cp::jointBilateralFilter(aa, src, dest, (int)ceil(sigma_space * 3) * 2 + 1, sigma_color, sigma_space);
 			normalize(dest, dest, 255, 0, NORM_MINMAX);
 			//domainTransformFilter(src, dest, sigma_color, sigma_space, iter, 1, DTF_RF, DTF_BGRA_SSE_PARALLEL);
 		}
