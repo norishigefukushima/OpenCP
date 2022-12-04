@@ -283,16 +283,33 @@ namespace cp
 		if (isInteractive)
 		{
 			const int fontType = FONT_HERSHEY_SIMPLEX;
+
+			string wnameplot = "grid position";
+			
+			Mat gridposition(imageSize, CV_8UC3);
+
 			namedWindow(wname);
 			int index = 0;
+			const int thmax = 10000;
+			int thresh = thmax; createTrackbar("threshold*0.0001(max 1pixel)", wname, &thresh, thmax);//max 1pixel
 			createTrackbar("pattern index", wname, &index, (int)objectPoints.size());
-			int gi = (int)objectPoints[0].size();
-			createTrackbar("grid index", wname, &gi, (int)objectPoints[0].size());
+
+			int gix = patternSize.width;
+			int giy = patternSize.height;
+			createTrackbar("grid index X", wname, &gix, patternSize.width);
+			createTrackbar("grid index Y", wname, &giy, patternSize.height);
 			int sw = 0; createTrackbar("sw", wname, &sw, 1);
 			int ColorMap = COLORMAP_JET; createTrackbar("ColorMap", wname, &ColorMap, COLORMAP_DEEPGREEN);
 			int key = 0;
 			while (key != 'q')
 			{
+				const float th2 = (thresh== thmax)?FLT_MAX:(thresh * 0.0001f) * (thresh * 0.0001f);
+				gridposition.setTo(255);
+
+				int gi = patternSize.width * giy + gix;
+				gi = (gix == patternSize.width) ? (int)objectPoints[0].size() : gi;
+				gi = (giy == patternSize.height) ? (int)objectPoints[0].size() : gi;
+
 				double terror = 0.0;
 				cv::applyColorMap(graybar, colorbar, ColorMap);
 				show.setTo(255);
@@ -305,13 +322,17 @@ namespace cp
 						projectPoints(objectPoints[i], rt[i], tv[i], intrinsic, distortion, reprojectPoints);
 						for (int n = 0; n < reprojectPoints.size(); n++)
 						{
-							float dx = imagePoints[i][n].x - reprojectPoints[n].x;
-							float dy = imagePoints[i][n].y - reprojectPoints[n].y;
+							const float dx = imagePoints[i][n].x - reprojectPoints[n].x;
+							const float dy = imagePoints[i][n].y - reprojectPoints[n].y;
 							terror = fma(dx, dx, fma(dy, dy, terror));
-							drawPlus(show, center + Point(cvRound(dx * scale), cvRound(dy * scale)), 2, color, 2);
+							
+							if (dx * dx + dy * dy < th2)
+							{
+								drawPlus(gridposition, Point(imagePoints[i][n]), 2, Scalar(255, 0, 0), 2);
+								drawPlus(show, center + Point(cvRound(dx * scale), cvRound(dy * scale)), 2, color, 2);
+							}
 						}
 					}
-
 					putText(show, format("Rep.Error: %6.4f", rep_error), Point(0, 20), fontType, 0.5, COLOR_GRAY50);
 				}
 				else
@@ -329,10 +350,15 @@ namespace cp
 								color = Scalar(colorbar.ptr<uchar>(n * step)[0], colorbar.ptr<uchar>(n * step)[1], colorbar.ptr<uchar>(n * step)[2], 0.0);
 							}
 
-							float dx = imagePoints[index][n].x - reprojectPoints[n].x;
-							float dy = imagePoints[index][n].y - reprojectPoints[n].y;
+							const float dx = imagePoints[index][n].x - reprojectPoints[n].x;
+							const float dy = imagePoints[index][n].y - reprojectPoints[n].y;
 							terror = fma(dx, dx, fma(dy, dy, terror));
-							drawPlus(show, center + Point(cvRound(dx * scale), cvRound(dy * scale)), 2, color, 2);
+							
+							if (dx * dx + dy * dy < th2)
+							{
+								drawPlus(gridposition, Point(imagePoints[index][n]), 2, Scalar(255, 0, 0), 2);
+								drawPlus(show, center + Point(cvRound(dx * scale), cvRound(dy * scale)), 2, color, 2);
+							}
 						}
 						putText(show, format("Rep.Error: %6.4f", sqrt(terror / (objectPoints[0].size()))), Point(0, 20), fontType, 0.5, COLOR_GRAY50);
 					}
@@ -344,15 +370,19 @@ namespace cp
 							color = Scalar(colorbar.ptr<uchar>(gi * step)[0], colorbar.ptr<uchar>(gi * step)[1], colorbar.ptr<uchar>(gi * step)[2], 0.0);
 						}
 
-						float dx = imagePoints[index][gi].x - reprojectPoints[gi].x;
-						float dy = imagePoints[index][gi].y - reprojectPoints[gi].y;
+						const float dx = imagePoints[index][gi].x - reprojectPoints[gi].x;
+						const float dy = imagePoints[index][gi].y - reprojectPoints[gi].y;
 						terror = fma(dx, dx, fma(dy, dy, terror));
-						drawPlus(show, center + Point(cvRound(dx * scale), cvRound(dy * scale)), 2, color, 2);
+						
+						if (dx * dx + dy * dy < th2)
+						{
+							drawPlus(gridposition, Point(imagePoints[index][gi]), 2, Scalar(255, 0, 0), 2);
+							drawPlus(show, center + Point(cvRound(dx * scale), cvRound(dy * scale)), 2, color, 2);
+						}
 
 						putText(show, format("Rep.Error: %6.4f", sqrt(terror)), Point(0, 20), fontType, 0.5, COLOR_GRAY50);
 					}
 				}
-
 
 				putText(show, format("%6.4f", length * 0.5 / scale), Point(length / 2 - 30, length / 2), fontType, 0.5, COLOR_GRAY50);
 				circle(show, center, length / 2, COLOR_GRAY100);
@@ -361,6 +391,9 @@ namespace cp
 				resize(colorbar.t(), cres, Size(show.cols, 20));
 				vconcat(show, cres, cres);
 				imshow(wname, cres);
+
+				imshow(wnameplot, gridposition);
+
 				key = waitKey(1);
 				if (index < patternImages.size())
 				{
