@@ -55,7 +55,7 @@ namespace cp
 		double calibration(const int flag);
 
 		void printParameters();
-		void drawReprojectionError(std::string wname = "error", const bool isInteractive = false);
+		void drawReprojectionError(std::string wname = "error", const bool isInteractive = false, const float scale = 1000.f);
 		void drawDistortion(std::string wname = "distortion", const bool isInteractive = false);
 	};
 }

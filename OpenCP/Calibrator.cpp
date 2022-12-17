@@ -263,15 +263,13 @@ namespace cp
 		cout << distortion << endl;
 	}
 
-	void Calibrator::drawReprojectionError(string wname, const bool isInteractive)
+	void Calibrator::drawReprojectionError(string wname, const bool isInteractive, const float scale)
 	{
 		int length = 400;
 		Size imsize(2 * length + 1, 2 * length + 1);
 		Point center(imsize.width / 2, imsize.height / 2);
 		Mat show(imsize, CV_8UC3);
 		show.setTo(255);
-
-		float scale = 1000.f;
 
 		double terror = 0.0;
 		Mat_<uchar> graybar = Mat(256, 1, CV_8U);
@@ -423,9 +421,10 @@ namespace cp
 						}
 						imshow(wname + "_image", show);
 					}
-
 				}
 			}
+			destroyWindow(wname);
+			destroyWindow(wnameplot);
 		}
 		else
 		{
