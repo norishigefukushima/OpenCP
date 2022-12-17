@@ -454,6 +454,7 @@
     <ClCompile Include="dithering.cpp" />
     <ClCompile Include="downsample.cpp" />
     <ClCompile Include="GaussianKDTree.cpp" />
+    <ClCompile Include="threshold.cpp" />
     <ClCompile Include="highDimensionalGaussianFilter.cpp" />
     <ClCompile Include="IM2COL.cpp" />
     <ClCompile Include="kmeans.cpp" />
@@ -764,6 +765,7 @@
     <ClInclude Include="..\include\stereoDisplay.hpp" />
     <ClInclude Include="..\include\stereoDP.hpp" />
     <ClInclude Include="..\include\stream.hpp" />
+    <ClInclude Include="..\include\threshold.hpp" />
     <ClInclude Include="..\include\tiling.hpp" />
     <ClInclude Include="..\include\timer.hpp" />
     <ClInclude Include="..\include\unnormalizedBilateralFilter.hpp" />
