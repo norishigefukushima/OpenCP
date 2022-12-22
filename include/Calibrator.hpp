@@ -4,6 +4,12 @@
 
 namespace cp
 {
+	CP_EXPORT void distortPoints(const std::vector<cv::Point2f>& src, std::vector<cv::Point2f>& dest, const cv::Mat& intrinsic, const cv::Mat& distortion);
+	CP_EXPORT void distortPoints(const std::vector<cv::Point2d>& src, std::vector<cv::Point2d>& dest, const cv::Mat& intrinsic, const cv::Mat& distortion);
+	CP_EXPORT void distortOnePoint(const cv::Point2f src, cv::Point2f& dest, const cv::Mat& intrinsic, const cv::Mat& distortion);
+	CP_EXPORT void distortOnePoint(const cv::Point2d src, cv::Point2d& dest, const cv::Mat& intrinsic, const cv::Mat& distortion);
+	CP_EXPORT void undistortOnePoint(const cv::Point2f src, cv::Point2f& dest, const cv::Mat& intrinsic, const cv::Mat& distortion);
+	CP_EXPORT void undistortOnePoint(const cv::Point2d src, cv::Point2d& dest, const cv::Mat& intrinsic, const cv::Mat& distortion);
 	CP_EXPORT void drawPatternIndexNumbers(cv::Mat& dest, const std::vector<cv::Point>& points, const double scale, const cv::Scalar color);
 	CP_EXPORT void drawPatternIndexNumbers(cv::Mat& dest, const std::vector<cv::Point2f>& points, const double scale, const cv::Scalar color);
 	CP_EXPORT void drawDetectedPattern(const cv::Mat& src, cv::Mat& dest, const cv::Size patternSize, const std::vector<cv::Point2f>& points, const bool flag, const double numberFontSize = 0.5, const cv::Scalar numberFontColor = COLOR_ORANGE);
@@ -19,6 +25,10 @@ namespace cp
 		void generatechessboard3D();
 		void initRemap();
 		bool isUseInitCameraMatrix = false;
+		void drawReprojectionErrorInternal(const std::vector<std::vector<cv::Point2f>>& points,
+			const std::vector <std::vector<cv::Point3f>>& objectPoints,
+			const std::vector<cv::Mat>& R, const std::vector<cv::Mat>& T,
+			const bool isWait = true, const std::string wname = "error", const float scale = 1000.f, const std::vector<cv::Mat>& patternImage = std::vector<cv::Mat>(), const int patternType = 0);
 	public:
 		cv::Point2f getImagePoint(const int number_of_chess, const int index = -1);
 		cv::Size imageSize;
@@ -42,6 +52,7 @@ namespace cp
 		~Calibrator();
 
 		void setIntrinsic(double focal_length);
+		void setIntrinsic(const cv::Mat& K, const cv::Mat& distortion);
 		void setInitCameraMatrix(const bool flag);
 		void solvePnP(const int number_of_chess, cv::Mat& r, cv::Mat& t);
 		void readParameter(char* name);
@@ -56,6 +67,8 @@ namespace cp
 
 		void printParameters();
 		void drawReprojectionError(std::string wname = "error", const bool isInteractive = false, const float scale = 1000.f);
+		void drawReprojectionErrorFromExtraPoints(const std::vector<cv::Point2f>& points, const bool isWait = true, const std::string wname = "error", const float scale = 1000.f, const cv::Mat& patternImage = cv::Mat(), const int patternType = 0);
+
 		void drawDistortion(std::string wname = "distortion", const bool isInteractive = false);
 	};
 }
