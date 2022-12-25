@@ -33,11 +33,14 @@ namespace cp
 		int stack_max = 0;
 	public:
 		StackImage(std::string window_name = "image stack");
+		~StackImage();
 		void setWindowName(std::string window_name);
 		void overwrite(cv::Mat& src);
+		void push(std::vector<cv::Mat>& src);
 		void push(cv::Mat& src);
 		void show();
 		void show(cv::Mat& src);
+		void gui();
 	};
 
 	enum DRAW_SIGNAL_CHANNEL

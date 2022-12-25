@@ -182,7 +182,7 @@ namespace cp
 	void drawSignalX(InputArrayOfArrays src_, DRAW_SIGNAL_CHANNEL color, Mat& dest, Size outputImageSize, int line_height, int shiftx, int shiftvalue, int rangex, int rangevalue, int linetype)
 	{
 		vector<Mat> src;
-		if(src_.isMatVector()) src_.getMatVector(src);
+		if (src_.isMatVector()) src_.getMatVector(src);
 		else
 		{
 			src.resize(1);
@@ -805,6 +805,11 @@ namespace cp
 		wname = window_name;
 	}
 
+	StackImage::~StackImage()
+	{
+		destroyWindow(wname);
+	}
+
 	void StackImage::setWindowName(std::string window_name)
 	{
 		wname = window_name;
@@ -842,6 +847,23 @@ namespace cp
 		}
 	}
 
+	void StackImage::push(vector<cv::Mat>& src)
+	{
+		for (int i = 0; i < src.size(); i++)
+		{
+			stack.push_back(src[i].clone());
+		}
+		stack_max = (int)stack.size();
+
+		if (stack_max > 0)
+		{
+			namedWindow(wname);
+			createTrackbar("num", wname, &num_stack, stack_max);
+			setTrackbarMax("num", wname, stack_max);
+			setTrackbarPos("num", wname, stack_max);
+		}
+	}
+
 	void StackImage::show(cv::Mat& src)
 	{
 		if (stack_max == 0) imshow(wname, src);
@@ -852,6 +874,29 @@ namespace cp
 	void StackImage::show()
 	{
 		if (stack_max > 0) imshow(wname, stack[min(num_stack, stack_max - 1)]);
+	}
+
+	void StackImage::gui()
+	{
+		if (stack_max == 0)return;
+		int key = 0;
+		while (key != 'q')
+		{
+			show();
+			key = waitKey(1);
+			if (key == 'f')
+			{
+				num_stack++;
+				num_stack = (num_stack >= stack_max) ? 0 : num_stack;
+				setTrackbarPos("num", wname, num_stack);
+			}
+			if (key == 'b')
+			{
+				num_stack--;
+				num_stack = (num_stack == -1) ? stack_max - 1 : num_stack;
+				setTrackbarPos("num", wname, num_stack);
+			}
+		}
 	}
 #pragma endregion
 }
