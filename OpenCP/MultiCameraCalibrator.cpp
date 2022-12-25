@@ -66,7 +66,7 @@ namespace cp
 		{
 			for (int i = 0; i < patternSize.width; ++i)
 			{
-				chessboard3D.push_back(Point3f(lengthofchess * (float)i, lengthofchess * (float)j, 0.0));
+				chessboard3D.push_back(Point3f(lengthofchess.width * (float)i, lengthofchess.height * (float)j, 0.0));
 			}
 		}
 	}
@@ -177,14 +177,14 @@ namespace cp
 		fs << "Q" << Q;
 	}
 
-	void MultiCameraCalibrator::init(Size imageSize_, Size patternSize_, float lengthofchess_, int numofcamera_)
+	void MultiCameraCalibrator::init(Size imageSize_, Size patternSize_, Size2f lengthofchess_, int numofcamera_)
 	{
 		numofcamera = numofcamera_;
 
 		numofchessboards = 0;
 		imageSize = imageSize_;
 		patternSize = patternSize_;
-		lengthofchess = lengthofchess_;
+		this->lengthofchess = lengthofchess_;
 
 		vector<vector<Point2f>> tmp;
 		for (int i = 0; i < numofcamera; i++)
@@ -211,6 +211,11 @@ namespace cp
 	}
 
 	MultiCameraCalibrator::MultiCameraCalibrator(Size imageSize_, Size patternSize_, float lengthofchess_, int numofcamera_)
+	{
+		init(imageSize_, patternSize_, Size2f(lengthofchess_, lengthofchess_), numofcamera_);
+	}
+
+	MultiCameraCalibrator::MultiCameraCalibrator(Size imageSize_, Size patternSize_, Size2f lengthofchess_, int numofcamera_)
 	{
 		init(imageSize_, patternSize_, lengthofchess_, numofcamera_);
 	}
@@ -265,7 +270,7 @@ namespace cp
 	void MultiCameraCalibrator::pushImagePoint(const vector<vector<Point2f>>& point)
 	{
 		numofchessboards++;
-		for (int i = 0; i < imagePoints.size(); i++)
+		for (int i = 0; i < numofcamera; i++)
 		{
 			imagePoints[i].push_back(point[i]);
 		}
@@ -276,6 +281,16 @@ namespace cp
 		objectPoints.push_back(point);
 	}
 
+	void MultiCameraCalibrator::clearPatternData()
+	{		
+		for (int i = 0; i < numofcamera; i++)
+		{
+			imagePoints[i].resize(0);
+			patternImages[i].resize(0);
+		}
+		objectPoints.resize(0);
+		numofchessboards = 0;
+	}
 
 	void MultiCameraCalibrator::printParameters()
 	{

@@ -7,13 +7,14 @@ using namespace cv;
 
 namespace cp
 {
+#pragma region util
 	void undistortOnePoint(const Point2f src, Point2f& dest, const Mat& intrinsic, const Mat& distortion)
 	{
 		vector<Point2f> s;
 		vector<Point2f> d;
 		s.push_back(src);
 		undistortPoints(s, d, intrinsic, distortion, Mat::eye(3, 3, CV_64F), intrinsic,
-			cv::TermCriteria(cv::TermCriteria::EPS | cv::TermCriteria::MAX_ITER, 30, 0.0001));
+			cv::TermCriteria(cv::TermCriteria::EPS | cv::TermCriteria::MAX_ITER, 50, DBL_EPSILON));
 		dest = d[0];
 	}
 
@@ -23,8 +24,28 @@ namespace cp
 		vector<Point2d> d;
 		s.push_back(src);
 		undistortPoints(s, d, intrinsic, distortion, Mat::eye(3, 3, CV_64F), intrinsic,
-			cv::TermCriteria(cv::TermCriteria::EPS | cv::TermCriteria::MAX_ITER, 30, 0.0001));
+			cv::TermCriteria(cv::TermCriteria::EPS | cv::TermCriteria::MAX_ITER, 50, DBL_EPSILON));
 		dest = d[0];
+	}
+
+	template <typename FLOAT>
+	void computeTiltProjectionMatrix(FLOAT tauX,
+		FLOAT tauY,
+		Matx<FLOAT, 3, 3>* matTilt)
+	{
+		FLOAT cTauX = std::cos(tauX);
+		FLOAT sTauX = std::sin(tauX);
+		FLOAT cTauY = std::cos(tauY);
+		FLOAT sTauY = std::sin(tauY);
+		Matx<FLOAT, 3, 3> matRotX = Matx<FLOAT, 3, 3>(1, 0, 0, 0, cTauX, sTauX, 0, -sTauX, cTauX);
+		Matx<FLOAT, 3, 3> matRotY = Matx<FLOAT, 3, 3>(cTauY, 0, -sTauY, 0, 1, 0, sTauY, 0, cTauY);
+		Matx<FLOAT, 3, 3> matRotXY = matRotY * matRotX;
+		Matx<FLOAT, 3, 3> matProjZ = Matx<FLOAT, 3, 3>(matRotXY(2, 2), 0, -matRotXY(0, 2), 0, matRotXY(2, 2), -matRotXY(1, 2), 0, 0, 1);
+		if (matTilt)
+		{
+			// Matrix for trapezoidal distortion of tilted image sensor
+			*matTilt = matProjZ * matRotXY;
+		}
 	}
 
 	void distortOnePoint(const Point2f src, Point2f& dest, const Mat& intrinsic, const Mat& distortion)
@@ -43,10 +64,55 @@ namespace cp
 		const double r2 = xp * xp + yp * yp;
 		const double r4 = r2 * r2;
 		const double r6 = r2 * r4;
-		const double xpp = xp * (1.0 + k1 * r2 + k2 * r4 + k3 * r6) + 2.0 * p1 * xp * yp + p2 * (r2 + 2.0 * xp * xp);
-		const double ypp = yp * (1.0 + k1 * r2 + k2 * r4 + k3 * r6) + p1 * (r2 + 2.0 * yp * yp) + 2.0 * p2 * xp * yp;
-		dest.x = float(xpp * fx + cx);
-		dest.y = float(ypp * fy + cy);
+		if (distortion.size().area() == 5)
+		{
+			const double xpp = xp * (1.0 + k1 * r2 + k2 * r4 + k3 * r6) + 2.0 * p1 * xp * yp + p2 * (r2 + 2.0 * xp * xp);
+			const double ypp = yp * (1.0 + k1 * r2 + k2 * r4 + k3 * r6) + p1 * (r2 + 2.0 * yp * yp) + 2.0 * p2 * xp * yp;
+			dest.x = float(xpp * fx + cx);
+			dest.y = float(ypp * fy + cy);
+		}
+		else if (distortion.size().area() <= 12)
+		{
+			const double k4 = distortion.at<double>(5);
+			const double k5 = distortion.at<double>(6);
+			const double k6 = distortion.at<double>(7);
+			const double s1 = distortion.at<double>(8);
+			const double s2 = distortion.at<double>(9);
+			const double s3 = distortion.at<double>(10);
+			const double s4 = distortion.at<double>(11);
+
+			const double xpp = xp * (1.0 + k1 * r2 + k2 * r4 + k3 * r6) / (1.0 + k4 * r2 + k5 * r4 + k6 * r6) + 2.0 * p1 * xp * yp + p2 * (r2 + 2.0 * xp * xp) + s1 * r2 + s2 * r4;
+			const double ypp = yp * (1.0 + k1 * r2 + k2 * r4 + k3 * r6) / (1.0 + k4 * r2 + k5 * r4 + k6 * r6) + p1 * (r2 + 2.0 * yp * yp) + 2.0 * p2 * xp * yp + s3 * r2 + s4 * r4;
+			dest.x = float(xpp * fx + cx);
+			dest.y = float(ypp * fy + cy);
+		}
+		else
+		{
+			const double k4 = distortion.at<double>(5);
+			const double k5 = distortion.at<double>(6);
+			const double k6 = distortion.at<double>(7);
+			const double s1 = distortion.at<double>(8);
+			const double s2 = distortion.at<double>(9);
+			const double s3 = distortion.at<double>(10);
+			const double s4 = distortion.at<double>(11);
+			const double tx = distortion.at<double>(12);
+			const double ty = distortion.at<double>(13);
+
+			const double xpp = xp * (1.0 + k1 * r2 + k2 * r4 + k3 * r6) / (1.0 + k4 * r2 + k5 * r4 + k6 * r6) + 2.0 * p1 * xp * yp + p2 * (r2 + 2.0 * xp * xp) + s1 * r2 + s2 * r4;
+			const double ypp = yp * (1.0 + k1 * r2 + k2 * r4 + k3 * r6) / (1.0 + k4 * r2 + k5 * r4 + k6 * r6) + p1 * (r2 + 2.0 * yp * yp) + 2.0 * p2 * xp * yp + s3 * r2 + s4 * r4;
+
+			Matx33d matTilt = Matx33d::eye();
+			computeTiltProjectionMatrix(tx, ty, &matTilt);
+
+			// additional distortion by projecting onto a tilt plane
+			Vec3d vecTilt = matTilt * Vec3d(xpp, ypp, 1);
+			double invProj = vecTilt(2) ? 1. / vecTilt(2) : 1;
+			const double xppt = invProj * vecTilt(0);
+			const double yppt = invProj * vecTilt(1);
+
+			dest.x = saturate_cast<float>(xppt * fx + cx);
+			dest.y = saturate_cast<float>(yppt * fy + cy);
+		}
 	}
 
 	void distortOnePoint(const Point2d src, Point2d& dest, const Mat& intrinsic, const Mat& distortion)
@@ -65,10 +131,55 @@ namespace cp
 		const double r2 = xp * xp + yp * yp;
 		const double r4 = r2 * r2;
 		const double r6 = r2 * r4;
-		const double xpp = xp * (1.0 + k1 * r2 + k2 * r4 + k3 * r6) + 2.0 * p1 * xp * yp + p2 * (r2 + 2.0 * xp * xp);
-		const double ypp = yp * (1.0 + k1 * r2 + k2 * r4 + k3 * r6) + p1 * (r2 + 2.0 * yp * yp) + 2.0 * p2 * xp * yp;
-		dest.x = xpp * fx + cx;
-		dest.y = ypp * fy + cy;
+		if (distortion.size().area() == 5)
+		{
+			const double xpp = xp * (1.0 + k1 * r2 + k2 * r4 + k3 * r6) + 2.0 * p1 * xp * yp + p2 * (r2 + 2.0 * xp * xp);
+			const double ypp = yp * (1.0 + k1 * r2 + k2 * r4 + k3 * r6) + p1 * (r2 + 2.0 * yp * yp) + 2.0 * p2 * xp * yp;
+			dest.x = xpp * fx + cx;
+			dest.y = ypp * fy + cy;
+		}
+		else if (distortion.size().area() <= 12)
+		{
+			const double k4 = distortion.at<double>(5);
+			const double k5 = distortion.at<double>(6);
+			const double k6 = distortion.at<double>(7);
+			const double s1 = distortion.at<double>(8);
+			const double s2 = distortion.at<double>(9);
+			const double s3 = distortion.at<double>(10);
+			const double s4 = distortion.at<double>(11);
+
+			const double xpp = xp * (1.0 + k1 * r2 + k2 * r4 + k3 * r6) / (1.0 + k4 * r2 + k5 * r4 + k6 * r6) + 2.0 * p1 * xp * yp + p2 * (r2 + 2.0 * xp * xp) + s1 * r2 + s2 * r4;
+			const double ypp = yp * (1.0 + k1 * r2 + k2 * r4 + k3 * r6) / (1.0 + k4 * r2 + k5 * r4 + k6 * r6) + p1 * (r2 + 2.0 * yp * yp) + 2.0 * p2 * xp * yp + s3 * r2 + s4 * r4;
+			dest.x = xpp * fx + cx;
+			dest.y = ypp * fy + cy;
+		}
+		else
+		{
+			const double k4 = distortion.at<double>(5);
+			const double k5 = distortion.at<double>(6);
+			const double k6 = distortion.at<double>(7);
+			const double s1 = distortion.at<double>(8);
+			const double s2 = distortion.at<double>(9);
+			const double s3 = distortion.at<double>(10);
+			const double s4 = distortion.at<double>(11);
+			const double tx = distortion.at<double>(12);
+			const double ty = distortion.at<double>(13);
+
+			const double xpp = xp * (1.0 + k1 * r2 + k2 * r4 + k3 * r6) / (1.0 + k4 * r2 + k5 * r4 + k6 * r6) + 2.0 * p1 * xp * yp + p2 * (r2 + 2.0 * xp * xp) + s1 * r2 + s2 * r4;
+			const double ypp = yp * (1.0 + k1 * r2 + k2 * r4 + k3 * r6) / (1.0 + k4 * r2 + k5 * r4 + k6 * r6) + p1 * (r2 + 2.0 * yp * yp) + 2.0 * p2 * xp * yp + s3 * r2 + s4 * r4;
+
+			Matx33d matTilt = Matx33d::eye();
+			computeTiltProjectionMatrix(tx, ty, &matTilt);
+
+			// additional distortion by projecting onto a tilt plane
+			Vec3d vecTilt = matTilt * Vec3d(xpp, ypp, 1);
+			double invProj = vecTilt(2) ? 1.0 / vecTilt(2) : 1.0;
+			const double xppt = invProj * vecTilt(0);
+			const double yppt = invProj * vecTilt(1);
+
+			dest.x = xppt * fx + cx;
+			dest.y = yppt * fy + cy;
+		}
 	}
 
 	void distortPoints(const vector<Point2f>& src, vector<Point2f>& dest, const Mat& intrinsic, const Mat& distortion)
@@ -83,17 +194,75 @@ namespace cp
 		const double p1 = distortion.at<double>(2);
 		const double p2 = distortion.at<double>(3);
 		dest.resize(src.size());
-		for (int i = 0; i < src.size(); i++)
+		if (distortion.size().area() == 5)
 		{
-			const double xp = (src[i].x - cx) / fx;
-			const double yp = (src[i].y - cy) / fy;
-			const double r2 = xp * xp + yp * yp;
-			const double r4 = r2 * r2;
-			const double r6 = r2 * r4;
-			const double xpp = xp * (1.0 + k1 * r2 + k2 * r4 + k3 * r6) + 2.0 * p1 * xp * yp + p2 * (r2 + 2.0 * xp * xp);
-			const double ypp = yp * (1.0 + k1 * r2 + k2 * r4 + k3 * r6) + p1 * (r2 + 2.0 * yp * yp) + 2.0 * p2 * xp * yp;
-			dest[i].x = saturate_cast<float>(xpp * fx + cx);
-			dest[i].y = saturate_cast<float>(ypp * fy + cy);
+			for (int i = 0; i < src.size(); i++)
+			{
+				const double xp = (src[i].x - cx) / fx;
+				const double yp = (src[i].y - cy) / fy;
+				const double r2 = xp * xp + yp * yp;
+				const double r4 = r2 * r2;
+				const double r6 = r2 * r4;
+				const double xpp = xp * (1.0 + k1 * r2 + k2 * r4 + k3 * r6) + 2.0 * p1 * xp * yp + p2 * (r2 + 2.0 * xp * xp);
+				const double ypp = yp * (1.0 + k1 * r2 + k2 * r4 + k3 * r6) + p1 * (r2 + 2.0 * yp * yp) + 2.0 * p2 * xp * yp;
+				dest[i].x = saturate_cast<float>(xpp * fx + cx);
+				dest[i].y = saturate_cast<float>(ypp * fy + cy);
+			}
+		}
+		else if (distortion.size().area() <= 12)
+		{
+			const double k4 = distortion.at<double>(5);
+			const double k5 = distortion.at<double>(6);
+			const double k6 = distortion.at<double>(7);
+			const double s1 = distortion.at<double>(8);
+			const double s2 = distortion.at<double>(9);
+			const double s3 = distortion.at<double>(10);
+			const double s4 = distortion.at<double>(11);
+			for (int i = 0; i < src.size(); i++)
+			{
+				const double xp = (src[i].x - cx) / fx;
+				const double yp = (src[i].y - cy) / fy;
+				const double r2 = xp * xp + yp * yp;
+				const double r4 = r2 * r2;
+				const double r6 = r2 * r4;
+				const double xpp = xp * (1.0 + k1 * r2 + k2 * r4 + k3 * r6) / (1.0 + k4 * r2 + k5 * r4 + k6 * r6) + 2.0 * p1 * xp * yp + p2 * (r2 + 2.0 * xp * xp) + s1 * r2 + s2 * r4;
+				const double ypp = yp * (1.0 + k1 * r2 + k2 * r4 + k3 * r6) / (1.0 + k4 * r2 + k5 * r4 + k6 * r6) + p1 * (r2 + 2.0 * yp * yp) + 2.0 * p2 * xp * yp + s3 * r2 + s4 * r4;
+				dest[i].x = saturate_cast<float>(xpp * fx + cx);
+				dest[i].y = saturate_cast<float>(ypp * fy + cy);
+			}
+		}
+		else
+		{
+			const double k4 = distortion.at<double>(5);
+			const double k5 = distortion.at<double>(6);
+			const double k6 = distortion.at<double>(7);
+			const double s1 = distortion.at<double>(8);
+			const double s2 = distortion.at<double>(9);
+			const double s3 = distortion.at<double>(10);
+			const double s4 = distortion.at<double>(11);
+			const double tx = distortion.at<double>(12);
+			const double ty = distortion.at<double>(13);
+			Matx33d matTilt = Matx33d::eye();
+			computeTiltProjectionMatrix(tx, ty, &matTilt);
+			for (int i = 0; i < src.size(); i++)
+			{
+				const double xp = (src[i].x - cx) / fx;
+				const double yp = (src[i].y - cy) / fy;
+				const double r2 = xp * xp + yp * yp;
+				const double r4 = r2 * r2;
+				const double r6 = r2 * r4;
+				const double xpp = xp * (1.0 + k1 * r2 + k2 * r4 + k3 * r6) / (1.0 + k4 * r2 + k5 * r4 + k6 * r6) + 2.0 * p1 * xp * yp + p2 * (r2 + 2.0 * xp * xp) + s1 * r2 + s2 * r4;
+				const double ypp = yp * (1.0 + k1 * r2 + k2 * r4 + k3 * r6) / (1.0 + k4 * r2 + k5 * r4 + k6 * r6) + p1 * (r2 + 2.0 * yp * yp) + 2.0 * p2 * xp * yp + s3 * r2 + s4 * r4;
+
+				// additional distortion by projecting onto a tilt plane
+				Vec3d vecTilt = matTilt * Vec3d(xpp, ypp, 1);
+				double invProj = vecTilt(2) ? 1. / vecTilt(2) : 1;
+				const double xppt = invProj * vecTilt(0);
+				const double yppt = invProj * vecTilt(1);
+
+				dest[i].x = saturate_cast<float>(xppt * fx + cx);
+				dest[i].y = saturate_cast<float>(yppt * fy + cy);
+			}
 		}
 	}
 
@@ -109,17 +278,75 @@ namespace cp
 		const double p1 = distortion.at<double>(2);
 		const double p2 = distortion.at<double>(3);
 		dest.resize(src.size());
-		for (int i = 0; i < src.size(); i++)
+		if (distortion.size().area() == 5)
 		{
-			const double xp = (src[i].x - cx) / fx;
-			const double yp = (src[i].y - cy) / fy;
-			const double r2 = xp * xp + yp * yp;
-			const double r4 = r2 * r2;
-			const double r6 = r2 * r4;
-			const double xpp = xp * (1.0 + k1 * r2 + k2 * r4 + k3 * r6) + 2.0 * p1 * xp * yp + p2 * (r2 + 2.0 * xp * xp);
-			const double ypp = yp * (1.0 + k1 * r2 + k2 * r4 + k3 * r6) + p1 * (r2 + 2.0 * yp * yp) + 2.0 * p2 * xp * yp;
-			dest[i].x = xpp * fx + cx;
-			dest[i].y = ypp * fy + cy;
+			for (int i = 0; i < src.size(); i++)
+			{
+				const double xp = (src[i].x - cx) / fx;
+				const double yp = (src[i].y - cy) / fy;
+				const double r2 = xp * xp + yp * yp;
+				const double r4 = r2 * r2;
+				const double r6 = r2 * r4;
+				const double xpp = xp * (1.0 + k1 * r2 + k2 * r4 + k3 * r6) + 2.0 * p1 * xp * yp + p2 * (r2 + 2.0 * xp * xp);
+				const double ypp = yp * (1.0 + k1 * r2 + k2 * r4 + k3 * r6) + p1 * (r2 + 2.0 * yp * yp) + 2.0 * p2 * xp * yp;
+				dest[i].x = xpp * fx + cx;
+				dest[i].y = ypp * fy + cy;
+			}
+		}
+		else if (distortion.size().area() <= 12)
+		{
+			const double k4 = distortion.at<double>(5);
+			const double k5 = distortion.at<double>(6);
+			const double k6 = distortion.at<double>(7);
+			const double s1 = distortion.at<double>(8);
+			const double s2 = distortion.at<double>(9);
+			const double s3 = distortion.at<double>(10);
+			const double s4 = distortion.at<double>(11);
+			for (int i = 0; i < src.size(); i++)
+			{
+				const double xp = (src[i].x - cx) / fx;
+				const double yp = (src[i].y - cy) / fy;
+				const double r2 = xp * xp + yp * yp;
+				const double r4 = r2 * r2;
+				const double r6 = r2 * r4;
+				const double xpp = xp * (1.0 + k1 * r2 + k2 * r4 + k3 * r6) / (1.0 + k4 * r2 + k5 * r4 + k6 * r6) + 2.0 * p1 * xp * yp + p2 * (r2 + 2.0 * xp * xp) + s1 * r2 + s2 * r4;
+				const double ypp = yp * (1.0 + k1 * r2 + k2 * r4 + k3 * r6) / (1.0 + k4 * r2 + k5 * r4 + k6 * r6) + p1 * (r2 + 2.0 * yp * yp) + 2.0 * p2 * xp * yp + s3 * r2 + s4 * r4;
+				dest[i].x = xpp * fx + cx;
+				dest[i].y = ypp * fy + cy;
+			}
+		}
+		else
+		{
+			const double k4 = distortion.at<double>(5);
+			const double k5 = distortion.at<double>(6);
+			const double k6 = distortion.at<double>(7);
+			const double s1 = distortion.at<double>(8);
+			const double s2 = distortion.at<double>(9);
+			const double s3 = distortion.at<double>(10);
+			const double s4 = distortion.at<double>(11);
+			const double tx = distortion.at<double>(12);
+			const double ty = distortion.at<double>(13);
+			Matx33d matTilt = Matx33d::eye();
+			computeTiltProjectionMatrix(tx, ty, &matTilt);
+			for (int i = 0; i < src.size(); i++)
+			{
+				const double xp = (src[i].x - cx) / fx;
+				const double yp = (src[i].y - cy) / fy;
+				const double r2 = xp * xp + yp * yp;
+				const double r4 = r2 * r2;
+				const double r6 = r2 * r4;
+				const double xpp = xp * (1.0 + k1 * r2 + k2 * r4 + k3 * r6) / (1.0 + k4 * r2 + k5 * r4 + k6 * r6) + 2.0 * p1 * xp * yp + p2 * (r2 + 2.0 * xp * xp) + s1 * r2 + s2 * r4;
+				const double ypp = yp * (1.0 + k1 * r2 + k2 * r4 + k3 * r6) / (1.0 + k4 * r2 + k5 * r4 + k6 * r6) + p1 * (r2 + 2.0 * yp * yp) + 2.0 * p2 * xp * yp + s3 * r2 + s4 * r4;
+
+				// additional distortion by projecting onto a tilt plane
+				Vec3d vecTilt = matTilt * Vec3d(xpp, ypp, 1);
+				double invProj = vecTilt(2) ? 1. / vecTilt(2) : 1;
+				const double xppt = invProj * vecTilt(0);
+				const double yppt = invProj * vecTilt(1);
+
+				dest[i].x = xppt * fx + cx;
+				dest[i].y = yppt * fy + cy;
+			}
 		}
 	}
 
@@ -169,7 +396,7 @@ namespace cp
 			for (int i = bb; i < width - bb; i += st)
 			{
 				const Point s = Point(i, j);
-				const Point2f diff = Point2f(mapu.at<float>(j, i), mapv.at<float>(j, i)) - Point2f(i, j);
+				const Point2f diff = Point2f(mapu.at<float>(j, i), mapv.at<float>(j, i)) - Point2f(float(i), float(j));
 				const Point d = Point(Point2f(s) + amp * diff);
 				//print_debug3(mapu.at<float>(j, i), i, mapu.at<float>(j, i) - i);
 
@@ -178,25 +405,7 @@ namespace cp
 			}
 		}
 	}
-
-	void Calibrator::generatechessboard3D()
-	{
-		for (int j = 0; j < patternSize.height; ++j)
-		{
-			for (int i = 0; i < patternSize.width; ++i)
-			{
-				chessboard3D.push_back(Point3f(lengthofchess * (float)i, lengthofchess * (float)j, 0.0));
-			}
-		}
-	}
-
-	void Calibrator::initRemap()
-	{
-		Mat P = Mat::eye(3, 3, CV_64F);
-		Mat R = Mat::eye(3, 3, CV_64F);
-		initUndistortRectifyMap(intrinsic, distortion, R, intrinsic, imageSize, CV_32FC1,
-			mapu, mapv);
-	}
+#pragma endregion
 
 	void Calibrator::readParameter(char* name)
 	{
@@ -221,22 +430,46 @@ namespace cp
 		fs << "distortion" << distortion;
 	}
 
-	void Calibrator::init(Size imageSize_, Size patternSize_, float lengthofchess_)
+	void Calibrator::generatechessboard3D()
+	{
+		for (int j = 0; j < patternSize.height; ++j)
+		{
+			for (int i = 0; i < patternSize.width; ++i)
+			{
+				chessboard3D.push_back(Point3f(lengthofchess.width * (float)i, lengthofchess.height * (float)j, 0.0));
+			}
+		}
+	}
+
+	void Calibrator::initRemap()
+	{
+		Mat P = Mat::eye(3, 3, CV_64F);
+		Mat R = Mat::eye(3, 3, CV_64F);
+		//print_debug(distortion);
+		initUndistortRectifyMap(intrinsic, distortion, R, intrinsic, imageSize, CV_32FC1,
+			mapu, mapv);
+	}
+
+	void Calibrator::init(Size imageSize_, Size patternSize_, Size2f lengthofchess)
 	{
 		numofchessboards = 0;
 		imageSize = imageSize_;
 		patternSize = patternSize_;
-		lengthofchess = lengthofchess_;
+		this->lengthofchess = lengthofchess;
 		distortion = Mat::zeros(1, 8, CV_64F);
-
 		intrinsic = Mat::eye(3, 3, CV_64F);
-		getDefaultNewCameraMatrix(intrinsic, imageSize, true);
+		//getDefaultNewCameraMatrix(intrinsic, imageSize, true);
 		generatechessboard3D();
 	}
 
-	Calibrator::Calibrator(Size imageSize_, Size patternSize_, float lengthofchess_)
+	Calibrator::Calibrator(Size imageSize_, Size patternSize_, float lengthofchess)
 	{
-		init(imageSize_, patternSize_, lengthofchess_);
+		init(imageSize_, patternSize_, Size2f(lengthofchess, lengthofchess));
+	}
+
+	Calibrator::Calibrator(Size imageSize_, Size patternSize_, Size2f lengthofchess)
+	{
+		init(imageSize_, patternSize_, lengthofchess);
 	}
 
 	Calibrator::Calibrator() { ; }
@@ -310,6 +543,14 @@ namespace cp
 		return ret;
 	}
 
+	void Calibrator::clearPatternData()
+	{
+		patternImages.resize(0);
+		imagePoints.resize(0);
+		objectPoints.resize(0);
+		numofchessboards = 0;
+	}
+
 	void Calibrator::pushImage(const cv::Mat& patternImage)
 	{
 		patternImages.push_back(patternImage);
@@ -330,7 +571,6 @@ namespace cp
 	{
 		cout << a.total() << endl;
 		Mat b = a.getMat();
-
 	}
 
 	void Calibrator::undistort(Mat& src, Mat& dest, const int interpolation)
@@ -359,11 +599,11 @@ namespace cp
 		{
 			Mat intrinsic_local = initCameraMatrix2D(objectPoints, imagePoints, imageSize);
 			intrinsic_local.copyTo(intrinsic);
-			rep_error = calibrateCamera(objectPoints, imagePoints, imageSize, intrinsic, distortion, rt, tv, flag | CALIB_USE_INTRINSIC_GUESS);
+			rep_error = calibrateCamera(objectPoints, imagePoints, imageSize, intrinsic, distortion, rt, tv, flag | CALIB_USE_INTRINSIC_GUESS, tc);
 		}
 		else
 		{
-			rep_error = calibrateCamera(objectPoints, imagePoints, imageSize, intrinsic, distortion, rt, tv, flag);
+			rep_error = calibrateCamera(objectPoints, imagePoints, imageSize, intrinsic, distortion, rt, tv, flag, tc);
 		}
 		//vector<vector<Point3f>> n;
 		//rep_error = calibrateCameraRO(objectPoints, imagePoints, imageSize, 0, intrinsic, distortion, rt, tv, n, flag);
@@ -381,8 +621,57 @@ namespace cp
 	{
 		std::cout << "intrinsic" << std::endl;
 		cout << intrinsic << endl;
-
 		cout << distortion << endl;
+	}
+
+	enum
+	{
+		All,
+		QuadCorner,
+		Boundary,
+		Center4,
+	};
+
+	void extractPatternCorner(const vector<Point2f>& src, const Size patternSize, vector<Point2f>& dest, const int method)
+	{
+		dest.clear();
+		if (method == All)
+		{
+			for (int i = 0; i < patternSize.area(); i++)
+			{
+				dest.push_back(src[i]);
+			}
+		}
+		if (method == QuadCorner)
+		{
+			dest.push_back(src[0]);
+			dest.push_back(src[patternSize.width - 1]);
+			dest.push_back(src[patternSize.area() - 1]);
+			dest.push_back(src[patternSize.area() - patternSize.width]);
+		}
+		if (method == Boundary)
+		{
+			for (int j = 0; j < patternSize.height; j++)
+			{
+				for (int i = 0; i < patternSize.width; i++)
+				{
+					if (i == 0 || i == patternSize.width - 1 ||
+						j == 0 || j == patternSize.height - 1)
+					{
+						dest.push_back(src[patternSize.width * j + i]);
+					}
+				}
+			}
+		}
+		if (method == Center4)
+		{
+			int jc = (patternSize.height - 1) / 2;
+			int ic = (patternSize.width - 1) / 2;
+			dest.push_back(src[(int)patternSize.width * (jc + 0) + (ic + 0)]);
+			dest.push_back(src[(int)patternSize.width * (jc + 0) + (ic + 1)]);
+			dest.push_back(src[(int)patternSize.width * (jc + 1) + (ic + 0)]);
+			dest.push_back(src[(int)patternSize.width * (jc + 1) + (ic + 1)]);
+		}
 	}
 
 	void Calibrator::drawReprojectionErrorInternal(const vector<vector<Point2f>>& points,
@@ -390,6 +679,12 @@ namespace cp
 		const vector<Mat>& R, const vector<Mat>& T,
 		const bool isWait, const std::string wname, const float scale, const std::vector<cv::Mat>& patternImage_, const int patternType)
 	{
+		string wnameplot = wname + ": Pattern";
+		if (isWait)
+		{
+			if (isWait) destroyWindow(wname);
+			if (isWait) destroyWindow(wnameplot);
+		}
 		int length = 400;
 		Size imsize(2 * length + 1, 2 * length + 1);
 		Point center(imsize.width / 2, imsize.height / 2);
@@ -407,16 +702,15 @@ namespace cp
 
 		const int fontType = FONT_HERSHEY_SIMPLEX;
 
-		string wnameplot = "grid position";
 		namedWindow(wnameplot);
 		static int escale = 200; createTrackbar("escale", wnameplot, &escale, 1000);//escale
 		static int view = 1; createTrackbar("view", wnameplot, &view, 2);
-		float pstep = round(imageSize.width / (patternSize.width + 2));
+		float pstep = float(round(imageSize.width / (patternSize.width + 2)));
 		static int errorCircle = 1; createTrackbar("error circle", wnameplot, &errorCircle, 1);
 		static int dist = 1; createTrackbar("undistort", wnameplot, &dist, 1);
 		static int grid_r = cvRound(pstep * 0.25); createTrackbar("grid radius", wnameplot, &grid_r, grid_r * 5);
 		static int isGrid = 1; createTrackbar("is grid", wnameplot, &isGrid, 1);
-		
+
 		namedWindow(wname);
 		const int thmax = 10000;
 		static int thresh = thmax; createTrackbar("threshold*0.0001(max 1pixel)", wname, &thresh, thmax);//max 1pixel
@@ -428,6 +722,7 @@ namespace cp
 		static int ColorMap = COLORMAP_JET; createTrackbar("ColorMap", wname, &ColorMap, COLORMAP_DEEPGREEN);
 		static int scalei = int(scale); createTrackbar("scale", wname, &scalei, scalei * 2);
 		static int errorrf = 0; createTrackbar("rep-front", wname, &errorrf, 1);
+		static int isFixCornerH = 0; createTrackbar("isFixCornerH", wname, &isFixCornerH, 3);
 
 		const int circle_rad = 9;
 #pragma region generate_data
@@ -441,9 +736,9 @@ namespace cp
 		const bool isReverse = (points[0][0].x > points[0][patternSize.width - 1].x);
 		if (isReverse)
 		{
-			for (int j = patternSize.height-1; j >=0; j--)
+			for (int j = patternSize.height - 1; j >= 0; j--)
 			{
-				for (int i = patternSize.width-1; i >=0 ; i--)
+				for (int i = patternSize.width - 1; i >= 0; i--)
 				{
 					pointsConic.push_back(Point2f((i + 1) * pstep, (j + 1) * pstep));
 				}
@@ -485,29 +780,24 @@ namespace cp
 				{
 					for (int m = 0; m < patternSize.width; m++)
 					{
-						circle(imageCircle[pindex], Point(points[pindex][patternSize.width * n + m]), circle_rad, COLOR_WHITE, cv::FILLED);
+						cv::circle(imageCircle[pindex], Point(points[pindex][patternSize.width * n + m]), circle_rad, COLOR_WHITE, cv::FILLED);
 					}
 				}
 				cp::drawPatternIndexNumbers(imageCircle[pindex], points[pindex], 2, COLOR_BLUE);
 
 				//warp conic view
-				Mat H = findHomography(points[pindex], pointsConic);
+				vector<Point2f> cornerQuadConic;
+				extractPatternCorner(pointsConic, patternSize, cornerQuadConic, isFixCornerH);
+				vector<Point2f> cornerQuad;
+				extractPatternCorner(points[pindex], patternSize, cornerQuad, isFixCornerH);
+				const Mat H = findHomography(cornerQuad, cornerQuadConic);
 				perspectiveTransform(points[pindex], pointsWarpConic[pindex], H);
+
 				undistortPoints(points[pindex], pointsUndistort[pindex], intrinsic, distortion, Mat::eye(3, 3, CV_64F), intrinsic,
 					cv::TermCriteria(cv::TermCriteria::EPS | cv::TermCriteria::MAX_ITER, 30, 0.0001));
 
-				Mat Hundistort = findHomography(pointsUndistort[pindex], pointsConic);
-				/*vector<Point2f> p0;
-				vector<Point2f> p1;
-				p0.push_back(pointsUndistort[0]);
-				p1.push_back(pointsFront[0]);
-				p0.push_back(pointsUndistort[patternSize.width - 1]);
-				p1.push_back(pointsFront[patternSize.width - 1]);
-				p0.push_back(pointsUndistort[patternSize.area() - 1]);
-				p1.push_back(pointsFront[patternSize.area() - 1]);
-				p0.push_back(pointsUndistort[patternSize.area() - patternSize.width]);
-				p1.push_back(pointsFront[patternSize.area() - patternSize.width]);
-				Hundistort = findHomography(p0, p1);*/
+				extractPatternCorner(pointsUndistort[pindex], patternSize, cornerQuad, isFixCornerH);
+				const Mat Hundistort = findHomography(cornerQuad, cornerQuadConic);
 				perspectiveTransform(pointsUndistort[pindex], pointsUndistortConic[pindex], Hundistort);
 
 				warpPerspective(image[pindex], imageConic[pindex], H, image[pindex].size());
@@ -524,11 +814,42 @@ namespace cp
 		Scalar colorArrow = COLOR_ORANGE;
 		Scalar colorErrorCircle = COLOR_CYAN;
 		int key = 0;
-			
+
+		cp::UpdateCheck uc(isFixCornerH);
 		while (key != 'q')
 		{
-			const int pindex = (indexGUI == (int)objectPoints.size()) ? 0 : indexGUI;
-			const float scale = scalei;
+#pragma region updateH
+			if (uc.isUpdate(isFixCornerH))
+			{
+				if (patternImage_.size() != 0)
+				{
+#pragma omp parallel for
+					for (int pindex = 0; pindex < patternImage_.size(); pindex++)
+					{
+						//warp conic view
+						vector<Point2f> cornerQuadConic;
+						extractPatternCorner(pointsConic, patternSize, cornerQuadConic, isFixCornerH);
+						vector<Point2f> cornerQuad;
+						extractPatternCorner(points[pindex], patternSize, cornerQuad, isFixCornerH);
+						const Mat H = findHomography(cornerQuad, cornerQuadConic);
+						perspectiveTransform(points[pindex], pointsWarpConic[pindex], H);
+
+						extractPatternCorner(pointsUndistort[pindex], patternSize, cornerQuad, isFixCornerH);
+						const Mat Hundistort = findHomography(cornerQuad, cornerQuadConic);
+						perspectiveTransform(pointsUndistort[pindex], pointsUndistortConic[pindex], Hundistort);
+
+						warpPerspective(image[pindex], imageConic[pindex], H, image[pindex].size());
+						warpPerspective(imageCircle[pindex], imageCircleConic[pindex], H, image[pindex].size());
+						warpPerspective(imageUndist[pindex], imageUndistConic[pindex], Hundistort, image[pindex].size());
+						Mat temp;  undistort(imageCircle[pindex], temp);
+						warpPerspective(temp, imageCircleUndistConic[pindex], Hundistort, image[pindex].size());
+					}
+				}
+			}
+#pragma endregion
+
+			const int pindex = (indexGUI >= (int)objectPoints.size()) ? 0 : indexGUI;
+			const float scale = float(scalei);
 			const float th2 = (thresh == thmax) ? FLT_MAX : (thresh * 0.0001f) * (thresh * 0.0001f);
 			if (!image[pindex].empty())
 			{
@@ -596,7 +917,7 @@ namespace cp
 				terrorConicPerPos[n] = 0.0;
 			}
 
-			if (indexGUI == objectPoints.size())//all pattern
+			if (indexGUI >= objectPoints.size())//all pattern
 			{
 				if (view == 0) repPatternShow.setTo(255);
 
@@ -629,14 +950,14 @@ namespace cp
 							if (view == 0)
 							{
 								drawPlus(repPatternShow, Point(points[pindex][n]), 2, colorArrow, 2);
-								arrowedLine(repPatternShow, Point(points[pindex][n]), Point(points[pindex][n].x + dx * escale, points[pindex][n].y + dy * escale), colorArrow, 1);
+								arrowedLine(repPatternShow, Point(points[pindex][n]), Point(int(points[pindex][n].x + dx * escale), int(points[pindex][n].y + dy * escale)), colorArrow, 1);
 							}
 							else
 							{
 								drawPlus(repPatternShow, Point(pointsConic[n]), 2, colorArrow, 2);
 								cv::circle(repPatternShow, Point(pointsConic[n]), grid_r, colorArrow);
-								if (errorrf == 0) arrowedLine(repPatternShow, Point(pointsConic[n]), Point(pointsConic[n].x + dx * escale, pointsConic[n].y + dy * escale), colorArrow, 1);
-								else arrowedLine(repPatternShow, Point(pointsConic[n]), Point(pointsConic[n].x + dux * escale, pointsConic[n].y + duy * escale), colorArrow, 1);
+								if (errorrf == 0) arrowedLine(repPatternShow, Point(pointsConic[n]), Point(int(pointsConic[n].x + dx * escale), int(pointsConic[n].y + dy * escale)), colorArrow, 1);
+								else arrowedLine(repPatternShow, Point(pointsConic[n]), Point(int(pointsConic[n].x + dux * escale), int(pointsConic[n].y + duy * escale)), colorArrow, 1);
 							}
 							if (errorrf == 0) drawPlus(repErrorShow, center + Point(cvRound(dx * scale), cvRound(dy * scale)), 2, color, 2);
 							else drawPlus(repErrorShow, center + Point(cvRound(dux * scale), cvRound(duy * scale)), 2, color, 2);
@@ -698,7 +1019,7 @@ namespace cp
 							if (view == 0)
 							{
 								drawPlus(repPatternShow, Point(points[pindex][n]), 2, colorArrow, 2);
-								arrowedLine(repPatternShow, Point(points[pindex][n]), Point(points[pindex][n].x + dx * escale, points[pindex][n].y + dy * escale), colorArrow, 1);
+								arrowedLine(repPatternShow, Point(points[pindex][n]), Point(int(points[pindex][n].x + dx * escale), int(points[pindex][n].y + dy * escale)), colorArrow, 1);
 							}
 							else
 							{
@@ -706,8 +1027,8 @@ namespace cp
 								cv::circle(repPatternShow, Point(pointsConic[n]), grid_r, colorArrow);
 								//cv::circle(gridposition, Point(pointsWarp[n]), front_r, color2);
 								//drawPlus(gridposition, Point(pointsWarp[n]), 2, COLOR_WHITE, 2);
-								if (errorrf == 0) arrowedLine(repPatternShow, Point(pointsConic[n]), Point(pointsConic[n].x + dx * escale, pointsConic[n].y + dy * escale), colorArrow, 1);
-								else arrowedLine(repPatternShow, Point(pointsConic[n]), Point(pointsConic[n].x + dux * escale, pointsConic[n].y + duy * escale), colorArrow, 1);
+								if (errorrf == 0) arrowedLine(repPatternShow, Point(pointsConic[n]), Point(int(pointsConic[n].x + dx * escale), int(pointsConic[n].y + dy * escale)), colorArrow, 1);
+								else arrowedLine(repPatternShow, Point(pointsConic[n]), Point(int(pointsConic[n].x + dux * escale), int(pointsConic[n].y + duy * escale)), colorArrow, 1);
 							}
 							if (errorrf == 0)drawPlus(repErrorShow, center + Point(cvRound(dx * scale), cvRound(dy * scale)), 2, color, 2);
 							else drawPlus(repErrorShow, center + Point(cvRound(dux * scale), cvRound(duy * scale)), 2, color, 2);
@@ -748,12 +1069,12 @@ namespace cp
 						if (view == 0)
 						{
 							drawPlus(repPatternShow, Point(points[pindex][gi]), 2, colorArrow, 2);
-							arrowedLine(repPatternShow, Point(points[pindex][gi]), Point(points[pindex][gi].x + dx * escale, points[pindex][gi].y + dy * escale), colorArrow, 1);
+							arrowedLine(repPatternShow, Point(points[pindex][gi]), Point(int(points[pindex][gi].x + dx * escale), int(points[pindex][gi].y + dy * escale)), colorArrow, 1);
 						}
 						else
 						{
 							drawPlus(repPatternShow, Point(pointsConic[gi]), 2, colorArrow, 2);
-							arrowedLine(repPatternShow, Point(pointsConic[gi]), Point(pointsConic[gi].x + dx * escale, pointsConic[gi].y + dy * escale), colorArrow, 1);
+							arrowedLine(repPatternShow, Point(pointsConic[gi]), Point(int(pointsConic[gi].x + dx * escale), int(pointsConic[gi].y + dy * escale)), colorArrow, 1);
 						}
 
 						drawPlus(repErrorShow, center + Point(cvRound(dx * scale), cvRound(dy * scale)), 2, color, 2);
@@ -779,20 +1100,33 @@ namespace cp
 		if (isWait) destroyWindow(wnameplot);
 	}
 
-	void Calibrator::drawReprojectionErrorFromExtraPoints(const vector<Point2f>& points, const bool isWait, const string wname, const float scale, const Mat& patternImage, const int patternType)
+	void Calibrator::drawReprojectionErrorFromExtraPoints(const vector<Point2f>& points, const bool isWait, const string wname, const float scale, const Mat& patternImage, const int patternType, const bool isUseInternalData)
 	{
 		vector<vector<Point2f>> p;
-		p.push_back(points);
 		vector<vector<Point3f>> o;
-		o.push_back(chessboard3D);
 		vector<Mat> im;
-		im.push_back(patternImage);
 		vector<Mat> R;
 		vector<Mat> T;
 		Mat r, t;
+		p.push_back(points);
+		o.push_back(chessboard3D);
+		im.push_back(patternImage);
 		cv::solvePnP(chessboard3D, points, intrinsic, distortion, r, t);
-		R.push_back(r);
-		T.push_back(t);
+		R.push_back(r.clone());
+		T.push_back(t.clone());
+		if (isUseInternalData)
+		{
+			//cout << "use internal"<<endl;
+			for (int i = 0; i < imagePoints.size(); i++)
+			{
+				p.push_back(imagePoints[i]);
+				o.push_back(chessboard3D);
+				im.push_back(patternImages[i]);
+				cv::solvePnP(chessboard3D, imagePoints[i], intrinsic, distortion, r, t);
+				R.push_back(r.clone());
+				T.push_back(t.clone());
+			}
+		}
 		drawReprojectionErrorInternal(p, o, R, T, isWait, wname, scale, im, patternType);
 	}
 
