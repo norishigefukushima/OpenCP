@@ -195,7 +195,7 @@ namespace cp
 		//PENTAGON_FILL,
 		void setPlotSymbolALL(int symbol_type);
 
-		//Plot::LINE::NONE,
+		//Plot::LINE::NOLINE,
 		//Plot::LINE::LINEAR,
 		//Plot::LINE::H2V,
 		//Plot::LINE::V2H

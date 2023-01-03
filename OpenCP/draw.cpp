@@ -184,6 +184,13 @@ namespace cp
 		dest.copyTo(src);
 	}
 
+	void polylines(InputOutputArray src, vector<Point2f>& points, const bool isclosed, Scalar color, const int thickness, const int lineType, const int shift)
+	{
+		vector<Point> pt;
+		for (int i = 0; i < points.size(); i++)pt.push_back(Point(points[i]));
+		cv::polylines(src, pt, isclosed, color, thickness, lineType, shift);
+	}
+
 	void eraseBoundary(const Mat& src, Mat& dest, const int step, const int borderType)
 	{
 		Mat temp = src(Rect(step, step, src.cols - 2 * step, src.rows - 2 * step));

@@ -589,7 +589,7 @@ void JPEG(string name)
 		}
 		*/
 
-		
+
 	}
 
 	{
@@ -603,48 +603,56 @@ void JPEG(string name)
 }
 
 
+void webPAnimationTest()
+{
+	//Webp test
+	vector<Mat> a(80);
+	
+	for (int i = 0; i < 80; i++)
+	{		
+		Mat img = imread("img/flower.png");
+		add(img, Scalar::all(i), a[i]);
+		//addNoise(a[i], a[i], 5);
+		putText(a[i], format("%d", i), Point(a[i].cols / 2, a[i].rows / 2), cv::FONT_HERSHEY_SIMPLEX, 1, COLOR_WHITE, 1);
+		//imwrite(format("data/o%03d.png", i), a[i]);
+		//imshow("a", a[i]);
+		//waitKey(1);
+	}
+	
+	int size = 0;
+	vector<int> parameters;
+	parameters.push_back(IMWRITE_WEBP_COLORSPACE);
+	parameters.push_back(0);
+	parameters.push_back(IMWRITE_WEBP_METHOD);
+	parameters.push_back(6);
+	parameters.push_back(IMWRITE_WEBP_QUALITY);
+	parameters.push_back(10);
+	parameters.push_back(IMWRITE_WEBP_TIMEMSPERFRAME);
+	parameters.push_back(67);//15 fps
+	{
+		Timer t("write YUV");
+		size = cp::imwriteAnimationWebp("webp/yuv.webp", a, parameters);
+	}
+	cout << size / 1024.0 << " Kbyte" << endl;
+
+	parameters[1] = 1;
+	{
+		Timer t("write YUV Sharp");
+		size = cp::imwriteAnimationWebp("webp/rgb.webp", a, parameters);
+	}
+	cout << size / 1024.0 << " Kbyte" << endl;
+
+	parameters[1] = 2;
+	{
+		Timer t("write RGB");
+		size = cp::imwriteAnimationWebp("webp/rgb.webp", a, parameters);
+	}
+	cout << size / 1024.0 << " Kbyte" << endl;
+}
 
 int main(int argc, char** argv)
 {
-	vector<Mat> desttt;
-	cv::imreadmulti("FLIR0201.tiff", desttt);
-	print_matinfo_detail(desttt);
-	return 0;
-	/*//JPEG("fir.jpg"); return 0;
-	JPEG("FLIR0201.jpg"); return 0;
-	
-	vector<Mat> destt = readYUV420("out.yuv", Size(1024, 768));
-	print_matinfo_detail(destt);
-	guiAlphaBlend(destt[1], destt[2]);*/
-
-	Mat vv = imread("FLIR0201.jpg", IMREAD_UNCHANGED);
-	Mat vv2 = imread("FLIR02012.jpg", IMREAD_UNCHANGED);
-	cout << getPSNR(vv, vv2) << endl;
-	print_matinfo_detail(vv);
-
-	cp::CSV csv("FLIR0201.csv", false);
-	Mat a = csv.getMat();
-	a.convertTo(a, CV_32F);
-	print_matinfo_detail(a);
-
-	normalize(a, a, 0, 255, NORM_MINMAX);
-
-	Mat aa; a.convertTo(aa, CV_8U);
-	Mat histo;
-	cp::drawHistogramImage(aa, histo, COLOR_RED);
-	imshow("histo", histo);
-
-
-	cp::guiContrast(a);
-
-	imwritePFM("fir0.pfm", a);
-	Mat b = imreadPFM("fir0.pfm");
-	print_matinfo_detail(b);
-	normalize(b, b, 0, 255, NORM_MINMAX);
-	cp::guiContrast(b);
-	return 0;
-
-
+	webPAnimationTest(); return 0;
 	//testSpearmanRankOrderCorrelationCoefficient(); return 0;
 	/*__m256i a = _mm256_set_step_epi32(0);
 	__m256i b = _mm256_set_step_epi32(8);
@@ -673,21 +681,6 @@ int main(int argc, char** argv)
 #pragma region setup
 	//Mat img = imread("img/lenna.png");
 	Mat img = imread("img/Kodak/kodim07.png");
-
-	//Webp test
-	/*vector<Mat> a(256);
-	for (int i = 0; i < 256; i++)
-	{
-		add(img, Scalar::all(i), a[i]);
-		putText(a[i], format("%d", i), Point(img.cols / 2, img.rows / 2), cv::FONT_HERSHEY_SIMPLEX, 3, COLOR_BLACK, 3);
-
-	}
-	cp::imwriteAnimationWebp("out.webp", a); return 0;
-	Mat imgg; cvtColor(img, imgg, COLOR_BGR2GRAY);
-
-	Mat aa = convert(imgg, CV_32F);
-	Mat t0, t1;
-	*/
 
 	//rangeBlurFilterRef(aa, t0, 5, 3);
 	//rangeBlurFilter(aa, t1, 5, 3);

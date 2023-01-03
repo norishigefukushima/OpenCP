@@ -5,6 +5,8 @@
 #include "consoleimage.hpp"
 #include "maskoperation.hpp"
 
+#include "debugcp.hpp"
+
 using namespace std;
 using namespace cv;
 
@@ -155,6 +157,10 @@ namespace cp
 		else if (src.type() == CV_32S || src.type() == CV_32SC3)getImageLine_<int>(src, channel, v, line);
 		else if (src.type() == CV_32F || src.type() == CV_32FC3)getImageLine_<float>(src, channel, v, line);
 		else if (src.type() == CV_64F || src.type() == CV_64FC3)getImageLine_<double>(src, channel, v, line);
+		else
+		{
+			cout << "do not support this type(getImageLine)" << endl;
+		}
 	}
 
 	static void getImageVLine(Mat& src, vector<Point>& v, const int line, int channel)
@@ -176,10 +182,15 @@ namespace cp
 	void drawSignalX(InputArrayOfArrays src_, DRAW_SIGNAL_CHANNEL color, Mat& dest, Size outputImageSize, int line_height, int shiftx, int shiftvalue, int rangex, int rangevalue, int linetype)
 	{
 		vector<Mat> src;
-		src_.getMatVector(src);
-
+		if (src_.isMatVector()) src_.getMatVector(src);
+		else
+		{
+			src.resize(1);
+			src[0] = src_.getMat();
+		}
 		Plot p(outputImageSize);
-		p.setKey(cp::Plot::NOKEY);
+		//p.setKey(cp::Plot::NOKEY);
+		p.setKey(cp::Plot::LEFT_TOP);
 
 		p.setPlotProfile(false, false, false);
 		p.setPlotSymbolALL(Plot::NOPOINT);
@@ -192,9 +203,9 @@ namespace cp
 		{
 			getImageLine(src[i], v[i], line_height, color);
 			p.push_back(v[i], i);
-			p.plotData();
 		}
-
+		p.generateKeyImage((int)src.size());
+		p.plotData();
 		p.render.copyTo(dest);
 	}
 
@@ -206,23 +217,10 @@ namespace cp
 		drawSignalX(s, color, dest, size, line_height, shiftx, shiftvalue, rangex, rangevalue, linetype);
 	}
 
-	void drawSignalY(Mat& src, DRAW_SIGNAL_CHANNEL color, Mat& dest, Size size, int line_height, int shiftx, int shiftvalue, int rangex, int rangevalue, int linetype)
+	void drawSignalY(InputArrayOfArrays src_, DRAW_SIGNAL_CHANNEL color, Mat& dest, Size size, int line_height, int shiftx, int shiftvalue, int rangex, int rangevalue, int linetype)
 	{
-		vector<Mat> s;
-		s.push_back(src);
-		drawSignalY(s, color, dest, size, line_height, shiftx, shiftvalue, rangex, rangevalue, linetype);
-	}
-
-	void drawSignalY(Mat& src1, Mat& src2, DRAW_SIGNAL_CHANNEL color, Mat& dest, Size size, int line_height, int shiftx, int shiftvalue, int rangex, int rangevalue, int linetype)
-	{
-		vector<Mat> s;
-		s.push_back(src1);
-		s.push_back(src2);
-		drawSignalY(s, color, dest, size, line_height, shiftx, shiftvalue, rangex, rangevalue, linetype);
-	}
-
-	void drawSignalY(vector<Mat>& src, DRAW_SIGNAL_CHANNEL color, Mat& dest, Size size, int line_height, int shiftx, int shiftvalue, int rangex, int rangevalue, int linetype)
-	{
+		vector<Mat> src;
+		src_.getMatVector(src);
 		Plot p(size);
 		p.setKey(cp::Plot::NOKEY);
 		p.setPlotProfile(false, false, false);
@@ -239,7 +237,26 @@ namespace cp
 		p.render.copyTo(dest);
 	}
 
-	void imshowAnalysis(std::string winname, Mat& src)
+	void drawSignalY(Mat& src1, Mat& src2, DRAW_SIGNAL_CHANNEL color, Mat& dest, Size size, int line_height, int shiftx, int shiftvalue, int rangex, int rangevalue, int linetype)
+	{
+		vector<Mat> s;
+		s.push_back(src1);
+		s.push_back(src2);
+		drawSignalY(s, color, dest, size, line_height, shiftx, shiftvalue, rangex, rangevalue, linetype);
+	}
+
+	void guiAnalysisMouse2(int event, int x, int y, int flags, void* param)
+	{
+		Point* ret = (Point*)param;
+		if (flags == EVENT_FLAG_LBUTTON)
+		{
+			ret->x = x;
+			ret->y = y;
+		}
+	}
+
+#if 0
+	void imshowAnalysis(std::string winname, const Mat& src)
 	{
 		static bool isFirst = true;
 		Mat im;
@@ -301,9 +318,11 @@ namespace cp
 		imshow(winnameHist, hist);
 		isFirst = false;
 	}
-
-	void imshowAnalysis(std::string winname, vector<Mat>& s)
+#endif
+	void imshowAnalysis(std::string winname, InputArrayOfArrays s_)
 	{
+		vector<Mat> s;
+		s_.getMatVector(s);
 		Mat src = s[0];
 		static bool isFirst = true;
 		vector<Mat> im(s.size());
@@ -388,26 +407,26 @@ namespace cp
 		isFirst = false;
 	}
 
-	void imshowAnalysisCompare(std::string winname, Mat& src1, Mat& src2)
+	void imshowAnalysisCompare(std::string winname, cv::InputArray src1, cv::InputArray src2)
 	{
 		static bool isFirst = true;
 
 		Mat im1, im2;
-		if (src1.channels() == 1)cvtColor(src1, im1, COLOR_GRAY2BGR);
+		if (src1.channels() == 1) cvtColor(src1, im1, COLOR_GRAY2BGR);
 		else src1.copyTo(im1);
-		if (src2.channels() == 1)cvtColor(src2, im2, COLOR_GRAY2BGR);
+		if (src2.channels() == 1) cvtColor(src2, im2, COLOR_GRAY2BGR);
 		else src2.copyTo(im2);
 
 		namedWindow(winname);
-		if (isFirst)moveWindow(winname.c_str(), src1.cols, 0);
-		static Point pt = Point(src1.cols / 2, src1.rows / 2);
-
+		if (isFirst)moveWindow(winname.c_str(), im1.cols, 0);
+		static Point pt = Point(im1.cols / 2, im1.rows / 2);
+		setMouseCallback(winname, (MouseCallback)guiAnalysisMouse2, (void*)&pt);
 		static int ALevel = 3;
-		static int sw = 0;
+		static int view_mode = 0;
 		static int alpha = 0;
 		static int channel = 3;
-		static int step = src1.cols / 2;
-		static int ystep = src1.rows / 2;
+		static int step = im1.cols / 2;
+		static int ystep = im1.rows / 2;
 
 		static int bb = 0;
 		static int level = 0;
@@ -417,35 +436,36 @@ namespace cp
 		static int yshifty = 128;
 		static int ystepy = 128;
 
-		{//sW!=0
-			//stepy=256;
-			;
-		}
-
-		static Point sigxpos = Point(512, src1.rows);
+		static Point sigxpos = Point(512, im1.rows);
 		static Point sigypos = Point(0, 0);
-		static Point hisxpos = Point(512, src1.rows);
+		static Point hisxpos = Point(512, im1.rows);
 		static Point shisypos = Point(0, 0);
 		createTrackbar("level", winname, &ALevel, 3);
-		createTrackbar("sw", winname, &sw, 2);
+		createTrackbar("view mode", winname, &view_mode, 2);
 		createTrackbar("alpha", winname, &alpha, 255);
 		createTrackbar("channel", winname, &channel, 3);
-		createTrackbar("x", winname, &pt.x, src1.cols - 1);
-		createTrackbar("y", winname, &pt.y, src1.rows - 1);
-		createTrackbar("clip x", winname, &step, src1.cols / 2);
-		createTrackbar("clip y", winname, &ystep, src1.rows / 2);
+		createTrackbar("x", winname, &pt.x, im1.cols - 1);
+		createTrackbar("y", winname, &pt.y, im1.rows - 1);
+		createTrackbar("clip x", winname, &step, im1.cols / 2);
+		createTrackbar("clip y", winname, &ystep, im1.rows / 2);
 
 		Mat show;
-		if (sw == 0)
+		if (view_mode == 0)
 		{
 			addWeighted(im1, 1.0 - alpha / 255.0, im2, alpha / 255.0, 0.0, show);
 		}
-		else if (sw == 1)
+		else if (view_mode == 1)
 		{
-			Mat temp2 = im1 - im2 + 127;
-			temp2.convertTo(show, CV_8UC3);
+			show.create(im1.size(), CV_8UC3);
+			uchar* d = show.ptr<uchar>();
+			uchar* s0 = im1.ptr<uchar>();
+			uchar* s1 = im2.ptr<uchar>();
+			for (int i = 0; i < im1.total(); i++)
+			{
+				d[i] = saturate_cast<uchar>(s0[i] - s1[i] + 127);
+			}
 		}
-		else if (sw == 2)
+		else if (view_mode == 2)
 		{
 			Mat tt = abs(im1 - im2);
 			if (channel < 0 || channel >2)
@@ -468,6 +488,7 @@ namespace cp
 		drawGrid(show, pt, COLOR_RED);
 		imshow(winname, show);
 
+#pragma region level_1_signal
 		if (ALevel > 1)
 		{
 			string winnameSigx = winname + " Xsignal";
@@ -484,19 +505,34 @@ namespace cp
 			createTrackbar("shift y", winnameSigy, &yshifty, 128);
 			createTrackbar("clip y", winnameSigy, &ystepy, 255);
 			Mat dest;
-			if (sw == 0)
+			if (view_mode == 0)
 			{
 				vector<Mat> s;
 				s.push_back(im1);
 				s.push_back(im2);
-				drawSignalX(s, (DRAW_SIGNAL_CHANNEL)channel, dest, Size(src1.cols, 350), pt.y, pt.x, shifty, step, stepy);
+				drawSignalX(s, (DRAW_SIGNAL_CHANNEL)channel, dest, Size(im1.cols, 350), pt.y, pt.x, shifty, step, stepy);
 				imshow(winnameSigx, dest);
-				drawSignalY(s, (DRAW_SIGNAL_CHANNEL)channel, dest, Size(src1.rows, 350), pt.x, pt.y, yshifty, ystep, ystepy);
+				drawSignalY(s, (DRAW_SIGNAL_CHANNEL)channel, dest, Size(im1.rows, 350), pt.x, pt.y, yshifty, ystep, ystepy);
 				Mat temp;
 				flip(dest.t(), temp, 0);
 				imshow(winnameSigy, temp);
 			}
-			else if (sw == 1)
+			else if (view_mode == 1)
+			{
+				Mat ss(im1.size(), CV_16SC3);
+				//Mat im1s, im2s;
+				/*im1.convertTo(im1s, CV_16S);
+				im2.convertTo(im2s, CV_16S);*/
+				//ss = im1s - im2s;
+				subtract(im1, im2, ss, Mat(), CV_16S);
+				drawSignalX(ss, (DRAW_SIGNAL_CHANNEL)channel, dest, Size(im1.cols, 350), pt.y, pt.x, shifty - 128, step, stepy);
+				imshow(winnameSigx, dest);
+				drawSignalY(ss, (DRAW_SIGNAL_CHANNEL)channel, dest, Size(im1.rows, 350), pt.x, pt.y, yshifty - 128, ystep, ystepy);
+				Mat temp;
+				flip(dest.t(), temp, 0);
+				imshow(winnameSigy, temp);
+			}
+			else if (view_mode == 2)
 			{
 				Mat ss(im1.size(), CV_16SC3);
 				Mat im1s, im2s;
@@ -505,25 +541,9 @@ namespace cp
 				ss = im1s - im2s;
 				//subtract(im1,im2,ss,Mat(),CV_16SC3);
 
-				drawSignalX(ss, (DRAW_SIGNAL_CHANNEL)channel, dest, Size(src1.cols, 350), pt.y, pt.x, shifty - 128, step, stepy);
+				drawSignalX(ss, (DRAW_SIGNAL_CHANNEL)channel, dest, Size(im1.cols, 350), pt.y, pt.x, shifty - 128, step, stepy);
 				imshow(winnameSigx, dest);
-				drawSignalY(ss, (DRAW_SIGNAL_CHANNEL)channel, dest, Size(src1.rows, 350), pt.x, pt.y, yshifty - 128, ystep, ystepy);
-				Mat temp;
-				flip(dest.t(), temp, 0);
-				imshow(winnameSigy, temp);
-			}
-			else if (sw == 2)
-			{
-				Mat ss(im1.size(), CV_16SC3);
-				Mat im1s, im2s;
-				im1.convertTo(im1s, CV_16SC3);
-				im2.convertTo(im2s, CV_16SC3);
-				ss = im1s - im2s;
-				//subtract(im1,im2,ss,Mat(),CV_16SC3);
-
-				drawSignalX(ss, (DRAW_SIGNAL_CHANNEL)channel, dest, Size(src1.cols, 350), pt.y, pt.x, shifty - 128, step, stepy);
-				imshow(winnameSigx, dest);
-				drawSignalY(ss, (DRAW_SIGNAL_CHANNEL)channel, dest, Size(src1.rows, 350), pt.x, pt.y, yshifty - 128, ystep, ystepy);
+				drawSignalY(ss, (DRAW_SIGNAL_CHANNEL)channel, dest, Size(im1.rows, 350), pt.x, pt.y, yshifty - 128, ystep, ystepy);
 				Mat temp;
 				flip(dest.t(), temp, 0);
 				imshow(winnameSigy, temp);
@@ -534,7 +554,8 @@ namespace cp
 			destroyWindow(winname + " Xsignal");
 			destroyWindow(winname + " Ysignal");
 		}
-
+#pragma endregion
+#pragma region level_2_histogram
 		if (ALevel > 2)
 		{
 			string winnameHist1 = winname + " Histogram1";
@@ -564,13 +585,15 @@ namespace cp
 			destroyWindow(winname + " Histogram1");
 			destroyWindow(winname + " Histogram2");
 		}
+#pragma endregion
+
+#pragma region level_0_base
 		if (ALevel > 0)
 		{
-			static ConsoleImage cw(Size(640, 480));
 			string winnameInfo = winname + " Info";
-			namedWindow(winnameInfo);
+			static cp::ConsoleImage cw(Size(640, 480), winnameInfo);
 			static int infoth = 255;
-			createTrackbar("BB", winnameInfo, &bb, min(src1.cols, src1.rows) / 2);
+			createTrackbar("BB", winnameInfo, &bb, min(im1.cols, im1.rows) / 2);
 			createTrackbar("thresh", winnameInfo, &infoth, 255);
 			createTrackbar("level", winnameInfo, &level, 2);
 			static int isshowmask = 0;
@@ -578,7 +601,6 @@ namespace cp
 
 			if (src1.channels() == src2.channels())
 			{
-
 				Mat tt = abs(im1 - im2);
 				Mat threshmask;
 				if (channel < 0 || channel >2)
@@ -602,8 +624,6 @@ namespace cp
 					imshow("threshmask", threshmask);
 				else
 					destroyWindow("threshmask");
-
-
 
 				cw.clear();
 				/*
@@ -684,18 +704,8 @@ namespace cp
 		{
 			destroyWindow(winname + " Info");
 		}
+#pragma endregion
 		isFirst = false;
-	}
-
-
-	void guiPreviewMouse2(int event, int x, int y, int flags, void* param)
-	{
-		Point* ret = (Point*)param;
-		if (flags == EVENT_FLAG_LBUTTON)
-		{
-			ret->x = x;
-			ret->y = y;
-		}
 	}
 
 	void guiAnalysisImage(InputArray src_)
@@ -711,7 +721,7 @@ namespace cp
 		else src.copyTo(im);
 
 		Point pt = Point(src.cols / 2, src.rows / 2);
-		setMouseCallback(winname, (MouseCallback)guiPreviewMouse2, (void*)&pt);
+		setMouseCallback(winname, (MouseCallback)guiAnalysisMouse2, (void*)&pt);
 
 		int channel = 3;
 		createTrackbar("channel", winname, &channel, 3);
@@ -778,12 +788,12 @@ namespace cp
 		}
 	}
 
-	void guiAnalysisCompare(Mat& src1, Mat& src2)
+	void guiAnalysisCompare(InputArray src1, InputArray src2, string wname)
 	{
 		int key = 0;
 		while (key != 'q')
 		{
-			imshowAnalysisCompare("AnalysisCompare", src1, src2);
+			imshowAnalysisCompare(wname, src1, src2);
 			key = waitKey(1);
 		}
 	}
@@ -793,6 +803,11 @@ namespace cp
 	StackImage::StackImage(std::string window_name)
 	{
 		wname = window_name;
+	}
+
+	StackImage::~StackImage()
+	{
+		destroyWindow(wname);
 	}
 
 	void StackImage::setWindowName(std::string window_name)
@@ -832,6 +847,23 @@ namespace cp
 		}
 	}
 
+	void StackImage::push(vector<cv::Mat>& src)
+	{
+		for (int i = 0; i < src.size(); i++)
+		{
+			stack.push_back(src[i].clone());
+		}
+		stack_max = (int)stack.size();
+
+		if (stack_max > 0)
+		{
+			namedWindow(wname);
+			createTrackbar("num", wname, &num_stack, stack_max);
+			setTrackbarMax("num", wname, stack_max);
+			setTrackbarPos("num", wname, stack_max);
+		}
+	}
+
 	void StackImage::show(cv::Mat& src)
 	{
 		if (stack_max == 0) imshow(wname, src);
@@ -842,6 +874,29 @@ namespace cp
 	void StackImage::show()
 	{
 		if (stack_max > 0) imshow(wname, stack[min(num_stack, stack_max - 1)]);
+	}
+
+	void StackImage::gui()
+	{
+		if (stack_max == 0)return;
+		int key = 0;
+		while (key != 'q')
+		{
+			show();
+			key = waitKey(1);
+			if (key == 'f')
+			{
+				num_stack++;
+				num_stack = (num_stack >= stack_max) ? 0 : num_stack;
+				setTrackbarPos("num", wname, num_stack);
+			}
+			if (key == 'b')
+			{
+				num_stack--;
+				num_stack = (num_stack == -1) ? stack_max - 1 : num_stack;
+				setTrackbarPos("num", wname, num_stack);
+			}
+		}
 	}
 #pragma endregion
 }

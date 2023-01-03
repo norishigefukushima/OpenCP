@@ -20,8 +20,8 @@ namespace cp
 			sm.at<double>(0) = src.x;
 			sm.at<double>(1) = src.y;
 			undistortPoints(sm, dm, K, dist, R, P);
-			dest.x = dm.at<double>(0);
-			dest.y = dm.at<double>(1);
+			dest.x = float(dm.at<double>(0));
+			dest.y = float(dm.at<double>(1));
 		}
 		if (K.depth() == CV_32F)
 		{
@@ -51,8 +51,8 @@ namespace cp
 		{
 			Mat sm = Mat(2, 1, CV_32F);
 			Mat dm = Mat(2, 1, CV_32F);
-			sm.at<float>(0) = src.x;
-			sm.at<float>(1) = src.y;
+			sm.at<float>(0) = float(src.x);
+			sm.at<float>(1) = float(src.y);
 			undistortPoints(sm, dm, K, dist, R, P);
 			dest.x = dm.at<float>(0);
 			dest.y = dm.at<float>(1);
@@ -66,7 +66,7 @@ namespace cp
 		{
 			for (int i = 0; i < patternSize.width; ++i)
 			{
-				chessboard3D.push_back(Point3f(lengthofchess * (float)i, lengthofchess * (float)j, 0.0));
+				chessboard3D.push_back(Point3f(lengthofchess.width * (float)i, lengthofchess.height * (float)j, 0.0));
 			}
 		}
 	}
@@ -177,14 +177,14 @@ namespace cp
 		fs << "Q" << Q;
 	}
 
-	void MultiCameraCalibrator::init(Size imageSize_, Size patternSize_, float lengthofchess_, int numofcamera_)
+	void MultiCameraCalibrator::init(Size imageSize_, Size patternSize_, Size2f lengthofchess_, int numofcamera_)
 	{
 		numofcamera = numofcamera_;
 
 		numofchessboards = 0;
 		imageSize = imageSize_;
 		patternSize = patternSize_;
-		lengthofchess = lengthofchess_;
+		this->lengthofchess = lengthofchess_;
 
 		vector<vector<Point2f>> tmp;
 		for (int i = 0; i < numofcamera; i++)
@@ -211,6 +211,11 @@ namespace cp
 	}
 
 	MultiCameraCalibrator::MultiCameraCalibrator(Size imageSize_, Size patternSize_, float lengthofchess_, int numofcamera_)
+	{
+		init(imageSize_, patternSize_, Size2f(lengthofchess_, lengthofchess_), numofcamera_);
+	}
+
+	MultiCameraCalibrator::MultiCameraCalibrator(Size imageSize_, Size patternSize_, Size2f lengthofchess_, int numofcamera_)
 	{
 		init(imageSize_, patternSize_, lengthofchess_, numofcamera_);
 	}
@@ -265,7 +270,7 @@ namespace cp
 	void MultiCameraCalibrator::pushImagePoint(const vector<vector<Point2f>>& point)
 	{
 		numofchessboards++;
-		for (int i = 0; i < imagePoints.size(); i++)
+		for (int i = 0; i < numofcamera; i++)
 		{
 			imagePoints[i].push_back(point[i]);
 		}
@@ -276,6 +281,16 @@ namespace cp
 		objectPoints.push_back(point);
 	}
 
+	void MultiCameraCalibrator::clearPatternData()
+	{		
+		for (int i = 0; i < numofcamera; i++)
+		{
+			imagePoints[i].resize(0);
+			patternImages[i].resize(0);
+		}
+		objectPoints.resize(0);
+		numofchessboards = 0;
+	}
 
 	void MultiCameraCalibrator::printParameters()
 	{
@@ -444,8 +459,26 @@ namespace cp
 		return te;
 	}
 
+	void MultiCameraCalibrator::setIntrinsic(const cv::Mat& intrinsic, const cv::Mat& distortion, const int cameraIndex)
+	{
+		intrinsic.copyTo(this->intrinsic[cameraIndex]);
+		distortion.copyTo(this->distortion[cameraIndex]);
+	}
 
-	void MultiCameraCalibrator::operator ()(bool isFixIntrinsic, int refCamera1, int refCamera2)
+	void MultiCameraCalibrator::setRP(const cv::Mat& R, const cv::Mat& P, const int cameraIndex, bool isInitRemap)
+	{
+		R.copyTo(this->R[cameraIndex]);
+		P.copyTo(this->P[cameraIndex]);
+		if (isInitRemap)initRemap();
+	}
+
+	void MultiCameraCalibrator::setQ(const cv::Mat& Q)
+	{
+		Q.copyTo(this->Q);
+	}
+
+
+	void MultiCameraCalibrator::operator ()(const int flags, int refCamera1, int refCamera2, const bool isIndependentCalibration)
 	{
 		if (refCamera1 == 0 && refCamera2 == 0)
 		{
@@ -458,7 +491,7 @@ namespace cp
 			return;
 		}
 
-		if (isFixIntrinsic)
+		if (isIndependentCalibration)
 		{
 			Mat r, t;
 			cv::calibrateCamera(objectPoints, imagePoints[refCamera1], imageSize, intrinsic[refCamera1], distortion[refCamera1], r, t, flag);
@@ -466,9 +499,9 @@ namespace cp
 
 			for (int i = 1; i < numofcamera; i++)
 			{
-				stereoCalibrate(objectPoints, imagePoints[refCamera1], imagePoints[i], intrinsic[refCamera1], distortion[refCamera1], intrinsic[i], distortion[i], imageSize,
+				rep_error = stereoCalibrate(objectPoints, imagePoints[refCamera1], imagePoints[i], intrinsic[refCamera1], distortion[refCamera1], intrinsic[i], distortion[i], imageSize,
 					reR[i], reT[i], E, F,
-					flag | CALIB_FIX_INTRINSIC,
+					flag,
 					TermCriteria(TermCriteria::COUNT + TermCriteria::EPS, 30, 1e-6)
 				);
 			}
@@ -477,7 +510,7 @@ namespace cp
 		{
 			for (int i = 1; i < numofcamera; i++)
 			{
-				stereoCalibrate(objectPoints, imagePoints[refCamera1], imagePoints[i], intrinsic[refCamera1], distortion[refCamera1], intrinsic[i], distortion[i], imageSize,
+				rep_error = stereoCalibrate(objectPoints, imagePoints[refCamera1], imagePoints[i], intrinsic[refCamera1], distortion[refCamera1], intrinsic[i], distortion[i], imageSize,
 					reR[i], reT[i], E, F,
 					flag,
 					TermCriteria(TermCriteria::COUNT + TermCriteria::EPS, 30, 1e-6));
@@ -488,11 +521,10 @@ namespace cp
 		initRemap();
 	}
 
-	void MultiCameraCalibrator::calibration(const int flags, int refCamera1, int refCamera2)
+	void MultiCameraCalibrator::calibration(const int flags, int refCamera1, int refCamera2, const bool isIndependentCalibration)
 	{
 		this->flag = flags;
-		operator()(false, refCamera1, refCamera2);
-		//operator()(true, refCamera1, refCamera2);
+		operator()(flags, refCamera1, refCamera2);
 	}
 
 	void MultiCameraCalibrator::rectifyImageRemap(Mat& src, Mat& dest, int numofcamera, const int interpolation)
@@ -510,21 +542,269 @@ namespace cp
 		cv::remap(src, dest, mapu[numofcamera], mapv[numofcamera], interpolation);
 	}
 
+	void MultiCameraCalibrator::drawReprojectionError(string wname, const bool isInteractive)
+	{
+#if 1
+		int length = 400;
+		Size imsize(2 * length + 1, 2 * length + 1);
+		Point center(imsize.width / 2, imsize.height / 2);
+		Mat show(imsize, CV_8UC3);
+		show.setTo(255);
+
+		float scale = 1000.f;
+
+		double terror = 0.0;
+		Mat_<uchar> graybar = Mat(256, 1, CV_8U);
+		Mat colorbar;
+		for (int i = 0; i < 256; i++) graybar(i) = i;
+		cv::applyColorMap(graybar, colorbar, COLORMAP_JET);
+		int step = 256 / (int)objectPoints.size();
+
+		if (isInteractive)
+		{
+			const int fontType = FONT_HERSHEY_SIMPLEX;
+			namedWindow(wname);
+			int index = 0;
+			int camera = 0;
+			createTrackbar("camera", wname, &camera, (int)imagePoints.size());
+			createTrackbar("pattern index", wname, &index, (int)objectPoints.size());
+			int gi = (int)objectPoints[0].size();
+			createTrackbar("grid index", wname, &gi, (int)objectPoints[0].size());
+			int sw = 0; createTrackbar("sw", wname, &sw, 1);
+			int ColorMap = COLORMAP_JET; createTrackbar("ColorMap", wname, &ColorMap, COLORMAP_DEEPGREEN);
+			int key = 0;
+
+			while (key != 'q')
+			{
+				double terror = 0.0;
+				cv::applyColorMap(graybar, colorbar, ColorMap);
+				show.setTo(255);
+
+				int start = 0;
+				int end = (int)imagePoints.size();
+				if (camera < imagePoints.size())
+				{
+					start = camera;
+					end = camera + 1;
+				}
+				int count = 0;
+				for (int cam = start; cam < end; cam++)
+				{
+					const bool isLast = cam == end - 1;
+					if (index == objectPoints.size())
+					{
+						for (int i = 0; i < objectPoints.size(); i++)
+						{
+							Scalar color = Scalar(colorbar.ptr<uchar>(i * step)[0], colorbar.ptr<uchar>(i * step)[1], colorbar.ptr<uchar>(i * step)[2], 0.0);
+							vector<Point2f> reprojectPoints;
+							Mat local_r;
+							Mat local_t;
+							solvePnP(objectPoints[i], imagePoints[cam][i], intrinsic[cam], distortion[cam], local_r, local_t);
+							projectPoints(objectPoints[i], local_r, local_t, intrinsic[cam], distortion[cam], reprojectPoints);
+							for (int n = 0; n < reprojectPoints.size(); n++)
+							{
+								float dx = imagePoints[cam][i][n].x - reprojectPoints[n].x;
+								float dy = imagePoints[cam][i][n].y - reprojectPoints[n].y;
+								terror = fma(dx, dx, fma(dy, dy, terror));
+								count++;
+								drawPlus(show, center + Point(cvRound(dx * scale), cvRound(dy * scale)), 2, color, 2);
+							}
+						}
+						//putText(show, format("Rep.Error: %6.4f", rep_error), Point(0, 20), fontType, 0.5, COLOR_GRAY50);
+					}
+					else
+					{
+						Scalar color = Scalar(colorbar.ptr<uchar>(index * step)[0], colorbar.ptr<uchar>(index * step)[1], colorbar.ptr<uchar>(index * step)[2], 0.0);
+						vector<Point2f> reprojectPoints;
+						Mat local_r;
+						Mat local_t;
+						solvePnP(objectPoints[index], imagePoints[cam][index], intrinsic[cam], distortion[cam], local_r, local_t);
+						projectPoints(objectPoints[index], local_r, local_t, intrinsic[cam], distortion[cam], reprojectPoints);
+
+						if (gi == objectPoints[0].size())
+						{
+							for (int n = 0; n < reprojectPoints.size(); n++)
+							{
+								if (sw == 1)
+								{
+									int step = 256 / (int)reprojectPoints.size();
+									color = Scalar(colorbar.ptr<uchar>(n * step)[0], colorbar.ptr<uchar>(n * step)[1], colorbar.ptr<uchar>(n * step)[2], 0.0);
+								}
+
+								float dx = imagePoints[cam][index][n].x - reprojectPoints[n].x;
+								float dy = imagePoints[cam][index][n].y - reprojectPoints[n].y;
+								terror = fma(dx, dx, fma(dy, dy, terror));
+								count++;
+								drawPlus(show, center + Point(cvRound(dx * scale), cvRound(dy * scale)), 2, color, 2);
+							}
+						}
+						else
+						{
+							if (sw == 1)
+							{
+								int step = 256 / (int)reprojectPoints.size();
+								color = Scalar(colorbar.ptr<uchar>(gi * step)[0], colorbar.ptr<uchar>(gi * step)[1], colorbar.ptr<uchar>(gi * step)[2], 0.0);
+							}
+
+							float dx = imagePoints[cam][index][gi].x - reprojectPoints[gi].x;
+							float dy = imagePoints[cam][index][gi].y - reprojectPoints[gi].y;
+							terror = fma(dx, dx, fma(dy, dy, terror));
+							count++;
+							drawPlus(show, center + Point(cvRound(dx * scale), cvRound(dy * scale)), 2, color, 2);
+						}
+					}
+
+					if (isLast)putText(show, format("Rep.Error: %6.4f", sqrt(terror / count)), Point(0, 20), fontType, 0.5, COLOR_GRAY50);
+					//draw image
+					if (index < patternImages[cam].size())
+					{
+						if (!patternImages[cam][index].empty())
+						{
+							Mat show;
+							if (patternImages[cam][index].channels() == 3)show = patternImages[cam][index].clone();
+							else cvtColor(patternImages[cam][index], show, COLOR_GRAY2BGR);
+
+							if (sw == 1)
+							{
+								if (gi == objectPoints[0].size())
+								{
+									for (int n = 0; n < imagePoints[cam][index].size(); n++)
+									{
+										int step = 256 / (int)imagePoints[cam][index].size();
+										Scalar color = Scalar(colorbar.ptr<uchar>(n * step)[0], colorbar.ptr<uchar>(n * step)[1], colorbar.ptr<uchar>(n * step)[2], 0.0);
+										circle(show, Point(imagePoints[cam][index][n]), 5, color, cv::FILLED);
+									}
+								}
+								else
+								{
+									int step = 256 / (int)imagePoints[cam][index].size();
+									Scalar color = Scalar(colorbar.ptr<uchar>(gi * step)[0], colorbar.ptr<uchar>(gi * step)[1], colorbar.ptr<uchar>(gi * step)[2], 0.0);
+									circle(show, Point(imagePoints[cam][index][gi]), 5, color, cv::FILLED);
+								}
+							}
+							imshow(wname + format("_image%d", cam), show);
+						}
+					}
+				}
+
+				putText(show, format("Rep.Error(All): %6.4f", rep_error), Point(0, 50), fontType, 0.5, COLOR_GRAY50);
+				putText(show, format("%6.4f", length * 0.5 / scale), Point(length / 2 - 30, length / 2), fontType, 0.5, COLOR_GRAY50);
+				circle(show, center, length / 2, COLOR_GRAY100);
+				drawGridMulti(show, Size(4, 4), COLOR_GRAY200);
+				Mat cres;
+				resize(colorbar.t(), cres, Size(show.cols, 20));
+				vconcat(show, cres, cres);
+				imshow(wname, cres);
+				key = waitKey(1);
+			}
+		}
+		else
+		{
+#if 0
+			for (int i = 0; i < objectPoints.size(); i++)
+			{
+				Scalar color = Scalar(colorbar.ptr<uchar>(i * step)[0], colorbar.ptr<uchar>(i * step)[1], colorbar.ptr<uchar>(i * step)[2], 0.0);
+				vector<Point2f> reprojectPoints;
+				projectPoints(objectPoints[i], rt[i], tv[i], intrinsic, distortion, reprojectPoints);
+				for (int n = 0; n < reprojectPoints.size(); n++)
+				{
+					float dx = imagePoints[i][n].x - reprojectPoints[n].x;
+					float dy = imagePoints[i][n].y - reprojectPoints[n].y;
+					terror = fma(dx, dx, fma(dy, dy, terror));
+					drawPlus(show, center + Point(cvRound(dx * scale), cvRound(dy * scale)), 2, color, 2);
+				}
+				//imshow("error", show);waitKey();
+			}
+			putText(show, format("%6.4f", length * 0.5 / scale), Point(length / 2 - 30, length / 2), FONT_HERSHEY_SCRIPT_SIMPLEX, 0.5, COLOR_GRAY50);
+			circle(show, center, length / 2, COLOR_GRAY100);
+			drawGridMulti(show, Size(4, 4), COLOR_GRAY200);
+			imshow(wname, show);
+#endif
+		}
+		print_debug(rep_error);
+		//print_debug(sqrt(terror / (objectPoints.size() * objectPoints[0].size())));
+#endif
+	}
+
+	double MultiCameraCalibrator::plotDiffDisparityZPatternZ(const int cam0, const int cam1, const double f, const double l, const double d_offset)
+	{
+		Plot pt;
+		pt.setKey(Plot::LEFT_TOP);
+		pt.setIsDrawMousePosition(false);
+		pt.setGrid(2);
+		pt.setPlotTitle(0, "left");
+		pt.setPlotTitle(1, "right");
+		pt.setPlotLineType(0, cp::Plot::NOLINE);
+		pt.setPlotLineType(1, cp::Plot::NOLINE);
+		pt.setXLabel("disparity to Z");
+		pt.setYLabel("difference");
+		Mat localR0, localT0;
+		Mat localR1, localT1;
+		//vector<double> zL, zR, zD;
+		vector<Point2f> dpl, dpr;
+		double ret = 0.0;
+		int count = 0;
+		
+		for (int p = 0; p < objectPoints.size(); p++)
+		{
+			cv::solvePnP(objectPoints[p], imagePoints[cam0][p], intrinsic[cam0], distortion[cam0], localR0, localT0);
+			cv::Rodrigues(localR0, localR0);
+
+			cv::solvePnP(objectPoints[p], imagePoints[cam1][p], intrinsic[cam1], distortion[cam1], localR1, localT1);
+			cv::Rodrigues(localR1, localR1);
+	
+			undistortPoints(imagePoints[cam0][p], dpl, intrinsic[cam0], distortion[cam0], R[cam0], P[cam0]);
+			undistortPoints(imagePoints[cam1][p], dpr, intrinsic[cam1], distortion[cam1], R[cam1], P[cam1]);
+
+			for (int c = 0; c < objectPoints[0].size(); c++)
+			{
+				Mat a = Mat(objectPoints[p][c]);
+				a.convertTo(a, CV_64F);
+				Mat dL = localR0 * a + localT0;
+				//Mat TL = localR0.t() * localT0;
+				Mat dR = localR1 * a + localT1;
+
+				const double disparity = double(dpl[c].x - dpr[c].x);	
+				const double z = (rect_flag == cv::CALIB_ZERO_DISPARITY) ? f * l / (disparity) : f * l / (disparity + d_offset);
+				ret += (dL.at<double>(2) - z) * (dL.at<double>(2) - z) + (dR.at<double>(2) - z) * (dR.at<double>(2) - z);
+				count += 2;
+				pt.push_back(z, dL.at<double>(2) - z, 0);
+				pt.push_back(z, dR.at<double>(2) - z, 1);
+				//pt.push_back(z, dL.at<double>(2), 0);
+				//pt.push_back(z, dR.at<double>(2), 1);
+
+				//zL.push_back(dL.at<double>(2));
+				//zR.push_back(dR.at<double>(2));
+				//zD.push_back(z);
+			}
+		}
+		double rmse = sqrt(ret / count);
+
+		pt.plot("Z", false, "", format("RMSE=%f",rmse));
+		return rmse;
+	}
+
 	void MultiCameraCalibrator::guiDisparityTest()
 	{
 		string wname = "disparity";
 		namedWindow(wname);
-		int pi = 0; createTrackbar("pattern index", wname, &pi, (int)objectPoints.size() - 1);
-		int ci = 0; createTrackbar("corner index", wname, &ci, (int)objectPoints[pi].size() - 1);
+		int pi = 0; // pattern index
+		createTrackbar("pattern index", wname, &pi, (int)objectPoints.size() - 1);
+		int ci = 0;// corner index
+		createTrackbar("corner index", wname, &ci, (int)objectPoints[pi].size() - 1);
 		int showsw = 1; createTrackbar("show: 0_raw, 1_rect", wname, &showsw, 1);
 		const int cami = 0;
 		Mat localR, localT;
 		int key = 0;
 		cp::ConsoleImage con(Size(640, 480), wname);
-		const double l = 1.0 / Q.at<double>(3, 2);//norm(reT[cami + 1]);
 		const double f = Q.at<double>(2, 3);
+		const double l = 1.0 / Q.at<double>(3, 2);//norm(reT[cami + 1]);
 		const double d_offset = l * Q.at<double>(3, 3);
 
+		//all projection
+		double z_error = plotDiffDisparityZPatternZ(0, 1, f, l, d_offset);
+
+		//point-by-point projection
 		Mat patternL;
 		Mat patternR;
 		vector<Mat> rectimL(objectPoints.size());
@@ -534,7 +814,6 @@ namespace cp
 			rectifyImageRemap(patternImages[cami + 0][i], rectimL[i], 0);
 			rectifyImageRemap(patternImages[cami + 1][i], rectimR[i], 1);
 		}
-
 		while (key != 'q')
 		{
 			if (showsw == 1)
@@ -557,7 +836,7 @@ namespace cp
 			cv::solvePnP(objectPoints[pi], imagePoints[cami + 0][pi], intrinsic[cami + 0], distortion[cami + 0], localR, localT);
 			cv::Rodrigues(localR, localR);
 			Mat dL = localR * a + localT;
-			Mat TL = localR.t() * localT.clone();
+			Mat TL = localR.t() * localT;
 			cv::solvePnP(objectPoints[pi], imagePoints[cami + 1][pi], intrinsic[cami + 1], distortion[cami + 1], localR, localT);
 			cv::Rodrigues(localR, localR);
 			Mat dR = localR * a + localT;
@@ -582,6 +861,7 @@ namespace cp
 				circle(patternR, Point(pt1), 10, COLOR_ORANGE, 2);
 				cp::drawPlus(patternR, Point(pt1), 3, COLOR_ORANGE);
 			}
+
 			con("xL       %f", dL.at<double>(0));
 			con("yL       %f", dL.at<double>(1));
 			con("zL       %f", dL.at<double>(2));
@@ -597,10 +877,12 @@ namespace cp
 			con("L        %f %f", l, norm(localR.t() * localT - TL));
 			const float disparity = rpt0.x - rpt1.x;
 			con("disp     %f", disparity);
-			const float flz = f * l / (disparity);
+			const float flz = float(f * l / (disparity));
 			con("z=fl/d   %f %f %f", flz, flz - dL.at<double>(2), flz - dR.at<double>(2));
-			const float flzo = f * l / (disparity + d_offset);
+			const float flzo = float(f * l / (disparity + d_offset));
 			con("z=fl/d(o)%f %f %f", flzo, flzo - dL.at<double>(2), flzo - dR.at<double>(2));
+			con("RMSE z   %f", z_error);
+
 			con.show();
 			imshow(wname + "patternL", patternL);
 			imshow(wname + "patternR", patternR);

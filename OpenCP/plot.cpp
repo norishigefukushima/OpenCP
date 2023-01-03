@@ -914,7 +914,7 @@ namespace cp
 	void Plot::push_back(vector<cv::Point>& point, int plotIndex)
 	{
 		data_labelmax = max(data_labelmax, plotIndex + 1);
-		const int size = point.size();
+		const int size = (int)point.size();
 		if (pinfo[plotIndex].data.size() == 0)
 		{
 			pinfo[plotIndex].data.resize(size);
@@ -936,7 +936,7 @@ namespace cp
 	void Plot::push_back(vector<cv::Point2d>& point, int plotIndex)
 	{
 		data_labelmax = max(data_labelmax, plotIndex + 1);
-		const int size = point.size();
+		const int size = (int)point.size();
 		if (pinfo[plotIndex].data.size() == 0)
 		{
 			pinfo[plotIndex].data.resize(size);
@@ -1558,7 +1558,10 @@ namespace cp
 
 				drawGrid(render, pt, Scalar(180, 180, 255), 1, 4, 0);
 			}
-
+			else
+			{
+				cv::addText(render, message, Point(100, 30), font, fontSize, COLOR_BLACK);
+			}
 			imshow(wname, render);
 
 #pragma region keyborad

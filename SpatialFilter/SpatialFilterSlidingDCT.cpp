@@ -266,7 +266,7 @@ namespace cp
 		sum += 1.0;//u=0
 
 #if 1
-		const int rend = 10.0 * sigma;
+		const int rend = (int)ceil(10.0 * sigma);
 		double eout = 0.0;
 		for (int i = R + 1; i <= rend; i++)
 		{

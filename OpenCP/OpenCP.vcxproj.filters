@@ -633,6 +633,9 @@
     <ClCompile Include="circleFilter.cpp">
       <Filter>ソース ファイル\filter</Filter>
     </ClCompile>
+    <ClCompile Include="threshold.cpp">
+      <Filter>ソース ファイル\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libGaussian\gaussian_conv.h">
@@ -1141,6 +1144,9 @@
     </ClInclude>
     <ClInclude Include="..\include\circleFilter.hpp">
       <Filter>ヘッダー ファイル\filter</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\threshold.hpp">
+      <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

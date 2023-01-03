@@ -20,11 +20,13 @@ void testCorrelationCoefficient()
 		for (int i = 0; i < s; i++)
 		{
 			const double v = rng.uniform(0.0, 100.0);
-			v1f[i] = v1d[i] = v;
+			v1f[i] = float(v);
+			v1d[i] = v;
 			v1i[i] = (int)v;
 			//double v2 = rng.uniform(-50.0, 50.0);
 			double v2 = rng.uniform(-10, 10);
-			v2f[i] = v2d[i] = v + v2;
+			v2f[i] = float(v + v2);
+			v2d[i] = v + v2;
 			v2i[i] = (int)v + (int)v2;
 		}
 
