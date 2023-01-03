@@ -25,10 +25,12 @@
 #define _MM_SELECT4(x,y) (((y)<<4) + (x))
 
 #if defined(__AVX512F__)
+/*
 STATIC_INLINE __m512i _mm512_setr_epi8(char s0, char s1, char s2, char s3, char s4, char s5, char s6, char s7, char s8, char s9, char s10, char s11, char s12, char s13, char s14, char s15, char s16, char s17, char s18, char s19, char s20, char s21, char s22, char s23, char s24, char s25, char s26, char s27, char s28, char s29, char s30, char s31, char s32, char s33, char s34, char s35, char s36, char s37, char s38, char s39, char s40, char s41, char s42, char s43, char s44, char s45, char s46, char s47, char s48, char s49, char s50, char s51, char s52, char s53, char s54, char s55, char s56, char s57, char s58, char s59, char s60, char s61, char s62, char s63)
 {
 	return _mm512_set_epi8(s63, s62, s61, s60, s59, s58, s57, s56, s55, s54, s53, s52, s51, s50, s49, s48, s47, s46, s45, s44, s43, s42, s41, s40, s39, s38, s37, s36, s35, s34, s33, s32, s31, s30, s29, s28, s27, s26, s25, s24, s23, s22, s21, s20, s19, s18, s17, s16, s15, s14, s13, s12, s11, s10, s9, s8, s7, s6, s5, s4, s3, s2, s1, s0);
 }
+*/
 #endif
 
 #pragma region xxx
@@ -690,6 +692,25 @@ STATIC_INLINE void _mm256_cvtepu8_psx2(__m128i src, __m256& dest0, __m256& dest1
 {
 	dest0 = _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(src));
 	dest1 = _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(_mm_shuffle_epi32(src, _MM_SHUFFLE(1, 0, 3, 2))));
+}
+
+//opencp uchar->floatx4
+STATIC_INLINE void _mm256_cvtepu8_psx4(__m256i src, __m256& dest0, __m256& dest1, __m256& dest2, __m256& dest3)
+{
+	dest0 = _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(_mm256_castsi256_si128(src)));
+	dest1 = _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(_mm_shuffle_epi32(_mm256_castsi256_si128(src), _MM_SHUFFLE(1, 0, 3, 2))));
+	__m128i v = _mm256_castsi256hi_si128(src);
+	dest2 = _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(v));
+	dest3 = _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(_mm_shuffle_epi32(v, _MM_SHUFFLE(1, 0, 3, 2))));
+}
+
+STATIC_INLINE void _mm256_cvtepu8_epi32x4(__m256i src, __m256i& dest0, __m256i& dest1, __m256i& dest2, __m256i& dest3)
+{
+	dest0 = _mm256_cvtepu8_epi32(_mm256_castsi256_si128(src));
+	dest1 = _mm256_cvtepu8_epi32(_mm_shuffle_epi32(_mm256_castsi256_si128(src), _MM_SHUFFLE(1, 0, 3, 2)));
+	__m128i v = _mm256_castsi256hi_si128(src);
+	dest2 = _mm256_cvtepu8_epi32(v);
+	dest3 = _mm256_cvtepu8_epi32(_mm_shuffle_epi32(v, _MM_SHUFFLE(1, 0, 3, 2)));
 }
 
 //opencp int ->uchar
