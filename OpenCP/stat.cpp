@@ -15,7 +15,7 @@ namespace cp
 
 	double Stat::getMin()
 	{
-		if (getSize() == 0)return 0.0;
+		if (getSize() == 0) return 0.0;
 		double minv = DBL_MAX;
 		const int size = getSize();
 		for (int i = 0; i < size; i++)
@@ -27,7 +27,7 @@ namespace cp
 
 	double Stat::getMax()
 	{
-		if (getSize() == 0)return 0.0;
+		if (getSize() == 0) return 0.0;
 		double maxv = -DBL_MAX;
 		const int size = getSize();
 		for (int i = 0; i < size; i++)
@@ -39,7 +39,7 @@ namespace cp
 
 	double Stat::getSum()
 	{
-		if (getSize() == 0)return 0.0;
+		if (getSize() == 0) return 0.0;
 		double sum = 0.0;
 		const int size = getSize();
 		for (int i = 0; i < size; i++)
@@ -51,7 +51,7 @@ namespace cp
 
 	double Stat::getMean()
 	{
-		if (getSize() == 0)return 0.0;
+		if (getSize() == 0) return 0.0;
 		return getSum() / (double)getSize();
 	}
 
@@ -69,16 +69,24 @@ namespace cp
 
 	double Stat::getStd()
 	{
-		if (getSize() == 0)return 0.0;
+		if (getSize() == 0) return 0.0;
 		return sqrt(getVar());
 	}
 
 	double Stat::getMedian()
 	{
-		if (getSize() == 0)return 0.0;
+		if (getSize() == 0) return 0.0;
 		vector<double> v;
 		cv::sort(data, v, cv::SORT_ASCENDING);
 		return v[getSize() / 2];
+	}
+
+	vector<int> Stat::getSortIndex(int flags)
+	{
+		vector<int> v;
+		if (getSize() == 0) return v;
+		cv::sortIdx(data, v, flags);
+		return v;
 	}
 
 	void Stat::pop_back()

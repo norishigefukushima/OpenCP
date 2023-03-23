@@ -293,6 +293,46 @@ __m256 __tmpp7 = _mm256_shuffle_ps(__tmp5, __tmp7, 0xEE); \
     (in_row7) = (tmp7);										\
 }
 
+STATIC_INLINE void _mm256_transpose_epi32(__m256i& in_row0, __m256i& in_row1, __m256i& in_row2, __m256i& in_row3, __m256i& in_row4, __m256i& in_row5, __m256i& in_row6, __m256i& in_row7)
+{
+	__m256i tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
+
+	tmp0 = _mm256_unpackhi_epi32((in_row0), (in_row2));
+	tmp1 = _mm256_unpackhi_epi32((in_row1), (in_row3));
+	tmp2 = _mm256_unpacklo_epi32((in_row0), (in_row2));
+	tmp3 = _mm256_unpacklo_epi32((in_row1), (in_row3));
+	tmp4 = _mm256_unpackhi_epi32((in_row4), (in_row6));
+	tmp5 = _mm256_unpackhi_epi32((in_row5), (in_row7));
+	tmp6 = _mm256_unpacklo_epi32((in_row4), (in_row6));
+	tmp7 = _mm256_unpacklo_epi32((in_row5), (in_row7));
+
+	in_row0 = _mm256_unpackhi_epi32(tmp0, tmp1);
+	in_row1 = _mm256_unpacklo_epi32(tmp0, tmp1);
+	in_row2 = _mm256_unpackhi_epi32(tmp2, tmp3);
+	in_row3 = _mm256_unpacklo_epi32(tmp2, tmp3);
+	in_row4 = _mm256_unpackhi_epi32(tmp4, tmp5);
+	in_row5 = _mm256_unpacklo_epi32(tmp4, tmp5);
+	in_row6 = _mm256_unpackhi_epi32(tmp6, tmp7);
+	in_row7 = _mm256_unpacklo_epi32(tmp6, tmp7);
+
+	(tmp7) = _mm256_permute2f128_si256(in_row0, in_row4, 0x31);
+	(tmp6) = _mm256_permute2f128_si256(in_row1, in_row5, 0x31);
+	(tmp5) = _mm256_permute2f128_si256(in_row2, in_row6, 0x31);
+	(tmp4) = _mm256_permute2f128_si256(in_row3, in_row7, 0x31);
+	(tmp3) = _mm256_permute2f128_si256(in_row0, in_row4, 0x20);
+	(tmp2) = _mm256_permute2f128_si256(in_row1, in_row5, 0x20);
+	(tmp1) = _mm256_permute2f128_si256(in_row2, in_row6, 0x20);
+	(tmp0) = _mm256_permute2f128_si256(in_row3, in_row7, 0x20);
+	(in_row0) = (tmp0);
+	(in_row1) = (tmp1);
+	(in_row2) = (tmp2);
+	(in_row3) = (tmp3);
+	(in_row4) = (tmp4);
+	(in_row5) = (tmp5);
+	(in_row6) = (tmp6);
+	(in_row7) = (tmp7);
+}
+
 STATIC_INLINE void _mm256_transpose8_ps(__m256* in_row, __m256* out_row)
 {
 	_MM256_TRANSPOSE8_PS(in_row[0], in_row[1], in_row[2], in_row[3], in_row[4], in_row[5], in_row[6], in_row[7],
@@ -724,7 +764,7 @@ STATIC_INLINE __m128i _mm256_cvtepi32x2_epu8(const __m256i v0, const __m256i v1)
 //opencp intx4 ->uchar
 STATIC_INLINE __m256i _mm256_cvtepi32x4_epu8(const __m256i v0, const __m256i v1, const __m256i v2, const __m256i v3)
 {
-	static __m256i shlmask = _mm256_setr_epi32(0, 4, 1, 5, 2, 6, 3, 7);
+	__m256i shlmask = _mm256_setr_epi32(0, 4, 1, 5, 2, 6, 3, 7);
 	return _mm256_permutevar8x32_epi32(_mm256_packus_epi16(_mm256_packs_epi32(v0, v1), _mm256_packs_epi32(v2, v3)), shlmask);
 }
 

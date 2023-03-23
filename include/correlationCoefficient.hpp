@@ -45,15 +45,15 @@ namespace cp
 		double computeRankDifference(std::vector<T>& Rsrc, std::vector<T>& Rref);
 
 		template<typename T>
-		double spearman_(std::vector<T>& v1, std::vector<T>& v2, const bool ignoreTie, const bool isPlot);
+		double spearman_(std::vector<T>& v1, std::vector<T>& v2, const bool ignoreTie, const bool isPlot, const int plotIndex);
 
 		template<typename T>
 		void setPlotData(std::vector<T>& v1, std::vector<T>& v2, std::vector<cv::Point2d>& data);
 
 
 		cp::Plot pt;
-		std::vector<cv::Point2d> plotsRAW;
-		std::vector<cv::Point2d> plotsRANK;
+		std::vector<std::vector<cv::Point2d>> plotsRAW;
+		std::vector<std::vector<cv::Point2d>> plotsRANK;
 		double Tref = 0.0;
 		std::vector<float> refRank;
 		std::vector<float> srcRank;
@@ -74,9 +74,15 @@ namespace cp
 		double computeUsingReference(std::vector<int>& v1, const bool ignoreTie = false);//compute SROCC (vector<float> NOT thread safe). 
 		double computeUsingReference(std::vector<float>& v1, const bool ignoreTie = false);//compute SROCC (vector<float> NOT thread safe). 
 		double computeUsingReference(std::vector<double>& v1, const bool ignoreTie = false);//compute SROCC (vector<float> NOT thread safe). 
+		double computeUsingReference(std::vector<std::vector<int>>& v1, const bool ignoreTie = false);//compute SROCC (vector<float> NOT thread safe). 
+		double computeUsingReference(std::vector<std::vector<float>>& v1, const bool ignoreTie = false);//compute SROCC (vector<float> NOT thread safe). 
+		double computeUsingReference(std::vector<std::vector<double>>& v1, const bool ignoreTie = false);//compute SROCC (vector<float> NOT thread safe). 
 		double compute(std::vector<int>& v1, std::vector<int>& v2, const bool ignoreTie = false, const bool isPlot = false);//compute SROCC (vector<int> thread safe). 
 		double compute(std::vector<float>& v1, std::vector<float>& v2, const bool ignoreTie = false, const bool isPlot = false);//compute SROCC (vector<float> thread safe). 
 		double compute(std::vector<double>& v1, std::vector<double>& v2, const bool ignoreTie = false, const bool isPlot = false);//compute SROCC ((vector<double>) thread safe). 
-		void plot(const bool isWait = true, const double rawMin = 0.0, const double rawMax = 0.0);
+		std::vector<double> compute(std::vector<std::vector<int>>& v1, std::vector<std::vector<int>>& v2, const bool ignoreTie = false, const bool isPlot = false);//compute SROCC (vector<int> thread safe). 
+		std::vector<double> compute(std::vector<std::vector<float>>& v1, std::vector<std::vector<float>>& v2, const bool ignoreTie = false, const bool isPlot = false);//compute SROCC (vector<float> thread safe). 
+		std::vector<double> compute(std::vector<std::vector<double>>& v1, std::vector<std::vector<double>>& v2, const bool ignoreTie = false, const bool isPlot = false);//compute SROCC ((vector<double>) thread safe). 
+		void plot(const bool isWait = true, const double rawMin = 0.0, const double rawMax = 0.0, std::vector<std::string> labels = std::vector<std::string>());
 	};
 }

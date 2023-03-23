@@ -341,7 +341,7 @@ namespace cp
 	}
 
 	template<typename T>
-	double SpearmanRankOrderCorrelationCoefficient::spearman_(vector<T>& v1, vector<T>& v2, const bool ignoreTie, const bool isPlot)
+	double SpearmanRankOrderCorrelationCoefficient::spearman_(vector<T>& v1, vector<T>& v2, const bool ignoreTie, const bool isPlot, const int plotIndex)
 	{
 		CV_Assert(v1.size() == v2.size());
 
@@ -354,7 +354,10 @@ namespace cp
 			rankTransformIgnoreTie(v1, r1);
 			rankTransformIgnoreTie(v2, r2);
 
-			if (isPlot)setPlotData(r1, r2, plotsRANK);
+			if (isPlot)
+			{
+				setPlotData(r1, r2, plotsRANK[plotIndex]);
+			}
 
 			const double D2 = computeRankDifference<float>(r1, r2);
 			return 1.0 - 6.0 * D2 / (pow(n, 3.0) - (double)n);
@@ -367,7 +370,10 @@ namespace cp
 			const double T2 = rankTransformUsingAverageTieScore(v2, r2);
 
 			//cout << "T1 " << T1 << ", T2 " << T2 << endl;
-			if (isPlot)setPlotData(r1, r2, plotsRANK);
+			if (isPlot)
+			{
+				setPlotData(r1, r2, plotsRANK[plotIndex]);
+			}
 
 			const bool isUsePearson = false;//for debug
 			if (isUsePearson)
@@ -387,22 +393,118 @@ namespace cp
 
 	double SpearmanRankOrderCorrelationCoefficient::compute(vector<int>& v1, vector<int>& v2, const bool ignoreTie, const bool isPlot)
 	{
-		if (isPlot)setPlotData(v1, v2, plotsRAW);
-		return spearman_<int>(v1, v2, ignoreTie, isPlot);
+		if (isPlot)
+		{
+			plotsRAW.resize(1);
+			setPlotData(v1, v2, plotsRAW[0]);
+		}
+		return spearman_<int>(v1, v2, ignoreTie, isPlot, 0);
+	}
+
+	vector<double> SpearmanRankOrderCorrelationCoefficient::compute(vector<vector<int>>& v1, vector<vector<int>>& v2, const bool ignoreTie, const bool isPlot)
+	{
+		const int size = (int)v1.size();
+		vector<double> ret(size + 1);
+		if (isPlot)
+		{
+			int dsize = 0;
+			plotsRAW.resize(size);
+			for (int i = 0; i < size; i++)
+			{
+				setPlotData(v1[i], v2[i], plotsRAW[i]);
+				ret[i] = spearman_<int>(v1[i], v2[i], ignoreTie, isPlot, i);
+				dsize += (int)v1[i].size();
+			}
+			vector<int> s1, s2;
+			for (int i = 0; i < size; i++)
+			{
+				for (int j = 0; j < v1[i].size(); j++)
+				{
+					s1.push_back(v1[i][j]);
+					s2.push_back(v2[i][j]);
+				}
+			}
+			ret[size] = spearman_<int>(s1, s2, ignoreTie, false, 0);
+		}
+		return ret;
 	}
 
 	double SpearmanRankOrderCorrelationCoefficient::compute(vector<float>& v1, vector<float>& v2, const bool ignoreTie, const bool isPlot)
 	{
-		if (isPlot)setPlotData(v1, v2, plotsRAW);
-		return spearman_<float>(v1, v2, ignoreTie, isPlot);
+		if (isPlot)
+		{
+			plotsRAW.resize(1);
+			setPlotData(v1, v2, plotsRAW[0]);
+		}
+		return spearman_<float>(v1, v2, ignoreTie, isPlot, 0);
+	}
+
+	vector<double> SpearmanRankOrderCorrelationCoefficient::compute(vector<vector<float>>& v1, vector<vector<float>>& v2, const bool ignoreTie, const bool isPlot)
+	{
+		const int size = (int)v1.size();
+		vector<double> ret(size + 1);
+		if (isPlot)
+		{
+			int dsize = 0;
+			plotsRAW.resize(size);
+			plotsRANK.resize(size);
+			for (int i = 0; i < size; i++)
+			{
+				setPlotData(v1[i], v2[i], plotsRAW[i]);
+				ret[i] = spearman_<float>(v1[i], v2[i], ignoreTie, isPlot, i);
+				dsize += (int)v1[i].size();
+			}
+			vector<float> s1, s2;
+			for (int i = 0; i < size; i++)
+			{
+				for (int j = 0; j < v1[i].size(); j++)
+				{
+					s1.push_back(v1[i][j]);
+					s2.push_back(v2[i][j]);
+				}
+			}
+			ret[size] = spearman_<float>(s1, s2, ignoreTie, false, 0);
+		}
+		return ret;
 	}
 
 	double SpearmanRankOrderCorrelationCoefficient::compute(vector<double>& v1, vector<double>& v2, const bool ignoreTie, const bool isPlot)
 	{
-		if (isPlot)setPlotData(v1, v2, plotsRAW);
-		return spearman_<double>(v1, v2, ignoreTie, isPlot);
+		if (isPlot)
+		{
+			plotsRAW.resize(1);
+			setPlotData(v1, v2, plotsRAW[0]);
+		}
+		return spearman_<double>(v1, v2, ignoreTie, isPlot, 0);
 	}
 
+	vector<double> SpearmanRankOrderCorrelationCoefficient::compute(vector<vector<double>>& v1, vector<vector<double>>& v2, const bool ignoreTie, const bool isPlot)
+	{
+		const int size = (int)v1.size();
+		vector<double> ret(size + 1);
+		if (isPlot)
+		{
+			int dsize = 0;
+			plotsRAW.resize(size);
+			for (int i = 0; i < size; i++)
+			{
+				setPlotData(v1[i], v2[i], plotsRAW[i]);
+				ret[i] = spearman_<double>(v1[i], v2[i], ignoreTie, isPlot, i);
+				dsize += (int)v1[i].size();
+			}
+			vector<double> s1, s2;
+			for (int i = 0; i < size; i++)
+			{
+				for (int j = 0; j < v1[i].size(); j++)
+				{
+					s1.push_back(v1[i][j]);
+					s2.push_back(v2[i][j]);
+				}
+			}
+			ret[size] = spearman_<double>(s1, s2, ignoreTie, false, 0);
+		}
+		return ret;
+	}
 
 	void SpearmanRankOrderCorrelationCoefficient::setReference(std::vector<int>& ref, const bool isIgnoreTie)
 	{
@@ -494,16 +596,33 @@ namespace cp
 		}
 	}
 
-	void SpearmanRankOrderCorrelationCoefficient::plot(const bool isWait, const double rawMin, const double rawMax)
+	void SpearmanRankOrderCorrelationCoefficient::plot(const bool isWait, const double rawMin, const double rawMax, vector<string> labels)
 	{
-		pt.setPlotLineType(0, Plot::LINE::NOLINE);
-		pt.setKey(Plot::KEY::NOKEY);
-		pt.push_back(plotsRAW);
+		if(labels.size()==0) pt.setKey(Plot::KEY::NOKEY);
+		else
+		{
+			if (labels.size() == plotsRAW.size())
+			{
+				for (int i = 0; i < plotsRAW.size(); i++)
+				{
+					pt.setPlotTitle(i, labels[i]);
+				}
+			}
+		}
+
+		for (int i = 0; i < plotsRAW.size(); i++)
+		{
+			pt.setPlotLineType(i, Plot::LINE::NOLINE);
+			pt.push_back(plotsRAW[i], i);
+		}
 		if (rawMin != 0.0 || rawMax != 0.0) pt.setYRange(rawMin, rawMax);
 		pt.plot("SROCC-RAW", isWait);
 		pt.clear();
 		pt.unsetXYRange();
-		pt.push_back(plotsRANK);
+		for (int i = 0; i < plotsRAW.size(); i++)
+		{
+			pt.push_back(plotsRANK[i], i);
+		}
 		pt.plot("SROCC-RANK", isWait);
 		pt.clear();
 	}

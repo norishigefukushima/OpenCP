@@ -17,6 +17,7 @@ namespace cp
 		double getVar();
 		double getStd();
 		double getMedian();
+		std::vector<int> getSortIndex(int flag = cv::SORT_ASCENDING);
 
 		void pop_back();
 		void push_back(double val);
