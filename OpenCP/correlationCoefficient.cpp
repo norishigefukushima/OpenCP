@@ -606,6 +606,9 @@ namespace cp
 				for (int i = 0; i < plotsRAW.size(); i++)
 				{
 					pt.setPlotTitle(i, labels[i]);
+					if(i==0)pt.setPlotColor(i, COLOR_RED);
+					if (i == 1)pt.setPlotColor(i, COLOR_GREEN);
+					if (i == 2)pt.setPlotColor(i, COLOR_BLUE);
 				}
 			}
 		}

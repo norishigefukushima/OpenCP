@@ -259,8 +259,9 @@ namespace cp
 
 	void varianceFilterGaussian(InputArray src, OutputArray dest, const cv::Size kernelSize, const double sigma)
 	{
-		GaussianBlur(src, dest, kernelSize, sigma);
-		subtract(src, dest, dest);
+		Mat temp;
+		GaussianBlur(src, temp, kernelSize, sigma);
+		subtract(src, temp, dest);
 		multiply(dest, dest, dest);
 		GaussianBlur(dest, dest, kernelSize, sigma);
 	}
