@@ -405,6 +405,13 @@ namespace cp
 			}
 		}
 	}
+
+	void drawDistortion(Mat& destImage, const Mat& intrinsic, const Mat& distortion, const Size imageSize, const int step, const int thickness, const double amp)
+	{
+		Mat mapu, mapv;
+		initUndistortRectifyMap(intrinsic, distortion, Mat::eye(3, 3, CV_64F), intrinsic, imageSize, CV_32FC1, mapu, mapv);
+		cp::drawDistortionLine(mapu, mapv, destImage, step, thickness, amp);
+	}
 #pragma endregion
 
 	void Calibrator::readParameter(char* name)
@@ -1182,7 +1189,7 @@ namespace cp
 			Mat show;
 			int step = 20; createTrackbar("step", wname, &step, 100);
 			int thickness = 1; createTrackbar("thickness", wname, &thickness, 3);
-			int amp = 100; createTrackbar("amp", wname, &amp, 2000);
+			int amp = 100; createTrackbar("amp*0.01", wname, &amp, 2000);
 			while (key != 'q')
 			{
 				drawDistortionLine(mapu, mapv, show, step, thickness, amp * 0.01f);
