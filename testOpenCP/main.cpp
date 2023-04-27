@@ -652,7 +652,7 @@ void webPAnimationTest()
 
 int main(int argc, char** argv)
 {
-	webPAnimationTest(); return 0;
+	//webPAnimationTest(); return 0;
 	//testSpearmanRankOrderCorrelationCoefficient(); return 0;
 	/*__m256i a = _mm256_set_step_epi32(0);
 	__m256i b = _mm256_set_step_epi32(8);
@@ -719,7 +719,7 @@ int main(int argc, char** argv)
 	//testRGBHistogram2();
 	//testTimer(img);
 	//testMatInfo(); return 0;
-	//testStat(); return 0;
+	testStat(); return 0;
 	//testDestinationTimePrediction(img); return 0;
 	//testAlphaBlend(left, right);
 	//testAlphaBlendMask(left, right);

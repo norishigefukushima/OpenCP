@@ -599,7 +599,7 @@ namespace cp
 	{
 		if (numofchessboards < 2)
 		{
-			std::cout << "input 3 or more chessboards" << std::endl;
+			std::cout << "input 2 or more chessboards" << std::endl;
 			return -1;
 		}
 		if (isUseInitCameraMatrix)
@@ -858,25 +858,33 @@ namespace cp
 			const int pindex = (indexGUI >= (int)objectPoints.size()) ? 0 : indexGUI;
 			const float scale = float(scalei);
 			const float th2 = (thresh == thmax) ? FLT_MAX : (thresh * 0.0001f) * (thresh * 0.0001f);
-			if (!image[pindex].empty())
-			{
-				if (dist == 0)
-				{
-					if (view == 0) image[pindex].copyTo(repPatternShow);
-					else if (view == 1) imageConic[pindex].copyTo(repPatternShow);
-					else imageCircleConic[pindex].copyTo(repPatternShow);
-				}
-				else
-				{
-					if (view == 0) imageUndist[pindex].copyTo(repPatternShow);
-					else if (view == 1) imageUndistConic[pindex].copyTo(repPatternShow);
-					else imageCircleUndistConic[pindex].copyTo(repPatternShow);
-				}
-			}
-			else
+			if (image.size() == 0)
 			{
 				repPatternShow.setTo(255);
 			}
+			else
+			{
+				if (!image[pindex].empty())
+				{
+					if (dist == 0)
+					{
+						if (view == 0) image[pindex].copyTo(repPatternShow);
+						else if (view == 1) imageConic[pindex].copyTo(repPatternShow);
+						else imageCircleConic[pindex].copyTo(repPatternShow);
+					}
+					else
+					{
+						if (view == 0) imageUndist[pindex].copyTo(repPatternShow);
+						else if (view == 1) imageUndistConic[pindex].copyTo(repPatternShow);
+						else imageCircleUndistConic[pindex].copyTo(repPatternShow);
+					}
+				}
+				else
+				{
+					repPatternShow.setTo(255);
+				}
+			}
+
 			bool isDrawConicalView = isGrid == 1;
 			if (isDrawConicalView)
 			{
@@ -1139,6 +1147,14 @@ namespace cp
 
 	void Calibrator::drawReprojectionError(string wname, const bool isInteractive, const float scale)
 	{
+		namedWindow(wname);
+		static int scaleINT = 0;
+		createTrackbar("scale", wname, &scaleINT, 10000);
+		if (scaleINT == 0)
+		{
+			scaleINT = scale;
+			setTrackbarPos("scale", wname, scaleINT);
+		}
 		int length = 400;
 		Size imsize(2 * length + 1, 2 * length + 1);
 		Point center(imsize.width / 2, imsize.height / 2);
@@ -1154,10 +1170,12 @@ namespace cp
 
 		if (isInteractive)
 		{
-			drawReprojectionErrorInternal(imagePoints, objectPoints, rt, tv, true, "error", scale, patternImages);
+			drawReprojectionErrorInternal(imagePoints, objectPoints, rt, tv, true, wname, float(scaleINT), patternImages);
 		}
 		else
 		{
+			//drawReprojectionErrorInternal(imagePoints, objectPoints, rt, tv, false, wname, scale, patternImages);
+			double total_l2 = 0.0;
 			for (int i = 0; i < objectPoints.size(); i++)
 			{
 				Scalar color = Scalar(colorbar.ptr<uchar>(i * step)[0], colorbar.ptr<uchar>(i * step)[1], colorbar.ptr<uchar>(i * step)[2], 0.0);
@@ -1165,14 +1183,18 @@ namespace cp
 				projectPoints(objectPoints[i], rt[i], tv[i], intrinsic, distortion, reprojectPoints);
 				for (int n = 0; n < reprojectPoints.size(); n++)
 				{
-					float dx = imagePoints[i][n].x - reprojectPoints[n].x;
-					float dy = imagePoints[i][n].y - reprojectPoints[n].y;
+					const float dx = imagePoints[i][n].x - reprojectPoints[n].x;
+					const float dy = imagePoints[i][n].y - reprojectPoints[n].y;
+					total_l2 += sqrt(dx * dx + dy * dy);
 					terror = fma(dx, dx, fma(dy, dy, terror));
-					drawPlus(show, center + Point(cvRound(dx * scale), cvRound(dy * scale)), 2, color, 2);
+					drawPlus(show, center + Point(cvRound(dx * scaleINT), cvRound(dy * scaleINT)), 2, color, 2);
 				}
 				//imshow("error", show);waitKey();
 			}
-			putText(show, format("%6.4f", length * 0.5 / scale), Point(length / 2 - 30, length / 2), FONT_HERSHEY_SCRIPT_SIMPLEX, 0.5, COLOR_GRAY50);
+			//reprojection error: average of L2 norm
+			putText(show, format("ave L2: %8.6f", total_l2 / (objectPoints.size() * objectPoints[0].size())), Point(10, 20), FONT_HERSHEY_SIMPLEX, 0.5, COLOR_GRAY50);
+			putText(show, format("reperr: %8.6f", sqrt(terror / (objectPoints.size() * objectPoints[0].size()))), Point(10, 40), FONT_HERSHEY_SIMPLEX, 0.5, COLOR_GRAY50);
+			putText(show, format("%6.4f", length * 0.5 / scaleINT), Point(length / 2 - 30, length / 2), FONT_HERSHEY_SCRIPT_SIMPLEX, 0.5, COLOR_GRAY50);
 			circle(show, center, length / 2, COLOR_GRAY100);
 			drawGridMulti(show, Size(4, 4), COLOR_GRAY200);
 			imshow(wname, show);
