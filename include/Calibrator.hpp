@@ -74,5 +74,6 @@ namespace cp
 		void drawReprojectionErrorFromExtraPoints(const std::vector<cv::Point2f>& points, const bool isWait = true, const std::string wname = "error", const float scale = 1000.f, const cv::Mat& patternImage = cv::Mat(), const int patternType = 0, const bool isUseInternalData = false);
 
 		void drawDistortion(std::string wname = "distortion", const bool isInteractive = false);
+		void drawReCalibration(std::string wname = "recalibration", const int flag = 0);
 	};
 }
