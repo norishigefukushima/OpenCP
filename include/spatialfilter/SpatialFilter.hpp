@@ -54,13 +54,15 @@ namespace cp
 		SlidingDCT3_AVX,
 		SlidingDCT5_AVX,
 		SlidingDCT7_AVX,
-		FIR_OPENCV,
-		FIR_SEPARABLE,//under debug
-		FIR_Sep2D_OPENCV,//call sepFilter2D
-		FIR_OPENCV2D,//call filter2D
-		DCT_AVX,
+		FIR_OPENCV_GAUSSIAN,
+		FIR_OPENCV_GAUSSIAN64F,
+		FIR_OPENCV_SEP2D,//call sepFilter2D
+		FIR_OPENCV_FILTER2D,//call filter2D
 		FIR_KAHAN,
+		DCTFULL_OPENCV,
+		FIR_SEPARABLE,//under debug
 		BOX,
+
 		SlidingDCT1_CONV,
 		SlidingDCT1_64_AVX,
 		SlidingDCT3_16_AVX,
@@ -79,7 +81,6 @@ namespace cp
 		SlidingDCT7_VXY,
 		SlidingDCT7_CONV,
 		SlidingDCT7_64_AVX,
-		FIR_OPENCV_64F,
 		SIZE,
 
 		//some wrapper function does not support as follows
@@ -118,10 +119,10 @@ namespace cp
 		SlidingDCT7_VXY,
 		SlidingDCT7_CONV,
 		SlidingDCT7_64_AVX,
-		DCT_AVX,
-		FIR_OPENCV,
-		FIR_Sep2D_OPENCV,
-		FIR_OPENCV_64F,
+		DCTALL_OPENCV,
+		FIR_OPENCV_GAUSSIAN,
+		FIR_OPENCV_SEP2D,
+		FIR_OPENCV_GAUSSIAN64F,
 		FIR_KAHAN,
 
 		SIZE,
@@ -133,10 +134,7 @@ namespace cp
 	};
 #endif
 
-	CP_EXPORT std::string getAlgorithmName(SpatialFilterAlgorithm method);
-	CP_EXPORT std::string getAlgorithmNameShort(SpatialFilterAlgorithm method);
-
-	inline int cliped_order(const int order, SpatialFilterAlgorithm m)
+	inline int clipOrder(const int order, SpatialFilterAlgorithm m)
 	{
 		int cliped = order;
 
@@ -171,6 +169,9 @@ namespace cp
 		}
 		return cliped;
 	}
+
+	CP_EXPORT std::string getAlgorithmName(SpatialFilterAlgorithm method);
+	CP_EXPORT std::string getAlgorithmNameShort(SpatialFilterAlgorithm method);
 
 	//base class for Smoothing filter
 	enum class SpatialKernel
@@ -246,7 +247,7 @@ namespace cp
 		void filter(const cv::Mat& src, cv::Mat& dst, const double sigma, const int order, const int borderType = cv::BORDER_DEFAULT)override;
 	};
 
-	class CP_EXPORT GaussianFilterFIROpenCV2D : public SpatialFilterBase
+	class CP_EXPORT GaussianFilterFIROpenCVFilter2D : public SpatialFilterBase
 	{
 	private:
 		cv::Mat internalBuff;
@@ -254,15 +255,15 @@ namespace cp
 		int d = 0;
 
 	public:
-		GaussianFilterFIROpenCV2D(cv::Size img_size, double sigma, int trunc, int depth);
-		GaussianFilterFIROpenCV2D(const int internal_depth, const bool isCompute32F);
-		~GaussianFilterFIROpenCV2D();
+		GaussianFilterFIROpenCVFilter2D(cv::Size img_size, double sigma, int trunc, int depth);
+		GaussianFilterFIROpenCVFilter2D(const int internal_depth, const bool isCompute32F);
+		~GaussianFilterFIROpenCVFilter2D();
 
 		void body(const cv::Mat& src, cv::Mat& dst, const int borderType)override;
 		void filter(const cv::Mat& src, cv::Mat& dst, const double sigma, const int order, const int borderType = cv::BORDER_DEFAULT)override;
 	};
 
-	class CP_EXPORT GaussianFilterFIRSep2DOpenCV : public SpatialFilterBase
+	class CP_EXPORT GaussianFilterFIROpenCVSep2D : public SpatialFilterBase
 	{
 	private:
 		cv::Mat internalBuff;
@@ -270,9 +271,9 @@ namespace cp
 		int d = 0;
 
 	public:
-		GaussianFilterFIRSep2DOpenCV(cv::Size img_size, double sigma, int trunc, int depth);
-		GaussianFilterFIRSep2DOpenCV(const int internal_depth, const bool isCompute32F);
-		~GaussianFilterFIRSep2DOpenCV();
+		GaussianFilterFIROpenCVSep2D(cv::Size img_size, double sigma, int trunc, int depth);
+		GaussianFilterFIROpenCVSep2D(const int internal_depth, const bool isCompute32F);
+		~GaussianFilterFIROpenCVSep2D();
 
 		void body(const cv::Mat& src, cv::Mat& dst, const int borderType)override;
 		void filter(const cv::Mat& src, cv::Mat& dst, const double sigma, const int order, const int borderType = cv::BORDER_DEFAULT)override;
@@ -1278,7 +1279,7 @@ namespace cp
 #pragma endregion
 
 #pragma region DCT
-	class CP_EXPORT SpatialFilterDCT_AVX_32F : public SpatialFilterBase
+	class CP_EXPORT SpatialFilterFullDCT_AVX_32F : public SpatialFilterBase
 	{
 	private:
 		cv::Mat inter;
@@ -1294,16 +1295,16 @@ namespace cp
 		void allocLUT();
 		void setGaussianKernel(const bool isForcedUpdate);
 	public:
-		SpatialFilterDCT_AVX_32F(cv::Size img_size, float sigma_space, int order);
-		SpatialFilterDCT_AVX_32F(const int dest_depth);
-		~SpatialFilterDCT_AVX_32F();
+		SpatialFilterFullDCT_AVX_32F(cv::Size img_size, float sigma_space, int order);
+		SpatialFilterFullDCT_AVX_32F(const int dest_depth);
+		~SpatialFilterFullDCT_AVX_32F();
 
 		void body(const cv::Mat& src, cv::Mat& dst, int borderType)override;
 		//order is no meaning, border is always BORDER_REFLECT due to DCTII transform
 		void filter(const cv::Mat& src, cv::Mat& dst, const double sigma, const int order, const int border = cv::BORDER_REFLECT)override;
 	};
 
-	class CP_EXPORT SpatialFilterDCT_AVX_64F : public SpatialFilterBase
+	class CP_EXPORT SpatialFilterFullDCT_AVX_64F : public SpatialFilterBase
 	{
 	private:
 		cv::Mat inter;
@@ -1319,9 +1320,9 @@ namespace cp
 		void allocLUT();
 
 	public:
-		SpatialFilterDCT_AVX_64F(cv::Size img_size, double sigma_space, int order);
-		SpatialFilterDCT_AVX_64F(const int dest_depth);
-		~SpatialFilterDCT_AVX_64F();
+		SpatialFilterFullDCT_AVX_64F(cv::Size img_size, double sigma_space, int order);
+		SpatialFilterFullDCT_AVX_64F(const int dest_depth);
+		~SpatialFilterFullDCT_AVX_64F();
 
 		void body(const cv::Mat& src, cv::Mat& dst, const int borderType)override;
 		//order is no meaning, border is always BORDER_REFLECT due to DCT-II transform
@@ -1339,11 +1340,11 @@ namespace cp
 	protected:
 		cv::Ptr<SpatialFilterBase> gauss = nullptr;
 	public:
-		SpatialFilter(const cp::SpatialFilterAlgorithm method, const int depth, const SpatialKernel skernel = SpatialKernel::GAUSSIAN, const int option = 0);
+		SpatialFilter(const cp::SpatialFilterAlgorithm method, const int dest_depth, const SpatialKernel skernel = SpatialKernel::GAUSSIAN, const int dct_option = 0);
 
 		void filter(const cv::Mat& src, cv::Mat& dst, const double sigma, const int order, const int borderType = cv::BORDER_DEFAULT);
 
-		cp::SpatialFilterAlgorithm getMethodType();
+		cp::SpatialFilterAlgorithm getAlgorithmType();
 		int getOrder();
 		double getSigma();
 		cv::Size getSize();

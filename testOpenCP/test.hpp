@@ -107,3 +107,6 @@ void imshowAnalysis(cv::String winname, cv::Mat& src);
 
 void testMultiScaleFilter();
 void testUnnormalizedBilateralFilter();
+
+//SpatialFilter
+void testSpatialFilter(cv::Mat& src);

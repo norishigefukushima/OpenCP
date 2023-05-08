@@ -10,10 +10,10 @@ namespace cp
 		std::string ret;
 		switch (method)
 		{
-		case SpatialFilterAlgorithm::FIR_OPENCV:			ret = "FIR_OPENCV";			break;
-		case SpatialFilterAlgorithm::FIR_Sep2D_OPENCV:		ret = "FIR_Sep2D_OPENCV";	break;
-		case SpatialFilterAlgorithm::FIR_OPENCV2D:			ret = "FIR_OPENCV2D";		break;
-		case SpatialFilterAlgorithm::FIR_OPENCV_64F:		ret = "FIR_OPENCV_64F";		break;
+		case SpatialFilterAlgorithm::FIR_OPENCV_GAUSSIAN:	ret = "FIR_OPENCV_GAUSSIAN";break;
+		case SpatialFilterAlgorithm::FIR_OPENCV_GAUSSIAN64F:ret = "FIR_OPENCV_GAUSSIAN64F";		break;
+		case SpatialFilterAlgorithm::FIR_OPENCV_SEP2D:		ret = "FIR_OPENCV_SEP2D";	break;
+		case SpatialFilterAlgorithm::FIR_OPENCV_FILTER2D:	ret = "FIR_OPENCV_FILTER2D";break;
 		case SpatialFilterAlgorithm::FIR_SEPARABLE:			ret = "FIR_SEPARABLE";		break;
 		case SpatialFilterAlgorithm::FIR_KAHAN:				ret = "FIR_KAHAN";			break;
 
@@ -52,7 +52,7 @@ namespace cp
 		case SpatialFilterAlgorithm::SlidingDCT7_64_AVX:	ret = "SlidingDCT-7_64F_AVX"; break;
 
 
-		case SpatialFilterAlgorithm::DCT_AVX:				ret = "DCT_AVX";			break;
+		case SpatialFilterAlgorithm::DCTFULL_OPENCV:		ret = "FullDCT_OPENCV";		break;
 		default:											ret = "";					break;
 		}
 
@@ -64,12 +64,12 @@ namespace cp
 		std::string ret;
 		switch (method)
 		{
-		case SpatialFilterAlgorithm::FIR_OPENCV:			ret = "FIR";			break;
-		case SpatialFilterAlgorithm::FIR_Sep2D_OPENCV:		ret = "FIR";	break;
-		case SpatialFilterAlgorithm::FIR_OPENCV2D:			ret = "FIR";		break;
-		case SpatialFilterAlgorithm::FIR_OPENCV_64F:		ret = "FIR";		break;
+		case SpatialFilterAlgorithm::FIR_OPENCV_GAUSSIAN:	ret = "FIR";		break;
+		case SpatialFilterAlgorithm::FIR_OPENCV_SEP2D:		ret = "FIR";		break;
+		case SpatialFilterAlgorithm::FIR_OPENCV_FILTER2D:	ret = "FIR";		break;
+		case SpatialFilterAlgorithm::FIR_OPENCV_GAUSSIAN64F:ret = "FIR";		break;
 		case SpatialFilterAlgorithm::FIR_SEPARABLE:			ret = "FIR";		break;
-		case SpatialFilterAlgorithm::FIR_KAHAN:				ret = "FIR_KAHAN";			break;
+		case SpatialFilterAlgorithm::FIR_KAHAN:				ret = "FIR_KAHAN";	break;
 
 		case SpatialFilterAlgorithm::IIR_AM:				ret = "IIR_AM";				break;
 		case SpatialFilterAlgorithm::IIR_AM_NAIVE:			ret = "IIR_AM_NAIVE";		break;
@@ -106,8 +106,8 @@ namespace cp
 		case SpatialFilterAlgorithm::SlidingDCT7_64_AVX:	ret = "SlidingDCT-7"; break;
 
 
-		case SpatialFilterAlgorithm::DCT_AVX:				ret = "DCT";			break;
-		default:											ret = "";					break;
+		case SpatialFilterAlgorithm::DCTFULL_OPENCV:		ret = "FullDCT";		break;
+		default:											ret = "";				break;
 		}
 
 		return ret;
@@ -172,25 +172,25 @@ namespace cp
 #pragma endregion
 
 
-	cv::Ptr<cp::SpatialFilterBase> createSpatialFilter(const cp::SpatialFilterAlgorithm method, const int dest_depth, const SpatialKernel skernel, const int option)
+	cv::Ptr<cp::SpatialFilterBase> createSpatialFilter(const cp::SpatialFilterAlgorithm method, const int dest_depth, const SpatialKernel skernel, const int dct_option)
 	{
-		const DCT_COEFFICIENTS dct_coeff = (option == 0) ? DCT_COEFFICIENTS::FULL_SEARCH_OPT : DCT_COEFFICIENTS::FULL_SEARCH_NOOPT;
+		const DCT_COEFFICIENTS dct_coeff = (dct_option == 0) ? DCT_COEFFICIENTS::FULL_SEARCH_OPT : DCT_COEFFICIENTS::FULL_SEARCH_NOOPT;
 
 		if (dest_depth == CV_8U || dest_depth == CV_32F)
 		{
 			switch (method)
 			{
-			case SpatialFilterAlgorithm::DCT_AVX:
-				return cv::Ptr<cp::SpatialFilterBase>(new SpatialFilterDCT_AVX_32F(dest_depth)); break;
+			case SpatialFilterAlgorithm::DCTFULL_OPENCV:
+				return cv::Ptr<cp::SpatialFilterBase>(new SpatialFilterFullDCT_AVX_32F(dest_depth)); break;
 
-			case SpatialFilterAlgorithm::FIR_OPENCV:
+			case SpatialFilterAlgorithm::FIR_OPENCV_GAUSSIAN:
 				return cv::Ptr<cp::SpatialFilterBase>(new GaussianFilterFIROpenCV(dest_depth, true)); break;
-			case SpatialFilterAlgorithm::FIR_OPENCV_64F:
+			case SpatialFilterAlgorithm::FIR_OPENCV_GAUSSIAN64F:
 				return cv::Ptr<cp::SpatialFilterBase>(new GaussianFilterFIROpenCV(dest_depth, false)); break;
-			case SpatialFilterAlgorithm::FIR_Sep2D_OPENCV:
-				return cv::Ptr<cp::SpatialFilterBase>(new GaussianFilterFIRSep2DOpenCV(dest_depth, true)); break;
-			case SpatialFilterAlgorithm::FIR_OPENCV2D:
-				return cv::Ptr<cp::SpatialFilterBase>(new GaussianFilterFIROpenCV2D(dest_depth, true)); break;
+			case SpatialFilterAlgorithm::FIR_OPENCV_SEP2D:
+				return cv::Ptr<cp::SpatialFilterBase>(new GaussianFilterFIROpenCVSep2D(dest_depth, true)); break;
+			case SpatialFilterAlgorithm::FIR_OPENCV_FILTER2D:
+				return cv::Ptr<cp::SpatialFilterBase>(new GaussianFilterFIROpenCVFilter2D(dest_depth, true)); break;
 			case SpatialFilterAlgorithm::FIR_KAHAN:
 				return cv::Ptr<cp::SpatialFilterBase>(new GaussianFilterFIRKahan(dest_depth)); break;
 			case SpatialFilterAlgorithm::FIR_SEPARABLE:
@@ -266,16 +266,16 @@ namespace cp
 		{
 			switch (method)
 			{
-			case SpatialFilterAlgorithm::DCT_AVX:
-				return cv::Ptr<cp::SpatialFilterBase>(new SpatialFilterDCT_AVX_64F(dest_depth)); break;
+			case SpatialFilterAlgorithm::DCTFULL_OPENCV:
+				return cv::Ptr<cp::SpatialFilterBase>(new SpatialFilterFullDCT_AVX_64F(dest_depth)); break;
 
-			case SpatialFilterAlgorithm::FIR_OPENCV:
-			case SpatialFilterAlgorithm::FIR_OPENCV_64F:
+			case SpatialFilterAlgorithm::FIR_OPENCV_GAUSSIAN:
+			case SpatialFilterAlgorithm::FIR_OPENCV_GAUSSIAN64F:
 				return cv::Ptr<cp::SpatialFilterBase>(new GaussianFilterFIROpenCV(dest_depth, false)); break;
-			case SpatialFilterAlgorithm::FIR_Sep2D_OPENCV:
-				return cv::Ptr<cp::SpatialFilterBase>(new GaussianFilterFIRSep2DOpenCV(dest_depth, false)); break;
-			case SpatialFilterAlgorithm::FIR_OPENCV2D:
-				return cv::Ptr<cp::SpatialFilterBase>(new GaussianFilterFIROpenCV2D(dest_depth, false)); break;
+			case SpatialFilterAlgorithm::FIR_OPENCV_SEP2D:
+				return cv::Ptr<cp::SpatialFilterBase>(new GaussianFilterFIROpenCVSep2D(dest_depth, false)); break;
+			case SpatialFilterAlgorithm::FIR_OPENCV_FILTER2D:
+				return cv::Ptr<cp::SpatialFilterBase>(new GaussianFilterFIROpenCVFilter2D(dest_depth, false)); break;
 			case SpatialFilterAlgorithm::FIR_KAHAN:
 				return cv::Ptr<cp::SpatialFilterBase>(new GaussianFilterFIRKahan(dest_depth)); break;
 			case SpatialFilterAlgorithm::FIR_SEPARABLE:
@@ -341,7 +341,7 @@ namespace cp
 		gauss = createSpatialFilter(method, dest_depth, skernel, option);
 	}
 
-	SpatialFilterAlgorithm SpatialFilter::getMethodType()
+	SpatialFilterAlgorithm SpatialFilter::getAlgorithmType()
 	{
 		return gauss->getAlgorithmType();
 	}

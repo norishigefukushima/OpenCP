@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "spatialfilter/SpatialFilter.hpp"
 
 #define USE_FMA_DERICHE
 
@@ -546,7 +547,7 @@ namespace cp
 	GaussianFilterDERICHE_AVX_32F::GaussianFilterDERICHE_AVX_32F(cv::Size imgSize, float sigma, int order)
 		: SpatialFilterBase(imgSize, CV_32F)
 	{
-		this->gf_order = order;
+		this->gf_order = clipOrder(order, SpatialFilterAlgorithm::IIR_DERICHE);
 		this->sigma = sigma;
 		allocBuffer();
 	}
@@ -2754,10 +2755,12 @@ namespace cp
 
 	void GaussianFilterDERICHE_AVX_32F::filter(const cv::Mat& src, cv::Mat& dst, const double sigma, const int order, const int borderType)
 	{
-		if (this->sigma != sigma || this->gf_order != order || this->imgSize != src.size())
+		int corder = clipOrder(order, SpatialFilterAlgorithm::IIR_DERICHE);
+		
+		if (this->sigma != sigma || this->gf_order != corder || this->imgSize != src.size())
 		{
 			this->sigma = sigma;
-			this->gf_order = order;
+			this->gf_order = corder;
 			this->imgSize = src.size();
 			allocBuffer();
 		}
@@ -2842,7 +2845,7 @@ namespace cp
 	GaussianFilterDERICHE_AVX_64F::GaussianFilterDERICHE_AVX_64F(cv::Size imgSize, double sigma, int order)
 		: SpatialFilterBase(imgSize, CV_64F)
 	{
-		this->gf_order = order;
+		this->gf_order = clipOrder(order, SpatialFilterAlgorithm::IIR_DERICHE);
 		this->sigma = sigma;
 		allocBuffer();
 	}
@@ -3997,10 +4000,11 @@ namespace cp
 
 	void GaussianFilterDERICHE_AVX_64F::filter(const cv::Mat& src, cv::Mat& dst, const double sigma, const int order, const int borderType)
 	{
-		if (this->sigma != sigma || this->gf_order != order || this->imgSize != src.size())
+		int corder = clipOrder(order, SpatialFilterAlgorithm::IIR_DERICHE);
+		if (this->sigma != sigma || this->gf_order != corder || this->imgSize != src.size())
 		{
 			this->sigma = sigma;
-			this->gf_order = order;
+			this->gf_order = corder;
 			this->imgSize = src.size();
 			allocBuffer();
 		}

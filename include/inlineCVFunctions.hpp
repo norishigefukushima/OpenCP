@@ -242,7 +242,7 @@ namespace cp
 		if (src.type() == CV_8UC3)return src.getMat();
 		cv::Mat ret;
 		src.getMat().convertTo(ret, CV_8U);
-		if(src.channels()==1) cvtColor(ret, ret, cv::COLOR_GRAY2BGR);
+		if (src.channels() == 1) cvtColor(ret, ret, cv::COLOR_GRAY2BGR);
 		return ret;
 	}
 
@@ -279,6 +279,23 @@ namespace cp
 		case CV_64F:ret = "CV_64F"; break;
 		case CV_16F:ret = "CV_16F"; break;
 		default: ret = "not support this type of depth."; break;
+		}
+		return ret;
+	}
+
+	inline std::string getBorderName(int borderType)
+	{
+		std::string ret="";
+		switch (borderType)
+		{
+		case cv::BORDER_CONSTANT:		ret = "BORDER_CONSTANT"; break;
+		case cv::BORDER_REPLICATE:		ret = "BORDER_REPLICATE"; break;
+		case cv::BORDER_REFLECT:		ret = "BORDER_REFLECT"; break;
+		case cv::BORDER_WRAP:			ret = "BORDER_WRAP"; break;
+		case cv::BORDER_REFLECT_101:	ret = "BORDER_REFLECT101(default)"; break;
+		case cv::BORDER_TRANSPARENT:	ret = "BORDER_TRANSPARENT"; break;
+		case cv::BORDER_ISOLATED:		ret = "BORDER_ISOLATED"; break;
+		default:						ret = "not support this type of border."; break;
 		}
 		return ret;
 	}

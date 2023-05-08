@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "spatialfilter/SpatialFilter.hpp"
 
 using namespace std;
 using namespace cv;
@@ -181,7 +182,7 @@ namespace cp
 	GaussianFilterAM_AVX_32F::GaussianFilterAM_AVX_32F(cv::Size imgSize, float sigma, int order)
 		: SpatialFilterBase(imgSize, CV_32F)
 	{
-		this->gf_order = order;
+		this->gf_order = clipOrder(order, SpatialFilterAlgorithm::IIR_AM);
 		this->sigma = sigma;
 
 		allocBuffer();
@@ -507,10 +508,11 @@ namespace cp
 
 	void GaussianFilterAM_AVX_32F::filter(const cv::Mat& src, cv::Mat& dst, const double sigma, const int order, const int borderType)
 	{
-		if (this->sigma != sigma || this->gf_order != order || imgSize != src.size())
+		int corder = clipOrder(order, SpatialFilterAlgorithm::IIR_AM);
+		if (this->sigma != sigma || this->gf_order != corder || imgSize != src.size())
 		{
 			this->sigma = sigma;
-			this->gf_order = order;
+			this->gf_order = corder;
 			this->imgSize = src.size();
 			allocBuffer();
 		}
@@ -543,7 +545,7 @@ namespace cp
 	GaussianFilterAM_AVX_64F::GaussianFilterAM_AVX_64F(cv::Size imgSize, double sigma, int order)
 		: SpatialFilterBase(imgSize, CV_64F)
 	{
-		this->gf_order = order;
+		this->gf_order = clipOrder(order, SpatialFilterAlgorithm::IIR_AM);
 		this->sigma = sigma;
 
 		allocBuffer();
@@ -760,10 +762,11 @@ namespace cp
 
 	void GaussianFilterAM_AVX_64F::filter(const cv::Mat& src, cv::Mat& dst, const double sigma, const int order, const int borderType)
 	{
-		if (this->sigma != sigma || this->gf_order != order || imgSize != src.size())
+		int corder = clipOrder(order, SpatialFilterAlgorithm::IIR_AM);
+		if (this->sigma != sigma || this->gf_order != corder || imgSize != src.size())
 		{
 			this->sigma = sigma;
-			this->gf_order = order;
+			this->gf_order = corder;
 			this->imgSize = src.size();
 			allocBuffer();
 		}

@@ -28,6 +28,7 @@ string getInformation()
 	ret += format("cv::getNumberOfCPUs = %d\n", cv::getNumberOfCPUs());
 	ret += format("cv::getNumThreads = %d\n", cv::getNumThreads());
 	ret += getCPUFeaturesLine() + "\n";
+	ret += getCPUFeaturesLine() + "\n";
 	ret += "==============\n";
 
 	return ret;
@@ -462,147 +463,6 @@ vector<Mat> readYUV420(string fname, Size size)
 	return ret;
 }
 
-void JPEG(string name)
-{
-	FILE* fp = fopen(name.c_str(), "rb");
-	uchar* buff = new uchar[1024 * 768 * 3];
-	const size_t size = fread(buff, sizeof(uchar), 1024 * 768 * 3, fp);
-
-	print_debug(size);
-	for (int i = 0; i < size - 1; i++)
-	{
-		if (buff[i] == 0xFF && buff[i + 1] == 0xFF)
-		{
-			cout << "FFFF" << endl;
-			//i++;
-			//continue;
-		}
-		/*else if(buff[i] == 0xFF && buff[i + 1] != 0xFF)
-		{
-			printf("%x\n", buff[i + 1]);
-		}*/
-
-		/*
-		if (buff[i] == 0xFF && buff[i + 1] == 0xE0)
-		{
-			cout << "APP: FFE0　　　　　　　　　| " << i << endl;
-		}
-		if (buff[i] == 0xFF && buff[i + 1] == 0xE1)
-		{
-			cout << "APP: FFE1　　　　　　　　　| " << i << endl;
-		}
-		if (buff[i] == 0xFF && buff[i + 1] == 0xE2)
-		{
-			cout << "APP: FFE2　　　　　　　　　| " << i << endl;
-		}
-		if (buff[i] == 0xFF && buff[i + 1] == 0xE3)
-		{
-			cout << "APP: FFE3　　　　　　　　　| " << i << endl;
-		}
-
-
-		if (buff[i] == 0xFF && buff[i] == 0xC0)
-		{
-			cout << "SoF: FFC0　　　　　　　　　| " << i << endl;
-		}
-		if (buff[i] == 0xFF && buff[i] == 0xC1)
-		{
-			cout << "SoF: FFC1　　　　　　　　　| " << i << endl;
-		}
-		if (buff[i] == 0xFF && buff[i] == 0xC2)
-		{
-			cout << "SoF: FFC2　　　　　　　　　| " << i << endl;
-		}
-		if (buff[i] == 0xFF && buff[i] == 0xC3)
-		{
-			cout << "SoF: FFC3　　　　　　　　　| " << i << endl;
-		}
-		if (buff[i] == 0xFF && buff[i] == 0xC8)
-		{
-			cout << "SoF: FFC8（JPEG拡張） 　　　| " << i << endl;
-		}
-
-		if (buff[i] == 0xFF && buff[i + 1] == 0xD8)
-		{
-			cout << "SOI: FFD8（画像開始）　　　| " << i << endl;
-		}
-		if (buff[i] == 0xFF && buff[i + 1] == 0xD9)
-		{
-			cout << "EOI: FFD9(画像終了)　　　　| " << i+1 << endl;
-		}
-		if (buff[i] == 0xFF && buff[i + 1] == 0xDA)
-		{
-			cout << "SOS: FFDA(スキャン開始)　　| " << i + 1 << endl;
-		}
-
-		if (buff[i] == 0xFF && buff[i + 1] == 0xDE)
-		{
-			cout << "DHP: FFDE(階層行定義)　　　| " << i + 1 << endl;
-		}
-		if (buff[i] == 0xFF && buff[i + 1] == 0xDF)
-		{
-			cout << "EXP: FFDF(拡張参照)　　　　| " << i + 1 << endl;
-		}
-
-
-		if (buff[i] == 0xFF && buff[i + 1] == 0xDB)
-		{
-			cout << "DQT: FFDB(量子化テーブル)　| " << i << endl;
-		}
-		if (buff[i] == 0xFF && buff[i + 1] == 0xC4)
-		{
-			cout << "DHT: FFC4(ハフマンテーブル)| " << i << endl;
-		}
-
-
-		if (buff[i] == 0xFF && buff[i + 1] == 0xD0)
-		{
-			cout << "RST: FFD0　　　　　　　　　| " << i << endl;
-		}
-		if (buff[i] == 0xFF && buff[i + 1] == 0xD1)
-		{
-			cout << "RST: FFD1　　　　　　　　　| " << i << endl;
-		}
-		if (buff[i] == 0xFF && buff[i + 1] == 0xD2)
-		{
-			cout << "RST: FFD2　　　　　　　　　| " << i << endl;
-		}
-		if (buff[i] == 0xFF && buff[i + 1] == 0xD3)
-		{
-			cout << "RST: FFD3　　　　　　　　　| " << i << endl;
-		}
-		if (buff[i] == 0xFF && buff[i + 1] == 0xD4)
-		{
-			cout << "RST: FFD4　　　　　　　　　| " << i << endl;
-		}
-		if (buff[i] == 0xFF && buff[i + 1] == 0xD5)
-		{
-			cout << "RST: FFD5　　　　　　　　　| " << i << endl;
-		}
-		if (buff[i] == 0xFF && buff[i + 1] == 0xD6)
-		{
-			cout << "RST: FFD6　　　　　　　　　| " << i << endl;
-		}
-		if (buff[i] == 0xFF && buff[i + 1] == 0xD7)
-		{
-			cout << "RST: FFD7　　　　　　　　　| " << i << endl;
-		}
-		*/
-
-
-	}
-
-	{
-		FILE* fp = fopen("test1.jpg", "wb");
-
-		//fwrite(buff + 860921, sizeof(char), 560698 - 2332 + 2, fp);
-		fwrite(buff, sizeof(char), 860926, fp);
-	}
-	delete[] buff;
-
-}
-
-
 void webPAnimationTest()
 {
 	//Webp test
@@ -650,8 +510,20 @@ void webPAnimationTest()
 	cout << size / 1024.0 << " Kbyte" << endl;
 }
 
+
 int main(int argc, char** argv)
 {
+	const bool isShowInfo = true;
+	if (isShowInfo)
+	{
+		cout << getInformation() << endl; 
+		cout << cv::getBuildInformation() << endl;
+	}
+	
+	//cv::ipp::setUseIPP(false);
+	//cv::setUseOptimized(false);
+
+
 	//webPAnimationTest(); return 0;
 	//testSpearmanRankOrderCorrelationCoefficient(); return 0;
 	/*__m256i a = _mm256_set_step_epi32(0);
@@ -665,12 +537,7 @@ int main(int argc, char** argv)
 
 	//print_uchar(_mm256_packus_epi16(_mm256_packus_epi32(a, b), _mm256_packus_epi32(c, d)));
 	return 0;*/
-	/*
-	cout << getInformation() << endl; return 0;
-	cout << cv::getBuildInformation() << endl;
-	cv::ipp::setUseIPP(false);
-	cv::setUseOptimized(false);
-	*/
+	
 	//testUnnormalizedBilateralFilter(); return 0;
 	//testMultiScaleFilter(); return 0;
 
@@ -681,7 +548,8 @@ int main(int argc, char** argv)
 #pragma region setup
 	//Mat img = imread("img/lenna.png");
 	Mat img = imread("img/Kodak/kodim07.png");
-
+	Mat gra = imread("img/Kodak/kodim07.png",0);
+	testSpatialFilter(gra);
 	//rangeBlurFilterRef(aa, t0, 5, 3);
 	//rangeBlurFilter(aa, t1, 5, 3);
 	//guiAlphaBlend(convert(t0,CV_8U), convert(t1,CV_8U));

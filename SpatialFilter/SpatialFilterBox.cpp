@@ -7,25 +7,30 @@ namespace cp
 {
 	SpatialFilterBox::SpatialFilterBox(const cp::BoxFilterMethod boxfilter_type, const int dest_depth)
 	{
+		this->boxfilter_type = boxfilter_type;
 		this->dest_depth = dest_depth;
 		this->depth = dest_depth;
 	}
 
 	void SpatialFilterBox::body(const cv::Mat& src, cv::Mat& dst, int borderType)
 	{
-		//boxFilter(src, dst, src.depth(), Size(2 * radius + 1, 2 * radius + 1), Point(-1, -1), true, border);
-		//blur(src, dst, Size(2 * radius + 1, 2 * radius + 1), Point(-1, -1), border);
-		
-		if (src.depth() == dest_depth)
+		if (boxfilter_type == BoxFilterMethod::OPENCV)
 		{
-			switch (dest_depth)
+			boxFilter(src, dst, dest_depth, Size(2 * radius + 1, 2 * radius + 1), Point(-1, -1), true, borderType);
+			//blur(src, dst, Size(2 * radius + 1, 2 * radius + 1), Point(-1, -1), border);
+		}
+		else
+		{
+			if (src.depth() == dest_depth)
 			{
-				
-			case CV_8U: cp::boxFilter_8u(const_cast<Mat&>(src), dst, radius, boxfilter_type, NAIVE);break;
-			case CV_32F: cp::boxFilter_32f(const_cast<Mat&>(src), dst, radius, boxfilter_type, NAIVE);break;
-			case CV_64F: cp::boxFilter_64f(const_cast<Mat&>(src), dst, radius, boxfilter_type, NAIVE);break;
-			default:
-				break;
+				switch (dest_depth)
+				{
+				case CV_8U: cp::boxFilter_8u(const_cast<Mat&>(src), dst, radius, boxfilter_type, NAIVE); break;
+				case CV_32F: cp::boxFilter_32f(const_cast<Mat&>(src), dst, radius, boxfilter_type, NAIVE); break;
+				case CV_64F: cp::boxFilter_64f(const_cast<Mat&>(src), dst, radius, boxfilter_type, NAIVE); break;
+				default:
+					break;
+				}
 			}
 		}
 		//
@@ -40,5 +45,4 @@ namespace cp
 
 		body(src, dst, borderType);
 	}
-
 }
