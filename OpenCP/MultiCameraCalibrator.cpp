@@ -478,7 +478,7 @@ namespace cp
 	}
 
 
-	void MultiCameraCalibrator::operator ()(const int flags, int refCamera1, int refCamera2, const bool isIndependentCalibration)
+	double MultiCameraCalibrator::operator ()(const int flags, int refCamera1, int refCamera2, const bool isIndependentCalibration)
 	{
 		if (refCamera1 == 0 && refCamera2 == 0)
 		{
@@ -488,7 +488,7 @@ namespace cp
 		if (numofchessboards < 1)
 		{
 			std::cout << "input 2 or more chessboards" << std::endl;
-			return;
+			return 0.0;
 		}
 
 		if (isIndependentCalibration)
@@ -519,12 +519,13 @@ namespace cp
 
 		rectifyMultiCollinear(intrinsic, distortion, refCamera1, refCamera2, imagePoints, imageSize, reR, reT, R, P, Q, -1.0, imageSize, 0, 0, rect_flag);
 		initRemap();
+		return rep_error;
 	}
 
-	void MultiCameraCalibrator::calibration(const int flags, int refCamera1, int refCamera2, const bool isIndependentCalibration)
+	double MultiCameraCalibrator::calibration(const int flags, int refCamera1, int refCamera2, const bool isIndependentCalibration)
 	{
 		this->flag = flags;
-		operator()(flags, refCamera1, refCamera2);
+		return operator()(flags, refCamera1, refCamera2);
 	}
 
 	void MultiCameraCalibrator::rectifyImageRemap(Mat& src, Mat& dest, int numofcamera, const int interpolation)

@@ -69,8 +69,8 @@ namespace cp
 		void setQ(const cv::Mat& Q);
 
 		//Calibration
-		void calibration(const int flags, int refCamera1 = 0, int refCamera2 = 0, const bool isIndependentCalibration = false);
-		void operator ()(const int flags, int refCamera1 = 0, int refCamera2 = 0, const bool isIndependentCalibration = false);
+		double calibration(const int flags, int refCamera1 = 0, int refCamera2 = 0, const bool isIndependentCalibration = false);
+		double operator ()(const int flags, int refCamera1 = 0, int refCamera2 = 0, const bool isIndependentCalibration = false);
 		void rectifyImageRemap(cv::Mat& src, cv::Mat& dest, int numofcamera, const int interpolation = cv::INTER_LINEAR);
 
 		void printParameters();

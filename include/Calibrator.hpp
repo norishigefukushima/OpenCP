@@ -13,7 +13,7 @@ namespace cp
 	CP_EXPORT void drawPatternIndexNumbers(cv::Mat& dest, const std::vector<cv::Point>& points, const double scale, const cv::Scalar color);
 	CP_EXPORT void drawPatternIndexNumbers(cv::Mat& dest, const std::vector<cv::Point2f>& points, const double scale, const cv::Scalar color);
 	CP_EXPORT void drawDetectedPattern(const cv::Mat& src, cv::Mat& dest, const cv::Size patternSize, const std::vector<cv::Point2f>& points, const bool flag, const double numberFontSize = 0.5, const cv::Scalar numberFontColor = COLOR_ORANGE);
-
+	CP_EXPORT void drawDistortion(cv::Mat& destImage, const cv::Mat& intrinsic, const cv::Mat& distortion, const cv::Size imageSize, const int step, const int thickness, const double amp = 1.0);
 	class CP_EXPORT Calibrator
 	{
 	private:
@@ -38,8 +38,8 @@ namespace cp
 
 		cv::Size patternSize;
 		cv::Size2f lengthofchess;
-		int numofchessboards=0;
-		double rep_error=0.0;
+		int numofchessboards = 0;
+		double rep_error = 0.0;
 
 		std::vector<cv::Mat> rt;
 		std::vector<cv::Mat> tv;
@@ -74,5 +74,6 @@ namespace cp
 		void drawReprojectionErrorFromExtraPoints(const std::vector<cv::Point2f>& points, const bool isWait = true, const std::string wname = "error", const float scale = 1000.f, const cv::Mat& patternImage = cv::Mat(), const int patternType = 0, const bool isUseInternalData = false);
 
 		void drawDistortion(std::string wname = "distortion", const bool isInteractive = false);
+		void drawReCalibration(std::string wname = "recalibration", const int flag = 0);
 	};
 }

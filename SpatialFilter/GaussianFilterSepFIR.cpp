@@ -651,6 +651,12 @@ namespace cp
 	void GaussianFilterSeparableFIR::filter(const Mat& src_, Mat& dest, const int r, const float sigma, int method, int border, int vectorization, bool useAllocBuffer)
 	{
 		Mat src = (Mat)src_;
+		if (src_.depth() == CV_8U)
+		{
+			cout << "src type of CV_8U is not supported (GaussianFilterSeparableFIR::filter). Convert to 32F." << endl;
+			src_.convertTo(src, CV_32F);
+		}
+	
 		if (src.depth() == CV_32F) createGaussianTable32F(r, sigma);
 		else if (src.depth() == CV_64F) createGaussianTable64F(r, sigma);
 
@@ -933,6 +939,8 @@ namespace cp
 		default:
 			break;
 		}
+
+		if (src_.depth() == CV_8U) dest.convertTo(dest, CV_8U);
 	}
 
 	void GaussianFilterSeparableFIR::filter(const Mat& src, Mat& dest, const double sigma, const int order, const int border)

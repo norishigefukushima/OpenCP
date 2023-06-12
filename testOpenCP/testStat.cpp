@@ -6,23 +6,58 @@ using namespace cp;
 
 void testStat()
 {
-	Mat src = imread("img/lenna.png");
-
 	string wname = "testVideoSubtitle";
 	namedWindow(wname);
+	int isInt = 1; createTrackbar("isInt", wname, &isInt, 1);
 	int sw = 0; createTrackbar("sw", wname, &sw, 1);
-	int sigma = 5; createTrackbar("sigma", wname, &sigma, 100);
-	int size = 1; createTrackbar("size", wname, &size, 10000);
+	int sigma = 9; createTrackbar("sigma", wname, &sigma, 100);
+	const int dataMax = 1000000;
+	int size = 1; createTrackbar("size", wname, &size, dataMax);
+	int iteration = 2; createTrackbar("iteration", wname, &iteration, 100); setTrackbarMin("iteration", wname, 1);
 	cp::ConsoleImage ci;
 	cp::Stat st;
 	int key = 0;
+	
 	while (key != 'q')
 	{
 		RNG rng(getTickCount());
-		for (int i = 0; i < 10000; i++)
+		if (sw == 0)
 		{
-			if (sw == 0) st.push_back(rng.gaussian(sigma));
-			else st.push_back(rng.uniform(0.0, (double)sigma));
+			if (isInt == 0)
+			{
+				for (int i = 0; i < dataMax; i++)
+				{
+					double sum = 0.0;
+					for (int n = 0; n < iteration; n++) sum += rng.gaussian(sigma);
+					st.push_back(sum/iteration+127.0);
+				}
+			}
+			else
+			{
+				for (int i = 0; i < dataMax; i++)
+				{
+					double sum = 0.0;
+					for (int n = 0; n < iteration; n++) sum += cvRound(rng.gaussian(sigma));
+					st.push_back(sum/iteration + 127.0);
+				}
+			}
+		}
+		else
+		{
+			if (isInt == 0)
+			{
+				for (int i = 0; i < dataMax; i++)
+				{
+					st.push_back(rng.uniform(0.0, (double)sigma) + 127.0);
+				}
+			}
+			else
+			{
+				for (int i = 0; i < dataMax; i++)
+				{
+					st.push_back(cvRound(rng.uniform(0.0, (double)sigma) + 127.0));
+				}
+			}
 
 		}
 		for (int i = 0; i < size; i++)
@@ -39,7 +74,15 @@ void testStat()
 		ci("std  %8.2f", st.getStd());
 		ci("var  %8.2f", st.getVar());
 		ci.show();
-		st.drawDistribution(wname);
+		if (isInt == 0)
+		{
+			st.drawDistribution(wname);
+		}
+		else
+		{
+			//st.drawDistribution(wname, 256, 0, 255);
+			st.drawDistributionStepSigma(wname, 1.f/iteration, 4.f);
+		}
 		st.clear();
 		key = waitKey(100);
 	}

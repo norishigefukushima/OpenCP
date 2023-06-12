@@ -3,6 +3,8 @@
 #include "matinfo.hpp"
 #include "plot.hpp"
 
+#include "debugcp.hpp"
+
 using namespace std;
 using namespace cv;
 
@@ -116,6 +118,25 @@ namespace cp
 		cout << "var  " << getVar() << endl;
 	}
 
+	void Stat::drawDistributionStep(string wname, const float step)
+	{
+		double min = getMin();
+		double max = getMax();
+		const int div = ceil((max - min) / step);
+		drawDistribution(wname, div, min, max);
+	}
+
+	void Stat::drawDistributionStepSigma(string wname, const float step, const float sigma)
+	{
+		const double ave = getMean();
+		const double std = getStd();
+		double domain = ceil(std * sigma / step) * step;
+		const double min = ave - domain;
+		const double max = ave + domain;
+		const int div = 2.0 * domain / step+1;
+		drawDistribution(wname, div, min, max);
+	}
+
 	void Stat::drawDistribution(string wname, int div)
 	{
 		double min = getMin();
@@ -123,72 +144,89 @@ namespace cp
 		drawDistribution(wname, div, min, max);
 	}
 
+	int size_ceil(int val, int target)
+	{
+		return (val % target == 0) ? val : (val / target + 1) * target;
+	}
+
 	void Stat::drawDistribution(string wname, int div, double minv, double maxv)
 	{
-		if (data.size() == 1)return;
+		if (div <= 2) return;
+		if (data.size() == 1) return;
+		namedWindow(wname);
+		const int tsize = max(256, div);
+		const int size = size_ceil(div, tsize);
+		const int lw = tsize / div;
+
 		double stmax = getMax();
 		double stmin = getMin();
 		if (stmax == stmin) return;
 
-		double stmed = getMedian();
-		double stmean = getMean();
-
+		const double stmed = getMedian();
+		const double stmean = getMean();
+		const double ststd = getStd();
+		Mat draw_ = Mat::zeros(Size(div, 256), CV_8UC3);
 		vector<int> hist(div);
-		for (int i = 0; i < div; i++)hist[i] = 0;
+		vector<double> histval(div);
+		const double range = maxv - minv;
+		const double interval = range / (div - 1);
+		for (int i = 0; i < div; i++)
+		{
+			hist[i] = 0;
+			histval[i] = i * interval + minv;
+		}
 
-		double interval = (maxv - minv) / (div - 1);
 		for (int i = 0; i < data.size(); i++)
 		{
-			double n = min(max((data[i] - minv), 0.0), maxv - minv);
-			int v = (int)(n / interval + 0.5);
+			const double n = min(max((data[i] - minv), 0.0), range);
+			const int v = cvRound(n / interval);
 			hist[v]++;
 		}
 
-		int medv = (int)((stmed - minv) / interval);
-		int meanv = (int)((stmean - minv) / interval);
+		const int medv = cvRound((stmed - minv) / interval);
+		const int meanv = cvRound((stmean - minv) / interval);
 
 		int hmax = 0;
 		for (int i = 0; i < div; i++)
 		{
-			if (hmax < hist[i])hmax = hist[i];
+			hmax = max(hmax, hist[i]);
 		}
-
-		Mat draw_ = Mat::zeros(Size(div, 256), CV_8UC3);
-
-		/*double hmaxl = log(hmax+1);
-		for (int i = 0; i < div; i++)
-		{
-			int h = (1.0 - (double)log(hist[i]+1) / (double)hmaxl)*(draw.rows - 1);
-
-			cv::line(draw, Point(i, h), Point(i, draw.rows - 1), cv::Scalar(230, 230, 230));
-		}
-		Mat text();
-		addText(text, "mean", Point(10, 20), "Consolas", 20, cv::Scalar::all(255))
-	*/
 
 		for (int i = 0; i < div; i++)
 		{
-			if (i % (div / 10) == 0)cv::line(draw_, Point(i, 0), Point(i, draw_.rows - 1), cv::Scalar::all(50));
+			const int x = i;
+			if (i % (div / 10) == 0) cv::line(draw_, Point(x, 0), Point(x, draw_.rows - 1), cv::Scalar::all(50));
 			int h = int((1.0 - (double)hist[i] / (double)hmax) * draw_.rows - 1);
-			cv::line(draw_, Point(i, h), Point(i, draw_.rows - 1), cv::Scalar(230, 230, 230));
+			cv::line(draw_, Point(x, h), Point(x, draw_.rows - 1), cv::Scalar(230, 230, 230));
 
-			if (i == meanv) cv::line(draw_, Point(i, h), Point(i, draw_.rows - 1), cv::Scalar(255, 0, 0));
-			if (i == medv)cv::line(draw_, Point(i, h), Point(i, draw_.rows - 1), cv::Scalar(0, 0, 255));
-			if (i == medv && i == meanv)cv::line(draw_, Point(i, h), Point(i, draw_.rows - 1), cv::Scalar(128, 0, 128));
+			if (i == meanv) cv::line(draw_, Point(x, h), Point(x, draw_.rows - 1), COLOR_RED);
+			if (i == medv) cv::line(draw_, Point(x, h), Point(x, draw_.rows - 1), COLOR_BLUE);
+			if (i == medv && i == meanv)cv::line(draw_, Point(x, h), Point(x, draw_.rows - 1), cv::Scalar(128, 0, 128));
 		}
 		Mat draw;
-		int amp = (int)ceil(256.0 / div);
-
-		resize(draw_, draw, Size(), amp, 1, INTER_NEAREST);
+		resize(draw_, draw, Size(div * lw, 256), 0, 0, INTER_NEAREST);
+		for (int i = 0; i < div - 1; i++)
+		{
+			const int x = i * lw + lw * 0.5;
+			const int xp = (i + 1) * lw + lw * 0.5;
+			const double v = (histval[i] + 0) - histval[meanv];
+			const double vp = (histval[i + 1] - histval[meanv]);
+			int y = draw.rows - 1 - cvRound((draw.rows - 1) * exp(v * v / (-2.0 * ststd * ststd)));
+			int yp = draw.rows - 1 - cvRound((draw.rows - 1) * exp(vp * vp / (-2.0 * ststd * ststd)));
+			line(draw, Point(x, y), Point(xp, yp), COLOR_GRAY150);
+			//line(draw, Point(x, y), Point(xp, yp), COLOR_RED);
+		}
 		Mat text_img = Mat::zeros(Size(draw.cols, 30), CV_8UC3);
 
 		string text = format("ave%f", stmean);
 		putText(text_img, text, Point(10, 20), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_WHITE);
+		line(text_img, Point(0, 20), Point(10, 20), COLOR_RED, 2);
 		vconcat(draw, text_img, draw);
 
 		text_img.setTo(0);
 		text = format("med%f", stmed);
 		putText(text_img, text, Point(10, 20), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_WHITE);
+		line(text_img, Point(0, 20), Point(10, 20), COLOR_BLUE, 2);
 		vconcat(draw, text_img, draw);
 
 		text_img.setTo(0);
@@ -201,6 +239,15 @@ namespace cp
 		putText(text_img, text, Point(10, 20), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_WHITE);
 		vconcat(draw, text_img, draw);
 
+		text_img.setTo(0);
+		text = format("std%f", ststd);
+		putText(text_img, text, Point(10, 20), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_WHITE);
+		vconcat(draw, text_img, draw);
+
+		text_img.setTo(0);
+		text = format("step%f", interval * 10);
+		putText(text_img, text, Point(10, 20), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, COLOR_WHITE);
+		vconcat(draw, text_img, draw);
 
 		//static int idx = 0;
 		//imwrite(format("%04d.png", idx++), draw);

@@ -171,6 +171,9 @@
     <ClCompile Include="testWindowFunction.cpp">
       <Filter>ソース ファイル\test\core</Filter>
     </ClCompile>
+    <ClCompile Include="testSpatialFilter.cpp">
+      <Filter>ソース ファイル\test\filter</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="test.hpp">

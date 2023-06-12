@@ -537,6 +537,11 @@ Optimization
 * openmp：OpenMPのparallel_for．コンパイル時コード生成になるため，最大パフォーマンスのためにはライブラリをコンパイルしなおす必要あり．
 * コメントなし：NaiveかOpenCVのどちらかと思われる．
 
+# SpatialFilter
+## SpatialFilter.hpp
+効率的な線形空間フィルタのクラス
+* [class SpatialFilter](spatialfilter/SpatialFilter_jp.md "#SpatialFilter")
+
 # Todo
 優先すべきドキュメントは下記のデバッグと開発に頻繁に使用する関数群
 

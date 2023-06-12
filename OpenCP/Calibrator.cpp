@@ -1,6 +1,7 @@
 #include "Calibrator.hpp"
 #include "draw.hpp"
 #include "debugcp.hpp"
+#include "consoleImage.hpp"
 
 using namespace std;
 using namespace cv;
@@ -405,6 +406,13 @@ namespace cp
 			}
 		}
 	}
+
+	void drawDistortion(Mat& destImage, const Mat& intrinsic, const Mat& distortion, const Size imageSize, const int step, const int thickness, const double amp)
+	{
+		Mat mapu, mapv;
+		initUndistortRectifyMap(intrinsic, distortion, Mat::eye(3, 3, CV_64F), intrinsic, imageSize, CV_32FC1, mapu, mapv);
+		cp::drawDistortionLine(mapu, mapv, destImage, step, thickness, amp);
+	}
 #pragma endregion
 
 	void Calibrator::readParameter(char* name)
@@ -592,7 +600,7 @@ namespace cp
 	{
 		if (numofchessboards < 2)
 		{
-			std::cout << "input 3 or more chessboards" << std::endl;
+			std::cout << "input 2 or more chessboards" << std::endl;
 			return -1;
 		}
 		if (isUseInitCameraMatrix)
@@ -705,7 +713,8 @@ namespace cp
 		namedWindow(wnameplot);
 		static int escale = 200; createTrackbar("escale", wnameplot, &escale, 1000);//escale
 		static int view = 1; createTrackbar("view", wnameplot, &view, 2);
-		float pstep = float(round(imageSize.width / (patternSize.width + 2)));
+
+		const float pstep = min(float(round(imageSize.height / (patternSize.height + 2))), float(round(imageSize.width / (patternSize.width + 2))));
 		static int errorCircle = 1; createTrackbar("error circle", wnameplot, &errorCircle, 1);
 		static int dist = 1; createTrackbar("undistort", wnameplot, &dist, 1);
 		static int grid_r = cvRound(pstep * 0.25); createTrackbar("grid radius", wnameplot, &grid_r, grid_r * 5);
@@ -851,25 +860,33 @@ namespace cp
 			const int pindex = (indexGUI >= (int)objectPoints.size()) ? 0 : indexGUI;
 			const float scale = float(scalei);
 			const float th2 = (thresh == thmax) ? FLT_MAX : (thresh * 0.0001f) * (thresh * 0.0001f);
-			if (!image[pindex].empty())
-			{
-				if (dist == 0)
-				{
-					if (view == 0) image[pindex].copyTo(repPatternShow);
-					else if (view == 1) imageConic[pindex].copyTo(repPatternShow);
-					else imageCircleConic[pindex].copyTo(repPatternShow);
-				}
-				else
-				{
-					if (view == 0) imageUndist[pindex].copyTo(repPatternShow);
-					else if (view == 1) imageUndistConic[pindex].copyTo(repPatternShow);
-					else imageCircleUndistConic[pindex].copyTo(repPatternShow);
-				}
-			}
-			else
+			if (image.size() == 0)
 			{
 				repPatternShow.setTo(255);
 			}
+			else
+			{
+				if (!image[pindex].empty())
+				{
+					if (dist == 0)
+					{
+						if (view == 0) image[pindex].copyTo(repPatternShow);
+						else if (view == 1) imageConic[pindex].copyTo(repPatternShow);
+						else imageCircleConic[pindex].copyTo(repPatternShow);
+					}
+					else
+					{
+						if (view == 0) imageUndist[pindex].copyTo(repPatternShow);
+						else if (view == 1) imageUndistConic[pindex].copyTo(repPatternShow);
+						else imageCircleUndistConic[pindex].copyTo(repPatternShow);
+					}
+				}
+				else
+				{
+					repPatternShow.setTo(255);
+				}
+			}
+
 			bool isDrawConicalView = isGrid == 1;
 			if (isDrawConicalView)
 			{
@@ -1132,6 +1149,14 @@ namespace cp
 
 	void Calibrator::drawReprojectionError(string wname, const bool isInteractive, const float scale)
 	{
+		namedWindow(wname);
+		static int scaleINT = 0;
+		createTrackbar("scale", wname, &scaleINT, 10000);
+		if (scaleINT == 0)
+		{
+			scaleINT = scale;
+			setTrackbarPos("scale", wname, scaleINT);
+		}
 		int length = 400;
 		Size imsize(2 * length + 1, 2 * length + 1);
 		Point center(imsize.width / 2, imsize.height / 2);
@@ -1147,10 +1172,12 @@ namespace cp
 
 		if (isInteractive)
 		{
-			drawReprojectionErrorInternal(imagePoints, objectPoints, rt, tv, true, "error", scale, patternImages);
+			drawReprojectionErrorInternal(imagePoints, objectPoints, rt, tv, true, wname, float(scaleINT), patternImages);
 		}
 		else
 		{
+			//drawReprojectionErrorInternal(imagePoints, objectPoints, rt, tv, false, wname, scale, patternImages);
+			double total_l2 = 0.0;
 			for (int i = 0; i < objectPoints.size(); i++)
 			{
 				Scalar color = Scalar(colorbar.ptr<uchar>(i * step)[0], colorbar.ptr<uchar>(i * step)[1], colorbar.ptr<uchar>(i * step)[2], 0.0);
@@ -1158,14 +1185,18 @@ namespace cp
 				projectPoints(objectPoints[i], rt[i], tv[i], intrinsic, distortion, reprojectPoints);
 				for (int n = 0; n < reprojectPoints.size(); n++)
 				{
-					float dx = imagePoints[i][n].x - reprojectPoints[n].x;
-					float dy = imagePoints[i][n].y - reprojectPoints[n].y;
+					const float dx = imagePoints[i][n].x - reprojectPoints[n].x;
+					const float dy = imagePoints[i][n].y - reprojectPoints[n].y;
+					total_l2 += sqrt(dx * dx + dy * dy);
 					terror = fma(dx, dx, fma(dy, dy, terror));
-					drawPlus(show, center + Point(cvRound(dx * scale), cvRound(dy * scale)), 2, color, 2);
+					drawPlus(show, center + Point(cvRound(dx * scaleINT), cvRound(dy * scaleINT)), 2, color, 2);
 				}
 				//imshow("error", show);waitKey();
 			}
-			putText(show, format("%6.4f", length * 0.5 / scale), Point(length / 2 - 30, length / 2), FONT_HERSHEY_SCRIPT_SIMPLEX, 0.5, COLOR_GRAY50);
+			//reprojection error: average of L2 norm
+			putText(show, format("ave L2: %8.6f", total_l2 / (objectPoints.size() * objectPoints[0].size())), Point(10, 20), FONT_HERSHEY_SIMPLEX, 0.5, COLOR_GRAY50);
+			putText(show, format("reperr: %8.6f", sqrt(terror / (objectPoints.size() * objectPoints[0].size()))), Point(10, 40), FONT_HERSHEY_SIMPLEX, 0.5, COLOR_GRAY50);
+			putText(show, format("%6.4f", length * 0.5 / scaleINT), Point(length / 2 - 30, length / 2), FONT_HERSHEY_SCRIPT_SIMPLEX, 0.5, COLOR_GRAY50);
 			circle(show, center, length / 2, COLOR_GRAY100);
 			drawGridMulti(show, Size(4, 4), COLOR_GRAY200);
 			imshow(wname, show);
@@ -1182,7 +1213,7 @@ namespace cp
 			Mat show;
 			int step = 20; createTrackbar("step", wname, &step, 100);
 			int thickness = 1; createTrackbar("thickness", wname, &thickness, 3);
-			int amp = 100; createTrackbar("amp", wname, &amp, 2000);
+			int amp = 100; createTrackbar("amp*0.01", wname, &amp, 2000);
 			while (key != 'q')
 			{
 				drawDistortionLine(mapu, mapv, show, step, thickness, amp * 0.01f);
@@ -1191,5 +1222,132 @@ namespace cp
 			}
 		}
 		destroyWindow(wname);
+	}
+
+	void Calibrator::drawReCalibration(std::string wname, int flag)
+	{
+		const int flags = flag;//0
+		const int shift = 50;
+		const int sstep = 3;
+		double errorMax = DBL_MAX;
+		int argv = 0;
+		int argu = 0;
+
+		//calib.intrinsic.setTo(0);
+		string wtest = "test";
+		namedWindow(wtest);
+		cp::ConsoleImage ci(Size(600, 500), wtest);
+
+		intrinsic.at<double>(0, 0) = 1;
+		intrinsic.at<double>(1, 1) = 1;
+		intrinsic.at<double>(0, 2) = (imageSize.width - 1) * 0.5 ;
+		intrinsic.at<double>(1, 2) = (imageSize.height - 1) * 0.5;
+		distortion.at<double>(0) = 0;
+		distortion.at<double>(1) = 0;
+		distortion.at<double>(2) = 0;
+		distortion.at<double>(3) = 0;
+		distortion.at<double>(4) = 0;
+
+		calibration(flags);
+		const float dF = intrinsic.at<double>(0, 0);
+		
+		int sw = 3; createTrackbar("sw", wtest, &sw, 6);
+		int f = dF;  createTrackbar("F", wtest, &f, dF*2.0); setTrackbarMin("F", wtest, dF*0.5);
+		int u = 0;  createTrackbar("u", wtest, &u, shift); setTrackbarMin("u", wtest, -shift);
+		int v = 0;  createTrackbar("v", wtest, &v, shift); setTrackbarMin("v", wtest, -shift);
+		int key = 0;
+
+		while (key != 'q')
+		{
+			//error = calib.calibration(flags | CALIB_FIX_PRINCIPAL_POINT);
+			intrinsic.at<double>(0, 0) = f; //1;
+			intrinsic.at<double>(1, 1) = f; //1;
+			intrinsic.at<double>(0, 2) = (imageSize.width - 1) * 0.5 + u;
+			intrinsic.at<double>(1, 2) = (imageSize.height - 1) * 0.5 + v;
+			distortion.at<double>(0) = 0;
+			distortion.at<double>(1) = 0;
+			distortion.at<double>(2) = 0;
+			distortion.at<double>(3) = 0;
+			distortion.at<double>(4) = 0;
+			
+			//if (sw == 0 || sw == 2)
+			//{
+			//	calib.intrinsic.at<double>(0, 0) = f;
+			//	calib.intrinsic.at<double>(1, 1) = f;
+			//}
+			double error = 0.0;
+			Timer t("", TIME_MSEC, false);
+			if (sw == 0)
+			{
+				ci("MOVE FOCAL LENGTH");
+				error = calibration(flags | CALIB_USE_INTRINSIC_GUESS | CALIB_FIX_FOCAL_LENGTH);
+				setTrackbarPos("u", wtest, (int)(intrinsic.at<double>(0, 2) - (imageSize.width - 1) * 0.5));
+				setTrackbarPos("v", wtest, (int)(intrinsic.at<double>(1, 2) - (imageSize.height - 1) * 0.5));
+			}
+			if (sw == 1)
+			{
+				ci("MOVE PRINCIPAL_POINT");
+				error = calibration(flags | CALIB_USE_INTRINSIC_GUESS | CALIB_FIX_PRINCIPAL_POINT);
+				setTrackbarPos("F", wtest, (int)(intrinsic.at<double>(0, 0)));
+			}
+			if (sw == 2)
+			{
+				ci("MOVE FOCAL_LENGTH and PRINCIPAL_POINT");
+				error = calibration(flags | CALIB_USE_INTRINSIC_GUESS | CALIB_FIX_FOCAL_LENGTH | CALIB_FIX_PRINCIPAL_POINT);
+			}
+			if (sw == 3)
+			{
+				ci("Fixed");
+				error = calibration(flags);
+				setTrackbarPos("F", wtest, (int)(intrinsic.at<double>(0, 0)));
+				setTrackbarPos("v", wtest, (int)(intrinsic.at<double>(0, 2) - (imageSize.width - 1) * 0.5));
+				setTrackbarPos("u", wtest, (int)(intrinsic.at<double>(1, 2) - (imageSize.height - 1) * 0.5));
+			}
+			if (sw == 4)
+			{
+				ci("Fixed: Fx=Fy");
+				error = calibration(flags | CALIB_FIX_ASPECT_RATIO);
+				setTrackbarPos("F", wtest, (int)(intrinsic.at<double>(0, 0)));
+				setTrackbarPos("v", wtest, (int)(intrinsic.at<double>(0, 2) - (imageSize.width - 1) * 0.5));
+				setTrackbarPos("u", wtest, (int)(intrinsic.at<double>(1, 2) - (imageSize.height - 1) * 0.5));
+			}
+			if (sw == 5)
+			{
+				ci("Fixed: 0 Tangent");
+				error = calibration(flags | CALIB_FIX_TANGENT_DIST);
+				setTrackbarPos("F", wtest, (int)(intrinsic.at<double>(0, 0)));
+				setTrackbarPos("v", wtest, (int)(intrinsic.at<double>(0, 2) - (imageSize.width - 1) * 0.5));
+				setTrackbarPos("u", wtest, (int)(intrinsic.at<double>(1, 2) - (imageSize.height - 1) * 0.5));
+			}
+			if (sw == 6)
+			{
+				ci("Fixed: Fx=Fy 0 Tangent");
+				error = calibration(flags | CALIB_FIX_TANGENT_DIST | CALIB_FIX_ASPECT_RATIO);
+				setTrackbarPos("F", wtest, (int)(intrinsic.at<double>(0, 0)));
+				setTrackbarPos("v", wtest, (int)(intrinsic.at<double>(0, 2) - (imageSize.width - 1) * 0.5));
+				setTrackbarPos("u", wtest, (int)(intrinsic.at<double>(1, 2) - (imageSize.height - 1) * 0.5));
+			}
+
+			ci("Time  %f ms", t.getTime());
+			ci("Fx %f", intrinsic.at<double>(0, 0));
+			ci("Fy %f", intrinsic.at<double>(1, 1));
+			ci("Cx %f", intrinsic.at<double>(0, 2));
+			ci("Cy %f", intrinsic.at<double>(1, 2));
+			ci("K1 %f", distortion.at<double>(0));
+			ci("K2 %f", distortion.at<double>(1));
+			ci("K3 %f", distortion.at<double>(4));
+			ci("P1 %f", distortion.at<double>(2));
+			ci("P2 %f", distortion.at<double>(3));
+			//ci("error %f", error);
+			ci.show();
+			drawReprojectionError("error");
+			key = waitKey(1);
+			const float fx = intrinsic.at<double>(0, 0);
+			const float fy = intrinsic.at<double>(1, 1);
+			const float cx = intrinsic.at<double>(0, 2);
+			const float cy = intrinsic.at<double>(1, 2);
+			//print_debug7(error, u, v, fx, fy, cx, cy);
+		}
+		key = 0;
 	}
 }

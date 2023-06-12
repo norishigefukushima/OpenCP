@@ -7,7 +7,7 @@ namespace cp
 {
 #pragma region DCT_AVX_32F
 
-	void SpatialFilterDCT_AVX_32F::allocLUT()
+	void SpatialFilterFullDCT_AVX_32F::allocLUT()
 	{
 		if (lutsizex != imgSize.width || lutsizey != imgSize.height)
 		{
@@ -20,7 +20,7 @@ namespace cp
 		}
 	}
 
-	void SpatialFilterDCT_AVX_32F::setGaussianKernel(const bool isForcedUpdate)
+	void SpatialFilterFullDCT_AVX_32F::setGaussianKernel(const bool isForcedUpdate)
 	{
 		bool isDenormal = true;
 
@@ -62,30 +62,30 @@ namespace cp
 		}
 	}
 
-	SpatialFilterDCT_AVX_32F::SpatialFilterDCT_AVX_32F(cv::Size imgSize, float sigma, int order)
+	SpatialFilterFullDCT_AVX_32F::SpatialFilterFullDCT_AVX_32F(cv::Size imgSize, float sigma, int order)
 		: SpatialFilterBase(imgSize, CV_32F)
 	{
-		this->algorithm = SpatialFilterAlgorithm::DCT_AVX;
+		this->algorithm = SpatialFilterAlgorithm::DCTFULL_OPENCV;
 		this->gf_order = order;
 		this->sigma = sigma;
 		allocLUT();
 		setGaussianKernel(true);
 	}
 
-	SpatialFilterDCT_AVX_32F::SpatialFilterDCT_AVX_32F(const int dest_depth)
+	SpatialFilterFullDCT_AVX_32F::SpatialFilterFullDCT_AVX_32F(const int dest_depth)
 	{ 
-		this->algorithm = SpatialFilterAlgorithm::DCT_AVX;
+		this->algorithm = SpatialFilterAlgorithm::DCTFULL_OPENCV;
 		this->dest_depth = dest_depth;
 		this->depth = CV_32F; 
 	}
 
-	SpatialFilterDCT_AVX_32F::~SpatialFilterDCT_AVX_32F()
+	SpatialFilterFullDCT_AVX_32F::~SpatialFilterFullDCT_AVX_32F()
 	{
 		_mm_free(LUTx);
 		_mm_free(LUTy);
 	}
 
-	void SpatialFilterDCT_AVX_32F::body(const cv::Mat& _src, cv::Mat& dst, int borderType)
+	void SpatialFilterFullDCT_AVX_32F::body(const cv::Mat& _src, cv::Mat& dst, int borderType)
 	{
 		CV_Assert(imgSize.width % 8 == 0);
 
@@ -150,7 +150,7 @@ namespace cp
 		}
 	}
 
-	void SpatialFilterDCT_AVX_32F::filter(const cv::Mat& src, cv::Mat& dst, const double sigma, const int order, const int borderType)
+	void SpatialFilterFullDCT_AVX_32F::filter(const cv::Mat& src, cv::Mat& dst, const double sigma, const int order, const int borderType)
 	{
 		if (this->sigma != sigma || this->gf_order != order || imgSize != src.size())
 		{
@@ -160,6 +160,10 @@ namespace cp
 			allocLUT();
 		}
 		setGaussianKernel(true);
+		if (borderType != cv::BORDER_REFLECT)
+		{
+			cout << "cv::dct/cv::idct is DCT-II: Only support borderType == cv::BORDER_REFLECT" << endl;
+		}
 		body(src, dst, borderType);
 	}
 
@@ -167,7 +171,7 @@ namespace cp
 
 #pragma region DCT_AVX_64F
 
-	void SpatialFilterDCT_AVX_64F::allocLUT()
+	void SpatialFilterFullDCT_AVX_64F::allocLUT()
 	{
 		CV_Assert(imgSize.width % 4 == 0);
 
@@ -223,7 +227,7 @@ namespace cp
 		}
 	}
 
-	SpatialFilterDCT_AVX_64F::SpatialFilterDCT_AVX_64F(cv::Size imgSize, double sigma, int order)
+	SpatialFilterFullDCT_AVX_64F::SpatialFilterFullDCT_AVX_64F(cv::Size imgSize, double sigma, int order)
 		: SpatialFilterBase(imgSize, CV_64F)
 	{
 		this->gf_order = order;
@@ -231,19 +235,19 @@ namespace cp
 		allocLUT();
 	}
 
-	SpatialFilterDCT_AVX_64F::SpatialFilterDCT_AVX_64F(const int dest_depth)
+	SpatialFilterFullDCT_AVX_64F::SpatialFilterFullDCT_AVX_64F(const int dest_depth)
 	{
 		this->dest_depth = dest_depth;
 		this->depth = CV_64F;
 	}
 
-	SpatialFilterDCT_AVX_64F::~SpatialFilterDCT_AVX_64F()
+	SpatialFilterFullDCT_AVX_64F::~SpatialFilterFullDCT_AVX_64F()
 	{
 		_mm_free(LUTx);
 		_mm_free(LUTy);
 	}
 
-	void SpatialFilterDCT_AVX_64F::body(const cv::Mat& _src, cv::Mat& dst, const int borderType)
+	void SpatialFilterFullDCT_AVX_64F::body(const cv::Mat& _src, cv::Mat& dst, const int borderType)
 	{
 		if (_src.depth() == depth)
 			inter = _src;
@@ -309,7 +313,7 @@ namespace cp
 		}
 	}
 
-	void SpatialFilterDCT_AVX_64F::filter(const cv::Mat& src, cv::Mat& dst, const double sigma, const int order, const int borderType)
+	void SpatialFilterFullDCT_AVX_64F::filter(const cv::Mat& src, cv::Mat& dst, const double sigma, const int order, const int borderType)
 	{
 		if (this->sigma != sigma || this->gf_order != order || this->imgSize != src.size())
 		{

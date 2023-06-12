@@ -10,7 +10,7 @@ namespace cp
 	GaussianFilterFIROpenCV::GaussianFilterFIROpenCV(cv::Size imgSize, double sigma, int trunc, int depth)
 		: SpatialFilterBase(imgSize, depth)
 	{
-		this->algorithm = SpatialFilterAlgorithm::FIR_OPENCV;
+		this->algorithm = SpatialFilterAlgorithm::FIR_OPENCV_GAUSSIAN;
 		this->sigma = sigma;
 		this->gf_order = trunc;
 		this->radius = (int)ceil(gf_order * sigma);
@@ -18,7 +18,7 @@ namespace cp
 
 	GaussianFilterFIROpenCV::GaussianFilterFIROpenCV(const int dest_depth, const bool isCompute32F)
 	{
-		this->algorithm = SpatialFilterAlgorithm::FIR_OPENCV;
+		this->algorithm = SpatialFilterAlgorithm::FIR_OPENCV_GAUSSIAN;
 		this->depth = isCompute32F ? CV_32F : CV_64F;
 		this->dest_depth = dest_depth;
 	}
