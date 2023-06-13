@@ -1,4 +1,6 @@
 #include <opencp.hpp>
+#include <opencv2/ximgproc.hpp>
+#include <opencv2/xphoto.hpp>
 using namespace std;
 using namespace cv;
 using namespace cp;

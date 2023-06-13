@@ -33,12 +33,14 @@ namespace cp
 #pragma region init
 	void UpdateCheck::init(double p0)
 	{
+		parameters.clear();
 		parameters.resize(0);
 		parameters.push_back(p0);
 	}
 
 	void UpdateCheck::init(double p0, double p1)
 	{
+		parameters.clear();
 		parameters.resize(0);
 		parameters.push_back(p0);
 		parameters.push_back(p1);
@@ -46,6 +48,7 @@ namespace cp
 
 	void UpdateCheck::init(double p0, double p1, double p2)
 	{
+		parameters.clear();
 		parameters.push_back(p0);
 		parameters.push_back(p1);
 		parameters.push_back(p2);
@@ -53,6 +56,7 @@ namespace cp
 
 	void UpdateCheck::init(double p0, double p1, double p2, double p3)
 	{
+		parameters.clear();
 		parameters.resize(0);
 		parameters.push_back(p0);
 		parameters.push_back(p1);
@@ -62,6 +66,7 @@ namespace cp
 
 	void UpdateCheck::init(double p0, double p1, double p2, double p3, double p4)
 	{
+		parameters.clear();
 		parameters.resize(0);
 		parameters.push_back(p0);
 		parameters.push_back(p1);
@@ -72,6 +77,7 @@ namespace cp
 
 	void UpdateCheck::init(double p0, double p1, double p2, double p3, double p4, double p5)
 	{
+		parameters.clear();
 		parameters.push_back(p0);
 		parameters.push_back(p1);
 		parameters.push_back(p2);
@@ -94,6 +100,7 @@ namespace cp
 
 	void UpdateCheck::init(double p0, double p1, double p2, double p3, double p4, double p5, double p6, double p7)
 	{
+		parameters.clear();
 		parameters.resize(0);
 		parameters.push_back(p0);
 		parameters.push_back(p1);
@@ -107,6 +114,7 @@ namespace cp
 
 	void UpdateCheck::init(double p0, double p1, double p2, double p3, double p4, double p5, double p6, double p7, double p8)
 	{
+		parameters.clear();
 		parameters.resize(0);
 		parameters.push_back(p0);
 		parameters.push_back(p1);
@@ -121,6 +129,7 @@ namespace cp
 
 	void UpdateCheck::init(double p0, double p1, double p2, double p3, double p4, double p5, double p6, double p7, double p8, double p9)
 	{
+		parameters.clear();
 		parameters.resize(0);
 		parameters.push_back(p0);
 		parameters.push_back(p1);
@@ -136,6 +145,7 @@ namespace cp
 
 	void UpdateCheck::init(double p0, double p1, double p2, double p3, double p4, double p5, double p6, double p7, double p8, double p9, double p10)
 	{
+		parameters.clear();
 		parameters.resize(0);
 		parameters.push_back(p0);
 		parameters.push_back(p1);
@@ -152,6 +162,7 @@ namespace cp
 
 	void UpdateCheck::init(double p0, double p1, double p2, double p3, double p4, double p5, double p6, double p7, double p8, double p9, double p10, double p11)
 	{
+		parameters.clear();
 		parameters.resize(0);
 		parameters.push_back(p0);
 		parameters.push_back(p1);
@@ -169,6 +180,7 @@ namespace cp
 
 	void UpdateCheck::init(double p0, double p1, double p2, double p3, double p4, double p5, double p6, double p7, double p8, double p9, double p10, double p11, double p12)
 	{
+		parameters.clear();
 		parameters.resize(0);
 		parameters.push_back(p0);
 		parameters.push_back(p1);
@@ -187,6 +199,7 @@ namespace cp
 
 	void UpdateCheck::init(double p0, double p1, double p2, double p3, double p4, double p5, double p6, double p7, double p8, double p9, double p10, double p11, double p12, double p13)
 	{
+		parameters.clear();
 		parameters.resize(0);
 		parameters.push_back(p0);
 		parameters.push_back(p1);
@@ -206,6 +219,7 @@ namespace cp
 
 	void UpdateCheck::init(double p0, double p1, double p2, double p3, double p4, double p5, double p6, double p7, double p8, double p9, double p10, double p11, double p12, double p13, double p14)
 	{
+		parameters.clear();
 		parameters.resize(0);
 		parameters.push_back(p0);
 		parameters.push_back(p1);
@@ -226,6 +240,7 @@ namespace cp
 
 	void UpdateCheck::init(double p0, double p1, double p2, double p3, double p4, double p5, double p6, double p7, double p8, double p9, double p10, double p11, double p12, double p13, double p14, double p15)
 	{
+		parameters.clear();
 		parameters.resize(0);
 		parameters.push_back(p0);
 		parameters.push_back(p1);
@@ -1108,6 +1123,14 @@ namespace cp
 			ret = true;
 		}
 		return firstTimeCheck(ret);
+	}
+
+	void UpdateCheck::print(int num_args)
+	{
+		for (int i = 0; i < num_args; i++)
+		{
+			cout << i << ": " << parameters[i] << endl;
+		}
 	}
 #pragma endregion
 }
