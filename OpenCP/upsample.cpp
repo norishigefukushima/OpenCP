@@ -94,7 +94,6 @@ namespace cp
 		}
 	}
 
-
 	template <>
 	void upsampleNearest_<uchar>(Mat& src, Mat& dest, const int scale)
 	{
@@ -121,13 +120,11 @@ namespace cp
 				}
 			}
 		}
-#if 0
 		else
 		{
 			for (int j = 0; j < src.rows; j++)
 			{
 				int n = j * scale;
-
 				uchar* s = src.ptr<uchar>(j);
 				for (int i = 0, m = 0; i < src.cols; i++, m += scale)
 				{
@@ -143,7 +140,6 @@ namespace cp
 				}
 			}
 		}
-#endif
 	}
 
 	template <>
@@ -338,14 +334,33 @@ namespace cp
 			dest_.create(Size(src.cols * scale, src.rows * scale), src_.type());
 		}
 		Mat dest = dest_.getMat();
+		if (src.channels() == 1)
+		{
+			if (src.depth() == CV_8U) upsampleNearest_<uchar>(src, dest, scale);
+			else if (src.depth() == CV_16S) upsampleNearest_<short>(src, dest, scale);
+			else if (src.depth() == CV_16U) upsampleNearest_<ushort>(src, dest, scale);
+			else if (src.depth() == CV_32S) upsampleNearest_<int>(src, dest, scale);
+			else if (src.depth() == CV_32F) upsampleNearest_<float>(src, dest, scale);
+			else if (src.depth() == CV_64F) upsampleNearest_<double>(src, dest, scale);
+		}
+		else
+		{
+			vector<Mat> v;
+			split(src_, v);
+			vector<Mat> d(v.size());
+			for (int c = 0; c < v.size(); c++)
+			{
+				d[c].create(src.size() * scale, src.depth());
 
-
-		if (src.depth() == CV_8U) upsampleNearest_<uchar>(src, dest, scale);
-		else if (src.depth() == CV_16S) upsampleNearest_<short>(src, dest, scale);
-		else if (src.depth() == CV_16U) upsampleNearest_<ushort>(src, dest, scale);
-		else if (src.depth() == CV_32S) upsampleNearest_<int>(src, dest, scale);
-		else if (src.depth() == CV_32F) upsampleNearest_<float>(src, dest, scale);
-		else if (src.depth() == CV_64F) upsampleNearest_<double>(src, dest, scale);
+				if (src.depth() == CV_8U) upsampleNearest_<uchar>(v[c], d[c], scale);
+				else if (src.depth() == CV_16S) upsampleNearest_<short>(v[c], d[c], scale);
+				else if (src.depth() == CV_16U) upsampleNearest_<ushort>(v[c], d[c], scale);
+				else if (src.depth() == CV_32S) upsampleNearest_<int>(v[c], d[c], scale);
+				else if (src.depth() == CV_32F) upsampleNearest_<float>(v[c], d[c], scale);
+				else if (src.depth() == CV_64F) upsampleNearest_<double>(v[c], d[c], scale);
+			}
+			merge(d, dest_);
+		}
 	}
 
 #if 0

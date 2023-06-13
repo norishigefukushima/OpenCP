@@ -2043,7 +2043,7 @@ STATIC_INLINE __m128 _mm_absdiff_ps(__m128 src1, __m128 src2)
 
 STATIC_INLINE __m256 _mm256_absdiff_ps(__m256 src1, __m256 src2)
 {
-	return _mm256_abs_ps(_mm256_sub_ps(src1, src2));
+	return _mm256_andnot_ps(_mm256_set1_ps(-0.f), _mm256_sub_ps(src1, src2));
 }
 
 //rsqrt->rcp
@@ -2602,6 +2602,12 @@ STATIC_INLINE __m128i _mm256_i32gather_epu8(const uchar* src, __m256i idx)
 {
 	return _mm256_cvtepi32_epu8(_mm256_srli_epi32(_mm256_i32gather_epi32(reinterpret_cast<const int*>(src - 3), idx, 1), 24));
 	//return _mm_setr_epi8(src[idx.m256i_i32[0]], src[idx.m256i_i32[1]], src[idx.m256i_i32[2]], src[idx.m256i_i32[3]], src[idx.m256i_i32[4]], src[idx.m256i_i32[5]], src[idx.m256i_i32[6]], src[idx.m256i_i32[7]], 0, 0, 0, 0, 0, 0, 0, 0);
+}
+
+//dest: 8 uchar elements
+STATIC_INLINE __m256 _mm256_i32gather_epu8cvtps(const uchar* src, __m256i idx)
+{
+	return _mm256_cvtepi32_ps(_mm256_srli_epi32(_mm256_i32gather_epi32(reinterpret_cast<const int*>(src - 3), idx, 1), 24));
 }
 
 STATIC_INLINE __m256 _mm256_i32gather_auto(float* src, __m256i idx)

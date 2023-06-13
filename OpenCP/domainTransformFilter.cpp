@@ -2739,6 +2739,7 @@ namespace cp
 	// Domain transform filtering: baseline implimentation for optimization
 	void domainTransformFilter_RF_Base(const Mat& src, const Mat& guide, Mat& dest, float sigma_r, float sigma_s, int maxiter, int norm)
 	{
+		//cout << "DTF here" << endl;
 		Mat img;
 		src.convertTo(img, CV_32F);
 
@@ -2785,7 +2786,7 @@ namespace cp
 		}
 
 		if (src.depth() == CV_8U || src.depth() == CV_16U || src.depth() == CV_16S || src.depth() == CV_32S)
-			img.convertTo(dest, src.depth(), 1.0, 0.5);
+			img.convertTo(dest, src.depth());
 		else
 			img.convertTo(dest, src.depth());
 	}

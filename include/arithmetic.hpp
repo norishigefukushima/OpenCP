@@ -22,7 +22,7 @@ namespace cp
 
 	//dest=src>>shift, lostbit=src-dest<<shift
 	CP_EXPORT void bitshiftRight(cv::InputArray src, cv::OutputArray dest, cv::OutputArray lostbit, const int shift);
-	//src>>shift
+	//src>>shift (if shift==0, there is no processing)
 	CP_EXPORT void bitshiftRight(cv::InputArray src, cv::OutputArray dest, const int shift);
 
 	CP_EXPORT void clip(cv::InputArray src, cv::OutputArray dst, const double minval=0.0, const double maxval=255.0);

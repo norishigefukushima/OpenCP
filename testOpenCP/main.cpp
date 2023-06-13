@@ -4,6 +4,7 @@ using namespace std;
 using namespace cv;
 using namespace cp;
 
+#include <opencv2/core/ocl.hpp>
 void testIsSame()
 {
 	Mat a(256, 256, CV_8U);
@@ -16,9 +17,9 @@ void testIsSame()
 	isSame(a, a, 10);
 }
 
-string getInformation()
+std::string getInformation()
 {
-	string ret = "version: " + cv::getVersionString() + "\n";
+	std::string ret = "version: " + cv::getVersionString() + "\n";
 	ret += "==============\n";
 	if (cv::useOptimized()) ret += "cv::useOptimized: true\n";
 	else ret += "cv::useOptimized: false\n";
@@ -34,6 +35,53 @@ string getInformation()
 	return ret;
 }
 
+std::string getOpenCLInformation()
+{
+	string ret = "";
+	if (cv::ocl::haveOpenCL())
+	{
+		cv::ocl::Context context;
+		if (!context.create(cv::ocl::Device::TYPE_GPU))
+		{
+			ret = "Failed creating the context\n";
+		}
+		else
+		{
+			// In OpenCV 3.0.0 beta, only a single device is detected.
+			ret = format("%d GPU devices are detected.\n", context.ndevices());
+			ret += "===========================================\n";
+			for (int i = 0; i < context.ndevices(); i++)
+			{
+				cv::ocl::Device device = context.device(i);
+				ret += "name            : "+ device.name() + "\n";
+				if (device.available()) ret += "available       : true\n";
+				else ret += "available       : false\n";
+				if (device.imageSupport()) ret += "imageSupport    : true\n";
+				else ret += "imageSupport false\n";
+				ret += "OpenCL_C_Version: " + device.OpenCL_C_Version()+"\n";
+				/*cout << device.doubleFPConfig() << endl;
+				cout<<device.compilerAvailable() << endl;
+				cout<<device.driverVersion() << endl;
+				cout << device.executionCapabilities() << endl;
+				cout << device.extensions() << endl;*/
+				cout << device.maxClockFrequency() << endl;
+				cout << device.maxComputeUnits() << endl;
+				cout << device.maxConstantArgs() << endl;
+				cout << device.maxConstantBufferSize() << endl;
+				cout << device.maxMemAllocSize() << endl;
+				cout << device.maxParameterSize() << endl;
+				cout << device.localMemSize() << endl;
+				cout << device.localMemType() << endl;
+				ret += "===========================================\n";
+			}
+		}
+	}
+	else
+	{
+		ret = "OpenCL is not avaiable.\n";
+	}
+	return ret;
+}
 template<typename T>
 void detailBoostLinear_(Mat& src, Mat& smooth, Mat& dest, const double boost)
 {
@@ -467,9 +515,9 @@ void webPAnimationTest()
 {
 	//Webp test
 	vector<Mat> a(80);
-	
+
 	for (int i = 0; i < 80; i++)
-	{		
+	{
 		Mat img = imread("img/flower.png");
 		add(img, Scalar::all(i), a[i]);
 		//addNoise(a[i], a[i], 5);
@@ -478,7 +526,7 @@ void webPAnimationTest()
 		//imshow("a", a[i]);
 		//waitKey(1);
 	}
-	
+
 	int size = 0;
 	vector<int> parameters;
 	parameters.push_back(IMWRITE_WEBP_COLORSPACE);
@@ -516,10 +564,11 @@ int main(int argc, char** argv)
 	const bool isShowInfo = true;
 	if (isShowInfo)
 	{
-		cout << getInformation() << endl; 
+		cout << getInformation() << endl;
 		cout << cv::getBuildInformation() << endl;
+		cout << getOpenCLInformation()<<endl;
 	}
-	
+
 	//cv::ipp::setUseIPP(false);
 	//cv::setUseOptimized(false);
 
@@ -537,7 +586,7 @@ int main(int argc, char** argv)
 
 	//print_uchar(_mm256_packus_epi16(_mm256_packus_epi32(a, b), _mm256_packus_epi32(c, d)));
 	return 0;*/
-	
+
 	//testUnnormalizedBilateralFilter(); return 0;
 	//testMultiScaleFilter(); return 0;
 
@@ -548,7 +597,7 @@ int main(int argc, char** argv)
 #pragma region setup
 	//Mat img = imread("img/lenna.png");
 	Mat img = imread("img/Kodak/kodim07.png");
-	Mat gra = imread("img/Kodak/kodim07.png",0);
+	Mat gra = imread("img/Kodak/kodim07.png", 0);
 	testSpatialFilter(gra);
 	//rangeBlurFilterRef(aa, t0, 5, 3);
 	//rangeBlurFilter(aa, t1, 5, 3);

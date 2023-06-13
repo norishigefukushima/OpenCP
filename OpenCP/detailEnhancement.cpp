@@ -22,9 +22,19 @@ namespace cp
 		const int d = 2 * r + 1;
 
 		Mat smooth;
-
-		GaussianBlur(src, smooth, Size(d, d), sigma_space);
-		addWeighted(src, 1.0 + boost, smooth, -boost, 0, dest);
+		if (src.depth() == CV_32F)
+		{
+			GaussianBlur(src, smooth, Size(d, d), sigma_space);
+			addWeighted(src, 1.0 + boost, smooth, -boost, 0, dest);
+		}
+		else
+		{
+			Mat src32f = src.getMat();
+			src32f.convertTo(src32f, CV_32F);
+			GaussianBlur(src32f, smooth, Size(d, d), sigma_space);
+			addWeighted(src32f, 1.0 + boost, smooth, -boost, 0, src32f);
+			src32f.convertTo(dest, src.type());
+		}
 	}
 
 	void detailEnhancementBilateral(InputArray src, OutputArray dest, const int r, const float sigma_color, const float sigma_space, const float boost)

@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include <opencv2/opencv.hpp>
 #include <opencv2/ximgproc.hpp>
 #include <opencv2/xphoto.hpp>

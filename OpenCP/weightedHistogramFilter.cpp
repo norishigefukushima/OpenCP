@@ -452,7 +452,7 @@ namespace cp
 			{
 				int thread_max = omp_get_max_threads();
 				int thread_range = height / thread_max;
-#pragma omp parallel for
+#pragma omp parallel for schedule(dynamic)
 				for (int y = 0; y < height; y++)
 				{
 					Ptr<WeightedHistogram> h = createWeightedHistogram(weightFunctionType, (float)sigmaHistogram, mode, src_max, luth);
@@ -493,7 +493,7 @@ namespace cp
 			}
 			if (weight_method == WHF_WEIGHT::GAUSSIAN)
 			{
-#pragma omp parallel for
+#pragma omp parallel for schedule(dynamic)
 				for (int y = 0; y < height; y++)
 				{
 					Ptr<WeightedHistogram> h = createWeightedHistogram(weightFunctionType, (float)sigmaHistogram, mode, src_max, luth);
@@ -517,7 +517,7 @@ namespace cp
 			}
 			else if (weight_method == WHF_WEIGHT::BOX)
 			{
-#pragma omp parallel for
+#pragma omp parallel for schedule(dynamic)
 				for (int y = 0; y < height; y++)
 				{
 					Ptr<WeightedHistogram> h = createWeightedHistogram(weightFunctionType, (float)sigmaHistogram, mode, src_max, luth);
@@ -548,7 +548,7 @@ namespace cp
 
 			if (weight_method == WHF_WEIGHT::BILATERAL)
 			{
-#pragma omp parallel for
+#pragma omp parallel for schedule(dynamic)
 				for (int y = 0; y < height; y++)
 				{
 					Ptr<WeightedHistogram> h = createWeightedHistogram(weightFunctionType, (float)sigmaHistogram, mode, src_max, luth);

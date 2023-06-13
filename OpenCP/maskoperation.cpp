@@ -12,6 +12,13 @@ namespace cp
 		return ret;
 	}
 
+	Mat createBoxMask(const Size size, const int top, const int bottom, const int left, const int right)
+	{
+		Mat ret = Mat::zeros(size, CV_8U);
+		ret(Rect(left, top, size.width - left - right, size.height - top - bottom)).setTo(255);
+		return ret;
+	}
+
 	void setBoxMask(Mat& mask, const int boundx, const int boundy)
 	{
 		Size size = mask.size();

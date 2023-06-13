@@ -15,6 +15,7 @@ void testSpatialFilter(Mat& src)
 	int order = 5;  createTrackbar("order", wname, &order, 20);
 	int type = 1;  createTrackbar("type", wname, &type, 2);
 	int borderType = cv::BORDER_REFLECT; createTrackbar("border", wname, &borderType, 4);
+	int bbb = 0;  createTrackbar("bbb", wname, &bbb, 100);
 	int key = 0;
 	Mat show;
 	Timer tfirst("", TIME_MSEC, false);
@@ -39,17 +40,22 @@ void testSpatialFilter(Mat& src)
 
 		SpatialFilterAlgorithm algorithm = SpatialFilterAlgorithm(algo);
 		int desttype = (type == 0) ? CV_8U : (type == 1) ? CV_32F : CV_64F;
-		
+
 		SpatialFilter sf(algorithm, desttype, SpatialKernel::GAUSSIAN, 0);//const DCT_COEFFICIENTS dct_coeff = (option == 0) ? DCT_COEFFICIENTS::FULL_SEARCH_OPT : DCT_COEFFICIENTS::FULL_SEARCH_NOOPT;
-		
+
 		tfirst.start();
 		sf.filter(src, show, sigma10 * 0.1, order, borderType);
 		tfirst.pushLapTime();
 		t.start();
 		sf.filter(src, show, sigma10 * 0.1, order, borderType);
 		t.pushLapTime();
-
 		imshowScale(wname, show);
+
+		Mat bb = src.clone();
+		
+		bb.setTo(0, ~createBoxMask(bb.size(), 0, 0, bbb, 0));
+		Mat bb2; sf.filter(bb, bb2, sigma10 * 0.1, order, borderType);
+		imshowScale("bbb", bb2);
 
 		ci("%d: sigma = %f", t.getStatSize(), sigma10 * 0.1);
 		ci("algorith: " + cp::getAlgorithmName(algorithm));
@@ -59,6 +65,7 @@ void testSpatialFilter(Mat& src)
 		ci("TIME: %f ms (1st)", tfirst.getLapTimeMedian());
 		ci("TIME: %f ms (2nd)", t.getLapTimeMedian());
 		ci("PSNR: %f dB", getPSNR(ref, show));
+		ci("PSNRBB: %f dB", getPSNR(ref, bb2, bbb));
 		ci.show();
 		key = waitKey(1);
 	}
