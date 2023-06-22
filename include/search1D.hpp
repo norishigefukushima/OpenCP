@@ -45,6 +45,7 @@ namespace cp
 
 	class Search1D32F
 	{
+		float minError;
 		float xmin;
 		float xmax;
 		float x1;
@@ -56,6 +57,7 @@ namespace cp
 		inline float getGSRight();
 
 	public:
+		inline float getMinError() { return minError; }
 		inline float linearSearch(const float search_min, const float search_max, const float step, bool isPlot = false, std::string wname = "search");
 		inline float binarySearch(const float search_min, const float search_max, const float eps, const int loop);
 		inline float goldenSectionSearch(const float search_min, const float search_max, const float eps, const int loop);
@@ -365,10 +367,12 @@ namespace cp
 
 		if (E2 < E1)
 		{
+			minError = E2;
 			ret = x2;
 		}
 		else
 		{
+			minError = E1;
 			ret = x1;
 		}
 
