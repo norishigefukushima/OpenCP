@@ -1849,6 +1849,15 @@ STATIC_INLINE float _mm256_reduceadd_ps(__m256 src)
 	//src = _mm256_unpacklo_ps(src, rsum);
 	//return _mm256_hadd_ps(src, src).m256_f32[0];
 }
+STATIC_INLINE float _mm256_reducemax_ps(__m256 src)
+{
+	float ret = src.m256_f32[0];
+	for (int i = 1; i < 8; i++)
+	{
+		ret = std::max(ret, src.m256_f32[0]);
+	}
+	return ret;
+}
 
 STATIC_INLINE void _mm256_reduceadd_highlow_ps(__m256 src, float& low, float& high)
 {
