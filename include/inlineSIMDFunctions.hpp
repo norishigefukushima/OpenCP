@@ -1851,11 +1851,14 @@ STATIC_INLINE float _mm256_reduceadd_ps(__m256 src)
 }
 STATIC_INLINE float _mm256_reducemax_ps(__m256 src)
 {
-	float ret = src.m256_f32[0];
+	float* data = (float*)_mm_malloc(sizeof(float) * 8, 32);
+	_mm256_store_ps(data, src);
+	float ret = data[0];
 	for (int i = 1; i < 8; i++)
 	{
-		ret = std::max(ret, src.m256_f32[0]);
+		ret = std::max(ret, data[i]);
 	}
+	_mm_free(data);
 	return ret;
 }
 
