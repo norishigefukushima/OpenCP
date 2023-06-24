@@ -1281,7 +1281,7 @@ static inline __m256dd _mm256_fmakahan_pdd(const __m256d a, const __m256d x, con
 }
 #endif /* AVX */
 
-#undef __AVX512F__
+#if 0
 #if defined(__AVX512F__) || defined(__KNC__)
 
 typedef struct
@@ -1290,12 +1290,12 @@ typedef struct
 	__m512d lo;
 } __m512dd;
 
-FPPLUS_STATIC_INLINE __m512dd _mm512_setzero_pdd(void) {
+FPPLUS_STATIC_INLINE __m512dd _mm512_setzero_pdd(void) 
+{
 	return (__m512dd) { _mm512_setzero_pd(), _mm512_setzero_pd() };
 }
 
-FPPLUS_STATIC_INLINE __m512dd _mm512_broadcast_sdd(
-	const doubledouble FPPLUS_ARRAY_POINTER(pointer, 8))
+FPPLUS_STATIC_INLINE __m512dd _mm512_broadcast_sdd(const doubledouble FPPLUS_ARRAY_POINTER(pointer, 8))
 {
 	return (__m512dd) {
 		_mm512_extload_pd(&pointer->hi, _MM_UPCONV_PD_NONE, _MM_BROADCAST_1X8, _MM_HINT_NONE),
@@ -1432,4 +1432,5 @@ FPPLUS_STATIC_INLINE doubledouble _mm512_reduce_add_pdd(const __m512dd x) {
 
 #endif /* Intel KNC or AVX-512 */
 
+#endif
 #endif /* FPPLUS_DD_H */

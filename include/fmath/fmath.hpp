@@ -93,7 +93,7 @@ namespace fmath {
 		}
 
 		template<class srcType>
-		inline const srcType* cast_to(const void *p)
+		inline const srcType* cast_to(const void* p)
 		{
 			return reinterpret_cast<const srcType*>(p);
 		}
@@ -207,7 +207,6 @@ namespace fmath {
 					double x = 1.0 + double(i) / n;
 					double a = ::log(x);
 					tbl[i].app = (float)a;
-					
 					if (i < n - 1) {
 						double b = ::log(x + h - e);
 						tbl[i].rev = (float)((b - a) / ((h - e) * (1 << 23)));
@@ -231,7 +230,7 @@ namespace fmath {
 			float(*exp_)(float);
 			__m128 (*exp_ps_)(__m128);
 			template<size_t N>
-			ExpCode(const ExpVar<N> *self)
+			ExpCode(const ExpVar<N>* self)
 			{
 				Xbyak::util::Cpu cpu;
 				try {
@@ -251,7 +250,7 @@ namespace fmath {
 				::exit(1);
 			}
 			template<size_t N>
-			void makeExp(const ExpVar<N> *self, const Xbyak::util::Cpu& /*cpu*/)
+			void makeExp(const ExpVar<N>* self, const Xbyak::util::Cpu& /*cpu*/)
 			{
 				typedef ExpVar<N> Self;
 				using namespace local;
@@ -303,7 +302,7 @@ namespace fmath {
 				outLocalLabel();
 			}
 			template<size_t N>
-			void makeExpPs(const ExpVar<N> *self, const Xbyak::util::Cpu& cpu)
+			void makeExpPs(const ExpVar<N>* self, const Xbyak::util::Cpu& cpu)
 			{
 				typedef ExpVar<N> Self;
 				using namespace local;
@@ -407,6 +406,71 @@ namespace fmath {
 		template<size_t EXP_N, size_t LOG_N, size_t EXPD_N>
 		MIE_ALIGN(32) const ExpdVar<EXPD_N> C<EXP_N, LOG_N, EXPD_N>::expdVar;
 
+
+		//add
+#ifdef __AVX512F__
+		template<size_t N = EXP_TABLE_SIZE>
+		struct ExpVar512 {
+			enum {
+				s = N,
+				n = 1 << s,
+				f88 = 0x42b00000 /* 88.0 */
+			};
+			float minX[16];
+			float maxX[16];
+			float a[16];
+			float b[16];
+			float f1[16];
+			unsigned int i127s[16];
+			unsigned int mask_s[16];
+			unsigned int i7fffffff[16];
+			unsigned int tbl[n];
+			ExpVar512()
+			{
+				float log_2 = ::logf(2.0f);
+				for (int i = 0; i < 16; i++) {
+					maxX[i] = 88;
+					minX[i] = -88;
+					a[i] = n / log_2;
+					b[i] = log_2 / n;
+					f1[i] = 1.0f;
+					i127s[i] = 127 << s;
+					i7fffffff[i] = 0x7fffffff;
+					mask_s[i] = mask(s);
+				}
+
+				for (int i = 0; i < n; i++) {
+					float y = pow(2.0f, (float)i / n);
+					fi fi;
+					fi.f = y;
+					tbl[i] = fi.i & mask(23);
+				}
+			}
+		};
+
+		/* to define static variables in fmath.hpp */
+		template<size_t EXP_N = EXP_TABLE_SIZE, size_t LOG_N = LOG_TABLE_SIZE, size_t EXPD_N = EXPD_TABLE_SIZE>
+		struct C512 {
+			static const ExpVar512<EXP_N> expVar512;
+			static const LogVar<LOG_N> logVar;
+			static const ExpdVar<EXPD_N> expdVar;
+#ifdef FMATH_USE_XBYAK
+			static const ExpCode& getInstance() {
+				static const ExpCode expCode(&expVar);
+				return expCode;
+			}
+#endif
+		};
+
+		template<size_t EXP_N, size_t LOG_N, size_t EXPD_N>
+		MIE_ALIGN(64) const ExpVar512<EXP_N> C512<EXP_N, LOG_N, EXPD_N>::expVar512;
+
+		/*template<size_t EXP_N, size_t LOG_N, size_t EXPD_N>
+		MIE_ALIGN(64) const LogVar<LOG_N> C<EXP_N, LOG_N, EXPD_N>::logVar;
+
+		template<size_t EXP_N, size_t LOG_N, size_t EXPD_N>
+		MIE_ALIGN(64) const ExpdVar<EXPD_N> C<EXP_N, LOG_N, EXPD_N>::expdVar;*/
+#endif
 	} // fmath::local
 
 #ifdef FMATH_USE_XBYAK
@@ -542,7 +606,7 @@ namespace fmath {
 		px : pointer to array of double
 		n : size of array
 	*/
-	inline void expd_v(double *px, size_t n)
+	inline void expd_v(double* px, size_t n)
 	{
 		using namespace local;
 		const ExpdVar<>& c = C<>::expdVar;
@@ -696,7 +760,7 @@ namespace fmath {
 
 		__m256i limit = _mm256_castps_si256(_mm256_and_ps(x, *reinterpret_cast<const __m256*>(expVar.i7fffffff)));
 		int over = _mm256_movemask_epi8(_mm256_cmpgt_epi32(limit, *reinterpret_cast<const __m256i*>(expVar.maxX)));
-		if (over) 
+		if (over)
 		{
 			x = _mm256_min_ps(x, _mm256_load_ps(expVar.maxX));
 			x = _mm256_max_ps(x, _mm256_load_ps(expVar.minX));
@@ -735,6 +799,55 @@ namespace fmath {
 		t = _mm256_mul_ps(t, t0);
 		return t;
 	}
+
+	//add: no limit check
+	inline __m256 exp_ps256_nolimitcheck(__m256 x)
+	{
+		using namespace local;
+		const ExpVar<>& expVar = C<>::expVar;
+
+		/*__m256i limit = _mm256_castps_si256(_mm256_and_ps(x, *reinterpret_cast<const __m256*>(expVar.i7fffffff)));
+		int over = _mm256_movemask_epi8(_mm256_cmpgt_epi32(limit, *reinterpret_cast<const __m256i*>(expVar.maxX)));
+		if (over)
+		{
+			x = _mm256_min_ps(x, _mm256_load_ps(expVar.maxX));
+			x = _mm256_max_ps(x, _mm256_load_ps(expVar.minX));
+		}*/
+		const __m256i r = _mm256_cvtps_epi32(_mm256_mul_ps(x, *reinterpret_cast<const __m256*>(expVar.a)));
+		__m256 t = _mm256_fnmadd_ps(_mm256_cvtepi32_ps(r), *reinterpret_cast<const __m256*>(expVar.b), x);
+		t = _mm256_add_ps(t, *reinterpret_cast<const __m256*>(expVar.f1));
+		const __m256i v8 = _mm256_and_si256(r, *reinterpret_cast<const __m256i*>(expVar.mask_s));
+		__m256i u8 = _mm256_add_epi32(r, *reinterpret_cast<const __m256i*>(expVar.i127s));
+		u8 = _mm256_srli_epi32(u8, expVar.s);
+		u8 = _mm256_slli_epi32(u8, 23);
+#if 1
+		__m256i ti = _mm256_i32gather_epi32((const int*)expVar.tbl, v8, 4);
+#else
+		unsigned int v0, v1, v2, v3, v4, v5, v6, v7;
+		v0 = _mm256_extract_epi16(v8, 0);
+		v1 = _mm256_extract_epi16(v8, 2);
+		v2 = _mm256_extract_epi16(v8, 4);
+		v3 = _mm256_extract_epi16(v8, 6);
+		v4 = _mm256_extract_epi16(v8, 8);
+		v5 = _mm256_extract_epi16(v8, 10);
+		v6 = _mm256_extract_epi16(v8, 12);
+		v7 = _mm256_extract_epi16(v8, 14);
+		__m256i ti = _mm256_setzero_si256();
+		ti = _mm256_insert_epi32(ti, expVar.tbl[v0], 0);
+		ti = _mm256_insert_epi32(ti, expVar.tbl[v1], 1);
+		ti = _mm256_insert_epi32(ti, expVar.tbl[v2], 2);
+		ti = _mm256_insert_epi32(ti, expVar.tbl[v3], 3);
+		ti = _mm256_insert_epi32(ti, expVar.tbl[v4], 4);
+		ti = _mm256_insert_epi32(ti, expVar.tbl[v5], 5);
+		ti = _mm256_insert_epi32(ti, expVar.tbl[v6], 6);
+		ti = _mm256_insert_epi32(ti, expVar.tbl[v7], 7);
+#endif
+		__m256 t0 = _mm256_castsi256_ps(ti);
+		t0 = _mm256_or_ps(t0, _mm256_castsi256_ps(u8));
+		t = _mm256_mul_ps(t, t0);
+		return t;
+	}
+
 #endif
 
 	inline float log(float x)
@@ -851,8 +964,8 @@ namespace fmath {
 
 	// for Xbyak version
 #ifdef FMATH_USE_XBYAK
-	float(*const exp)(float) = local::C<>::getInstance().exp_;
-	__m128 (*const exp_ps)(__m128) = local::C<>::getInstance().exp_ps_;
+	float(* const exp)(float) = local::C<>::getInstance().exp_;
+	__m128 (* const exp_ps)(__m128) = local::C<>::getInstance().exp_ps_;
 #endif
 
 	// exp2(x) = pow(2, x)
@@ -882,6 +995,7 @@ namespace fmath {
 		return exp_pd(_mm_mul_pd(y, log_pd(x)));
 	}
 
+	//add
 #ifdef __AVX2__
 	inline __m256 log_ps256(__m256 x)//base e
 	{
@@ -893,6 +1007,55 @@ namespace fmath {
 	inline __m256 pow_ps256(__m256 x, __m256 y)
 	{
 		return exp_ps256(_mm256_mul_ps(y, log_ps256(x)));
+	}
+#endif
+
+#ifdef __AVX512F__
+	inline __m512 exp_ps512(__m512 x)
+	{
+		using namespace local;
+		const ExpVar512<>& expVar = C512<>::expVar512;
+
+		/*__m512i limit = _mm512_castps_si512(_mm512_and_ps(x, *reinterpret_cast<const __m512*>(expVar.i7fffffff)));
+		int over =  _mm512_movemask_epi8(_mm512_cmpgt_epi32(limit, *reinterpret_cast<const __m512i*>(expVar.maxX)));
+		if (over)
+		{
+			x = _mm512_min_ps(x, _mm512_load_ps(expVar.maxX));
+			x = _mm512_max_ps(x, _mm512_load_ps(expVar.minX));
+		}*/
+		const __m512i r = _mm512_cvtps_epi32(_mm512_mul_ps(x, *reinterpret_cast<const __m512*>(expVar.a)));
+		__m512 t = _mm512_fnmadd_ps(_mm512_cvtepi32_ps(r), *reinterpret_cast<const __m512*>(expVar.b), x);
+		t = _mm512_add_ps(t, *reinterpret_cast<const __m512*>(expVar.f1));
+		const __m512i v8 = _mm512_and_si512(r, *reinterpret_cast<const __m512i*>(expVar.mask_s));
+		__m512i u8 = _mm512_add_epi32(r, *reinterpret_cast<const __m512i*>(expVar.i127s));
+		u8 = _mm512_srli_epi32(u8, expVar.s);
+		u8 = _mm512_slli_epi32(u8, 23);
+#if 1
+		__m512i ti = _mm512_i32gather_epi32(v8, (const int*)expVar.tbl,  4);
+#else
+		unsigned int v0, v1, v2, v3, v4, v5, v6, v7;
+		v0 = _mm256_extract_epi16(v8, 0);
+		v1 = _mm256_extract_epi16(v8, 2);
+		v2 = _mm256_extract_epi16(v8, 4);
+		v3 = _mm256_extract_epi16(v8, 6);
+		v4 = _mm256_extract_epi16(v8, 8);
+		v5 = _mm256_extract_epi16(v8, 10);
+		v6 = _mm256_extract_epi16(v8, 12);
+		v7 = _mm256_extract_epi16(v8, 14);
+		__m256i ti = _mm256_setzero_si256();
+		ti = _mm256_insert_epi32(ti, expVar.tbl[v0], 0);
+		ti = _mm256_insert_epi32(ti, expVar.tbl[v1], 1);
+		ti = _mm256_insert_epi32(ti, expVar.tbl[v2], 2);
+		ti = _mm256_insert_epi32(ti, expVar.tbl[v3], 3);
+		ti = _mm256_insert_epi32(ti, expVar.tbl[v4], 4);
+		ti = _mm256_insert_epi32(ti, expVar.tbl[v5], 5);
+		ti = _mm256_insert_epi32(ti, expVar.tbl[v6], 6);
+		ti = _mm256_insert_epi32(ti, expVar.tbl[v7], 7);
+#endif
+		__m512 t0 = _mm512_castsi512_ps(ti);
+		t0 = _mm512_or_ps(t0, _mm512_castsi512_ps(u8));
+		t = _mm512_mul_ps(t, t0);
+		return t;
 	}
 #endif
 } // fmath
