@@ -774,7 +774,7 @@ namespace fmath {
 		__m256i u8 = _mm256_add_epi32(r, *reinterpret_cast<const __m256i*>(expVar.i127s));
 		u8 = _mm256_srli_epi32(u8, expVar.s);
 		u8 = _mm256_slli_epi32(u8, 23);
-#ifdef 1
+#if 1
 		__m256i ti = _mm256_i32gather_epi32((const int*)expVar.tbl, v8, 4);
 #else
 		unsigned int v0, v1, v2, v3, v4, v5, v6, v7;
