@@ -39,6 +39,7 @@ namespace cp
 
 	double getPSNR_DD(doubledouble* src1, cv::Mat& src2)
 	{
+#ifdef __AVX2__
 		if (src2.depth() == CV_64F && src2.channels() == 2)
 		{
 			doubledouble* a = (doubledouble*)src2.ptr<double>();
@@ -152,6 +153,10 @@ namespace cp
 		}
 
 		return 10.0 * log10(255.0 * 255.0 / mse);
+#endif
+
+		cout << "error: USE AVX2 for getPSNR_DD" << endl;
+		return -1.0;
 	}
 
 	double getPSNR_DD(cv::Mat& src1, doubledouble* src2)
