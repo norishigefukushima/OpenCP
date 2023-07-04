@@ -99,6 +99,7 @@ namespace cp
 
 	void GaussianFilterSepKahan64f(const Mat& src, Mat& dst, const Size kernelSize, double sigma_space, const int borderType, const bool isSort)
 	{
+#ifdef __AVX2__
 		if (kernelSize.width == 0 || kernelSize.height == 0) { src.copyTo(dst); return; }
 
 		CV_Assert(!src.empty());
@@ -259,6 +260,9 @@ namespace cp
 				}
 			}
 		}
+#else 
+		cout << "USE AVX2 in GaussianFilterSepKahan64f" << endl;
+#endif
 	}
 
 

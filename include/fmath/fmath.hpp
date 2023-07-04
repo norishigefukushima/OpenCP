@@ -1,4 +1,5 @@
 #pragma once
+#include <inlineSIMDFunctions.hpp>
 /**
 	@brief fast math library for float
 	@author herumi
@@ -752,6 +753,7 @@ namespace fmath {
 
 		return t;
 	}
+
 #ifdef __AVX2__
 	inline __m256 exp_ps256(__m256 x)
 	{
@@ -772,7 +774,7 @@ namespace fmath {
 		__m256i u8 = _mm256_add_epi32(r, *reinterpret_cast<const __m256i*>(expVar.i127s));
 		u8 = _mm256_srli_epi32(u8, expVar.s);
 		u8 = _mm256_slli_epi32(u8, 23);
-#if 1
+#ifdef 1
 		__m256i ti = _mm256_i32gather_epi32((const int*)expVar.tbl, v8, 4);
 #else
 		unsigned int v0, v1, v2, v3, v4, v5, v6, v7;
@@ -848,6 +850,94 @@ namespace fmath {
 		return t;
 	}
 
+
+#else
+	inline __m256 exp_ps256(__m256 x)
+	{
+#if 0
+		__m128 a = fmath::exp_ps(_mm256_extractf128_ps(x, 1));
+		__m128 b = fmath::exp_ps(_mm256_extractf128_ps(x, 0));
+		return _mm256_set_m128(a, b);
+#else
+		using namespace local;
+		const ExpVar<>& expVar = C<>::expVar;
+
+		__m256i limit = _mm256_castps_si256(_mm256_and_ps(x, *reinterpret_cast<const __m256*>(expVar.i7fffffff)));
+		__m128i limitlo = _mm256_castsi256_si128(limit);
+		__m128i limithi = _mm_castps_si128(_mm256_extractf128_ps(_mm256_castsi256_ps(limit), 1));
+		int over = _mm_movemask_epi8(_mm_cmpgt_epi32(limitlo, *reinterpret_cast<const __m128i*>(expVar.maxX)));
+		over += _mm_movemask_epi8(_mm_cmpgt_epi32(limithi, *reinterpret_cast<const __m128i*>(expVar.maxX)));
+		if (over)
+		{
+			x = _mm256_min_ps(x, _mm256_load_ps(expVar.maxX));
+			x = _mm256_max_ps(x, _mm256_load_ps(expVar.minX));
+		}
+		const __m256i r = _mm256_cvtps_epi32(_mm256_mul_ps(x, *reinterpret_cast<const __m256*>(expVar.a)));
+		__m256 t = _mm256_fnmadd_ps(_mm256_cvtepi32_ps(r), *reinterpret_cast<const __m256*>(expVar.b), x);
+		t = _mm256_add_ps(t, *reinterpret_cast<const __m256*>(expVar.f1));
+
+		__m128i rlo = _mm256_castsi256_si128(r);
+		__m128i rhi = _mm_castps_si128(_mm256_extractf128_ps(_mm256_castsi256_ps(r), 1));
+		__m128i v8lo = _mm_and_si128(rlo, *reinterpret_cast<const __m128i*>(expVar.mask_s));
+		__m128i v8hi = _mm_and_si128(rhi, *reinterpret_cast<const __m128i*>(expVar.mask_s));
+		__m128i u8lo = _mm_add_epi32(rlo, *reinterpret_cast<const __m128i*>(expVar.i127s));
+		__m128i u8hi = _mm_add_epi32(rhi, *reinterpret_cast<const __m128i*>(expVar.i127s));
+
+		u8lo = _mm_srli_epi32(u8lo, expVar.s);
+		u8hi = _mm_srli_epi32(u8hi, expVar.s);
+		u8lo = _mm_slli_epi32(u8lo, 23);
+		u8hi = _mm_slli_epi32(u8hi, 23);
+
+		__m256i u8 = _mm256_set_m128i(u8hi, u8lo);
+		__m256i v8 = _mm256_set_m128i(v8hi, v8lo);
+		__m256i ti = _mm256_i32gatherset_epi32((const int*)expVar.tbl, v8, 4);
+		__m256 t0 = _mm256_castsi256_ps(ti);
+		t0 = _mm256_or_ps(t0, _mm256_castsi256_ps(u8));
+		t = _mm256_mul_ps(t, t0);
+		return t;
+#endif
+
+	}
+	inline __m256 exp_ps256_nolimitcheck(__m256 x)
+	{
+		using namespace local;
+		const ExpVar<>& expVar = C<>::expVar;
+
+		/*
+		__m256i limit = _mm256_castps_si256(_mm256_and_ps(x, *reinterpret_cast<const __m256*>(expVar.i7fffffff)));
+		__m128i limitlo = _mm256_castsi256_si128(limit);
+		__m128i limithi = _mm_castps_si128(_mm256_extractf128_ps(_mm256_castsi256_ps(limit), 1));
+		int over = _mm_movemask_epi8(_mm_cmpgt_epi32(limitlo, *reinterpret_cast<const __m128i*>(expVar.maxX)));
+		over += _mm_movemask_epi8(_mm_cmpgt_epi32(limithi, *reinterpret_cast<const __m128i*>(expVar.maxX)));
+		if (over)
+		{
+			x = _mm256_min_ps(x, _mm256_load_ps(expVar.maxX));
+			x = _mm256_max_ps(x, _mm256_load_ps(expVar.minX));
+		}*/
+		const __m256i r = _mm256_cvtps_epi32(_mm256_mul_ps(x, *reinterpret_cast<const __m256*>(expVar.a)));
+		__m256 t = _mm256_fnmadd_ps(_mm256_cvtepi32_ps(r), *reinterpret_cast<const __m256*>(expVar.b), x);
+		t = _mm256_add_ps(t, *reinterpret_cast<const __m256*>(expVar.f1));
+
+		__m128i rlo = _mm256_castsi256_si128(r);
+		__m128i rhi = _mm_castps_si128(_mm256_extractf128_ps(_mm256_castsi256_ps(r), 1));
+		__m128i v8lo = _mm_and_si128(rlo, *reinterpret_cast<const __m128i*>(expVar.mask_s));
+		__m128i v8hi = _mm_and_si128(rhi, *reinterpret_cast<const __m128i*>(expVar.mask_s));
+		__m128i u8lo = _mm_add_epi32(rlo, *reinterpret_cast<const __m128i*>(expVar.i127s));
+		__m128i u8hi = _mm_add_epi32(rhi, *reinterpret_cast<const __m128i*>(expVar.i127s));
+
+		u8lo = _mm_srli_epi32(u8lo, expVar.s);
+		u8hi = _mm_srli_epi32(u8hi, expVar.s);
+		u8lo = _mm_slli_epi32(u8lo, 23);
+		u8hi = _mm_slli_epi32(u8hi, 23);
+
+		__m256i u8 = _mm256_set_m128i(u8hi, u8lo);
+		__m256i v8 = _mm256_set_m128i(v8hi, v8lo);
+		__m256i ti = _mm256_i32gatherset_epi32((const int*)expVar.tbl, v8, 4);
+		__m256 t0 = _mm256_castsi256_ps(ti);
+		t0 = _mm256_or_ps(t0, _mm256_castsi256_ps(u8));
+		t = _mm256_mul_ps(t, t0);
+		return t;
+	}
 #endif
 
 	inline float log(float x)
@@ -996,7 +1086,7 @@ namespace fmath {
 	}
 
 	//add
-#ifdef __AVX2__
+#ifdef __AVX__
 	inline __m256 log_ps256(__m256 x)//base e
 	{
 		__m128 a = fmath::log_ps(_mm256_extractf128_ps(x, 1));
@@ -1031,7 +1121,7 @@ namespace fmath {
 		u8 = _mm512_srli_epi32(u8, expVar.s);
 		u8 = _mm512_slli_epi32(u8, 23);
 #if 1
-		__m512i ti = _mm512_i32gather_epi32(v8, (const int*)expVar.tbl,  4);
+		__m512i ti = _mm512_i32gather_epi32(v8, (const int*)expVar.tbl, 4);
 #else
 		unsigned int v0, v1, v2, v3, v4, v5, v6, v7;
 		v0 = _mm256_extract_epi16(v8, 0);

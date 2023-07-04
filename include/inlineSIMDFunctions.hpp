@@ -6,7 +6,7 @@
 #ifdef __INTEL_LLVM_COMPILER //#ifdef __INTEL_COMPILER
 //#include <x86intrin.h>
 #include <immintrin.h>
-  
+
 //#include <intrin.h>
 #else
 #include <intrin.h>
@@ -36,6 +36,47 @@ STATIC_INLINE __m512i _mm512_setr_epi8(char s0, char s1, char s2, char s3, char 
 }*/
 #endif
 //#endif
+
+#pragma region swich_for_AVX(sandybridge_ivybridge)
+static inline __m256i _my256_cvtepu8_epi32(__m128i src)
+{
+	const __m128i a16 = _mm_unpacklo_epi8(src, _mm_setzero_si128());
+	return _mm256_set_m128i(_mm_unpackhi_epi16(a16, _mm_setzero_si128()),_mm_unpacklo_epi16(a16, _mm_setzero_si128()));
+}
+
+#ifndef __AVX2__
+#define _mm256_fmadd_ps(a,b,c) _mm256_add_ps(_mm256_mul_ps(a,b),c)
+#define _mm256_fmsub_ps(a,b,c) _mm256_sub_ps(_mm256_mul_ps(a,b),c)
+#define _mm256_fnmadd_ps(a,b,c) _mm256_add_ps(_mm256_mul_ps(_mm256_mul_ps(_mm256_set1_ps(-1.f),a),b),c)
+#define _mm256_fnmsub_ps(a,b,c) _mm256_sub_ps(_mm256_mul_ps(_mm256_mul_ps(_mm256_set1_ps(-1.f),a),b),c)
+#define _mm256_fmadd_pd(a,b,c) _mm256_add_pd(_mm256_mul_pd(a,b),c)
+#define _mm256_fmsub_pd(a,b,c) _mm256_sub_pd(_mm256_mul_pd(a,b),c)
+#define _mm256_fnmadd_pd(a,b,c) _mm256_add_pd(_mm256_mul_pd(_mm256_mul_pd(_mm256_set1_pd(-1.0),a),b),c)
+#define _mm256_fnmsub_pd(a,b,c) _mm256_sub_pd(_mm256_mul_pd(_mm256_mul_pd(_mm256_set1_pd(-1.0),a),b),c)
+#define _mm256_cvtepu8_epi32(a) _my256_cvtepu8_epi32(a)
+#endif
+
+//#define USE_SET4GATHER
+STATIC_INLINE __m256 _mm256_i32gatherset_ps(const float* s, __m256i index, int offset)
+{
+	return _mm256_setr_ps(s[((int*)&index)[0]], s[((int*)&index)[1]], s[((int*)&index)[2]], s[((int*)&index)[3]], s[((int*)&index)[4]], s[((int*)&index)[5]], s[((int*)&index)[6]], s[((int*)&index)[7]]); \
+}
+STATIC_INLINE __m256i _mm256_i32gatherset_epi32(const int* s, __m256i index, int offset)
+{
+	return _mm256_setr_epi32(s[((int*)&index)[0]], s[((int*)&index)[1]], s[((int*)&index)[2]], s[((int*)&index)[3]], s[((int*)&index)[4]], s[((int*)&index)[5]], s[((int*)&index)[6]], s[((int*)&index)[7]]); \
+}
+
+#if defined(USE_SET4GATHER)
+#define _mm256_i32gather_ps(s, idx, val) _mm256_i32gatherset_ps(s, idx, val)
+#define _mm256_i32gather_epi32(s, idx, val) _mm256_i32gatherset_epi32(s, idx, val)
+#elif !defined(__AVX2__)
+
+#define _mm256_i32gather_ps(s, idx, val) _mm256_i32gatherset_ps(s, idx, val)
+#define _mm256_i32gather_epi32(s, idx, val) _mm256_i32gatherset_epi32(s, idx, val)
+#endif
+
+
+#pragma endregion
 
 #pragma region xxx
 #pragma endregion
@@ -2289,7 +2330,7 @@ STATIC_INLINE void print_long(__m256i src)
 	printf_s("\n");
 }
 
-STATIC_INLINE void print_simd(__m128 src)  { print_m128(src);}
+STATIC_INLINE void print_simd(__m128 src) { print_m128(src); }
 STATIC_INLINE void print_simd(__m128i src) { print_int(src); }
 STATIC_INLINE void print_simd(__m128d src) { print_m128d(src); }
 STATIC_INLINE void print_simd(__m256i src) { print_int(src); }
