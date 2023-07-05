@@ -37,14 +37,53 @@ STATIC_INLINE __m512i _mm512_setr_epi8(char s0, char s1, char s2, char s3, char 
 #endif
 //#endif
 
+//#define USE_SET4GATHER
+//#define UNUSE_FMA
+
 #pragma region swich_for_AVX(sandybridge_ivybridge)
 static inline __m256i _my256_cvtepu8_epi32(__m128i src)
 {
 	const __m128i a16 = _mm_unpacklo_epi8(src, _mm_setzero_si128());
 	return _mm256_set_m128i(_mm_unpackhi_epi16(a16, _mm_setzero_si128()),_mm_unpacklo_epi16(a16, _mm_setzero_si128()));
 }
-
 #ifndef __AVX2__
+#define _mm256_cvtepu8_epi32(a) _my256_cvtepu8_epi32(a)
+
+#ifdef AMD_OPTIMIZATION
+inline __m256 _mm256_i32gather_ps(float* s, __m256i index, int val)
+{
+	return _mm256_setr_ps(s[((int*)&index)[0]], s[((int*)&index)[1]], s[((int*)&index)[2]], s[((int*)&index)[3]], s[((int*)&index)[4]], s[((int*)&index)[5]], s[((int*)&index)[6]], s[((int*)&index)[7]]);
+}
+
+#define _mm256_permute4x64_ps(src,imm8) (_mm256_castsi256_ps(_mm256_permute4x64_epi64(_mm256_castps_si256(src), imm8)))
+//for _MM_SHUFFLE(3, 1, 2, 0) 
+/*
+inline __m256 _mm256_permute4x64_ps(__m256 src, const int imm8)
+{
+	//perm128x1, shuffle_pd(1,0.5) x2
+	__m256 tmp = _mm256_permute2f128_ps(src, src, 0x01);
+	__m256d tm2 = _mm256_shuffle_pd(_mm256_castps_pd(src), _mm256_castps_pd(tmp), 0b1100);
+	__m256 ret = _mm256_castpd_ps(_mm256_shuffle_pd(tm2, tm2, 0b0110));
+	return ret;
+}
+*/
+/*
+inline __m256 _mm256_permute4x64_ps(__m256 src, const int imm8)
+{
+	//perm128x1 shuffle_ps(1,0.5) x2, blend(1,0.33) x1
+	__m256 tmp = _mm256_permute2f128_ps(src, src, 0x01);
+	__m256 rt1 = _mm256_shuffle_ps(src, tmp, _MM_SHUFFLE(1, 0, 1, 0));
+	__m256 rt2 = _mm256_shuffle_ps(tmp, src, _MM_SHUFFLE(3, 2, 3, 2));
+	__m256 ret = _mm256_blend_ps(rt1, rt2, 0b11110000);
+	return ret;
+}*/
+#else
+#define _mm256_permute4x64_ps(src,imm8) (_mm256_castsi256_ps(_mm256_permute4x64_epi64(_mm256_castps_si256(src), imm8)))
+//#define _mm256_permute4x64_ps(src,imm8) (_mm256_castpd_ps(_mm256_permute4x64_pd(_mm256_castps_pd(src), imm8)))
+#endif 
+#endif
+
+#if !defined(__AVX2__) || defined(UNUSE_FMA)
 #define _mm256_fmadd_ps(a,b,c) _mm256_add_ps(_mm256_mul_ps(a,b),c)
 #define _mm256_fmsub_ps(a,b,c) _mm256_sub_ps(_mm256_mul_ps(a,b),c)
 #define _mm256_fnmadd_ps(a,b,c) _mm256_add_ps(_mm256_mul_ps(_mm256_mul_ps(_mm256_set1_ps(-1.f),a),b),c)
@@ -53,10 +92,9 @@ static inline __m256i _my256_cvtepu8_epi32(__m128i src)
 #define _mm256_fmsub_pd(a,b,c) _mm256_sub_pd(_mm256_mul_pd(a,b),c)
 #define _mm256_fnmadd_pd(a,b,c) _mm256_add_pd(_mm256_mul_pd(_mm256_mul_pd(_mm256_set1_pd(-1.0),a),b),c)
 #define _mm256_fnmsub_pd(a,b,c) _mm256_sub_pd(_mm256_mul_pd(_mm256_mul_pd(_mm256_set1_pd(-1.0),a),b),c)
-#define _mm256_cvtepu8_epi32(a) _my256_cvtepu8_epi32(a)
 #endif
 
-//#define USE_SET4GATHER
+
 STATIC_INLINE __m256 _mm256_i32gatherset_ps(const float* s, __m256i index, int offset)
 {
 	return _mm256_setr_ps(s[((int*)&index)[0]], s[((int*)&index)[1]], s[((int*)&index)[2]], s[((int*)&index)[3]], s[((int*)&index)[4]], s[((int*)&index)[5]], s[((int*)&index)[6]], s[((int*)&index)[7]]); \
@@ -66,11 +104,7 @@ STATIC_INLINE __m256i _mm256_i32gatherset_epi32(const int* s, __m256i index, int
 	return _mm256_setr_epi32(s[((int*)&index)[0]], s[((int*)&index)[1]], s[((int*)&index)[2]], s[((int*)&index)[3]], s[((int*)&index)[4]], s[((int*)&index)[5]], s[((int*)&index)[6]], s[((int*)&index)[7]]); \
 }
 
-#if defined(USE_SET4GATHER)
-#define _mm256_i32gather_ps(s, idx, val) _mm256_i32gatherset_ps(s, idx, val)
-#define _mm256_i32gather_epi32(s, idx, val) _mm256_i32gatherset_epi32(s, idx, val)
-#elif !defined(__AVX2__)
-
+#if !defined(__AVX2__) || defined(USE_SET4GATHER)
 #define _mm256_i32gather_ps(s, idx, val) _mm256_i32gatherset_ps(s, idx, val)
 #define _mm256_i32gather_epi32(s, idx, val) _mm256_i32gatherset_epi32(s, idx, val)
 #endif
