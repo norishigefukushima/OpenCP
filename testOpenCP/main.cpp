@@ -82,6 +82,14 @@ std::string getOpenCLInformation()
 	}
 	return ret;
 }
+
+std::string getCUDAInformation()
+{
+	cv::cuda::DeviceInfo info;
+	string s = info.name();
+	return s;
+}
+
 template<typename T>
 void detailBoostLinear_(Mat& src, Mat& smooth, Mat& dest, const double boost)
 {
@@ -567,6 +575,8 @@ int main(int argc, char** argv)
 		cout << getInformation() << endl;
 		cout << cv::getBuildInformation() << endl;
 		cout << getOpenCLInformation()<<endl;
+		cout << getCUDAInformation() << endl;
+		cv::cuda::printCudaDeviceInfo(0);
 	}
 
 	//cv::ipp::setUseIPP(false);

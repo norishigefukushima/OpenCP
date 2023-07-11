@@ -4,8 +4,8 @@
 
 #ifdef _DEBUG
 #pragma comment(lib, "opencpd.lib")
-#pragma comment(lib, "MultiScaleFilter.lib")
-#pragma comment(lib, "SpatialFilter.lib")
+#pragma comment(lib, "MultiScaleFilterd.lib")
+#pragma comment(lib, "SpatialFilterd.lib")
 #else
 #pragma comment(lib, "opencp.lib")
 #pragma comment(lib, "MultiScaleFilter.lib")

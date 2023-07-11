@@ -289,13 +289,7 @@ __pycache__/
 *.odx.cs
 *.xsd.cs
 
-bin/OpenCP.dll
-bin/OpenCPd.dll
-bin/SpatialFilter.dll
-bin/SpatialFilterd.dll
+bin/*.dll
 lib/*.exp
-lib/OpenCP.lib
-lib/OpenCPd.lib
-lib/SpatialFilter.lib
-lib/SpatialFilterd.lib
+lib/*.lib
 testOpenCP/My Advisor Results - testOpenCP/
