@@ -1,6 +1,16 @@
 #pragma once 
 
 #include "common.hpp"
+/*************************************************************
+ inline functions
+*************************************************************/
+#include "inlineSIMDFunctions.hpp"
+#include "inlineCVFunctions.hpp"
+#include "inlineMathFunctions.hpp"
+
+//one line fuinctions
+#include "onelineCVFunctions.hpp"
+#include "search1D.hpp"
 
 /*************************************************************
  core
@@ -150,16 +160,7 @@
 #include "fftinfo.hpp"
 #include "fitPlane.hpp"
 
-/*************************************************************
- inline functions
-*************************************************************/
-#include "inlineSIMDFunctions.hpp"
-#include "inlineCVFunctions.hpp"
-#include "inlineMathFunctions.hpp"
 
-//one line fuinctions
-#include "onelineCVFunctions.hpp"
-#include "search1D.hpp"
 //template for new files
 /*
 

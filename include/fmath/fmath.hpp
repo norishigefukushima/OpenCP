@@ -63,9 +63,11 @@
 #include "xbyak/xbyak_util.h"
 #endif
 
-namespace fmath {
+namespace fmath
+{
 
-	namespace local {
+	namespace local
+	{
 
 		const size_t EXP_TABLE_SIZE = 10;
 		const size_t EXPD_TABLE_SIZE = 11;
@@ -174,14 +176,14 @@ namespace fmath {
 					C2[i] = 0.16666666685227835064;
 					C3[i] = 3.0000000027955394;
 #endif
-				}
+			}
 				for (int i = 0; i < s; i++) {
 					di di;
 					di.d = ::pow(2.0, i * (1.0 / s));
 					tbl[i] = di.i & mask64(52);
 				}
-			}
-		};
+		}
+	};
 
 		template<size_t N = LOG_TABLE_SIZE>
 		struct LogVar {
@@ -381,7 +383,7 @@ namespace fmath {
 				jmp(".retry");
 				outLocalLabel();
 			}
-		};
+};
 #endif
 
 		/* to define static variables in fmath.hpp */
@@ -394,7 +396,7 @@ namespace fmath {
 			static const ExpCode& getInstance() {
 				static const ExpCode expCode(&expVar);
 				return expCode;
-			}
+		}
 #endif
 		};
 
@@ -822,7 +824,7 @@ namespace fmath {
 		__m256i u8 = _mm256_add_epi32(r, *reinterpret_cast<const __m256i*>(expVar.i127s));
 		u8 = _mm256_srli_epi32(u8, expVar.s);
 		u8 = _mm256_slli_epi32(u8, 23);
-#if 1
+#ifndef USE_SET4GATHER
 		__m256i ti = _mm256_i32gather_epi32((const int*)expVar.tbl, v8, 4);
 #else
 		unsigned int v0, v1, v2, v3, v4, v5, v6, v7;
@@ -1010,8 +1012,10 @@ namespace fmath {
 		for given y > 0
 		get f_y(x) := pow(x, y) for x >= 0
 	*/
-	class PowGenerator {
-		enum {
+	class PowGenerator 
+	{
+		enum 
+		{
 			N = 11
 		};
 		float tbl0_[256];
