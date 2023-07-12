@@ -289,7 +289,7 @@ __pycache__/
 *.odx.cs
 *.xsd.cs
 
+# other
 bin/*.dll
 lib/*.exp
 lib/*.lib
-testOpenCP/My Advisor Results - testOpenCP/
