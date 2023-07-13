@@ -213,4 +213,38 @@ namespace cp
 		}
 	}
 
+
+	vector<Mat> readYUV420(string fname, Size size)
+	{
+		Mat temp = Mat::zeros(Size(size.width, cvRound(size.height * 1.5)), CV_8U);
+		FILE* fp = fopen(fname.c_str(), "rb");
+		if (fp == NULL)cout << fname << " open error\n";
+		const int fsize = size.area() + size.area() * 2 / 4;
+		fread(temp.data, sizeof(char), cvRound(size.area() * 1.5), fp);
+
+		Mat Y(size, CV_8U);
+		Size hsize = size / 2;
+		Mat U(hsize, CV_8U);
+		Mat V(hsize, CV_8U);
+		vector<Mat> ret;
+		for (int i = 0; i < size.area(); i++)
+		{
+			Y.at<uchar>(i) = temp.at<uchar>(i);
+		}
+		for (int i = 0; i < hsize.area(); i++)
+		{
+			U.at<uchar>(i) = temp.at<uchar>(i + size.area());
+		}
+		for (int i = 0; i < hsize.area(); i++)
+		{
+			V.at<uchar>(i) = temp.at<uchar>(i + size.area() + hsize.area());
+		}
+
+		ret.push_back(Y);
+		ret.push_back(U);
+		ret.push_back(V);
+		fclose(fp);
+		//imshow("aa",dest);waitKey();
+		return ret;
+	}
 }

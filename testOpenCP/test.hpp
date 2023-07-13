@@ -18,6 +18,7 @@ void testAlphaBlend(cv::Mat& src1, cv::Mat& src2);
 void testAlphaBlendMask(cv::Mat& src1, cv::Mat& src2);
 void consoleImageTest();
 void testAddNoise(cv::Mat& src);
+void testIsSame();
 void testConcat();
 void copyMakeBorderTest(cv::Mat& src);
 void testCorrelationCoefficient();
@@ -38,6 +39,7 @@ void testDestinationTimePrediction(cv::Mat& src);
 void testTiling(cv::Mat& src);
 void testLocalPSNR(cv::Mat& ref);
 void testVideoSubtitle();
+void testWebPAnimation();
 void testWindowFunction();
 
 //imgproc

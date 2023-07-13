@@ -1,5 +1,6 @@
 #pragma once
 #include <opencv2/core/cvdef.h>
+#include <opencv2/core/ocl.hpp>
 #include <opencv2/imgproc.hpp>
 #include <string>
 
@@ -318,6 +319,74 @@ namespace cp
 			ret = 4; break;
 		default:
 			break;
+		}
+		return ret;
+	}
+
+
+
+	inline std::string getInformation()
+	{
+		std::string ret = "version: " + cv::getVersionString() + "\n";
+		ret += "==============\n";
+		if (cv::useOptimized()) ret += "cv::useOptimized: true\n";
+		else ret += "cv::useOptimized: false\n";
+		if (cv::ipp::useIPP()) ret += "cv::ipp::useIPP: true\n";
+		else ret += "cv::ipp::useIPP: true\n";
+		ret += cv::ipp::getIppVersion() + "\n";
+		ret += cv::format("cv::getNumberOfCPUs = %d\n", cv::getNumberOfCPUs());
+		ret += cv::format("cv::getNumThreads = %d\n", cv::getNumThreads());
+		ret += cv::getCPUFeaturesLine() + "\n";
+		ret += cv::getCPUFeaturesLine() + "\n";
+		ret += "==============\n";
+
+		return ret;
+	}
+
+	inline std::string getOpenCLInformation()
+	{
+		std::string ret = "";
+		if (cv::ocl::haveOpenCL())
+		{
+			cv::ocl::Context context;
+			if (!context.create(cv::ocl::Device::TYPE_GPU))
+			{
+				ret = "Failed creating the context\n";
+			}
+			else
+			{
+				// In OpenCV 3.0.0 beta, only a single device is detected.
+				ret = cv::format("%d GPU devices are detected.\n", context.ndevices());
+				ret += "===========================================\n";
+				for (int i = 0; i < context.ndevices(); i++)
+				{
+					cv::ocl::Device device = context.device(i);
+					ret += "name            : " + device.name() + "\n";
+					if (device.available()) ret += "available       : true\n";
+					else ret += "available       : false\n";
+					if (device.imageSupport()) ret += "imageSupport    : true\n";
+					else ret += "imageSupport false\n";
+					ret += "OpenCL_C_Version: " + device.OpenCL_C_Version() + "\n";
+					/*cout << device.doubleFPConfig() << endl;
+					cout<<device.compilerAvailable() << endl;
+					cout<<device.driverVersion() << endl;
+					cout << device.executionCapabilities() << endl;
+					cout << device.extensions() << endl;*/
+					std::cout << device.maxClockFrequency() << std::endl;
+					std::cout << device.maxComputeUnits() << std::endl;
+					std::cout << device.maxConstantArgs() << std::endl;
+					std::cout << device.maxConstantBufferSize() << std::endl;
+					std::cout << device.maxMemAllocSize() << std::endl;
+					std::cout << device.maxParameterSize() << std::endl;
+					std::cout << device.localMemSize() << std::endl;
+					std::cout << device.localMemType() << std::endl;
+					ret += "===========================================\n";
+				}
+			}
+		}
+		else
+		{
+			ret = "OpenCL is not avaiable.\n";
 		}
 		return ret;
 	}

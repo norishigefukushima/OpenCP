@@ -37,7 +37,7 @@ STATIC_INLINE __m512i _mm512_setr_epi8(char s0, char s1, char s2, char s3, char 
 #endif
 //#endif
 
-#define USE_SET4GATHER
+#define USE_SET4GATHER //for AMD CPU
 //#define UNUSE_FMA
 
 #pragma region swich_for_AVX(sandybridge_ivybridge)
