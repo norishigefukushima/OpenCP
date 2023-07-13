@@ -4,8 +4,8 @@
 
 #ifdef _DEBUG
 #pragma comment(lib, "opencpd.lib")
-#pragma comment(lib, "MultiScaleFilter.lib")
-#pragma comment(lib, "SpatialFilter.lib")
+#pragma comment(lib, "MultiScaleFilterd.lib")
+#pragma comment(lib, "SpatialFilterd.lib")
 #else
 #pragma comment(lib, "opencp.lib")
 #pragma comment(lib, "MultiScaleFilter.lib")
@@ -18,6 +18,7 @@ void testAlphaBlend(cv::Mat& src1, cv::Mat& src2);
 void testAlphaBlendMask(cv::Mat& src1, cv::Mat& src2);
 void consoleImageTest();
 void testAddNoise(cv::Mat& src);
+void testIsSame();
 void testConcat();
 void copyMakeBorderTest(cv::Mat& src);
 void testCorrelationCoefficient();
@@ -38,6 +39,7 @@ void testDestinationTimePrediction(cv::Mat& src);
 void testTiling(cv::Mat& src);
 void testLocalPSNR(cv::Mat& ref);
 void testVideoSubtitle();
+void testWebPAnimation();
 void testWindowFunction();
 
 //imgproc

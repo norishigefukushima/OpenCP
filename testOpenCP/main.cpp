@@ -4,569 +4,657 @@ using namespace std;
 using namespace cv;
 using namespace cp;
 
-#include <opencv2/core/ocl.hpp>
-void testIsSame()
+void stream2(Mat& a, Mat& b)
 {
-	Mat a(256, 256, CV_8U);
-	Mat b(256, 256, CV_8U);
-	randu(a, 0, 255);
-	randu(b, 0, 255);
-	isSame(a, b);
-	isSame(a, a);
-	isSame(a, b, 10);
-	isSame(a, a, 10);
-}
-
-std::string getInformation()
-{
-	std::string ret = "version: " + cv::getVersionString() + "\n";
-	ret += "==============\n";
-	if (cv::useOptimized()) ret += "cv::useOptimized: true\n";
-	else ret += "cv::useOptimized: false\n";
-	if (cv::ipp::useIPP()) ret += "cv::ipp::useIPP: true\n";
-	else ret += "cv::ipp::useIPP: true\n";
-	ret += cv::ipp::getIppVersion() + "\n";
-	ret += format("cv::getNumberOfCPUs = %d\n", cv::getNumberOfCPUs());
-	ret += format("cv::getNumThreads = %d\n", cv::getNumThreads());
-	ret += getCPUFeaturesLine() + "\n";
-	ret += getCPUFeaturesLine() + "\n";
-	ret += "==============\n";
-
-	return ret;
-}
-
-std::string getOpenCLInformation()
-{
-	string ret = "";
-	if (cv::ocl::haveOpenCL())
+	const int size = a.size().area();
+	float* ap = a.ptr < float>();
+	float* bp = b.ptr < float>();
+	for (int i = 0; i < size; i += 8)
 	{
-		cv::ocl::Context context;
-		if (!context.create(cv::ocl::Device::TYPE_GPU))
-		{
-			ret = "Failed creating the context\n";
-		}
-		else
-		{
-			// In OpenCV 3.0.0 beta, only a single device is detected.
-			ret = format("%d GPU devices are detected.\n", context.ndevices());
-			ret += "===========================================\n";
-			for (int i = 0; i < context.ndevices(); i++)
-			{
-				cv::ocl::Device device = context.device(i);
-				ret += "name            : "+ device.name() + "\n";
-				if (device.available()) ret += "available       : true\n";
-				else ret += "available       : false\n";
-				if (device.imageSupport()) ret += "imageSupport    : true\n";
-				else ret += "imageSupport false\n";
-				ret += "OpenCL_C_Version: " + device.OpenCL_C_Version()+"\n";
-				/*cout << device.doubleFPConfig() << endl;
-				cout<<device.compilerAvailable() << endl;
-				cout<<device.driverVersion() << endl;
-				cout << device.executionCapabilities() << endl;
-				cout << device.extensions() << endl;*/
-				cout << device.maxClockFrequency() << endl;
-				cout << device.maxComputeUnits() << endl;
-				cout << device.maxConstantArgs() << endl;
-				cout << device.maxConstantBufferSize() << endl;
-				cout << device.maxMemAllocSize() << endl;
-				cout << device.maxParameterSize() << endl;
-				cout << device.localMemSize() << endl;
-				cout << device.localMemType() << endl;
-				ret += "===========================================\n";
-			}
-		}
-	}
-	else
-	{
-		ret = "OpenCL is not avaiable.\n";
-	}
-	return ret;
-}
-template<typename T>
-void detailBoostLinear_(Mat& src, Mat& smooth, Mat& dest, const double boost)
-{
-	T* imptr = src.ptr<T>();
-	T* smptr = smooth.ptr<T>();
-	T* dptr = dest.ptr<T>();
-	const int size = src.size().area();
-	for (int i = 0; i < size; i++)
-	{
-		dptr[i] = saturate_cast<T>(smptr[i] + boost * (imptr[i] - smptr[i]));
+		_mm256_stream_ps(bp + i, _mm256_stream_load_ps(ap + i));
 	}
 }
 
-template<typename T>
-void detailBoostGauss_(Mat& src, Mat& smooth, Mat& dest, const double boost, const double sigma)
+void stream3(Mat& a, Mat& b)
 {
-	T* imptr = src.ptr<T>();
-	T* smptr = smooth.ptr<T>();
-	T* dptr = dest.ptr<T>();
-	const int size = src.size().area();
-	for (int i = 0; i < size; i++)
+	const int size = a.size().area();
+	float* ap = a.ptr < float>();
+	float* bp = b.ptr < float>();
+	for (int i = 0; i < size; i += 16)
 	{
-		const double sub = imptr[i] - smptr[i];
-		dptr[i] = saturate_cast<T>(smptr[i] + boost * exp(sub * sub / (-2.0 * sigma * sigma)) * (sub));
+		_mm256_stream_ps(bp + i + 0, _mm256_stream_load_ps(ap + i + 0));
+		_mm256_stream_ps(bp + i + 8, _mm256_stream_load_ps(ap + i + 8));
 	}
 }
 
-inline double contrastLinear_(double val, double a, double c)
+void stream4(Mat& a, Mat& b)
 {
-	return a * (val - c) + c;
-}
-
-inline double contrastGauss_(double val, double a, double c, double coeff)
-{
-	double sub = (val - c);
-	return val - a * exp(coeff * sub * sub) * sub;
-}
-
-inline double contrastGamma_(double val, double gamma)
-{
-	return pow(val / 255.0, gamma) * 255.0;
-}
-
-
-template<typename T>
-void baseContrastLinear_(Mat& src, Mat& smooth, Mat& dest, const double a, const double c, const int method)
-{
-	T* imptr = src.ptr<T>();
-	T* smptr = smooth.ptr<T>();
-	T* dptr = dest.ptr<T>();
-	const int size = src.size().area();
-	for (int i = 0; i < size; i++)
+	const int size = a.size().area();
+	float* ap = a.ptr < float>();
+	float* bp = b.ptr < float>();
+	for (int i = 0; i < size; i += 32)
 	{
-		dptr[i] = saturate_cast<T>(contrastLinear_(smptr[i], a, c) + (imptr[i] - smptr[i]));
+		_mm256_stream_ps(bp + i + 0, _mm256_stream_load_ps(ap + i + 0));
+		_mm256_stream_ps(bp + i + 8, _mm256_stream_load_ps(ap + i + 8));
+		_mm256_stream_ps(bp + i + 16, _mm256_stream_load_ps(ap + i + 16));
+		_mm256_stream_ps(bp + i + 24, _mm256_stream_load_ps(ap + i + 24));
 	}
 }
 
-template<typename T>
-void baseContrastGauss_(Mat& src, Mat& smooth, Mat& dest, const double a, const double c, const double sigma, const int method)
+void stream5(Mat& a, Mat& b)
 {
-	T* imptr = src.ptr<T>();
-	T* smptr = smooth.ptr<T>();
-	T* dptr = dest.ptr<T>();
-	const int size = src.size().area();
-	const double coeff = -1.0 / (2.0 * sigma * sigma);
-	for (int i = 0; i < size; i++)
+	const int size = a.size().area();
+	const float* ap = a.ptr<float>();
+	float* bp = b.ptr<float>();
+	for (int i = 0; i < size; i += 64)
 	{
-		dptr[i] = saturate_cast<T>(contrastGauss_(smptr[i], a, c, coeff) + (imptr[i] - smptr[i]));
-		//dptr[i] = saturate_cast<T>(contrastLinear_(smptr[i], a, c) + (imptr[i] - smptr[i]));
+		_mm256_stream_ps(bp + 0, _mm256_stream_load_ps(ap + 0));
+		_mm256_stream_ps(bp + 8, _mm256_stream_load_ps(ap + 8));
+		_mm256_stream_ps(bp + 16, _mm256_stream_load_ps(ap + 16));
+		_mm256_stream_ps(bp + 24, _mm256_stream_load_ps(ap + 24));
+		_mm256_stream_ps(bp + 32, _mm256_stream_load_ps(ap + 32));
+		_mm256_stream_ps(bp + 40, _mm256_stream_load_ps(ap + 40));
+		_mm256_stream_ps(bp + 48, _mm256_stream_load_ps(ap + 48));
+		_mm256_stream_ps(bp + 56, _mm256_stream_load_ps(ap + 56));
+		ap += 64;
+		bp += 64;
 	}
 }
 
-template<typename T>
-void baseContrastGamma_(Mat& src, Mat& smooth, Mat& dest, const double gamma)
+void stream51(Mat& a, Mat& b)
 {
-	T* imptr = src.ptr<T>();
-	T* smptr = smooth.ptr<T>();
-	T* dptr = dest.ptr<T>();
-	const int size = src.size().area();
-	for (int i = 0; i < size; i++)
+	const int size = a.size().area();
+	float* ap = a.ptr < float>();
+	float* bp = b.ptr < float>();
+#pragma omp parallel for 
+	for (int i = 0; i < size; i += 32)
 	{
-		dptr[i] = saturate_cast<T>(contrastGamma_(smptr[i], gamma) + (imptr[i] - smptr[i]));
-		//dptr[i] = saturate_cast<T>(contrastLinear_(smptr[i], a, c) + (imptr[i] - smptr[i]));
+		_mm256_stream_ps(bp + i + 0, _mm256_stream_load_ps(ap + i + 0));
+		_mm256_stream_ps(bp + i + 8, _mm256_stream_load_ps(ap + i + 8));
+		_mm256_stream_ps(bp + i + 16, _mm256_stream_load_ps(ap + i + 16));
+		_mm256_stream_ps(bp + i + 24, _mm256_stream_load_ps(ap + i + 24));
 	}
 }
 
-void baseContrast(cv::InputArray src, cv::InputArray smooth, cv::OutputArray dest, const double a, const double c, const double sigma, const int method)
+void stream52(Mat& a, Mat& b)
 {
-	dest.create(src.size(), src.type());
-	Plot pt;
-	pt.setXRange(0, 256);
-	pt.setYRange(0, 256);
-	const double coeff = -1.0 / (2.0 * sigma * sigma);
-	for (int i = 0; i < 256; i++)
-	{
-		pt.push_back(i, contrastLinear_(i, a, c), 0);
-		pt.push_back(i, contrastGauss_(i, a, c, coeff), 1);
-		pt.push_back(i, contrastGamma_(i, a), 2);
-
-	}
-	pt.plot("contrast", false);
-
-	Mat im = src.getMat();
-	Mat sm = smooth.getMat();
-	Mat dst = dest.getMat();
-	if (method == 0)
-	{
-		if (im.depth() == CV_8U)  baseContrastGamma_<uchar>(im, sm, dst, a);
-		if (im.depth() == CV_32F) baseContrastGamma_<float>(im, sm, dst, a);
-		if (im.depth() == CV_64F) baseContrastGamma_<double>(im, sm, dst, a);
-	}
-	else if (method == 1)
-	{
-		if (im.depth() == CV_8U)  baseContrastLinear_<uchar>(im, sm, dst, a, c, method);
-		if (im.depth() == CV_32F) baseContrastLinear_<float>(im, sm, dst, a, c, method);
-		if (im.depth() == CV_64F) baseContrastLinear_<double>(im, sm, dst, a, c, method);
-	}
-	else if (method == 2)
-	{
-		if (im.depth() == CV_8U)  baseContrastGauss_<uchar>(im, sm, dst, a, c, sigma, method);
-		if (im.depth() == CV_32F) baseContrastGauss_<float>(im, sm, dst, a, c, sigma, method);
-		if (im.depth() == CV_64F) baseContrastGauss_<double>(im, sm, dst, a, c, sigma, method);
-	}
-	else if (method == 3)
-	{
-		if (im.depth() == CV_8U)  baseContrastGamma_<uchar>(im, sm, dst, a);
-		if (im.depth() == CV_32F) baseContrastGamma_<float>(im, sm, dst, a);
-		if (im.depth() == CV_64F) baseContrastGamma_<double>(im, sm, dst, a);
-	}
-}
-
-void detailBoost(cv::InputArray src, cv::InputArray smooth, cv::OutputArray dest, const double boost, const double sigma, const int method)
-{
-	dest.create(src.size(), src.type());
-
-	Mat im = src.getMat();
-	Mat sm = smooth.getMat();
-	Mat dst = dest.getMat();
-	if (method == 0)
-	{
-		if (im.depth() == CV_8U)  detailBoostGauss_<uchar>(im, sm, dst, boost, sigma);
-		if (im.depth() == CV_32F) detailBoostGauss_<float>(im, sm, dst, boost, sigma);
-		if (im.depth() == CV_64F) detailBoostGauss_<double>(im, sm, dst, boost, sigma);
-	}
-	else if (method == 1)
-	{
-		if (im.depth() == CV_8U) detailBoostLinear_<uchar>(im, sm, dst, boost);
-		if (im.depth() == CV_32F) detailBoostLinear_<float>(im, sm, dst, boost);
-		if (im.depth() == CV_64F) detailBoostLinear_<double>(im, sm, dst, boost);
-	}
-}
-
-void detailTest()
-{
-	string wname = "enhance";
-	namedWindow(wname);
-	int boost = 100; createTrackbar("boost", wname, &boost, 300);
-	int center = 128; createTrackbar("center", wname, &center, 255);
-	int sigma = 30; createTrackbar("sigma", wname, &sigma, 300);
-	int sr = 30; createTrackbar("sr", wname, &sr, 300);
-	int ss = 5; createTrackbar("ss", wname, &ss, 20);
-	int method = 0; createTrackbar("method", wname, &method, 2);
-	//Mat src = imread("img/flower.png", 0);
-	Mat src = imread("img/lenna.png", 0);
-	//addNoise(src, src, 5);
-	Mat smooth, smooth2;
-
-	int key = 0;
-	Mat show, show2;
-	cp::ConsoleImage ci;
-	while (key != 'q')
-	{
-		const int d = 2 * (ss * 3) + 1;
-		cv::bilateralFilter(src, smooth, d, (double)sr, (double)ss);
-		edgePreservingFilter(src, smooth2, 1, (float)ss, sr / 255.f);
-		//cp::highDimensionalGaussianFilterPermutohedralLattice(src, smooth2, sr, ss);
-
-		detailBoost(src, smooth, show, boost * 0.01, sigma, method);
-		detailBoost(src, smooth2, show2, boost * 0.01, sigma, method);
-		//baseContrast(src, smooth, show, boost * 0.01, center, sigma, 0);
-		//baseContrast(src, smooth2, show2, boost * 0.01, center, sigma, 0);
-
-		ci("PSNR smooth  %f", getPSNR(smooth, smooth2));
-		ci("PSNR enhance %f", getPSNR(show, show2));
-		ci.show();
-		imshow(wname, show);
-		imshow(wname + "2", show2);
-
-		key = waitKey(1);
-		if (key == 'c')guiAlphaBlend(show, show2);
-	}
-}
-
-template<int postprocess>
-void rangeBlurFilter_(const Mat& src, Mat& dst, const int r, const float sigma_range, const float sigma_space, const int borderType)
-{
-	const float lastexp = -1.f;
-	dst.create(src.size(), src.type());
-	Mat srcf;
-	if (src.depth() == CV_32F)srcf = src;
-	else src.convertTo(srcf, CV_32F);
-
-	Mat destf;
-	if (src.depth() == CV_32F)destf = dst;
-	else destf.create(src.size(), CV_32F);
-
-	cv::Mat ave, stddev;
-	if (postprocess == 1)//using stddev
-	{
-		meanStdFilter(srcf, ave, stddev, r);
-	}
-	else
-	{
-		blur(srcf, ave, Size(2 * r + 1, 2 * r + 1));
-	}
-
-	Mat im;
-	copyMakeBorder(srcf, im, r, r, r, r, borderType);
-
-	const int d = (2 * r + 1) * (2 * r + 1);
-	vector<float> rangeTable(256);
-	float* rweight = &rangeTable[0];
-	vector<float> space(d);
-	vector<int> offset(d);
-
-	const float coeff_r = -1.f / (2.f * sigma_range * sigma_range);
-	for (int i = 0; i < 256; i++)
-	{
-		rangeTable[i] = exp(i * i * coeff_r);
-	}
-
-	const float coeff_s = -1.f / (2.f * sigma_space * sigma_space);
-	float wsum = 0.f;
-	if (sigma_space <= 0)
-	{
-		for (int j = -r, idx = 0; j <= r; j++)
-		{
-			for (int i = -r; i <= r; i++)
-			{
-				double dis = double(i * i + j * j);
-				offset[idx] = im.cols * j + i;
-				float v = 1.f;
-				wsum += v;
-				space[idx] = v;
-				idx++;
-			}
-		}
-	}
-	else
-	{
-		for (int j = -r, idx = 0; j <= r; j++)
-		{
-			for (int i = -r; i <= r; i++)
-			{
-				double dis = double(i * i + j * j);
-				offset[idx] = im.cols * j + i;
-				float v = (float)exp(dis * coeff_s);
-				wsum += v;
-				space[idx] = v;
-				idx++;
-			}
-		}
-	}
-
-	for (int k = 0; k < d; k++)
-	{
-		space[k] /= wsum;
-	}
-
+	const int size = a.size().area();
+	float* ap = a.ptr < float>();
+	float* bp = b.ptr < float>();
 #pragma omp parallel for schedule(dynamic)
-	for (int j = 0; j < src.rows; j++)
+	for (int i = 0; i < size; i += 32)
 	{
-		float* dptr = destf.ptr<float>(j);
-		const float* sptr = im.ptr<float>(j + r) + r;
-		const float* aptr = ave.ptr<float>(j);
+		_mm256_stream_ps(bp + i + 0, _mm256_stream_load_ps(ap + i + 0));
+		_mm256_stream_ps(bp + i + 8, _mm256_stream_load_ps(ap + i + 8));
+		_mm256_stream_ps(bp + i + 16, _mm256_stream_load_ps(ap + i + 16));
+		_mm256_stream_ps(bp + i + 24, _mm256_stream_load_ps(ap + i + 24));
+	}
+}
 
-		for (int i = 0; i < src.cols; i += 32)
+void stream6(Mat& a, Mat& b)
+{
+	const int size = a.size().area();
+	float* ap = a.ptr < float>();
+	float* bp = b.ptr < float>();
+#pragma omp parallel for
+	for (int i = 0; i < size; i += 32)
+	{
+		__m256 v0 = _mm256_stream_load_ps(ap + i + 0);
+		__m256 v1 = _mm256_stream_load_ps(ap + i + 8);
+		__m256 v2 = _mm256_stream_load_ps(ap + i + 16);
+		__m256 v3 = _mm256_stream_load_ps(ap + i + 24);
+		_mm256_stream_ps(bp + i + 0, v0);
+		_mm256_stream_ps(bp + i + 8, v1);
+		_mm256_stream_ps(bp + i + 16, v2);
+		_mm256_stream_ps(bp + i + 24, v3);
+	}
+}
+
+void stream7(Mat& a, Mat& b)
+{
+	const int size = a.size().area();
+	float* ap = a.ptr < float>();
+	float* bp = b.ptr < float>();
+	const int thread_max = omp_get_max_threads();
+	const int step = size / thread_max;
+#pragma omp parallel for
+	for (int t = 0; t < thread_max; t++)
+	{
+		//const int idx = omp_get_thread_num();
+		const int st = (t + 0) * step;
+		const int ed = (t + 1) * step;
+		for (int i = st; i < ed; i += 32)
 		{
-			const float* si = sptr + i;
-			const __m256 ma0 = _mm256_lddqu_ps(aptr + i);
-			const __m256 ma1 = _mm256_lddqu_ps(aptr + i + 8);
-			const __m256 ma2 = _mm256_lddqu_ps(aptr + i + 16);
-			const __m256 ma3 = _mm256_lddqu_ps(aptr + i + 24);
-
-			__m256 mv0 = _mm256_setzero_ps();
-			__m256 mv1 = _mm256_setzero_ps();
-			__m256 mv2 = _mm256_setzero_ps();
-			__m256 mv3 = _mm256_setzero_ps();
-			__m256 mw0 = _mm256_setzero_ps();
-			__m256 mw1 = _mm256_setzero_ps();
-			__m256 mw2 = _mm256_setzero_ps();
-			__m256 mw3 = _mm256_setzero_ps();
-			for (int k = 0; k < d; k++)
-			{
-				const __m256 mr0 = _mm256_lddqu_ps(si + offset[k] + 0);
-				const __m256 mr1 = _mm256_lddqu_ps(si + offset[k] + 8);
-				const __m256 mr2 = _mm256_lddqu_ps(si + offset[k] + 16);
-				const __m256 mr3 = _mm256_lddqu_ps(si + offset[k] + 24);
-				__m256 mlw0 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_i32gather_ps(rweight, _mm256_cvtps_epi32(_mm256_abs_ps(_mm256_sub_ps(mr0, ma0))), 4));
-				__m256 mlw1 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_i32gather_ps(rweight, _mm256_cvtps_epi32(_mm256_abs_ps(_mm256_sub_ps(mr1, ma1))), 4));
-				__m256 mlw2 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_i32gather_ps(rweight, _mm256_cvtps_epi32(_mm256_abs_ps(_mm256_sub_ps(mr2, ma2))), 4));
-				__m256 mlw3 = _mm256_mul_ps(_mm256_set1_ps(space[k]), _mm256_i32gather_ps(rweight, _mm256_cvtps_epi32(_mm256_abs_ps(_mm256_sub_ps(mr3, ma3))), 4));
-				mv0 = _mm256_fmadd_ps(mlw0, mr0, mv0);
-				mv1 = _mm256_fmadd_ps(mlw1, mr1, mv1);
-				mv2 = _mm256_fmadd_ps(mlw2, mr2, mv2);
-				mv3 = _mm256_fmadd_ps(mlw3, mr3, mv3);
-				mw0 = _mm256_add_ps(mlw0, mw0);
-				mw1 = _mm256_add_ps(mlw1, mw1);
-				mw2 = _mm256_add_ps(mlw2, mw2);
-				mw3 = _mm256_add_ps(mlw3, mw3);
-			}
-
-			if constexpr (postprocess == 0)
-			{
-				_mm256_storeu_ps(dptr + i + 0, _mm256_div_ps(mv0, mw0));
-				_mm256_storeu_ps(dptr + i + 8, _mm256_div_ps(mv1, mw1));
-				_mm256_storeu_ps(dptr + i + 16, _mm256_div_ps(mv2, mw2));
-				_mm256_storeu_ps(dptr + i + 24, _mm256_div_ps(mv3, mw3));
-			}
-			else if constexpr (postprocess == 1)
-			{
-				const float* s = stddev.ptr<float>(j, i);
-
-				_mm256_storeu_ps(dptr + i + 0, _mm256_mul_ps(_mm256_loadu_ps(s), _mm256_div_ps(mv0, mw0)));
-				_mm256_storeu_ps(dptr + i + 8, _mm256_mul_ps(_mm256_loadu_ps(s + 8), _mm256_div_ps(mv1, mw1)));
-				_mm256_storeu_ps(dptr + i + 16, _mm256_mul_ps(_mm256_loadu_ps(s + 16), _mm256_div_ps(mv2, mw2)));
-				_mm256_storeu_ps(dptr + i + 24, _mm256_mul_ps(_mm256_loadu_ps(s + 24), _mm256_div_ps(mv3, mw3)));
-			}
-			else if constexpr (postprocess == 2)
-			{
-				const float* s = stddev.ptr<float>(j, i);
-
-				_mm256_storeu_ps(dptr + i + 0, _mm256_mul_ps(_mm256_set1_ps(lastexp), _mm256_div_ps(mv0, _mm256_mul_ps(_mm256_loadu_ps(s), mw0))));
-				_mm256_storeu_ps(dptr + i + 8, _mm256_mul_ps(_mm256_set1_ps(lastexp), _mm256_div_ps(mv1, _mm256_mul_ps(_mm256_loadu_ps(s + 8), mw1))));
-				_mm256_storeu_ps(dptr + i + 16, _mm256_mul_ps(_mm256_set1_ps(lastexp), _mm256_div_ps(mv2, _mm256_mul_ps(_mm256_loadu_ps(s + 16), mw2))));
-				_mm256_storeu_ps(dptr + i + 24, _mm256_mul_ps(_mm256_set1_ps(lastexp), _mm256_div_ps(mv3, _mm256_mul_ps(_mm256_loadu_ps(s + 24), mw3))));
-			}
-
+			__m256 v0 = _mm256_stream_load_ps(ap + i + 0);
+			__m256 v1 = _mm256_stream_load_ps(ap + i + 8);
+			__m256 v2 = _mm256_stream_load_ps(ap + i + 16);
+			__m256 v3 = _mm256_stream_load_ps(ap + i + 24);
+			_mm256_stream_ps(bp + i + 0, v0);
+			_mm256_stream_ps(bp + i + 8, v1);
+			_mm256_stream_ps(bp + i + 16, v2);
+			_mm256_stream_ps(bp + i + 24, v3);
 		}
 	}
-
-	if (srcf.depth() != CV_32F) destf.convertTo(dst, src.type());
 }
 
-void rangeBlurFilter(const Mat& src, Mat& dst, const int r, const float sigma_range, const float sigma_space = -1.f, const int postProcessType = 0, const int borderType = cv::BORDER_DEFAULT)
+void stream8(Mat& a, Mat& b)
 {
-	if (postProcessType == 0)rangeBlurFilter_<0>(src, dst, r, sigma_range, sigma_space, borderType);
-	if (postProcessType == 1)rangeBlurFilter_<1>(src, dst, r, sigma_range, sigma_space, borderType);
-	if (postProcessType == 2)rangeBlurFilter_<2>(src, dst, r, sigma_range, sigma_space, borderType);
-}
-
-template<int postprocess>
-void rangeBlurFilterRef_(const Mat& src, Mat& dst, const int r, const float sigma)
-{
-	CV_Assert(src.depth() == CV_32F);
-
-	dst.create(src.size(), src.type());
-	cv::Mat ave, stddev;
-	meanStdFilter(src, ave, stddev, r);
-	const float coeff = 1.f / (-2.f * sigma * sigma);
-	for (int j = r; j < src.rows - r; j++)
+	const int size = a.size().area();
+	float* ap = a.ptr < float>();
+	float* bp = b.ptr < float>();
+	const int thread_max = omp_get_max_threads();
+	const int step = size / thread_max;
+#pragma omp parallel for
+	for (int t = 0; t < thread_max; t++)
 	{
-		float* dptr = dst.ptr<float>(j);
-		const float* sptr = src.ptr<float>(j);
-		const float* avep = ave.ptr<float>(j);
-
-		for (int i = r; i < src.cols - r; i++)
+		//const int idx = omp_get_thread_num();
+		const int st = (t + 0) * step;
+		const int ed = (t + 1) * step;
+		__m256 v0 = _mm256_stream_load_ps(ap + 0);
+		__m256 v1 = _mm256_stream_load_ps(ap + 8);
+		__m256 v2 = _mm256_stream_load_ps(ap + 16);
+		__m256 v3 = _mm256_stream_load_ps(ap + 24);
+		for (int i = st; i < ed - 32; i += 32)
 		{
-			const float a = avep[i];
-			const float s = sptr[i];
-			float w = 0.f;
-			for (int l = -r; l <= r; l++)
+			_mm256_stream_ps(bp + i + 0, v0);
+			_mm256_stream_ps(bp + i + 8, v1);
+			_mm256_stream_ps(bp + i + 16, v2);
+			_mm256_stream_ps(bp + i + 24, v3);
+			v0 = _mm256_stream_load_ps(ap + i + 32);
+			v1 = _mm256_stream_load_ps(ap + i + 40);
+			v2 = _mm256_stream_load_ps(ap + i + 48);
+			v3 = _mm256_stream_load_ps(ap + i + 56);
+		}
+		_mm256_stream_ps(bp + ed - 32 + 0, v0);
+		_mm256_stream_ps(bp + ed - 32 + 8, v1);
+		_mm256_stream_ps(bp + ed - 32 + 16, v2);
+		_mm256_stream_ps(bp + ed - 32 + 24, v3);
+	}
+}
+
+void stream9(Mat& a, Mat& b)
+{
+	const int size = a.size().area();
+	float* ap = a.ptr < float>();
+	float* bp = b.ptr < float>();
+	const int thread_max = omp_get_max_threads();
+	const int step = size / thread_max;
+#pragma omp parallel for
+	for (int t = 0; t < thread_max; t++)
+	{
+		//const int idx = omp_get_thread_num();
+		const int st = (t + 0) * step;
+		const int ed = (t + 1) * step;
+		__m256 v0 = _mm256_stream_load_ps(ap + 0);
+		__m256 v1 = _mm256_stream_load_ps(ap + 8);
+		__m256 v2 = _mm256_stream_load_ps(ap + 16);
+		__m256 v3 = _mm256_stream_load_ps(ap + 24);
+		__m256 v4 = _mm256_stream_load_ps(ap + 32);
+		__m256 v5 = _mm256_stream_load_ps(ap + 40);
+		__m256 v6 = _mm256_stream_load_ps(ap + 48);
+		__m256 v7 = _mm256_stream_load_ps(ap + 56);
+		for (int i = st; i < ed - 64; i += 64)
+		{
+			_mm256_stream_ps(bp + i + 0, v0);
+			_mm256_stream_ps(bp + i + 8, v1);
+			_mm256_stream_ps(bp + i + 16, v2);
+			_mm256_stream_ps(bp + i + 24, v3);
+			_mm256_stream_ps(bp + i + 32, v4);
+			_mm256_stream_ps(bp + i + 40, v5);
+			_mm256_stream_ps(bp + i + 48, v6);
+			_mm256_stream_ps(bp + i + 56, v7);
+			v0 = _mm256_stream_load_ps(ap + i + 32);
+			v1 = _mm256_stream_load_ps(ap + i + 40);
+			v2 = _mm256_stream_load_ps(ap + i + 48);
+			v3 = _mm256_stream_load_ps(ap + i + 56);
+			v4 = _mm256_stream_load_ps(ap + i + 32);
+			v5 = _mm256_stream_load_ps(ap + i + 40);
+			v6 = _mm256_stream_load_ps(ap + i + 48);
+			v7 = _mm256_stream_load_ps(ap + i + 56);
+		}
+		_mm256_stream_ps(bp + ed - 32 + 0, v0);
+		_mm256_stream_ps(bp + ed - 32 + 8, v1);
+		_mm256_stream_ps(bp + ed - 32 + 16, v2);
+		_mm256_stream_ps(bp + ed - 32 + 24, v3);
+		_mm256_stream_ps(bp + ed - 32 + 32, v4);
+		_mm256_stream_ps(bp + ed - 32 + 40, v5);
+		_mm256_stream_ps(bp + ed - 32 + 48, v6);
+		_mm256_stream_ps(bp + ed - 32 + 56, v7);
+	}
+}
+
+void streamSet(Mat& a, float val, const bool isParallel, const int unroll)
+{
+	const __m256 mv = _mm256_set1_ps(val);
+	const int size = a.size().area();
+	float* ap = a.ptr<float>();
+	if (isParallel)
+	{
+		if (unroll == 1)
+		{
+#pragma omp parallel for
+			for (int i = 0; i < size; i += 8)
 			{
-				const float* kptr = src.ptr<float>(j + l);//kernel
-				for (int k = -r; k <= r; k++)
+				_mm256_stream_ps(ap + i + 0, mv);
+			}
+		}
+		if (unroll == 2)
+		{
+#pragma omp parallel for
+			for (int i = 0; i < size; i += 16)
+			{
+				_mm256_stream_ps(ap + i + 0, mv);
+				_mm256_stream_ps(ap + i + 8, mv);
+			}
+		}
+		if (unroll == 4)
+		{
+#pragma omp parallel for
+			for (int i = 0; i < size; i += 32)
+			{
+				_mm256_stream_ps(ap + i + 0, mv);
+				_mm256_stream_ps(ap + i + 8, mv);
+				_mm256_stream_ps(ap + i + 16, mv);
+				_mm256_stream_ps(ap + i + 24, mv);
+			}
+		}
+		if (unroll == 8)
+		{
+			const int thread_max = omp_get_max_threads();
+			const int step = size / thread_max;
+#pragma omp parallel for schedule (static, 1)
+			for (int t = 0; t < thread_max; t++)
+			{
+				float* aptr = ap + t * step;
+				for (int i = 0; i < step; i += 32)
 				{
-					const float vvv = kptr[i + k] - a;
-					w += exp(vvv * vvv * coeff);
+					_mm256_stream_ps(aptr + 0, mv);
+					_mm256_stream_ps(aptr + 8, mv);
+					_mm256_stream_ps(aptr + 16, mv);
+					_mm256_stream_ps(aptr + 24, mv);
+					aptr += 32;
 				}
 			}
-			float v = s * w;
-			if constexpr (postprocess == 0) dptr[i] = v / w;
-			else if constexpr (postprocess == 1) dptr[i] = v / w * stddev.at<float>(j, i);
-			else if constexpr (postprocess == 2) dptr[i] = exp(-1.f * v / (w * stddev.at<float>(j, i)));
+			/*
+#pragma omp parallel for
+			for (int i = 0; i < size; i += 64)
+			{
+				_mm256_stream_ps(ap + i + 0, mv);
+				_mm256_stream_ps(ap + i + 8, mv);
+				_mm256_stream_ps(ap + i + 16, mv);
+				_mm256_stream_ps(ap + i + 24, mv);
+				_mm256_stream_ps(ap + i + 32, mv);
+				_mm256_stream_ps(ap + i + 40, mv);
+				_mm256_stream_ps(ap + i + 48, mv);
+				_mm256_stream_ps(ap + i + 56, mv);
+			}
+			*/
+		}
+	}
+	else
+	{
+		if (unroll == 1)
+		{
+			for (int i = 0; i < size; i += 8)
+			{
+				_mm256_stream_ps(ap + 0, mv);
+				ap += 8;
+			}
+		}
+		if (unroll == 2)
+		{
+			for (int i = 0; i < size; i += 16)
+			{
+				_mm256_stream_ps(ap + 0, mv);
+				_mm256_stream_ps(ap + 8, mv);
+				ap += 16;
+			}
+		}
+		if (unroll == 4)
+		{
+			for (int i = 0; i < size; i += 32)
+			{
+				_mm256_stream_ps(ap + 0, mv);
+				_mm256_stream_ps(ap + 8, mv);
+				_mm256_stream_ps(ap + 16, mv);
+				_mm256_stream_ps(ap + 24, mv);
+				ap += 32;
+			}
+		}
+		if (unroll == 8)
+		{
+			for (int i = 0; i < size; i += 64)
+			{
+				_mm256_stream_ps(ap + 0, mv);
+				_mm256_stream_ps(ap + 8, mv);
+				_mm256_stream_ps(ap + 16, mv);
+				_mm256_stream_ps(ap + 24, mv);
+				_mm256_stream_ps(ap + 32, mv);
+				_mm256_stream_ps(ap + 40, mv);
+				_mm256_stream_ps(ap + 48, mv);
+				_mm256_stream_ps(ap + 56, mv);
+				ap += 64;
+			}
 		}
 	}
 }
 
-void rangeBlurFilterRef(const Mat& src, Mat& dst, const int r, const float sigma_range, const int postProcessType = 0)
+
+float streamSum(Mat& a, float val, const bool isParallel, const int unroll)
 {
-	if (postProcessType == 0)rangeBlurFilterRef_<0>(src, dst, r, sigma_range);
-	if (postProcessType == 1)rangeBlurFilterRef_<1>(src, dst, r, sigma_range);
-	if (postProcessType == 2)rangeBlurFilterRef_<2>(src, dst, r, sigma_range);
-}
+	float ret=0.f;
+	const int thread_max = omp_get_max_threads();
+	AutoBuffer<__m256> acc(thread_max);
+	for (int i = 0; i < thread_max; i++) acc[i] = _mm256_setzero_ps();
 
-vector<Mat> readYUV420(string fname, Size size)
-{
-	Mat temp = Mat::zeros(Size(size.width, cvRound(size.height * 1.5)), CV_8U);
-	FILE* fp = fopen(fname.c_str(), "rb");
-	if (fp == NULL)cout << fname << " open error\n";
-	const int fsize = size.area() + size.area() * 2 / 4;
-	fread(temp.data, sizeof(char), cvRound(size.area() * 1.5), fp);
+	const __m256 mv = _mm256_set1_ps(val);
+	const int size = a.size().area();
+	const int step = size / thread_max;
+	float* ap = a.ptr<float>();
+	if (isParallel)
+	{
+		if (unroll == 1)
+		{
+			//_mm_clflush(ap);
+#pragma omp parallel for // schedule  (static, 1)
+			for (int t = 0; t < thread_max; t++)
+			{
+				float* aptr = ap + t * step;
+				for (int i = 0; i < step; i += 8)
+				{
+					acc[t] = _mm256_add_ps(acc[t], _mm256_stream_load_ps(aptr));
+					aptr += 8;
+				}
+			}
+		}
+		if (unroll == 2)
+		{
+#pragma omp parallel for // schedule  (static, 1)
+			for (int t = 0; t < thread_max; t++)
+			{
+				float* aptr = ap + t * step;
+				for (int i = 0; i < step; i += 16)
+				{
+					acc[t] = _mm256_add_ps(acc[t], _mm256_load_ps(aptr+0));
+					acc[t] = _mm256_add_ps(acc[t], _mm256_load_ps(aptr+8));
+					aptr += 16;
+				}
+			}
+		}
+		if (unroll == 4)
+		{
+#pragma omp parallel for  schedule  (static, 1)
+			for (int t = 0; t < thread_max; t++)
+			{
+				float* aptr = ap + t * step;
+				for (int i = 0; i < step; i += 32)
+				{
+					acc[t] = _mm256_add_ps(acc[t], _mm256_stream_load_ps(aptr + 0));
+					acc[t] = _mm256_add_ps(acc[t], _mm256_stream_load_ps(aptr + 8));
+					acc[t] = _mm256_add_ps(acc[t], _mm256_stream_load_ps(aptr +16));
+					acc[t] = _mm256_add_ps(acc[t], _mm256_stream_load_ps(aptr +24));
+					aptr += 32;
+				}
+			}
+		}
+		if (unroll == 8)
+		{
+			const int thread_max = omp_get_max_threads();
+			const int step = size / thread_max;
+#pragma omp parallel for schedule (static, 1)
+			for (int t = 0; t < thread_max; t++)
+			{
+				float* aptr = ap + t * step;
+				for (int i = 0; i < step; i += 32)
+				{
+					_mm256_stream_ps(aptr + 0, mv);
+					_mm256_stream_ps(aptr + 8, mv);
+					_mm256_stream_ps(aptr + 16, mv);
+					_mm256_stream_ps(aptr + 24, mv);
+					aptr += 32;
+				}
+			}
+			/*
+#pragma omp parallel for
+			for (int i = 0; i < size; i += 64)
+			{
+				_mm256_stream_ps(ap + i + 0, mv);
+				_mm256_stream_ps(ap + i + 8, mv);
+				_mm256_stream_ps(ap + i + 16, mv);
+				_mm256_stream_ps(ap + i + 24, mv);
+				_mm256_stream_ps(ap + i + 32, mv);
+				_mm256_stream_ps(ap + i + 40, mv);
+				_mm256_stream_ps(ap + i + 48, mv);
+				_mm256_stream_ps(ap + i + 56, mv);
+			}
+			*/
+		}
+	}
+	else
+	{
+		if (unroll == 1)
+		{
+			for (int i = 0; i < size; i += 8)
+			{
+				_mm256_stream_ps(ap + 0, mv);
+				ap += 8;
+			}
+		}
+		if (unroll == 2)
+		{
+			for (int i = 0; i < size; i += 16)
+			{
+				_mm256_stream_ps(ap + 0, mv);
+				_mm256_stream_ps(ap + 8, mv);
+				ap += 16;
+			}
+		}
+		if (unroll == 4)
+		{
+			for (int i = 0; i < size; i += 32)
+			{
+				_mm256_stream_ps(ap + 0, mv);
+				_mm256_stream_ps(ap + 8, mv);
+				_mm256_stream_ps(ap + 16, mv);
+				_mm256_stream_ps(ap + 24, mv);
+				ap += 32;
+			}
+		}
+		if (unroll == 8)
+		{
+			for (int i = 0; i < size; i += 64)
+			{
+				_mm256_stream_ps(ap + 0, mv);
+				_mm256_stream_ps(ap + 8, mv);
+				_mm256_stream_ps(ap + 16, mv);
+				_mm256_stream_ps(ap + 24, mv);
+				_mm256_stream_ps(ap + 32, mv);
+				_mm256_stream_ps(ap + 40, mv);
+				_mm256_stream_ps(ap + 48, mv);
+				_mm256_stream_ps(ap + 56, mv);
+				ap += 64;
+			}
+		}
+	}
 
-	Mat Y(size, CV_8U);
-	Size hsize = size / 2;
-	Mat U(hsize, CV_8U);
-	Mat V(hsize, CV_8U);
-	vector<Mat> ret;
-	for (int i = 0; i < size.area(); i++)
+	for (int t = 1; t < thread_max; t++)
 	{
-		Y.at<uchar>(i) = temp.at<uchar>(i);
+		acc[0], _mm256_add_ps(acc[0], acc[t]);
 	}
-	for (int i = 0; i < hsize.area(); i++)
-	{
-		U.at<uchar>(i) = temp.at<uchar>(i + size.area());
-	}
-	for (int i = 0; i < hsize.area(); i++)
-	{
-		V.at<uchar>(i) = temp.at<uchar>(i + size.area() + hsize.area());
-	}
-
-	ret.push_back(Y);
-	ret.push_back(U);
-	ret.push_back(V);
-	fclose(fp);
-	//imshow("aa",dest);waitKey();
+	ret = _mm256_reduceadd_ps(acc[0]);
 	return ret;
 }
-
-void webPAnimationTest()
+void testStreamCopy()
 {
-	//Webp test
-	vector<Mat> a(80);
+	string wname = "stream";
+	cp::ConsoleImage ci(Size(700, 300));
+	//namedWindow(wname);
+	int iteration = 5;
+	createTrackbar("iteration", "", &iteration, 1000);
+	int size = 3;  createTrackbar("size", "", &size, 8);
+	int th = 4;  createTrackbar("thread", "", &th, omp_get_max_threads());
 
-	for (int i = 0; i < 80; i++)
+	int key = 0;
+
+	cp::Timer t("", TIME_MSEC, false);
+	while (key != 'q')
 	{
-		Mat img = imread("img/flower.png");
-		add(img, Scalar::all(i), a[i]);
-		//addNoise(a[i], a[i], 5);
-		putText(a[i], format("%d", i), Point(a[i].cols / 2, a[i].rows / 2), cv::FONT_HERSHEY_SIMPLEX, 1, COLOR_WHITE, 1);
-		//imwrite(format("data/o%03d.png", i), a[i]);
-		//imshow("a", a[i]);
-		//waitKey(1);
+		const int w = 128 * (int)pow(2, size);
+		ci("Size %d x %d", w, w);
+		omp_set_num_threads(th);
+		const int thread_max = omp_get_max_threads();
+		ci("threads %d", thread_max);
+		cv::Size imsize = Size(w, w);
+		//float* data_a = (float*)_mm_malloc(imsize.area() * sizeof(float), AVX_ALIGN);
+		//float* data_b = (float*)_mm_malloc(imsize.area() * sizeof(float), AVX_ALIGN);
+		//AutoBuffer<float> data_a(imsize.area());
+		//AutoBuffer<float> data_b(imsize.area());
+		//Mat a(imsize, CV_32F, data_a);
+		//Mat b(imsize, CV_32F, data_b);
+		Mat a(imsize, CV_32F);
+
+		auto benchSet = [&](int iteration, bool parallel, int unroll)
+		{
+			t.clearStat();
+			for (int i = 0; i < iteration; i++)
+			{
+				t.start();
+				//streamSet(a, 0.f, parallel, unroll);
+				streamSum(a, 0.f, parallel, unroll);
+				t.pushLapTime();
+			}
+		};
+
+		benchSet(iteration, false, 1);
+		ci("streamSet S1 GB/s  %f", a.size().area() * sizeof(float) / t.getLapTimeMedian() / 1000000.0);
+		benchSet(iteration, false, 2);
+		ci("streamSet S2 GB/s  %f", a.size().area() * sizeof(float) / t.getLapTimeMedian() / 1000000.0);
+		benchSet(iteration, false, 4);
+		ci("streamSet S4 GB/s  %f", a.size().area() * sizeof(float) / t.getLapTimeMedian() / 1000000.0);
+		benchSet(iteration, false, 8);
+		ci("streamSet S8 GB/s  %f", a.size().area() * sizeof(float) / t.getLapTimeMedian() / 1000000.0);
+		benchSet(iteration, true, 1);
+		ci("streamSet P1 GB/s  %f", a.size().area() * sizeof(float) / t.getLapTimeMedian() / 1000000.0);
+		benchSet(iteration, true, 2);
+		ci("streamSet P2 GB/s  %f", a.size().area() * sizeof(float) / t.getLapTimeMedian() / 1000000.0);
+		benchSet(iteration, true, 4);
+		ci("streamSet P4 GB/s  %f", a.size().area() * sizeof(float) / t.getLapTimeMedian() / 1000000.0);
+		benchSet(iteration, true, 8);
+		ci("streamSet P8 GB/s  %f", a.size().area() * sizeof(float) / t.getLapTimeMedian() / 1000000.0);
+
+
+
+		/*
+		for (int i = 0; i < iteration; i++)
+		{
+			t.start();
+			a.copyTo(b);
+			t.pushLapTime();
+		}
+		ci("copy   Time %f ms, GB/s  %f", t.getLapTimeMedian(), a.size().area() * sizeof(float) / t.getLapTimeMedian() / 1000000.0);
+		t.clearStat();
+
+		for (int i = 0; i < iteration; i++)
+		{
+			t.start();
+			cp::streamCopy(a, b);
+			t.pushLapTime();
+		}
+		ci("stream  Time %f ms, GB/s  %f", t.getLapTimeMedian(), a.size().area() * sizeof(float) / t.getLapTimeMedian() / 1000000.0);
+		t.clearStat();
+
+		for (int i = 0; i < iteration; i++)
+		{
+			t.start();
+			stream2(a, b);
+			t.pushLapTime();
+		}
+		ci("stream2 Time %f ms, GB/s  %f", t.getLapTimeMedian(), a.size().area() * sizeof(float) / t.getLapTimeMedian() / 1000000.0);
+		t.clearStat();
+
+		for (int i = 0; i < iteration; i++)
+		{
+			t.start();
+			stream3(a, b);
+			t.pushLapTime();
+		}
+		ci("stream3 Time %f ms, GB/s  %f", t.getLapTimeMedian(), a.size().area() * sizeof(float) / t.getLapTimeMedian() / 1000000.0);
+		t.clearStat();
+
+		for (int i = 0; i < iteration; i++)
+		{
+			t.start();
+			stream4(a, b);
+			t.pushLapTime();
+		}
+		ci("stream4 Time %f ms, GB/s  %f", t.getLapTimeMedian(), a.size().area() * sizeof(float) / t.getLapTimeMedian() / 1000000.0);
+		t.clearStat();
+
+		for (int i = 0; i < iteration; i++)
+		{
+			t.start();
+			stream5(a, b);
+			t.pushLapTime();
+		}
+		ci("stream5 Time %f ms, GB/s  %f", t.getLapTimeMedian(), a.size().area() * sizeof(float) / t.getLapTimeMedian() / 1000000.0);
+		t.clearStat();
+
+		for (int i = 0; i < iteration; i++)
+		{
+			t.start();
+			stream6(a, b);
+			t.pushLapTime();
+		}
+		ci("stream6 Time %f ms, GB/s  %f", t.getLapTimeMedian(), a.size().area() * sizeof(float) / t.getLapTimeMedian() / 1000000.0);
+		t.clearStat();
+
+		for (int i = 0; i < iteration; i++)
+		{
+			t.start();
+			stream7(a, b);
+			t.pushLapTime();
+		}
+		ci("stream7 Time %f ms, GB/s  %f", t.getLapTimeMedian(), a.size().area() * sizeof(float) / t.getLapTimeMedian() / 1000000.0);
+		t.clearStat();
+
+		for (int i = 0; i < iteration; i++)
+		{
+			t.start();
+			stream8(a, b);
+			t.pushLapTime();
+		}
+		ci("stream8 Time %f ms, GB/s  %f", t.getLapTimeMedian(), a.size().area() * sizeof(float) / t.getLapTimeMedian() / 1000000.0);
+		t.clearStat();
+
+		for (int i = 0; i < iteration; i++)
+		{
+			t.start();
+			stream9(a, b);
+			t.pushLapTime();
+		}
+		ci("stream9 Time %f ms, GB/s  %f", t.getLapTimeMedian(), a.size().area() * sizeof(float) / t.getLapTimeMedian() / 1000000.0);
+		t.clearStat();
+		*/
+
+
+		ci.show();
+		key = waitKey(1);
 	}
 
-	int size = 0;
-	vector<int> parameters;
-	parameters.push_back(IMWRITE_WEBP_COLORSPACE);
-	parameters.push_back(0);
-	parameters.push_back(IMWRITE_WEBP_METHOD);
-	parameters.push_back(6);
-	parameters.push_back(IMWRITE_WEBP_QUALITY);
-	parameters.push_back(10);
-	parameters.push_back(IMWRITE_WEBP_TIMEMSPERFRAME);
-	parameters.push_back(67);//15 fps
-	{
-		Timer t("write YUV");
-		size = cp::imwriteAnimationWebp("webp/yuv.webp", a, parameters);
-	}
-	cout << size / 1024.0 << " Kbyte" << endl;
-
-	parameters[1] = 1;
-	{
-		Timer t("write YUV Sharp");
-		size = cp::imwriteAnimationWebp("webp/rgb.webp", a, parameters);
-	}
-	cout << size / 1024.0 << " Kbyte" << endl;
-
-	parameters[1] = 2;
-	{
-		Timer t("write RGB");
-		size = cp::imwriteAnimationWebp("webp/rgb.webp", a, parameters);
-	}
-	cout << size / 1024.0 << " Kbyte" << endl;
+	//_mm_free(data_a);
+	//_mm_free(data_b);
 }
-
-
 int main(int argc, char** argv)
 {
+	testStreamCopy(); return 0;
+
 	const bool isShowInfo = true;
 	if (isShowInfo)
 	{
 		cout << getInformation() << endl;
 		cout << cv::getBuildInformation() << endl;
-		cout << getOpenCLInformation()<<endl;
+		cout << getOpenCLInformation() << endl;
+		cv::cuda::printCudaDeviceInfo(0);
 	}
 
 	//cv::ipp::setUseIPP(false);
