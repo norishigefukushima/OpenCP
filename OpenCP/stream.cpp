@@ -1,5 +1,10 @@
 #include "stream.hpp"
 #include "inlineSIMDFunctions.hpp"
+#ifdef _OPENMP_LLVM_RUNTIME
+#include <omp_llvm.h>
+#else
+#include <omp.h>
+#endif
 
 using namespace std;
 using namespace cv;
@@ -110,6 +115,131 @@ namespace cp
 		if (src.depth() == CV_32S) streamCopy(s.ptr<int>(), d.ptr<int>(), size);
 		if (src.depth() == CV_32F) streamCopy(s.ptr<float>(), d.ptr<float>(), size);
 		if (src.depth() == CV_64F) streamCopy(s.ptr<double>(), d.ptr<double>(), size);
+	}
+
+
+	void streamSet(cv::InputArray src, const float val, const bool isParallel, const int unroll)
+	{
+		CV_Assert(src.depth() == CV_32F);
+
+		Mat a = src.getMat();
+		const __m256 mv = _mm256_set1_ps(val);
+		const int size = a.size().area();
+		float* ap = a.ptr<float>();
+		const int thread_max = omp_get_max_threads();
+		const int step = size / thread_max;
+		if (isParallel)
+		{
+			if (unroll == 1)
+			{
+#pragma omp parallel for schedule (static, 1)
+				for (int t = 0; t < thread_max; t++)
+				{
+					float* aptr = ap + t * step;
+					for (int i = 0; i < step; i += 8)
+					{
+						_mm256_stream_ps(aptr + 0, mv);
+						aptr += 8;
+					}
+				}
+			}
+			if (unroll == 2)
+			{
+#pragma omp parallel for schedule (static, 1)
+				for (int t = 0; t < thread_max; t++)
+				{
+					float* aptr = ap + t * step;
+					for (int i = 0; i < step; i += 16)
+					{
+						_mm256_stream_ps(aptr + 0, mv);
+						_mm256_stream_ps(aptr + 8, mv);
+						aptr += 16;
+					}
+				}
+			}
+			if (unroll == 4)
+			{
+#pragma omp parallel for schedule (static, 1)
+				for (int t = 0; t < thread_max; t++)
+				{
+					float* aptr = ap + t * step;
+					for (int i = 0; i < step; i += 32)
+					{
+						_mm256_stream_ps(aptr + 0, mv);
+						_mm256_stream_ps(aptr + 8, mv);
+						_mm256_stream_ps(aptr + 16, mv);
+						_mm256_stream_ps(aptr + 24, mv);
+						aptr += 32;
+					}
+				}
+			}
+			if (unroll == 8)
+			{
+#pragma omp parallel for schedule (static, 1)
+				for (int t = 0; t < thread_max; t++)
+				{
+					float* aptr = ap + t * step;
+					for (int i = 0; i < step; i += 64)
+					{
+						_mm256_stream_ps(aptr + 0, mv);
+						_mm256_stream_ps(aptr + 8, mv);
+						_mm256_stream_ps(aptr + 16, mv);
+						_mm256_stream_ps(aptr + 24, mv);
+						_mm256_stream_ps(aptr + 32, mv);
+						_mm256_stream_ps(aptr + 40, mv);
+						_mm256_stream_ps(aptr + 48, mv);
+						_mm256_stream_ps(aptr + 56, mv);
+						aptr += 64;
+					}
+				}
+			}
+		}
+		else
+		{
+			if (unroll == 1)
+			{
+				for (int i = 0; i < size; i += 8)
+				{
+					_mm256_stream_ps(ap + 0, mv);
+					ap += 8;
+				}
+			}
+			if (unroll == 2)
+			{
+				for (int i = 0; i < size; i += 16)
+				{
+					_mm256_stream_ps(ap + 0, mv);
+					_mm256_stream_ps(ap + 8, mv);
+					ap += 16;
+				}
+			}
+			if (unroll == 4)
+			{
+				for (int i = 0; i < size; i += 32)
+				{
+					_mm256_stream_ps(ap + 0, mv);
+					_mm256_stream_ps(ap + 8, mv);
+					_mm256_stream_ps(ap + 16, mv);
+					_mm256_stream_ps(ap + 24, mv);
+					ap += 32;
+				}
+			}
+			if (unroll == 8)
+			{
+				for (int i = 0; i < size; i += 64)
+				{
+					_mm256_stream_ps(ap + 0, mv);
+					_mm256_stream_ps(ap + 8, mv);
+					_mm256_stream_ps(ap + 16, mv);
+					_mm256_stream_ps(ap + 24, mv);
+					_mm256_stream_ps(ap + 32, mv);
+					_mm256_stream_ps(ap + 40, mv);
+					_mm256_stream_ps(ap + 48, mv);
+					_mm256_stream_ps(ap + 56, mv);
+					ap += 64;
+				}
+			}
+		}
 	}
 
 	void streamConvertTo8U(const char* src, uchar* dst, const int size)

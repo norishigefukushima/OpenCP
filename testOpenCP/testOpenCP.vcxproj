@@ -471,6 +471,7 @@
     <ClCompile Include="guiPixelizationTest.cpp" />
     <ClCompile Include="highDimentionalGaussianFilterTest.cpp" />
     <ClCompile Include="multiScaleFilterTest.cpp" />
+    <ClCompile Include="benchStream.cpp" />
     <ClCompile Include="testCalibration.cpp" />
     <ClCompile Include="testCheckSameImage.cpp" />
     <ClCompile Include="testColorCorrection.cpp" />

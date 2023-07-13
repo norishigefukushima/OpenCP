@@ -28,6 +28,9 @@
     <Filter Include="ソース ファイル\test\stereo">
       <UniqueIdentifier>{67fd3055-34b7-4e2c-b357-7a0fafe5c440}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\bench">
+      <UniqueIdentifier>{644d246a-9fde-4912-95cd-872eade2d98d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -179,6 +182,9 @@
     </ClCompile>
     <ClCompile Include="testWebP.cpp">
       <Filter>ソース ファイル\test\core</Filter>
+    </ClCompile>
+    <ClCompile Include="benchStream.cpp">
+      <Filter>ソース ファイル\bench</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

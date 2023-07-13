@@ -112,3 +112,5 @@ void testUnnormalizedBilateralFilter();
 
 //SpatialFilter
 void testSpatialFilter(cv::Mat& src);
+
+void benchStreamSet();
