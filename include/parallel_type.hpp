@@ -1,7 +1,11 @@
 #pragma once
 
 #include <string>
+#ifdef _OPENMP_LLVM_RUNTIME
+#include <omp_llvm.h>
+#else
 #include <omp.h>
+#endif
 
 const int OMP_THREADS_MAX = omp_get_max_threads();
 

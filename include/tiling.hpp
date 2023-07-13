@@ -2,7 +2,11 @@
 #pragma once
 
 #include "common.hpp"
+#ifdef _OPENMP_LLVM_RUNTIME
+#include <omp_llvm.h>
+#else
 #include <omp.h>
+#endif
 namespace cp
 {
 	//get online image size

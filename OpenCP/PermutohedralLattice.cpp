@@ -3,12 +3,17 @@
 #include "tiling.hpp"
 #include "timer.hpp"
 #include "color.hpp"
-#include <omp.h>
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include "debugcp.hpp"
+
+#ifdef _OPENMP_LLVM_RUNTIME
+#include <omp_llvm.h>
+#else
+#include <omp.h>
+#endif
 using namespace std;
 using namespace cv;
 

@@ -25,15 +25,15 @@ namespace cp
 	}
 
 #pragma region copyMakeBorderReplicate
-	void copyMakeBorderReplicate8UC1(Mat& src, Mat& border, const int top, const int bottom, const int left, const int right)
+	static void copyMakeBorderReplicate8UC1(const Mat& src, Mat& border, const int top, const int bottom, const int left, const int right)
 	{
 		const int LEFT = get_simd_ceil(left, 32);
 		const int end = border.cols - right;
 
-#pragma omp parallel for
+#pragma omp parallel for schedule (dynamic)
 		for (int j = 0; j < border.rows; j++)
 		{
-			uchar* s = src.ptr<uchar>(min(max(j - top, 0), src.rows - 1));
+			const uchar* s = src.ptr<uchar>(min(max(j - top, 0), src.rows - 1));
 			uchar* d = border.ptr<uchar>(j);
 
 			__m256i ms = _mm256_set1_epi8(s[0]);
@@ -47,7 +47,7 @@ namespace cp
 		}
 	}
 
-	void copyMakeBorderReplicate32FC1(Mat& src, Mat& border, const int top, const int bottom, const int left, const int right)
+	static void copyMakeBorderReplicate32FC1(const Mat& src, Mat& border, const int top, const int bottom, const int left, const int right)
 	{
 		const int LEFT = get_simd_ceil(left, 8);
 		const int RIGHT = get_simd_ceil(right, 8);
@@ -105,10 +105,10 @@ namespace cp
 			memcpy(d + left, s, sizeof(float) * src.cols);
 		}
 #else 
-#pragma omp parallel for
+#pragma omp parallel for schedule (dynamic)
 		for (int j = 0; j < border.rows; j++)
 		{
-			float* s = src.ptr<float>(min(max(j - top, 0), src.rows - 1));
+			const float* s = src.ptr<float>(min(max(j - top, 0), src.rows - 1));
 			float* d = border.ptr<float>(j);
 
 			__m256 ms = _mm256_set1_ps(s[0]);
@@ -123,7 +123,7 @@ namespace cp
 #endif
 	}
 
-	void copyMakeBorderReplicate32FC3(Mat& src, Mat& border, const int top, const int bottom, const int left, const int right)
+	static void copyMakeBorderReplicate32FC3(const Mat& src, Mat& border, const int top, const int bottom, const int left, const int right)
 	{
 		const int LEFT = get_simd_floor(left, 8);
 		const int RIGHT = get_simd_ceil(right, 8);
@@ -176,10 +176,10 @@ namespace cp
 		}
 #else
 
-#pragma omp parallel for
+#pragma omp parallel for  schedule (dynamic)
 		for (int j = 0; j < border.rows; j++)
 		{
-			float* s = src.ptr<float>(min(max(j - top, 0), src.rows - 1));
+			const float* s = src.ptr<float>(min(max(j - top, 0), src.rows - 1));
 			float* d = border.ptr<float>(j);
 
 			for (int i = 0; i < LEFT; i += 8)
@@ -205,17 +205,17 @@ namespace cp
 #endif
 	}
 
-	void copyMakeBorderReplicate8UC3(Mat& src, Mat& border, const int top, const int bottom, const int left, const int right)
+	static void copyMakeBorderReplicate8UC3(const Mat& src, Mat& border, const int top, const int bottom, const int left, const int right)
 	{
 		const int LEFT = get_simd_floor(left, 32);
 		const int end = border.cols - right;
 		const int end_simd = border.cols - (right - get_simd_floor(right, 8));
 		const int e = (src.cols - 1) * 3;
 
-#pragma omp parallel for
+#pragma omp parallel for  schedule (dynamic)
 		for (int j = 0; j < border.rows; j++)
 		{
-			uchar* s = src.ptr<uchar>(min(max(j - top, 0), src.rows - 1));
+			const uchar* s = src.ptr<uchar>(min(max(j - top, 0), src.rows - 1));
 			uchar* d = border.ptr<uchar>(j);
 
 			for (int i = 0; i < LEFT; i += 32)
@@ -249,7 +249,9 @@ namespace cp
 		Mat src = src_.getMat();
 		Size bsize = Size(src.cols + left + right, src.rows + top + bottom);
 		if (border_.empty() || border_.size() != bsize || border_.type() != src_.type())
+		{
 			border_.create(bsize, src.type());
+		}
 
 		Mat border = border_.getMat();
 

@@ -1,6 +1,8 @@
 #include "shiftImage.hpp"
 #include <iostream>
-#ifdef _OPENMP
+#ifdef _OPENMP_LLVM_RUNTIME
+#include <omp_llvm.h>
+#else
 #include <omp.h>
 #endif
 

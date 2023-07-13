@@ -1,8 +1,12 @@
 #include "tiling.hpp"
 #include "../include/inlineSIMDFunctions.hpp"
 #include "debugcp.hpp"
-#include <omp.h>
 #include "../include/onelineCVFunctions.hpp"
+#ifdef _OPENMP_LLVM_RUNTIME
+#include <omp_llvm.h>
+#else
+#include <omp.h>
+#endif
 using namespace std;
 using namespace cv;
 
