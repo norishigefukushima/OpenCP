@@ -549,6 +549,7 @@
     <ClCompile Include="box\boxFilter_SSAT_SoA.cpp" />
     <ClCompile Include="box\boxFilter_SSAT_VH.cpp" />
     <ClCompile Include="box\boxFilter_SSAT_VtV.cpp" />
+    <ClCompile Include="buildInformation.cpp" />
     <ClCompile Include="Calibrator.cpp" />
     <ClCompile Include="checkSameImage.cpp" />
     <ClCompile Include="circleFilter.cpp" />
@@ -790,6 +791,7 @@
     <ClInclude Include="..\include\bitconvert.hpp" />
     <ClInclude Include="..\include\boundaryReconstructionFilter.hpp" />
     <ClInclude Include="..\include\boxFilter.hpp" />
+    <ClInclude Include="..\include\buildInformation.hpp" />
     <ClInclude Include="..\include\Calibrator.hpp" />
     <ClInclude Include="..\include\checkSameImage.hpp" />
     <ClInclude Include="..\include\circleFilter.hpp" />

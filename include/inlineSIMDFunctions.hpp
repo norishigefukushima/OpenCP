@@ -2551,23 +2551,23 @@ STATIC_INLINE void _mm256_i32scaterscalar_ps_color(float* dest, __m256i vindex, 
 #pragma endregion
 
 #pragma region set
-__m256i _mm256_set1_auto(uchar src)
+STATIC_INLINE __m256i _mm256_set1_auto(uchar src)
 {
 	return _mm256_set1_epi8(src);
 }
-__m256i _mm256_set1_auto(short src)
+STATIC_INLINE __m256i _mm256_set1_auto(short src)
 {
 	return _mm256_set1_epi16(src);
 }
-__m256i _mm256_set1_auto(int src)
+STATIC_INLINE __m256i _mm256_set1_auto(int src)
 {
 	return _mm256_set1_epi32(src);
 }
-__m256 _mm256_set1_auto(float src)
+STATIC_INLINE __m256 _mm256_set1_auto(float src)
 {
 	return _mm256_set1_ps(src);
 }
-__m256d _mm256_set1_auto(double src)
+STATIC_INLINE __m256d _mm256_set1_auto(double src)
 {
 	return _mm256_set1_pd(src);
 }

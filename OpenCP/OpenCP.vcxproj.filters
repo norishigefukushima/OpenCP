@@ -636,6 +636,9 @@
     <ClCompile Include="threshold.cpp">
       <Filter>ソース ファイル\core</Filter>
     </ClCompile>
+    <ClCompile Include="buildInformation.cpp">
+      <Filter>ソース ファイル\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libGaussian\gaussian_conv.h">
@@ -1146,6 +1149,9 @@
       <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\threshold.hpp">
+      <Filter>ヘッダー ファイル\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\buildInformation.hpp">
       <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
   </ItemGroup>
