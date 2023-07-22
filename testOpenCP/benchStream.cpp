@@ -22,8 +22,7 @@ void benchStreamSet()
 		const int w = 128 * (int)pow(2, size);
 		const cv::Size imsize = Size(w, w);
 		if (a.size() != imsize)a.create(imsize, CV_32F);
-
-		
+	
 		omp_set_num_threads(th);
 		const int thread_max = omp_get_max_threads();
 

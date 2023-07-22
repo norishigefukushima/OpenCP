@@ -262,7 +262,7 @@ namespace cp
 	}
 #pragma endregion
 
-#pragma region splitCopyMakeBorderReplicate
+#pragma region splitCopyMakeBordereplicate
 
 	void splitCopyMakeBorderReplicate32F(Mat& src, vector<Mat>& border, const int top, const int bottom, const int left, const int right)
 	{
@@ -371,8 +371,7 @@ namespace cp
 			}
 		}
 #else
-
-#pragma omp parallel for
+#pragma omp parallel for //schedule (dynamic)
 		for (int j = 0; j < border[0].rows; j++)
 		{
 			float* s = src.ptr<float>(border_replicate(j - top, src.rows - 1));
@@ -422,7 +421,6 @@ namespace cp
 				r[i] = s[3 * (src.cols - 1) + 2];
 			}*/
 		}
-
 #endif
 	}
 
@@ -744,18 +742,18 @@ namespace cp
 
 		if (borderType == cv::BORDER_REPLICATE)
 		{
-			if (src.depth() == CV_8U)splitCopyMakeBorderReplicate8U(s, dst, top, bottom, left, right);
-			else if (src.depth() == CV_32F)splitCopyMakeBorderReplicate32F(s, dst, top, bottom, left, right);
+			if (src.depth() == CV_8U)		splitCopyMakeBorderReplicate8U(s, dst, top, bottom, left, right);
+			else if (src.depth() == CV_32F) splitCopyMakeBorderReplicate32F(s, dst, top, bottom, left, right);
 		}
 		else if (borderType == cv::BORDER_REFLECT101)
 		{
-			if (src.depth() == CV_8U)splitCopyMakeBorderReflect1018U(s, dst, top, bottom, left, right);
-			else if (src.depth() == CV_32F)splitCopyMakeBorderReflect10132F(s, dst, top, bottom, left, right);
+			if (src.depth() == CV_8U)		splitCopyMakeBorderReflect1018U(s, dst, top, bottom, left, right);
+			else if (src.depth() == CV_32F) splitCopyMakeBorderReflect10132F(s, dst, top, bottom, left, right);
 		}
 		else if (borderType == cv::BORDER_REFLECT)
 		{
-			if (src.depth() == CV_8U)splitCopyMakeBorderReflect8U(s, dst, top, bottom, left, right);
-			else if (src.depth() == CV_32F)splitCopyMakeBorderReflect32F(s, dst, top, bottom, left, right);
+			if (src.depth() == CV_8U)		splitCopyMakeBorderReflect8U(s, dst, top, bottom, left, right);
+			else if (src.depth() == CV_32F) splitCopyMakeBorderReflect32F(s, dst, top, bottom, left, right);
 		}
 		else
 		{
