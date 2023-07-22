@@ -1091,19 +1091,16 @@ STATIC_INLINE void _mm256_load_cvtpd_bgr2planar_pd(const double* ptr, __m256d& b
 
 STATIC_INLINE void _mm256_load_cvtps_bgr2planar_ps(const float* ptr, __m256& b, __m256& g, __m256& r)
 {
-	__m256 bgr0 = _mm256_loadu_ps(ptr);
-	__m256 bgr1 = _mm256_loadu_ps(ptr + 8);
-	__m256 bgr2 = _mm256_loadu_ps(ptr + 16);
-
-	__m256 s02_low = _mm256_permute2f128_ps(bgr0, bgr2, 0 + 2 * 16);
-	__m256 s02_high = _mm256_permute2f128_ps(bgr0, bgr2, 1 + 3 * 16);
-
+	const __m256 bgr0 = _mm256_loadu_ps(ptr);
+	const __m256 bgr2 = _mm256_loadu_ps(ptr + 16);
+	const __m256 s02_low = _mm256_permute2f128_ps(bgr0, bgr2, 0 + 2 * 16);
+	const __m256 s02_high = _mm256_permute2f128_ps(bgr0, bgr2, 1 + 3 * 16);
+	const __m256 bgr1 = _mm256_loadu_ps(ptr + 8);
 	__m256 b0 = _mm256_blend_ps(_mm256_blend_ps(s02_low, s02_high, 0x24), bgr1, 0x92);
-	__m256 g0 = _mm256_blend_ps(_mm256_blend_ps(s02_high, s02_low, 0x92), bgr1, 0x24);
-	__m256 r0 = _mm256_blend_ps(_mm256_blend_ps(bgr1, s02_low, 0x24), s02_high, 0x92);
-
 	b = _mm256_shuffle_ps(b0, b0, 0x6c);
+	__m256 g0 = _mm256_blend_ps(_mm256_blend_ps(s02_high, s02_low, 0x92), bgr1, 0x24);
 	g = _mm256_shuffle_ps(g0, g0, 0xb1);
+	__m256 r0 = _mm256_blend_ps(_mm256_blend_ps(bgr1, s02_low, 0x24), s02_high, 0x92);
 	r = _mm256_shuffle_ps(r0, r0, 0xc6);
 }
 
@@ -2553,6 +2550,29 @@ STATIC_INLINE void _mm256_i32scaterscalar_ps_color(float* dest, __m256i vindex, 
 }
 #pragma endregion
 
+#pragma region set
+__m256i _mm256_set1_auto(uchar src)
+{
+	return _mm256_set1_epi8(src);
+}
+__m256i _mm256_set1_auto(short src)
+{
+	return _mm256_set1_epi16(src);
+}
+__m256i _mm256_set1_auto(int src)
+{
+	return _mm256_set1_epi32(src);
+}
+__m256 _mm256_set1_auto(float src)
+{
+	return _mm256_set1_ps(src);
+}
+__m256d _mm256_set1_auto(double src)
+{
+	return _mm256_set1_pd(src);
+}
+
+#pragma endregion
 STATIC_INLINE void _mm256_stream_auto(uchar* dest, __m256 ms)
 {
 	_mm256_store_cvtps_epu8((__m128i*)dest, ms);
