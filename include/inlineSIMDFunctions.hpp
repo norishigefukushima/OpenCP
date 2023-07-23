@@ -3100,6 +3100,7 @@ STATIC_INLINE __m128i _mm512_cvtepi32_epu8(const __m512i v0)
 	//return _mm256_castsi256_si128(_mm256_permutevar8x32_epi32(_mm256_packus_epi16(_mm256_packs_epi32(v0, _mm256_setzero_si256()), _mm256_setzero_si256()), _mm256_setr_epi32(0, 4, 1, 5, 2, 6, 3, 7)));
 }
 
+//_mm512_permutexvar_ps: L3, T1
 STATIC_INLINE void _mm512_cvtsoa2aos_ps(const __m512 b, const __m512 g, const __m512 r, __m512& db, __m512& dg, __m512& dr)
 {
 #if __USE_SCATTER_INSTRUCTION__
@@ -3236,6 +3237,45 @@ STATIC_INLINE __m512d _mm512_loadu_auto(const double* src)
 	return _mm512_loadu_pd(src);
 }
 
+STATIC_INLINE void _mm512_load_cvtps_bgr2planar_ps(const float* ptr, __m512& b, __m512& g, __m512& r)
+{
+	//   0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
+	//  16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31
+	//  32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47
+
+	__m512 a0 = _mm512_castps256_ps512(_mm256_loadu_ps(ptr + 0));
+	__m512 a1 = _mm512_castps256_ps512(_mm256_loadu_ps(ptr + 8));
+	__m512 a2 = _mm512_castps256_ps512(_mm256_loadu_ps(ptr + 16));
+	a0 = _mm512_insertf32x8(a0, ((const __m256*)ptr)[3], 1);
+	a1 = _mm512_insertf32x8(a1, ((const __m256*)ptr)[4], 1);
+	a2 = _mm512_insertf32x8(a2, ((const __m256*)ptr)[5], 1);
+	//   0  1  2  3  4  5  6  7 24 25 26 27 28 29 30 31
+	//   8  9 10 11 12 13 14 15 32 33 34 35 36 37 38 39
+	//  16 17 18 19 20 21 22 23 40 41 42 43 44 45 46 47
+
+	static const __m512i idx0 = _mm512_setr_epi32(4, 5, 6, 7, 16, 17, 18, 19, 12, 13, 14, 15, 24, 25, 26, 27);
+	b = _mm512_mask_blend_ps(0xf0f0, a0, a1);
+	g = _mm512_permutex2var_ps(a0, idx0, a2);
+	r = _mm512_mask_blend_ps(0xf0f0, a1, a2);
+	//   0  1  2  3 12 13 14 15 24 25 26 27 36 37 38 39
+	//   4  5  6  7 16 17 18 19 28 29 30 31 40 41 42 43
+	//   8  9 10 11 20 21 22 23 32 33 34 35 44 45 46 47
+
+	a0 = _mm512_mask_blend_ps(0xcccc, b, g);
+	a1 = _mm512_shuffle_ps(b, r, 78);
+	a2 = _mm512_mask_blend_ps(0xcccc, g, r);
+	//   0  1  6  7 12 13 18 19 24 25 30 31 36 37 42 43
+	//   2  3  8  9 14 15 20 21 26 27 32 33 38 39 44 45
+	//   4  5 10 11 16 17 22 23 28 29 34 35 40 41 46 47
+
+	static const __m512i idx1 = _mm512_setr_epi32(1, 16, 3, 18, 5, 20, 7, 22, 9, 24, 11, 26, 13, 28, 15, 30);
+	b = _mm512_mask_blend_ps(0xaaaa, a0, a1);
+	g = _mm512_permutex2var_ps(a0, idx1, a2);
+	r = _mm512_mask_blend_ps(0xaaaa, a1, a2);
+	//   0  3  6  9 12 15 18 21 24 27 30 33 36 39 42 45
+	//   1  4  7 10 13 16 19 22 25 28 31 34 37 40 43 46
+	//   2  5  8 11 14 17 20 23 26 29 32 35 38 41 44 47
+}
 
 STATIC_INLINE __m512 _mm512_i32gather_auto(const float* src, __m512i idx)
 {
