@@ -3891,12 +3891,59 @@ STATIC_INLINE __m512i _mm512_set_step_epi32(int v, int step = 1)
 	return _mm512_setr_epi32(v, v + step, v + 2 * step, v + 3 * step, v + 4 * step, v + 5 * step, v + 6 * step, v + 7 * step, v + 8 * step, v + 9 * step, v + 10 * step, v + 11 * step, v + 12 * step, v + 13 * step, v + 14 * step, v + 15 * step);
 }
 
+
+
 #define print_m512(src) printf_s("%s: %6.2f %6.2f %6.2f %6.2f | %6.2f %6.2f %6.2f %6.2f | %6.2f %6.2f %6.2f %6.2f | %6.2f %6.2f %6.2f %6.2f\n",#src,((float*)&src)[0], ((float*)&src)[1], ((float*)&src)[2], ((float*)&src)[3], ((float*)&src)[4], ((float*)&src)[5], ((float*)&src)[6], ((float*)&src)[7], ((float*)&src)[8], ((float*)&src)[9], ((float*)&src)[10], ((float*)&src)[11], ((float*)&src)[12], ((float*)&src)[13], ((float*)&src)[14], ((float*)&src)[15]);
 #define print_m512i_int(src) printf_s("%s: %d %d %d %d | %d %d %d %d | %d %d %d %d | %d %d %d %d\n",#src,((int*)&src)[0], ((int*)&src)[1], ((int*)&src)[2], ((int*)&src)[3], ((int*)&src)[4], ((int*)&src)[5], ((int*)&src)[6], ((int*)&src)[7], ((int*)&src)[8], ((int*)&src)[9], ((int*)&src)[10], ((int*)&src)[11], ((int*)&src)[12], ((int*)&src)[13], ((int*)&src)[14], ((int*)&src)[15]);
 #define print_m512i_int_align4(src) printf_s("%s: %4d %4d %4d %4d | %4d %4d %4d %4d | %4d %4d %4d %4d | %4d %4d %4d %4d\n",#src,((int*)&src)[0], ((int*)&src)[1], ((int*)&src)[2], ((int*)&src)[3], ((int*)&src)[4], ((int*)&src)[5], ((int*)&src)[6], ((int*)&src)[7], ((int*)&src)[8], ((int*)&src)[9], ((int*)&src)[10], ((int*)&src)[11], ((int*)&src)[12], ((int*)&src)[13], ((int*)&src)[14], ((int*)&src)[15]);
 #define print_m512i_short(src) printf_s("%s: %6d %6d %6d %6d | %6d %6d %6d %6d | %6d %6d %6d %6d | %6d %6d %6d %6d | %6d %6d %6d %6d | %6d %6d %6d %6d | %6d %6d %6d %6d | %6d %6d %6d %6d\n",#src,((short*)&src)[0], ((short*)&src)[1], ((short*)&src)[2], ((short*)&src)[3], ((short*)&src)[4], ((short*)&src)[5], ((short*)&src)[6], ((short*)&src)[7], ((short*)&src)[8], ((short*)&src)[9], ((short*)&src)[10], ((short*)&src)[11], ((short*)&src)[12], ((short*)&src)[13], ((short*)&src)[14], ((short*)&src)[15],((short*)&src)[16], ((short*)&src)[17], ((short*)&src)[18], ((short*)&src)[19], ((short*)&src)[20], ((short*)&src)[21], ((short*)&src)[22], ((short*)&src)[23], ((short*)&src)[24], ((short*)&src)[25], ((short*)&src)[26], ((short*)&src)[27], ((short*)&src)[28], ((short*)&src)[29], ((short*)&src)[30], ((short*)&src)[31]);
 #define print_m512i_uchar(src) printf_s("%s: %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d\n",#src,((uchar*)&src)[0], ((uchar*)&src)[1], ((uchar*)&src)[2], ((uchar*)&src)[3], ((uchar*)&src)[4], ((uchar*)&src)[5], ((uchar*)&src)[6], ((uchar*)&src)[7], ((uchar*)&src)[8], ((uchar*)&src)[9], ((uchar*)&src)[10], ((uchar*)&src)[11], ((uchar*)&src)[12], ((uchar*)&src)[13], ((uchar*)&src)[14], ((uchar*)&src)[15],((uchar*)&src)[16], ((uchar*)&src)[17], ((uchar*)&src)[18], ((uchar*)&src)[19], ((uchar*)&src)[20], ((uchar*)&src)[21], ((uchar*)&src)[22], ((uchar*)&src)[23], ((uchar*)&src)[24], ((uchar*)&src)[25], ((uchar*)&src)[26], ((uchar*)&src)[27], ((uchar*)&src)[28], ((uchar*)&src)[29], ((uchar*)&src)[30], ((uchar*)&src)[31],((uchar*)&src)[32], ((uchar*)&src)[33], ((uchar*)&src)[34], ((uchar*)&src)[35], ((uchar*)&src)[36], ((uchar*)&src)[37], ((uchar*)&src)[38], ((uchar*)&src)[39], ((uchar*)&src)[40], ((uchar*)&src)[41], ((uchar*)&src)[42], ((uchar*)&src)[43], ((uchar*)&src)[44], ((uchar*)&src)[45], ((uchar*)&src)[46], ((uchar*)&src)[47],((uchar*)&src)[48], ((uchar*)&src)[49], ((uchar*)&src)[50], ((uchar*)&src)[51], ((uchar*)&src)[52], ((uchar*)&src)[53], ((uchar*)&src)[54], ((uchar*)&src)[55], ((uchar*)&src)[56], ((uchar*)&src)[57], ((uchar*)&src)[58], ((uchar*)&src)[59], ((uchar*)&src)[60], ((uchar*)&src)[61], ((uchar*)&src)[62], ((uchar*)&src)[63]);
 #define print_m512i_char(src) printf_s("%s: %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d\n",#src,((char*)&src)[0], ((char*)&src)[1], ((char*)&src)[2], ((char*)&src)[3], ((char*)&src)[4], ((char*)&src)[5], ((char*)&src)[6], ((char*)&src)[7], ((char*)&src)[8], ((char*)&src)[9], ((char*)&src)[10], ((char*)&src)[11], ((char*)&src)[12], ((char*)&src)[13], ((char*)&src)[14], ((char*)&src)[15],((char*)&src)[16], ((char*)&src)[17], ((char*)&src)[18], ((char*)&src)[19], ((char*)&src)[20], ((char*)&src)[21], ((char*)&src)[22], ((char*)&src)[23], ((char*)&src)[24], ((char*)&src)[25], ((char*)&src)[26], ((char*)&src)[27], ((char*)&src)[28], ((char*)&src)[29], ((char*)&src)[30], ((char*)&src)[31],((char*)&src)[32], ((char*)&src)[33], ((char*)&src)[34], ((char*)&src)[35], ((char*)&src)[36], ((char*)&src)[37], ((char*)&src)[38], ((char*)&src)[39], ((char*)&src)[40], ((char*)&src)[41], ((char*)&src)[42], ((char*)&src)[43], ((char*)&src)[44], ((char*)&src)[45], ((char*)&src)[46], ((char*)&src)[47],((char*)&src)[48], ((char*)&src)[49], ((char*)&src)[50], ((char*)&src)[51], ((char*)&src)[52], ((char*)&src)[53], ((char*)&src)[54], ((char*)&src)[55], ((char*)&src)[56], ((char*)&src)[57], ((char*)&src)[58], ((char*)&src)[59], ((char*)&src)[60], ((char*)&src)[61], ((char*)&src)[62], ((char*)&src)[63]);
+
+STATIC_INLINE void _print_m512h(char* name, __m512h src)
+{
+	__m512 slo = _mm512_cvtph_ps(_mm512_castsi512_si256(src));
+	__m512 shi = _mm512_cvtph_ps(_mm512_extracti32x8_epi32(src, 1));
+	printf_s("%6.2f %6.2f %6.2f %6.2f %6.2f %6.2f %6.2f %6.2f | %6.2f %6.2f %6.2f %6.2f %6.2f %6.2f %6.2f %6.2f | %6.2f %6.2f %6.2f %6.2f %6.2f %6.2f %6.2f %6.2f | %6.2f %6.2f %6.2f %6.2f %6.2f %6.2f %6.2f %6.2f\n",
+		((float*)&slo)[0], ((float*)&slo)[1], ((float*)&slo)[2], ((float*)&slo)[3], ((float*)&slo)[4], ((float*)&slo)[5], ((float*)&slo)[6], ((float*)&slo)[7],
+		((float*)&slo)[8], ((float*)&slo)[9], ((float*)&slo)[10], ((float*)&slo)[11], ((float*)&slo)[12], ((float*)&slo)[13], ((float*)&slo)[14], ((float*)&slo)[15],
+		((float*)&shi)[0], ((float*)&shi)[1], ((float*)&shi)[2], ((float*)&shi)[3], ((float*)&shi)[4], ((float*)&shi)[5], ((float*)&shi)[6], ((float*)&shi)[7],
+		((float*)&shi)[8], ((float*)&shi)[9], ((float*)&shi)[10], ((float*)&shi)[11], ((float*)&shi)[12], ((float*)&shi)[13], ((float*)&shi)[14], ((float*)&shi)[15]);
+}
+#define print_m512h(src) _print_m512h(#src, src);
+
+#define _mm512_set_m128i(/* __m128i */ src3, /* __m128i */ src2, /* __m128i */ src1, /* __m128i */ src0) \
+    _mm512_inserti32x4(_mm512_inserti32x4(_mm512_inserti32x4(_mm512_castsi128_si512(src0), (src1), 0x1),(src2), 0x2), (src3), 0x3)
+
+#define _mm512_setr_m128i(/* __m128i */ src0, /* __m128i */ src1, /* __m128i */ src2, /* __m128i */ src3) \
+    _mm512_inserti32x4(_mm512_inserti32x4(_mm512_inserti32x4(_mm512_castsi128_si512(src0), (src1), 0x1),(src2), 0x2), (src3), 0x3)
+
+#define _mm512_set_m256i(/* __m256i */ src1, /* __m256i */ src0) \
+    _mm512_inserti64x4(_mm512_castsi256_si512(src0), (src1), 0x1)
+
+#define _mm512_setr_m256i(/* __m256i */ src0, /* __m256i */ src1) \
+    _mm512_inserti64x4(_mm512_castsi256_si512(src0), (src1), 0x1)
+
+inline __m512h _mm512_set1_ph(float src)
+{
+	__m128h rh = _mm_cvtps_ph(_mm_set1_ps(src), _MM_FROUND_TO_NEAREST_INT);
+	return _mm512_broadcastw_epi16(rh);
+}
+
+inline __m256h _mm256_set1_ph(float src)
+{
+	__m128h rh = _mm_cvtps_ph(_mm_set1_ps(src), _MM_FROUND_TO_NEAREST_INT);
+	return _mm256_broadcastw_epi16(rh);
+}
+
+//opencp: not implement in VS
+inline __m512h _mm512_exp_ph(__m512h src)
+{
+	__m512 slo = _mm512_cvtph_ps(_mm512_castsi512_si256(src));
+	__m512 shi = _mm512_cvtph_ps(_mm512_extracti32x8_epi32(src, 1));
+	return _mm512_setr_m256i(_mm512_cvtps_ph(_mm512_exp_ps(slo), _MM_ROUND_MODE_NEAREST), _mm512_cvtps_ph(_mm512_exp_ps(shi), _MM_ROUND_MODE_NEAREST));
+}
+
 #endif //__AVX512F__
 
 #endif //__CP_INLINE_SIMD_FUNCTIONS__
