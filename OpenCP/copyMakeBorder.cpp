@@ -47,6 +47,28 @@ namespace cp
 		}
 	}
 
+	static void copyMakeBorderReplicate16SC1(const Mat& src, Mat& border, const int top, const int bottom, const int left, const int right)
+	{
+		const int LEFT = get_simd_ceil(left, 16);
+		const int end = border.cols - right;
+
+#pragma omp parallel for schedule (dynamic)
+		for (int j = 0; j < border.rows; j++)
+		{
+			const short* s = src.ptr<short>(min(max(j - top, 0), src.rows - 1));
+			short* d = border.ptr<short>(j);
+
+			__m256i ms = _mm256_set1_epi16(s[0]);
+			for (int i = 0; i < LEFT; i += 16)
+				_mm256_storeu_si256((__m256i*)(d + i), ms);
+
+			memcpy(d + left, s, sizeof(short) * src.cols);
+
+			for (int i = end; i < border.cols; i++)
+				d[i] = (s[src.cols - 1]);
+		}
+	}
+
 	static void copyMakeBorderReplicate32FC1(const Mat& src, Mat& border, const int top, const int bottom, const int left, const int right)
 	{
 		const int LEFT = get_simd_ceil(left, 8);
@@ -122,6 +144,7 @@ namespace cp
 		}
 #endif
 	}
+
 
 	static void copyMakeBorderReplicate32FC3(const Mat& src, Mat& border, const int top, const int bottom, const int left, const int right)
 	{
@@ -212,7 +235,7 @@ namespace cp
 		const int end_simd = border.cols - (right - get_simd_floor(right, 8));
 		const int e = (src.cols - 1) * 3;
 
-#pragma omp parallel for  schedule (dynamic)
+#pragma omp parallel for schedule (dynamic)
 		for (int j = 0; j < border.rows; j++)
 		{
 			const uchar* s = src.ptr<uchar>(min(max(j - top, 0), src.rows - 1));
@@ -243,7 +266,7 @@ namespace cp
 	void copyMakeBorderReplicate(InputArray src_, cv::OutputArray border_, const int top, const int bottom, const int left, const int right)
 	{
 		CV_Assert(!src_.empty());
-		CV_Assert(src_.depth() == CV_8U || src_.depth() == CV_32F);
+		CV_Assert(src_.depth() == CV_8U || src_.depth() == CV_32F ||src_.depth() == CV_16S|| src_.depth() == CV_16U|| src_.depth() == CV_16F);
 		CV_Assert(src_.channels() == 1 || src_.channels() == 3);
 
 		Mat src = src_.getMat();
@@ -255,10 +278,11 @@ namespace cp
 
 		Mat border = border_.getMat();
 
-		if (src.type() == CV_8UC1)copyMakeBorderReplicate8UC1(src, border, top, bottom, left, right);
-		else if (src.type() == CV_8UC3)copyMakeBorderReplicate8UC3(src, border, top, bottom, left, right);
-		else if (src.type() == CV_32FC1)copyMakeBorderReplicate32FC1(src, border, top, bottom, left, right);
-		else if (src.type() == CV_32FC3)copyMakeBorderReplicate32FC3(src, border, top, bottom, left, right);
+		if (src.type() == CV_8UC1)			copyMakeBorderReplicate8UC1(src, border, top, bottom, left, right);
+		else if (src.type() == CV_8UC3)		copyMakeBorderReplicate8UC3(src, border, top, bottom, left, right);
+		else if (src.type() == CV_32FC1)	copyMakeBorderReplicate32FC1(src, border, top, bottom, left, right);
+		else if (src.type() == CV_32FC3)	copyMakeBorderReplicate32FC3(src, border, top, bottom, left, right);
+		else if (src.type() == CV_16FC1 || src.type() == CV_16SC1|| src.type() == CV_16UC1) copyMakeBorderReplicate16SC1(src, border, top, bottom, left, right);
 	}
 #pragma endregion
 
