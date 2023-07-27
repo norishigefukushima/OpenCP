@@ -1116,11 +1116,11 @@ STATIC_INLINE void _mm256_load_cvtpd_bgr2planar_pd(const double* ptr, __m256d& b
 
 STATIC_INLINE void _mm256_load_cvtps_bgr2planar_ps(const float* ptr, __m256& b, __m256& g, __m256& r)
 {
-	const __m256 bgr0 = _mm256_loadu_ps(ptr);
-	const __m256 bgr2 = _mm256_loadu_ps(ptr + 16);
+	const __m256 bgr0 = _mm256_load_ps(ptr);
+	const __m256 bgr2 = _mm256_load_ps(ptr + 16);
 	const __m256 s02_low = _mm256_permute2f128_ps(bgr0, bgr2, 0 + 2 * 16);
 	const __m256 s02_high = _mm256_permute2f128_ps(bgr0, bgr2, 1 + 3 * 16);
-	const __m256 bgr1 = _mm256_loadu_ps(ptr + 8);
+	const __m256 bgr1 = _mm256_load_ps(ptr + 8);
 	__m256 b0 = _mm256_blend_ps(_mm256_blend_ps(s02_low, s02_high, 0x24), bgr1, 0x92);
 	b = _mm256_shuffle_ps(b0, b0, 0x6c);
 	__m256 g0 = _mm256_blend_ps(_mm256_blend_ps(s02_high, s02_low, 0x92), bgr1, 0x24);
@@ -1129,6 +1129,23 @@ STATIC_INLINE void _mm256_load_cvtps_bgr2planar_ps(const float* ptr, __m256& b, 
 	r = _mm256_shuffle_ps(r0, r0, 0xc6);
 }
 
+STATIC_INLINE void _mm256_loadu_cvtps_bgr2planar_ps(const float* ptr, __m256& b, __m256& g, __m256& r)
+{
+	
+	const __m256 bgr0 = _mm256_loadu_ps(ptr);
+	const __m256 bgr2 = _mm256_loadu_ps(ptr + 16);
+	const __m256 s02_low = _mm256_permute2f128_ps(bgr0, bgr2, 0 + 2 * 16);
+	const __m256 s02_high = _mm256_permute2f128_ps(bgr0, bgr2, 1 + 3 * 16);
+	const __m256 bgr1 = _mm256_loadu_ps(ptr + 8);
+	
+	__m256 b0 = _mm256_blend_ps(_mm256_blend_ps(s02_low, s02_high, 0x24), bgr1, 0x92);
+	b = _mm256_shuffle_ps(b0, b0, 0x6c);
+	__m256 g0 = _mm256_blend_ps(_mm256_blend_ps(s02_high, s02_low, 0x92), bgr1, 0x24);
+	g = _mm256_shuffle_ps(g0, g0, 0xb1);
+	__m256 r0 = _mm256_blend_ps(_mm256_blend_ps(bgr1, s02_low, 0x24), s02_high, 0x92);
+	r = _mm256_shuffle_ps(r0, r0, 0xc6);
+	
+}
 #define _mm256_shuffle_epi64(/*__m256i*/ a, /*__m256i*/ b, /*const int*/ imm8)\
  _mm256_castpd_si256(_mm256_shuffle_pd(_mm256_castsi256_pd(a), _mm256_castsi256_pd(b), imm8))
 
@@ -1225,6 +1242,30 @@ STATIC_INLINE void _mm256_load_cvtepu8bgr2planar_si256(const uchar* ptr, __m256i
 	__m256i bgr0 = _mm256_load_si256((const __m256i*)ptr);
 	__m256i bgr1 = _mm256_load_si256((const __m256i*)(ptr + 32));
 	__m256i bgr2 = _mm256_load_si256((const __m256i*)(ptr + 64));
+
+	__m256i s02_low = _mm256_permute2x128_si256(bgr0, bgr2, 0 + 2 * 16);
+	__m256i s02_high = _mm256_permute2x128_si256(bgr0, bgr2, 1 + 3 * 16);
+
+	const __m256i blendmask_bgrdeinterleave0 = _mm256_setr_epi8(0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0);
+	const __m256i blendmask_bgrdeinterleave1 = _mm256_setr_epi8(0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1);
+
+	__m256i b0 = _mm256_blendv_epi8(_mm256_blendv_epi8(s02_low, s02_high, blendmask_bgrdeinterleave0), bgr1, blendmask_bgrdeinterleave1);
+	__m256i g0 = _mm256_blendv_epi8(_mm256_blendv_epi8(s02_high, s02_low, blendmask_bgrdeinterleave1), bgr1, blendmask_bgrdeinterleave0);
+	__m256i r0 = _mm256_blendv_epi8(_mm256_blendv_epi8(bgr1, s02_low, blendmask_bgrdeinterleave0), s02_high, blendmask_bgrdeinterleave1);
+
+	const __m256i shufflemask_bgrdeinterleaveb = _mm256_setr_epi8(0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13);
+	const __m256i shufflemask_bgrdeinterleaveg = _mm256_setr_epi8(1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14);
+	const __m256i shufflemask_bgrdeinterleaver = _mm256_setr_epi8(2, 5, 8, 11, 14, 1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15);
+	b = _mm256_shuffle_epi8(b0, shufflemask_bgrdeinterleaveb);
+	g = _mm256_shuffle_epi8(g0, shufflemask_bgrdeinterleaveg);
+	r = _mm256_shuffle_epi8(r0, shufflemask_bgrdeinterleaver);
+}
+
+STATIC_INLINE void _mm256_loadu_cvtepu8bgr2planar_si256(const uchar* ptr, __m256i& b, __m256i& g, __m256i& r)
+{
+	__m256i bgr0 = _mm256_loadu_si256((const __m256i*)ptr);
+	__m256i bgr1 = _mm256_loadu_si256((const __m256i*)(ptr + 32));
+	__m256i bgr2 = _mm256_loadu_si256((const __m256i*)(ptr + 64));
 
 	__m256i s02_low = _mm256_permute2x128_si256(bgr0, bgr2, 0 + 2 * 16);
 	__m256i s02_high = _mm256_permute2x128_si256(bgr0, bgr2, 1 + 3 * 16);
@@ -3331,19 +3372,18 @@ STATIC_INLINE void _mm512_load_cvtepu8_bgr2planar_si512(const uchar* ptr, __m512
 	//b:    0 100 200   1 | 101 201   2 102 | 202   3 103 203 |   4 104 204   5 | 105 205   6 106 | 206   7 107 207 |   8 108 208   9 | 109 209  10 110 | 210  11 111 211 |  12 112 212  13 | 113 213  14 114 | 214  15 115 215 |  16 116 216  17 | 117 217  18 118 | 218  19 119 219 |  20 120 220  21
 	//g : 121 221  22 122 | 222  23 123 223 |  24 124 224  25 | 125 225  26 126 | 226  27 127 227 |  28 128 228  29 | 129 229  30 130 | 230  31 131 231 |  32 132 232  33 | 133 233  34 134 | 234  35 135 235 |  36 136 236  37 | 137 237  38 138 | 238  39 139 239 |  40 140 240  41 | 141 241  42 142
 	//r : 242  43 143 243 |  44 144 244  45 | 145 245  46 146 | 246  47 147 247 |  48 148 248  49 | 149 249  50 150 | 250  51 151 251 |  52 152 252  53 | 153 253  54 154 | 254  55 155 255 |  56 156   0  57 | 157   1  58 158 |   2  59 159   3 |  60 160   4  61 | 161   5  62 162 |   6  63 163   7
-	__m512i a0 = _mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr + 0)));
-	__m512i a1 = _mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr + 32)));
-	__m512i a2 = _mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr + 64)));
-	a0 = _mm512_inserti32x8(a0, ((const __m256i*)ptr)[3], 1);
-	a1 = _mm512_inserti32x8(a1, ((const __m256i*)ptr)[4], 1);
-	a2 = _mm512_inserti32x8(a2, ((const __m256i*)ptr)[5], 1);
+	__m512i a0 = _mm512_castsi256_si512(_mm256_load_si256((const __m256i*)(ptr + 0)));
+	__m512i a1 = _mm512_castsi256_si512(_mm256_load_si256((const __m256i*)(ptr + 32)));
+	__m512i a2 = _mm512_castsi256_si512(_mm256_load_si256((const __m256i*)(ptr + 64)));
+	a0 = _mm512_inserti32x8(a0, _mm256_load_si256((const __m256i*)(ptr + 96)), 1);
+	a1 = _mm512_inserti32x8(a1, _mm256_load_si256((const __m256i*)(ptr + 128)), 1);
+	a2 = _mm512_inserti32x8(a2, _mm256_load_si256((const __m256i*)(ptr + 160)), 1);
 
 	//static const __m512i idx0 = _mm512_setr_epi32(4, 5, 6, 7, 16, 17, 18, 19, 12, 13, 14, 15, 24, 25, 26, 27);
 	static const __m512i idx0 = _mm512_setr_epi64(21474836484, 30064771078, 73014444048, 81604378642, 55834574860, 64424509454, 107374182424, 115964117018);
 	g = _mm512_permutex2var_epi32(a0, idx0, a2);
 	b = _mm512_mask_blend_epi32(0xf0f0, a0, a1);
 	r = _mm512_mask_blend_epi32(0xf0f0, a1, a2);
-
 
 	a0 = _mm512_mask_blend_epi32(0xcccc, b, g);
 	a1 = _mm512_shuffle2_epi32(b, r, 78);
@@ -3368,7 +3408,48 @@ STATIC_INLINE void _mm512_load_cvtepu8_bgr2planar_si512(const uchar* ptr, __m512
 	r = _mm512_mask_blend_epi8(0xaaaaaaaaaaaaaaaa, a1, a2);
 }
 
-STATIC_INLINE void _mm512_load_cvtph_bgr2planar_ph2(const short* ptr, __m512h& b, __m512h& g, __m512h& r, const __m512i idx0, const __m512i idx1, const __m512i idx2, const __m512i idx3)
+STATIC_INLINE void _mm512_loadu_cvtepu8_bgr2planar_si512(const uchar* ptr, __m512i& b, __m512i& g, __m512i& r)
+{
+	//b:    0 100 200   1 | 101 201   2 102 | 202   3 103 203 |   4 104 204   5 | 105 205   6 106 | 206   7 107 207 |   8 108 208   9 | 109 209  10 110 | 210  11 111 211 |  12 112 212  13 | 113 213  14 114 | 214  15 115 215 |  16 116 216  17 | 117 217  18 118 | 218  19 119 219 |  20 120 220  21
+	//g : 121 221  22 122 | 222  23 123 223 |  24 124 224  25 | 125 225  26 126 | 226  27 127 227 |  28 128 228  29 | 129 229  30 130 | 230  31 131 231 |  32 132 232  33 | 133 233  34 134 | 234  35 135 235 |  36 136 236  37 | 137 237  38 138 | 238  39 139 239 |  40 140 240  41 | 141 241  42 142
+	//r : 242  43 143 243 |  44 144 244  45 | 145 245  46 146 | 246  47 147 247 |  48 148 248  49 | 149 249  50 150 | 250  51 151 251 |  52 152 252  53 | 153 253  54 154 | 254  55 155 255 |  56 156   0  57 | 157   1  58 158 |   2  59 159   3 |  60 160   4  61 | 161   5  62 162 |   6  63 163   7
+	__m512i a0 = _mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr + 0)));
+	__m512i a1 = _mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr + 32)));
+	__m512i a2 = _mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr + 64)));
+	a0 = _mm512_inserti32x8(a0, ((const __m256i*)ptr)[3], 1);
+	a1 = _mm512_inserti32x8(a1, ((const __m256i*)ptr)[4], 1);
+	a2 = _mm512_inserti32x8(a2, ((const __m256i*)ptr)[5], 1);
+
+	//static const __m512i idx0 = _mm512_setr_epi32(4, 5, 6, 7, 16, 17, 18, 19, 12, 13, 14, 15, 24, 25, 26, 27);
+	static const __m512i idx0 = _mm512_setr_epi64(21474836484, 30064771078, 73014444048, 81604378642, 55834574860, 64424509454, 107374182424, 115964117018);
+	g = _mm512_permutex2var_epi32(a0, idx0, a2);
+	b = _mm512_mask_blend_epi32(0xf0f0, a0, a1);
+	r = _mm512_mask_blend_epi32(0xf0f0, a1, a2);
+
+	a0 = _mm512_mask_blend_epi32(0xcccc, b, g);
+	a1 = _mm512_shuffle2_epi32(b, r, 78);
+	a2 = _mm512_mask_blend_epi32(0xcccc, g, r);
+
+	//static const __m512i idx1 = _mm512_setr_epi32(1, 16, 3, 18, 5, 20, 7, 22, 9, 24, 11, 26, 13, 28, 15, 30);
+	static const __m512i idx1 = _mm512_setr_epi64(68719476737, 77309411331, 85899345925, 94489280519, 103079215113, 111669149707, 120259084301, 128849018895);
+	b = _mm512_mask_blend_epi32(0xaaaa, a0, a1);
+	g = _mm512_permutex2var_epi32(a0, idx1, a2);
+	r = _mm512_mask_blend_epi32(0xaaaa, a1, a2);
+
+	//static const __m512i idx3 = _mm512_setr_epi16(1, 32, 3, 34, 5, 36, 7, 38, 9, 40, 11, 42, 13, 44, 15, 46, 17, 48, 19, 50, 21, 52, 23, 54, 25, 56, 27, 58, 29, 60, 31, 62	);
+	static const __m512i idx3 = _mm512_setr_epi64(9570162095161345, 10696079182135301, 11821996269109257, 12947913356083213, 14073830443057169, 15199747530031125, 16325664617005081, 17451581703979037);
+	a1 = _mm512_permutex2var_epi16(b, idx3, r);
+	a0 = _mm512_mask_blend_epi16(0xaaaaaaaa, b, g);
+	a2 = _mm512_mask_blend_epi16(0xaaaaaaaa, g, r);
+
+	//static const __m512i idx4 = _mm512_setr_epi8(1, 64, 3, 66, 5, 68, 7, 70, 9, 72, 11, 74, 13, 76, 15, 78, 17, 80, 19, 82, 21, 84, 23, 86, 25, 88, 27, 90, 29, 92, 31, 94, 33, 96, 35, 98, 37, 100, 39, 102, 41, 104, 43, 106, 45, 108, 47, 110, 49, 112, 51, 114, 53, 116, 55, 118, 57, 120, 59, 122, 61, 124, 63, 126);
+	static const __m512i idx4 = _mm512_setr_epi64(5046076696864964609, 5624798079569577993, 6203519462274191377, 6782240844978804761, 7360962227683418145, 7939683610388031529, 8518404993092644913, 9097126375797258297);
+	g = _mm512_permutex2var_epi8(a0, idx4, a2);
+	b = _mm512_mask_blend_epi8(0xaaaaaaaaaaaaaaaa, a0, a1);
+	r = _mm512_mask_blend_epi8(0xaaaaaaaaaaaaaaaa, a1, a2);
+}
+
+STATIC_INLINE void _mm512_loadu_cvtph_bgr2planar_ph2(const short* ptr, __m512h& b, __m512h& g, __m512h& r, const __m512i idx0, const __m512i idx1, const __m512i idx2, const __m512i idx3)
 {
 	//   0  1  2  3  4  5  6  7 |  8  9 10 11 12 13 14 15 | 16 17 18 19 20 21 22 23 | 24 25 26 27 28 29 30 31
 	//  32 33 34 35 36 37 38 39 | 40 41 42 43 44 45 46 47 | 48 49 50 51 52 53 54 55 | 56 57 58 59 60 61 62 63
@@ -3412,6 +3493,48 @@ STATIC_INLINE void _mm512_load_cvtph_bgr2planar_ph2(const short* ptr, __m512h& b
 }
 
 STATIC_INLINE void _mm512_load_cvtps_bgr2planar_ps(const float* ptr, __m512& b, __m512& g, __m512& r)
+{
+	//   0  1  2  3 |  4  5  6  7 |  8  9 10 11 | 12 13 14 15
+	//  16 17 18 19 | 20 21 22 23 | 24 25 26 27 | 28 29 30 31
+	//  32 33 34 35 | 36 37 38 39 | 40 41 42 43 | 44 45 46 47
+
+	__m512 a0 = _mm512_castps256_ps512(_mm256_load_ps(ptr + 0));
+	__m512 a1 = _mm512_castps256_ps512(_mm256_load_ps(ptr + 8));
+	__m512 a2 = _mm512_castps256_ps512(_mm256_load_ps(ptr + 16));
+	a0 = _mm512_insertf32x8(a0, _mm256_load_ps(ptr + 24), 1);
+	a1 = _mm512_insertf32x8(a1, _mm256_load_ps(ptr + 32), 1);
+	a2 = _mm512_insertf32x8(a2, _mm256_load_ps(ptr + 40), 1);
+	//   0  1  2  3 |  4  5  6  7 | 24 25 26 27 | 28 29 30 31
+	//   8  9 10 11 | 12 13 14 15 | 32 33 34 35 | 36 37 38 39
+	//  16 17 18 19 | 20 21 22 23 | 40 41 42 43 | 44 45 46 47
+
+	//static const __m512i idx0 = _mm512_setr_epi32(4, 5, 6, 7, 16, 17, 18, 19, 12, 13, 14, 15, 24, 25, 26, 27);
+	static const __m512i idx0 = _mm512_setr_epi64(21474836484, 30064771078, 73014444048, 81604378642, 55834574860, 64424509454, 107374182424, 115964117018);
+	g = _mm512_permutex2var_ps(a0, idx0, a2);
+	b = _mm512_mask_blend_ps(0xf0f0, a0, a1);
+	r = _mm512_mask_blend_ps(0xf0f0, a1, a2);
+	//   0  1  2  3 | 12 13 14 15 | 24 25 26 27 | 36 37 38 39
+	//   4  5  6  7 | 16 17 18 19 | 28 29 30 31 | 40 41 42 43
+	//   8  9 10 11 | 20 21 22 23 | 32 33 34 35 | 44 45 46 47
+
+	a0 = _mm512_mask_blend_ps(0xcccc, b, g);
+	a1 = _mm512_shuffle_ps(b, r, 78);
+	a2 = _mm512_mask_blend_ps(0xcccc, g, r);
+	//   0  1  6  7 | 12 13 18 19 | 24 25 30 31 | 36 37 42 43
+	//   2  3  8  9 | 14 15 20 21 | 26 27 32 33 | 38 39 44 45
+	//   4  5 10 11 | 16 17 22 23 | 28 29 34 35 | 40 41 46 47
+
+	//static const __m512i idx1 = _mm512_setr_epi32(1, 16, 3, 18, 5, 20, 7, 22, 9, 24, 11, 26, 13, 28, 15, 30);
+	static const __m512i idx1 = _mm512_setr_epi64(68719476737, 77309411331, 85899345925, 94489280519, 103079215113, 111669149707, 120259084301, 128849018895);
+	b = _mm512_mask_blend_ps(0xaaaa, a0, a1);
+	g = _mm512_permutex2var_ps(a0, idx1, a2);
+	r = _mm512_mask_blend_ps(0xaaaa, a1, a2);
+	//   0  3  6  9 | 12 15 18 21 | 24  27 30 33 | 36 39 42 45
+	//   1  4  7 10 | 13 16 19 22 | 25  28 31 34 | 37 40 43 46
+	//   2  5  8 11 | 14 17 20 23 | 26  29 32 35 | 38 41 44 47
+}
+
+STATIC_INLINE void _mm512_loadu_cvtps_bgr2planar_ps(const float* ptr, __m512& b, __m512& g, __m512& r)
 {
 	//   0  1  2  3 |  4  5  6  7 |  8  9 10 11 | 12 13 14 15
 	//  16 17 18 19 | 20 21 22 23 | 24 25 26 27 | 28 29 30 31
@@ -4091,10 +4214,10 @@ STATIC_INLINE void _printInt6_m512h(const char* name, __m512h src)
 {
 	__m512i sint = _mm512_cvtph_epi16(src);
 	printf_s("%6d %6d %6d %6d %6d %6d %6d %6d | %6d %6d %6d %6d %6d %6d %6d %6d | %6d %6d %6d %6d %6d %6d %6d %6d | %6d %6d %6d %6d %6d %6d %6d %6d\n",
-		((short*)&sint)[0],  ((short*)&sint)[1],  ((short*)&sint)[2],  ((short*)& sint)[3],  ((short*)&sint)[4],  ((short*)& sint)[5], ((short*)& sint)[6],  ((short*)&sint)[7],
-		((short*)&sint)[8],  ((short*)&sint)[9],  ((short*)&sint)[10], ((short*)& sint)[11], ((short*)&sint)[12], ((short*)& sint)[13], ((short*)&sint)[14], ((short*)&sint)[15],
-		((short*)&sint)[16], ((short*)&sint)[17], ((short*)&sint)[18], ((short*)& sint)[19], ((short*)&sint)[20], ((short*)& sint)[21], ((short*)&sint)[22], ((short*)&sint)[23],
-		((short*)&sint)[24], ((short*)&sint)[25], ((short*)&sint)[26], ((short*)& sint)[27], ((short*)&sint)[28], ((short*)& sint)[29], ((short*)&sint)[30], ((short*)&sint)[31]);
+		((short*)&sint)[0], ((short*)&sint)[1], ((short*)&sint)[2], ((short*)&sint)[3], ((short*)&sint)[4], ((short*)&sint)[5], ((short*)&sint)[6], ((short*)&sint)[7],
+		((short*)&sint)[8], ((short*)&sint)[9], ((short*)&sint)[10], ((short*)&sint)[11], ((short*)&sint)[12], ((short*)&sint)[13], ((short*)&sint)[14], ((short*)&sint)[15],
+		((short*)&sint)[16], ((short*)&sint)[17], ((short*)&sint)[18], ((short*)&sint)[19], ((short*)&sint)[20], ((short*)&sint)[21], ((short*)&sint)[22], ((short*)&sint)[23],
+		((short*)&sint)[24], ((short*)&sint)[25], ((short*)&sint)[26], ((short*)&sint)[27], ((short*)&sint)[28], ((short*)&sint)[29], ((short*)&sint)[30], ((short*)&sint)[31]);
 }
 
 STATIC_INLINE void _printInt3_m512h(const char* name, __m512h src)
@@ -4150,18 +4273,70 @@ STATIC_INLINE __m512h _mm512_set_step_ph(float v, float step = 1.f)
 	);
 }
 
+
 STATIC_INLINE void _mm512_load_cvtph_bgr2planar_ph(const short* ptr, __m512h& b, __m512h& g, __m512h& r)
 {
 	//   0  1  2  3  4  5  6  7 |  8  9 10 11 12 13 14 15 | 16 17 18 19 20 21 22 23 | 24 25 26 27 28 29 30 31
 	//  32 33 34 35 36 37 38 39 | 40 41 42 43 44 45 46 47 | 48 49 50 51 52 53 54 55 | 56 57 58 59 60 61 62 63
 	//  64 65 66 67 68 69 70 71 | 72 73 74 75 76 77 78 79 | 80 81 82 83 84 85 86 87 | 88 89 90 91 92 93 94 95
 
-	b = _mm512_castsi256_si512(_mm256_loadu_si256((__m256i*)(ptr + 0)));
-	g = _mm512_castsi256_si512(_mm256_loadu_si256((__m256i*)(ptr + 16)));
-	r = _mm512_castsi256_si512(_mm256_loadu_si256((__m256i*)(ptr + 32)));
-	b = _mm512_inserti32x8(b, ((const __m256i*)ptr)[3], 1);
-	g = _mm512_inserti32x8(g, ((const __m256i*)ptr)[4], 1);
-	r = _mm512_inserti32x8(r, ((const __m256i*)ptr)[5], 1);
+	b = _mm512_castsi256_si512(_mm256_load_si256((const __m256i*)(ptr + 0)));
+	g = _mm512_castsi256_si512(_mm256_load_si256((const __m256i*)(ptr + 16)));
+	r = _mm512_castsi256_si512(_mm256_load_si256((const __m256i*)(ptr + 32)));
+	b = _mm512_inserti32x8(b, _mm256_load_si256((const __m256i*)(ptr + 48)), 1);
+	g = _mm512_inserti32x8(g, _mm256_load_si256((const __m256i*)(ptr + 64)), 1);
+	r = _mm512_inserti32x8(r, _mm256_load_si256((const __m256i*)(ptr + 80)), 1);
+	//   0  1  2  3  4  5  6  7 |  8  9 10 11 12 13 14 15 | 48 49 50 51 52 53 54 55 | 56 57 58 59 60 61 62 63
+	//  16 17 18 19 20 21 22 23 | 24 25 26 27 28 29 30 31 | 64 65 66 67 68 69 70 71 | 72 73 74 75 76 77 78 79
+	//  32 33 34 35 36 37 38 39 | 40 41 42 43 44 45 46 47 | 80 81 82 83 84 85 86 87 | 88 89 90 91 92 93 94 95
+
+	//static const __m512i idx0 = _mm512_setr_epi16(8, 9, 10, 11, 12, 13, 14, 15, 32, 33, 34, 35, 36, 37, 38, 39, 24, 25, 26, 27, 28, 29, 30, 31, 48, 49, 50, 51, 52, 53, 54, 55);
+	static const __m512i idx0 = _mm512_setr_epi64(3096267694080008, 4222184781053964, 9851770215923744, 10977687302897700, 7599936041975832, 8725853128949788, 14355438563819568, 15481355650793524);
+	__m512i a1 = _mm512_permutex2var_ph(b, idx0, r);
+	__m512i a0 = _mm512_mask_blend_epi16(0xff00ff00, b, g);
+	__m512i a2 = _mm512_mask_blend_epi16(0xff00ff00, g, r);
+	//   0  1  2  3  4  5  6  7 | 24 25 26 27 28 29 30 31 | 48 49 50 51 52 53 54 55 | 72 73 74 75 76 77 78 79
+	//   8  9 10 11 12 13 14 15 | 32 33 34 35 36 37 38 39 | 56 57 58 59 60 61 62 63 | 80 81 82 83 84 85 86 87
+	//  16 17 18 19 20 21 22 23 | 40 41 42 43 44 45 46 47 | 64 65 66 67 68 69 70 71 | 88 89 90 91 92 93 94 95
+
+	//static const __m512i idx1 = _mm512_setr_epi16(4, 5, 6, 7, 32, 33, 34, 35, 12, 13, 14, 15, 40, 41, 42, 43, 20, 21, 22, 23, 48, 49, 50, 51, 28, 29, 30, 31, 56, 57, 58, 59);
+	//static const __m512i idx1 = _mm512_setr_epi64(1970350607106052, 9851770215923744, 4222184781053964, 12103604389871656, 6474018955001876, 14355438563819568, 8725853128949788, 16607272737767480);
+	//g = _mm512_permutex2var_ph(a0, idx1, a2);
+	b = _mm512_mask_blend_ph(0xf0f0f0f0, a0, a1);
+	g = _mm512_shuffle2_epi32(a0, a2, _MM_SHUFFLE(1, 0, 3, 2));//78
+	r = _mm512_mask_blend_ph(0xf0f0f0f0, a1, a2);
+	//   0  1  2  3 12 13 14 15 | 24 25 26 27 36 37 38 39 | 48 49 50 51 60 61 62 63 | 72 73 74 75 84 85 86 87
+	//   4  5  6  7 16 17 18 19 | 28 29 30 31 40 41 42 43 | 52 53 54 55 64 65 66 67 | 76 77 78 79 88 89 90 91
+	//   8  9 10 11 20 21 22 23 | 32 33 34 35 44 45 46 47 | 56 57 58 59 68 69 70 71 | 80 81 82 83 92 93 94 95
+
+	//static const __m512i idx2 = _mm512_setr_epi16(2, 3, 32, 33, 6, 7, 36, 37, 10, 11, 40, 41, 14, 15, 44, 45, 18, 19, 48, 49, 22, 23, 52, 53, 26, 27, 56, 57, 30, 31, 60, 61);
+	static const __m512i idx2 = _mm512_setr_epi64(9288811670601730, 10414728757575686, 11540645844549642, 12666562931523598, 13792480018497554, 14918397105471510, 16044314192445466, 17170231279419422);
+	a1 = _mm512_permutex2var_ph(b, idx2, r);
+	a0 = _mm512_mask_blend_epi16(0xcccccccc, b, g);
+	a2 = _mm512_mask_blend_epi16(0xcccccccc, g, r);
+	//   0  1  6  7 12 13 18 19 | 24 25 30 31 36 37 42 43 | 48 49 54 55 60 61 66 67 | 72 73 78 79 84 85 90 91
+	//   2  3  8  9 14 15 20 21 | 26 27 32 33 38 39 44 45 | 50 51 56 57 62 63 68 69 | 74 75 80 81 86 87 92 93
+	//   4  5 10 11 16 17 22 23 | 28 29 34 35 40 41 46 47 | 52 53 58 59 64 65 70 71 | 76 77 82 83 88 89 94 95
+
+	//static const __m512i idx3 = _mm512_setr_epi16(1, 32, 3, 34, 5, 36, 7, 38, 9, 40, 11, 42, 13, 44, 15, 46, 17, 48, 19, 50, 21, 52, 23, 54, 25, 56, 27, 58, 29, 60, 31, 62	);
+	static const __m512i idx3 = _mm512_setr_epi64(9570162095161345, 10696079182135301, 11821996269109257, 12947913356083213, 14073830443057169, 15199747530031125, 16325664617005081, 17451581703979037);
+	g = _mm512_permutex2var_ph(a0, idx3, a2);
+	b = _mm512_mask_blend_epi16(0xaaaaaaaa, a0, a1);
+	r = _mm512_mask_blend_epi16(0xaaaaaaaa, a1, a2);
+}
+
+STATIC_INLINE void _mm512_loadu_cvtph_bgr2planar_ph(const short* ptr, __m512h& b, __m512h& g, __m512h& r)
+{
+	//   0  1  2  3  4  5  6  7 |  8  9 10 11 12 13 14 15 | 16 17 18 19 20 21 22 23 | 24 25 26 27 28 29 30 31
+	//  32 33 34 35 36 37 38 39 | 40 41 42 43 44 45 46 47 | 48 49 50 51 52 53 54 55 | 56 57 58 59 60 61 62 63
+	//  64 65 66 67 68 69 70 71 | 72 73 74 75 76 77 78 79 | 80 81 82 83 84 85 86 87 | 88 89 90 91 92 93 94 95
+
+	b = _mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr + 0)));
+	g = _mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr + 16)));
+	r = _mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr + 32)));
+	b = _mm512_inserti32x8(b, _mm256_loadu_si256((const __m256i*)(ptr + 48)), 1);
+	g = _mm512_inserti32x8(g, _mm256_loadu_si256((const __m256i*)(ptr + 64)), 1);
+	r = _mm512_inserti32x8(r, _mm256_loadu_si256((const __m256i*)(ptr + 80)), 1);
 	//   0  1  2  3  4  5  6  7 |  8  9 10 11 12 13 14 15 | 48 49 50 51 52 53 54 55 | 56 57 58 59 60 61 62 63
 	//  16 17 18 19 20 21 22 23 | 24 25 26 27 28 29 30 31 | 64 65 66 67 68 69 70 71 | 72 73 74 75 76 77 78 79
 	//  32 33 34 35 36 37 38 39 | 40 41 42 43 44 45 46 47 | 80 81 82 83 84 85 86 87 | 88 89 90 91 92 93 94 95
@@ -4177,10 +4352,10 @@ STATIC_INLINE void _mm512_load_cvtph_bgr2planar_ph(const short* ptr, __m512h& b,
 	//  16 17 18 19 20 21 22 23 | 40 41 42 43 44 45 46 47 | 64 65 66 67 68 69 70 71 | 88 89 90 91 92 93 94 95
 
 	//static const __m512i idx1 = _mm512_setr_epi16(4, 5, 6, 7, 32, 33, 34, 35, 12, 13, 14, 15, 40, 41, 42, 43, 20, 21, 22, 23, 48, 49, 50, 51, 28, 29, 30, 31, 56, 57, 58, 59);
-	static const __m512i idx1 = _mm512_setr_epi64(1970350607106052, 9851770215923744, 4222184781053964, 12103604389871656, 6474018955001876, 14355438563819568, 8725853128949788, 16607272737767480);
-	//g = _mm512_shuffle_epi64(a0, a2, 0b01010101);
-	g = _mm512_permutex2var_ph(a0, idx1, a2);
+	//static const __m512i idx1 = _mm512_setr_epi64(1970350607106052, 9851770215923744, 4222184781053964, 12103604389871656, 6474018955001876, 14355438563819568, 8725853128949788, 16607272737767480);
+	//g = _mm512_permutex2var_ph(a0, idx1, a2);
 	b = _mm512_mask_blend_ph(0xf0f0f0f0, a0, a1);
+	g = _mm512_shuffle2_epi32(a0, a2, _MM_SHUFFLE(1, 0, 3, 2));//78
 	r = _mm512_mask_blend_ph(0xf0f0f0f0, a1, a2);
 	//   0  1  2  3 12 13 14 15 | 24 25 26 27 36 37 38 39 | 48 49 50 51 60 61 62 63 | 72 73 74 75 84 85 86 87
 	//   4  5  6  7 16 17 18 19 | 28 29 30 31 40 41 42 43 | 52 53 54 55 64 65 66 67 | 76 77 78 79 88 89 90 91
