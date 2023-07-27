@@ -106,7 +106,7 @@ namespace cp
 
 	void Timer::pushLapTime()
 	{
-		const double time = (getTickCount() - pre) / (getTickFrequency());
+		const double time = double(getTickCount() - pre) / (getTickFrequency());
 		countIndex++;
 		if (countIndex >= countIgnoringThreshold)
 		{
@@ -132,7 +132,7 @@ namespace cp
 
 	double Timer::getTime(bool isPrint, std::string message)
 	{
-		cTime = (getTickCount() - pre) / (getTickFrequency());
+		cTime = double(getTickCount() - pre) / (getTickFrequency());
 		convertTime(isPrint, message);
 		return cTime;
 	}
