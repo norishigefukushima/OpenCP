@@ -448,6 +448,70 @@ namespace cp
 #endif
 	}
 
+	void splitCopyMakeBorderReplicate16S(Mat& src, vector<Mat>& border, const int top, const int bottom, const int left, const int right)
+	{
+		CV_Assert(!src.empty());
+		CV_Assert(src.channels() == 3);
+
+		const int LEFT = get_simd_ceil(left, 16);
+		const int RIGHT = get_simd_ceil(right, 16);
+		const int END = border[0].cols - RIGHT;
+		const int end = border[0].cols - right;
+		const int end_simd = border[0].cols - (right - get_simd_floor(right, 16));
+		const int SIMDW = get_simd_floor(src.cols, 16);
+
+#pragma omp parallel for //schedule (dynamic)
+		for (int j = 0; j < border[0].rows; j++)
+		{
+			short* s = src.ptr<short>(border_replicate(j - top, src.rows - 1));
+
+			short* b = border[0].ptr<short>(j);
+			short* g = border[1].ptr<short>(j);
+			short* r = border[2].ptr<short>(j);
+
+			for (int i = 0; i < LEFT; i += 16)
+			{
+				_mm256_storeu_si256((__m256i*)(b + i), _mm256_set1_epi16(s[0]));
+				_mm256_storeu_si256((__m256i*)(g + i), _mm256_set1_epi16(s[1]));
+				_mm256_storeu_si256((__m256i*)(r + i), _mm256_set1_epi16(s[2]));
+			}
+			for (int i = END; i < END + RIGHT; i += 16)
+			{
+				_mm256_storeu_si256((__m256i*)(b + i), _mm256_set1_epi16(s[3 * (src.cols - 1) + 0]));
+				_mm256_storeu_si256((__m256i*)(g + i), _mm256_set1_epi16(s[3 * (src.cols - 1) + 1]));
+				_mm256_storeu_si256((__m256i*)(r + i), _mm256_set1_epi16(s[3 * (src.cols - 1) + 2]));
+			}
+
+			for (int i = 0; i < SIMDW; i += 16)
+			{
+				__m256i mb, mg, mr;
+				_mm256_load_cvtepi16bgr2planar_epi16(s + 3 * i, mb, mg, mr);
+				_mm256_storeu_si256((__m256i*)(b + i + left), mb);
+				_mm256_storeu_si256((__m256i*)(g + i + left), mg);
+				_mm256_storeu_si256((__m256i*)(r + i + left), mr);
+			}
+			for (int i = SIMDW; i < src.cols; i++)
+			{
+				b[i + left] = s[3 * i + 0];
+				g[i + left] = s[3 * i + 1];
+				r[i + left] = s[3 * i + 2];
+			}
+
+			/*for (int i = end; i < end_simd; i += 8)
+			{
+				_mm256_storeu_ps(b + i, _mm256_set1_ps(s[3 * (src.cols - 1) + 0]));
+				_mm256_storeu_ps(g + i, _mm256_set1_ps(s[3 * (src.cols - 1) + 1]));
+				_mm256_storeu_ps(r + i, _mm256_set1_ps(s[3 * (src.cols - 1) + 2]));
+			}
+			for (int i = end_simd; i < border[0].cols; i++)
+			{
+				b[i] = s[3 * (src.cols - 1) + 0];
+				g[i] = s[3 * (src.cols - 1) + 1];
+				r[i] = s[3 * (src.cols - 1) + 2];
+			}*/
+		}
+	}
+
 	void splitCopyMakeBorderReplicate8U(Mat& src, vector<Mat>& border, const int top, const int bottom, const int left, const int right)
 	{
 		CV_Assert(!src.empty());
@@ -458,7 +522,7 @@ namespace cp
 		const int END = border[0].cols - RIGHT;
 		const int end = border[0].cols - right;
 		const int end_simd = border[0].cols - (right - get_simd_floor(right, 32));
-		const int SIMDW = get_simd_floor(src.cols, 8);
+		const int SIMDW = get_simd_floor(src.cols, 32);
 
 #pragma omp parallel for
 		for (int j = 0; j < border[0].rows; j++)
@@ -727,7 +791,7 @@ namespace cp
 	void splitCopyMakeBorder(cv::InputArray src, cv::OutputArrayOfArrays dest, const int top, const int bottom, const int left, const int right, const int borderType, const cv::Scalar& color)
 	{
 		CV_Assert(!src.empty());
-		CV_Assert(src.depth() == CV_8U || src.depth() == CV_32F);
+		CV_Assert(src.depth() == CV_8U || src.depth() == CV_32F || src.depth() == CV_16S || src.depth() == CV_16U|| src.depth() == CV_16F);
 		CV_Assert(borderType == cv::BORDER_REPLICATE || borderType == cv::BORDER_REFLECT101 || borderType == cv::BORDER_REFLECT);
 
 		Mat s = src.getMat();
@@ -768,6 +832,7 @@ namespace cp
 		{
 			if (src.depth() == CV_8U)		splitCopyMakeBorderReplicate8U(s, dst, top, bottom, left, right);
 			else if (src.depth() == CV_32F) splitCopyMakeBorderReplicate32F(s, dst, top, bottom, left, right);
+			else if (src.depth() == CV_16F || src.depth() == CV_16S || src.depth() == CV_16U) splitCopyMakeBorderReplicate16S(s, dst, top, bottom, left, right);
 		}
 		else if (borderType == cv::BORDER_REFLECT101)
 		{
