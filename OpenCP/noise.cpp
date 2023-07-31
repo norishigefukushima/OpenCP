@@ -12,6 +12,7 @@ namespace cp
 		cv::RNG rng;
 		if (seed != 0) rng.state = seed;
 		else rng.state = cv::getTickCount();
+
 		for (int j = 0; j < src.rows; j++)
 		{
 			srcType* s = src.ptr<srcType>(j);
@@ -52,17 +53,27 @@ namespace cp
 		add(s, n, dest, noArray(), src.depth());
 	}
 
-	static void addNoiseMono_double(Mat& src, Mat& dest, const double sigma)
+	static void addNoiseMono_double(const Mat& src, Mat& dest, const double sigma)
 	{
-		Mat s; src.convertTo(s, CV_64F);
-		Mat n(s.size(), CV_64F);
+		Mat n(src.size(), CV_64F);
 		randn(n, 0, sigma);
-		add(s, n, dest, noArray(), src.depth());
+		add(src, n, dest);
+	}
+
+	static void addNoiseMono_float(const Mat& src, Mat& dest, const double sigma)
+	{
+		Mat n(src.size(), CV_32F);
+		randn(n, 0, sigma);
+		add(src, n, dest);
 	}
 
 	static void addNoiseMono(Mat& src, Mat& dest, const double sigma)
 	{
-		if (src.depth() == CV_32F || src.depth() == CV_64F)
+		if (src.depth() == CV_32F)
+		{
+			addNoiseMono_float(src, dest, sigma);
+		}
+		else if (src.depth() == CV_64F)
 		{
 			addNoiseMono_double(src, dest, sigma);
 		}
@@ -75,8 +86,9 @@ namespace cp
 	void addNoise(InputArray src_, OutputArray dest_, const double sigma, const double sprate, const uint64 seed)
 	{
 		CV_Assert(!src_.empty());
-		dest_.create(src_.size(), src_.type());
+
 		Mat src = src_.getMat();
+		if(src.size()!=dest_.size() || src.type()!=dest_.type()) dest_.create(src_.size(), src_.type());
 		Mat dest = dest_.getMat();
 
 		if (seed != 0) cv::theRNG().state = seed;
@@ -84,16 +96,15 @@ namespace cp
 		if (src.channels() == 1)
 		{
 			addNoiseMono(src, dest, sigma);
-			if (sprate != 0)addNoiseSoltPepperMono(dest, dest, sprate, seed);
-			return;
+			if (sprate != 0.0) addNoiseSoltPepperMono(dest, dest, sprate, seed);
 		}
 		else
 		{
 			Mat s = src.reshape(1);
-			dest = dest.reshape(1);
-			addNoiseMono(s, dest, sigma);
-			if (sprate != 0)addNoiseSoltPepperMono(dest, dest, sprate, seed);
-			dest = dest.reshape(3);
+			Mat d = dest.reshape(1);
+			addNoiseMono(s, d, sigma);
+			if (sprate != 0.0)addNoiseSoltPepperMono(d, d, sprate, seed);
+			dest = d.reshape(3);
 		}
 	}
 
