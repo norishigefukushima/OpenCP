@@ -35,7 +35,11 @@
 #include <float.h>
 #include <string.h> // for memcpy
 #if defined(_WIN32) && !defined(__GNUC__)
+#ifdef __INTEL_LLVM_COMPILER //#ifdef __INTEL_COMPILER
+#include <immintrin.h>
+#else
 #include <intrin.h>
+#endif
 #ifndef MIE_ALIGN
 #define MIE_ALIGN(x) __declspec(align(x))
 #endif
@@ -65,10 +69,8 @@
 
 namespace fmath
 {
-
 	namespace local
 	{
-
 		const size_t EXP_TABLE_SIZE = 10;
 		const size_t EXPD_TABLE_SIZE = 11;
 		const size_t LOG_TABLE_SIZE = 12;
@@ -176,14 +178,14 @@ namespace fmath
 					C2[i] = 0.16666666685227835064;
 					C3[i] = 3.0000000027955394;
 #endif
-			}
+				}
 				for (int i = 0; i < s; i++) {
 					di di;
 					di.d = ::pow(2.0, i * (1.0 / s));
 					tbl[i] = di.i & mask64(52);
 				}
-		}
-	};
+			}
+		};
 
 		template<size_t N = LOG_TABLE_SIZE>
 		struct LogVar {
@@ -383,7 +385,7 @@ namespace fmath
 				jmp(".retry");
 				outLocalLabel();
 			}
-};
+		};
 #endif
 
 		/* to define static variables in fmath.hpp */
@@ -396,7 +398,7 @@ namespace fmath
 			static const ExpCode& getInstance() {
 				static const ExpCode expCode(&expVar);
 				return expCode;
-		}
+			}
 #endif
 		};
 
@@ -1012,9 +1014,9 @@ namespace fmath
 		for given y > 0
 		get f_y(x) := pow(x, y) for x >= 0
 	*/
-	class PowGenerator 
+	class PowGenerator
 	{
-		enum 
+		enum
 		{
 			N = 11
 		};
