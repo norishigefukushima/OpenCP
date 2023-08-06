@@ -68,7 +68,7 @@ namespace cp
 		/// <param name="boundingBox">bonding box ignoring outside region. default is 0.</param>
 		/// <param name="precision">computing precision. Default: PSNR_UP_CAST(0). Other: PSNR_8U(1),PSNR_32F(2), PSNR_64F(3), PSNR_KAHAN_64F(4)</param>
 		/// <param name="compare_channel">computing channlel. Default: compute MSE all channele PSNR_ALL(0). Other: PSNR_Y(1), PSNR_B(2), PSNR_G(3), PSNR_R(4), PSNR_Y_INTEGER(5)</param>
-		/// <returns>PSNR value, 0: same, -1: NaN, -2: Inf</returns>
+		/// <returns>PSNR value, Inf: same, NaN: MSE=NaN, -2: 0: MSE=Inf</returns>
 		double getPSNR(cv::InputArray src, cv::InputArray ref, const int boundingBox = 0, const int precision = PSNR_UP_CAST, const int compare_channel = PSNR_ALL);
 
 		/// <summary>
@@ -79,7 +79,7 @@ namespace cp
 		/// <param name="boundingBox">bonding box ignoring outside region. default is 0.</param>
 		/// <param name="precision">computing precision. Default: PSNR_UP_CAST(0). Other: PSNR_8U(0),PSNR_32F(1), PSNR_64F(2), PSNR_KAHAN_64F(3)</param>
 		/// <param name="compare_channel">computing channlel. Default: compute MSE all channele and then logged PSNR_ALL(0). Other: PSNR_Y(1), PSNR_B(2), PSNR_G(3), PSNR_R(4)</param>
-		/// <returns>PSNR value, 0: same, -1: NaN, -2: Inf</returns>
+		/// <returns>PSNR value, Inf: same, NaN: MSE=NaN, -2: 0: MSE=Inf</returns>
 		double operator()(cv::InputArray src, cv::InputArray ref, const int boundingBox = 0, const int precision = PSNR_UP_CAST, const int compare_channel = PSNR_ALL);
 
 		//set reference image for acceleration
@@ -97,7 +97,7 @@ namespace cp
 	boundingBox: ignoring outside region. default is 0
 	precision: computing precision, default PSNR_32F(1), other PSNR_8U(0),PSNR_64F(2), PSNR_KAHAN_64F(3)
 	compare_channel: default compute MSE all channele and then logged PSNR_ALL(0), PSNR_Y(1), PSNR_B(2), PSNR_G(3), PSNR_R(4),
-	0: same image, -1: NaN, -2: Inf, else PSNR.
+	PSNR value, Inf: same, NaN: MSE=NaN, -2: 0: MSE=Inf
 	*/
 
 	/// <summary>
@@ -107,8 +107,8 @@ namespace cp
 	/// <param name="reference">Reference image</param>
 	/// <param name="boundingBox">bonding box ignoring outside region. Default is 0.</param>
 	/// <param name="precision">computing precision. Default: PSNR_UP_CAST(0). Other: PSNR_8U(1),PSNR_32F(2), PSNR_64F(3), PSNR_KAHAN_64F(4)</param>
-		/// <param name="compare_channel">computing channlel. Default: compute MSE all channele PSNR_ALL(0). Other: PSNR_Y(1), PSNR_B(2), PSNR_G(3), PSNR_R(4), PSNR_Y_INTEGER(5)</param>
-	/// <returns>PSNR value (0: same, -1: NaN, -2: Inf, else PSNR)</returns>
+	/// <param name="compare_channel">computing channlel. Default: compute MSE all channele PSNR_ALL(0). Other: PSNR_Y(1), PSNR_B(2), PSNR_G(3), PSNR_R(4), PSNR_Y_INTEGER(5)</param>
+	/// <returns>PSNR value, Inf: same, NaN: MSE=NaN, -2: 0: MSE=Inf</returns>
 	CP_EXPORT double getPSNR(cv::InputArray src, cv::InputArray reference, const int boundingBox = 0, const int precision = PSNR_UP_CAST, const int compare_channel = PSNR_ALL);
 
 	/// <summary>
@@ -121,7 +121,7 @@ namespace cp
 	/// <param name="boundingBox">bonding box ignoring outside region. Default is 0.</param>
 	/// <param name="precision">Computing precision. Default: PSNR_UP_CAST(0). Other: PSNR_8U(0),PSNR_32F(1), PSNR_64F(2), PSNR_KAHAN_64F(3)</param>
 	/// <param name="compare_channel">Computing channlel. Default: compute MSE all channele and then logged PSNR_ALL(0). Other: PSNR_Y(1), PSNR_B(2), PSNR_G(3), PSNR_R(4)</param>
-	/// <returns>PSNR value (0: same, -1: NaN, -2: Inf, else PSNR)</returns>
+	/// <returns>PSNR value, Inf: same, NaN: MSE=NaN, -2: 0: MSE=Inf</returns>
 	CP_EXPORT double getPSNRClip(cv::InputArray src, cv::InputArray reference, const double minval = 0.0, const double maxval = 255.0, const int boundingBox = 0, const int precision = PSNR_UP_CAST, const int compare_channel = PSNR_ALL);
 	CP_EXPORT double getMSE(cv::InputArray src1, cv::InputArray src2const, int boundingBox = 0, const int precision = PSNR_UP_CAST, const int compare_channel = PSNR_ALL);
 	CP_EXPORT double getMSE(cv::InputArray src1, cv::InputArray src2, cv::InputArray mask);
