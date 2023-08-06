@@ -1,5 +1,6 @@
 #pragma once
 #include <opencv2/core/cvdef.h>
+#include <limits>
 #include <cmath>
 namespace cp
 {
@@ -217,19 +218,20 @@ namespace cp
 		subf.convertTo(dest, depth);
 	}
 
+	//mse=0.0->inf, NaN->NaN, Inf->0.0
 	inline double MSEtoPSNR(const double mse)
 	{
 		if (mse == 0.0)
 		{
-			return 0;
+			return std::numeric_limits<double>::infinity();
 		}
 		else if (cvIsNaN(mse))
 		{
-			return -1.0;
+			return std::numeric_limits<double>::quiet_NaN();;
 		}
 		else if (cvIsInf(mse))
 		{
-			return -2.0;
+			return 0.0;
 		}
 		else
 		{
