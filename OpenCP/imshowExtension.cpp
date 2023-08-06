@@ -843,7 +843,7 @@ namespace cp
 			namedWindow(wname);
 			createTrackbar("num", wname, &num_stack, stack_max);
 			setTrackbarMax("num", wname, stack_max);
-			setTrackbarPos("num", wname, stack_max);
+			//setTrackbarPos("num", wname, stack_max);
 		}
 	}
 
@@ -860,15 +860,37 @@ namespace cp
 			namedWindow(wname);
 			createTrackbar("num", wname, &num_stack, stack_max);
 			setTrackbarMax("num", wname, stack_max);
-			setTrackbarPos("num", wname, stack_max);
+			//setTrackbarPos("num", wname, stack_max);
 		}
 	}
 
-	void StackImage::show(cv::Mat& src)
+	void StackImage::clear()
 	{
-		if (stack_max == 0) imshow(wname, src);
-		else if (stack_max == num_stack) imshow(wname, src);
-		else  imshow(wname, stack[num_stack]);
+		stack.clear();
+		stack_max = (int)stack.size();
+	}
+
+	void StackImage::show(cv::Mat& src, bool isMergePages)
+	{
+		if (stack_max == 0)
+		{
+			imshow(wname, src);
+		}
+		else
+		{
+			if (isMergePages)
+			{
+				stack.push_back(src);
+				Mat show; hconcat(stack, show);
+				imshow(wname, show);
+			}
+			else
+			{
+				if (stack_max == num_stack) imshow(wname, src);
+				else  imshow(wname, stack[num_stack]);
+			}
+		}
+		
 	}
 
 	void StackImage::show()

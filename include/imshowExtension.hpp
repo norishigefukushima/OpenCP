@@ -38,8 +38,9 @@ namespace cp
 		void overwrite(cv::Mat& src);
 		void push(std::vector<cv::Mat>& src);
 		void push(cv::Mat& src);
+		void clear();
 		void show();
-		void show(cv::Mat& src);
+		void show(cv::Mat& src, const bool isMergePages);
 		void gui();
 	};
 

@@ -8,6 +8,7 @@ namespace cp
 	{
 	private:
 		int count;
+		int count_page;
 		std::string windowName;
 		StackImage si;
 		std::vector<std::string> strings;
