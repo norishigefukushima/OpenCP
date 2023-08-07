@@ -11,7 +11,7 @@ namespace cp
 		CV_Assert(src.depth() == CV_32F || src.depth() == CV_64F);
 
 		int ret = 0;
-		const int size = src.size().area()*src.channels();
+		const int size = src.size().area() * src.channels();
 		if (src.depth() == CV_32F)
 		{
 			float* s = src.ptr<float>();
@@ -47,10 +47,10 @@ namespace cp
 	int countNaN(InputArray src_)
 	{
 		Mat src = src_.getMat();
-		CV_Assert(src.depth() == CV_32F || src.depth() == CV_64F);
+		if (src.depth() == CV_8U || src.depth() == CV_8S || src.depth() == CV_16S || src.depth() == CV_16U || src.depth() == CV_32S) return 0;
 
 		int ret = 0;
-		const int size = src.size().area()*src.channels();
+		const int size = src.size().area() * src.channels();
 		if (src.depth() == CV_32F)
 		{
 			float* s = src.ptr<float>();
@@ -74,10 +74,10 @@ namespace cp
 	int countInf(InputArray src_)
 	{
 		Mat src = src_.getMat();
-		CV_Assert(src.depth() == CV_32F || src.depth() == CV_64F);
+		if (src.depth() == CV_8U || src.depth() == CV_8S || src.depth() == CV_16S || src.depth() == CV_16U || src.depth() == CV_32S) return 0;
 
 		int ret = 0;
-		const int size = src.size().area()*src.channels();
+		const int size = src.size().area() * src.channels();
 		if (src.depth() == CV_32F)
 		{
 			float* s = src.ptr<float>();
