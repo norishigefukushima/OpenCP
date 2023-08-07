@@ -20,7 +20,7 @@ namespace cp
 		inline int getGSRight();
 
 	public:
-		inline void plotError(std::string wname, const int search_min, const int search_max);
+		inline void plotError(std::string wname, const int search_min, const int search_max, const bool isWait);
 		inline int linearSearch(const int search_min, const int search_max);
 		inline int goldenSearch(const int search_min, const int search_max);
 	};
@@ -113,7 +113,7 @@ namespace cp
 		{
 			//print_debug6(x1, x2, E1, E2, xmin, xmax);
 			//getchar();
-			if (abs(x1 - x2) <= 1 || xmin==xmax)
+			if (abs(x1 - x2) <= 1 || xmin == xmax)
 			{
 				if (E2 < E1)
 				{
@@ -151,9 +151,11 @@ namespace cp
 		return ret;
 	}
 
-	inline void Search1DInt::plotError(std::string wname, const int search_min, const int search_max)
+	inline void Search1DInt::plotError(std::string wname, const int search_min, const int search_max, const bool isWait)//linear search
 	{
 		cp::Plot pt;
+		pt.setPlotTitle(0, "data");
+		pt.setPlotTitle(1, "min");
 		int ret = search_min;
 		double Emax = DBL_MAX;
 		for (int i = search_min; i <= search_max; i++)
@@ -164,10 +166,11 @@ namespace cp
 				Emax = e;
 				ret = i;
 			}
-			std::cout << i << "," << e << std::endl;
+			//std::cout << i << "," << e << std::endl;
 			pt.push_back(i, e);
 		}
-		pt.plot(wname);
+		pt.push_back_VLine(ret, 1);
+		pt.plot(wname, isWait, "", cv::format("argmin %d, min %f", ret, Emax));
 	}
 
 #pragma endregion
@@ -257,7 +260,7 @@ namespace cp
 	{
 		xmin = search_min;
 		xmax = search_max;
-		double ret=0.0;
+		double ret = 0.0;
 		double E1 = getError(xmin);
 		double E2 = getError(xmax);
 
