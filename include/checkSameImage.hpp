@@ -45,7 +45,7 @@ namespace cp
 	};
 
 	/// <summary>
-	/// wrapper function of CheckSameImage.isSame. check same image with the previous called image
+	/// Wrapper function of CheckSameImage. Check same image with the previous called image
 	/// </summary>
 	/// <param name="src">src image</param>
 	/// <param name="ref">reference image, the image is pushed.</param>
