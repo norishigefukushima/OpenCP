@@ -49,7 +49,7 @@ STATIC_INLINE __m512i _mm512_setr_epi8(char s0, char s1, char s2, char s3, char 
 
 //#define AVX512_VBMI //enable _mm512_permutex2var_epi8 >=TigerLake 
 
-//#define USE_SET4GATHER //for AMD CPU
+#define USE_SET4GATHER //for AMD CPU
 //#define UNUSE_FMA
 
 #pragma region swich_for_AVX(sandybridge_ivybridge)
@@ -2249,9 +2249,49 @@ STATIC_INLINE __m128 _mm_absdiff_ps(__m128 src1, __m128 src2)
 	return _mm_abs_ps(_mm_sub_ps(src1, src2));
 }
 
-STATIC_INLINE __m256 _mm256_absdiff_ps(__m256 src1, __m256 src2)
+STATIC_INLINE __m256 _mm256_absdiff_ps(const __m256 src1, const __m256 src2)
 {
 	return _mm256_andnot_ps(_mm256_set1_ps(-0.f), _mm256_sub_ps(src1, src2));
+}
+
+STATIC_INLINE void _mm256_absdiff_psx2(const __m256 src0, const __m256 ref0, const __m256 src1, const __m256 ref1, __m256& d0, __m256& d1)
+{
+	d0 = _mm256_sub_ps(src0, ref0);
+	d1 = _mm256_sub_ps(src1, ref1);
+	d0 = _mm256_abs_ps(d0);
+	d1 = _mm256_abs_ps(d1);
+}
+
+STATIC_INLINE void _mm256_absdiff_psx4(const __m256 src0, const __m256 ref0, const __m256 src1, const __m256 ref1, const __m256 src2, const __m256 ref2, const __m256 src3, const __m256 ref3, __m256& d0, __m256& d1, __m256& d2, __m256& d3)
+{
+	d0 = _mm256_sub_ps(src0, ref0);
+	d1 = _mm256_sub_ps(src1, ref1);
+	d2 = _mm256_sub_ps(src2, ref2);
+	d3 = _mm256_sub_ps(src3, ref3);
+	d0 = _mm256_abs_ps(d0);
+	d1 = _mm256_abs_ps(d1);
+	d2 = _mm256_abs_ps(d2);
+	d3 = _mm256_abs_ps(d3);
+}
+
+STATIC_INLINE void _mm256_absdiff_psx8(const __m256 src0, const __m256 ref0, const __m256 src1, const __m256 ref1, const __m256 src2, const __m256 ref2, const __m256 src3, const __m256 ref3, const __m256 src4, const __m256 ref4, const __m256 src5, const __m256 ref5, const __m256 src6, const __m256 ref6, const __m256 src7, const __m256 ref7, __m256& d0, __m256& d1, __m256& d2, __m256& d3, __m256& d4, __m256& d5, __m256& d6, __m256& d7)
+{
+	d0 = _mm256_sub_ps(src0, ref0);
+	d1 = _mm256_sub_ps(src1, ref1);
+	d2 = _mm256_sub_ps(src2, ref2);
+	d3 = _mm256_sub_ps(src3, ref3);
+	d4 = _mm256_sub_ps(src4, ref4);
+	d5 = _mm256_sub_ps(src5, ref5);
+	d6 = _mm256_sub_ps(src6, ref6);
+	d7 = _mm256_sub_ps(src7, ref7);
+	d0 = _mm256_abs_ps(d0);
+	d1 = _mm256_abs_ps(d1);
+	d2 = _mm256_abs_ps(d2);
+	d3 = _mm256_abs_ps(d3);
+	d4 = _mm256_abs_ps(d4);
+	d5 = _mm256_abs_ps(d5);
+	d6 = _mm256_abs_ps(d6);
+	d7 = _mm256_abs_ps(d7);
 }
 
 //rsqrt->rcp
