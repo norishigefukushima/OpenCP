@@ -4308,17 +4308,28 @@ STATIC_INLINE __m512i _mm512_set_step_epi32(int v, int step = 1)
 #define print_m512i_uchar(src) printf_s("%s: %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d\n",#src,((uchar*)&src)[0], ((uchar*)&src)[1], ((uchar*)&src)[2], ((uchar*)&src)[3], ((uchar*)&src)[4], ((uchar*)&src)[5], ((uchar*)&src)[6], ((uchar*)&src)[7], ((uchar*)&src)[8], ((uchar*)&src)[9], ((uchar*)&src)[10], ((uchar*)&src)[11], ((uchar*)&src)[12], ((uchar*)&src)[13], ((uchar*)&src)[14], ((uchar*)&src)[15],((uchar*)&src)[16], ((uchar*)&src)[17], ((uchar*)&src)[18], ((uchar*)&src)[19], ((uchar*)&src)[20], ((uchar*)&src)[21], ((uchar*)&src)[22], ((uchar*)&src)[23], ((uchar*)&src)[24], ((uchar*)&src)[25], ((uchar*)&src)[26], ((uchar*)&src)[27], ((uchar*)&src)[28], ((uchar*)&src)[29], ((uchar*)&src)[30], ((uchar*)&src)[31],((uchar*)&src)[32], ((uchar*)&src)[33], ((uchar*)&src)[34], ((uchar*)&src)[35], ((uchar*)&src)[36], ((uchar*)&src)[37], ((uchar*)&src)[38], ((uchar*)&src)[39], ((uchar*)&src)[40], ((uchar*)&src)[41], ((uchar*)&src)[42], ((uchar*)&src)[43], ((uchar*)&src)[44], ((uchar*)&src)[45], ((uchar*)&src)[46], ((uchar*)&src)[47],((uchar*)&src)[48], ((uchar*)&src)[49], ((uchar*)&src)[50], ((uchar*)&src)[51], ((uchar*)&src)[52], ((uchar*)&src)[53], ((uchar*)&src)[54], ((uchar*)&src)[55], ((uchar*)&src)[56], ((uchar*)&src)[57], ((uchar*)&src)[58], ((uchar*)&src)[59], ((uchar*)&src)[60], ((uchar*)&src)[61], ((uchar*)&src)[62], ((uchar*)&src)[63]);
 #define print_m512i_char(src) printf_s("%s: %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d\n",#src,((char*)&src)[0], ((char*)&src)[1], ((char*)&src)[2], ((char*)&src)[3], ((char*)&src)[4], ((char*)&src)[5], ((char*)&src)[6], ((char*)&src)[7], ((char*)&src)[8], ((char*)&src)[9], ((char*)&src)[10], ((char*)&src)[11], ((char*)&src)[12], ((char*)&src)[13], ((char*)&src)[14], ((char*)&src)[15],((char*)&src)[16], ((char*)&src)[17], ((char*)&src)[18], ((char*)&src)[19], ((char*)&src)[20], ((char*)&src)[21], ((char*)&src)[22], ((char*)&src)[23], ((char*)&src)[24], ((char*)&src)[25], ((char*)&src)[26], ((char*)&src)[27], ((char*)&src)[28], ((char*)&src)[29], ((char*)&src)[30], ((char*)&src)[31],((char*)&src)[32], ((char*)&src)[33], ((char*)&src)[34], ((char*)&src)[35], ((char*)&src)[36], ((char*)&src)[37], ((char*)&src)[38], ((char*)&src)[39], ((char*)&src)[40], ((char*)&src)[41], ((char*)&src)[42], ((char*)&src)[43], ((char*)&src)[44], ((char*)&src)[45], ((char*)&src)[46], ((char*)&src)[47],((char*)&src)[48], ((char*)&src)[49], ((char*)&src)[50], ((char*)&src)[51], ((char*)&src)[52], ((char*)&src)[53], ((char*)&src)[54], ((char*)&src)[55], ((char*)&src)[56], ((char*)&src)[57], ((char*)&src)[58], ((char*)&src)[59], ((char*)&src)[60], ((char*)&src)[61], ((char*)&src)[62], ((char*)&src)[63]);
 
-//opencp: not implement in VS2022 (checked 2023/7/25)
+//opencp: not implement in VS2022 (checked 2023/8/12)
 #ifndef __INTEL_LLVM_COMPILER
-inline __m512h _mm512_exp_ph(__m512h src)
+STATIC_INLINE __m512h _mm512_exp_ph(__m512h src)
 {
 	const __m512 slo = _mm512_cvtph_ps(_mm512_castsi512_si256(src));
 	const __m512 shi = _mm512_cvtph_ps(_mm512_extracti32x8_epi32(src, 1));
 	return _mm512_setr_m256i(_mm512_cvtps_ph(_mm512_exp_ps(slo), CP_ROUND_NEAREST), _mm512_cvtps_ph(_mm512_exp_ps(shi), CP_ROUND_NEAREST));
 }
+//opencp: not implement in VS2022 (checked 2023/8/12)
 inline __m512h _mm512_pow_ph(__m512h src, __m512h pow)
 {
-	return _mm512_setzero_ph();
+	const __m512 slo = _mm512_cvtph_ps(_mm512_castsi512_si256(src));
+	const __m512 shi = _mm512_cvtph_ps(_mm512_extracti32x8_epi32(src, 1));
+	const __m512 plo = _mm512_cvtph_ps(_mm512_castsi512_si256(pow));
+	const __m512 phi = _mm512_cvtph_ps(_mm512_extracti32x8_epi32(pow, 1));
+	return _mm512_setr_m256i(_mm512_cvtps_ph(_mm512_pow_ps(slo, plo), CP_ROUND_NEAREST), _mm512_cvtps_ph(_mm512_pow_ps(shi, phi), CP_ROUND_NEAREST));
+}
+inline __m512h _mm512_cbrt_ph(__m512h src)
+{
+	const __m512 slo = _mm512_cvtph_ps(_mm512_castsi512_si256(src));
+	const __m512 shi = _mm512_cvtph_ps(_mm512_extracti32x8_epi32(src, 1));
+	return _mm512_setr_m256i(_mm512_cvtps_ph(_mm512_cbrt_ps(slo), CP_ROUND_NEAREST), _mm512_cvtps_ph(_mm512_cbrt_ps(shi), CP_ROUND_NEAREST));
 }
 #endif
 
@@ -4494,6 +4505,56 @@ STATIC_INLINE __m512h _mm512_loadu_auto16(const unsigned char* src)
 STATIC_INLINE __m512h _mm512_loadu_auto16(const short* src)
 {
 	return _mm512_loadu_si512((__m512h*)src);
+}
+
+STATIC_INLINE __m256h _mm512_castph512_ph256hi(__m512h src)
+{
+	return _mm512_extracti32x8_epi32(src, 1);
+}
+
+STATIC_INLINE void _mm512_storeu_auto(unsigned char* dest, __m512h src)
+{
+	_mm_storeu_si128((__m128i*)(dest + 0), _mm512_cvtps_epu8(_mm512_cvtph_ps(_mm512_castph512_ph256(src))));
+	_mm_storeu_si128((__m128i*)(dest + 16), _mm512_cvtps_epu8(_mm512_cvtph_ps(_mm512_castph512_ph256hi(src))));
+}
+
+STATIC_INLINE void _mm512_storeu_auto(float* dest, __m512h src)
+{
+	_mm512_storeu_ps(dest + 0, _mm512_cvtph_ps(_mm512_castph512_ph256(src)));
+	_mm512_storeu_ps(dest + 16, _mm512_cvtph_ps(_mm512_castph512_ph256hi(src)));
+}
+
+STATIC_INLINE void _mm512_storescalar_auto(float* dest, __m512h ms, const int numpixel)
+{
+	__m512 ms0 = _mm512_cvtph_ps(_mm512_castph512_ph256(ms));
+	__m512 ms1 = _mm512_cvtph_ps(_mm512_castph512_ph256hi(ms));
+	_mm512_storescalar_ps(dest, ms0, numpixel);
+	_mm512_storescalar_ps(dest + 16, ms1, numpixel);
+}
+
+STATIC_INLINE void _mm512_storeu_auto_color(float* dest, __m512h b, __m512h g, __m512h r)
+{
+	__m512 b0 = _mm512_cvtph_ps(_mm512_castph512_ph256(b));
+	__m512 g0 = _mm512_cvtph_ps(_mm512_castph512_ph256(g));
+	__m512 r0 = _mm512_cvtph_ps(_mm512_castph512_ph256(r));
+	_mm512_storeu_ps_color(dest, b0, g0, r0);
+	__m512 b1 = _mm512_cvtph_ps(_mm512_castph512_ph256hi(b));
+	__m512 g1 = _mm512_cvtph_ps(_mm512_castph512_ph256hi(g));
+	__m512 r1 = _mm512_cvtph_ps(_mm512_castph512_ph256hi(r));
+	_mm512_storeu_ps_color(dest + 48, b1, g1, r1);
+}
+
+STATIC_INLINE void _mm512_storescalar_auto_color(float* dest, __m512h b, __m512h g, __m512h r, const int numpixel)
+{
+	/*__m512 dr, dg, db;
+	_mm512_cvtsoa2aos_ps(b, g, r, db, dg, dr);
+	float CV_DECL_ALIGNED(64) buffscalarstore[48];
+	_mm512_store_ps(buffscalarstore + 0, db);
+	_mm512_store_ps(buffscalarstore + 16, dg);
+	_mm512_store_ps(buffscalarstore + 32, dr);
+
+	for (int i = 0; i < numpixel; i++)
+		dest[i] = buffscalarstore[i];*/
 }
 #endif //__AVX512FP16__
 
