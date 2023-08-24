@@ -49,7 +49,7 @@ STATIC_INLINE __m512i _mm512_setr_epi8(char s0, char s1, char s2, char s3, char 
 
 //#define AVX512_VBMI //enable _mm512_permutex2var_epi8 >=TigerLake 
 
-#define USE_SET4GATHER //for AMD CPU
+//#define USE_SET4GATHER //for AMD CPU
 //#define UNUSE_FMA
 
 #pragma region swich_for_AVX(sandybridge_ivybridge)
@@ -109,16 +109,19 @@ inline __m256 _mm256_permute4x64_ps(__m256 src, const int imm8)
 
 STATIC_INLINE __m256 _mm256_i32gatherset_ps(const float* s, __m256i index, int offset)
 {
-	return _mm256_setr_ps(s[((int*)&index)[0]], s[((int*)&index)[1]], s[((int*)&index)[2]], s[((int*)&index)[3]], s[((int*)&index)[4]], s[((int*)&index)[5]], s[((int*)&index)[6]], s[((int*)&index)[7]]); \
+	return _mm256_setr_ps(s[((int*)&index)[0]], s[((int*)&index)[1]], s[((int*)&index)[2]], s[((int*)&index)[3]], s[((int*)&index)[4]], s[((int*)&index)[5]], s[((int*)&index)[6]], s[((int*)&index)[7]]);
 }
 STATIC_INLINE __m256i _mm256_i32gatherset_epi32(const int* s, __m256i index, int offset)
 {
-	return _mm256_setr_epi32(s[((int*)&index)[0]], s[((int*)&index)[1]], s[((int*)&index)[2]], s[((int*)&index)[3]], s[((int*)&index)[4]], s[((int*)&index)[5]], s[((int*)&index)[6]], s[((int*)&index)[7]]); \
+	return _mm256_setr_epi32(s[((int*)&index)[0]], s[((int*)&index)[1]], s[((int*)&index)[2]], s[((int*)&index)[3]], s[((int*)&index)[4]], s[((int*)&index)[5]], s[((int*)&index)[6]], s[((int*)&index)[7]]);
 }
 
 #if !defined(__AVX2__) || defined(USE_SET4GATHER)
+#define _mm256_i32gather_force_ps(s, idx, val) _mm256_i32gather_ps(s, idx, val)
+#define _mm256_i32gather_force_epi32(s, idx, val) _mm256_i32gather_epi32(s, idx, val)
 #define _mm256_i32gather_ps(s, idx, val) _mm256_i32gatherset_ps(s, idx, val)
 #define _mm256_i32gather_epi32(s, idx, val) _mm256_i32gatherset_epi32(s, idx, val)
+
 #endif
 
 
