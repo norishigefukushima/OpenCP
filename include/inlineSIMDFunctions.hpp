@@ -115,7 +115,26 @@ STATIC_INLINE __m256i _mm256_i32gatherset_epi32(const int* s, __m256i index, int
 {
 	return _mm256_setr_epi32(s[((int*)&index)[0]], s[((int*)&index)[1]], s[((int*)&index)[2]], s[((int*)&index)[3]], s[((int*)&index)[4]], s[((int*)&index)[5]], s[((int*)&index)[6]], s[((int*)&index)[7]]);
 }
-
+#ifdef __AVX512F__
+STATIC_INLINE __m512 _mm512_i32gatherset_ps(__m512i index, const float* s, int offset)
+{
+	return _mm512_setr_ps(
+		s[((int*)&index)[0]], s[((int*)&index)[1]], s[((int*)&index)[2]], s[((int*)&index)[3]], 
+		s[((int*)&index)[4]], s[((int*)&index)[5]], s[((int*)&index)[6]], s[((int*)&index)[7]],
+		s[((int*)&index)[8]], s[((int*)&index)[9]], s[((int*)&index)[10]], s[((int*)&index)[11]], 
+		s[((int*)&index)[12]], s[((int*)&index)[13]], s[((int*)&index)[14]], s[((int*)&index)[15]]
+	);
+}
+STATIC_INLINE __m512i _mm512_i32gatherset_epi32(__m512i index, const int* s, int offset)
+{
+	return _mm512_setr_epi32(
+		s[((int*)&index)[0]], s[((int*)&index)[1]], s[((int*)&index)[2]], s[((int*)&index)[3]],
+		s[((int*)&index)[4]], s[((int*)&index)[5]], s[((int*)&index)[6]], s[((int*)&index)[7]],
+		s[((int*)&index)[8]], s[((int*)&index)[9]], s[((int*)&index)[10]], s[((int*)&index)[11]],
+		s[((int*)&index)[12]], s[((int*)&index)[13]], s[((int*)&index)[14]], s[((int*)&index)[15]]
+	);
+}
+#endif
 #if !defined(__AVX2__) || defined(USE_SET4GATHER)
 #define _mm256_i32gather_force_ps(s, idx, val) _mm256_i32gather_ps(s, idx, val)
 #define _mm256_i32gather_force_epi32(s, idx, val) _mm256_i32gather_epi32(s, idx, val)
