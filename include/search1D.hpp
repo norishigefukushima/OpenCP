@@ -58,7 +58,8 @@ namespace cp
 
 	public:
 		inline float getMinError() { return minError; }
-		inline float linearSearch(const float search_min, const float search_max, const float step, bool isPlot = false, std::string wname = "search");
+		inline float linearSearch(const float search_min, const float search_max, const float step);
+		inline float linearSearch(const float search_min, const float search_max, const float step, bool isPlot, std::string wname = "search");
 		inline float binarySearch(const float search_min, const float search_max, const float eps, const int loop);
 		inline float goldenSectionSearch(const float search_min, const float search_max, const float eps, const int loop);
 	};
@@ -302,15 +303,10 @@ namespace cp
 		return (xmax - xmin) * phi / (1.f + phi) + xmin;
 	}
 
-	inline float Search1D32F::linearSearch(const float search_min, const float search_max, const float step, bool isPlot, std::string wname)
+	inline float Search1D32F::linearSearch(const float search_min, const float search_max, const float step)
 	{
 		float ret = search_min + step;
-		//cp::Plot pt;
 		float Emax = getError(search_min + step);
-		//float ep = Emax;
-		//FILE* fp = fopen("hat", "w");
-		//FILE* fp = fopen("exp_lp", "w");
-		//FILE* fp = fopen("Gauss", "w");
 		for (float i = search_min + step; i <= search_max; i += step)
 		{
 			const float e = getError(i);
@@ -319,14 +315,27 @@ namespace cp
 				Emax = e;
 				ret = i;
 			}
-			//fprintf(fp, "%f %f %f\n", i, e, ep - e);
-			//ep = e;
-			//if (isPlot) pt.push_back(i, e, 0);
 		}
-		//fclose(fp);
-		//std::cout << ret << "," << Emax << std::endl;
-		//getchar();
-		//if (isPlot)pt.plot(wname, false);
+		return ret;
+	}
+
+	inline float Search1D32F::linearSearch(const float search_min, const float search_max, const float step, bool isPlot, std::string wname)
+	{
+		float ret = search_min + step;
+		cp::Plot pt;
+		float Emax = getError(search_min + step);
+		for (float i = search_min + step; i <= search_max; i += step)
+		{
+			const float e = getError(i);
+			if (e < Emax)
+			{
+				Emax = e;
+				ret = i;
+			}
+
+			if (isPlot) pt.push_back(i, e, 0);
+		}
+		if (isPlot) pt.plot(wname, false);
 		return ret;
 	}
 
