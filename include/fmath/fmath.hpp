@@ -1129,24 +1129,7 @@ namespace fmath
 #if 1
 		__m512i ti = _mm512_i32gather_epi32(v8, (const int*)expVar.tbl, 4);
 #else
-		unsigned int v0, v1, v2, v3, v4, v5, v6, v7;
-		v0 = _mm256_extract_epi16(v8, 0);
-		v1 = _mm256_extract_epi16(v8, 2);
-		v2 = _mm256_extract_epi16(v8, 4);
-		v3 = _mm256_extract_epi16(v8, 6);
-		v4 = _mm256_extract_epi16(v8, 8);
-		v5 = _mm256_extract_epi16(v8, 10);
-		v6 = _mm256_extract_epi16(v8, 12);
-		v7 = _mm256_extract_epi16(v8, 14);
-		__m256i ti = _mm256_setzero_si256();
-		ti = _mm256_insert_epi32(ti, expVar.tbl[v0], 0);
-		ti = _mm256_insert_epi32(ti, expVar.tbl[v1], 1);
-		ti = _mm256_insert_epi32(ti, expVar.tbl[v2], 2);
-		ti = _mm256_insert_epi32(ti, expVar.tbl[v3], 3);
-		ti = _mm256_insert_epi32(ti, expVar.tbl[v4], 4);
-		ti = _mm256_insert_epi32(ti, expVar.tbl[v5], 5);
-		ti = _mm256_insert_epi32(ti, expVar.tbl[v6], 6);
-		ti = _mm256_insert_epi32(ti, expVar.tbl[v7], 7);
+		__m512i ti = _mm512_i32gatherset_epi32(v8, (const int*)expVar.tbl, 4);
 #endif
 		__m512 t0 = _mm512_castsi512_ps(ti);
 		t0 = _mm512_or_ps(t0, _mm512_castsi512_ps(u8));
