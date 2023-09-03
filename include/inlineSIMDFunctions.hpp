@@ -149,6 +149,28 @@ STATIC_INLINE __m512i _mm512_i32gatherset_epi32(__m512i index, const int* s, int
 #pragma region xxx
 #pragma endregion
 
+#pragma region utility
+STATIC_INLINE std::string getRoundingModeName(const int mode)
+{
+	std::string ret = "";
+	switch (mode)
+	{
+	case _MM_ROUND_NEAREST:		ret = "_MM_ROUND_NEAREST"; break;
+	case _MM_ROUND_DOWN:		ret = "_MM_ROUND_DOWN"; break;
+	case _MM_ROUND_UP:			ret = "_MM_ROUND_UP"; break;
+	case _MM_ROUND_TOWARD_ZERO:	ret = "_MM_ROUND_TOWARD_ZERO"; break;
+	default: break;
+	}
+	return ret;
+}
+
+STATIC_INLINE int _mm_cvtf32_i32(const float src)
+{
+	__m128i d = _mm_cvtps_epi32(_mm_set1_ps(src));
+	return ((int*)&d)[0];
+}
+#pragma endregion
+
 //template for array
 //const int CV_DECL_ALIGNED(AVX_ALIGN) a[10]
 #pragma region loop manipulation
