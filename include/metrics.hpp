@@ -138,5 +138,6 @@ namespace cp
 
 	CP_EXPORT double getTotalVariation(cv::InputArray src);
 
-	//CP_EXPORT double SSIM(cv::Mat& src, cv::Mat& ref, double sigma = 1.5);removed for update
+	CP_EXPORT double getSSIM(const cv::Mat& i1, const cv::Mat& i2, const double sigma = 1.5);
+	CP_EXPORT double getGMSD(cv::InputArray ref, cv::InputArray src, const double c = 170.0, const bool isDownsample = true);
 }
