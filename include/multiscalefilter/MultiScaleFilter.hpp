@@ -96,6 +96,7 @@ inline float getremapCoefficient(float i, float g, const int window_type, float 
 
 namespace cp
 {
+	//abstract class for multi-scale filtering
 	class CP_EXPORT MultiScaleFilter
 	{
 	public:
@@ -238,7 +239,7 @@ namespace cp
 		virtual void dog(const cv::Mat& src, cv::Mat& dest) = 0;
 	};
 
-
+	//classical multi-scale filtering (no edge-preserving filter)
 	class CP_EXPORT MultiScaleGaussianFilter : public MultiScaleFilter
 	{
 	public:
@@ -248,6 +249,7 @@ namespace cp
 		void dog(const cv::Mat& src, cv::Mat& dest)override;
 	};
 
+	//multi-scale filtering with bilateral filtering-based pyramid
 	class CP_EXPORT MultiScaleBilateralFilter : public MultiScaleFilter
 	{
 	public:
@@ -259,6 +261,22 @@ namespace cp
 	};
 
 
+	//build scale-space per image (very slow)
+	class CP_EXPORT LocalMultiScaleFilterFull : public MultiScaleFilter
+	{
+	public:
+		void filter(const cv::Mat& src, cv::Mat& dest, const float sigma_range, const float sigma_space, const float boost = 1.f, const int level = 2, const ScaleSpace scaleSpaceMethod = ScaleSpace::Pyramid);
+	protected:
+		void pyramid(const cv::Mat& src, cv::Mat& dest)override;
+
+		//DoG
+		void dog(const cv::Mat& src, cv::Mat& dest)override;
+		void setDoGKernel(float* weight, int* index, const int index_step, cv::Size ksize, const float sigma1, const float sigma2);
+		float getDoGCoeffLnNoremap(cv::Mat& src, const float g, const int y, const int x, const int size, int* index, float* weight);
+		float getDoGCoeffLn(cv::Mat& src, const float g, const int y, const int x, const int size, int* index, float* weight);
+	};
+
+	//build scale-space per block (same accuracy as full, pyramid: LLF naive implementation, dog: same as full)
 	class CP_EXPORT LocalMultiScaleFilter : public MultiScaleFilter
 	{
 	public:
@@ -276,19 +294,7 @@ namespace cp
 		float getRemapDoGCoeffLn(cv::Mat& src, const float g, const int y, const int x, const int size, int* index, float* weight);
 	};
 
-	class CP_EXPORT LocalMultiScaleFilterFull : public MultiScaleFilter
-	{
-	public:
-		void filter(const cv::Mat& src, cv::Mat& dest, const float sigma_range, const float sigma_space, const float boost = 1.f, const int level = 2, const ScaleSpace scaleSpaceMethod = ScaleSpace::Pyramid);
-	protected:
-		void pyramid(const cv::Mat& src, cv::Mat& dest)override;
-		void dog(const cv::Mat& src, cv::Mat& dest)override;
-
-		void setDoGKernel(float* weight, int* index, const int index_step, cv::Size ksize, const float sigma1, const float sigma2);
-		float getDoGCoeffLnNoremap(cv::Mat& src, const float g, const int y, const int x, const int size, int* index, float* weight);
-		float getDoGCoeffLn(cv::Mat& src, const float g, const int y, const int x, const int size, int* index, float* weight);
-	};
-
+	//reference implementation: not optimized
 	class CP_EXPORT FastLLFReference : public MultiScaleFilter
 	{
 	public:
@@ -487,7 +493,7 @@ namespace cp
 		void productSumLaplacianPyramid(const std::vector<cv::Mat>& LaplacianPyramid, std::vector<cv::Mat>& GaussianPyramid, std::vector<cv::Mat>& destPyramid, const int order, const float g);
 	};
 
-
+	//reference implementation: not optimized
 	class CP_EXPORT LocalMultiScaleFilterFourierReference : public MultiScaleFilter
 	{
 	public:
@@ -665,4 +671,19 @@ namespace cp
 		void process(const cv::Mat& src, cv::Mat& dst, const int threadIndex, const int imageIndex);
 		void filter(const cv::Size div, const cv::Mat& src, cv::Mat& dest, const int order, const float sigma_range, const float sigma_space, const float boost, const int level, const MultiScaleFilter::ScaleSpace scaleSpaceMethod);
 	};
+
+	//alias: LocalMultiScaleFilterFull
+	CP_EXPORT void localLaplacianFilterFull(cv::InputArray src, cv::OutputArray dest, const float sigma_range, const float sigma_space, const float boost, const int level);
+	//alias: LocalMultiScaleFilter with pyramid
+	CP_EXPORT void localLaplacianFilter(cv::InputArray src, cv::OutputArray dest, const float sigma_range, const float sigma_space, const float boost, const int level);
+	//alias: LocalMultiScaleFilter with DoG
+	CP_EXPORT void localDoGFilter(cv::InputArray src, cv::OutputArray dest, const float sigma_range, const float sigma_space, const float boost, const int level);
+	//alias: LocalMultiScaleFilterInterpolation with pyramid
+	CP_EXPORT void fastLocalLaplacianFilter(cv::InputArray src, cv::OutputArray dest, const int order, const float sigma_range, const float sigma_space, const float boost, const int level);
+	//alias: LocalMultiScaleFilterInterpolation with DoG
+	CP_EXPORT void fastLocalDoGFilter(cv::InputArray src, cv::OutputArray dest, const int order, const float sigma_range, const float sigma_space, const float boost, const int level);
+	//alias: LocalMultiScaleFilterFourier with pyramid
+	CP_EXPORT void FourierLocalLaplacianFilter(cv::InputArray src, cv::OutputArray dest, const int order, const float sigma_range, const float sigma_space, const float boost, const int level);
+	//alias: LocalMultiScaleFilterFourier with DoG
+	CP_EXPORT void FourierLocalDoGFilter(cv::InputArray src, cv::OutputArray dest, const int order, const float sigma_range, const float sigma_space, const float boost, const int level);
 }

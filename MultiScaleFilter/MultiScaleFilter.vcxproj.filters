@@ -32,5 +32,8 @@
     <ClCompile Include="MultiscaleFilter.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="MultiscaleFilterAlias.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

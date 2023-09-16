@@ -16,7 +16,7 @@ struct MouseMSFParameter
 	}
 };
 
-void guiMouseMSFOnMouse(int event, int x, int y, int flags, void* param)
+static void guiMouseMSFOnMouse(int event, int x, int y, int flags, void* param)
 {
 	MouseMSFParameter* retp = (MouseMSFParameter*)param;
 
@@ -41,8 +41,10 @@ void testMultiScaleFilter()
 
 	//const bool isDrawRemap = true;
 	const bool isDrawRemap = false;
-	bool isNEPF = false;
-	//bool isNEPF = true;
+
+	bool isClassicScaleSpace = false;
+	//bool isClassicScaleSpace = true;
+	// 
 	//const bool isPlotProfile = true;
 	const bool isPlotProfile = false;
 
@@ -143,6 +145,7 @@ void testMultiScaleFilter()
 #pragma region variable
 	MultiScaleGaussianFilter msf;
 	MultiScaleBilateralFilter msbf;
+
 	LocalMultiScaleFilter lmsf;
 	LocalMultiScaleFilterFull lmsffull;
 	LocalMultiScaleFilterInterpolation lmsi;
@@ -205,14 +208,14 @@ void testMultiScaleFilter()
 	while (key != 'q')
 	{
 #pragma region setup
-		cp::Timer t("total", 0, false);
+		cp::Timer time_total("total", 0, false);
 
 		if (ucim.isUpdate(im, Color))
 		{
 			src = imread(filename[im], Color);
 			if (src.empty())
 			{
-				std::cout << "fail" << std::endl;
+				std::cout << "file open fail " << im << std::endl;
 			}
 			resize(src, src, Size(768, 512));
 			//resize(src, src, Size(512, 768));
@@ -231,12 +234,11 @@ void testMultiScaleFilter()
 		Sbeta = beta_ * 0.01f;
 		Ssigma = Ssigma_ * 0.1f;
 		//Ssigma = log(2.5);
-
 #pragma endregion
 
 #pragma region main processing
 
-		if (isNEPF)
+		if (isClassicScaleSpace)
 		{
 			msf.filter(srcf, dest, sigma_r, sigma_s, boost, level, MultiScaleFilter::Pyramid);
 			cp::streamCopy(dest, destPyramid);
@@ -322,8 +324,9 @@ void testMultiScaleFilter()
 			tllff.setPeriodMethod(periodMethod);
 			lmsi.setCubicAlpha(-cubic * 0.01f);
 			tlmsi.setCubicAlpha(-cubic * 0.01f);
-
 #pragma endregion
+
+#pragma region reference
 			bool flag = (isFull == 1);
 			//if (ucfull.isUpdate(im, Color, sigma_r_, sigma_s_, detail_param_, level, pyramidMethod) && flag)
 			if (flag)
@@ -351,7 +354,8 @@ void testMultiScaleFilter()
 				time_naive_py.push_back((end - start) * 1000 / cv::getTickFrequency());
 				cp::streamCopy(dest, destPyramidNaive);
 			}
-#if 1
+#pragma endregion
+
 #pragma region Gaussian Fourier pyramid
 			if (isComputeReference)
 			{
@@ -472,7 +476,7 @@ void testMultiScaleFilter()
 				cp::streamCopy(dest, destTilePyramidCubic);
 			}
 #pragma endregion
-#endif
+
 		}
 
 		if (isDoG)
@@ -628,7 +632,7 @@ void testMultiScaleFilter()
 #pragma region profile_plot
 		if (isDrawRemap) msf.drawRemap(false);
 
-		if (isNEPF)
+		if (isClassicScaleSpace)
 		{
 			if (src.channels() == 1)
 			{
@@ -773,6 +777,8 @@ void testMultiScaleFilter()
 		key = waitKey(1);
 
 #pragma endregion
+
+#pragma region show
 		//show tile div
 		if (isShowTileDiv) tllff.drawMinMax("minmax", srcf);
 
@@ -817,35 +823,10 @@ void testMultiScaleFilter()
 		cv::moveWindow("destPyramid", 600, 200);
 		cv::moveWindow("destcomprePy", 1200, 200);
 		cv::moveWindow("info", 600, 200);
-		ci("Total     | %6.2f ms", t.getTime());
+		ci("Total     | %6.2f ms", time_total.getTime());
 		ci.show();
+#pragma endregion
+
 	}
 	return;
-}
-
-void testUnnormalizedBilateralFilter()
-{
-	string wname = "UnnormalizedBilateralFilter";
-	namedWindow(wname);
-	Mat src = imread("img/flower.png");
-	int sr = 30; createTrackbar("sr", wname, &sr, 255);
-	int ss = 3; createTrackbar("ss", wname, &ss, 10);
-	int isEnhance = 0; createTrackbar("enhance", wname, &isEnhance, 1);
-	
-	int key = 0;
-	Mat dest;
-	cp::ConsoleImage ci;
-	cp::Timer t("", TIME_MSEC);
-	cp::UpdateCheck uc(ss);
-	while (key != 'q')
-	{
-		if (uc.isUpdate(ss))t.clearStat();
-		t.start();
-		cp::unnormalizedBilateralFilter(src, dest, (int)ceil(ss * 3.f), float(sr), float(ss), isEnhance==1);
-		t.getpushLapTime();
-		imshow(wname, dest);
-		ci("Time %f (%d)", t.getLapTimeMedian(), t.getStatSize());
-		ci.show();
-		key = waitKey(1);
-	}
 }
