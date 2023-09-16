@@ -52,9 +52,6 @@
     <Filter Include="ソース ファイル\core">
       <UniqueIdentifier>{a8d6d5ad-3a54-49d1-b714-38aaf9b46b00}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ソース ファイル\filter\resize">
-      <UniqueIdentifier>{bf46c031-b34c-4575-95b8-dd0602bd6e8c}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ソース ファイル\filter\boxFilter\hpp">
       <UniqueIdentifier>{83434b1c-5fc1-4e1c-846a-ec02000dba44}</UniqueIdentifier>
     </Filter>
@@ -69,9 +66,6 @@
     </Filter>
     <Filter Include="ヘッダー ファイル\filter\GaussianFilter">
       <UniqueIdentifier>{260ef808-550d-4dae-9a11-b8ed7539829b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ヘッダー ファイル\filter\resize">
-      <UniqueIdentifier>{da54fbf2-e362-4f0d-80b0-5e6d0a9f8db8}</UniqueIdentifier>
     </Filter>
     <Filter Include="ヘッダー ファイル\imgproc">
       <UniqueIdentifier>{b79448de-d14a-4509-b8ce-d9e731d73ddb}</UniqueIdentifier>
@@ -93,6 +87,12 @@
     </Filter>
     <Filter Include="ソース ファイル\stereo\Calibration">
       <UniqueIdentifier>{9193546a-1c9b-4f53-920c-0e8844b7aba1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\resize">
+      <UniqueIdentifier>{bf46c031-b34c-4575-95b8-dd0602bd6e8c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\resize">
+      <UniqueIdentifier>{da54fbf2-e362-4f0d-80b0-5e6d0a9f8db8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -526,22 +526,22 @@
       <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
     </ClCompile>
     <ClCompile Include="jointBilateralUpsample.cpp">
-      <Filter>ソース ファイル\filter\resize</Filter>
+      <Filter>ソース ファイル\resize</Filter>
     </ClCompile>
     <ClCompile Include="downsample.cpp">
-      <Filter>ソース ファイル\filter\resize</Filter>
+      <Filter>ソース ファイル\resize</Filter>
     </ClCompile>
     <ClCompile Include="depthUpsample.cpp">
-      <Filter>ソース ファイル\filter\resize</Filter>
+      <Filter>ソース ファイル\resize</Filter>
     </ClCompile>
     <ClCompile Include="upsample.cpp">
-      <Filter>ソース ファイル\filter\resize</Filter>
+      <Filter>ソース ファイル\resize</Filter>
     </ClCompile>
     <ClCompile Include="bilateralGuidedUpsample.cpp">
-      <Filter>ソース ファイル\filter\resize</Filter>
+      <Filter>ソース ファイル\resize</Filter>
     </ClCompile>
     <ClCompile Include="NEDI.cpp">
-      <Filter>ソース ファイル\filter\resize</Filter>
+      <Filter>ソース ファイル\resize</Filter>
     </ClCompile>
     <ClCompile Include="kmeans.cpp">
       <Filter>ソース ファイル\core</Filter>
@@ -638,6 +638,12 @@
     </ClCompile>
     <ClCompile Include="buildInformation.cpp">
       <Filter>ソース ファイル\core</Filter>
+    </ClCompile>
+    <ClCompile Include="localLUTUpsample.cpp">
+      <Filter>ソース ファイル\resize</Filter>
+    </ClCompile>
+    <ClCompile Include="guidedImageUpsampleAlt.cpp">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -837,7 +843,7 @@
       <Filter>ヘッダー ファイル\filter\GaussianFilter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\jointBilateralUpsample.hpp">
-      <Filter>ヘッダー ファイル\filter\resize</Filter>
+      <Filter>ヘッダー ファイル\resize</Filter>
     </ClInclude>
     <ClInclude Include="..\include\imqc.hpp">
       <Filter>ヘッダー ファイル\imgproc\qualitymetrics</Filter>
@@ -972,19 +978,19 @@
       <Filter>ヘッダー ファイル\filter</Filter>
     </ClInclude>
     <ClInclude Include="..\include\downsample.hpp">
-      <Filter>ヘッダー ファイル\filter\resize</Filter>
+      <Filter>ヘッダー ファイル\resize</Filter>
     </ClInclude>
     <ClInclude Include="..\include\depthUpsample.hpp">
-      <Filter>ヘッダー ファイル\filter\resize</Filter>
+      <Filter>ヘッダー ファイル\resize</Filter>
     </ClInclude>
     <ClInclude Include="..\include\upsample.hpp">
-      <Filter>ヘッダー ファイル\filter\resize</Filter>
+      <Filter>ヘッダー ファイル\resize</Filter>
     </ClInclude>
     <ClInclude Include="..\include\bilateralGuidedUpsample.hpp">
-      <Filter>ヘッダー ファイル\filter\resize</Filter>
+      <Filter>ヘッダー ファイル\resize</Filter>
     </ClInclude>
     <ClInclude Include="..\include\NEDI.hpp">
-      <Filter>ヘッダー ファイル\filter\resize</Filter>
+      <Filter>ヘッダー ファイル\resize</Filter>
     </ClInclude>
     <ClInclude Include="..\include\kmeans.hpp">
       <Filter>ヘッダー ファイル\core</Filter>
@@ -1088,15 +1094,6 @@
     <ClInclude Include="..\include\fmath\fmath.hpp">
       <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\inlineCVFunctions.hpp">
-      <Filter>ヘッダー ファイル\core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\inlineMathFunctions.hpp">
-      <Filter>ヘッダー ファイル\core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\inlineSIMDFunctions.hpp">
-      <Filter>ヘッダー ファイル\core</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\onelineCVFunctions.hpp">
       <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
@@ -1117,9 +1114,6 @@
     </ClInclude>
     <ClInclude Include="..\include\binaryWeightedRangeFilter.hpp">
       <Filter>ヘッダー ファイル\filter</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\common.hpp">
-      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="..\include\dithering.hpp">
       <Filter>ヘッダー ファイル\imgproc</Filter>
@@ -1153,6 +1147,21 @@
     </ClInclude>
     <ClInclude Include="..\include\buildInformation.hpp">
       <Filter>ヘッダー ファイル\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\localLUTUpsample.hpp">
+      <Filter>ヘッダー ファイル\resize</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\inlineCVFunctions.hpp">
+      <Filter>ヘッダー ファイル\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\inlineMathFunctions.hpp">
+      <Filter>ヘッダー ファイル\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\inlineSIMDFunctions.hpp">
+      <Filter>ヘッダー ファイル\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\common.hpp">
+      <Filter>ヘッダー ファイル\common</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

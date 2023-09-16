@@ -569,6 +569,8 @@
     <ClCompile Include="dithering.cpp" />
     <ClCompile Include="downsample.cpp" />
     <ClCompile Include="GaussianKDTree.cpp" />
+    <ClCompile Include="guidedImageUpsampleAlt.cpp" />
+    <ClCompile Include="localLUTUpsample.cpp" />
     <ClCompile Include="threshold.cpp" />
     <ClCompile Include="highDimensionalGaussianFilter.cpp" />
     <ClCompile Include="IM2COL.cpp" />
@@ -815,6 +817,7 @@
     <ClInclude Include="..\include\IM2COL.hpp" />
     <ClInclude Include="..\include\inlineCVFunctions.hpp" />
     <ClInclude Include="..\include\kmeans.hpp" />
+    <ClInclude Include="..\include\localLUTUpsample.hpp" />
     <ClInclude Include="..\include\mediancut.hpp" />
     <ClInclude Include="..\include\metricsDD.hpp" />
     <ClInclude Include="..\include\NEDI.hpp" />

@@ -8,60 +8,12 @@ void benchmark()
 {
 	benchStreamSet();
 }
-int main(int argc, char** argv)
+
+void testCore(Mat& img)
 {
-	benchmark(); return 0;
-
-	const bool isShowInfo = true;
-	if (isShowInfo)
-	{
-		cout << getInformation() << endl;
-		cout << cv::getBuildInformation() << endl;
-		cout << getOpenCLInformation() << endl;
-		cv::cuda::printCudaDeviceInfo(0);
-	}
-
-	//cv::ipp::setUseIPP(false);
-	//cv::setUseOptimized(false);
-
-
-	//webPAnimationTest(); return 0;
-	//testSpearmanRankOrderCorrelationCoefficient(); return 0;
-	/*__m256i a = _mm256_set_step_epi32(0);
-	__m256i b = _mm256_set_step_epi32(8);
-	__m256i c = _mm256_set_step_epi32(16);
-	__m256i d = _mm256_set_step_epi32(24);
-
-	__m256i w = _mm256_cmpgt_epi32(a, _mm256_set1_epi32(2));
-	print_int(w);
-	print_int(_mm256_andnot_si256(w, b));
-
-	//print_uchar(_mm256_packus_epi16(_mm256_packus_epi32(a, b), _mm256_packus_epi32(c, d)));
-	return 0;*/
-
-	//testUnnormalizedBilateralFilter(); return 0;
-	//testMultiScaleFilter(); return 0;
-
 	//testIsSame(); return 0;
-
-
-	//detailTest(); return 0;
-#pragma region setup
-	//Mat img = imread("img/lenna.png");
-	Mat img = imread("img/Kodak/kodim07.png");
-	Mat gra = imread("img/Kodak/kodim07.png", 0);
-	testSpatialFilter(gra);
-	//rangeBlurFilterRef(aa, t0, 5, 3);
-	//rangeBlurFilter(aa, t1, 5, 3);
-	//guiAlphaBlend(convert(t0,CV_8U), convert(t1,CV_8U));
-	//Mat img = imread("img/cameraman.png",0);
-	//Mat img = imread("img/barbara.png", 0);
-	//filter2DTest(img); return 0;
-
-#pragma endregion
-
-
-#pragma region core
+	//testSpearmanRankOrderCorrelationCoefficient(); return 0;
+	//webPAnimationTest(); return 0;
 	//guiPixelizationTest();
 	//testStreamConvert8U(); return 0;
 	//testKMeans(img); return 0;
@@ -88,7 +40,7 @@ int main(int argc, char** argv)
 	//testRGBHistogram2();
 	//testTimer(img);
 	//testMatInfo(); return 0;
-	testStat(); return 0;
+	testStat(); return;
 	//testDestinationTimePrediction(img); return 0;
 	//testAlphaBlend(left, right);
 	//testAlphaBlendMask(left, right);
@@ -98,27 +50,25 @@ int main(int argc, char** argv)
 	//guiContrast(guiCropZoom(img));
 	//testVideoSubtitle();
 	//guiWindowFunction();
-#pragma endregion
-
-#pragma region imgproc
+}
+void testImgproc(Mat& img)
+{
 	//guiCvtColorPCATest(); return 0;
-#pragma endregion
-
-#pragma region stereo
-	//testStereoBase(); return 0;
-	//testCVStereoBM(); return 0;
-	//testCVStereoSGBM(); return 0;
-#pragma endregion
-
-#pragma region filter
+}
+void testFilter(Mat& img)
+{
+	//rangeBlurFilterRef(aa, t0, 5, 3);
+	//rangeBlurFilter(aa, t1, 5, 3);
+	//guiAlphaBlend(convert(t0,CV_8U), convert(t1,CV_8U));
+	//filter2DTest(img); return 0;
+	//testUnnormalizedBilateralFilter(); return 0;
+	//detailTest(); return 0;
 	//testGuidedImageFilter(Mat(), Mat()); return 0;
-	highDimentionalGaussianFilterTest(img); return 0;
+	highDimentionalGaussianFilterTest(img); return;
 	//highDimentionalGaussianFilterHSITest(); return 0;
 	//guiDenoiseTest(img);
 	//testWeightedHistogramFilterDisparity(); return 0;
 	//testWeightedHistogramFilter();return 0;
-#pragma endregion 
-
 	//guiUpsampleTest(img); return 0;
 	guiDomainTransformFilterTest(img);
 	//guiMedianFilterTest(img);
@@ -128,16 +78,12 @@ int main(int argc, char** argv)
 	//VizKernel vk;
 	//vk.run(img, 2);
 
-
-	//guiShift(left,right); return 0;
-	//
 	//iirGuidedFilterTest2(img); return 0;
 	//iirGuidedFilterTest1(dmap, left); return 0;
 	//iirGuidedFilterTest(); return 0;
 	//iirGuidedFilterTest(left); return 0;
 	//fitPlaneTest(); return 0;
 	//guiWeightMapTest(); return 0;
-
 
 	//guiGeightedJointBilateralFilterTest();
 	//guiHazeRemoveTest();
@@ -240,5 +186,42 @@ int main(int argc, char** argv)
 	//application 
 	//guiDetailEnhancement(src);
 	//guiDomainTransformFilterTest(mega);
+}
+void testStereo()
+{
+	//testStereoBase(); return 0;
+	//testCVStereoBM(); return 0;
+	//testCVStereoSGBM(); return 0;
+}
+
+int main(int argc, char** argv)
+{
+	//cv::ipp::setUseIPP(false);
+	//cv::setUseOptimized(false);
+	const bool isShowInfo = true;
+	if (isShowInfo)
+	{
+		cout << getInformation() << endl;
+		cout << cv::getBuildInformation() << endl;
+		cout << getOpenCLInformation() << endl;
+		cv::cuda::printCudaDeviceInfo(0);
+	}
+
+	//benchmark(); return 0;
+
+#pragma region setup
+	//Mat img = imread("img/lenna.png");
+	Mat img = imread("img/Kodak/kodim07.png");
+	//Mat img = imread("img/Kodak/kodim07.png",0);
+	//Mat img = imread("img/cameraman.png",0);
+	//Mat img = imread("img/barbara.png", 0);
+#pragma endregion
+
+	//testCore(img);
+	//testImgproc(img);
+	//testStereo();
+	//testFilter(img)
+	//testSpatialFilter(gra);	
+	testMultiScaleFilter(); return 0;
 	return 0;
 }

@@ -49,6 +49,7 @@ void guiDisparityPlaneFitSLICTest(cv::Mat& leftim, cv::Mat& rightim, cv::Mat& GT
 void fitPlaneTest();
 void guiCvtColorPCATest();
 void guiColorCorrectionTest(cv::Mat& src, cv::Mat& ref);
+void guiInpaint(cv::Mat& src, std::string wname = "inpaint");
 
 //filter
 void testGuidedImageFilter(cv::Mat& img_p, cv::Mat& img_I);
@@ -85,6 +86,7 @@ void guiDomainTransformFilter(cv::Mat& src);
 void guiNonLocalMeansTest(cv::Mat& src);
 void guiSeparableNLMTest(cv::Mat& src);
 void guiIterativeBackProjectionTest(cv::Mat& src);
+void guiUnnormalizedBilateralFilter(cv::Mat& src);
 
 //stereo
 void testCVStereoBM();
@@ -107,8 +109,8 @@ void imshowAnalysisCompare(cv::String winname, cv::Mat& src1, cv::Mat& src2);
 void imshowAnalysis(cv::String winname, std::vector<cv::Mat>& s);
 void imshowAnalysis(cv::String winname, cv::Mat& src);
 
+//MultiscaleFilter
 void testMultiScaleFilter();
-void testUnnormalizedBilateralFilter();
 
 //SpatialFilter
 void testSpatialFilter(cv::Mat& src);

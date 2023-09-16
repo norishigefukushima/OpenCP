@@ -469,6 +469,7 @@
     <ClCompile Include="guiBlendTest.cpp" />
     <ClCompile Include="bilateralfilter\bilateralFilterTest.cpp" />
     <ClCompile Include="guiPixelizationTest.cpp" />
+    <ClCompile Include="guiUnnormalizedBilateralFilter.cpp" />
     <ClCompile Include="highDimentionalGaussianFilterTest.cpp" />
     <ClCompile Include="multiScaleFilterTest.cpp" />
     <ClCompile Include="benchStream.cpp" />
@@ -494,6 +495,7 @@
     <ClCompile Include="testCorrelationCoefficient.cpp" />
     <ClCompile Include="testGuidedImageFilter.cpp" />
     <ClCompile Include="guiHazeRemoveTest.cpp" />
+    <ClCompile Include="testInpaint.cpp" />
     <ClCompile Include="testKMeans.cpp" />
     <ClCompile Include="testMatInfo.cpp" />
     <ClCompile Include="testSpatialFilter.cpp" />

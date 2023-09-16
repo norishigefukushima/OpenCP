@@ -186,6 +186,12 @@
     <ClCompile Include="benchStream.cpp">
       <Filter>ソース ファイル\bench</Filter>
     </ClCompile>
+    <ClCompile Include="testInpaint.cpp">
+      <Filter>ソース ファイル\test\imgproc</Filter>
+    </ClCompile>
+    <ClCompile Include="guiUnnormalizedBilateralFilter.cpp">
+      <Filter>ソース ファイル\test\filter</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="test.hpp">
