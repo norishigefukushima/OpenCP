@@ -2,6 +2,9 @@
 
 #include <opencv2/opencv.hpp>
 
+#include <opencv2/ximgproc.hpp>
+#include <opencv2/xphoto.hpp>
+
 #ifdef CP_API
 #define CP_EXPORT __declspec(dllexport)
 #else 

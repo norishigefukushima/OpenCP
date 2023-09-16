@@ -1,11 +1,11 @@
 #include "onelineCVFunctions.hpp"
-
+#include "inlineSIMDFunctions.hpp"
 using namespace std;
 using namespace cv;
 
 namespace cp
-{
-	cv::Mat convert(cv::InputArray& src, const int depth, const double alpha, const double beta)
+{	
+	inline cv::Mat convert(cv::InputArray& src, const int depth, const double alpha, const double beta)
 	{
 		cv::Mat ret;
 		src.getMat().convertTo(ret, depth, alpha, beta);

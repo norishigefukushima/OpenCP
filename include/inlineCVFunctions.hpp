@@ -391,3 +391,12 @@ namespace cp
 		return ret;
 	}
 }
+
+//crop image to have multiples
+inline cv::Mat cropMultipleFloor(cv::InputArray src, const int multiples)
+{
+	cv::Mat src_ = src.getMat();
+	const int w = (src_.cols / multiples) * multiples;
+	const int h = (src_.rows / multiples) * multiples;
+	return src_(cv::Rect(0, 0, w, h)).clone();
+}
