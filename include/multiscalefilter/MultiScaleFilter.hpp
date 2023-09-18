@@ -96,7 +96,7 @@ inline float getremapCoefficient(float i, float g, const int window_type, float 
 
 namespace cp
 {
-	//abstract class for multi-scale filtering
+	//abstract class for each multi-scale filter
 	class CP_EXPORT MultiScaleFilter
 	{
 	public:
@@ -105,20 +105,17 @@ namespace cp
 			FIX,
 			ADAPTIVE,
 		};
-
 		enum ScaleSpace
 		{
 			Pyramid,
 			DoG
 		};
-
 		enum RangeDescopeMethod
 		{
 			FULL,
 			MINMAX,
 			LOCAL,
 		};
-
 		enum PyramidComputeMethod
 		{
 			IgnoreBoundary,
@@ -129,7 +126,6 @@ namespace cp
 
 		void setAdaptive(const bool adaptiveMethod, cv::Mat& adaptiveSigmaMap, cv::Mat& adaptiveBoostMap, const int level);
 		std::string getAdaptiveName();
-
 		std::string getScaleSpaceName();
 
 		void setPyramidComputeMethod(const PyramidComputeMethod scaleSpaceMethod);
@@ -137,7 +133,6 @@ namespace cp
 
 		void setRangeDescopeMethod(RangeDescopeMethod scaleSpaceMethod);
 		std::string getRangeDescopeMethod();
-
 		cv::Size getLayerSize(const int level);
 
 		inline int getGaussianRadius(const float sigma) { return (pyramidComputeMethod == OpenCV) ? 2 : get_simd_ceil(int(ceil(1.5 * sigma)), 2); }
@@ -194,35 +189,27 @@ namespace cp
 		float* generateWeight(int r, const float sigma, float& evenratio, float& oddratio);
 		void GaussDownFull(const cv::Mat& src, cv::Mat& dest, const float sigma, const int borderType);
 		void GaussDown(const cv::Mat& src, cv::Mat& dest);
-		template<int D>
-		void GaussDown(const cv::Mat& src, cv::Mat& dest, float* linebuff);//linebuffsize = src.cols+2*radius
+		template<int D> void GaussDown(const cv::Mat& src, cv::Mat& dest, float* linebuff);//linebuffsize = src.cols+2*radius
 		void GaussDownIgnoreBoundary(const cv::Mat& src, cv::Mat& dest);
-		template<int D>
-		void GaussDownIgnoreBoundary(const cv::Mat& src, cv::Mat& dest, float* linebuff);//linebuffsize = src.cols
+		template<int D> void GaussDownIgnoreBoundary(const cv::Mat& src, cv::Mat& dest, float* linebuff);//linebuffsize = src.cols
 
 		void GaussUpFull(const cv::Mat& src, cv::Mat& dest, const float sigma, const int borderType);
 		void GaussUp(const cv::Mat& src, cv::Mat& dest);
 		void GaussUpIgnoreBoundary(const cv::Mat& src, cv::Mat& dest);
 
 		//dest = addsubsrc +/- srcup
-		template<bool isAdd>
-		void GaussUpAddFull(const cv::Mat& src, const cv::Mat& addsubsrc, cv::Mat& dest, const float sigma, const int borderType);
+		template<bool isAdd> void GaussUpAddFull(const cv::Mat& src, const cv::Mat& addsubsrc, cv::Mat& dest, const float sigma, const int borderType);
 		//dest = addsubsrc +/- srcup
-		template<bool isAdd>
-		void GaussUpAdd(const cv::Mat& src, const cv::Mat& addsubsrc, cv::Mat& dest);
-		template<bool isAdd, int D, int D2>
-		void GaussUpAdd(const cv::Mat& src, const cv::Mat& addsubsrc, cv::Mat& dest);
+		template<bool isAdd> void GaussUpAdd(const cv::Mat& src, const cv::Mat& addsubsrc, cv::Mat& dest);
+		template<bool isAdd, int D, int D2> void GaussUpAdd(const cv::Mat& src, const cv::Mat& addsubsrc, cv::Mat& dest);
 		//dest = addsubsrc +/- srcup
-		template<bool isAdd>
-		void GaussUpAddIgnoreBoundary(const cv::Mat& src, const cv::Mat& addsubsrc, cv::Mat& dest);
-		template<bool isAdd, int D2>
-		void GaussUpAddIgnoreBoundary(const cv::Mat& src, const cv::Mat& addsubsrc, cv::Mat& dest, float* linee, float* lineo);//linebuffsize = src.cols
+		template<bool isAdd> void GaussUpAddIgnoreBoundary(const cv::Mat& src, const cv::Mat& addsubsrc, cv::Mat& dest);
+		template<bool isAdd, int D2> void GaussUpAddIgnoreBoundary(const cv::Mat& src, const cv::Mat& addsubsrc, cv::Mat& dest, float* linee, float* lineo);//linebuffsize = src.cols
 
 		void buildGaussianPyramid(const cv::Mat& src, std::vector<cv::Mat>& GaussianPyramid, const int level, const float sigma);
 		void buildGaussianLaplacianPyramid(const cv::Mat& src, std::vector<cv::Mat>& GaussianPyramid, std::vector<cv::Mat>& LaplacianPyramid, const int level, const float sigma);
 		void buildLaplacianPyramid(const cv::Mat& src, std::vector<cv::Mat>& LaplacianPyramid, const int level, const float sigma);
-		template<int D, int d, int d2>
-		void buildLaplacianPyramid(const cv::Mat& src, std::vector<cv::Mat>& LaplacianPyramid, const int level, const float sigma, float* linebuff);
+		template<int D, int d, int d2> void buildLaplacianPyramid(const cv::Mat& src, std::vector<cv::Mat>& LaplacianPyramid, const int level, const float sigma, float* linebuff);
 		//using precomputed Gaussian pyramid
 		void buildLaplacianPyramid(const std::vector<cv::Mat>& GaussianPyramid, std::vector<cv::Mat>& destPyramid, const int level, const float sigma);
 		//L0+...resize(Ln-2+resize(Ln-1+resize(Ln)))

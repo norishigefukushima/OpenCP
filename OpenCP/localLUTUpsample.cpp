@@ -3,6 +3,7 @@
 
 #include <inlineSIMDFunctions.hpp>
 #include <arithmetic.hpp>
+#include <blend.hpp>
 #include <draw.hpp>
 
 #define LOCALLUT_USE_SIMD
@@ -12,6 +13,7 @@ using namespace std;
 
 namespace cp
 {
+#pragma region utility
 	std::string LocalLUTUpsample::getBuildingLUTMethod(const BUILD_LUT method)
 	{
 		string ret = "";
@@ -25,8 +27,6 @@ namespace cp
 			ret = "L1_MIN"; break;
 		case BUILD_LUT::L2_MIN:
 			ret = "L2_MIN"; break;
-		case BUILD_LUT::LInf2_MIN:
-			ret = "LInf2_MIN"; break;
 		case BUILD_LUT::FREQUENCY_MAX_WTA:
 			ret = "FREQUENCY_MAX_WTA"; break;
 
@@ -101,7 +101,8 @@ namespace cp
 		return ret;
 	}
 
-	void plotLUTLine(uchar* src, int lutsize, Mat& dest, Scalar color, int offset)
+#pragma region guiLUT
+	static void plotLUTLine(const uchar* src, int lutsize, Mat& dest, Scalar color, int offset)
 	{
 		if (dest.empty())
 		{
@@ -124,14 +125,13 @@ namespace cp
 		}
 	}
 
-
 	struct MouseParameterLocalLUT
 	{
 		cv::Rect pt;
 		std::string wname;
 	};
 
-	void guiLUTPreviewMouse(int event, int x, int y, int flags, void* param)
+	static void guiLUTPreviewMouse(int event, int x, int y, int flags, void* param)
 	{
 		MouseParameterLocalLUT* retp = (MouseParameterLocalLUT*)param;
 
@@ -145,16 +145,16 @@ namespace cp
 		}
 	}
 
-	void LocalLUTUpsample::guiLUT(Mat& lowres_src, Mat& highres_src, Mat& highres_groundtruth, bool isWait, string wname)
+	void LocalLUTUpsample::guiLUT(Mat& lowres_src, Mat& lowres_prc, Mat& highres_src, Mat& highres_groundtruth, bool isWait, string wname)
 	{
 		const Scalar background_color = Scalar::all(255);
 		const Scalar background_gridlinecolor = Scalar::all(200);
 		const int scale = highres_src.cols / lowres_src.cols;
 		namedWindow(wname);
 		moveWindow(wname, 500, 500);
-		namedWindow(wname + "image");
-
-		//static Rect pt = Rect(lowres_src.cols / 2, lowres_src.rows / 2, lowres_src.cols, lowres_src.rows);
+		string wnameShow = wname + +"lowres src image";
+		namedWindow(wnameShow);
+		int alpha = 0; createTrackbar("0:src 100:prc", wnameShow, &alpha, 100);
 
 		static MouseParameterLocalLUT param
 		{
@@ -162,258 +162,231 @@ namespace cp
 			wname
 		};
 
-		setMouseCallback(wname + "image", (MouseCallback)guiLUTPreviewMouse, (void*)&param);
+		setMouseCallback(wnameShow, (MouseCallback)guiLUTPreviewMouse, (void*)&param);
 		createTrackbar("x", wname, &param.pt.x, lowres_src.cols - 1);
 		createTrackbar("y", wname, &param.pt.y, lowres_src.rows - 1);
-		static int subx = 2 * scale;  createTrackbar("sub_x", wname, &subx, 4 * scale);
-		static int suby = 2 * scale; createTrackbar("sub_y", wname, &suby, 4 * scale);
+		//channel(0: all, 1:B, 2:G, 3:R)
 		static int c = 0; createTrackbar("c", wname, &c, 3);
 		static int isScatterPlot = 1; createTrackbar("isScatterPlot", wname, &isScatterPlot, 1);
 		static int isLUTLine = 1; createTrackbar("isLUTLine", wname, &isLUTLine, 1);
-		int key = 0;
-		int lutsize = LUT_TensorAoS_B.channels();
+		//if subx == xmax, plot all
+		static int subx = 2 * scale; createTrackbar("ex:highsub_x", wname, &subx, 4 * scale);
+		//if suby == ymax, no plot
+		static int suby = 2 * scale; createTrackbar("ex:highsub_y", wname, &suby, 4 * scale);
 
-
-
+		const int lutsize = LUT_TensorAoS_B.channels();
 		static bool isGrid = true;
+		Mat showImage;
+		Mat lutImage(256, 256, CV_8UC3);
+		int key = 0;
 		while (key != 'q')
 		{
-			Mat im = lowres_src.clone();
-			Vec3b v = im.at<Vec3b>(Point(param.pt.x, param.pt.y));
+			cp::alphaBlend(lowres_src, lowres_prc, 1.0 - alpha * 0.01, showImage);
+			Vec3b v = showImage.at<Vec3b>(Point(param.pt.x, param.pt.y));
+			line(showImage, Point(0, param.pt.y), Point(lowres_src.cols, param.pt.y), Scalar(0, 0, 255));
+			line(showImage, Point(param.pt.x, 0), Point(param.pt.x, lowres_src.rows), Scalar(0, 0, 255));
+			showImage.at<Vec3b>(Point(param.pt.x, param.pt.y)) = v;
 
-			line(im, Point(0, param.pt.y), Point(lowres_src.cols, param.pt.y), Scalar(0, 0, 255));
-			line(im, Point(param.pt.x, 0), Point(param.pt.x, lowres_src.rows), Scalar(0, 0, 255));
-			im.at<Vec3b>(Point(param.pt.x, param.pt.y)) = v;
-			Mat show(256, 256, CV_8UC3, background_color);
+			lutImage.setTo(background_color);
 			if (isGrid)
 			{
-				line(show, Point(0, 63), Point(255, 63), background_gridlinecolor);
-				line(show, Point(0, 127), Point(255, 127), background_gridlinecolor);
-				line(show, Point(0, 191), Point(255, 191), background_gridlinecolor);
+				line(lutImage, Point(0, 63), Point(255, 63), background_gridlinecolor);
+				line(lutImage, Point(0, 127), Point(255, 127), background_gridlinecolor);
+				line(lutImage, Point(0, 191), Point(255, 191), background_gridlinecolor);
 
-				line(show, Point(63, 0), Point(63, 255), background_gridlinecolor);
-				line(show, Point(127, 0), Point(127, 255), background_gridlinecolor);
-				line(show, Point(191, 0), Point(191, 255), background_gridlinecolor);
+				line(lutImage, Point(63, 0), Point(63, 255), background_gridlinecolor);
+				line(lutImage, Point(127, 0), Point(127, 255), background_gridlinecolor);
+				line(lutImage, Point(191, 0), Point(191, 255), background_gridlinecolor);
 			}
 
+			//plot from internal src_low_border and dst_low_border
 			if (isScatterPlot != 0)
 			{
 				const int d = 2 * patch_radius + 1;
 				const Rect roi = Rect(param.pt.x, param.pt.y, d, d);
-				Mat sb = src_low_border(roi).clone();
-				Mat db = dst_low_border(roi).clone();
+				const Mat sb = src_low_border(roi).clone();
+				const Mat db = prc_low_border(roi).clone();
 				for (int j = 0; j < d; j++)
 				{
 					for (int i = 0; i < d; i++)
 					{
 						if (c == 0)
 						{
-							circle(show, Point(sb.at<uchar>(j, 3 * i + 0), 255 - db.at<uchar>(j, 3 * i + 0)), 3, Scalar(255, 128, 128), 1);
-							circle(show, Point(sb.at<uchar>(j, 3 * i + 1), 255 - db.at<uchar>(j, 3 * i + 1)), 3, Scalar(128, 255, 128), 1);
-							circle(show, Point(sb.at<uchar>(j, 3 * i + 2), 255 - db.at<uchar>(j, 3 * i + 2)), 3, Scalar(128, 128, 255), 1);
+							circle(lutImage, Point(sb.at<uchar>(j, 3 * i + 0), 255 - db.at<uchar>(j, 3 * i + 0)), 3, Scalar(255, 128, 128), 1);
+							circle(lutImage, Point(sb.at<uchar>(j, 3 * i + 1), 255 - db.at<uchar>(j, 3 * i + 1)), 3, Scalar(128, 255, 128), 1);
+							circle(lutImage, Point(sb.at<uchar>(j, 3 * i + 2), 255 - db.at<uchar>(j, 3 * i + 2)), 3, Scalar(128, 128, 255), 1);
 						}
 						if (c == 1)
 						{
-							circle(show, Point(sb.at<uchar>(j, 3 * i + 0), 255 - db.at<uchar>(j, 3 * i + 0)), 3, Scalar(255, 128, 128), 1);
+							circle(lutImage, Point(sb.at<uchar>(j, 3 * i + 0), 255 - db.at<uchar>(j, 3 * i + 0)), 3, Scalar(255, 128, 128), 1);
 						}
 						if (c == 2)
 						{
-							circle(show, Point(sb.at<uchar>(j, 3 * i + 1), 255 - db.at<uchar>(j, 3 * i + 1)), 3, Scalar(128, 255, 128), 1);
+							circle(lutImage, Point(sb.at<uchar>(j, 3 * i + 1), 255 - db.at<uchar>(j, 3 * i + 1)), 3, Scalar(128, 255, 128), 1);
 						}
 						if (c == 3)
 						{
-							circle(show, Point(sb.at<uchar>(j, 3 * i + 2), 255 - db.at<uchar>(j, 3 * i + 2)), 3, Scalar(128, 128, 255), 1);
+							circle(lutImage, Point(sb.at<uchar>(j, 3 * i + 2), 255 - db.at<uchar>(j, 3 * i + 2)), 3, Scalar(128, 128, 255), 1);
 						}
 					}
 				}
 			}
 
-			uchar* lutb = LUT_TensorAoS_B.ptr<uchar>(param.pt.y) + lutsize * param.pt.x;
-			uchar* lutg = LUT_TensorAoS_G.ptr<uchar>(param.pt.y) + lutsize * param.pt.x;
-			uchar* lutr = LUT_TensorAoS_R.ptr<uchar>(param.pt.y) + lutsize * param.pt.x;
-
 			if (isLUTLine != 0)
 			{
+				const uchar* lutb = LUT_TensorAoS_B.ptr<uchar>(param.pt.y) + lutsize * param.pt.x;
+				const uchar* lutg = LUT_TensorAoS_G.ptr<uchar>(param.pt.y) + lutsize * param.pt.x;
+				const uchar* lutr = LUT_TensorAoS_R.ptr<uchar>(param.pt.y) + lutsize * param.pt.x;
 				if (c == 0)
 				{
 					if (lutsize == 256)
 					{
-						plotLUTLine(lutb, lutsize, show, Scalar(255, 0, 0), 0);
-						plotLUTLine(lutg, lutsize, show, Scalar(0, 255, 0), 0);
-						plotLUTLine(lutr, lutsize, show, Scalar(0, 0, 255), 0);
+						plotLUTLine(lutb, lutsize, lutImage, Scalar(255, 0, 0), 0);
+						plotLUTLine(lutg, lutsize, lutImage, Scalar(0, 255, 0), 0);
+						plotLUTLine(lutr, lutsize, lutImage, Scalar(0, 0, 255), 0);
 					}
 					else
 					{
-						plotLUTLine(lutb, lutsize, show, Scalar(255, 0, 0), offset_map.at<uchar>(param.pt.y, 3 * param.pt.x + 0));
-						plotLUTLine(lutg, lutsize, show, Scalar(0, 255, 0), offset_map.at<uchar>(param.pt.y, 3 * param.pt.x + 1));
-						plotLUTLine(lutr, lutsize, show, Scalar(0, 0, 255), offset_map.at<uchar>(param.pt.y, 3 * param.pt.x + 2));
+						plotLUTLine(lutb, lutsize, lutImage, Scalar(255, 0, 0), offset_map.at<uchar>(param.pt.y, 3 * param.pt.x + 0));
+						plotLUTLine(lutg, lutsize, lutImage, Scalar(0, 255, 0), offset_map.at<uchar>(param.pt.y, 3 * param.pt.x + 1));
+						plotLUTLine(lutr, lutsize, lutImage, Scalar(0, 0, 255), offset_map.at<uchar>(param.pt.y, 3 * param.pt.x + 2));
 					}
 
 				}
 				else
 				{
 					int offset = (lutsize == 256) ? 0 : offset_map.at<uchar>(param.pt.y, 3 * param.pt.x + c - 1);
-					if (c == 1) plotLUTLine(lutb, lutsize, show, Scalar(255, 0, 0), offset);
-					if (c == 2) plotLUTLine(lutg, lutsize, show, Scalar(0, 255, 0), offset);
-					if (c == 3) plotLUTLine(lutr, lutsize, show, Scalar(0, 0, 255), offset);
+					if (c == 1) plotLUTLine(lutb, lutsize, lutImage, Scalar(255, 0, 0), offset);
+					if (c == 2) plotLUTLine(lutg, lutsize, lutImage, Scalar(0, 255, 0), offset);
+					if (c == 3) plotLUTLine(lutr, lutsize, lutImage, Scalar(0, 0, 255), offset);
 				}
 			}
-			//plot all;
-			if (subx == 4 * scale)
+			//plot extra points from all Mat& highres_src, Mat& highres_groundtruth
+			constexpr int explotmode = 0;
+			if (subx == 4 * scale) //plot all
 			{
-				Scalar b = Scalar(255, 128, 128);
-				Scalar g = Scalar(128, 230, 128);
-				Scalar r = Scalar(128, 128, 255);
-				Scalar gray = Scalar(80, 80, 80);
+				const Scalar b = Scalar(255, 128, 128);
+				const Scalar g = Scalar(128, 230, 128);
+				const Scalar r = Scalar(128, 128, 255);
+				const Scalar gray = Scalar(80, 80, 80);
 				for (int j = -2 * scale; j < 2 * scale; j++)
 				{
 					for (int i = -2 * scale; i < 2 * scale; i++)
 					{
-						int bx = scale * param.pt.x + j;
-						int by = scale * param.pt.y + i;
+						const int bx = scale * param.pt.x + j;
+						const int by = scale * param.pt.y + i;
 						//int bo = src.at<uchar>(y, 3 * x + 0);
-						int bi = highres_src.at<uchar>(by, 3 * bx + 0);
-						int bo = highres_groundtruth.at<uchar>(by, 3 * bx + 0);
+						const int bi = highres_src.at<uchar>(by, 3 * bx + 0);
+						const int bo = highres_groundtruth.at<uchar>(by, 3 * bx + 0);
+						const int gi = highres_src.at<uchar>(by, 3 * bx + 1);
+						const int go = highres_groundtruth.at<uchar>(by, 3 * bx + 1);
+						const int ri = highres_src.at<uchar>(by, 3 * bx + 2);
+						const int ro = highres_groundtruth.at<uchar>(by, 3 * bx + 2);
 
-						int gi = highres_src.at<uchar>(by, 3 * bx + 1);
-						int go = highres_groundtruth.at<uchar>(by, 3 * bx + 1);
-
-						int ri = highres_src.at<uchar>(by, 3 * bx + 2);
-						int ro = highres_groundtruth.at<uchar>(by, 3 * bx + 2);
-
-						//if (c == 0 || c == 1)circle(show, Point(bi, 255 - bo), 3, Scalar(255, 128, 128), 1);
-						//if (c == 0 || c == 2)circle(show, Point(gi, 255 - go), 3, Scalar(128, 230, 128), 1);
-						//if (c == 0 || c == 3)circle(show, Point(ri, 255 - ro), 3, Scalar(128, 128, 255), 1);
-						//if (c == 0 || c == 1)cp::drawTimes(show, Point(bi, 255 - bo), 5, b, 1);
-						//if (c == 0 || c == 2)cp::drawTimes(show, Point(gi, 255 - go), 5, g, 1);
-						//if (c == 0 || c == 3)cp::drawTimes(show, Point(ri, 255 - ro), 5, r, 1);
-						if (c == 0 || c == 1)cp::drawTimes(show, Point(bi, 255 - bo), 5, gray, 1);
-						if (c == 0 || c == 2)cp::drawTimes(show, Point(gi, 255 - go), 5, gray, 1);
-						if (c == 0 || c == 3)cp::drawTimes(show, Point(ri, 255 - ro), 5, gray, 1);
-
+						if constexpr (explotmode == 0)
+						{
+							if (c == 0 || c == 1)cp::drawTimes(lutImage, Point(bi, 255 - bo), 5, gray, 1);
+							if (c == 0 || c == 2)cp::drawTimes(lutImage, Point(gi, 255 - go), 5, gray, 1);
+							if (c == 0 || c == 3)cp::drawTimes(lutImage, Point(ri, 255 - ro), 5, gray, 1);
+						}
+						else if constexpr (explotmode == 1)
+						{
+							if (c == 0 || c == 1)cp::drawTimes(lutImage, Point(bi, 255 - bo), 5, b, 1);
+							if (c == 0 || c == 2)cp::drawTimes(lutImage, Point(gi, 255 - go), 5, g, 1);
+							if (c == 0 || c == 3)cp::drawTimes(lutImage, Point(ri, 255 - ro), 5, r, 1);
+						}
+						else
+						{
+							if (c == 0 || c == 1)circle(lutImage, Point(bi, 255 - bo), 3, Scalar(255, 128, 128), 1);
+							if (c == 0 || c == 2)circle(lutImage, Point(gi, 255 - go), 3, Scalar(128, 230, 128), 1);
+							if (c == 0 || c == 3)circle(lutImage, Point(ri, 255 - ro), 3, Scalar(128, 128, 255), 1);
+						}
 					}
 				}
 			}
-			else if (suby == 4 * scale)
+			else if (suby == 4 * scale) //no process
 			{
-				; //no process
+				;
 			}
 			else
 			{
-				int bx = scale * param.pt.x + subx - 2 * scale;
-				int by = scale * param.pt.y + suby - 2 * scale;
-				{
-					//int bo = src.at<uchar>(y, 3 * x + 0);
-					int bi = highres_src.at<uchar>(by, 3 * bx + 0);
-					int bo = highres_groundtruth.at<uchar>(by, 3 * bx + 0);
+				const int bx = scale * param.pt.x + subx - 2 * scale;
+				const int by = scale * param.pt.y + suby - 2 * scale;
 
-					int gi = highres_src.at<uchar>(by, 3 * bx + 1);
-					int go = highres_groundtruth.at<uchar>(by, 3 * bx + 1);
+				const int bi = highres_src.at<uchar>(by, 3 * bx + 0);
+				const int bo = highres_groundtruth.at<uchar>(by, 3 * bx + 0);
+				const int gi = highres_src.at<uchar>(by, 3 * bx + 1);
+				const int go = highres_groundtruth.at<uchar>(by, 3 * bx + 1);
+				const int ri = highres_src.at<uchar>(by, 3 * bx + 2);
+				const int ro = highres_groundtruth.at<uchar>(by, 3 * bx + 2);
 
-					int ri = highres_src.at<uchar>(by, 3 * bx + 2);
-					int ro = highres_groundtruth.at<uchar>(by, 3 * bx + 2);
-
-					if (c == 0 || c == 1)circle(show, Point(bi, 255 - bo), 3, Scalar(255, 128, 128), 3);
-					if (c == 0 || c == 2)circle(show, Point(gi, 255 - go), 3, Scalar(128, 230, 128), 3);
-					if (c == 0 || c == 3)circle(show, Point(ri, 255 - ro), 3, Scalar(128, 128, 255), 3);
-					//if (c == 0 || c == 1)cp::drawTimes(show, Point(bi, 255 - bo), 3, Scalar(255, 128, 128), 1);
-					//if (c == 0 || c == 2)cp::drawTimes(show, Point(gi, 255 - go), 3, Scalar(128, 230, 128), 1);
-					//if (c == 0 || c == 3)cp::drawTimes(show, Point(ri, 255 - ro), 3, Scalar(128, 128, 255), 1);
-				}
+				if (c == 0 || c == 1)circle(lutImage, Point(bi, 255 - bo), 3, Scalar(255, 128, 128), 3);
+				if (c == 0 || c == 2)circle(lutImage, Point(gi, 255 - go), 3, Scalar(128, 230, 128), 3);
+				if (c == 0 || c == 3)circle(lutImage, Point(ri, 255 - ro), 3, Scalar(128, 128, 255), 3);
+				//if (c == 0 || c == 1)cp::drawTimes(show, Point(bi, 255 - bo), 3, Scalar(255, 128, 128), 1);
+				//if (c == 0 || c == 2)cp::drawTimes(show, Point(gi, 255 - go), 3, Scalar(128, 230, 128), 1);
+				//if (c == 0 || c == 3)cp::drawTimes(show, Point(ri, 255 - ro), 3, Scalar(128, 128, 255), 1);
 			}
-			Mat show2;
-			copyMakeBorder(show, show2, 1, 1, 1, 1, BORDER_CONSTANT, Scalar::all(0));
-			imshow(wname, show2);
-			imshow(wname + "image", im);
-			if (!isWait) key = waitKey(1);
 
+			cv::imshow(wname, lutImage);
+			cv::imshow(wnameShow, showImage);
 
-			if (key == 'p')
-			{
-				for (int i = 0; i < lutsize; i++)
-				{
-					printf("%d: %d %d %d\n", i, lutb[i], lutr[i], lutr[i]);
-				}
-			}
-			else if (key == 'j')
+#pragma region key
+			if (isWait) key = waitKey(1);
+			else break;
+
+			if (key == 'e') exit(0);
+			if (key == 'j')
 			{
 				param.pt.x--;
 				param.pt.x = max(param.pt.x, 0);
 				setTrackbarPos("x", wname, param.pt.x);
 			}
-			else if (key == 'i')
+			if (key == 'i')
 			{
 				param.pt.y--;
 				param.pt.y = max(param.pt.y, 0);
 				setTrackbarPos("y", wname, param.pt.y);
 			}
-			else if (key == 'l')
+			if (key == 'l')
 			{
 				param.pt.x++;
 				param.pt.x = min(param.pt.x, lowres_src.cols - 1);
 				setTrackbarPos("x", wname, param.pt.x);
 			}
-			else if (key == 'k')
+			if (key == 'k')
 			{
 				param.pt.y++;
 				param.pt.y = min(param.pt.y, lowres_src.rows - 1);
 				setTrackbarPos("y", wname, param.pt.y);
 			}
-			else if (key == 'g') isGrid = (isGrid) ? false : true;
-
-			if (!isWait)key = 'q';
+			if (key == 'g') isGrid = (isGrid) ? false : true;
+#pragma endregion
 		}
 	}
+#pragma endregion
+#pragma endregion
 
-	void LocalLUTUpsample::LUTgraph(const uchar* array_lut, const int lut_num, string path)
-	{
-		FILE* gp;
-		gp = _popen(path.c_str(), "w");
-
-		// 画像として保存
-		fprintf(gp, "set terminal png\n");
-		fprintf(gp, "set output 'lut.png'\n");
-
-		// 軸
-		fprintf(gp, "set grid\n");
-		fprintf(gp, "set xrange [0:128]\n");
-		fprintf(gp, "set yrange [0:128]\n");
-		fprintf(gp, "set xtics 0, 16, 128\n");
-		fprintf(gp, "set ytics 0, 16, 128\n");
-
-		// 描画スタイル
-		fprintf(gp, "plot '-' with linespoints linetype 1 pointtype 9\n");	// 9か13が見やすい
-
-
-		// グラフを表示
-		for (int i = 0; i < lut_num; i++)
-		{
-			fprintf(gp, "%d\t%d\n", i, (int)array_lut[i]);
-		}
-		fprintf(gp, "e\n");
-
-		fprintf(gp, "set terminal windows\n");
-		fprintf(gp, "set output\n");
-
-		fflush(gp);
-		_pclose(gp);
-	}
-
-	// Create LUT
+	// Create LUT (AoS: 8bit width lut_num channels image for each color, SoA: vector<Mat> for each lut_num)
 	void LocalLUTUpsample::createLUTTensor(const int width, const int height, const int lut_num)
 	{
-		LUT_TensorAoS_B.create(Size(width, height), CV_MAKETYPE(CV_8U, lut_num));
-		LUT_TensorAoS_G.create(Size(width, height), CV_MAKETYPE(CV_8U, lut_num));
-		LUT_TensorAoS_R.create(Size(width, height), CV_MAKETYPE(CV_8U, lut_num));
-
-		LUT_TensorSoA_B.resize(lut_num);
-		LUT_TensorSoA_G.resize(lut_num);
-		LUT_TensorSoA_R.resize(lut_num);
-		for (int i = 0; i < lut_num; i++)
+		if (useSoA)
 		{
-			LUT_TensorSoA_B[i].create(Size(width, height), CV_8U);
-			LUT_TensorSoA_G[i].create(Size(width, height), CV_8U);
-			LUT_TensorSoA_R[i].create(Size(width, height), CV_8U);
+			LUT_TensorSoA_B.resize(lut_num);
+			LUT_TensorSoA_G.resize(lut_num);
+			LUT_TensorSoA_R.resize(lut_num);
+			for (int i = 0; i < lut_num; i++)
+			{
+				LUT_TensorSoA_B[i].create(Size(width, height), CV_8U);
+				LUT_TensorSoA_G[i].create(Size(width, height), CV_8U);
+				LUT_TensorSoA_R[i].create(Size(width, height), CV_8U);
+			}
+		}
+		else
+		{
+			LUT_TensorAoS_B.create(Size(width, height), CV_MAKETYPE(CV_8U, lut_num));
+			LUT_TensorAoS_G.create(Size(width, height), CV_MAKETYPE(CV_8U, lut_num));
+			LUT_TensorAoS_R.create(Size(width, height), CV_MAKETYPE(CV_8U, lut_num));
 		}
 	}
 
@@ -1413,7 +1386,6 @@ namespace cp
 			case 7:blur32f_256unroll4<7>(lut_buff, srcdst_lut); break;
 			default:blur32f_256unroll4(lut_buff, srcdst_lut, r, div); break;
 			}
-
 			//blur16s_256unroll4(lut_buff, srcdst_lut, r, DIV);
 			//blur3_16s_256unroll4(lut_buff, srcdst_lut);
 		}
@@ -1522,7 +1494,7 @@ namespace cp
 				for (int i = -r; i <= r; i++)
 				{
 					uchar* y_src = src_low_border.ptr<uchar>(y + i + r, x);
-					uchar* y_res = dst_low_border.ptr<uchar>(y + i + r, x);
+					uchar* y_res = prc_low_border.ptr<uchar>(y + i + r, x);
 
 					for (int j = -r; j <= r; j++)
 					{
@@ -1556,7 +1528,6 @@ namespace cp
 						lutmap.at<uchar>(inp_g, 3 * oup_g + 1) += adder;
 						lutmap.at<uchar>(inp_r, 3 * oup_r + 2) += adder;
 
-						// 次の画素
 						y_src += 3;
 						y_res += 3;
 					}
@@ -1650,12 +1621,9 @@ namespace cp
 				}
 				else if (lut_boundary_method == BOUNDARY::EXPERIMENT1)
 				{
-					/*
-					setLUTBoundaryLinearScale(lutb, lut_num, iminb, imaxb, 1.f + 0.1f*leplicate_offset);
-					setLUTBoundaryLinearScale(lutg, lut_num, iming, imaxg, 1.f + 0.1f*leplicate_offset);
-					setLUTBoundaryLinearScale(lutr, lut_num, iminr, imaxr, 1.f + 0.1f*leplicate_offset);
-					*/
-
+					//setLUTBoundaryLinearScale(lutb, lut_num, iminb, imaxb, 1.f + 0.1f*leplicate_offset);
+					//setLUTBoundaryLinearScale(lutg, lut_num, iming, imaxg, 1.f + 0.1f*leplicate_offset);
+					//setLUTBoundaryLinearScale(lutr, lut_num, iminr, imaxr, 1.f + 0.1f*leplicate_offset);
 					setLUTBoundaryLinearClip(lutb, lut_num, iminb, imaxb, boundary_replicate_offset);
 					setLUTBoundaryLinearClip(lutg, lut_num, iming, imaxg, boundary_replicate_offset);
 					setLUTBoundaryLinearClip(lutr, lut_num, iminr, imaxr, boundary_replicate_offset);
@@ -1737,8 +1705,7 @@ namespace cp
 				uchar* lutg = LUT_TensorAoS_G.ptr<uchar>(y) + LUT_TensorAoS_B.channels() * x;
 				uchar* lutr = LUT_TensorAoS_R.ptr<uchar>(y) + LUT_TensorAoS_B.channels() * x;
 
-				lutmap.setTo(0);
-				//頻度の集計
+				lutmap.setTo(0);//clear 2D LUT map (heavy)
 
 				uchar iminb = 255;
 				uchar iming = 255;
@@ -1755,17 +1722,17 @@ namespace cp
 
 				int idx = 0;
 
-				uchar v = dst_low_border.at<uchar>(y + r, +3 * (x + r) + 0);
+				uchar v = prc_low_border.at<uchar>(y + r, +3 * (x + r) + 0);
 				offset_map.at<uchar>(y, 3 * x + 0) = v - ((v >> shift) << shift);
-				v = dst_low_border.at<uchar>(y + r, +3 * (x + r) + 1);
+				v = prc_low_border.at<uchar>(y + r, +3 * (x + r) + 1);
 				offset_map.at<uchar>(y, 3 * x + 1) = v - ((v >> shift) << shift);
-				v = dst_low_border.at<uchar>(y + r, +3 * (x + r) + 2);
+				v = prc_low_border.at<uchar>(y + r, +3 * (x + r) + 2);
 				offset_map.at<uchar>(y, 3 * x + 2) = v - ((v >> shift) << shift);
 
 				for (int i = -r; i <= r; i++)
 				{
 					uchar* y_src = src_low_border.ptr<uchar>(y + i + r) + 3 * (x);
-					uchar* y_res = dst_low_border.ptr<uchar>(y + i + r) + 3 * (x);
+					uchar* y_res = prc_low_border.ptr<uchar>(y + i + r) + 3 * (x);
 
 					for (int j = -r; j <= r; j++)
 					{
@@ -1792,10 +1759,10 @@ namespace cp
 						omaxb = max(omaxb, oup_b);
 						omaxg = max(omaxg, oup_g);
 						omaxr = max(omaxr, oup_r);
-						//lutmap.at<uchar>(inp_b, 3 * oup_b + 0)++;		//頻度をカウント（）
+						//lutmap.at<uchar>(inp_b, 3 * oup_b + 0)++;		
 						//lutmap.at<uchar>(inp_g, 3 * oup_g + 1)++;
 						//lutmap.at<uchar>(inp_r, 3 * oup_r + 2)++;
-						lutmap.at<ushort>(inp_b, 3 * oup_b + 0) += adder;		//頻度をカウント
+						lutmap.at<ushort>(inp_b, 3 * oup_b + 0) += adder;//count frequency
 						lutmap.at<ushort>(inp_g, 3 * oup_g + 1) += adder;
 						lutmap.at<ushort>(inp_r, 3 * oup_r + 2) += adder;
 					}
@@ -1807,7 +1774,8 @@ namespace cp
 					lutg[i] = 0;
 					lutr[i] = 0;
 				}
-				// 最頻値から出力値を決定
+
+				// find most frequent value
 				for (int j = iminb; j <= imaxb; j++)
 				{
 					ushort max_b = 0;
@@ -1854,7 +1822,7 @@ namespace cp
 					}
 				}
 
-				//LUTの端点を埋める
+				//filling boundary
 				const uchar minv = 0;
 				const uchar maxv = lut_num - 1;
 				//Blue
@@ -1867,7 +1835,7 @@ namespace cp
 				if (lutr[0] == 0) lutr[0] = minv;
 				if (lutr[lut_num - 1] == 0) lutr[lut_num - 1] = maxv;
 
-				//レンジ方向の補間
+				//interlation for range
 				//Blue
 				for (int i = 1; i < lut_num - 1; i++)
 				{
@@ -1935,7 +1903,7 @@ namespace cp
 		return l.z > h.z;
 	}
 
-	void setLInfDistanceOrder2(AutoBuffer<Point>& order, const int r)
+	static void setLInfDistanceOrder2(AutoBuffer<Point>& order, const int r)
 	{
 		vector<uchar> l1((2 * r + 1) * (2 * r + 1));
 		// compute Linf norm
@@ -1965,7 +1933,7 @@ namespace cp
 		}
 	}
 
-	void setLInfDistanceOrder(AutoBuffer<Point>& order, const int r)
+	static void setLInfDistanceOrder(AutoBuffer<Point>& order, const int r)
 	{
 		vector<Point3f> l2((2 * r + 1) * (2 * r + 1));
 		// compute L2 norm
@@ -1987,7 +1955,7 @@ namespace cp
 		}
 	}
 
-	void setL1DistanceOrder(AutoBuffer<Point>& order, const int r)
+	static void setL1DistanceOrder(AutoBuffer<Point>& order, const int r)
 	{
 		vector<Point3f> l2((2 * r + 1) * (2 * r + 1));
 		// compute L2 norm
@@ -2009,7 +1977,7 @@ namespace cp
 		}
 	}
 
-	void setL2DistanceOrder(AutoBuffer<Point>& order, const int r)
+	static void setL2DistanceOrder(AutoBuffer<Point>& order, const int r)
 	{
 		vector<Point3f> l2((2 * r + 1) * (2 * r + 1));
 		// compute L2 norm
@@ -2031,7 +1999,7 @@ namespace cp
 		}
 	}
 
-	void setL2DistanceOrderEven(AutoBuffer<Point>& order, const int r)
+	static void setL2DistanceOrderEven(AutoBuffer<Point>& order, const int r)
 	{
 		vector<Point3f> l2((2 * r + 1) * (2 * r + 1));
 		// compute L2 norm
@@ -2113,13 +2081,6 @@ namespace cp
 		default:
 		case 2: setL2DistanceOrder(order, r); break;
 		}
-		/*cv::parallel_for_
-		(
-			cv::Range(0, lowres_size.height),
-			BuildLocalLUTTensorDistanceMIN_ParallelBody(src_low_border, dst_low_border, LUT_B, LUT_G, LUT_R, &order[0], r, lut_num, lut_boundary_method, lut_filter_radius, leplicate_offset, lowres_size.width),
-			8
-		);
-		return;*/
 
 		if (src_low_border.channels() == 1)
 		{
@@ -2141,13 +2102,10 @@ namespace cp
 
 						for (int i = 0; i < window_size; i++)
 						{
-							int n = order[i].y;
-							int m = order[i].x;
-
-							uchar* y_src = src_low_border.ptr<uchar>(y + n, x + m);
-							uchar* y_res = dst_low_border.ptr<uchar>(y + n, x + m);
-							const uchar inp_b = y_src[0];
-							const uchar oup_b = y_res[0];
+							const int n = order[i].y;
+							const int m = order[i].x;
+							const uchar inp_b = src_low_border.at<uchar>(y + n, x + m);
+							const uchar oup_b = prc_low_border.at<uchar>(y + n, x + m);
 
 							lutb[inp_b] = oup_b;
 
@@ -2156,7 +2114,6 @@ namespace cp
 							ominb = min(oup_b, ominb);
 							omaxb = max(oup_b, omaxb);
 						}
-
 						//padding boundary by min max values
 						setLUTMinMax(lutb, lut_num, ominb, omaxb, iminb, imaxb);
 					}
@@ -2166,13 +2123,8 @@ namespace cp
 						{
 							const int n = order[i].y;
 							const int m = order[i].x;
-
-							uchar* y_src = src_low_border.ptr<uchar>(y + n, x + m);
-							uchar* y_res = dst_low_border.ptr<uchar>(y + n, x + m);
-
-							const uchar inp_b = y_src[0];
-
-							lutb[inp_b] = y_res[0];
+							const uchar inp_b = src_low_border.at<uchar>(y + n, x + m);
+							lutb[inp_b] = prc_low_border.at<uchar>(y + n, x + m);
 
 							iminb = min(iminb, inp_b);
 							imaxb = max(imaxb, inp_b);
@@ -2222,46 +2174,18 @@ namespace cp
 						}
 						else if constexpr (lut_boundary_method == (int)BOUNDARY::NO_INTERPOLATION)
 						{
-							goto LOOP_END_GRAY;
+							continue;//skip interpolation
 						}
 					}
 
 					// Linearly interpolating in range direction
 					interpolateLUT(lutb, lut_num, iminb, imaxb);
 
-					// plot LUT
-					//if (x == 140 && y == 136)
-					//{
-					//	for (int i = 0; i < lut_num; i++)
-					//	{
-					//		cout << (int)lutb[i] << " ";
-					//	}
-					//	cout << endl;
-					//}
-
-
-					//interpolateLUTStep(lutb, lut_num, iminb, imaxb);
-					//interpolateLUTStep(lutg, lut_num, iming, imaxg);
-					//interpolateLUTStep(lutr, lut_num, iminr, imaxr);
-
 					//filtering LUT
 					if (lut_filter_radius != 0)
 					{
 						boxBlurLUT(lutb, lut_buff, lut_num, lut_filter_radius);
 					}
-
-					// plot LUT
-					//if (x == 140 && y == 136)
-					/*if (x == 15 && y == 150)
-					{
-						for (int i = 0; i < lut_num; i++)
-						{
-							cout << (int)lutb[i] << " ";
-						}
-						cout << endl;
-					}*/
-				LOOP_END_GRAY:
-					;
 				}
 				_mm_free(lut_buff);
 			}
@@ -2332,7 +2256,7 @@ namespace cp
 							int m = order[i].x;
 
 							uchar* y_src = src_low_border.ptr<uchar>(y + n, x + m);
-							uchar* y_res = dst_low_border.ptr<uchar>(y + n, x + m);
+							uchar* y_res = prc_low_border.ptr<uchar>(y + n, x + m);
 							const uchar inp_b = y_src[0];
 							const uchar inp_g = y_src[1];
 							const uchar inp_r = y_src[2];
@@ -2364,12 +2288,9 @@ namespace cp
 						}
 
 						//padding boundary by min max values
-
 						setLUTMinMax(lutb, lut_num, ominb, omaxb, iminb, imaxb);
 						setLUTMinMax(lutg, lut_num, oming, omaxg, iming, imaxg);
 						setLUTMinMax(lutr, lut_num, ominr, omaxr, iminr, imaxr);
-
-
 						//setLUTBoundaryLinearFlatSwich(lutb, lut_num, iminb, imaxb, osumb / window_size);
 						//setLUTBoundaryLinearFlatSwich(lutg, lut_num, iming, imaxg, osumg / window_size);
 						//setLUTBoundaryLinearFlatSwich(lutr, lut_num, iminr, imaxr, osumr / window_size);
@@ -2378,13 +2299,14 @@ namespace cp
 					{
 						switch (window_size)
 						{
-						case 1: setScatterPlotsRGB<1>(x, y, order, src_low_border, dst_low_border, lutb, lutg, lutr, imin, imax); break;
-						case 9: setScatterPlotsRGB<9>(x, y, order, src_low_border, dst_low_border, lutb, lutg, lutr, imin, imax); break;
-						case 25: setScatterPlotsRGB<25>(x, y, order, src_low_border, dst_low_border, lutb, lutg, lutr, imin, imax); break;
-						case 49: setScatterPlotsRGB<49>(x, y, order, src_low_border, dst_low_border, lutb, lutg, lutr, imin, imax); break;
-						case 81: setScatterPlotsRGB<81>(x, y, order, src_low_border, dst_low_border, lutb, lutg, lutr, imin, imax); break;
-						default: setScatterPlotsRGB(window_size, x, y, order, src_low_border, dst_low_border, lutb, lutg, lutr, imin, imax); break;
+						case 1: setScatterPlotsRGB<1>(x, y, order, src_low_border, prc_low_border, lutb, lutg, lutr, imin, imax); break;
+						case 9: setScatterPlotsRGB<9>(x, y, order, src_low_border, prc_low_border, lutb, lutg, lutr, imin, imax); break;
+						case 25: setScatterPlotsRGB<25>(x, y, order, src_low_border, prc_low_border, lutb, lutg, lutr, imin, imax); break;
+						case 49: setScatterPlotsRGB<49>(x, y, order, src_low_border, prc_low_border, lutb, lutg, lutr, imin, imax); break;
+						case 81: setScatterPlotsRGB<81>(x, y, order, src_low_border, prc_low_border, lutb, lutg, lutr, imin, imax); break;
+						default: setScatterPlotsRGB(window_size, x, y, order, src_low_border, prc_low_border, lutb, lutg, lutr, imin, imax); break;
 						}
+
 						iminb = ((uchar*)&imin)[0];
 						iming = ((uchar*)&imin)[1];
 						iminr = ((uchar*)&imin)[2];
@@ -2448,7 +2370,7 @@ namespace cp
 						}
 						else if constexpr (lut_boundary_method == (int)BOUNDARY::NO_INTERPOLATION)
 						{
-							goto LOOP_END;
+							continue; //skip interpolation
 						}
 					}
 
@@ -2460,7 +2382,7 @@ namespace cp
 					//interpolateLUTStep(lutg, lut_num, iming, imaxg);
 					//interpolateLUTStep(lutr, lut_num, iminr, imaxr);
 
-					//filtering LUT
+					//smoothing LUT
 					boxBlurLUT(lutb, lut_buff, lut_num, lut_filter_radius);
 					boxBlurLUT(lutg, lut_buff, lut_num, lut_filter_radius);
 					boxBlurLUT(lutr, lut_buff, lut_num, lut_filter_radius);
@@ -2474,9 +2396,6 @@ namespace cp
 							rptr[i][x] = lutr[i];
 						}
 					}
-
-				LOOP_END:
-					;
 				}
 				_mm_free(lut_buff);
 				if constexpr (isSoA)
@@ -2493,6 +2412,7 @@ namespace cp
 		}
 	}
 
+	//building tensor from src_low_border and dst_low_border
 	void LocalLUTUpsample::buildLocalLUTTensorDistanceMIN(const int distance, const int lut_num, const int r, const int range_div, const int lut_filter_radius, const BOUNDARY lut_boundary_method)
 	{
 		if (useSoA)
@@ -2615,7 +2535,7 @@ namespace cp
 				for (int i = -r; i <= r; i++)
 				{
 					uchar* y_src = src_low_border.ptr<uchar>(y + i + r) + 3 * (x);
-					uchar* y_res = dst_low_border.ptr<uchar>(y + i + r) + 3 * (x);
+					uchar* y_res = prc_low_border.ptr<uchar>(y + i + r) + 3 * (x);
 
 					for (int j = -r; j <= r; j++)
 					{
@@ -3021,7 +2941,7 @@ namespace cp
 	{
 		const int scale = int(up_sampling_ratio_resolution);
 		Mat weight(scale * scale, d * d, CV_32F);
-		setGaussianLnWeight(weight, sigma, 2);
+		cp::setGaussianLnWeight(weight, sigma, 2);
 		_tensorUpConvNxNLinearNaive(src_highres, dst, weight);
 	}
 
@@ -3029,7 +2949,7 @@ namespace cp
 	{
 		const int scale = int(up_sampling_ratio_resolution);
 		Mat weight(scale * scale, d * d, CV_32F);
-		setGaussianLnWeight(weight, sigma, 1);
+		cp::setGaussianLnWeight(weight, sigma, 1);
 		_tensorUpConvNxNLinearNaive(src_highres, dst, weight);
 	}
 #pragma endregion
@@ -3452,7 +3372,7 @@ namespace cp
 	{
 		const int scale = int(up_sampling_ratio_resolution);
 		Mat weight(scale * scale, 4, CV_32F);
-		setLinearWeight2x2(weight);
+		cp::setLinearWeight2x2(weight);
 
 		if (lut_num == 256) _tensorUpConv4Linear<false>(src_highres, dst, weight, lut_num, isOffset);
 		else _tensorUpConv4Linear<true>(src_highres, dst, weight, lut_num, isOffset);
@@ -3472,7 +3392,7 @@ namespace cp
 	{
 		const int scale = int(up_sampling_ratio_resolution);
 		Mat weight(scale * scale, 4, CV_32F);
-		setGaussianWeight2x2(weight, sigma);
+		cp::setGaussianWeight2x2(weight, sigma);
 
 		if (lut_num == 256) _tensorUpConv4Linear<false>(src_highres, dst, weight, lut_num, isOffset);
 		else _tensorUpConv4Linear<true>(src_highres, dst, weight, lut_num, isOffset);
@@ -4177,7 +4097,7 @@ namespace cp
 		const int scale = int(up_sampling_ratio_resolution);
 		Mat weight(scale * scale, 16, CV_32F);
 
-		setCubicWeight4x4(weight, alpha);
+		cp::setCubicWeight4x4(weight, alpha);
 
 		if (lut_num == 256)
 			_tensorUpConv16Linear<false>(src_highres, dst, weight, lut_num, isOffset);
@@ -4204,7 +4124,7 @@ namespace cp
 		const int scale = int(up_sampling_ratio_resolution);
 		Mat weight(scale * scale, 16, CV_32F);
 
-		setGaussianWeight4x4(weight, sigma);
+		cp::setGaussianWeight4x4(weight, sigma);
 
 		//interpolationConv16Linear(src_highres, dst, weight, lut_num, isOffset);
 		if (lut_num == 256) _tensorUpConv16Linear<false>(src_highres, dst, weight, lut_num, isOffset);
@@ -4215,7 +4135,7 @@ namespace cp
 	{
 		const int scale = int(up_sampling_ratio_resolution);
 		Mat weight(scale * scale, 16, CV_32F);
-		setGaussianWeight4x4(weight, sigma_space);
+		cp::setGaussianWeight4x4(weight, sigma_space);
 
 		if (lut_num == 256)
 			_tensorUpBilateralConv16Linear<false>(src_highres, dst, weight, sigma_range, lut_num, isOffset);
@@ -6016,7 +5936,7 @@ namespace cp
 								const int idx = (x + m);
 
 								//gray
-								int intensity = src[idx];
+								const int intensity = src[idx];
 								__m256 mv = _mm256_mul_ps(mw0, _mm256_cvtepu8_ps(_mm256_i32gather_epu8(lutb, _mm256_add_epi32(mlutidx0, _mm256_set1_epi32(intensity)))));
 								mv = _mm256_fmadd_ps(mw1, _mm256_cvtepu8_ps(_mm256_i32gather_epu8(lutb, _mm256_add_epi32(mlutidx1, _mm256_set1_epi32(intensity)))), mv);
 								mv = _mm256_fmadd_ps(mw2, _mm256_cvtepu8_ps(_mm256_i32gather_epu8(lutb, _mm256_add_epi32(mlutidx2, _mm256_set1_epi32(intensity)))), mv);
@@ -6909,7 +6829,7 @@ namespace cp
 	{
 		const int scale = int(up_sampling_ratio_resolution);
 		Mat weight(scale * scale, 64, CV_32F);
-		setGaussianWeight8x8(weight, sigma_space);
+		cp::setGaussianWeight8x8(weight, sigma_space);
 
 		if (lut_num == 256)
 		{
@@ -6938,11 +6858,11 @@ namespace cp
 	{
 		const int scale = int(up_sampling_ratio_resolution);
 		Mat weight(scale * scale, 64, CV_32F);
-		setGaussianWeight8x8(weight, sigma);
+		cp::setGaussianWeight8x8(weight, sigma);
 
 		if (lut_num == 256)
 		{
-			const bool isLoad = false;
+			constexpr bool isLoad = false;
 			int scale = int(up_sampling_ratio_resolution);
 			if (isLoad)
 			{
@@ -6951,8 +6871,7 @@ namespace cp
 				else if (scale == 4) _tensorUpConv64LinearLoadScale<false, 4>(src_highres, dst, weight, lut_num, isOffset);
 				else if (scale == 8) _tensorUpConv64LinearLoadScale<false, 8>(src_highres, dst, weight, lut_num, isOffset);
 				else if (scale == 16) _tensorUpConv64LinearLoadScale<false, 16>(src_highres, dst, weight, lut_num, isOffset);
-				else
-					_tensorUpConv64Linear<false>(src_highres, dst, weight, lut_num, isOffset);
+				else _tensorUpConv64Linear<false>(src_highres, dst, weight, lut_num, isOffset);
 			}
 			else
 			{
@@ -6981,92 +6900,93 @@ namespace cp
 
 #pragma endregion
 
-	void LocalLUTUpsample::upsample(Mat& src_low, Mat& dst_low, Mat& src_high, Mat& dst_high, const int r, const int lut_num, const int lut_filter_radius, const BUILD_LUT build_lut_method, const UPTENSOR tensorup_method, const BOUNDARY lut_boundary_method, const bool isUseOffsetMap)
+	void LocalLUTUpsample::upsample(InputArray src_low, InputArray prc_low, InputArray src_high, OutputArray prc_high, const int r, const int lut_num, const int lut_filter_radius, const BUILD_LUT build_lut_method, const UPTENSOR tensorup_method, const BOUNDARY lut_boundary_method, const bool isUseOffsetMap)
 	{
 		CV_Assert(src_low.depth() == CV_8U);
-		CV_Assert(dst_low.depth() == CV_8U);
-		CV_Assert(src_low.size() == dst_low.size());
+		CV_Assert(prc_low.depth() == CV_8U);
+		CV_Assert(src_low.size() == prc_low.size());
+		prc_high.create(src_high.size(), src_low.type());
+		Mat src = src_high.getMat();
+		Mat dest = prc_high.getMat();
+
 		patch_radius = r;
 		const int border = BORDER_REPLICATE;
-		dst_high.create(src_high.size(), src_low.type());
 
-		up_sampling_ratio_resolution = float(int(src_high.cols / src_low.cols));
-		const int ratio = 256 / lut_num;
-		const int shift = (int)log2(ratio);
+		up_sampling_ratio_resolution = float(int(src.cols / src_low.size().width));
+		const int bitratio = 256 / lut_num;
+		const int shift = (int)log2(bitratio);
 
-		lowres_size = Size(src_low.cols, src_low.rows);
+		lowres_size = src_low.size();
 		createLUTTensor(lowres_size.width, lowres_size.height, lut_num);
 
 		copyMakeBorder(src_low, src_low_border, r, r, r, r, border);
-		bitshiftRight(src_low_border, src_low_border, shift);//if shift==0, there is no processing
-
+		cp::bitshiftRight(src_low_border, src_low_border, shift);//if shift==0, there is no processing
 		if (shift == 0)
 		{
-			offset_map.create(dst_low.size(), dst_low.type());
-			copyMakeBorder(dst_low, dst_low_border, r, r, r, r, border);
+			offset_map.create(prc_low.size(), prc_low.type());
+			copyMakeBorder(prc_low, prc_low_border, r, r, r, r, border);
 		}
 		else
 		{
-			bitshiftRight(dst_low, offset_map_buffer, offset_map, shift);
-			copyMakeBorder(offset_map_buffer, dst_low_border, r, r, r, r, border);
+			cp::bitshiftRight(prc_low, offset_map_buffer, offset_map, shift);
+			copyMakeBorder(offset_map_buffer, prc_low_border, r, r, r, r, border);
 		}
 
+		//build LUT Tensor
 		{
 			//cp::Timer t("build");
 			switch (build_lut_method)
 			{
 			case BUILD_LUT::LInf_MIN:
 			default:
-				buildLocalLUTTensorDistanceMIN(0, lut_num, r, ratio, lut_filter_radius, lut_boundary_method); break;
+				buildLocalLUTTensorDistanceMIN(0, lut_num, r, bitratio, lut_filter_radius, lut_boundary_method); break;
 			case BUILD_LUT::L1_MIN:
-				buildLocalLUTTensorDistanceMIN(1, lut_num, r, ratio, lut_filter_radius, lut_boundary_method); break;
+				buildLocalLUTTensorDistanceMIN(1, lut_num, r, bitratio, lut_filter_radius, lut_boundary_method); break;
 			case BUILD_LUT::L2_MIN:
-				buildLocalLUTTensorDistanceMIN(2, lut_num, r, ratio, lut_filter_radius, lut_boundary_method); break;
-			case BUILD_LUT::LInf2_MIN:
-				buildLocalLUTTensorDistanceMIN(3, lut_num, r, ratio, lut_filter_radius, lut_boundary_method); break;
+				buildLocalLUTTensorDistanceMIN(2, lut_num, r, bitratio, lut_filter_radius, lut_boundary_method); break;
 			case BUILD_LUT::FREQUENCY_MAX_WTA:
-				buildLocalLUTTensorFrequencyMaxWTA8U(lut_num, r, ratio, lut_filter_radius, lut_boundary_method); break;
+				buildLocalLUTTensorFrequencyMaxWTA8U(lut_num, r, bitratio, lut_filter_radius, lut_boundary_method); break;
 				//getWTA16U(lut_num, r, ratio);		
 			case BUILD_LUT::FREQUENCY_MAX_DP:
-				buildLocalLUTTensorFrequencyMaxDP(lut_num, r, ratio); break;
+				buildLocalLUTTensorFrequencyMaxDP(lut_num, r, bitratio); break;
 			}
 		}
 
+		//interpolate LUT Tensor
 		{
 			//if (isUseOffsetMap)cout << "use offset map" << endl;
 			//cp::Timer t("tensorup");
 			switch (tensorup_method)
 			{
 			case UPTENSOR::NEAREST:
-				tensorUpNearestLinear(src_high, dst_high, lut_num, isUseOffsetMap); break;
+				tensorUpNearestLinear(src, dest, lut_num, isUseOffsetMap); break;
 			case UPTENSOR::BOX4:
-				tensorUpBox4Linear(src_high, dst_high, lut_num, isUseOffsetMap); break;
+				tensorUpBox4Linear(src, dest, lut_num, isUseOffsetMap); break;
 			case UPTENSOR::BOX16:
-				tensorUpBox16Linear(src_high, dst_high, lut_num, isUseOffsetMap); break;
+				tensorUpBox16Linear(src, dest, lut_num, isUseOffsetMap); break;
 			case UPTENSOR::BOX64:
-				tensorUpBox64Linear(src_high, dst_high, lut_num, isUseOffsetMap); break;
+				tensorUpBox64Linear(src, dest, lut_num, isUseOffsetMap); break;
 			case UPTENSOR::GAUSS4:
-				tensorUpGauss4Linear(src_high, dst_high, lut_num, tensor_up_sigma_space, isUseOffsetMap); break;
+				tensorUpGauss4Linear(src, dest, lut_num, tensor_up_sigma_space, isUseOffsetMap); break;
 			case UPTENSOR::GAUSS16:
-				tensorUpGauss16Linear(src_high, dst_high, lut_num, tensor_up_sigma_space, isUseOffsetMap); break;
-			case UPTENSOR::GAUSS64:
-				tensorUpGauss64Linear(src_high, dst_high, lut_num, tensor_up_sigma_space, isUseOffsetMap); break;
-			case UPTENSOR::LINEAR:
-				tensorUpTriLinear(src_high, dst_high, lut_num, isUseOffsetMap); break;
-			case UPTENSOR::CUBIC:
-				tensorUpBiCubicLinear(src_high, dst_high, lut_num, tensor_up_cubic_alpha, isUseOffsetMap); break;
-			case UPTENSOR::BILATERAL16:
-				tensorUpBilateral16Linear(src_high, dst_high, lut_num, tensor_up_sigma_space, tensor_up_sigma_range, isUseOffsetMap); break;
-			case UPTENSOR::BILATERAL64:
-				tensorUpBilateral64Linear(src_high, dst_high, lut_num, tensor_up_sigma_space, tensor_up_sigma_range, isUseOffsetMap); break;
-			case UPTENSOR::BoxNxN:
-				tensorUpBoxNxNLinear(src_high, dst_high, tensor_up_kernel_size); break;
-			case UPTENSOR::GaussNxN:
-				tensorUpGaussNxNLinear(src_high, dst_high, tensor_up_kernel_size, tensor_up_sigma_space); break;
-			case UPTENSOR::LaplaceNxN:
-				tensorUpLaplaceNxNLinear(src_high, dst_high, tensor_up_kernel_size, tensor_up_sigma_space); break;
 			default:
-				tensorUpGauss16Linear(src_high, dst_high, lut_num, tensor_up_sigma_space, isUseOffsetMap); break;
+				tensorUpGauss16Linear(src, dest, lut_num, tensor_up_sigma_space, isUseOffsetMap); break;
+			case UPTENSOR::GAUSS64:
+				tensorUpGauss64Linear(src, dest, lut_num, tensor_up_sigma_space, isUseOffsetMap); break;
+			case UPTENSOR::LINEAR:
+				tensorUpTriLinear(src, dest, lut_num, isUseOffsetMap); break;
+			case UPTENSOR::CUBIC:
+				tensorUpBiCubicLinear(src, dest, lut_num, tensor_up_cubic_alpha, isUseOffsetMap); break;
+			case UPTENSOR::BILATERAL16:
+				tensorUpBilateral16Linear(src, dest, lut_num, tensor_up_sigma_space, tensor_up_sigma_range, isUseOffsetMap); break;
+			case UPTENSOR::BILATERAL64:
+				tensorUpBilateral64Linear(src, dest, lut_num, tensor_up_sigma_space, tensor_up_sigma_range, isUseOffsetMap); break;
+			case UPTENSOR::BoxNxN:
+				tensorUpBoxNxNLinear(src, dest, tensor_up_kernel_size); break;
+			case UPTENSOR::GaussNxN:
+				tensorUpGaussNxNLinear(src, dest, tensor_up_kernel_size, tensor_up_sigma_space); break;
+			case UPTENSOR::LaplaceNxN:
+				tensorUpLaplaceNxNLinear(src, dest, tensor_up_kernel_size, tensor_up_sigma_space); break;
 			}
 		}
 	}

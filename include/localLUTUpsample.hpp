@@ -3,7 +3,7 @@
 
 namespace cp
 {
-	class CP_EXPORT LocalLUTUpsample
+	class CP_EXPORT LocalLUTUpsample //no constructor
 	{
 	public:
 		enum class BUILD_LUT
@@ -11,7 +11,6 @@ namespace cp
 			L2_MIN,
 			L1_MIN,
 			LInf_MIN,
-			LInf2_MIN,
 			FREQUENCY_MAX_WTA,
 			FREQUENCY_MAX_DP,
 
@@ -24,8 +23,9 @@ namespace cp
 			MINMAX_OUTPUT,
 			MINMAX0_255,
 			LINEAR,
-			LINEAR_LAST2,
 			NO_INTERPOLATION,
+			//experimental
+			LINEAR_LAST2,
 			EXPERIMENT1,
 			EXPERIMENT2,
 
@@ -35,18 +35,19 @@ namespace cp
 		enum class UPTENSOR
 		{
 			NEAREST,//box1
-			BOX4,
-			BOX16,
-			BOX64,
-			GAUSS4,
-			GAUSS16,
-			GAUSS64,
-			LINEAR,
-			CUBIC,
-			BILATERAL16,
-			BILATERAL64,
+			BOX4,////2x2
+			BOX16,//4x4
+			BOX64,//8x8
+			GAUSS4,//2x2
+			GAUSS16,//4x4
+			GAUSS64,//8x8
+			LINEAR,//2x2
+			CUBIC,//4x4
 			BoxNxN,
 			GaussNxN,
+			//experimental
+			BILATERAL16,
+			BILATERAL64,
 			LaplaceNxN,
 
 			SIZE
@@ -61,14 +62,43 @@ namespace cp
 		std::string getBuildingLUTMethod(const BUILD_LUT method);
 		std::string getTensorUpsamplingMethod(const UPTENSOR method);
 		std::string getBoundaryMethod(const BOUNDARY method);
-		void upsample(cv::Mat& src_low, cv::Mat& dst_low, cv::Mat& src, cv::Mat& dst, const int r, const int lut_num = 128, const int lut_filter_radius = 0, const BUILD_LUT build_method = BUILD_LUT::L1_MIN, const UPTENSOR tensorup_method = UPTENSOR::BOX16, const BOUNDARY lut_boundary_method = BOUNDARY::LINEAR, const bool isUseOffsetMap = true);
-		void guiLUT(cv::Mat& lowres_src, cv::Mat& highres_src, cv::Mat& highres_out, bool isWait = true, std::string wname = "LocalLUT");
+		/// <summary>
+		/// local LUT upsampling
+		/// </summary>
+		/// <param name="src_low">source low resolution image</param>
+		/// <param name="prc_low">processed low resolution image</param>
+		/// <param name="src_high">source high resolution image</param>
+		/// <param name="dst_high">processed (destination) high resolution image</param>
+		/// <param name="r">radius of subsampled spatial domain</param>
+		/// <param name="lut_num">number of LUT per pixel</param>
+		/// <param name="lut_filter_radius">radius of LUT filter for range domain</param>
+		/// <param name="build_method">building LUT method</param>
+		/// <param name="tensorup_method">tensor upsampling method</param>
+		/// <param name="lut_boundary_method">LUT boundary condition</param>
+		/// <param name="isUseOffsetMap">with/without offset map</param>
+		void upsample(cv::InputArray src_low, cv::InputArray prc_low, cv::InputArray src_high, cv::OutputArray prc_high,
+			const int r, const int lut_num = 256, const int lut_filter_radius = 2,
+			const BUILD_LUT build_method = BUILD_LUT::L1_MIN,
+			const UPTENSOR tensorup_method = UPTENSOR::BOX16,
+			const BOUNDARY lut_boundary_method = BOUNDARY::LINEAR,
+			const bool isUseOffsetMap = true);
+
+		/// <summary>
+		/// GUI viewing for LUT per pixel
+		/// </summary>
+		/// <param name="lowres_src">show image </param>
+		/// <param name="lowres_prc">show image </param>
+		/// <param name="highres_src">for additional scatter plot</param>
+		/// <param name="highres_groundtruth">for additional bold circle plot</param>
+		/// <param name="isWait">loop waiting</param>
+		/// <param name="wname">window name</param>
+		void guiLUT(cv::Mat& lowres_src, cv::Mat& lowres_prc, cv::Mat& highres_src, cv::Mat& highres_out, bool isWait = true, std::string wname = "LocalLUT");
 
 	private:
 		const bool useSoA = false;//false; AoS is faster
 		cv::Size lowres_size;
 		cv::Mat src_low_border;
-		cv::Mat dst_low_border;
+		cv::Mat prc_low_border;
 
 		cv::Mat LUT_TensorAoS_B;//AoS: Size(width*height), channels=lut_num (or gray case)
 		cv::Mat LUT_TensorAoS_G;//AoS: Size(width*height), channels=lut_num
@@ -84,10 +114,9 @@ namespace cp
 		float tensor_up_sigma_space = 2.f;
 		float tensor_up_sigma_range = 30.f;
 		float tensor_up_cubic_alpha = 1.f;//from -0.5 to 2
-		float up_sampling_ratio_resolution;//up_sampling_ratio
+		float up_sampling_ratio_resolution = 0.f;//up_sampling_ratio
 		int boundary_replicate_offset = 0;
-		// Write the graph of LUT with gnuplot
-		void LUTgraph(const uchar* array_lut, const int lut_num, std::string gnuplotpath = "C:/gnuplot/bin/pgnuplot.exe");
+
 		void createLUTTensor(const int width, const int height, const int lut_num);
 
 		template<int lut_boundary_method, bool isSoA> void buildLocalLUTTensorDistanceMINInvoker(const int distance, const int lut_num, const int r, const int range_div, const int lut_filter_radius);
