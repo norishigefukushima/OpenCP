@@ -52,9 +52,6 @@ namespace cp
 		destP.at<double>(1, 2) = destP.at<double>(1, 2) * a + b;
 		destP.at<double>(0, 3) *= a;
 		destP.at<double>(1, 3) *= a;
-
-
-
 	}
 
 
