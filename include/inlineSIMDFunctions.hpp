@@ -3294,6 +3294,13 @@ STATIC_INLINE std::vector<std::string> _MM_PRINT_EXCEPTION(std::string mes = "",
 	return ret;
 }
 
+STATIC_INLINE __m128i _mm256_cvtps_pbh(__m256 a)
+{
+	static __m256i mask = _mm256_setr_epi8(2, 3, 6, 7, 10, 11, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3, 6, 7, 10, 11, 14, 15);
+	__m256i t = _mm256_shuffle_epi8(_mm256_castps_si256(a), mask);
+	__m256i s = _mm256_permute2x128_si256(t, t, 0x01);
+	return _mm256_castsi256_si128(_mm256_blend_epi16(t, s, 0b11110000));
+}
 #ifdef __AVX512F__
 #define _mm512_set_m128i(/* __m128i */ src3, /* __m128i */ src2, /* __m128i */ src1, /* __m128i */ src0) \
     _mm512_inserti32x4(_mm512_inserti32x4(_mm512_inserti32x4(_mm512_castsi128_si512(src0), (src1), 0x1),(src2), 0x2), (src3), 0x3)
@@ -4335,6 +4342,14 @@ STATIC_INLINE __m512i _mm512_set_step_epi8(char v, char step = 1)
 		v + 16 * step, v + 17 * step, v + 18 * step, v + 19 * step, v + 20 * step, v + 21 * step, v + 22 * step, v + 23 * step, v + 24 * step, v + 25 * step, v + 26 * step, v + 27 * step, v + 28 * step, v + 29 * step, v + 30 * step, v + 31 * step,
 		v + 32 * step, v + 33 * step, v + 34 * step, v + 35 * step, v + 36 * step, v + 37 * step, v + 38 * step, v + 39 * step, v + 40 * step, v + 41 * step, v + 42 * step, v + 43 * step, v + 44 * step, v + 45 * step, v + 46 * step, v + 47 * step,
 		v + 48 * step, v + 49 * step, v + 50 * step, v + 51 * step, v + 52 * step, v + 53 * step, v + 54 * step, v + 55 * step, v + 56 * step, v + 57 * step, v + 58 * step, v + 59 * step, v + 60 * step, v + 61 * step, v + 62 * step, v + 63 * step
+	);
+}
+
+STATIC_INLINE __m512i _mm512_set_step_epi16(short v, short step = 1)
+{
+	return _mm512_setr_epi16(
+		v + 0 * step, v + 1 * step, v + 2 * step, v + 3 * step, v + 4 * step, v + 5 * step, v + 6 * step, v + 7 * step, v + 8 * step, v + 9 * step, v + 10 * step, v + 11 * step, v + 12 * step, v + 13 * step, v + 14 * step, v + 15 * step,
+		v + 16 * step, v + 17 * step, v + 18 * step, v + 19 * step, v + 20 * step, v + 21 * step, v + 22 * step, v + 23 * step, v + 24 * step, v + 25 * step, v + 26 * step, v + 27 * step, v + 28 * step, v + 29 * step, v + 30 * step, v + 31 * step
 	);
 }
 
