@@ -327,9 +327,10 @@ namespace cp
 		int maxColorIndex = 0;
 		int minColorIndex = 0;
 	public:
-
+		
 		Plot2D(cv::Size graph_size, double xmin, double xmax, double xstep, double ymin, double ymax, double ystep);
 		void add(double x, double y, double val);
+		void addIndex(int x, int y, double val);
 		cv::Mat show;
 		void plot(std::string wname = "plot2D");
 
@@ -344,7 +345,7 @@ namespace cp
 		void setLabelYGreekLetter(std::string greeksymbol, std::string subscript);
 		void setLabelZGreekLetter(std::string greeksymbol, std::string subscript);
 		void setMinMax(double xmin, double xmax, double xstep, double ymin, double ymax, double ystep);
-
+		cv::Mat getGridData();
 	};
 
 	CP_EXPORT void plotGraph(cv::OutputArray graphImage, std::vector<cv::Point2d>& data, double xmin, double xmax, double ymin, double ymax,

@@ -167,7 +167,7 @@ namespace cp
 					line(graph, Point(p.x, H - cvRound(y_step * (yn - ymin))), Point(cvRound(x_step * (xn - xmin)), H - cvRound(y_step * (yn - ymin))), color, thickness);
 				}
 			}
-			
+
 
 			if constexpr (lt == Plot::NOPOINT)
 			{
@@ -1726,7 +1726,6 @@ namespace cp
 		plotImageSize = graph_size;
 		setMinMax(xmin, xmax, xinterval, ymin, ymax, yinterval);
 
-
 		//default gnuplot5.0
 		colorIndex.push_back(CV_RGB(148, 0, 211));
 		colorIndex.push_back(CV_RGB(0, 158, 115));
@@ -1805,12 +1804,19 @@ namespace cp
 		isPlotMin = plot_min;
 	}
 
+	cv::Mat Plot2D::getGridData()
+	{
+		return this->gridData;
+	}
 
 
 	void Plot2D::plotGraph(bool isColor)
 	{
 		Mat dataflip;
 		flip(gridData, dataflip, 0);
+		int rate_x = plotImageSize.width / dataflip.cols;
+		int rate_y = plotImageSize.height / dataflip.rows;
+		plotImageSize = Size(dataflip.cols * rate_x, dataflip.rows * rate_y);
 		resize(dataflip, gridDataRes, plotImageSize, 0, 0, cv::INTER_LINEAR);
 		Mat barImageGray(Size(barWidth, plotImageSize.height), CV_8U);
 		for (int j = 0; j < plotImageSize.height; j++)
@@ -1822,16 +1828,19 @@ namespace cp
 			}
 		}
 
-		double z_min_temp, z_max_temp;
-		minMaxLoc(gridDataRes, &z_min_temp, &z_max_temp, &z_min_point, &z_max_point);
 		if (!isSetZMinMax)
 		{
+			double z_min_temp, z_max_temp;
+			minMaxLoc(gridDataRes, &z_min_temp, &z_max_temp, &z_min_point, &z_max_point);
 			z_min = z_min_temp;
 			z_max = z_max_temp;
 		}
 
-		Mat graphG;
-		normalize(gridDataRes, graphG, 255, 0, NORM_MINMAX, CV_8U);
+		Mat graphG(gridDataRes.size(), CV_8U);
+		for (int i = 0; i < gridDataRes.size().area(); i++)
+		{
+			graphG.at<uchar>(i) = cv::saturate_cast<uchar>(max(0.0, gridDataRes.at<double>(i) - z_min) / (z_max - z_min) * 255.0);
+		}
 
 		if (isColor)
 		{
@@ -2494,11 +2503,22 @@ namespace cp
 		}
 	}
 
+	void Plot2D::addIndex(int x, int y, double val)
+	{
+		if (
+			x < gridData.cols && x >= 0 &&
+			y < gridData.rows && y >= 0
+			)
+		{
+			gridData.at<double>(y, x) = val;
+		}
+	}
+
 	void Plot2D::add(double x, double y, double val)
 	{
-		int X = int((x - x_min) / x_interval);
-		int Y = int((y - y_min) / y_interval);
-		gridData.at<double>(Y, X) = val;
+		const int X = int((x - x_min) / x_interval);
+		const int Y = int((y - y_min) / y_interval);
+		addIndex(X, Y, val);
 	}
 
 #pragma endregion

@@ -26,7 +26,7 @@ void testCore(Mat& img)
 
 	//testHistogram(); return 0;
 	//testPlot(); return 0;
-	//testPlot2D(); return 0;
+	testPlot2D(); return;
 
 	//guiHazeRemoveTest();
 
@@ -217,7 +217,7 @@ int main(int argc, char** argv)
 	//Mat img = imread("img/barbara.png", 0);
 #pragma endregion
 
-	//testCore(img);
+	testCore(img);
 	//testImgproc(img);
 	//testStereo();
 	//testFilter(img)
