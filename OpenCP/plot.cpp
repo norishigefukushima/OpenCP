@@ -2554,7 +2554,7 @@ namespace cp
 			int resx = graph.cols / gridData.cols;
 			int resy = graph.rows / gridData.rows;
 			if (isGrid) drawGrid(graph, Point(plot_x * resx, plot_y * resy), COLOR_RED);
-			addLabelToGraph(isDrawingContour);
+			addLabelToGraph(isDrawingContour, keyState, isPlotMin, isPlotMax);
 
 			for (int i = 0; i < gridData.cols; i++)
 			{
