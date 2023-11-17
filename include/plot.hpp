@@ -28,6 +28,10 @@ namespace cp
 
 		std::string xlabel = "x";
 		std::string ylabel = "y";
+		std::string xlabel_subscript = "";
+		std::string ylabel_subscript = "";
+		bool isLabelXGreekLetter = false;
+		bool isLabelYGreekLetter = false;
 
 		int data_labelmax = 1;
 
@@ -152,6 +156,9 @@ namespace cp
 		void setKey(const KEY key_method);
 		void setXLabel(std::string xlabel);
 		void setYLabel(std::string ylabel);
+		void setXLabelGreekLetter(std::string greeksymbol, std::string subscript);
+		void setYLabelGreekLetter(std::string greeksymbol, std::string subscript);
+
 		void setGrid(int level = 0);//0: no grid, 1: div 4, 2: div 16
 		void setBackGoundColor(cv::Scalar cl);
 
@@ -298,7 +305,7 @@ namespace cp
 		cv::Mat gridDataRes;
 		int colormap = 2;
 		cv::Mat graph;
-		void plotGraph(bool isColor);
+		void plotGraph(bool isColor, cv::Mat& graph);
 
 		std::vector<std::string> contourLabels;
 		std::vector<double> contourThresh;
@@ -321,13 +328,15 @@ namespace cp
 		cv::Mat labelxImage;
 		cv::Mat labelyImage;
 		cv::Mat labelzImage;
-		void addLabelToGraph();
+		void addLabelToGraph(bool isDrawingContour, int keyState, bool isPlotMin, bool isPlotMax);
 		bool isPlotMax = false;
 		bool isPlotMin = false;
 		int maxColorIndex = 0;
 		int minColorIndex = 0;
+		int plot_x = 0;
+		int plot_y = 0;
 	public:
-		
+
 		Plot2D(cv::Size graph_size, double xmin, double xmax, double xstep, double ymin, double ymax, double ystep);
 		void add(double x, double y, double val);
 		void addIndex(int x, int y, double val);
