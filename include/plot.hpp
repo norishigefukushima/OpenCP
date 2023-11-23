@@ -303,7 +303,7 @@ namespace cp
 		cv::Point z_max_point;
 		cv::Mat gridData;
 		cv::Mat gridDataRes;
-		int colormap = 2;
+		int colormap = 20;
 		cv::Mat graph;
 		void plotGraph(bool isColor, cv::Mat& graph);
 
@@ -331,6 +331,7 @@ namespace cp
 		void addLabelToGraph(bool isDrawingContour, int keyState, bool isPlotMin, bool isPlotMax);
 		bool isPlotMax = false;
 		bool isPlotMin = false;
+		//bool isPlotMin = true;
 		int maxColorIndex = 0;
 		int minColorIndex = 0;
 		int plot_x = 0;

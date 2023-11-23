@@ -1864,10 +1864,10 @@ namespace cp
 			}
 		}
 
+		double z_min_temp, z_max_temp;
+		minMaxLoc(gridDataRes, &z_min_temp, &z_max_temp, &z_min_point, &z_max_point);
 		if (!isSetZMinMax)
 		{
-			double z_min_temp, z_max_temp;
-			minMaxLoc(gridDataRes, &z_min_temp, &z_max_temp, &z_min_point, &z_max_point);
 			z_min = z_min_temp;
 			z_max = z_max_temp;
 		}
@@ -2227,7 +2227,6 @@ namespace cp
 
 			return 0;
 		}
-
 	};
 
 	void embed(Mat& src, Mat& target, Point pt, const bool isCenteringX, const bool isCenteringY)
@@ -2311,7 +2310,7 @@ namespace cp
 		}
 		if (isPlotMin)
 		{
-			drawPlus(graph, z_min_point, 8, colorIndex[minColorIndex]);
+			drawPlus(graph, z_min_point, 8*3, colorIndex[minColorIndex]);
 		}
 
 		GraphTicksGenerator tickx(x_min, x_max, graph.cols, fontSize2, 4);
@@ -2388,6 +2387,23 @@ namespace cp
 		Rect rz = Rect(show.cols - labelzImage.cols - 2, 1, labelzImage.cols, labelzImage.rows);
 		labelzImage.copyTo(show(rz));
 
+
+		/*Mat infoImage = getTextImageQt(format("min:%5.2f,%5.2f,%5.2f, max:%5.2f,%5.2f,%5.2f",
+			gridData.at<double>(z_min_point), (z_min_point.x - x_min) * x_interval, (z_min_point.y - y_min) * y_interval, 
+			gridData.at<double>(z_max_point), (z_max_point.x - x_min) * x_interval, (z_max_point.y - y_min) * y_interval),
+			font, fontSize, Scalar::all(0), background_color);*/
+		//print_debug(z_min_point);
+		//print_debug(y_min);
+		//print_debug(y_interval);
+		/*const int y = gridDataRes.rows - 1 - z_min_point.y;
+		const double ratex = gridDataRes.cols / gridData.cols;
+		const double ratey = gridDataRes.rows / gridData.rows;
+		Mat infoImage = getTextImageQt(format("min:%5.2f=(%5.2f,%5.2f)",
+			gridDataRes.at<double>(Size(z_min_point.x, y)), z_min_point.x* x_interval/ratex + x_min, y* y_interval/ratey + y_min),
+			font, fontSize, Scalar::all(0), background_color); 
+		Rect ri = Rect(1, 1, infoImage.cols, infoImage.rows);
+		infoImage.copyTo(show(ri));*/
+		
 		//x
 		for (int i = 0; i < tickx.num_ticks; i++)
 		{
@@ -2506,7 +2522,7 @@ namespace cp
 		setTrackbarMin("width", wname2, 256);
 		createTrackbar("height", wname2, &plotImageSize.height, 1080);
 		setTrackbarMin("height", wname2, 256);
-		colormap = 18; createTrackbar("colormap", wname2, &colormap, 20);
+		createTrackbar("colormap", wname2, &colormap, 20);
 		plot_x = x_size / 2; createTrackbar("plot x", wname2, &plot_x, x_size - 1);
 		plot_y = y_size / 2; createTrackbar("plot y", wname2, &plot_y, y_size - 1);
 		//int minvalue = 30; createTrackbar("min", wname, &minvalue, 100);
@@ -2545,8 +2561,8 @@ namespace cp
 
 		ptx.setIsDrawMousePosition(false);
 		pty.setIsDrawMousePosition(false);
-		bool isGrid = true;
-		bool isDrawingContour = true;
+		bool isGrid = false;
+		bool isDrawingContour = false;
 		while (key != 'q')
 		{
 			//writeGraph(isColor, PLOT_ARG_MAX, minvalue, maxvalue, isMinMaxSet);
