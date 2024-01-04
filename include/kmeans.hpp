@@ -33,8 +33,9 @@ namespace cp
 			SIZE
 		};
 		double clustering(cv::InputArray _data, int K, cv::InputOutputArray _bestLabels, cv::TermCriteria criteria, int attempts, int flags, cv::OutputArray _centers, MeanFunction function = MeanFunction::Mean, Schedule schedule = Schedule::Auto);
+		void gui(cv::InputArray _data, int K, cv::InputOutputArray _bestLabels, cv::TermCriteria criteria, int attempts, int flags, cv::OutputArray _centers, MeanFunction function = MeanFunction::Mean, Schedule schedule = Schedule::Auto);
 	private:
-		float sigma = 0.f;//for weightedMeanCentroid
+		float sigma = 30.f;//for weightedMeanCentroid
 		float signal_max = 255.f;//for weightedMeanCentroid
 		int weightTableSize = 0;//for weightedMeanCentroid
 

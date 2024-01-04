@@ -1,4 +1,7 @@
 #include "kmeans.hpp"
+#include "stereo_core.hpp" //for RGB histogram
+#include "pointcloud.hpp"
+
 #include "inlineSIMDFunctions.hpp"
 using namespace std;
 using namespace cv;
@@ -48,6 +51,319 @@ namespace cp
 		}
 
 		return ret;
+	}
+
+	static void onMouseKmeans3D(int event, int x, int y, int flags, void* param)
+	{
+		Point* ret = (Point*)param;
+
+		if (flags == EVENT_FLAG_LBUTTON)
+		{
+			ret->x = x;
+			ret->y = y;
+		}
+	}
+
+	static void projectPoints(const Mat& xyz, const Mat& R, const Mat& t, const Mat& K, vector<Point2f>& dest, const bool isRotationThenTranspose)
+	{
+		float* data = (float*)xyz.ptr<float>(0);
+		Point2f* dst = &dest[0];
+		int size2 = xyz.size().area();
+		int i;
+		float tt[3];
+		tt[0] = (float)t.at<double>(0, 0);
+		tt[1] = (float)t.at<double>(1, 0);
+		tt[2] = (float)t.at<double>(2, 0);
+
+		float r[3][3];
+		if (isRotationThenTranspose)
+		{
+			const float f00 = (float)K.at<double>(0, 0);
+			const float xc = (float)K.at<double>(0, 2);
+			const float f11 = (float)K.at<double>(1, 1);
+			const float yc = (float)K.at<double>(1, 2);
+
+			r[0][0] = (float)R.at<double>(0, 0);
+			r[0][1] = (float)R.at<double>(0, 1);
+			r[0][2] = (float)R.at<double>(0, 2);
+
+			r[1][0] = (float)R.at<double>(1, 0);
+			r[1][1] = (float)R.at<double>(1, 1);
+			r[1][2] = (float)R.at<double>(1, 2);
+
+			r[2][0] = (float)R.at<double>(2, 0);
+			r[2][1] = (float)R.at<double>(2, 1);
+			r[2][2] = (float)R.at<double>(2, 2);
+
+			for (i = 0; i < size2; i++)
+			{
+				const float x = data[0];
+				const float y = data[1];
+				//const float z = data[2];
+				const float z = 0.f;
+
+				const float px = r[0][0] * x + r[0][1] * y + r[0][2] * z + tt[0];
+				const float py = r[1][0] * x + r[1][1] * y + r[1][2] * z + tt[1];
+				const float pz = r[2][0] * x + r[2][1] * y + r[2][2] * z + tt[2];
+
+				const float div = 1.f / pz;
+
+				dst->x = (f00 * px + xc * pz) * div;
+				dst->y = (f11 * py + yc * pz) * div;
+
+				data += 3;
+				dst++;
+			}
+		}
+		else
+		{
+			Mat kr = K * R;
+
+			r[0][0] = (float)kr.at<double>(0, 0);
+			r[0][1] = (float)kr.at<double>(0, 1);
+			r[0][2] = (float)kr.at<double>(0, 2);
+
+			r[1][0] = (float)kr.at<double>(1, 0);
+			r[1][1] = (float)kr.at<double>(1, 1);
+			r[1][2] = (float)kr.at<double>(1, 2);
+
+			r[2][0] = (float)kr.at<double>(2, 0);
+			r[2][1] = (float)kr.at<double>(2, 1);
+			r[2][2] = (float)kr.at<double>(2, 2);
+
+			for (i = 0; i < size2; i++)
+			{
+				const float x = data[0] + tt[0];
+				const float y = data[1] + tt[1];
+				const float z = data[2] + tt[2];
+
+				const float div = 1.f / (r[2][0] * x + r[2][1] * y + r[2][2] * z);
+
+				dst->x = (r[0][0] * x + r[0][1] * y + r[0][2] * z) * div;
+				dst->y = (r[1][0] * x + r[1][1] * y + r[1][2] * z) * div;
+
+				data += 3;
+				dst++;
+			}
+		}
+	}
+
+	bool loop(string wname, Size size, Mat& data, Mat& label, Mat& center, const int K)
+	{
+		namedWindow(wname);
+		static int f = 1000;  createTrackbar("f", wname, &f, 2000);
+		static int z = 1250; createTrackbar("z", wname, &z, 2000);
+		static int pitch = 90; createTrackbar("pitch", wname, &pitch, 360);
+		static int roll = 0; createTrackbar("roll", wname, &roll, 180);
+		static int yaw = 90; createTrackbar("yaw", wname, &yaw, 360);
+		static int color = 9; createTrackbar("color", wname, &color, 20);
+		static Point ptMouse = Point(cvRound((size.width - 1) * 0.75), cvRound((size.height - 1) * 0.25));
+
+		cv::setMouseCallback(wname, (MouseCallback)onMouseKmeans3D, (void*)&ptMouse);
+
+		//project RGB2XYZ
+		Mat src = label.clone();
+		src *= 255 / K;
+		src.convertTo(src, CV_8U);
+		Mat rgb, xyz;
+		data.convertTo(rgb, CV_32F);
+		//cout << rgb.cols << endl;
+		//cout << rgb.rows << endl;
+		//if(rgb.rows==3) 
+		if(rgb.channels()==3) rgb = rgb.reshape(3, rgb.cols* rgb.rows);
+		else rgb = rgb.reshape(3, rgb.cols * rgb.rows/3);
+
+		xyz = rgb.clone();
+		Mat centerRGB = center.clone();
+		//if(cols)
+		centerRGB = centerRGB.reshape(3);
+		Mat centerxyz = centerRGB.clone();
+		vector<Point2f> pt(rgb.size().area());
+
+		//set up etc plots
+		Mat guide, guideDest;
+		/*guide.push_back(Point3f(0.f, 0.f, 0.f)); //rgbzero;
+		guide.push_back(Point3f(0.f, 0.f, 255.f)); //rmax
+		guide.push_back(Point3f(0.f, 255.f, 0.f)); //gmax
+		guide.push_back(Point3f(255.f, 0.f, 0.f)); //rmax
+		guide.push_back(Point3f(255.f, 255.f, 255.f)); //rgbmax
+		guide.push_back(Point3f(0.f, 255.f, 255.f)); //grmax
+		guide.push_back(Point3f(255.f, 0.f, 255.f)); //brmax
+		guide.push_back(Point3f(255.f, 255.f, 0.f)); //bgmax*/
+
+		guide.push_back(Point3f(-127.5f, -127.5f, -127.5f)); //rgbzero;
+		guide.push_back(Point3f(-127.5, -127.5, 127.5)); //rmax
+		guide.push_back(Point3f(-127.5, 127.5, -127.5)); //gmax
+		guide.push_back(Point3f(127.5, -127.5, -127.5)); //rmax
+		guide.push_back(Point3f(127.5, 127.5, 127.5)); //rgbmax
+		guide.push_back(Point3f(-127.5, 127.5, 127.5)); //grmax
+		guide.push_back(Point3f(127.5, -127.5, 127.5)); //brmax
+		guide.push_back(Point3f(127.5, 127.5, -127.5)); //bgmax
+
+		vector<Point2f> guidept(guide.rows);
+		vector<Point2f> centerpt(center.rows);
+		//vector<Point2f> additionalpt(additionalPoints.rows);
+		//vector<Point2f> additional_start_line(additionalStartLines.rows);
+		//vector<Point2f> additional_end_line(additionalEndLines.rows);
+
+		int key = 0;
+		Mat show = Mat::zeros(size, CV_8UC3);
+		Mat k = Mat::eye(3, 3, CV_64F);
+		Mat R = Mat::eye(3, 3, CV_64F);
+		Mat t = Mat::zeros(3, 1, CV_64F);
+		Mat colorIndex;
+
+		//rotate & plot additionalPoint
+/*if (!additionalPoints.empty())
+{
+	cp::moveXYZ(additionalPoints, additionalPointsDest, rot, Mat::zeros(3, 1, CV_64F), true);
+	if (sw_projection == 0) projectPointsParallel(additionalPointsDest, R, t, k, additionalpt, true);
+	if (sw_projection == 1) projectPoints(additionalPointsDest, R, t, k, additionalpt, true);
+}*/
+
+/*if (!additionalStartLines.empty())
+{
+	cp::moveXYZ(additionalStartLines, additionalStartLinesDest, rot, Mat::zeros(3, 1, CV_64F), true);
+	cp::moveXYZ(additionalEndLines, additionalEndLinesDest, rot, Mat::zeros(3, 1, CV_64F), true);
+	if (sw_projection == 0) projectPointsParallel(additionalStartLinesDest, R, t, k, additional_start_line, true);
+	if (sw_projection == 1) projectPoints(additionalStartLinesDest, R, t, k, additional_start_line, true);
+	if (sw_projection == 0) projectPointsParallel(additionalEndLinesDest, R, t, k, additional_end_line, true);
+	if (sw_projection == 1) projectPoints(additionalEndLinesDest, R, t, k, additional_end_line, true);
+}*/
+		while (key != 'q')
+		{
+			//cout <<"xyz  :"<< rgb.cols << "," << rgb.rows << "," << rgb.channels() << endl;
+			//cout <<"index: "<< src.cols << "," << src.rows << "," << src.channels() << endl;
+			cv::applyColorMap(src, colorIndex, color);
+
+			pitch = (int)(180 * (double)ptMouse.y / (double)(size.height - 1) + 0.5);
+			yaw = (int)(180 * (double)ptMouse.x / (double)(size.width - 1) + 0.5);
+			setTrackbarPos("pitch", wname, pitch);
+			setTrackbarPos("yaw", wname, yaw);
+
+			//intrinsic
+			k.at<double>(0, 2) = (size.width - 1) * 0.5;
+			k.at<double>(1, 2) = (size.height - 1) * 0.5;
+			k.at<double>(0, 0) = show.cols * 0.001 * f;
+			k.at<double>(1, 1) = show.cols * 0.001 * f;
+			t.at<double>(2) = z - 800;
+
+			//rotate & plot RGB plots
+			Mat rot;
+			cp::Eular2Rotation(pitch - 90.0, roll - 90, yaw - 90, rot);
+			Mat tt = Mat::ones(3, 1, CV_64F);
+			tt.at<double>(0) = -127.5;
+			tt.at<double>(1) = -127.5;
+			tt.at<double>(2) = -127.5;
+			cp::moveXYZ(rgb, xyz, rot, tt, false);
+			projectPoints(xyz, R, t, k, pt, true);
+
+			//rotate & plot guide information
+			cp::moveXYZ(guide, guideDest, rot, Mat::zeros(3, 1, CV_64F), true);
+			projectPoints(guideDest, R, t, k, guidept, true);
+
+			/*cout << center.cols << endl;
+			cout << center.rows << endl;
+			cout << center.channels() << endl;*/
+			cp::moveXYZ(centerRGB, centerxyz, rot, tt, false);
+			projectPoints(centerxyz, R, t, k, centerpt, true);
+
+
+			//draw lines for etc points
+			Point rgbzero = Point(cvRound(guidept[0].x), cvRound(guidept[0].y));
+			Point rmax = Point(cvRound(guidept[1].x), cvRound(guidept[1].y));
+			Point gmax = Point(cvRound(guidept[2].x), cvRound(guidept[2].y));
+			Point bmax = Point(cvRound(guidept[3].x), cvRound(guidept[3].y));
+			Point bgrmax = Point(cvRound(guidept[4].x), cvRound(guidept[4].y));
+			Point grmax = Point(cvRound(guidept[5].x), cvRound(guidept[5].y));
+			Point brmax = Point(cvRound(guidept[6].x), cvRound(guidept[6].y));
+			Point bgmax = Point(cvRound(guidept[7].x), cvRound(guidept[7].y));
+			Point ezero = Point(cvRound(guidept[8].x), cvRound(guidept[8].y));
+			line(show, bgmax, bgrmax, COLOR_WHITE);
+			line(show, brmax, bgrmax, COLOR_WHITE);
+			line(show, grmax, bgrmax, COLOR_WHITE);
+			line(show, bgmax, bmax, COLOR_WHITE);
+			line(show, brmax, bmax, COLOR_WHITE);
+			line(show, brmax, rmax, COLOR_WHITE);
+			line(show, grmax, rmax, COLOR_WHITE);
+			line(show, grmax, gmax, COLOR_WHITE);
+			line(show, bgmax, gmax, COLOR_WHITE);
+			circle(show, rgbzero, 3, COLOR_WHITE, cv::FILLED);
+			arrowedLine(show, rgbzero, rmax, COLOR_RED, 2);
+			arrowedLine(show, rgbzero, gmax, COLOR_GREEN, 2);
+			arrowedLine(show, rgbzero, bmax, COLOR_BLUE, 2);
+			//arrowedLine(show, rgbzero, bgrmax, Scalar::all(50), 1);
+
+			//rendering RGB plots
+			for (int i = 0; i < src.size().area(); i++)
+			{
+				const int x = cvRound(pt[i].x);
+				const int y = cvRound(pt[i].y);
+				if (x >= 0 && x < show.cols && y >= 0 && y < show.rows)
+				{
+					show.at<Vec3b>(Point(x, y)) = colorIndex.at<Vec3b>(i);
+				}
+			}
+
+			for (int i = 0; i < centerxyz.size().area(); i++)
+			{
+				const int x = cvRound(centerpt[i].x);
+				const int y = cvRound(centerpt[i].y);
+				if (x >= 0 && x < show.cols && y >= 0 && y < show.rows)
+				{
+					circle(show, Point(x, y), 5, COLOR_WHITE, 3);
+				}
+			}
+
+			imshow(wname, show);
+			key = waitKey(1);
+			if (key == 's')
+			{
+				cout << "write rgb_histogram.png" << endl;
+				imwrite("rgb_histogram.png", show);
+			}
+			if (key == 't')
+			{
+				ptMouse.x = cvRound((size.width - 1) * 0.5);
+				ptMouse.y = cvRound((size.height - 1) * 0.5);
+			}
+			if (key == 'r')
+			{
+				ptMouse.x = cvRound((size.width - 1) * 0.75);
+				ptMouse.y = cvRound((size.height - 1) * 0.25);
+			}
+			if (key == '?')
+			{
+				cout << "v: switching rendering method" << endl;
+				cout << "r: reset viewing direction for parallel view" << endl;
+				cout << "t: reset viewing direction for paspective view" << endl;
+				cout << "s: save 3D RGB plot" << endl;
+			}
+			if (key == 'w')
+			{
+				return true;
+			}
+			show.setTo(0);
+
+			//if (!isWait)break;
+		}
+		return false;
+	}
+
+	void KMeans::gui(InputArray _data, int K, InputOutputArray _bestLabels, TermCriteria criteria, int attempts, int flags, OutputArray _centers, MeanFunction function, Schedule schedule)
+	{
+		cv::Size size = cv::Size(512, 512);
+		string wname = "kmeans";
+		clustering(_data, K, _bestLabels, cv::TermCriteria(criteria.type, 1, criteria.epsilon), attempts, flags, _centers, function, schedule);
+		loop(wname, size, _data.getMat(), _bestLabels.getMat(), _centers.getMat(), K);
+
+		for (int i = 0; i < i < criteria.maxCount; i++)
+		{
+			cout << i << endl;
+			clustering(_data, K, _bestLabels, cv::TermCriteria(criteria.type, 1, criteria.epsilon), attempts, cv::KMEANS_USE_INITIAL_LABELS, _centers, function, schedule);
+			bool isexit = loop(wname, size, _data.getMat(), _bestLabels.getMat(), _centers.getMat(), K);
+			if (isexit) return;
+		}
 	}
 
 	double kmeans(InputArray _data, int K, InputOutputArray _bestLabels, TermCriteria criteria, int attempts, int flags, OutputArray _centers)
@@ -400,7 +716,7 @@ namespace cp
 			{
 				dest_centroid.ptr<float>(arg_k)[d] += wi * dataTop[d][i];
 			}
-		}
+	}
 #else
 		const float* centroidPtr = src_centroid.ptr<float>();//dim*K
 		const __m256i mtsize = _mm256_set1_epi32(tableSize - 1);
@@ -415,10 +731,15 @@ namespace cp
 				__m256 mc = _mm256_i32gather_ps(centroidPtr, _mm256_add_epi32(midx, _mm256_set1_epi32(d)), 4);
 				mc = _mm256_sub_ps(mc, _mm256_load_ps(&dataTop[d][i]));
 				mdist = _mm256_fmadd_ps(mc, mc, mdist);
+				//mdist = _mm256_add_ps(_mm256_abs_ps(mc), mdist);
 			}
-
+			//__m256i a = _mm256_min_epi32(mtsize, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist)));
+			//print_m256i_int(a);
+			// 
 			//__m256 mwi = _mm256_i32gather_ps(Table, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist)), 4);
-			__m256 mwi = _mm256_i32gather_ps(Table, _mm256_min_epi32(mtsize, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist))), 4);
+			//__m256 mwi = _mm256_i32gather_ps(Table, _mm256_min_epi32(mtsize, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist))), 4);
+			__m256 mwi = _mm256_i32gather_ps(Table, _mm256_max_epi32(_mm256_setzero_si256(), _mm256_min_epi32(mtsize, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist)))), 4);
+			//__m256 mwi = _mm256_i32gather_ps(Table, _mm256_max_epi32(_mm256_setzero_si256(), _mm256_min_epi32(mtsize, _mm256_cvtps_epi32(mdist))), 4);
 			for (int v = 0; v < 8; v++)
 			{
 				const int arg_k = ((int*)&marg_k)[v];
@@ -433,7 +754,7 @@ namespace cp
 			}
 		}
 #endif 
-	}
+}
 
 	//N*dims
 	void KMeans::harmonicMeanCentroid(Mat& data_points, const int* labels, const Mat& src_centroid, Mat& dest_centroid, float* centroid_weight, int* counters)
@@ -887,7 +1208,6 @@ namespace cp
 				weight_table[i] = (float)pow(i, min(sigma, 10.f)) + FLT_EPSILON;
 			}
 		}
-
 		if (function == MeanFunction::Gauss)
 		{
 			for (int i = 0; i < weightTableSize; i++)
@@ -2160,5 +2480,4 @@ namespace cp
 		return 0.0;
 	}
 #pragma endregion
-#
-}
+	}
