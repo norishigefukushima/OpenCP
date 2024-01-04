@@ -43,6 +43,7 @@ namespace cp
 
 	public:
 		bool isSSE;
+		bool isRGBDCT = true;
 		void cvtColorOrder32F_BGR2BBBBGGGGRRRR(const cv::Mat& src, cv::Mat& dest);
 		void cvtColorOrder32F_BBBBGGGGRRRR2BGR(const cv::Mat& src, cv::Mat& dest);
 
