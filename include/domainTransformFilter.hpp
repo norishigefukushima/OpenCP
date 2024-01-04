@@ -25,6 +25,8 @@ namespace cp
 		DTF_SLOWEST
 	}DTF_IMPLEMENTATION;
 
+	//convolutionType (0: DTF_RF, 1: DTF_NC, 2: DTF_IC)
 	CP_EXPORT void domainTransformFilter(cv::InputArray srcImage, cv::OutputArray destImage, const float sigma_r, const float sigma_s, const int maxiter, const int norm = DTF_L1, const int convolutionType = DTF_RF, const int implementation = DTF_SLOWEST);
+	//convolutionType (0: DTF_RF, 1: DTF_NC, 2: DTF_IC)
 	CP_EXPORT void domainTransformFilter(cv::InputArray srcImage, cv::InputArray guideImage, cv::OutputArray destImage, const float sigma_r, const float sigma_s, const int maxiter, const int norm = DTF_L1, const int convolutionType = DTF_RF, const int implementation = DTF_SLOWEST);
 }
