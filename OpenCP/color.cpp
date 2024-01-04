@@ -1235,7 +1235,7 @@ namespace cp
 
 	void cvtColorBGR8u2BGRA32f(const Mat& src, Mat& dest, const float alpha)
 	{
-		if (dest.empty())dest.create(src.size(), CV_32FC4);
+		if (dest.empty()) dest.create(src.size(), CV_32FC4);
 
 		int size = src.size().area();
 		uchar* s = (uchar*)src.ptr<uchar>(0);
@@ -3389,6 +3389,7 @@ namespace cp
 	void cvtColorPCA(InputArray src_, OutputArray dest_, const int dest_channels, Mat& evec, Mat& eval, Mat& mean)
 	{
 		CV_Assert(src_.depth() == CV_32F);
+		
 
 		if (src_.channels() == 1)
 		{
@@ -3401,6 +3402,7 @@ namespace cp
 
 		Mat src = src_.getMat();
 		Mat dest = dest_.getMat();
+		CV_Assert(src.data != dest.data);
 		Mat cov;
 		if (channels <= 3 && src_.channels() <= 3)
 		{
@@ -3409,11 +3411,11 @@ namespace cp
 				if (src.channels() == 2) calcCovarMatrix2_(src, cov, mean);
 				if (src.channels() == 3) calcCovarMatrix3_(src, cov, mean);
 			}
-
 			eigen(cov, eval, evec);
 			eigenVecConvert(evec);
 			Mat transmat;
 			evec(Rect(0, 0, evec.cols, channels)).convertTo(transmat, CV_32F);
+			//print_matinfo(transmat);
 			{
 				if (src.channels() == 2) projectPCA_2xn(src, dest, transmat);
 				else if (src.channels() == 3) projectPCA_3xN(src, dest, transmat);
