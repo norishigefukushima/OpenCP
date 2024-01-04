@@ -16,7 +16,7 @@ void testCore(Mat& img)
 	//webPAnimationTest(); return 0;
 	//guiPixelizationTest();
 	//testStreamConvert8U(); return 0;
-	//testKMeans(img); return 0;
+	testKMeans(img); return;
 	//testTiling(img); return 0;
 	//copyMakeBorderTest(img); return 0;
 	//testSplitMerge(img); return 0;
@@ -40,7 +40,7 @@ void testCore(Mat& img)
 	//testRGBHistogram2();
 	//testTimer(img);
 	//testMatInfo(); return 0;
-	testStat(); return;
+	//testStat(); return;
 	//testDestinationTimePrediction(img); return 0;
 	//testAlphaBlend(left, right);
 	//testAlphaBlendMask(left, right);
@@ -198,7 +198,7 @@ int main(int argc, char** argv)
 {
 	//cv::ipp::setUseIPP(false);
 	//cv::setUseOptimized(false);
-	const bool isShowInfo = true;
+	const bool isShowInfo = false;
 	if (isShowInfo)
 	{
 		cout << getInformation() << endl;
@@ -217,7 +217,7 @@ int main(int argc, char** argv)
 	//Mat img = imread("img/barbara.png", 0);
 #pragma endregion
 
-	//testCore(img);
+	testCore(img);
 	//testImgproc(img);
 	//testStereo();
 	//testFilter(img)

@@ -126,9 +126,6 @@
     <ClCompile Include="bitconvert.cpp">
       <Filter>ソース ファイル\core</Filter>
     </ClCompile>
-    <ClCompile Include="domainTransformFilter.cpp">
-      <Filter>ソース ファイル\filter</Filter>
-    </ClCompile>
     <ClCompile Include="arithmetic.cpp">
       <Filter>ソース ファイル\core</Filter>
     </ClCompile>
@@ -644,6 +641,9 @@
     </ClCompile>
     <ClCompile Include="guidedImageUpsampleAlt.cpp">
       <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClCompile>
+    <ClCompile Include="domainTransformFilter.cpp">
+      <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

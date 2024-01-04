@@ -94,7 +94,7 @@ namespace cp
 		}
 
 		// add a last fake frame to signal the last duration
-		WebPAnimEncoderAdd(enc, NULL, timems_per_frame, NULL);
+		WebPAnimEncoderAdd(enc, NULL, timems_per_frame* src.size(), NULL);
 
 		WebPData webp_data = { 0 };
 		WebPDataInit(&webp_data);
