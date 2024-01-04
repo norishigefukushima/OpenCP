@@ -26,7 +26,7 @@ void testCore(Mat& img)
 
 	//testHistogram(); return 0;
 	//testPlot(); return 0;
-	//testPlot2D(); return 0;
+	testPlot2D(); return;
 
 	//guiHazeRemoveTest();
 
