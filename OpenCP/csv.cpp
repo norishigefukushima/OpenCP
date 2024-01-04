@@ -206,18 +206,18 @@ namespace cp
 		int c = 0;
 		vector<double> v;
 		//int start = 3;//with BOM
-		int start = 0;//with BOM
+		int start = 0;//without BOM
 		for (size_t i = start; i < ret; i++)
 		{
 			if (str[i] == ',')
 			{
 				localBuffer[c] = '\0';
 				const double d = atof(localBuffer);
-				if (d < 2)
+				/*if (d < 2)
 				{
 					cout << i << endl;
 					cout << d << endl; getchar();
-				}
+				}*/
 				c = 0;
 				v.push_back(d);
 			}
