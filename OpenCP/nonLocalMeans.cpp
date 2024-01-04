@@ -13,7 +13,8 @@ namespace cp
 	{
 		return _mm_castps_si128(_mm_movelh_ps(_mm_castsi128_ps(a), _mm_castsi128_ps(b)));
 	}
-
+#define _mm256_fastsqrt_ps _mm256_sqrt_ps
+	
 #pragma region NLM no optimization
 	template <class srcType>
 	class NonlocalMeansFilterNoOptimizationInvorker_ : public cv::ParallelLoopBody
@@ -1092,26 +1093,25 @@ namespace cp
 									}
 
 									const float* rptr = sptr2 + imstep * (tr_y + l) + (tr_x + k);
-
-									const __m256 mrw0 = _mm256_i32gather_ps(range_weight, _mm256_cvtps_epi32(_mm256_fastsqrt_ps(mdist0)), 4);
+									const __m256 mrw0 = _mm256_i32gather_ps(range_weight, _mm256_cvttps_epi32(_mm256_fastsqrt_ps(mdist0)), 4);
 									mb0 = _mm256_fmadd_ps(mrw0, _mm256_lddqu_ps(rptr), mb0);
 									mg0 = _mm256_fmadd_ps(mrw0, _mm256_lddqu_ps(rptr + colorstep), mg0);
 									mr0 = _mm256_fmadd_ps(mrw0, _mm256_lddqu_ps(rptr + colorstep2), mr0);
 									mw0 = _mm256_add_ps(mrw0, mw0);
 
-									const __m256 mrw1 = _mm256_i32gather_ps(range_weight, _mm256_cvtps_epi32(_mm256_fastsqrt_ps(mdist1)), 4);
+									const __m256 mrw1 = _mm256_i32gather_ps(range_weight, _mm256_cvttps_epi32(_mm256_fastsqrt_ps(mdist1)), 4);
 									mb1 = _mm256_fmadd_ps(mrw1, _mm256_lddqu_ps(rptr + 8), mb1);
 									mg1 = _mm256_fmadd_ps(mrw1, _mm256_lddqu_ps(rptr + 8 + colorstep), mg1);
 									mr1 = _mm256_fmadd_ps(mrw1, _mm256_lddqu_ps(rptr + 8 + colorstep2), mr1);
 									mw1 = _mm256_add_ps(mrw1, mw1);
 
-									const __m256 mrw2 = _mm256_i32gather_ps(range_weight, _mm256_cvtps_epi32(_mm256_fastsqrt_ps(mdist2)), 4);
+									const __m256 mrw2 = _mm256_i32gather_ps(range_weight, _mm256_cvttps_epi32(_mm256_fastsqrt_ps(mdist2)), 4);
 									mb2 = _mm256_fmadd_ps(mrw2, _mm256_lddqu_ps(rptr + 16), mb2);
 									mg2 = _mm256_fmadd_ps(mrw2, _mm256_lddqu_ps(rptr + 16 + colorstep), mg2);
 									mr2 = _mm256_fmadd_ps(mrw2, _mm256_lddqu_ps(rptr + 16 + colorstep2), mr2);
 									mw2 = _mm256_add_ps(mrw2, mw2);
 
-									const __m256 mrw3 = _mm256_i32gather_ps(range_weight, _mm256_cvtps_epi32(_mm256_fastsqrt_ps(mdist3)), 4);
+									const __m256 mrw3 = _mm256_i32gather_ps(range_weight, _mm256_cvttps_epi32(_mm256_fastsqrt_ps(mdist3)), 4);
 									mb3 = _mm256_fmadd_ps(mrw3, _mm256_lddqu_ps(rptr + 24), mb3);
 									mg3 = _mm256_fmadd_ps(mrw3, _mm256_lddqu_ps(rptr + 24 + colorstep), mg3);
 									mr3 = _mm256_fmadd_ps(mrw3, _mm256_lddqu_ps(rptr + 24 + colorstep2), mr3);
@@ -1583,7 +1583,10 @@ namespace cp
 
 		virtual void operator()(const cv::Range& r) const
 		{
-			if (patchWindowSizeX == 3 && patchWindowSizeY == 3) unroll4_<3, 3>(r);
+			if (patchWindowSizeX == 3 && patchWindowSizeY == 3)
+			{
+				unroll4_<3, 3>(r);
+			}
 			else if (patchWindowSizeX == 5 && patchWindowSizeY == 5) unroll4_<5, 5>(r);
 			else if (patchWindowSizeX == 7 && patchWindowSizeY == 7) unroll4_<7, 7>(r);
 			else unroll4(r);
@@ -1686,6 +1689,7 @@ namespace cp
 		}
 
 		Mat(dst(Rect(0, 0, src.cols, src.rows))).copyTo(dest);
+		//cp::guiAlphaBlend(src, dest);
 		_mm_free(range_weight);
 	}
 
@@ -5586,8 +5590,8 @@ namespace cp
 			const int patchSize = patchWindowSizeX * patchWindowSizeY;
 			const float tdiv = 1.f / (float)(patchSize);//templete square div
 			const __m256 mtdiv = _mm256_set1_ps(tdiv);
-
-			if (dest->channels() == 3)
+			const int gch = gim->size().area() / dest->size().area();
+			if (dest->channels() == 3 && gch == 3)
 			{
 				const int colorstep = im->size().area() / 3;
 				const int colorstep2 = colorstep * 2;
@@ -5771,7 +5775,7 @@ namespace cp
 					}//i
 				}//j
 			}
-			else if (dest->channels() == 1)
+			else if (dest->channels() == 1 && gch == 3)
 			{
 				for (int j = r.start; j < r.end; j++)
 				{
@@ -5894,6 +5898,175 @@ namespace cp
 						d += 32;
 					}//i
 				}//j
+			}
+			else if (dest->channels() == 3 && gch == 1)
+			{
+				const int colorstep = im->size().area() / 3;
+				const int colorstep2 = colorstep * 2;
+				for (int j = r.start; j < r.end; j++)
+				{
+					float* d = dest->ptr<float>(j);
+					const float* tprt_ = gim->ptr<float>(sr_y + j) + sr_x;
+					const float* sptr2_ = gim->ptr<float>(j);
+					const float* rptr2_ = im->ptr<float>(j);
+					for (int i = 0; i < dest->cols; i += 32)
+					{
+						__m256 mr0 = _mm256_setzero_ps();
+						__m256 mg0 = _mm256_setzero_ps();
+						__m256 mb0 = _mm256_setzero_ps();
+						__m256 mw0 = _mm256_setzero_ps();
+						__m256 mr1 = _mm256_setzero_ps();
+						__m256 mg1 = _mm256_setzero_ps();
+						__m256 mb1 = _mm256_setzero_ps();
+						__m256 mw1 = _mm256_setzero_ps();
+						__m256 mr2 = _mm256_setzero_ps();
+						__m256 mg2 = _mm256_setzero_ps();
+						__m256 mb2 = _mm256_setzero_ps();
+						__m256 mw2 = _mm256_setzero_ps();
+						__m256 mr3 = _mm256_setzero_ps();
+						__m256 mg3 = _mm256_setzero_ps();
+						__m256 mb3 = _mm256_setzero_ps();
+						__m256 mw3 = _mm256_setzero_ps();
+
+						//kernel loop
+						const float* tprt = tprt_ + i;
+						const float* sptr2 = sptr2_ + i;
+						const float* rptr2 = rptr2_ + i;
+						int sindex = 0;
+						for (int l = kernelWindowSizeY; l--;)
+						{
+							const float* sptr = sptr2 + imstep * (l);
+							for (int k = kernelWindowSizeX; k--;)
+							{
+								//patch loop
+								const float* t = tprt;
+								const float* s = (sptr + k);
+								if constexpr (norm == 1) // computing color L1 norm
+								{
+									__m256 mdist0 = _mm256_setzero_ps();
+									__m256 mdist1 = _mm256_setzero_ps();
+									__m256 mdist2 = _mm256_setzero_ps();
+									__m256 mdist3 = _mm256_setzero_ps();
+									for (int n = patchWindowSizeY; n--;)
+									{
+										for (int m = patchWindowSizeX; m--;)
+										{
+											mdist0 = _mm256_add_ps(mdist0, _mm256_abs_ps(_mm256_sub_ps(_mm256_lddqu_ps(s), _mm256_lddqu_ps(t))));
+											mdist1 = _mm256_add_ps(mdist1, _mm256_abs_ps(_mm256_sub_ps(_mm256_lddqu_ps(s + 8), _mm256_lddqu_ps(t + 8))));
+											mdist2 = _mm256_add_ps(mdist2, _mm256_abs_ps(_mm256_sub_ps(_mm256_lddqu_ps(s + 16), _mm256_lddqu_ps(t + 16))));
+											mdist3 = _mm256_add_ps(mdist3, _mm256_abs_ps(_mm256_sub_ps(_mm256_lddqu_ps(s + 24), _mm256_lddqu_ps(t + 24))));
+
+											s++, t++;
+										}
+										t += cstep;
+										s += cstep;
+									}
+
+									const float* rptr = rptr2 + imstep * (tr_y + l) + (tr_x + k);
+									const __m256 sw = _mm256_set1_ps(space_weight[sindex++]);
+
+									const __m256 mrw0 = _mm256_mul_ps(sw, _mm256_i32gather_ps(range_weight, _mm256_cvtps_epi32(_mm256_mul_ps(mdist0, mtdiv)), 4));
+									mb0 = _mm256_fmadd_ps(mrw0, _mm256_lddqu_ps(rptr), mb0);
+									mg0 = _mm256_fmadd_ps(mrw0, _mm256_lddqu_ps(rptr + colorstep), mg0);
+									mr0 = _mm256_fmadd_ps(mrw0, _mm256_lddqu_ps(rptr + colorstep2), mr0);
+									mw0 = _mm256_add_ps(mrw0, mw0);
+
+									const __m256 mrw1 = _mm256_mul_ps(sw, _mm256_i32gather_ps(range_weight, _mm256_cvtps_epi32(_mm256_mul_ps(mdist1, mtdiv)), 4));
+									mb1 = _mm256_fmadd_ps(mrw1, _mm256_lddqu_ps(rptr + 8), mb1);
+									mg1 = _mm256_fmadd_ps(mrw1, _mm256_lddqu_ps(rptr + 8 + colorstep), mg1);
+									mr1 = _mm256_fmadd_ps(mrw1, _mm256_lddqu_ps(rptr + 8 + colorstep2), mr1);
+									mw1 = _mm256_add_ps(mrw1, mw1);
+
+									const __m256 mrw2 = _mm256_mul_ps(sw, _mm256_i32gather_ps(range_weight, _mm256_cvtps_epi32(_mm256_mul_ps(mdist2, mtdiv)), 4));
+									mb2 = _mm256_fmadd_ps(mrw2, _mm256_lddqu_ps(rptr + 16), mb2);
+									mg2 = _mm256_fmadd_ps(mrw2, _mm256_lddqu_ps(rptr + 16 + colorstep), mg2);
+									mr2 = _mm256_fmadd_ps(mrw2, _mm256_lddqu_ps(rptr + 16 + colorstep2), mr2);
+									mw2 = _mm256_add_ps(mrw2, mw2);
+
+									const __m256 mrw3 = _mm256_mul_ps(sw, _mm256_i32gather_ps(range_weight, _mm256_cvtps_epi32(_mm256_mul_ps(mdist3, mtdiv)), 4));
+									mb3 = _mm256_fmadd_ps(mrw3, _mm256_lddqu_ps(rptr + 24), mb3);
+									mg3 = _mm256_fmadd_ps(mrw3, _mm256_lddqu_ps(rptr + 24 + colorstep), mg3);
+									mr3 = _mm256_fmadd_ps(mrw3, _mm256_lddqu_ps(rptr + 24 + colorstep2), mr3);
+									mw3 = _mm256_add_ps(mrw3, mw3);
+								}
+								else // computing color L2 norm
+								{
+									__m256 mdist0 = _mm256_setzero_ps();
+									__m256 mdist1 = _mm256_setzero_ps();
+									__m256 mdist2 = _mm256_setzero_ps();
+									__m256 mdist3 = _mm256_setzero_ps();
+									for (int n = patchWindowSizeY; n--;)
+									{
+										for (int m = patchWindowSizeX; m--;)
+										{
+											mdist0 = _mm256_ssdadd_ps(mdist0, _mm256_lddqu_ps(s), _mm256_lddqu_ps(t));
+											mdist1 = _mm256_ssdadd_ps(mdist1, _mm256_lddqu_ps(s + 8), _mm256_lddqu_ps(t + 8));
+											mdist2 = _mm256_ssdadd_ps(mdist2, _mm256_lddqu_ps(s + 16), _mm256_lddqu_ps(t + 16));
+											mdist3 = _mm256_ssdadd_ps(mdist3, _mm256_lddqu_ps(s + 24), _mm256_lddqu_ps(t + 24));
+
+											s++, t++;
+										}
+										t += cstep;
+										s += cstep;
+									}
+
+									const float* rptr = rptr2 + imstep * (tr_y + l) + (tr_x + k);
+									const __m256 sw = _mm256_set1_ps(space_weight[sindex++]);
+
+									const __m256 mrw0 = _mm256_mul_ps(sw, _mm256_i32gather_ps(range_weight, _mm256_cvtps_epi32(_mm256_fastsqrt_ps(mdist0)), 4));
+									mb0 = _mm256_fmadd_ps(mrw0, _mm256_lddqu_ps(rptr), mb0);
+									mg0 = _mm256_fmadd_ps(mrw0, _mm256_lddqu_ps(rptr + colorstep), mg0);
+									mr0 = _mm256_fmadd_ps(mrw0, _mm256_lddqu_ps(rptr + colorstep2), mr0);
+									mw0 = _mm256_add_ps(mrw0, mw0);
+
+									const __m256 mrw1 = _mm256_mul_ps(sw, _mm256_i32gather_ps(range_weight, _mm256_cvtps_epi32(_mm256_fastsqrt_ps(mdist1)), 4));
+									mb1 = _mm256_fmadd_ps(mrw1, _mm256_lddqu_ps(rptr + 8), mb1);
+									mg1 = _mm256_fmadd_ps(mrw1, _mm256_lddqu_ps(rptr + 8 + colorstep), mg1);
+									mr1 = _mm256_fmadd_ps(mrw1, _mm256_lddqu_ps(rptr + 8 + colorstep2), mr1);
+									mw1 = _mm256_add_ps(mrw1, mw1);
+
+									const __m256 mrw2 = _mm256_mul_ps(sw, _mm256_i32gather_ps(range_weight, _mm256_cvtps_epi32(_mm256_fastsqrt_ps(mdist2)), 4));
+									mb2 = _mm256_fmadd_ps(mrw2, _mm256_lddqu_ps(rptr + 16), mb2);
+									mg2 = _mm256_fmadd_ps(mrw2, _mm256_lddqu_ps(rptr + 16 + colorstep), mg2);
+									mr2 = _mm256_fmadd_ps(mrw2, _mm256_lddqu_ps(rptr + 16 + colorstep2), mr2);
+									mw2 = _mm256_add_ps(mrw2, mw2);
+
+									const __m256 mrw3 = _mm256_mul_ps(sw, _mm256_i32gather_ps(range_weight, _mm256_cvtps_epi32(_mm256_fastsqrt_ps(mdist3)), 4));
+									mb3 = _mm256_fmadd_ps(mrw3, _mm256_lddqu_ps(rptr + 24), mb3);
+									mg3 = _mm256_fmadd_ps(mrw3, _mm256_lddqu_ps(rptr + 24 + colorstep), mg3);
+									mr3 = _mm256_fmadd_ps(mrw3, _mm256_lddqu_ps(rptr + 24 + colorstep2), mr3);
+									mw3 = _mm256_add_ps(mrw3, mw3);
+								}
+							}
+						}
+
+						mb0 = _mm256_div_ps(mb0, mw0);
+						mg0 = _mm256_div_ps(mg0, mw0);
+						mr0 = _mm256_div_ps(mr0, mw0);
+						_mm256_storeu_ps_color(d, mb0, mg0, mr0);
+
+						mb1 = _mm256_div_ps(mb1, mw1);
+						mg1 = _mm256_div_ps(mg1, mw1);
+						mr1 = _mm256_div_ps(mr1, mw1);
+						_mm256_storeu_ps_color(d + 24, mb1, mg1, mr1);
+
+						mb2 = _mm256_div_ps(mb2, mw2);
+						mg2 = _mm256_div_ps(mg2, mw2);
+						mr2 = _mm256_div_ps(mr2, mw2);
+						_mm256_storeu_ps_color(d + 48, mb2, mg2, mr2);
+
+						mb3 = _mm256_div_ps(mb3, mw3);
+						mg3 = _mm256_div_ps(mg3, mw3);
+						mr3 = _mm256_div_ps(mr3, mw3);
+						_mm256_storeu_ps_color(d + 72, mb3, mg3, mr3);
+
+						d += 96;
+					}//i
+				}//j
+			}
+			else
+			{
+				cout << "do not support this channels src:" << dest->channels() << ", guide: " << gch << endl;
 			}
 		}
 
@@ -6222,7 +6395,8 @@ namespace cp
 
 		virtual void operator()(const cv::Range& r) const
 		{
-			if (patchWindowSizeX == 3 && patchWindowSizeY == 3) unroll4_<3, 3>(r);
+			if (patchWindowSizeX == 1 && patchWindowSizeY == 1) unroll4_<1, 1>(r);
+			else if (patchWindowSizeX == 3 && patchWindowSizeY == 3) unroll4_<3, 3>(r);
 			else if (patchWindowSizeX == 5 && patchWindowSizeY == 5) unroll4_<5, 5>(r);
 			else if (patchWindowSizeX == 7 && patchWindowSizeY == 7) unroll4_<7, 7>(r);
 			else unroll4(r);
@@ -6260,6 +6434,7 @@ namespace cp
 			copyMakeBorder(src, temp, bby, bby, bbx, bbx + spad, borderType);
 			cvtColorBGR2PLANE(temp, im);
 		}
+
 		if (guide.channels() == 1)
 		{
 			copyMakeBorder(guide, gim, bby, bby, bbx, bbx + spad, borderType);

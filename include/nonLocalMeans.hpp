@@ -6,14 +6,14 @@
 namespace cp
 {
 	/// <summary>
-	/// non-local means filter (NLM).
+	/// non-local means filter (NLM) using LUT for weight computation.
 	/// weight[i] = (-pow(abs(i/sigma), powexp) / powexp) for range and space.
 	/// powexp=2: Gaussian, powexp=1: Laplacian, powexp=infinity(input 0): Box.
 	/// </summary>
 	/// <param name="src">input</param>
 	/// <param name="dest">output</param>
-	/// <param name="patchWindowSize">patch size (rectangle)</param>
-	/// <param name="kernelWindowSize">kernel size (rectangle)</param>
+	/// <param name="patchWindowSize">patch size (rectangle odd)</param>
+	/// <param name="kernelWindowSize">kernel size (rectangle odd)</param>
 	/// <param name="sigma_range">sigma for range</param>
 	/// <param name="powexp_range">order of pow for range</param>
 	/// <param name="patchnorm">patch distance metrics L1(1) or L2(2)</param>
@@ -23,14 +23,14 @@ namespace cp
 	CP_EXPORT void nonLocalMeansFilter(cv::InputArray src, cv::OutputArray dest, const cv::Size patchWindowSize, const cv::Size kernelWindowSize, const double sigma, const double powexp = 2.0, const int patchNorm = 2, const int borderType = cv::BORDER_DEFAULT);
 
 	/// <summary>
-	/// non-local means filter (NLM).
+	/// non-local means filter (NLM) using LUT for weight computation.
 	/// weight[i] = (-pow(abs(i/sigma), powexp) / powexp) for range and space.
 	/// powexp=2: Gaussian, powexp=1: Laplacian, powexp=infinity(input 0): Box.
 	/// </summary>
 	/// <param name="src">input</param>
 	/// <param name="dest">output</param>
-	/// <param name="patchWindowSize">patch size (rectangle)</param>
-	/// <param name="kernelWindowSize">kernel size (rectangle)</param>
+	/// <param name="patchWindowSize">patch size (rectangle odd)</param>
+	/// <param name="kernelWindowSize">kernel size (rectangle odd)</param>
 	/// <param name="sigma_range">sigma for range</param>
 	/// <param name="powexp_range">order of pow for range</param>
 	/// <param name="patchnorm">patch distance metrics L1(1) or L2(2)</param>
@@ -41,7 +41,7 @@ namespace cp
 
 
 	/// <summary>
-	/// joint non-local means filter (NLM).
+	/// joint non-local means filter (NLM) using LUT for weight computation.
 	/// weight[i] = (-pow(abs(i/sigma), powexp) / powexp) for range and space.
 	/// powexp=2: Gaussian, powexp=1: Laplacian, powexp=infinity(input 0): Box.
 	/// </summary>
