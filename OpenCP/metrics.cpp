@@ -6,6 +6,7 @@
 #include "updateCheck.hpp"
 #include "color.hpp"
 #include "debugcp.hpp"
+#include "statistic.hpp"
 
 using namespace std;
 using namespace cv;
@@ -254,7 +255,7 @@ namespace cp
 			}
 			case PSNR_Y_INTEGER:
 			{
-				cp::cvtColorIntegerY(src, dest); 
+				cp::cvtColorIntegerY(src, dest);
 				temp.convertTo(dest, CV_64F); break;
 			}
 			case PSNR_B:
@@ -1234,14 +1235,29 @@ namespace cp
 
 	double getGMSD(InputArray ref, InputArray src, const double c, const bool isDownsample)
 	{
+		CV_Assert(ref.channels() == src.channels());
 		const double alpha = 0.5;
 		const bool isUseAdditonalMasking = true;
 		//const bool isUseAdditonalMasking = false;
 
 		Mat gradientRef;
 		Mat gradientSrc;
-		Mat ref32 = cp::convert(ref, CV_32F);
-		Mat src32 = cp::convert(src, CV_32F);
+		Mat ref32;
+		Mat src32;
+		if (ref.channels() == 1)
+		{
+			ref32 = cp::convert(ref, CV_32F);
+			src32 = cp::convert(src, CV_32F);
+		}
+		else
+		{
+			Mat tmp;
+			cvtColor(ref, tmp, COLOR_BGR2GRAY);
+			ref32 = cp::convert(tmp, CV_32F).clone();
+			cvtColor(src, tmp, COLOR_BGR2GRAY);
+			src32 = cp::convert(tmp, CV_32F).clone();
+		}
+
 		if (isDownsample)
 		{
 			resize(ref32, ref32, Size(), 0.5, 0.5, INTER_AREA);
@@ -1474,13 +1490,18 @@ namespace cp
 #pragma endregion
 
 #pragma region SSIM
-	double getSSIM(const cv::Mat& src1, const cv::Mat& src2, const double sigma)
+	double getSSIM(const cv::Mat& src1, const cv::Mat& src2, const double sigma, bool isDownsample)
 	{
 		cv::Mat i1 = src1;
 		cv::Mat i2 = src2;
 		if (src1.channels() == 3) cvtColor(src1, i1, COLOR_BGR2GRAY);
 		if (src2.channels() == 3) cvtColor(src2, i2, COLOR_BGR2GRAY);
 
+		if (isDownsample)
+		{
+			resize(i1, i1, Size(), 0.5, 0.5, INTER_AREA);
+			resize(i2, i2, Size(), 0.5, 0.5, INTER_AREA);
+		}
 		const int D = (int)ceil(sigma * 3.0) * 2 + 1;
 		const Size kernelSize = Size(D, D);
 		const double C1 = 6.5025, C2 = 58.5225;
@@ -1516,8 +1537,9 @@ namespace cp
 		t1 = t1.mul(t2);//25  
 		cv::Mat ssim_map;//26
 		divide(t3, t1, ssim_map);//27
-		cv::Scalar mssim = mean(ssim_map);
-		return mssim[0];
+		
+		int r = D / 2;
+		return cp::average(ssim_map, r, r, r, r);
 	}
 #pragma endregion
 }
