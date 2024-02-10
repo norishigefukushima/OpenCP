@@ -12,8 +12,29 @@ using namespace cv;
 namespace cp
 {
 #pragma region merge
+	template<typename srcType, typename dstType>
+	static void mergeConvertBase_(const vector<Mat>& src, Mat& dest, const double scale, const double offset)
+	{
+		if (dest.empty())dest.create(src[0].size(), src[0].depth());
+		const int size = src[0].size().area();
+		dstType* d = dest.ptr<dstType>();
+		const srcType* s0 = src[0].ptr<srcType>();
+		const srcType* s1 = src[1].ptr<srcType>();
+		const srcType* s2 = src[2].ptr<srcType>();
+		for (int i = 0; i < size; i++)
+		{
+			d[0] = saturate_cast<dstType>(scale * s0[0] + offset);
+			d[1] = saturate_cast<dstType>(scale * s1[0] + offset);
+			d[2] = saturate_cast<dstType>(scale * s2[0] + offset);
+			d += 3;
+			s0++;
+			s1++;
+			s2++;
+		}
+	}
+
 	template<class srcType>
-	void mergeBase_(vector<Mat>& src, Mat& dest)
+	static void mergeBase_(vector<Mat>& src, Mat& dest)
 	{
 		if (dest.empty())dest.create(src[0].size(), src[0].depth());
 		const int size = src[0].size().area();
@@ -33,7 +54,7 @@ namespace cp
 		}
 	}
 
-	void mergeStore_8U(vector<Mat>& src, Mat& dest)
+	static void mergeStore_8U(vector<Mat>& src, Mat& dest)
 	{
 		if (dest.empty())dest.create(src[0].size(), src[0].depth());
 
@@ -90,7 +111,7 @@ namespace cp
 		}
 	}
 
-	void mergeStream_8U(vector<Mat>& src, Mat& dest)
+	static void mergeStream_8U(vector<Mat>& src, Mat& dest)
 	{
 		if (dest.empty())dest.create(src[0].size(), src[0].depth());
 
@@ -151,24 +172,37 @@ namespace cp
 	{
 		vector<Mat> s;
 		src.getMatVector(s);
-		if (dest.empty())
-		{
-			dest.create(s[0].size(), s[0].type());
-		}
+		dest.create(s[0].size(), CV_MAKETYPE(depth, s.size()));
 		Mat dst = dest.getMat();
 
-		switch (s[0].depth())
+		if (depth == s[0].depth() && scale == 1.0 && offset == 1.0)
 		{
-		case CV_8U:
-			if (isCache)mergeStore_8U(s, dst);
-			else mergeStream_8U(s, dst);
-			break;
-		case CV_32F:
-			mergeBase_<float>(s, dst);
-			break;
-		default:
-			cout << "not support type" << endl;
-			break;
+			switch (s[0].depth())
+			{
+			case CV_8U:
+				if (isCache) mergeStore_8U(s, dst);
+				else mergeStream_8U(s, dst);
+				break;
+			case CV_32F:
+				mergeBase_<float>(s, dst);
+				break;
+			default:
+				cout << "not support type" << endl;
+				break;
+			}
+		}
+		else
+		{
+			if (s[0].depth() == CV_8U)
+			{
+				if (depth == CV_8U)  mergeConvertBase_<uchar, uchar>(s, dst, scale, offset);
+				if (depth == CV_32F) mergeConvertBase_<uchar, float>(s, dst, scale, offset);
+			}
+			if (s[0].depth() == CV_32F)
+			{
+				if (depth == CV_8U) mergeConvertBase_<float, uchar>(s, dst, scale, offset);
+				if (depth == CV_32F) mergeConvertBase_<float, float>(s, dst, scale, offset);
+			}
 		}
 	}
 #pragma endregion
@@ -3389,7 +3423,7 @@ namespace cp
 	void cvtColorPCA(InputArray src_, OutputArray dest_, const int dest_channels, Mat& evec, Mat& eval, Mat& mean)
 	{
 		CV_Assert(src_.depth() == CV_32F);
-		
+
 
 		if (src_.channels() == 1)
 		{
@@ -4038,6 +4072,6 @@ namespace cp
 		if (C.empty())C.create(3, 4, CV_64F);
 
 		xcvFindColorMatrix(&CvMat(src_point_crowd1), &CvMat(src_point_crowd2), &CvMat(C));
-	}
+}
 #endif
 }

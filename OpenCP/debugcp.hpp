@@ -8,3 +8,5 @@
 #include <plot.hpp>
 #include <inlineCVFunctions.hpp>
 #include <inlineMathFunctions.hpp>
+
+#include "inlineSIMDFunctions.hpp"

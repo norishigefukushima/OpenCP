@@ -653,6 +653,8 @@ namespace cp
 	}
 	*/
 
+	//type 0 Gaussian (sr is not used)
+	//type 1 bilateral (sr is valid)
 	class TexturenessImportanceMapSampling
 	{
 		Mat importance;
@@ -730,67 +732,78 @@ namespace cp
 			}
 		}
 
-		int ss1 = 3;
-		int ss2 = 1;
-		int sr = 70;
+		float edgeComputeSigma = 3.f;
+		float edgeDiffusionSigma = 1.f;
+		float sr = 70.f;
 		const int type = 0;
 
 		void computeTextureness(const Mat& src, Mat& dest)
 		{
 			if (type == 0)
 			{
-				GaussianBlur(src, dest, Size((int)ceil(ss1 * 3) * 2 + 1, (int)ceil(ss1 * 3) * 2 + 1), ss1);
+				GaussianBlur(src, dest, Size((int)ceil(edgeComputeSigma * 3.f) * 2 + 1, (int)ceil(edgeComputeSigma * 3.f) * 2 + 1), edgeComputeSigma);
 				//gf->filter(src, dest, ss1, 1);
 			}
 			else
 			{
 				float sigma_range = sr / 255.f;
-				bilateralFilter(src_32f, dest, ss1 * 2 * 2 + 1, sigma_range, ss1);
+				bilateralFilter(src_32f, dest, (int)ceil(edgeComputeSigma * 2) * 2 + 1, sigma_range, edgeComputeSigma);
 				//bilateralFilterLocalStatisticsPrior(src, dest, sigma_range, (float)ss1, sigma_range * 0.8f);
 			}
 			absdiff(src, dest, dest);
 			//min(dest, 100.f, dest);
 
-			if (ss2 != 0)
+			if (edgeDiffusionSigma != 0.f)
 			{
 				Size ksize = Size(5, 5);
-				GaussianBlur(dest, dest, ksize, ss2);
+				GaussianBlur(dest, dest, ksize, edgeDiffusionSigma);
 			}
 			normalize(dest, dest, 0, 1, NORM_MINMAX);
 		}
 		void computeTextureness(const vector<Mat>& src, Mat& dest)
 		{
-			dest.setTo(0.f);
-			for (int c = 0; c < src.size(); c++)
 			{
+				const int c = 0;
 				if (type == 0)
 				{
-					GaussianBlur(src[c], src_32f, Size((int)ceil(ss1 * 3) * 2 + 1, (int)ceil(ss1 * 3) * 2 + 1), ss1);
+					const int r = (int)ceil(edgeComputeSigma * 1.5);
+					const int d = 2 * r + 1;
+					GaussianBlur(src[c], src_32f, Size(d, d), edgeComputeSigma);
 					//gf->filter(src[c], src_32f, ss1, 1);
 				}
 				else
 				{
-					bilateralFilter(src_32f, dest, ss1 * 2 * 2 + 1, sr, ss1);
+					bilateralFilter(src_32f, dest, (int)ceil(edgeComputeSigma * 2) * 2 + 1, sr, edgeComputeSigma);
 					//bilateralFilterLocalStatisticsPrior(src[c], src_32f, float(sr), (float)ss1, sr * 0.8f);
 				}
-				//Mat a;
-				//Size ksize = Size(5, 5);
-				//GaussianBlur(src[c], a, ksize, 0.5);
-				//absdiff(a, src[c], src_32f);
-
+				absdiff(src_32f, src[c], dest);
+			}
+			for (int c = 1; c < src.size(); c++)
+			{
+				if (type == 0)
+				{
+					const int r = (int)ceil(edgeComputeSigma * 1.5);
+					const int d = 2 * r + 1;
+					GaussianBlur(src[c], src_32f, Size(d, d), edgeComputeSigma);
+					//gf->filter(src[c], src_32f, ss1, 1);
+				}
+				else
+				{
+					bilateralFilter(src_32f, dest, (int)ceil(edgeComputeSigma * 2) * 2 + 1, sr, edgeComputeSigma);
+					//bilateralFilterLocalStatisticsPrior(src[c], src_32f, float(sr), (float)ss1, sr * 0.8f);
+				}
 				absdiff(src_32f, src[c], src_32f);
-				//min(src_32f, 100.f, src_32f);
 				add(src_32f, dest, dest);
 			}
 
-			if (ss2 != 0)
+			if (edgeDiffusionSigma != 0)
 			{
-				Size ksize = Size(5, 5);
-				GaussianBlur(dest, dest, ksize, ss2);
+				Size ksize = Size(3, 3);
+				//GaussianBlur(dest, dest, ksize, edgeDiffusionSigma);
+				blur(dest, dest, ksize);
 			}
 
 			normalize(dest, dest, 0.f, 1.f, NORM_MINMAX);
-			//pow(dest, 0.7f, dest);
 		}
 
 		int randDither(const Mat& src, Mat& dest)
@@ -815,8 +828,8 @@ namespace cp
 		}
 
 	public:
-		TexturenessImportanceMapSampling(const int ss1, const   int ss2, const  int sr, const int type) :
-			ss1(ss1), ss2(ss2), sr(sr), type(type) 
+		TexturenessImportanceMapSampling(const float edgeComputeSigma, const float edgeDiffusionSigma, const float sr, const int type) :
+			edgeComputeSigma(edgeComputeSigma), edgeDiffusionSigma(edgeDiffusionSigma), sr(sr), type(type)
 		{
 			;
 		}
@@ -839,8 +852,14 @@ namespace cp
 				computeTextureness(src, importance);
 				remap(importance, sampling_ratio);
 
-				sample_num = ditherDestruction(importance, dest, ditheringMethod, MEANDERING);
-				//sample_num = randDither(importance, dest);
+				if (ditheringMethod >= 0)
+				{
+					sample_num = ditherDestruction(importance, dest, ditheringMethod, MEANDERING);
+				}
+				else
+				{
+					sample_num = randDither(importance, dest);
+				}
 				//cout << sample_num << endl;
 				//cp::imshowScale("src[0]", src[0]); cp::imshowScale("importance", importance, 255); imshow("mask", dest); waitKey();
 			}
@@ -853,7 +872,14 @@ namespace cp
 			importance.create(src.rows, src.cols, CV_32F);//importance map (n pixels)
 			computeTextureness(src, importance);
 			remap(importance, sampling_ratio);
-			sample_num = ditherDestruction(importance, dest, ditheringMethod, MEANDERING);
+			if (ditheringMethod >= 0)
+			{
+				sample_num = ditherDestruction(importance, dest, ditheringMethod, MEANDERING);
+			}
+			else
+			{
+				sample_num = randDither(importance, dest);
+			}
 		}
 	};
 
@@ -867,9 +893,9 @@ namespace cp
 		static int sr = 70; createTrackbar("sr", "", &sr, 255);
 		static int type = 0; createTrackbar("type", "", &type, 2);
 #else
-		int ss1 = 3;
-		int ss2 = 1;
-		int sr = 70;
+		float ss1 = 3.f;
+		float ss2 = 1.f;
+		float sr = 70.f;
 		const int type = 0;
 #endif
 		if (dest.empty() || dest.type() != CV_8UC1 || dest.size() != src.size())dest.create(src.size(), CV_8UC1);
@@ -1091,7 +1117,8 @@ namespace cp
 		int sample_num = 0;
 		cv::Mat mask;
 
-		TexturenessImportanceMapSampling ims(3, 1, 70, 0);
+		//TexturenessImportanceMapSampling ims(3.0, 1.0, 70, 0);
+		TexturenessImportanceMapSampling ims(3.5, 1.5, 70, 0);
 		ims.generate(guide, mask, sample_num, sampling_ratio, ditheringMethod, isUseAverage);
 
 		sample_num = get_simd_floor(sample_num, 8);
@@ -1121,7 +1148,7 @@ namespace cp
 						d[c][count] = s[c][x];
 					}
 					count++;
-					if (count == sample_num)return;
+					if (count == sample_num) return;
 				}
 			}
 		}

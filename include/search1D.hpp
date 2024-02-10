@@ -335,7 +335,7 @@ namespace cp
 
 			if (isPlot) pt.push_back(i, e, 0);
 		}
-		if (isPlot) pt.plot(wname, false);
+		if (isPlot) pt.plot(wname, true);
 		return ret;
 	}
 

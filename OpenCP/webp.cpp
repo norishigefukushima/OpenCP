@@ -82,7 +82,7 @@ namespace cp
 		{
 			cvtColor(src[i], temp, COLOR_BGR2RGBA);
 
-			if (!WebPPictureImportRGBA(&pic, temp.data, temp.step))
+			if (!WebPPictureImportRGBA(&pic, temp.data, (int)temp.step))
 			{
 				cerr << "error: WebPPictureImportRGBA" << endl;
 			}
@@ -94,7 +94,7 @@ namespace cp
 		}
 
 		// add a last fake frame to signal the last duration
-		WebPAnimEncoderAdd(enc, NULL, timems_per_frame* src.size(), NULL);
+		WebPAnimEncoderAdd(enc, NULL, timems_per_frame* (int)src.size(), NULL);
 
 		WebPData webp_data = { 0 };
 		WebPDataInit(&webp_data);

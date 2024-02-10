@@ -645,6 +645,9 @@
     <ClCompile Include="domainTransformFilter.cpp">
       <Filter>ソース ファイル\filter\edgePreservingFilter</Filter>
     </ClCompile>
+    <ClCompile Include="patchPCA.cpp">
+      <Filter>ソース ファイル\imgproc</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libGaussian\gaussian_conv.h">
@@ -1162,6 +1165,9 @@
     </ClInclude>
     <ClInclude Include="..\include\common.hpp">
       <Filter>ヘッダー ファイル\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\patchPCA.hpp">
+      <Filter>ヘッダー ファイル\imgproc</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

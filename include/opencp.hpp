@@ -68,6 +68,7 @@
 #include "mediancut.hpp"
 #include "metrics.hpp"
 #include "metricsDD.hpp"
+#include "patchPCA.hpp"
 #include "pixelization.hpp"
 #include "ppmx.hpp"
 #include "remappedDither.hpp"
