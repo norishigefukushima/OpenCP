@@ -611,9 +611,9 @@ namespace cp
 				{
 					if (index1st.at<uchar>(i) == k)
 					{
-						int b = int(g0[i])/4;
-						int g = int(g1[i])/4;
-						int r = int(g2[i])/4;
+						int b = int(g0[i])/2;
+						int g = int(g1[i])/2;
+						int r = int(g2[i])/2;
 						const float w = pow(histmax[k] - histogram[k][b][g][r] + 1, 1);
 
 						munew0[k] += w * g0[i];
