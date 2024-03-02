@@ -134,6 +134,10 @@ namespace cp
 
 #pragma region Spearman
 
+	SpearmanRankOrderCorrelationCoefficient::SpearmanRankOrderCorrelationCoefficient()
+	{
+
+	}
 #pragma region rankTransform
 	template<>
 	double SpearmanRankOrderCorrelationCoefficient::rankTransformUsingAverageTieScore<int>(vector<int>& src, vector<float>& dst)
@@ -397,6 +401,8 @@ namespace cp
 		{
 			plotsRAW.resize(1);
 			setPlotData(v1, v2, plotsRAW[0]);
+
+			plotsRANK.resize(1);
 		}
 		return spearman_<int>(v1, v2, ignoreTie, isPlot, 0);
 	}
@@ -435,6 +441,8 @@ namespace cp
 		{
 			plotsRAW.resize(1);
 			setPlotData(v1, v2, plotsRAW[0]);
+
+			plotsRANK.resize(1);
 		}
 		return spearman_<float>(v1, v2, ignoreTie, isPlot, 0);
 	}
@@ -474,6 +482,8 @@ namespace cp
 		{
 			plotsRAW.resize(1);
 			setPlotData(v1, v2, plotsRAW[0]);
+
+			plotsRANK.resize(1);
 		}
 		return spearman_<double>(v1, v2, ignoreTie, isPlot, 0);
 	}
@@ -587,8 +597,9 @@ namespace cp
 
 
 	template<typename T>
-	void SpearmanRankOrderCorrelationCoefficient::setPlotData(vector<T>& v1, vector<T>& v2, vector<cv::Point2d>& data)
+	void SpearmanRankOrderCorrelationCoefficient::setPlotData(const vector<T>& v1, const vector<T>& v2, vector<Point2d>& data)
 	{
+		//cout << v1.size() << "," << v2.size() << endl;
 		data.resize(v1.size());
 		for (int i = 0; i < v1.size(); i++)
 		{
@@ -598,7 +609,7 @@ namespace cp
 
 	void SpearmanRankOrderCorrelationCoefficient::plot(const bool isWait, const double rawMin, const double rawMax, vector<string> labels)
 	{
-		if(labels.size()==0) pt.setKey(Plot::KEY::NOKEY);
+		if (labels.size() == 0) pt.setKey(Plot::KEY::NOKEY);
 		else
 		{
 			if (labels.size() == plotsRAW.size())
@@ -606,9 +617,9 @@ namespace cp
 				for (int i = 0; i < plotsRAW.size(); i++)
 				{
 					pt.setPlotTitle(i, labels[i]);
-					if(i==0)pt.setPlotColor(i, COLOR_RED);
-					if (i == 1)pt.setPlotColor(i, COLOR_GREEN);
-					if (i == 2)pt.setPlotColor(i, COLOR_BLUE);
+					if (i == 0) pt.setPlotColor(i, COLOR_RED);
+					if (i == 1) pt.setPlotColor(i, COLOR_GREEN);
+					if (i == 2) pt.setPlotColor(i, COLOR_BLUE);
 				}
 			}
 		}

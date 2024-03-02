@@ -48,7 +48,7 @@ namespace cp
 		double spearman_(std::vector<T>& v1, std::vector<T>& v2, const bool ignoreTie, const bool isPlot, const int plotIndex);
 
 		template<typename T>
-		void setPlotData(std::vector<T>& v1, std::vector<T>& v2, std::vector<cv::Point2d>& data);
+		void setPlotData(const std::vector<T>& v1, const std::vector<T>& v2, std::vector<cv::Point2d>& data);
 
 
 		cp::Plot pt;
@@ -68,6 +68,7 @@ namespace cp
 		std::vector<SpearmanOrder<float>> sporder32f;
 		std::vector<SpearmanOrder<double>> sporder64f;
 	public:
+		SpearmanRankOrderCorrelationCoefficient();
 		void setReference(std::vector<int>& ref, const bool ignoreTie = false);
 		void setReference(std::vector<float>& ref, const bool ignoreTie = false);
 		void setReference(std::vector<double>& ref, const bool ignoreTie = false);
