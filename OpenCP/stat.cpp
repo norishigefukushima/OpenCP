@@ -122,7 +122,7 @@ namespace cp
 	{
 		double min = getMin();
 		double max = getMax();
-		const int div = ceil((max - min) / step);
+		const int div = (int)ceil((max - min) / step);
 		drawDistribution(wname, div, min, max);
 	}
 
@@ -133,7 +133,7 @@ namespace cp
 		double domain = ceil(std * sigma / step) * step;
 		const double min = ave - domain;
 		const double max = ave + domain;
-		const int div = 2.0 * domain / step+1;
+		const int div = int(2.0 * domain / step) + 1;
 		drawDistribution(wname, div, min, max);
 	}
 
@@ -207,8 +207,8 @@ namespace cp
 		resize(draw_, draw, Size(div * lw, 256), 0, 0, INTER_NEAREST);
 		for (int i = 0; i < div - 1; i++)
 		{
-			const int x = i * lw + lw * 0.5;
-			const int xp = (i + 1) * lw + lw * 0.5;
+			const int x = i * lw + int(lw * 0.5);
+			const int xp = (i + 1) * lw + int(lw * 0.5);
 			const double v = (histval[i] + 0) - histval[meanv];
 			const double vp = (histval[i + 1] - histval[meanv]);
 			int y = draw.rows - 1 - cvRound((draw.rows - 1) * exp(v * v / (-2.0 * ststd * ststd)));

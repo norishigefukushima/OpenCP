@@ -5,5 +5,5 @@
 #pragma comment(lib,"SpatialFilter.lib")
 #else
 #pragma comment(lib, "opencp.lib")
-#pragma comment(lib,"SpatialFilter.lib")
+#pragma comment(lib, "SpatialFilter.lib")
 #endif

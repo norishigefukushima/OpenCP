@@ -6,8 +6,8 @@ namespace cp
 {
 	enum
 	{
-		IMAGE_TEXTURNESS_FLOYD_STEINBERG,
 		IMAGE_TEXTURENESS_OSTRO,
+		IMAGE_TEXTURNESS_FLOYD_STEINBERG,
 		IMAGE_TEXTURENESS_SIERRA2,
 		IMAGE_TEXTURENESS_SIERRA3,
 		IMAGE_TEXTURENESS_JARVIS,
@@ -74,6 +74,7 @@ namespace cp
 
 	//packed
 	CP_EXPORT void generateSamplingMaskRemappedDitherTexturenessPackedAoS(cv::Mat& src, cv::Mat& dest, const float sampling_ratio, int ditheringMethod = IMAGE_TEXTURENESS_OSTRO);
-	CP_EXPORT void generateSamplingMaskRemappedDitherTexturenessPackedSoA(std::vector<cv::Mat>& src, cv::Mat& dest, const float sampling_ratio, const bool isUseAverage, int ditheringMethod = IMAGE_TEXTURENESS_OSTRO);
-	CP_EXPORT void generateSamplingMaskRemappedDitherTexturenessPackedSoA(std::vector<cv::Mat>& src, std::vector<cv::Mat>& guide, cv::Mat& dest, const float sampling_ratio, int ditheringMethod = IMAGE_TEXTURENESS_OSTRO);
+	CP_EXPORT void generateSamplingMaskRemappedDitherTexturenessDoGPackedSoA(const std::vector<cv::Mat>& src, cv::Mat& dest, const float sampling_ratio, const bool isUseAverage, int ditheringMethod = IMAGE_TEXTURENESS_OSTRO, cv::Mat sampleMask = cv::Mat(), const float sigma = 3.f);
+	CP_EXPORT void generateSamplingMaskRemappedDitherTexturenessGradientMaxPackedSoA(const std::vector<cv::Mat>& src, cv::Mat& dest, const float sampling_ratio, const bool isUseAverage, int ditheringMethod = IMAGE_TEXTURENESS_OSTRO, cv::Mat sampleMask = cv::Mat());
+	CP_EXPORT void generateSamplingMaskRemappedDitherTexturenessPackedSoA(const std::vector<cv::Mat>& src, std::vector<cv::Mat>& guide, cv::Mat& dest, const float sampling_ratio, int ditheringMethod = IMAGE_TEXTURENESS_OSTRO);
 }

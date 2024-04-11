@@ -54,7 +54,7 @@ namespace cp
 			split_inter2[2].create(img_size, CV_32FC1);
 		}
 
-		if (downsampleMethod == DownsampleMethod::IMPORTANCE_MAP) src.convertTo(input_image8u, CV_8UC3);
+		if (downsampleMethod == DownsampleMethod::DITHER_DOG) src.convertTo(input_image8u, CV_8UC3);
 
 
 		if (cm == ClusterMethod::X_means)

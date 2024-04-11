@@ -158,6 +158,7 @@ namespace cp
 		}
 	}
 
+	//template<int use_fmath, int guide_channels>
 	template<int use_fmath, int guide_channels>
 	void ClusteringHDKF_NystromSingle::computeB(const std::vector<cv::Mat>& guide)
 	{
@@ -181,10 +182,7 @@ namespace cp
 				{
 					const float* mu_kPtr = mu.ptr<float>(k);
 					mmu[k] = (__m256*)_mm_malloc(sizeof(__m256) * guide_channels, AVX_ALIGN);
-					for (int c = 0; c < guide_channels; c++)
-					{
-						mmu[k][c] = _mm256_set1_ps(mu_kPtr[c]);
-					}
+					mmu[k][0] = _mm256_set1_ps(mu_kPtr[0]);
 				}
 
 				cv::AutoBuffer<__m256> U(K);
@@ -195,18 +193,10 @@ namespace cp
 
 					for (int k = 0; k < K; k++)
 					{
+						const float* mu_kPtr = mu.ptr<float>(k);
 						__m256 msub = _mm256_sub_ps(msrc0, mmu[k][0]);
 						__m256 mdiff = _mm256_mul_ps(msub, msub);
-						__m256 mexp = v_exp_ps<use_fmath>(_mm256_mul_ps(mcoef, mdiff));
-						const float* eigVecPtr = eigenvecA.ptr<float>(k);
-						for (int l = 0; l < K; l++)
-						{
-							U[l] = _mm256_fmadd_ps(_mm256_set1_ps(eigVecPtr[l]), mexp, U[l]);
-						}
-					}
-					for (int k = 0; k < K; k++)
-					{
-						_mm256_store_ps(BPtr[k] + n, U[k]);
+						_mm256_store_ps(BPtr[k] + n, v_exp_ps<use_fmath>(_mm256_mul_ps(mcoef, mdiff)));
 					}
 				}
 
@@ -225,10 +215,8 @@ namespace cp
 				{
 					const float* mu_kPtr = mu.ptr<float>(k);
 					mmu[k] = (__m256*)_mm_malloc(sizeof(__m256) * guide_channels, AVX_ALIGN);
-					for (int c = 0; c < guide_channels; c++)
-					{
-						mmu[k][c] = _mm256_set1_ps(mu_kPtr[c]);
-					}
+					mmu[k][0] = _mm256_set1_ps(mu_kPtr[0]);
+					mmu[k][1] = _mm256_set1_ps(mu_kPtr[1]);
 				}
 
 				for (int n = 0; n < imsize; n += 8)
@@ -429,7 +417,6 @@ namespace cp
 				}
 
 				cv::AutoBuffer<__m256> msrc(guide_channels);
-
 				for (int n = 0; n < imsize; n += 8)
 				{
 					for (int c = 0; c < guide_channels; c++) msrc[c] = *gptr[c]++;
@@ -495,10 +482,8 @@ namespace cp
 			cv::AutoBuffer<__m256*> gptr(guide_channels);
 			for (int c = 0; c < guide_channels; c++) gptr[c] = (__m256*)guide[c].ptr<float>();
 
-			cv::AutoBuffer<float*> WPtr(K);
-			for (int k = 0; k < K; k++) WPtr[k] = B[k].ptr<float>();
-
-			cv::AutoBuffer<__m256> msrc(guide_channels);
+			cv::AutoBuffer<float*> BPtr(K);
+			for (int k = 0; k < K; k++) BPtr[k] = B[k].ptr<float>();
 
 			cv::AutoBuffer<cv::AutoBuffer<__m256>> mmu(K);
 			for (int k = 0; k < K; k++)
@@ -511,6 +496,7 @@ namespace cp
 				}
 			}
 
+			cv::AutoBuffer<__m256> msrc(guide_channels);
 			for (int n = 0; n < imsize; n += 8)
 			{
 				for (int c = 0; c < guide_channels; c++) msrc[c] = *gptr[c]++;
@@ -524,7 +510,7 @@ namespace cp
 						const __m256 msub = _mm256_sub_ps(msrc[c], mmu[k][c]);
 						mdiff = _mm256_fmadd_ps(msub, msub, mdiff);
 					}
-					_mm256_store_ps(WPtr[k] + n, v_exp_ps<use_fmath>(_mm256_mul_ps(mcoef, mdiff)));
+					_mm256_store_ps(BPtr[k] + n, v_exp_ps<use_fmath>(_mm256_mul_ps(mcoef, mdiff)));
 				}
 			}
 		}
@@ -1543,12 +1529,11 @@ namespace cp
 		}
 		{
 			//timer[3].start();
+			std::vector<cv::Mat> signal = (isJoint) ? guide : src;
+			//print_debug(signal.size());
+			//fast math case
+			switch (signal.size())
 			{
-				std::vector<cv::Mat> signal = (isJoint) ? guide : src;
-
-				//fast math case
-				switch (signal.size())
-				{
 				case 1: computeB<1, 1>(signal); break;
 				case 2: computeB<1, 2>(signal); break;
 				case 3: computeB<1, 3>(signal); break;
@@ -1565,11 +1550,10 @@ namespace cp
 				case 14: computeB<1, 14>(signal); break;
 				case 15: computeB<1, 15>(signal); break;
 				default:
-					if (isUseFmath) computeBCn<1>(signal);
-					else computeBCn<0>(signal);
-					//std::cout << "do not define " << guide.size() << " channel" << std::endl;
-					break;
-				}
+				if (isUseFmath) computeBCn<1>(signal);
+				else computeBCn<0>(signal);
+				//std::cout << "do not define " << guide.size() << " channel" << std::endl;
+				break;
 			}
 			//timer[3].getpushLapTime();
 		}

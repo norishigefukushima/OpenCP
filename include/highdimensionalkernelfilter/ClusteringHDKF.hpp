@@ -5,6 +5,21 @@
 
 namespace cp
 {
+	inline int rate2scale(const double rate)
+	{
+		int ret = 1;
+		const int scalemax = 10;
+		for (int scale = 2; scale < scalemax; scale++)
+		{
+			if (rate > 1.0 / (scale * scale))
+			{
+				ret = scale - 1;
+				break;
+			}
+		}
+		return ret;
+	}
+
 	enum class ClusterMethod
 	{
 		random_sample,
@@ -12,6 +27,7 @@ namespace cp
 		K_means_pp,
 		K_means_fast,
 		K_means_pp_fast,
+		K_means_mspp_fast,
 		KGaussInvMeansPPFast,
 
 		mediancut_median,
@@ -49,7 +65,9 @@ namespace cp
 		case ClusterMethod::K_means_pp:				ret = "Kmeans_pp";	break;
 		case ClusterMethod::K_means_fast:			ret = "Kmeans_fast"; break;
 		case ClusterMethod::K_means_pp_fast:		ret = "Kmeans_pp_fast"; break;
+		case ClusterMethod::K_means_mspp_fast:		ret = "K_means_mspp_fast"; break;
 		case ClusterMethod::KGaussInvMeansPPFast:	ret = "KGaussInvMeansPPFast"; break;
+
 		case ClusterMethod::mediancut_median:		ret = "mediancut_median"; break;
 		case ClusterMethod::mediancut_max:			ret = "mediancut_max"; break;
 		case ClusterMethod::mediancut_min:			ret = "mediancut_min"; break;
@@ -82,11 +100,18 @@ namespace cp
 	typedef enum DownsampleMethod
 	{
 		NEAREST,
-		LINEAR,
-		CUBIC,
 		AREA,
-		LANCZOS,
-		IMPORTANCE_MAP,
+		RANDOM,
+		DITHER_UNIFORM,
+		GRADIENT_MAX,
+		DITHER_COLORNORMAL,
+		DITHER_GRADIENT_MAX,
+		DITHER_DOG,
+		CVNEAREST,
+		CVLINEAR,
+		CVCUBIC,
+		CVAREA,
+		CVLANCZOS,
 		IMPORTANCE_MAP2,
 
 		DownsampleMethodSize
@@ -97,13 +122,21 @@ namespace cp
 		std::string ret = "no supported";
 		switch (method)
 		{
-		case cv::INTER_NEAREST:		ret = "NEAREST"; break;
-		case cv::INTER_LINEAR:		ret = "LINEAR"; break;
-		case cv::INTER_CUBIC:		ret = "CUBIC"; break;
-		case cv::INTER_AREA:		ret = "AREA"; break;
-		case cv::INTER_LANCZOS4:	ret = "LANCZOS4"; break;
-		case IMPORTANCE_MAP:		ret = "IMPORTANCE_MAP"; break;
-		case IMPORTANCE_MAP2:		ret = "IMPORTANCE_MAP2"; break;
+		case NEAREST:             ret = "NEAREST"; break;
+		case AREA:				  ret = "AREA"; break;
+		case RANDOM:			  ret = "RANDOM"; break;
+		case DITHER_UNIFORM:	  ret = "DITHER_UNIFORM"; break;
+		case GRADIENT_MAX:		  ret = "GRADIENT_MAX"; break;
+		case DITHER_COLORNORMAL:  ret = "DITHER_COLORNORMAL"; break;
+		case DITHER_GRADIENT_MAX: ret = "DITHER_GRADIENT_MAX"; break;
+		case DITHER_DOG:		  ret = "DITHER_DOG"; break;
+		case CVNEAREST:			  ret = "cv::NEAREST"; break;
+		case CVLINEAR:			  ret = "cv::LINEAR"; break;
+		case CVCUBIC:			  ret = "cv::CUBIC"; break;
+		case CVAREA:			  ret = "cv::AREA"; break;
+		case CVLANCZOS:			  ret = "cv::LANCZOS4"; break;
+		case IMPORTANCE_MAP2:	  ret = "IMPORTANCE_MAP2"; break;
+
 		default:
 			break;
 		}
@@ -188,13 +221,89 @@ namespace cp
 			bool isDownsampleClustering = false, int downsampleRate = 2, int downsampleMethod = cv::INTER_NEAREST) = 0;
 	};
 
+	class TexturenessSampling
+	{
+		cv::RNG rng;
+		cv::Mat histogram;
+
+		cv::Mat importance;
+		cv::Mat src_32f;
+		cv::Mat gray;
+		cv::Mat sampleMask;
+		cv::Mat weight;
+		bool isUseWeight = false;
+		//Ptr<cp::SpatialFilterBase> gf = cp::createSpatialFilter(cp::SpatialFilterAlgorithm::SlidingDCT5_AVX, CV_32F, cp::SpatialKernel::GAUSSIAN);
+
+		float edgeDiffusionSigma = 0.7f;
+		void gradientMax(const cv::Mat& src, cv::Mat& dest, const bool isAccumurate);
+
+		void gradientMaxDiffuse3x3(const cv::Mat& src, cv::Mat& dest, const bool isAccumurate, const float sigma);
+
+		//return maxval;
+		template<int ch>
+		float gradientMaxDiffuse3x3(const std::vector<cv::Mat>& src, cv::Mat& dest, const bool isAccumurate, const float sigma, const cv::Rect roi);
+		float computeTexturenessGradientMax(const std::vector<cv::Mat>& src, cv::Mat& dest, const cv::Rect roi);
+		float computeTexturenessGradientMax(const cv::Mat& src, cv::Mat& dest, const cv::Rect roi);
+
+		float getmax(const cv::Mat& src);
+
+		void normalize_max1(cv::Mat& srcdest);
+
+		float computeTexturenessDoG(const std::vector<cv::Mat>& src, cv::Mat& dest, const float sigma);
+		float computeTexturenessDoG(const cv::Mat& src, cv::Mat& dest, const float sigma);
+
+
+
+		void computeTexturenessBilateral(const std::vector<cv::Mat>& src, cv::Mat& dest, const float sigmaSpace, const float sr = 70.f);
+
+		void mask2samples(const int sample_num, const cv::Mat& sampleMask, const std::vector<cv::Mat>& guide, cv::Mat& dest, cv::Rect roi);
+
+		void remap(cv::Mat& srcdest, const float scale, const float rangemax);
+		float computeScaleHistogram(cv::Mat& src, const float sampling_ratio, const int numBins = 100, const float rangemin = 0.f, const float rangemax = 1.f);
+
+		//source [0:1]
+		//_MM_XORSHIFT32_AVX2 mrand;
+		int randDither(const cv::Mat& src, cv::Mat& dest);
+
+		template<int channels>
+		int remapRandomDitherSamples(const int sample_num, const float scale, const float rangemax, const cv::Mat& prob, const std::vector<cv::Mat>& guide, cv::Mat& dest, cv::Rect roi);
+		template<int channels>
+		int remapFloydSteinbergDitherSamples(const int sample_num, const float scale, const float rangemax, cv::Mat& prob, const std::vector<cv::Mat>& guide, cv::Mat& dest, cv::Rect roi);
+		template<int channels>
+		int remapFloydSteinbergDitherSamplesWeight(const int sample_num, const float scale, const float rangemax, cv::Mat& prob, const std::vector<cv::Mat>& guide, cv::Mat& dest, cv::Mat& wmap, cv::Rect roi);
+
+		int dither(cv::Mat& inportance, cv::Mat& dest, const int ditheringMethod);
+
+	public:
+		TexturenessSampling();
+		TexturenessSampling(const float edgeDiffusionSigma);
+
+		void generateDoG(const std::vector<cv::Mat>& src, cv::Mat& dest, int& sample_num, const float sampling_ratio, const int ditheringMethod, const bool isUseAverage, const float sigma);
+		void generateDoG(const cv::Mat& src, cv::Mat& dest, int& sample_num, const float sampling_ratio, const int ditheringMethod, const float sigma);
+
+		void generateGradientMax(const std::vector<cv::Mat>& src, cv::Mat& dest, int& sample_num, const float sampling_ratio, const int ditheringMethod, const bool isUseAverage);
+		void generateGradientMax(const cv::Mat& src, cv::Mat& dest, int& sample_num, const float sampling_ratio, const int ditheringMethod);
+
+
+		int generateUniformSamples(const std::vector<cv::Mat>& image, cv::Mat& samples, const float sampling_ratio, const int ditheringMethod, const cv::Rect roi);
+		int generateColorNormalizedSamples(const std::vector<cv::Mat>& image, cv::Mat& samples, const float sampling_ratio, const int ditheringMethod, const bool isUseAverage, const cv::Rect roi);
+		int generateGradientMaxSamples(const std::vector<cv::Mat>& image, cv::Mat& samples, const float sampling_ratio, const int ditheringMethod, const bool isUseAverage, const cv::Rect roi);
+		int generateGradientMaxSamplesWeight(const std::vector<cv::Mat>& image, cv::Mat& samples, cv::Mat& weight, const float sampling_ratio, const int ditheringMethod, const bool isUseAverage, const cv::Rect roi);
+		int generateDoGSamples(const std::vector<cv::Mat>& image, cv::Mat& samples, const float sigma, const float sampling_ratio, const int ditheringMethod, const bool isUseAverage, const cv::Rect roi);
+
+		void setEdgeDiffusionSigma(const float sigma);
+		void setUseWeight(const bool flag);
+	};
+
 	class CP_EXPORT ClusteringHDKFSingleBase
 	{
-		bool isTestClustering = false;
+		cv::Mat wmap;
+		TexturenessSampling ts;
 
 		cv::Mat labels, guide_image8u,
 			reshaped_image8u, reshaped_image32f;
 	protected:
+		bool isTestClustering;
 		cv::Mat projectionMatrix;//for PCA
 		cv::Mat eigenValue;//for PCA
 
@@ -204,7 +313,7 @@ namespace cp
 		std::vector<cv::Mat> downsampleSRC;
 		cv::Mat guide_image32f;
 
-		cv::Mat clusteringErrorMap;
+		cv::Mat sampling_mask;//dithering result
 		bool isJoint = false;
 		int statePCA = 0;//0: noPCA, 1: srcPCA, 2: jointPCA
 		std::vector<cv::Mat> vsrc;//input image
@@ -226,6 +335,8 @@ namespace cp
 		double sigma_range = 0.0;
 		int spatial_order = 0;
 
+		int kmeanspp_trials = 3;
+		int kmeansrepp_trials = 3;
 		double kmeans_sigma = 25.0;
 		double kmeans_signal_max = 255.0;
 
@@ -239,8 +350,7 @@ namespace cp
 		cv::Mat mu;//[guide_channelsxK]clustering sampling points
 
 		bool isCropBoundaryClustering = false;
-		bool isDownsampleClustering = false;
-		int downsampleRate = 1;
+		double sampleRate = 0.25;
 		int downsampleClusteringMethod = cv::INTER_NEAREST;
 		int downsampleImageMethod = cv::INTER_AREA;
 
@@ -252,14 +362,10 @@ namespace cp
 
 		cv::Ptr<cp::SpatialFilterBase> GF;
 
-		//return mse
-		double testClustering(const std::vector<cv::Mat>& guide);
-		void clustering();
-		void downsampleForClustering(cv::Mat& src, cv::Mat& dest);
-
 		void downsampleImage(const std::vector<cv::Mat>& vsrc, std::vector<cv::Mat>& vsrcRes, const std::vector<cv::Mat>& vguide, std::vector<cv::Mat>& vguideRes, const int downsampleImageMethod = cv::INTER_AREA);
-		std::vector<cv::Mat> cropBufferForClustering;
-		std::vector<cv::Mat> cropBufferForClustering2;
+
+		//swich downsampleForClustering/mergeForClustering
+		void clustering();
 		void downsampleForClustering(std::vector<cv::Mat>& src, cv::Mat& dest, const bool isCropBoundary);
 		void downsampleForClusteringWith8U(std::vector<cv::Mat>& src, cv::Mat& dest, cv::Mat& image8u, const bool isCropBoundary);
 		void mergeForClustering(std::vector<cv::Mat>& src, cv::Mat& dest, const bool isCropBoundary);
@@ -275,15 +381,19 @@ namespace cp
 		void setGaussianFilter(const double sigma_space, const cp::SpatialFilterAlgorithm method, const int gf_order);
 		void setBoundaryLength(const int length);
 		void setNumIterations(const int iterations) { this->iterations = iterations; }
+
+		void setKMeansPPTrials(const int num) { this->kmeanspp_trials = num; }
+		void setKMeansREPPTrials(const int num) { this->kmeansrepp_trials = num; }
 		void setKMeansAttempts(const int attempts) { this->attempts = attempts; }
 		void setKMeansSigma(const double sigma) { this->kmeans_sigma = sigma; }
 		void setKMeansSignalMax(const double signal_max) { this->kmeans_signal_max = signal_max; }
+
 		void setClusterRefine(const int method) { this->clusterRefineMethod = method; };
 		void setDownsampleImageSize(const int val) { this->downSampleImage = val; }
 		void setParameter(cv::Size img_size, double sigma_space, double sigma_range, ClusterMethod cm,
 			int K, cp::SpatialFilterAlgorithm gf_method, int gf_order, int depth,
-			bool isDownsampleClustering = false, int downsampleRate = 2, int downsampleMethod = cv::INTER_NEAREST, int boundarylength = 0, int borderType = cv::BORDER_DEFAULT);
-
+			double downsampleRate = 0.25, int downsampleMethod = cv::INTER_NEAREST, int boundarylength = 0, int borderType = cv::BORDER_DEFAULT);
+		void setSampleRate(const double rate);
 		void setConcat_offset(int concat_offset);
 		void setPca_r(int pca_r);
 		void setKmeans_ratio(float kmeans_ratio);
@@ -292,31 +402,29 @@ namespace cp
 
 		void setTestClustering(bool flag);
 
-		void getClusteringErrorMap(cv::Mat& dest);
-
 		void filter(const cv::Mat& src, cv::Mat& dst, double sigma_space, double sigma_range,
 			ClusterMethod cm, int K, const cp::SpatialFilterAlgorithm gf_method, int gf_order, int depth,
-			bool isDownsampleClustering = false, int downsampleRate = 2, int downsampleMethod = cv::INTER_NEAREST, int border = cv::BORDER_DEFAULT);
+			const double downsampleRate = 0.25, int downsampleMethod = cv::INTER_NEAREST, int border = cv::BORDER_DEFAULT);
 		void jointfilter(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dst, const double sigma_space, const double sigma_range,
 			const ClusterMethod cm, const int K, const cp::SpatialFilterAlgorithm gf_method, const int gf_order, const int depth,
-			const bool isDownsampleClustering = false, const int downsampleRate = 2, const int downsampleMethod = cv::INTER_NEAREST, int border = cv::BORDER_DEFAULT);
+			const double downsampleRate = 0.25, const int downsampleMethod = cv::INTER_NEAREST, int border = cv::BORDER_DEFAULT);
 
 		void filter(const std::vector<cv::Mat>& src, cv::Mat& dst, const double sigma_space, const double sigma_range,
 			const ClusterMethod cm, const int K, const cp::SpatialFilterAlgorithm gf_method, const int gf_order, const int depth,
-			const bool isDownsampleClustering = false, const int downsampleRate = 2, const int downsampleMethod = cv::INTER_NEAREST, const int boundaryLength = 0, int border = cv::BORDER_DEFAULT);
+			const double downsampleRate = 0.25, const int downsampleMethod = cv::INTER_NEAREST, const int boundaryLength = 0, int border = cv::BORDER_DEFAULT);
 		void PCAfilter(const std::vector<cv::Mat>& src, const int pca_channels, cv::Mat& dst, const double sigma_space, const double sigma_range,
 			const ClusterMethod cm, const int K, const cp::SpatialFilterAlgorithm gf_method, const int gf_order, const int depth,
-			const bool isDownsampleClustering = false, const int downsampleRate = 2, const int downsampleMethod = cv::INTER_NEAREST, const int boundaryLength = 0, int border = cv::BORDER_DEFAULT);
+			const double downsampleRate = 0.25, const int downsampleMethod = cv::INTER_NEAREST, const int boundaryLength = 0, int border = cv::BORDER_DEFAULT);
 		void jointfilter(const std::vector<cv::Mat>& src, const std::vector<cv::Mat>& guide, cv::Mat& dst, const double sigma_space, const double sigma_range,
 			const ClusterMethod cm, const int K, const cp::SpatialFilterAlgorithm gf_method, const int gf_order, const int depth,
-			const bool isDownsampleClustering = false, const int downsampleRate = 2, const int downsampleMethod = cv::INTER_NEAREST, const int boundaryLength = 0, int border = cv::BORDER_DEFAULT);
+			const double downsampleRate = 0.25, const int downsampleMethod = cv::INTER_NEAREST, const int boundaryLength = 0, int border = cv::BORDER_DEFAULT);
 		void jointPCAfilter(const std::vector<cv::Mat>& src, const std::vector<cv::Mat>& guide, const int pca_channels, cv::Mat& dst, const double sigma_space, const double sigma_range,
 			const ClusterMethod cm, const int K, const cp::SpatialFilterAlgorithm gf_method, const int gf_order, const int depth,
-			const bool isDownsampleClustering = false, const int downsampleRate = 2, const int downsampleMethod = cv::INTER_NEAREST, const int boundaryLength = 0, int border = cv::BORDER_DEFAULT);
+			const double downsampleRate = 0.25, const int downsampleMethod = cv::INTER_NEAREST, const int boundaryLength = 0, int border = cv::BORDER_DEFAULT);
 
 		void nlmfilter(const std::vector<cv::Mat>& src, const std::vector<cv::Mat>& guide, cv::Mat& dst, const double sigma_space, const double sigma_range, const int patch_r, const int reduced_dim,
 			const ClusterMethod cm, const int K, const cp::SpatialFilterAlgorithm gf_method, const int gf_order, const int depth,
-			const bool isDownsampleClustering = false, const int downsampleRate = 2, const int downsampleMethod = cv::INTER_NEAREST, const int boundaryLength = 0, int border = cv::BORDER_DEFAULT);
+			const double downsampleRate = 0.25, const int downsampleMethod = cv::INTER_NEAREST, const int boundaryLength = 0, int border = cv::BORDER_DEFAULT);
 
 		cv::Mat getSamplingPoints();
 		cv::Mat cloneEigenValue();//clone eigenValue
@@ -327,19 +435,19 @@ namespace cp
 	enum class ConstantTimeHDGF
 	{
 		Interpolation,
+		Nystrom,
+		SoftAssignment,
 		Interpolation2,
 		Interpolation3,
-		Nystrom,
-		SoftAssignment
 	};
 	inline std::string getclusteringHDKFMethodName(int method)
 	{
 		std::string ret = "";
-		if (method == 0) ret = "Interpolation";
-		if (method == 1) ret = "Interpolation2";
-		if (method == 2) ret = "Interpolation3";
-		if (method == 3) ret = "Nystrom";
-		if (method == 4) ret = "Soft";
+		if (method == (int)ConstantTimeHDGF::Interpolation) ret = "Interpolation";
+		if (method == (int)ConstantTimeHDGF::Interpolation2) ret = "Interpolation2";
+		if (method == (int)ConstantTimeHDGF::Interpolation3) ret = "Interpolation3";
+		if (method == (int)ConstantTimeHDGF::Nystrom) ret = "Nystrom";
+		if (method == (int)ConstantTimeHDGF::SoftAssignment) ret = "Soft";
 		return ret;
 	}
 
@@ -683,8 +791,12 @@ namespace cp
 		void setDownsampleImageSize(const int val);
 		void setKMeansAttempts(const int attempts);
 		void setNumIterations(const int iterations);
+
+		void setKMeansPPTrials(const int num);
+		void setKMeansREPPTrials(const int num);
 		void setKMeansSigma(const double sigma);
 		void setKMeansSignalMax(const double signal_max);
+
 		void setClusterRefine(const int method);
 		void setConcat_offset(int concat_offset);
 		void setPca_r(int pca_r);
@@ -699,35 +811,36 @@ namespace cp
 		void setIsUseLocalMu(const bool flag);
 		void setIsUseLocalStatisticsPrior(const bool flag);
 
+		void setSampleRate(const float rate);
 
 		void filter(const cv::Mat& src, cv::Mat& dst, double sigma_space, double sigma_range,
 			ClusterMethod cm, int K, cp::SpatialFilterAlgorithm gf_method, int gf_order, int depth,
-			bool isDownsampleClustering = false, int downsampleRate = 2, int downsampleMethod = cv::INTER_NEAREST
+			double downsampleRate = 0.25, int downsampleMethod = cv::INTER_NEAREST
 			, double truncateBoundary = 3.0, const int borderType = cv::BORDER_DEFAULT);
 
 		void PCAfilter(const cv::Mat& src, const int reduced_dim, cv::Mat& dst, double sigma_space, double sigma_range,
 			ClusterMethod cm, int K, cp::SpatialFilterAlgorithm gf_method, int gf_order, int depth,
-			bool isDownsampleClustering = false, int downsampleRate = 2, int downsampleMethod = cv::INTER_NEAREST
+			double downsampleRate = 0.25, int downsampleMethod = cv::INTER_NEAREST
 			, double truncateBoundary = 3.0, const int borderType = cv::BORDER_DEFAULT);
 
 		void jointfilter(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dst, double sigma_space, double sigma_range,
 			ClusterMethod cm, int K, cp::SpatialFilterAlgorithm gf_method, int gf_order, int depth,
-			bool isDownsampleClustering = false, int downsampleRate = 2, int downsampleMethod = cv::INTER_NEAREST
+			double downsampleRate = 0.25, int downsampleMethod = cv::INTER_NEAREST
 			, double truncateBoundary = 3.0, const int borderType = cv::BORDER_DEFAULT);
 
 		void jointPCAfilter(const cv::Mat& src, const cv::Mat& guide, const int reduced_dim, cv::Mat& dst, double sigma_space, double sigma_range,
 			ClusterMethod cm, int K, cp::SpatialFilterAlgorithm gf_method, int gf_order, int depth,
-			bool isDownsampleClustering = false, int downsampleRate = 2, int downsampleMethod = cv::INTER_NEAREST
+			double downsampleRate = 0.25, int downsampleMethod = cv::INTER_NEAREST
 			, double truncateBoundary = 3.0, const int borderType = cv::BORDER_DEFAULT);
 
 		void jointPCAfilter(const std::vector<cv::Mat>& src, const std::vector<cv::Mat>& guide, const int reduced_dim, cv::Mat& dst, double sigma_space, double sigma_range,
 			ClusterMethod cm, int K, cp::SpatialFilterAlgorithm gf_method, int gf_order, int depth,
-			bool isDownsampleClustering = false, int downsampleRate = 2, int downsampleMethod = cv::INTER_NEAREST
+			double downsampleRate = 0.25, int downsampleMethod = cv::INTER_NEAREST
 			, double truncateBoundary = 3.0, const int borderType = cv::BORDER_DEFAULT);
 
 		void nlmfilter(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dst, double sigma_space, double sigma_range, const int patch_r, const int reduced_dim,
 			ClusterMethod cm, int K, cp::SpatialFilterAlgorithm gf_method, int gf_order, int depth,
-			bool isDownsampleClustering = false, int downsampleRate = 2, int downsampleMethod = cv::INTER_NEAREST
+			double downsampleRate = 0.25, int downsampleMethod = cv::INTER_NEAREST
 			, double truncateBoundary = 3.0, const int borderType = cv::BORDER_DEFAULT);
 
 		cv::Size getTileSize();

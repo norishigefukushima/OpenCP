@@ -60,6 +60,12 @@ namespace cp
 		return ret;
 	}
 
+	void KMeans::setWeightMap(const cv::Mat& weight)
+	{
+		isUseWeight = true;
+		this->weight = weight;
+	}
+
 	static void onMouseKmeans3D(int event, int x, int y, int flags, void* param)
 	{
 		Point* ret = (Point*)param;
@@ -71,7 +77,7 @@ namespace cp
 		}
 	}
 
-	static void projectPoints(const Mat& xyz, const Mat& R, const Mat& t, const Mat& K, vector<Point2f>& dest, const bool isRotationThenTranspose)
+	static void orthographicProjectPoints(const Mat& xyz, const Mat& R, const Mat& t, const Mat& K, vector<Point2f>& dest, const bool isRotationThenTranspose)
 	{
 		float* data = (float*)xyz.ptr<float>(0);
 		Point2f* dst = &dest[0];
@@ -255,7 +261,7 @@ namespace cp
 }*/
 		Mat muindex(K, 1, CV_8U);
 		Mat mucolor;
-		for (int i = 0; i < K; i++) muindex.at<uchar>(i) = 255.0 / K * i;
+		for (int i = 0; i < K; i++) muindex.at<uchar>(i) = saturate_cast<uchar>(255.0 / K * i);
 
 		while (key != 'q')
 		{
@@ -308,22 +314,22 @@ namespace cp
 			tt.at<double>(1) = -127.5;
 			tt.at<double>(2) = -127.5;
 			cp::moveXYZ(rgb, xyz, rot, tt, false);
-			projectPoints(xyz, R, t, k, pt, true);
+			orthographicProjectPoints(xyz, R, t, k, pt, true);
 
 			if (isAdditional)
 			{
 				cp::moveXYZ(additionalRGB, additionalXYZ, rot, tt, false);
-				projectPoints(additionalXYZ, R, t, k, additionalpt, true);
+				orthographicProjectPoints(additionalXYZ, R, t, k, additionalpt, true);
 			}
 			//rotate & plot guide information
 			cp::moveXYZ(guide, guideDest, rot, Mat::zeros(3, 1, CV_64F), true);
-			projectPoints(guideDest, R, t, k, guidept, true);
+			orthographicProjectPoints(guideDest, R, t, k, guidept, true);
 
 			/*cout << center.cols << endl;
 			cout << center.rows << endl;
 			cout << center.channels() << endl;*/
 			cp::moveXYZ(centroidRGB, centerxyz, rot, tt, false);
-			projectPoints(centerxyz, R, t, k, centerpt, true);
+			orthographicProjectPoints(centerxyz, R, t, k, centerpt, true);
 
 			//draw lines for etc points
 			Point rgbzero = Point(cvRound(guidept[0].x), cvRound(guidept[0].y));
@@ -361,10 +367,13 @@ namespace cp
 					if (x >= 0 && x < show.cols && y >= 0 && y < show.rows)
 					{
 						show.at<Vec3b>(Point(x, y)) = addtionalPlotColor;
+
+						show.at<Vec3b>(Point(x + 1, y + 0)) = addtionalPlotColor;
+						show.at<Vec3b>(Point(x - 1, y + 0)) = addtionalPlotColor;
+						show.at<Vec3b>(Point(x + 0, y + 1)) = addtionalPlotColor;
+						show.at<Vec3b>(Point(x + 0, y - 1)) = addtionalPlotColor;
 					}
 				}
-				cp::moveXYZ(additionalRGB, additionalXYZ, rot, tt, false);
-				projectPoints(additionalXYZ, R, t, k, additionalpt, true);
 			}
 
 			//rendering RGB plots
@@ -468,6 +477,12 @@ namespace cp
 		return temp * temp;
 	}
 
+	inline float normL2SqrAdd(float a, float b, float c)
+	{
+		float temp = a - b;
+		return temp * temp + c;
+	}
+
 	//(a-b)^2
 	inline __m256 normL2Sqr(__m256 a, __m256 b)
 	{
@@ -483,7 +498,7 @@ namespace cp
 	}
 
 #pragma region initialCentroid
-	void KMeans::generateKmeansRandomInitialCentroidSoA(const cv::Mat& data_points, cv::Mat& dest_centroids, const int K, cv::RNG& rng)
+	void KMeans::generateKmeansRandomBoxInitialCentroidSoA(const cv::Mat& data_points, cv::Mat& dest_centroids, const int K, cv::RNG& rng)
 	{
 		const int N = data_points.cols;
 		const int dims = data_points.rows;
@@ -517,6 +532,319 @@ namespace cp
 		}
 	}
 
+
+	//slow
+	float KMeansPPDistanceComputerSoASingleDNLoop(__m256* dest_distance, const Mat& data_points, const __m256* src_distance, const int centroid_index)
+	{
+		const int dims = data_points.rows;
+		const int simd_width = data_points.cols / 8;
+
+		std::vector<__m256*> dim(dims);
+		{
+			int d = 0;
+			const float* p = data_points.ptr<float>(d);
+			dim[d] = (__m256*)p;
+			const __m256 centers_value = _mm256_set1_ps(p[centroid_index]);
+
+			for (int i = 0; i < simd_width; i++)
+			{
+				dest_distance[i] = normL2Sqr(dim[d][i], centers_value);
+			}
+		}
+		for (int d = 1; d < dims; d++)
+		{
+			const float* p = data_points.ptr<float>(d);
+			dim[d] = (__m256*)p;
+			const __m256 centers_value = _mm256_set1_ps(p[centroid_index]);
+
+			for (int i = 0; i < simd_width; i++)
+			{
+				dest_distance[i] = normL2SqrAdd(dim[d][i], centers_value, dest_distance[i]);
+			}
+		}
+
+		float ret = 0.f;
+		__m256 tdist2_acc = _mm256_setzero_ps();
+		for (int i = 0; i < simd_width; i++)
+		{
+			dest_distance[i] = _mm256_min_ps(dest_distance[i], src_distance[i]);
+			tdist2_acc = _mm256_add_ps(tdist2_acc, dest_distance[i]);
+		}
+		ret += _mm256_reduceadd_ps(tdist2_acc);
+		return ret;
+	}
+
+	template<int dims>
+	float KMeansPPDistanceComputerSoASingleNDLoop(__m256* dest_distance, const Mat& data_points, const __m256* src_distance, const int centroid_index)
+	{
+		const int simd_width = data_points.cols / 8;
+
+		AutoBuffer<__m256*> dim(dims);
+		AutoBuffer<__m256> centers_value(dims);
+		for (int d = 0; d < dims; d++)
+		{
+			const float* p = data_points.ptr<float>(d);
+			dim[d] = (__m256*)p;
+			centers_value[d] = _mm256_set1_ps(p[centroid_index]);
+		}
+
+		float ret = 0.f;
+		__m256 tdist2_acc = _mm256_setzero_ps();
+		for (int i = 0; i < simd_width; i++)
+		{
+			__m256 v = normL2Sqr(dim[0][i], centers_value[0]);
+			for (int d = 1; d < dims; d++)
+			{
+				v = normL2SqrAdd(dim[d][i], centers_value[d], v);
+			}
+			dest_distance[i] = _mm256_min_ps(v, src_distance[i]);
+			tdist2_acc = _mm256_add_ps(tdist2_acc, dest_distance[i]);
+		}
+		ret += _mm256_reduceadd_ps(tdist2_acc);
+		return ret;
+	}
+
+	template<>
+	float KMeansPPDistanceComputerSoASingleNDLoop<3>(__m256* dest_distance, const Mat& data_points, const __m256* src_distance, const int centroid_index)
+	{
+		const int simd_width = data_points.cols / 8;
+
+		AutoBuffer<__m256*> dim(3);
+		AutoBuffer<__m256> centers_value(3);
+		for (int d = 0; d < 3; d++)
+		{
+			const float* p = data_points.ptr<float>(d);
+			dim[d] = (__m256*)p;
+			centers_value[d] = _mm256_set1_ps(p[centroid_index]);
+		}
+
+		float ret = 0.f;
+		__m256 tdist2_acc = _mm256_setzero_ps();
+		for (int i = 0; i < simd_width; i++)
+		{
+			__m256 v = normL2Sqr(dim[0][i], centers_value[0]);
+			v = normL2SqrAdd(dim[1][i], centers_value[1], v);
+			v = normL2SqrAdd(dim[2][i], centers_value[2], v);
+			dest_distance[i] = _mm256_min_ps(v, src_distance[i]);
+			tdist2_acc = _mm256_add_ps(tdist2_acc, dest_distance[i]);
+		}
+		ret += _mm256_reduceadd_ps(tdist2_acc);
+		return ret;
+	}
+
+	float KMeansPPDistanceComputerSoASingleNDLoop(__m256* dest_distance, const Mat& data_points, const __m256* src_distance, const int centroid_index)
+	{
+		const int dims = data_points.rows;
+		if (dims == 1) return KMeansPPDistanceComputerSoASingleNDLoop<1>(dest_distance, data_points, src_distance, centroid_index);
+		if (dims == 2) return KMeansPPDistanceComputerSoASingleNDLoop<2>(dest_distance, data_points, src_distance, centroid_index);
+		if (dims == 3) return KMeansPPDistanceComputerSoASingleNDLoop<3>(dest_distance, data_points, src_distance, centroid_index);
+		if (dims == 4) return KMeansPPDistanceComputerSoASingleNDLoop<4>(dest_distance, data_points, src_distance, centroid_index);
+		if (dims == 5) return KMeansPPDistanceComputerSoASingleNDLoop<5>(dest_distance, data_points, src_distance, centroid_index);
+
+		const int simd_width = data_points.cols / 8;
+
+		AutoBuffer<__m256*> dim(dims);
+		AutoBuffer<__m256> centers_value(dims);
+		for (int d = 0; d < dims; d++)
+		{
+			const float* p = data_points.ptr<float>(d);
+			dim[d] = (__m256*)p;
+			centers_value[d] = _mm256_set1_ps(p[centroid_index]);
+		}
+
+		__m256 tdist2_acc = _mm256_setzero_ps();
+		for (int i = 0; i < simd_width; i++)
+		{
+			__m256 v = normL2Sqr(dim[0][i], centers_value[0]);
+			for (int d = 1; d < dims; d++)
+			{
+				v = normL2SqrAdd(dim[d][i], centers_value[d], v);
+			}
+			dest_distance[i] = _mm256_min_ps(v, src_distance[i]);
+			tdist2_acc = _mm256_add_ps(tdist2_acc, dest_distance[i]);
+		}
+		float ret = _mm256_reduceadd_ps(tdist2_acc);
+		return ret;
+	}
+
+	float KMeansMSPPDistanceComputerSoASingleInitNDLoop(__m256* dest_distance1st, __m256* dest_distance2nd, __m256* dest_index1st, __m256* dest_index2nd, const Mat& data_points, const __m256* src_distance1st, const __m256* src_distance2nd, const __m256* src_index1st, const __m256* src_index2nd, const int centroid_index, const int kindex)
+	{
+		if (false)
+		{
+			const int dims = data_points.rows;
+			const int simd_width = data_points.cols / 8;
+
+			AutoBuffer<__m256*> dim(dims);
+			AutoBuffer<__m256> centers_value(dims);
+			for (int d = 0; d < dims; d++)
+			{
+				const float* p = data_points.ptr<float>(d);
+				dim[d] = (__m256*)p;
+				centers_value[d] = _mm256_set1_ps(p[centroid_index]);
+			}
+
+			float ret = 0.f;
+			__m256 tdist2_acc = _mm256_setzero_ps();
+			for (int i = 0; i < simd_width; i++)
+			{
+				__m256 v = normL2Sqr(dim[0][i], centers_value[0]);
+				for (int d = 1; d < dims; d++)
+				{
+					v = normL2SqrAdd(dim[d][i], centers_value[d], v);
+				}
+				dest_index1st[i] = src_index1st[i];
+				_mm256_argmin_ps(src_distance1st[i], v, dest_index1st[i], kindex);
+				dest_distance1st[i] = v;
+				tdist2_acc = _mm256_add_ps(tdist2_acc, dest_distance1st[i]);
+			}
+			ret += _mm256_reduceadd_ps(tdist2_acc);
+			return ret;
+		}
+		else
+		{
+			const int dims = data_points.rows;
+			AutoBuffer<const float*> dim(dims);
+			AutoBuffer<float> centers_value(dims);
+			for (int d = 0; d < dims; d++)
+			{
+				const float* p = data_points.ptr<float>(d);
+				dim[d] = p;
+				centers_value[d] = p[centroid_index];
+			}
+			const float* sdist_1st = (const float*)src_distance1st;
+			const float* sdist_2nd = (const float*)src_distance2nd;
+			float* ddist_1st = (float*)dest_distance1st;
+			float* ddist_2nd = (float*)dest_distance2nd;
+			const float* sidx_1st = (const float*)src_index1st;
+			const float* sidx_2nd = (const float*)src_index2nd;
+			float* didx_1st = (float*)dest_index1st;
+			float* didx_2nd = (float*)dest_index2nd;
+			float ret = 0.f;
+			for (int i = 0; i < data_points.cols; i++)
+			{
+				float v = normL2Sqr(dim[0][i], centers_value[0]);
+				for (int d = 1; d < dims; d++)
+				{
+					v = normL2SqrAdd(dim[d][i], centers_value[d], v);
+				}
+
+				ddist_1st[i] = sdist_1st[i];
+				didx_1st[i] = sidx_1st[i];
+				ddist_2nd[i] = sdist_2nd[i];
+				didx_2nd[i] = sidx_2nd[i];
+
+				if (v < sdist_2nd[i])
+				{
+					ddist_2nd[i] = v;
+					didx_2nd[i] = kindex;
+				}
+				if (v < sdist_1st[i])
+				{
+					ddist_2nd[i] = sdist_1st[i];
+					didx_2nd[i] = sidx_1st[i];
+					ddist_1st[i] = v;
+					didx_1st[i] = kindex;
+				}
+				ret += ddist_1st[i];
+			}
+			return ret;
+		}
+	}
+
+	float KMeansMSPPDistanceComputerSoASingleNDLoop(__m256* dest_distance1st, __m256* dest_distance2nd, __m256* dest_index1st, __m256* dest_index2nd, const Mat& data_points,
+		const __m256* src_distance1st, const __m256* src_distance2nd, const __m256* src_index1st, const __m256* src_index2nd, const int centroid_index, const int remove_kindex)
+	{
+		const int dims = data_points.rows;
+		if (false)
+		{
+			const int simd_width = data_points.cols / 8;
+			const __m256 mkindex = _mm256_set1_ps((float)remove_kindex);
+			AutoBuffer<__m256*> dim(dims);
+			AutoBuffer<__m256> centers_value(dims);
+			for (int d = 0; d < dims; d++)
+			{
+				const float* p = data_points.ptr<float>(d);
+				dim[d] = (__m256*)p;
+				centers_value[d] = _mm256_set1_ps(p[centroid_index]);
+			}
+
+			float ret = 0.f;
+			__m256 tdist2_acc = _mm256_setzero_ps();
+			for (int i = 0; i < simd_width; i++)
+			{
+				__m256 v = normL2Sqr(dim[0][i], centers_value[0]);
+				for (int d = 1; d < dims; d++)
+				{
+					v = normL2SqrAdd(dim[d][i], centers_value[d], v);
+				}
+				const __m256 mask = _mm256_cmp_ps(mkindex, src_index1st[i], 0);
+				//dest_distance[i] = _mm256_blendv_ps(src_distance[i], v, mask);
+				//dest_index[i] = _mm256_blendv_ps(src_index[i], mkindex, mask);
+				dest_distance1st[i] = _mm256_blendv_ps(v, src_distance1st[i], mask);
+				dest_index1st[i] = _mm256_blendv_ps(mkindex, src_index1st[i], mask);
+
+				tdist2_acc = _mm256_add_ps(tdist2_acc, dest_distance1st[i]);
+			}
+			ret += _mm256_reduceadd_ps(tdist2_acc);
+			return ret;
+		}
+		else
+		{
+			AutoBuffer<const float*> dim(dims);
+			AutoBuffer<float> centers_value(dims);
+			for (int d = 0; d < dims; d++)
+			{
+				const float* p = data_points.ptr<float>(d);
+				dim[d] = p;
+				centers_value[d] = p[centroid_index];
+			}
+			const float* sdst_1st = (const float*)src_distance1st;
+			const float* sdst_2nd = (const float*)src_distance2nd;
+			float* ddst_1st = (float*)dest_distance1st;
+			float* ddst_2nd = (float*)dest_distance2nd;
+			const float* sidx_1st = (const float*)src_index1st;
+			const float* sidx_2nd = (const float*)src_index2nd;
+			float* didx_1st = (float*)dest_index1st;
+			float* didx_2nd = (float*)dest_index2nd;
+			float ret = 0.f;
+			for (int i = 0; i < data_points.cols; i++)
+			{
+				float v = normL2Sqr(dim[0][i], centers_value[0]);
+				for (int d = 1; d < dims; d++)
+				{
+					v = normL2SqrAdd(dim[d][i], centers_value[d], v);
+				}
+
+				ddst_1st[i] = sdst_1st[i];
+				didx_1st[i] = sidx_1st[i];
+				ddst_2nd[i] = sdst_2nd[i];
+				didx_2nd[i] = sidx_2nd[i];
+
+				if (sidx_2nd[i] == float(remove_kindex))
+				{
+					ddst_2nd[i] = v;
+				}
+
+				if (sidx_1st[i] == float(remove_kindex))
+				{
+					if (v < sdst_1st[i])
+					{
+						ddst_1st[i] = v;
+						didx_1st[i] = remove_kindex;
+					}
+					else
+					{
+						ddst_1st[i] = sdst_2nd[i];
+						didx_1st[i] = sidx_2nd[i];
+					}
+				}
+
+				ret += ddst_1st[i];
+			}
+			return ret;
+		}
+	}
+
 	class KMeansPPDistanceComputerSoA_AVX : public ParallelLoopBody
 	{
 	private:
@@ -525,13 +853,12 @@ namespace cp
 		const Mat& data_points;
 		const int centroid_index;
 	public:
-		KMeansPPDistanceComputerSoA_AVX(__m256* dest_dist, const Mat& data_points, const __m256* src_distance, int centroid_index) :
+		KMeansPPDistanceComputerSoA_AVX(__m256* dest_dist, const Mat& data_points, const __m256* src_distance, const int centroid_index) :
 			dest_distance(dest_dist), data_points(data_points), src_distance(src_distance), centroid_index(centroid_index)
 		{ }
 
 		void operator()(const cv::Range& range) const CV_OVERRIDE
 		{
-			//CV_TRACE_FUNCTION();
 			const int begin = range.start;
 			const int end = range.end;
 			const int dims = data_points.rows;
@@ -569,13 +896,169 @@ namespace cp
 		}
 	};
 
-	//k - means center initialization using the following algorithm :
-	//Arthur & Vassilvitskii(2007) k-means++ : The Advantages of Careful Seeding
-	//centroids: dims x k
-	void KMeans::generateKmeansPPInitialCentroidSoA(const Mat& data_points, Mat& dest_centroids,
-		int K, RNG& rng, int trials)
+	float getWeightedSamplingDistance(const Mat& data_points, const Mat& weight, const int dims, const int size, const int index, __m256* dist)
 	{
-		//CV_TRACE_FUNCTION();
+		AutoBuffer<const float*> p(dims);
+		AutoBuffer<__m256> centers_value(dims);
+		const float* wp = weight.ptr<float>();
+		for (int d = 0; d < dims; d++)
+		{
+			p[d] = data_points.ptr<float>(d);
+			centers_value[d] = _mm256_set1_ps(p[d][index]);
+		}
+
+		float distance_sum = 0.f;
+		__m256 dist_value_acc = _mm256_setzero_ps();
+		for (int i = 0; i < size; i++)
+		{
+			const __m256 mw = _mm256_sub_ps(_mm256_set1_ps(1.f), _mm256_loadu_ps(wp + 8 * i));
+			//const __m256 mw =  _mm256_loadu_ps(wp + 8 * i);
+			__m256 dist_value = cp::normL2Sqr(_mm256_loadu_ps(p[0] + 8 * i), centers_value[0]);
+			for (int d = 1; d < dims; d++)
+			{
+				dist_value = cp::normL2SqrAdd(_mm256_loadu_ps(p[d] + 8 * i), centers_value[d], dist_value);
+			}
+			dist_value = _mm256_mul_ps(dist_value, mw);
+			dist[i] = dist_value;
+			dist_value_acc = _mm256_add_ps(dist_value_acc, dist_value);
+		}
+		distance_sum = _mm256_reduceadd_ps(dist_value_acc);
+		return distance_sum;
+	}
+
+	float getSamplingDistance(const Mat& data_points, const int dims, const int size, const int index, __m256* dist)
+	{
+		AutoBuffer<const float*> p(dims);
+		AutoBuffer<__m256> centers_value(dims);
+		for (int d = 0; d < dims; d++)
+		{
+			p[d] = data_points.ptr<float>(d);
+			centers_value[d] = _mm256_set1_ps(p[d][index]);
+		}
+
+		float distance_sum = 0.f;
+		__m256 dist_value_acc = _mm256_setzero_ps();
+		for (int i = 0; i < size; i++)
+		{
+			{
+				const __m256 md = _mm256_loadu_ps(p[0] + 8 * i);
+				const __m256 dist_value = cp::normL2Sqr(md, centers_value[0]);
+				dist[i] = dist_value;
+				dist_value_acc = _mm256_add_ps(dist_value_acc, dist_value);
+			}
+			for (int d = 1; d < dims; d++)
+			{
+				const __m256 md = _mm256_loadu_ps(p[d] + 8 * i);
+				const __m256 dist_value = cp::normL2Sqr(md, centers_value[d]);
+				dist[i] = _mm256_add_ps(dist[i], dist_value);
+				// compute accumulate
+				dist_value_acc = _mm256_add_ps(dist_value_acc, dist_value);
+			}
+		}
+		distance_sum = _mm256_reduceadd_ps(dist_value_acc);
+		return distance_sum;
+	}
+
+	int getIndexProbabilitySampling(const float* disttop, const float prob, const int N)
+	{
+		float p = prob;
+		int centroidIndex = 0;
+		for (; centroidIndex < N - 8; centroidIndex += 8)
+		{
+			const float sub = _mm256_reduceadd_ps(_mm256_loadu_ps(disttop + centroidIndex));
+
+			if (p - sub <= 0.f)
+			{
+				for (int v = 0; v < 8; v++)
+				{
+					p -= disttop[centroidIndex + v];
+					if (p <= 0.f)
+					{
+						centroidIndex += v;
+						return centroidIndex;
+					}
+				}
+			}
+			else
+			{
+				p -= sub;
+			}
+		}
+		for (; centroidIndex < N - 1; centroidIndex++)
+		{
+			p -= disttop[centroidIndex];
+			if (p <= 0.f) return centroidIndex;;
+		}
+		return centroidIndex;
+	}
+
+	float getWeightedDistance(const float* distance, const float* weight, const int size)
+	{
+		__m256 msum = _mm256_setzero_ps();
+		for (int i = 0; i < size; i += 8)
+		{
+			msum = _mm256_fmadd_ps(_mm256_loadu_ps(distance + i), _mm256_loadu_ps(weight + i), msum);
+		}
+		return _mm256_reduceadd_ps(msum);
+	}
+
+	int getIndexWeightedProbabilitySampling(const float* disttop, const float* weight, const float prob, const int N)
+	{
+		float p = prob;
+		int centroidIndex = 0;
+		for (; centroidIndex < N - 8; centroidIndex += 8)
+		{
+			__m256 v = _mm256_mul_ps(_mm256_loadu_ps(weight + centroidIndex), _mm256_loadu_ps(disttop + centroidIndex));
+			const float sub = _mm256_reduceadd_ps(v);
+
+			if (p - sub <= 0.f)
+			{
+				for (int v = 0; v < 8; v++)
+				{
+					p -= weight[centroidIndex + v] * disttop[centroidIndex + v];
+					if (p <= 0.f)
+					{
+						centroidIndex += v;
+						return centroidIndex;
+					}
+				}
+			}
+			else
+			{
+				p -= sub;
+			}
+		}
+		for (; centroidIndex < N - 1; centroidIndex++)
+		{
+			p -= weight[centroidIndex] * disttop[centroidIndex];
+			if (p <= 0.f) return centroidIndex;;
+		}
+		return centroidIndex;
+	}
+
+	void weightInv(const Mat& weight, Mat& dest)
+	{
+		dest.create(weight.size(), CV_32F);
+		const int size = weight.size().area();
+		const float* w = weight.ptr<float>();
+		float* d = dest.ptr<float>();
+		__m256 mone = _mm256_set1_ps(1.f);
+		for (int i = 0; i < size; i += 8)
+		{
+			//__m256 v = _mm256_sub_ps(mone, _mm256_loadu_ps(w + i));
+			__m256 v = _mm256_rcp_ps(_mm256_loadu_ps(w + i));
+			//v = _mm256_mul_ps(v, v);
+			//v = _mm256_mul_ps(v, v);
+			/*v = _mm256_sqrt_ps(v);
+			v = _mm256_sqrt_ps(v);
+			v = _mm256_sqrt_ps(v);*/
+			_mm256_storeu_ps(d + i, v);
+			//_mm256_storeu_ps(d + i, mone);
+		}
+	}
+
+	void KMeans::generateWeightedKmeansPPInitialCentroidSoA(const Mat& data_points, const Mat& weight, Mat& dest_centroids, int K, RNG& rng, int trials)
+	{
 		const int dims = data_points.rows;
 		const int N = data_points.cols;
 		const int simdNfloor = N / 8;
@@ -590,95 +1073,53 @@ namespace cp
 		__m256* dist_swp = dist_tmp + simdNfloor;
 
 		//randomize the first centroid
-		//centersPtr[0] = (unsigned)rng % N;
-		centersPtr[0] = N/2;
-
-		//determin the first centroid by mean (not effective)
-		if (false)
-		{
-			Scalar v0 = mean(data_points.row(0));
-			Scalar v1 = mean(data_points.row(1));
-			Scalar v2 = mean(data_points.row(2));
-			const float* d0 = data_points.ptr<float>(0);
-			const float* d1 = data_points.ptr<float>(1);
-			const float* d2 = data_points.ptr<float>(2);
-			float diff_max = FLT_MAX;
-			int argindex = 0;
-			for (int i = 0; i < N; i++)
-			{
-				float diff = float((d0[i] - v0.val[0]) * (d0[i] - v0.val[0])
-					+ (d1[i] - v1.val[0]) * (d1[i] - v1.val[0])
-					+ (d2[i] - v2.val[0]) * (d2[i] - v2.val[0]));
-				if (diff < diff_max)
-				{
-					diff_max = diff;
-					argindex = i;
-				}
-			}
-			centersPtr[0] = argindex;
-		}
-
-		for (int i = 0; i < simdNfloor; i++)
-		{
-			dist[i] = _mm256_setzero_ps();
-		}
-
-		float distance_sum = 0.f;//summation of L2 distance between first sample and all samples
-		for (int d = 0; d < dims; d++)
-		{
-			const float* p = data_points.ptr<float>(d);
-			__m256 centers_value = _mm256_set1_ps(p[centersPtr[0]]);
-			__m256 dist_value_acc = _mm256_setzero_ps();
-			for (int i = 0; i < simdNfloor; i++)
-			{
-				// compute dist[i]
-				const __m256 md = _mm256_loadu_ps(p + 8 * i);
-				const __m256 dist_value = cp::normL2Sqr(md, centers_value);
-				dist[i] = _mm256_add_ps(dist[i], dist_value);
-				// compute accumulate
-				dist_value_acc = _mm256_add_ps(dist_value_acc, dist_value);
-			}
-			distance_sum += _mm256_reduceadd_ps(dist_value_acc);
-		}
-
+		centersPtr[0] = (unsigned int)rng % N;//uniform sampling
+		//centersPtr[0] = N / 2;
+		//float distance_sum = getWeightedSamplingDistance(data_points, weight, dims, simdNfloor, centersPtr[0], dist);//summation of L2 distance between first sample and all samples
+		Mat wi;
+		//cout << sum(weight) << endl;
+		weightInv(weight, wi);
+		float distance_sum = getSamplingDistance(data_points, dims, simdNfloor, centersPtr[0], dist);//summation of L2 distance between first sample and all samples
 		for (int k = 1; k < K; k++)
 		{
 			float bestSum = FLT_MAX;
 			int bestCenter = -1;
-
-			for (int j = 0; j < trials; j++)
+			const float* disttop = (float*)dist;
+			const int iter = trials;
+			//const int iter = 1 + 2*trials * k / (K - 1);
+			//const int iter = 1 + trials * (1.0 - k / (K - 1));
+			for (int j = 0; j < iter; j++)
 			{
-				float p = (float)rng * distance_sum;//original
-				//float p = (float)rng * distance_sum / dims;//better? case by case
-				int ci = 0;
-				for (; ci < N - 1; ci++)
-				{
-					p -= distancePP[ci];
-					if (p <= 0.f)
-					{
-						break;
-					}
-				}
-
-				//	Range : start=0,end=N
-				//	KMeansPPDistanceComputer : tdist2=tdist2, data=data, dist=dist, ci=ci
-				//	divUp : (dims*N + CV_KMEANS_PARALLEL_GRANULIARITY - 1) / CV_KMEANS_PARALLEL_GRANULIARITY@
-				const int parallel = cv::getNumThreads();
-				parallel_for_(Range(0, N), KMeansPPDistanceComputerSoA_AVX(dist_swp, data_points, dist, ci), parallel);
+				//float dd = getWeightedDistance((const float*)dist, wi.ptr<float>(), N);
+				//print_debug2(dd, distance_sum);
+				const float p = (float)rng * getWeightedDistance((const float*)dist, wi.ptr<float>(), N);
+				//const float p = (float)rng * distance_sum;//original
+				//float p = rng.uniform(0.1f, 1.f) * distance_sum;
+				//const int centroidIndex = getIndexProbabilitySampling(disttop, p, N);
+				const int centroidIndex = getIndexWeightedProbabilitySampling(disttop, wi.ptr<float>(), p, N);
 
 				float distance_sum_local = 0.f;
-				__m256 tdist2_acc = _mm256_setzero_ps();
-				for (int i = 0; i < simdNfloor; i++)
+				const int parallel = cv::getNumThreads();
+				if (parallel != 1)
 				{
-					tdist2_acc = _mm256_add_ps(tdist2_acc, dist_swp[i]);
+					KMeansPPDistanceComputerSoA_AVX plb(dist_swp, data_points, dist, centroidIndex);
+					parallel_for_(Range(0, N), plb, parallel);
+					__m256 tdist2_acc = _mm256_setzero_ps();
+					for (int i = 0; i < simdNfloor; i++)
+					{
+						tdist2_acc = _mm256_add_ps(tdist2_acc, dist_swp[i]);
+					}
+					distance_sum_local += _mm256_reduceadd_ps(tdist2_acc);
 				}
-				distance_sum_local += _mm256_reduceadd_ps(tdist2_acc);
+				else
+				{
+					distance_sum_local = KMeansPPDistanceComputerSoASingleNDLoop(dist_swp, data_points, dist, centroidIndex);
+				}
 
 				if (distance_sum_local < bestSum)
 				{
 					bestSum = distance_sum_local;
-					bestCenter = ci;
-
+					bestCenter = centroidIndex;
 					std::swap(dist_tmp, dist_swp);
 				}
 			}
@@ -696,12 +1137,423 @@ namespace cp
 		for (int k = 0; k < K; k++)
 		{
 			float* dst = dest_centroids.ptr<float>(k);
+			const int idx = centersPtr[k];
 			for (int d = 0; d < dims; d++)
 			{
-				const float* src = data_points.ptr<float>(d);
-				dst[d] = src[centersPtr[k]];
+				dst[d] = data_points.at<float>(d, idx);
 			}
 		}
+	}
+
+
+	//k - means center initialization using the following algorithm :
+	//Arthur & Vassilvitskii(2007) k-means++ : The Advantages of Careful Seeding
+	//centroids: dims x k
+	void KMeans::generateKmeansPPInitialCentroidSoA(const Mat& data_points, Mat& dest_centroids, int K, RNG& rng, int trials)
+	{
+		const int dims = data_points.rows;
+		const int N = data_points.cols;
+		const int simdNfloor = N / 8;
+		cv::AutoBuffer<int, 64> centersData(K);
+		int* centersPtr = &centersData[0];
+
+		//3 buffers; dist, tdist, tdist2.
+		if (distancePP.size() != N * 3) distancePP.allocate(N * 3);
+
+		__m256* dist = (__m256*)(&distancePP[0]);
+		__m256* dist_tmp = dist + simdNfloor;
+		__m256* dist_swp = dist_tmp + simdNfloor;
+
+		//randomize the first centroid
+		centersPtr[0] = (unsigned int)rng % N;//uniform sampling
+		//centersPtr[0] = N / 2;
+		float distance_sum = getSamplingDistance(data_points, dims, simdNfloor, centersPtr[0], dist);//summation of L2 distance between first sample and all samples
+
+		for (int k = 1; k < K; k++)
+		{
+			float bestSum = FLT_MAX;
+			int bestCenter = -1;
+			const float* disttop = (float*)dist;
+			const int iter = trials;
+			//const int iter = 1 + 2*trials * k / (K - 1);
+			//const int iter = 1 + trials * (1.0 - k / (K - 1));
+			for (int j = 0; j < iter; j++)
+			{
+				const float p = (float)rng * distance_sum;//original
+				//float p = rng.uniform(0.1f, 1.f) * distance_sum;
+				const int centroidIndex = getIndexProbabilitySampling(disttop, p, N);
+
+				float distance_sum_local = 0.f;
+				const int parallel = cv::getNumThreads();
+				if (parallel != 1)
+				{
+					KMeansPPDistanceComputerSoA_AVX plb(dist_swp, data_points, dist, centroidIndex);
+					parallel_for_(Range(0, N), plb, parallel);
+					__m256 tdist2_acc = _mm256_setzero_ps();
+					for (int i = 0; i < simdNfloor; i++)
+					{
+						tdist2_acc = _mm256_add_ps(tdist2_acc, dist_swp[i]);
+					}
+					distance_sum_local += _mm256_reduceadd_ps(tdist2_acc);
+				}
+				else
+				{
+					distance_sum_local = KMeansPPDistanceComputerSoASingleNDLoop(dist_swp, data_points, dist, centroidIndex);
+				}
+
+				if (distance_sum_local < bestSum)
+				{
+					bestSum = distance_sum_local;
+					bestCenter = centroidIndex;
+					std::swap(dist_tmp, dist_swp);
+				}
+			}
+
+			if (bestCenter < 0)
+			{
+				CV_Error(Error::StsNoConv, "kmeans (SoA): can't update cluster center (check input for huge or NaN values)");
+			}
+
+			centersPtr[k] = bestCenter;//in intensity index, where have minimum distance
+			distance_sum = bestSum;
+			std::swap(dist, dist_tmp);
+		}
+
+		for (int k = 0; k < K; k++)
+		{
+			float* dst = dest_centroids.ptr<float>(k);
+			const int idx = centersPtr[k];
+			for (int d = 0; d < dims; d++)
+			{
+				dst[d] = data_points.at<float>(d, idx);
+			}
+		}
+	}
+
+	void KMeans::generateKmeansMSPPInitialCentroidSoA(const Mat& data_points, Mat& dest_centroids, int K, RNG& rng, int trials)
+	{
+#if 1
+		const int dims = data_points.rows;
+		const int N = data_points.cols;
+		const int simdNfloor = N / 8;
+		cv::AutoBuffer<int, 64> centersData(K);
+		int* centersPtr = &centersData[0];
+
+		//3 buffers; dist, tdist, tdist2.
+		//if (distancePP.size() != N * 6) distancePP.allocate(N * 12);
+
+		if (true)
+		{
+			//print_debug2(trials, KMEANSREPP_TRIALS);
+			if (distancePP.size() != N * 3) distancePP.allocate(N * 3);
+			cv::AutoBuffer<int, 64> centersDataRetry(K);
+			int* centersRetryPtr = &centersDataRetry[0];
+			float distance_retry = FLT_MAX;
+			for (int n = 0; n < KMEANSREPP_TRIALS; n++)
+			{
+				__m256* dist = (__m256*)(&distancePP[0]);
+				__m256* dist_tmp = dist + simdNfloor;
+				__m256* dist_swp = dist_tmp + simdNfloor;
+
+				//randomize the first centroid
+				if (n == 0)
+				{
+					centersPtr[0] = (unsigned int)rng % N;
+				}
+				else
+				{
+					centersPtr[0] = (unsigned int)rng % N;
+					//const float* disttop = (float*)dist;
+					//const float p = (float)rng * distance_retry;//original
+					//centersPtr[0] = getIndexProbabilitySampling(disttop, p, N);
+				}
+				//centersPtr[0] = N / 2;				
+				float distance_sum = getSamplingDistance(data_points, dims, simdNfloor, centersPtr[0], dist);//summation of L2 distance between first sample and all samples
+
+				for (int k = 1; k < K; k++)
+				{
+					float bestSum = FLT_MAX;
+					int bestCenter = -1;
+					const float* disttop = (float*)dist;
+
+					//const int iter = trials;
+					//const int iter = 1 + 2 * trials * k / (K - 1);
+					const int iter = 1 + saturate_cast<int>(trials * (float(k) / (K - 1)));
+					for (int j = 0; j < iter; j++)
+					{
+						const float p = (float)rng * distance_sum;//original
+						const int centroidIndex = getIndexProbabilitySampling(disttop, p, N);
+
+						float distance_sum_local = 0.f;
+						const int parallel = cv::getNumThreads();
+						if (parallel != 1)
+						{
+							KMeansPPDistanceComputerSoA_AVX plb(dist_swp, data_points, dist, centroidIndex);
+							parallel_for_(Range(0, N), plb, parallel);
+							__m256 tdist2_acc = _mm256_setzero_ps();
+							for (int i = 0; i < simdNfloor; i++)
+							{
+								tdist2_acc = _mm256_add_ps(tdist2_acc, dist_swp[i]);
+							}
+							distance_sum_local += _mm256_reduceadd_ps(tdist2_acc);
+						}
+						else
+						{
+							distance_sum_local = KMeansPPDistanceComputerSoASingleNDLoop(dist_swp, data_points, dist, centroidIndex);
+						}
+
+						if (distance_sum_local < bestSum)
+						{
+							bestSum = distance_sum_local;
+							bestCenter = centroidIndex;
+							std::swap(dist_tmp, dist_swp);
+						}
+					}
+
+					if (bestCenter < 0)
+					{
+						CV_Error(Error::StsNoConv, "kmeans (SoA): can't update cluster center (check input for huge or NaN values)");
+					}
+
+					centersPtr[k] = bestCenter;//in intensity index, where have minimum distance
+					distance_sum = bestSum;
+					std::swap(dist, dist_tmp);
+				}
+
+				if (distance_sum < distance_retry)
+				{
+					distance_retry = distance_sum;
+					for (int k = 0; k < K; k++)
+					{
+						centersRetryPtr[k] = centersPtr[k];
+					}
+				}
+			}
+
+			for (int k = 0; k < K; k++)
+			{
+				float* dst = dest_centroids.ptr<float>(k);
+				const int idx = centersRetryPtr[k];
+				for (int d = 0; d < dims; d++)
+				{
+					dst[d] = data_points.at<float>(d, idx);
+				}
+			}
+		}
+		else
+		{
+			__m256* dist_1st = (__m256*)(&distancePP[0]);
+			__m256* dist_1st_tmp = dist_1st + simdNfloor;
+			__m256* dist_1st_swp = dist_1st_tmp + simdNfloor;
+			__m256* idx_1st = dist_1st_swp + simdNfloor;
+			__m256* idx_1st_tmp = idx_1st + simdNfloor;
+			__m256* idx_1st_swp = idx_1st_tmp + simdNfloor;
+			__m256* dist_2nd = idx_1st_swp + simdNfloor;
+			__m256* dist_2nd_tmp = dist_2nd + simdNfloor;
+			__m256* dist_2nd_swp = dist_2nd_tmp + simdNfloor;
+			__m256* idx_2nd = dist_2nd_swp + simdNfloor;
+			__m256* idx_2nd_tmp = idx_2nd + simdNfloor;
+			__m256* idx_2nd_swp = idx_2nd_tmp + simdNfloor;
+
+			float distance_sum = 0.f;//summation of L2 distance between first sample and all samples
+			if (true)
+			{
+				//randomize the first centroid
+				centersPtr[0] = (unsigned int)rng % N;
+				//centersPtr[0] = N / 2;
+				for (int i = 0; i < simdNfloor; i++)
+				{
+					dist_1st[i] = _mm256_setzero_ps();
+					idx_1st[i] = _mm256_setzero_ps();
+					dist_2nd[i] = _mm256_set1_ps(FLT_MAX);
+					idx_1st[i] = _mm256_setzero_ps();
+				}
+				for (int d = 0; d < dims; d++)
+				{
+					const float* p = data_points.ptr<float>(d);
+					__m256 centers_value = _mm256_set1_ps(p[centersPtr[0]]);
+					__m256 dist_value_acc = _mm256_setzero_ps();
+					for (int i = 0; i < simdNfloor; i++)
+					{
+						// compute dist[i]
+						const __m256 md = _mm256_loadu_ps(p + 8 * i);
+						const __m256 dist_value = cp::normL2Sqr(md, centers_value);
+						dist_1st[i] = _mm256_add_ps(dist_1st[i], dist_value);
+						// compute accumulate
+						dist_value_acc = _mm256_add_ps(dist_value_acc, dist_value);
+					}
+					distance_sum += _mm256_reduceadd_ps(dist_value_acc);
+				}
+			}
+			else //retry
+			{
+				__m256* dist_psh = dist_1st_swp + simdNfloor;
+
+				//float error_min = FLT_MAX;
+				float error_min = 0.f;
+				for (int j = 0; j < trials; j++)
+				{
+					//randomize the first centroid
+					const int ridx = (unsigned int)rng % N;
+					for (int i = 0; i < simdNfloor; i++)
+					{
+						dist_psh[i] = _mm256_setzero_ps();
+					}
+					float distance_sum_1st = 0.f;
+					for (int d = 0; d < dims; d++)
+					{
+						const float* p = data_points.ptr<float>(d);
+						const __m256 centers_value = _mm256_set1_ps(p[ridx]);
+						__m256 dist_value_acc = _mm256_setzero_ps();
+						for (int i = 0; i < simdNfloor; i++)
+						{
+							// compute dist[i]
+							const __m256 md = _mm256_loadu_ps(p + 8 * i);
+							const __m256 dist_value = cp::normL2Sqr(md, centers_value);
+							dist_psh[i] = _mm256_add_ps(dist_psh[i], dist_value);
+							// compute accumulate
+							dist_value_acc = _mm256_add_ps(dist_value_acc, dist_value);
+						}
+						distance_sum_1st += _mm256_reduceadd_ps(dist_value_acc);
+					}
+
+					//if (distance_sum_1st < error_min)
+					if (distance_sum_1st > error_min)
+					{
+						error_min = distance_sum_1st;
+						centersPtr[0] = ridx;
+						for (int i = 0; i < simdNfloor; i++)
+						{
+							dist_1st[i] = dist_psh[i];
+						}
+					}
+				}
+				distance_sum = error_min;
+			}
+
+			for (int k = 1; k < K; k++)
+			{
+				float bestSum = FLT_MAX;
+				int bestCenter = -1;
+				const float* disttop = (float*)dist_1st;
+				const int iter = trials;
+				//const int iter = 1 + 2*trials * k / (K - 1);
+				//const int iter = 1 + trials * (1.0 - k / (K - 1));
+				for (int j = 0; j < iter; j++)
+				{
+					int centroidIndex = 0;
+					{
+						float p = (float)rng * distance_sum;//original
+						//float p = rng.uniform(0.1f, 1.f) * distance_sum;
+						for (; centroidIndex < N - 1; centroidIndex++)
+						{
+							p -= disttop[centroidIndex];
+							if (p <= 0.f) break;
+						}
+					}
+
+					float distance_sum_local = 0.f;
+					const int parallel = cv::getNumThreads();
+					if (parallel != 1)
+					{
+						/*
+						KMeansPPDistanceComputerSoA_AVX plb(dist_swp, data_points, dist, centroidIndex);
+						parallel_for_(Range(0, N), plb, parallel);
+						__m256 tdist2_acc = _mm256_setzero_ps();
+						for (int i = 0; i < simdNfloor; i++)
+						{
+							tdist2_acc = _mm256_add_ps(tdist2_acc, dist_swp[i]);
+						}
+						distance_sum_local += _mm256_reduceadd_ps(tdist2_acc);
+						*/
+					}
+					else
+					{
+						//distance_sum_local = KMeansPPDistanceComputerSoASingleNDLoop(dist_swp, data_points, dist, centroidIndex);
+						distance_sum_local = KMeansMSPPDistanceComputerSoASingleInitNDLoop(dist_1st_swp, dist_2nd_swp, idx_1st_swp, idx_2nd_swp, data_points, dist_1st, dist_2nd, idx_1st, idx_2nd, centroidIndex, k);
+					}
+
+					if (distance_sum_local < bestSum)
+					{
+						bestSum = distance_sum_local;
+						bestCenter = centroidIndex;
+						std::swap(dist_1st_tmp, dist_1st_swp);
+						std::swap(dist_2nd_tmp, dist_2nd_swp);
+						std::swap(idx_1st_tmp, idx_1st_swp);
+						std::swap(idx_2nd_tmp, idx_2nd_swp);
+					}
+				}
+
+				if (bestCenter < 0)
+				{
+					CV_Error(Error::StsNoConv, "kmeans (SoA): can't update cluster center (check input for huge or NaN values)");
+				}
+
+				centersPtr[k] = bestCenter;//in intensity index, where have minimum distance
+				distance_sum = bestSum;
+				std::swap(dist_1st, dist_1st_tmp);
+				std::swap(dist_2nd, dist_2nd_tmp);
+				std::swap(idx_1st, idx_1st_tmp);
+				std::swap(idx_2nd, idx_2nd_tmp);
+			}
+#if 1
+			const int iter = 30;
+			int count = 0;
+			for (int l = 0; l < iter; l++)
+			{
+				float bestSum = distance_sum;
+				const float* disttop = (float*)dist_1st;
+				int centroidIndex = 0;
+				{
+					float p = (float)rng * distance_sum;//original
+					for (; centroidIndex < N - 1; centroidIndex++)
+					{
+						p -= disttop[centroidIndex];
+						if (p <= 0.f) break;
+					}
+				}
+
+				int argk = -1;
+				for (int k = 0; k < K; k++)
+				{
+					float distance_sum_local = KMeansMSPPDistanceComputerSoASingleNDLoop(dist_1st_swp, dist_2nd_swp, idx_1st_swp, idx_2nd_swp, data_points, dist_1st, dist_2nd, idx_1st, idx_2nd, centroidIndex, k);
+					if (distance_sum_local < bestSum)
+					{
+						argk = k;
+						bestSum = distance_sum_local;
+						std::swap(dist_1st_tmp, dist_1st_swp);
+						std::swap(dist_2nd_tmp, dist_2nd_swp);
+						std::swap(idx_1st_tmp, idx_1st_swp);
+						std::swap(idx_2nd_tmp, idx_2nd_swp);
+					}
+					//print_debug3(k, distance_sum_local, distance_sum);
+				}
+				//print_debug4(l, argk, bestSum, distance_sum);
+				if (argk >= 0)
+				{
+					count++;
+					centersPtr[argk] = centroidIndex;//in intensity index, where have minimum distance
+					distance_sum = bestSum;
+					std::swap(dist_1st, dist_1st_tmp);
+					std::swap(dist_2nd, dist_2nd_tmp);
+					std::swap(idx_1st, idx_1st_tmp);
+					std::swap(idx_2nd, idx_2nd_tmp);
+				}
+			}
+			print_debug(count);
+#endif
+		}
+		/*
+		for (int k = 0; k < K; k++)
+		{
+			float* dst = dest_centroids.ptr<float>(k);
+			for (int d = 0; d < dims; d++)
+			{
+				dst[d] = data_points.at<float>(d, centersPtr[k]);
+			}
+		}
+		*/
+#endif
 	}
 #pragma endregion
 
@@ -739,6 +1591,52 @@ namespace cp
 		}
 	}
 
+	void KMeans::minmaxCentroidSoA(const Mat& data_points, const int* labels, Mat& dest_centroid, int* counters, const int K)
+	{
+		//cannot vectorize it without scatter
+		const int dims = data_points.rows;
+		const int N = data_points.cols;
+		AutoBuffer<Vec3f> minv(K);
+		AutoBuffer<Vec3f> maxv(K);
+		for (int k = 0; k < K; k++)
+		{
+			minv[k] = Vec3f(FLT_MAX, FLT_MAX, FLT_MAX);
+			maxv[k] = -Vec3f(FLT_MAX, FLT_MAX, FLT_MAX);
+		}
+		{
+			int d = 0;
+			const float* dataPtr = data_points.ptr<float>(d);
+			for (int i = 0; i < N; i++)
+			{
+				const int arg_k = labels[i];
+				minv[arg_k].val[d] = min(dataPtr[i], minv[arg_k].val[d]);
+				maxv[arg_k].val[d] = max(dataPtr[i], maxv[arg_k].val[d]);
+				counters[arg_k]++;
+			}
+		}
+		for (int d = 1; d < dims; d++)
+		{
+			const float* dataPtr = data_points.ptr<float>(d);
+			for (int i = 0; i < N; i++)
+			{
+				const int arg_k = labels[i];
+				minv[arg_k].val[d] = min(dataPtr[i], minv[arg_k].val[d]);
+				maxv[arg_k].val[d] = max(dataPtr[i], maxv[arg_k].val[d]);
+			}
+		}
+
+		for (int k = 0; k < K; k++)
+		{
+			if (counters[k] != 0)
+			{
+				for (int d = 0; d < dims; d++)
+				{
+					dest_centroid.ptr<float>(k)[d] = (maxv[k].val[d] + minv[k].val[d]) * 0.5f;
+					//print_debug3(maxv[k].val[d], minv[k].val[d], dest_centroid.ptr<float>(k)[d]);
+				}
+			}
+		}
+	}
 	//Nxdims
 	void KMeans::boxMeanCentroidSoA(const Mat& data_points, const int* labels, Mat& dest_centroid, int* counters)
 	{
@@ -767,9 +1665,9 @@ namespace cp
 	}
 
 	//N*dims
-	void KMeans::weightedMeanCentroid(const Mat& data_points, const int* labels, const Mat& src_centroid, const float* Table, const int tableSize, Mat& dest_centroid, float* dest_centroid_weight, int* dest_counters)
+	template<int dims>
+	void weightedMeanCentroid_(const Mat& data_points, const int* labels, const Mat& src_centroid, const float* Table, const int tableSize, Mat& dest_centroid, float* dest_centroid_weight, int* dest_counters)
 	{
-		const int dims = data_points.rows;
 		const int N = data_points.cols;
 		const int K = src_centroid.rows;
 
@@ -805,44 +1703,162 @@ namespace cp
 			{
 				dest_centroid.ptr<float>(arg_k)[d] += wi * dataTop[d][i];
 			}
-}
+		}
 #else
-		const float* centroidPtr = src_centroid.ptr<float>();//dim*K
-		const __m256i mtsize = _mm256_set1_epi32(tableSize - 1);
-		for (int i = 0; i < N; i += 8)
+		if (true)
 		{
-			const __m256i marg_k = _mm256_load_si256((__m256i*)(labels + i));
-			const __m256i midx = _mm256_mullo_epi32(marg_k, _mm256_set1_epi32(dims));
-			__m256 mdist = _mm256_setzero_ps();
-
-			for (int d = 0; d < dims; d++)
+			const float* centroidPtr = src_centroid.ptr<float>();//dim*K
+			const __m256i mtsize = _mm256_set1_epi32(tableSize - 1);
+			for (int i = 0; i < N; i += 8)
 			{
-				__m256 mc = _mm256_i32gather_ps(centroidPtr, _mm256_add_epi32(midx, _mm256_set1_epi32(d)), 4);
-				mc = _mm256_sub_ps(mc, _mm256_load_ps(&dataTop[d][i]));
-				mdist = _mm256_fmadd_ps(mc, mc, mdist);
-				//mdist = _mm256_add_ps(_mm256_abs_ps(mc), mdist);
-			}
-			//__m256i a = _mm256_min_epi32(mtsize, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist)));
-			//print_m256i_int(a);
-			// 
-			//__m256 mwi = _mm256_i32gather_ps(Table, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist)), 4);
-			//__m256 mwi = _mm256_i32gather_ps(Table, _mm256_min_epi32(mtsize, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist))), 4);
-			__m256 mwi = _mm256_i32gather_ps(Table, _mm256_max_epi32(_mm256_setzero_si256(), _mm256_min_epi32(mtsize, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist)))), 4);
-			//__m256 mwi = _mm256_i32gather_ps(Table, _mm256_max_epi32(_mm256_setzero_si256(), _mm256_min_epi32(mtsize, _mm256_cvtps_epi32(mdist))), 4);
-			for (int v = 0; v < 8; v++)
-			{
-				const int arg_k = ((int*)&marg_k)[v];
-				const float wi = ((float*)&mwi)[v];
-				dest_centroid_weight[arg_k] += wi;
-				dest_counters[arg_k]++;
-				float* dstCentroidPtr = dest_centroid.ptr<float>(arg_k);
+				const __m256i marg_k = _mm256_load_si256((__m256i*)(labels + i));
+				const __m256i midx = _mm256_mullo_epi32(marg_k, _mm256_set1_epi32(dims));
+				__m256 mdist = _mm256_setzero_ps();
 				for (int d = 0; d < dims; d++)
 				{
-					dstCentroidPtr[d] += wi * dataTop[d][i + v];
+					__m256 mc = _mm256_i32gather_ps(centroidPtr, _mm256_add_epi32(midx, _mm256_set1_epi32(d)), 4);
+					mc = _mm256_sub_ps(mc, _mm256_load_ps(&dataTop[d][i]));
+					mdist = _mm256_fmadd_ps(mc, mc, mdist);
+				}
+
+				const __m256 mwi = _mm256_i32gather_ps(Table, _mm256_min_epi32(mtsize, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist))), 4);
+				for (int v = 0; v < 8; v++)
+				{
+					const int arg_k = ((int*)&marg_k)[v];
+					const float wi = ((float*)&mwi)[v];
+					dest_centroid_weight[arg_k] += wi;
+					dest_counters[arg_k]++;
+					float* dstCentroidPtr = dest_centroid.ptr<float>(arg_k);
+					for (int d = 0; d < dims; d++)
+					{
+						dstCentroidPtr[d] += wi * dataTop[d][i + v];
+					}
+				}
+			}
+		}
+		else
+		{
+			Mat st; transpose(src_centroid, st);
+			const __m256i mtsize = _mm256_set1_epi32(tableSize - 1);
+			AutoBuffer <const float*> ctptr(dims);
+			for (int d = 0; d < dims; d++)
+			{
+				ctptr[d] = st.ptr<float>(d);
+			}
+			for (int i = 0; i < N; i += 8)
+			{
+				const __m256i marg_k = _mm256_load_si256((__m256i*)(labels + i));
+				__m256 mdist = _mm256_setzero_ps();
+
+				for (int d = 0; d < dims; d++)
+				{
+					//__m256 mc = _mm256_permutevar8x32_ps(_mm256_load_ps(ctptr[d]), marg_k);
+					__m256 mc = _mm256_i32gather_ps(ctptr[d], marg_k, 4);
+					mc = _mm256_sub_ps(mc, _mm256_load_ps(&dataTop[d][i]));
+					mdist = _mm256_fmadd_ps(mc, mc, mdist);
+				}
+				//__m256 mwi = _mm256_set1_ps(1);
+				__m256 mwi = _mm256_i32gather_ps(Table, _mm256_min_epi32(mtsize, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist))), 4);
+
+				for (int v = 0; v < 8; v++)
+				{
+					const int arg_k = ((int*)&marg_k)[v];
+					const float wi = ((float*)&mwi)[v];
+					dest_centroid_weight[arg_k] += wi;
+					dest_counters[arg_k]++;
+					float* dstCentroidPtr = dest_centroid.ptr<float>(arg_k);
+					for (int d = 0; d < dims; d++)
+					{
+						dstCentroidPtr[d] += wi * dataTop[d][i + v];
+					}
 				}
 			}
 		}
 #endif 
+	}
+
+	void KMeans::weightedMeanCentroid(const Mat& data_points, const int* labels, const Mat& src_centroid, const float* Table, const int tableSize, Mat& dest_centroid, float* dest_centroid_weight, int* dest_counters)
+	{
+		const int dims = data_points.rows;
+		if (dims == 1) weightedMeanCentroid_<1>(data_points, labels, src_centroid, Table, tableSize, dest_centroid, dest_centroid_weight, dest_counters);
+		else if (dims == 2) weightedMeanCentroid_<2>(data_points, labels, src_centroid, Table, tableSize, dest_centroid, dest_centroid_weight, dest_counters);
+		else if (dims == 3) weightedMeanCentroid_<3>(data_points, labels, src_centroid, Table, tableSize, dest_centroid, dest_centroid_weight, dest_counters);
+		else
+		{
+			const int N = data_points.cols;
+			const int K = src_centroid.rows;
+
+			for (int k = 0; k < K; k++) dest_centroid_weight[k] = 0.f;
+
+			cv::AutoBuffer<const float*, 64> dataTop(dims);
+			for (int d = 0; d < dims; d++)
+			{
+				dataTop[d] = data_points.ptr<float>(d);
+			}
+
+#if 0
+			//scalar
+			cv::AutoBuffer<const float*, 64> centroidTop(K);
+			for (int k = 0; k < K; k++)
+			{
+				centroidTop[k] = src_centroid.ptr<float>(k);
+			}
+			for (int i = 0; i < N; i++)
+			{
+				const int arg_k = labels[i];
+
+				float dist = 0.f;
+				for (int d = 0; d < dims; d++)
+				{
+					float diff = (centroidTop[arg_k][d] - dataTop[d][i]);
+					dist += diff * diff;
+				}
+				const float wi = Table[int(sqrt(dist))];
+				centroid_weight[arg_k] += wi;
+				counters[arg_k]++;
+				for (int d = 0; d < dims; d++)
+				{
+					dest_centroid.ptr<float>(arg_k)[d] += wi * dataTop[d][i];
+				}
+			}
+#else
+			const float* centroidPtr = src_centroid.ptr<float>();//dim*K
+			const __m256i mtsize = _mm256_set1_epi32(tableSize - 1);
+			for (int i = 0; i < N; i += 8)
+			{
+				const __m256i marg_k = _mm256_load_si256((__m256i*)(labels + i));
+				const __m256i midx = _mm256_mullo_epi32(marg_k, _mm256_set1_epi32(dims));
+				__m256 mdist = _mm256_setzero_ps();
+
+				for (int d = 0; d < dims; d++)
+				{
+					__m256 mc = _mm256_i32gather_ps(centroidPtr, _mm256_add_epi32(midx, _mm256_set1_epi32(d)), 4);
+					mc = _mm256_sub_ps(mc, _mm256_load_ps(&dataTop[d][i]));
+					mdist = _mm256_fmadd_ps(mc, mc, mdist);
+					//mdist = _mm256_add_ps(_mm256_abs_ps(mc), mdist);
+				}
+				//__m256i a = _mm256_min_epi32(mtsize, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist)));
+				//print_m256i_int(a);
+				// 
+				//__m256 mwi = _mm256_i32gather_ps(Table, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist)), 4);
+				//__m256 mwi = _mm256_i32gather_ps(Table, _mm256_min_epi32(mtsize, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist))), 4);
+				__m256 mwi = _mm256_i32gather_ps(Table, _mm256_max_epi32(_mm256_setzero_si256(), _mm256_min_epi32(mtsize, _mm256_cvtps_epi32(_mm256_sqrt_ps(mdist)))), 4);
+				//__m256 mwi = _mm256_i32gather_ps(Table, _mm256_max_epi32(_mm256_setzero_si256(), _mm256_min_epi32(mtsize, _mm256_cvtps_epi32(mdist))), 4);
+				for (int v = 0; v < 8; v++)
+				{
+					const int arg_k = ((int*)&marg_k)[v];
+					const float wi = ((float*)&mwi)[v];
+					dest_centroid_weight[arg_k] += wi;
+					dest_counters[arg_k]++;
+					float* dstCentroidPtr = dest_centroid.ptr<float>(arg_k);
+					for (int d = 0; d < dims; d++)
+					{
+						dstCentroidPtr[d] += wi * dataTop[d][i + v];
+					}
+				}
+			}
+#endif 
+		}
 	}
 
 	//N*dims
@@ -1161,8 +2177,8 @@ namespace cp
 				}
 				for (int n = BEGIN; n < END; n += 8)
 				{
-					__m256 mdist = _mm256_setzero_ps();
-					for (int d = 0; d < dims; d++)
+					__m256 mdist = normL2Sqr(_mm256_loadu_ps(dptr[0] + n), mc[0]);
+					for (int d = 1; d < dims; d++)
 					{
 						mdist = normL2SqrAdd(_mm256_loadu_ps(dptr[d] + n), mc[d], mdist);
 					}
@@ -1341,7 +2357,6 @@ namespace cp
 
 	double KMeans::clusteringSoA(cv::InputArray dataInput, int K, cv::InputOutputArray bestLabels, cv::TermCriteria criteria, int attempts, int flags, OutputArray dest_centroids, MeanFunction function, int loop)
 	{
-		const int SPP_TRIALS = 3;
 		Mat src = dataInput.getMat();
 		const bool isrow = (src.rows == 1);
 		const int N = max(src.cols, src.rows);//input data size
@@ -1360,7 +2375,7 @@ namespace cp
 			for (int i = 0; i < weightTableSize; i++)
 			{
 				//weight_table[i] = 1.f;
-				weight_table[i] = 1.f - exp(i * i / (-2.f * sigma * sigma)) + 0.001f;
+				weight_table[i] = max(1.f - exp(i * i / (-2.f * sigma * sigma)), 0.001f);
 				//weight_table[i] =Huber(i, sigma) + 0.001f;
 				//weight_table[i] = i< sigma ? 0.001f: 1.f;
 				//float n = 2.2f;
@@ -1446,12 +2461,12 @@ namespace cp
 		cv::AutoBuffer<float, 64> dists(N);//double->float
 		RNG& rng = theRNG();
 
-		if (criteria.type & TermCriteria::EPS)criteria.epsilon = std::max(criteria.epsilon, 0.);
+		if (criteria.type & TermCriteria::EPS) criteria.epsilon = std::max(criteria.epsilon, 0.0);
 		else criteria.epsilon = FLT_EPSILON;
 
 		criteria.epsilon *= criteria.epsilon;
 
-		if (criteria.type & TermCriteria::COUNT)criteria.maxCount = std::min(std::max(criteria.maxCount, 2), 100);
+		if (criteria.type & TermCriteria::COUNT) criteria.maxCount = std::min(std::max(criteria.maxCount, 2), 100);
 		else criteria.maxCount = 100;
 
 		if (K == 1)
@@ -1478,14 +2493,21 @@ namespace cp
 				{
 					//cout << "init" << endl;
 					//cp::Timer t("generate sample"); //<1ns
+
 					if (flags & KMEANS_PP_CENTERS)//kmean++
 					{
 						//cout << "kmeans++ SoA" << endl;
-						generateKmeansPPInitialCentroidSoA(data_points, centroids, K, rng, SPP_TRIALS);
+						if (isUseWeight) generateWeightedKmeansPPInitialCentroidSoA(data_points, weight, centroids, K, rng, KMEANSPP_TRIALS);
+						else generateKmeansPPInitialCentroidSoA(data_points, centroids, K, rng, KMEANSPP_TRIALS);
+					}
+					else if (flags & KMEANS_MSPP_CENTERS)//kmean++
+					{
+						//cout << "kmeans ms++ SoA" << endl;
+						generateKmeansMSPPInitialCentroidSoA(data_points, centroids, K, rng, KMEANSPP_TRIALS);
 					}
 					else //random initialization
 					{
-						generateKmeansRandomInitialCentroidSoA(data_points, centroids, K, rng);
+						generateKmeansRandomBoxInitialCentroidSoA(data_points, centroids, K, rng);
 					}
 					//cout << "init done" << endl;
 				}
@@ -1498,17 +2520,21 @@ namespace cp
 					for (int k = 0; k < K; k++) label_count[k] = 0;
 
 					//compute centroid without normalization; loop: N x d 
-					if (function == MeanFunction::Harmonic)
+					if (function == MeanFunction::Mean)
 					{
-						harmonicMeanCentroid(data_points, labelsPtr, old_centroids, centroids, centroid_weight, label_count);
+						boxMeanCentroidSoA(data_points, labelsPtr, centroids, label_count);
+					}
+					else if (function == MeanFunction::MinMax)
+					{
+						minmaxCentroidSoA(data_points, labelsPtr, centroids, label_count, K);
 					}
 					else if (function == MeanFunction::Gauss || function == MeanFunction::GaussInv || function == MeanFunction::LnNorm)
 					{
 						weightedMeanCentroid(data_points, labelsPtr, old_centroids, weight_table, weightTableSize, centroids, centroid_weight, label_count);
 					}
-					else if (function == MeanFunction::Mean)
+					else if (function == MeanFunction::Harmonic)
 					{
-						boxMeanCentroidSoA(data_points, labelsPtr, centroids, label_count);
+						harmonicMeanCentroid(data_points, labelsPtr, old_centroids, centroids, centroid_weight, label_count);
 					}
 
 					//processing for empty cluster
@@ -1591,6 +2617,10 @@ namespace cp
 						{
 							count_normalize = 1.f / label_count[k];
 						}
+						else if (function == MeanFunction::MinMax)
+						{
+							count_normalize = 1.f;
+						}
 						else
 						{
 							count_normalize = 1.f / centroid_weight[k];//weighted mean
@@ -1610,12 +2640,12 @@ namespace cp
 							max_center_shift = std::max(max_center_shift, dist);
 						}
 					}
-					}
+				}
 
 				//compute distance and relabel
 				//image size x dimensions x K (the most large loop)
-				bool isLastIter = (++iter == MAX(criteria.maxCount, 2) || max_center_shift <= criteria.epsilon);
-				//if (max_center_shift <= criteria.epsilon)					cout << "exit (max_center_shift <= criteria.epsilon), iteration" << iter - 1 << endl;
+				iter++;
+				const bool isLastIter = (iter == 1) ? false : (iter == MAX(criteria.maxCount, 2) || max_center_shift <= criteria.epsilon);
 				{
 					//cp::Timer t(format("%d: distant computing", iter)); //last loop is fast
 					if (isLastIter)
@@ -1638,9 +2668,9 @@ namespace cp
 						{
 							switch (dims)
 							{
-							case 1:parallel_for_(Range(0, N), KMeansDistanceComputer_SoA<false, KMeansDistanceLoop::KND, 1>(dists.data(), labelsPtr, data_points, centroids), parallel); break;
-							case 2:parallel_for_(Range(0, N), KMeansDistanceComputer_SoA<false, KMeansDistanceLoop::KND, 2>(dists.data(), labelsPtr, data_points, centroids), parallel); break;
-							case 3:parallel_for_(Range(0, N), KMeansDistanceComputer_SoA<false, KMeansDistanceLoop::KND, 3>(dists.data(), labelsPtr, data_points, centroids), parallel); break;
+							case 1: parallel_for_(Range(0, N), KMeansDistanceComputer_SoA<false, KMeansDistanceLoop::KND, 1>(dists.data(), labelsPtr, data_points, centroids), parallel); break;
+							case 2: parallel_for_(Range(0, N), KMeansDistanceComputer_SoA<false, KMeansDistanceLoop::KND, 2>(dists.data(), labelsPtr, data_points, centroids), parallel); break;
+							case 3: parallel_for_(Range(0, N), KMeansDistanceComputer_SoA<false, KMeansDistanceLoop::KND, 3>(dists.data(), labelsPtr, data_points, centroids), parallel); break;
 							case 64:parallel_for_(Range(0, N), KMeansDistanceComputer_SoA<false, KMeansDistanceLoop::KND, 64>(dists.data(), labelsPtr, data_points, centroids), parallel); break;
 							default:parallel_for_(Range(0, N), KMeansDistanceComputer_SoADim<false, KMeansDistanceLoop::KND>(dists.data(), labelsPtr, data_points, centroids), parallel); break;
 							}
@@ -1651,39 +2681,39 @@ namespace cp
 							//cout << labels_internal << endl;
 							switch (dims)
 							{
-							case 1:parallel_for_(Range(0, N), KMeansDistanceComputer_SoA<false, KMeansDistanceLoop::NKD, 1>(dists.data(), labelsPtr, data_points, centroids), parallel); break;
-							case 2:parallel_for_(Range(0, N), KMeansDistanceComputer_SoA<false, KMeansDistanceLoop::NKD, 2>(dists.data(), labelsPtr, data_points, centroids), parallel); break;
-							case 3:parallel_for_(Range(0, N), KMeansDistanceComputer_SoA<false, KMeansDistanceLoop::NKD, 3>(dists.data(), labelsPtr, data_points, centroids), parallel); break;
+							case 1: parallel_for_(Range(0, N), KMeansDistanceComputer_SoA<false, KMeansDistanceLoop::NKD, 1>(dists.data(), labelsPtr, data_points, centroids), parallel); break;
+							case 2: parallel_for_(Range(0, N), KMeansDistanceComputer_SoA<false, KMeansDistanceLoop::NKD, 2>(dists.data(), labelsPtr, data_points, centroids), parallel); break;
+							case 3: parallel_for_(Range(0, N), KMeansDistanceComputer_SoA<false, KMeansDistanceLoop::NKD, 3>(dists.data(), labelsPtr, data_points, centroids), parallel); break;
 							case 64:parallel_for_(Range(0, N), KMeansDistanceComputer_SoA<false, KMeansDistanceLoop::NKD, 64>(dists.data(), labelsPtr, data_points, centroids), parallel); break;
 							default:parallel_for_(Range(0, N), KMeansDistanceComputer_SoADim<false, KMeansDistanceLoop::NKD>(dists.data(), labelsPtr, data_points, centroids), parallel); break;
 							}
-							//parallel_for_(Range(0, N), KMeansDistanceComputer_SoADim<false, KMeansDistanceLoop::KND>(dists.data(), labels, data_points, centroids), parallel);
-							//parallel_for_(Range(0, N), KMeansDistanceComputer_SoADim<false, KMeansDistanceLoop::NKD>(dists.data(), labels, data_points, centroids), parallel);
-
-							//cout << labels_internal << endl;
 						}
 					}
 				}
-				}
+			}
 
-			//reshape data structure for output
+			//reshape data structure for output			
 			if (compactness < best_compactness)
 			{
 				best_compactness = compactness;
 				if (dest_centroids.needed())
 				{
 					if (dest_centroids.fixedType() && dest_centroids.channels() == dims)
+					{
 						centroids.reshape(dims).copyTo(dest_centroids);
+					}
 					else
+					{
 						centroids.copyTo(dest_centroids);
+					}
 				}
 				labels_internal.copyTo(best_labels);
 			}
-			}
+		}
 
 		_mm_free(weight_table);
 		return best_compactness;
-		}
+	}
 #pragma endregion
 
 #pragma region AoS
@@ -2669,4 +3699,4 @@ namespace cp
 		return 0.0;
 	}
 #pragma endregion
-	}
+}

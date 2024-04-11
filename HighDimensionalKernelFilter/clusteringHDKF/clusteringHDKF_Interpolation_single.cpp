@@ -302,7 +302,7 @@ namespace cp
 				mc1[k] = _mm256_set1_ps(mu.at<cv::Vec3f>(k)[1]);
 				mc2[k] = _mm256_set1_ps(mu.at<cv::Vec3f>(k)[2]);
 			}
-			
+
 			for (int n = 0; n < IMSIZE8; n++)
 			{
 				__m256 mdiffmax = _mm256_set1_ps(FLT_MAX);
@@ -315,7 +315,7 @@ namespace cp
 					mdiff = _mm256_fmadd_ps(msub, msub, mdiff);
 					msub = _mm256_sub_ps(*im2, mc2[k]);
 					mdiff = _mm256_fmadd_ps(msub, msub, mdiff);
-					
+
 					_mm256_argmin_ps(mdiff, mdiffmax, argment, float(k));
 				}
 				*idx++ = argment;
@@ -685,47 +685,162 @@ namespace cp
 
 		if (channels == 3)
 		{
-			for (int y = boundaryLength; y < h - boundaryLength; y++)
+			if (!isUseLocalStatisticsPrior)
 			{
-				const __m256* src0 = (const __m256*)src[0].ptr<float>(y, boundaryLength);
-				const __m256* src1 = (const __m256*)src[1].ptr<float>(y, boundaryLength);
-				const __m256* src2 = (const __m256*)src[2].ptr<float>(y, boundaryLength);
-				const __m256* inter0 = (const __m256*)intermat[0].ptr<float>(y, boundaryLength);
-				const __m256* inter1 = (const __m256*)intermat[1].ptr<float>(y, boundaryLength);
-				const __m256* inter2 = (const __m256*)intermat[2].ptr<float>(y, boundaryLength);
-				const __m256* interw = (const __m256*)intermat[3].ptr<float>(y, boundaryLength);
-
-				__m256* numer0 = (__m256*)numer[0].ptr<float>(y, boundaryLength);
-				__m256* numer1 = (__m256*)numer[1].ptr<float>(y, boundaryLength);
-				__m256* numer2 = (__m256*)numer[2].ptr<float>(y, boundaryLength);
-				__m256* denom_ = (__m256*)denom.ptr<float>(y, boundaryLength);
-
-				for (int x = boundaryLength; x < w - boundaryLength; x += 8)
+				for (int y = boundaryLength; y < h - boundaryLength; y++)
 				{
-					const __m256 norm = _mm256_div_avoidzerodiv_ps(_mm256_set1_ps(1.f), *interw);
+					const __m256* src0 = (const __m256*)src[0].ptr<float>(y, boundaryLength);
+					const __m256* src1 = (const __m256*)src[1].ptr<float>(y, boundaryLength);
+					const __m256* src2 = (const __m256*)src[2].ptr<float>(y, boundaryLength);
+					const __m256* inter0 = (const __m256*)intermat[0].ptr<float>(y, boundaryLength);
+					const __m256* inter1 = (const __m256*)intermat[1].ptr<float>(y, boundaryLength);
+					const __m256* inter2 = (const __m256*)intermat[2].ptr<float>(y, boundaryLength);
+					const __m256* interw = (const __m256*)intermat[3].ptr<float>(y, boundaryLength);
 
-					__m256 msub = _mm256_fnmadd_ps(*inter0, norm, *src0++);
-					__m256 mdiff = _mm256_mul_ps(msub, msub);
-					msub = _mm256_fnmadd_ps(*inter1, norm, *src1++);
-					mdiff = _mm256_fmadd_ps(msub, msub, mdiff);
-					msub = _mm256_fnmadd_ps(*inter2, norm, *src2++);
-					mdiff = _mm256_fmadd_ps(msub, msub, mdiff);
+					__m256* numer0 = (__m256*)numer[0].ptr<float>(y, boundaryLength);
+					__m256* numer1 = (__m256*)numer[1].ptr<float>(y, boundaryLength);
+					__m256* numer2 = (__m256*)numer[2].ptr<float>(y, boundaryLength);
+					__m256* denom_ = (__m256*)denom.ptr<float>(y, boundaryLength);
 
-					const __m256 malpha = v_exp_ps<use_fmath>(_mm256_mul_ps(mcoef, mdiff));
-
-					if constexpr (isInit)
+					for (int x = boundaryLength; x < w - boundaryLength; x += 8)
 					{
-						*numer0++ = _mm256_mul_ps(malpha, *inter0++);
-						*numer1++ = _mm256_mul_ps(malpha, *inter1++);
-						*numer2++ = _mm256_mul_ps(malpha, *inter2++);
-						*denom_++ = _mm256_mul_ps(malpha, *interw++);
+						const __m256 norm = _mm256_div_avoidzerodiv_ps(_mm256_set1_ps(1.f), *interw);
+
+						__m256 msub = _mm256_fnmadd_ps(*inter0, norm, *src0++);
+						__m256 mdiff = _mm256_mul_ps(msub, msub);
+						msub = _mm256_fnmadd_ps(*inter1, norm, *src1++);
+						mdiff = _mm256_fmadd_ps(msub, msub, mdiff);
+						msub = _mm256_fnmadd_ps(*inter2, norm, *src2++);
+						mdiff = _mm256_fmadd_ps(msub, msub, mdiff);
+
+						const __m256 malpha = v_exp_ps<use_fmath>(_mm256_mul_ps(mcoef, mdiff));
+
+						if constexpr (isInit)
+						{
+							*numer0++ = _mm256_mul_ps(malpha, *inter0++);
+							*numer1++ = _mm256_mul_ps(malpha, *inter1++);
+							*numer2++ = _mm256_mul_ps(malpha, *inter2++);
+							*denom_++ = _mm256_mul_ps(malpha, *interw++);
+						}
+						else
+						{
+							*numer0++ = _mm256_fmadd_ps(malpha, *inter0++, *numer0);
+							*numer1++ = _mm256_fmadd_ps(malpha, *inter1++, *numer1);
+							*numer2++ = _mm256_fmadd_ps(malpha, *inter2++, *numer2);
+							*denom_++ = _mm256_fmadd_ps(malpha, *interw++, *denom_);
+						}
 					}
-					else
+				}
+			}
+			else
+			{
+				//cout << "LSP" << endl;
+				const float sqrt2_sr_divpi = float((sqrt(2.0) * sigma_range) / sqrt(CV_PI));
+				const float sqrt2_sr_inv = float(1.0 / (sqrt(2.0) * sigma_range));
+				const float eps2 = delta * sqrt2_sr_inv;
+				const float exp2 = exp(-eps2 * eps2);
+				const float erf2 = erf(eps2);
+				const int simdsize8 = src[0].size().area() / 8;
+				const __m256 mexp2 = _mm256_set1_ps(exp2);
+				//const __m256 merf2 = _mm256_set1_ps(erf2 / sqrt2_sr_divpi);
+				const __m256 mflt_epsilon = _mm256_set1_ps(+FLT_EPSILON);
+				//const __m256 msqrt2_sr_inv2 = _mm256_set1_ps(sqrt2_sr_inv * 2.f);
+				const __m256 msqrt2_sr_inv2inv = _mm256_set1_ps(1.f / (sqrt2_sr_inv * 2.f));
+				const __m256 msqrt2_sr_divpi = _mm256_set1_ps(1.f / sqrt2_sr_divpi);
+				const __m256 msqrt2_sr_divpiinv = _mm256_set1_ps(sqrt2_sr_divpi);
+				const __m256 mm1f = _mm256_set1_ps(-1.f);
+				for (int y = boundaryLength; y < h - boundaryLength; y++)
+				{
+					const __m256* mmask = (const __m256*)blendLSPMask.ptr<float>(y, boundaryLength);
+
+					const __m256* ms0 = (const __m256*)src[0].ptr<float>(y, boundaryLength);
+					const __m256* ms1 = (const __m256*)src[1].ptr<float>(y, boundaryLength);
+					const __m256* ms2 = (const __m256*)src[2].ptr<float>(y, boundaryLength);
+					__m256* mi0 = (__m256*)intermat[0].ptr<float>(y, boundaryLength);
+					__m256* mi1 = (__m256*)intermat[1].ptr<float>(y, boundaryLength);
+					__m256* mi2 = (__m256*)intermat[2].ptr<float>(y, boundaryLength);
+					const __m256* mw_ = (const __m256*)intermat[3].ptr<float>(y, boundaryLength);
+
+					__m256* numer0 = (__m256*)numer[0].ptr<float>(y, boundaryLength);
+					__m256* numer1 = (__m256*)numer[1].ptr<float>(y, boundaryLength);
+					__m256* numer2 = (__m256*)numer[2].ptr<float>(y, boundaryLength);
+					__m256* denom_ = (__m256*)denom.ptr<float>(y, boundaryLength);
+
+					for (int x = boundaryLength; x < w - boundaryLength; x += 8)
 					{
-						*numer0++ = _mm256_fmadd_ps(malpha, *inter0++, *numer0);
-						*numer1++ = _mm256_fmadd_ps(malpha, *inter1++, *numer1);
-						*numer2++ = _mm256_fmadd_ps(malpha, *inter2++, *numer2);
-						*denom_++ = _mm256_fmadd_ps(malpha, *interw++, *denom_);
+						//const __m256 norm = _mm256_div_avoidzerodiv_ps(_mm256_set1_ps(1.f), *mw_);
+						const __m256 norm = _mm256_rcp_ps(*mw_);
+
+						if (_mm256_movemask_ps(*mmask) != 0)
+						{
+							const __m256 mdiffb = _mm256_fnmadd_ps(norm, *mi0, *ms0);
+							const __m256 mdiffg = _mm256_fnmadd_ps(norm, *mi1, *ms1);
+							const __m256 mdiffr = _mm256_fnmadd_ps(norm, *mi2, *ms2);
+							/*
+							const __m256 mdiff = _mm256_add_ps(_mm256_sqrt_ps(_mm256_fmadd_ps(mdiffr, mdiffr, _mm256_fmadd_ps(mdiffg, mdiffg, _mm256_mul_ps(mdiffb, mdiffb)))), mflt_epsilon);
+
+							const __m256 meps1 = _mm256_mul_ps(mdiff, msqrt2_sr_inv2);
+							const __m256 mcoeff = _mm256_sub_ps(_mm256_exp_ps(_mm256_mul_ps(mm1f, _mm256_mul_ps(meps1, meps1))), mexp2);
+							const __m256 ma = _mm256_div_ps(mcoeff, _mm256_mul_ps(mdiff, _mm256_fmadd_ps(msqrt2_sr_divpi, _mm256_erf_ps(meps1), merf2)));
+							*/
+							const __m256 mdiff = _mm256_rsqrt_ps(_mm256_fmadd_ps(mdiffr, mdiffr, _mm256_fmadd_ps(mdiffg, mdiffg, _mm256_fmadd_ps(mdiffb, mdiffb, mflt_epsilon))));
+							const __m256 meps1inv = _mm256_mul_ps(mdiff, msqrt2_sr_inv2inv);
+							const __m256 meps1 = _mm256_rcp_ps(meps1inv);
+							const __m256 mcoeff = _mm256_expm1_ps(_mm256_mul_ps(mm1f, _mm256_mul_ps(meps1, meps1)));
+							const __m256 ma = _mm256_mul_ps(mcoeff, _mm256_mul_ps(mdiff, _mm256_mul_ps(msqrt2_sr_divpiinv, _mm256_rcp_ps(_mm256_erf_ps(meps1)))));
+
+							/*
+							const __m256 mdiff = _mm256_rsqrt_ps(_mm256_fmadd_ps(mdiffr, mdiffr, _mm256_fmadd_ps(mdiffg, mdiffg, _mm256_fmadd_ps(mdiffb, mdiffb, mflt_epsilon))));
+							const __m256 meps1inv = _mm256_mul_ps(mdiff, msqrt2_sr_inv2inv);
+							const __m256 meps1 = _mm256_rcp_ps(meps1inv);
+							const __m256 mcoeff = _mm256_sub_ps(_mm256_exp_ps(_mm256_mul_ps(mm1f, _mm256_mul_ps(meps1, meps1))), mexp2);
+							const __m256 ma = _mm256_mul_ps(mcoeff, _mm256_mul_ps(mdiff, _mm256_rcp_ps(_mm256_fmadd_ps(msqrt2_sr_divpi, _mm256_erf_ps(meps1), merf2))));
+							*/
+
+							/*const __m256 mdiff = _mm256_fmadd_ps(mdiffr, mdiffr, _mm256_fmadd_ps(mdiffg, mdiffg, _mm256_fmadd_ps(mdiffb, mdiffb, mflt_epsilon)));
+							const float v = 85.f;
+							const __m256 ma = _mm256_min_ps(_mm256_setzero_ps(),_mm256_add_ps(_mm256_set1_ps(-1.f),_mm256_mul_ps(mdiff, _mm256_set1_ps(1.f/(v*v)))));*/
+
+							/*
+							const __m256 mdiff = _mm256_sqrt_ps(_mm256_fmadd_ps(mdiffr, mdiffr, _mm256_fmadd_ps(mdiffg, mdiffg, _mm256_mul_ps(mdiffb, mdiffb))));
+							const __m256 meps1 = _mm256_mul_ps(mdiff, msqrt2_sr_inv2);
+							const __m256 mcoeff = _mm256_sub_ps(_mm256_exp_ps(_mm256_mul_ps(mm1f, _mm256_mul_ps(meps1, meps1))), mexp2);
+							const __m256 ma = _mm256_div_ps(mcoeff, _mm256_fmadd_ps(mdiff, _mm256_fmadd_ps(msqrt2_sr_divpi, _mm256_erf_ps(meps1), merf2), mflt_epsilon));
+							*/
+							/*
+							const __m256 mdiff = _mm256_fmadd_ps(mdiffr, mdiffr, _mm256_fmadd_ps(mdiffg, mdiffg, _mm256_mul_ps(mdiffb, mdiffb)));
+							const __m256 mdiffsq = _mm256_sqrt_ps(mdiff);
+							const __m256 meps1 = _mm256_mul_ps(mdiff, msqrt2_sr_inv2);
+							const __m256 mcoeff = _mm256_sub_ps(_mm256_exp_ps(_mm256_mul_ps(mm1f, meps1)), mexp2);
+							const __m256 ma = _mm256_div_ps(mcoeff, _mm256_fmadd_ps(mdiffsq, _mm256_fmadd_ps(msqrt2_sr_divpi, _mm256_erf_ps(meps1), merf2), mflt_epsilon));
+							*/
+
+							*mi0 = _mm256_blendv_ps(*mi0, _mm256_mul_ps(*mw_, _mm256_fmadd_ps(ma, mdiffb, *ms0)), *mmask);
+							*mi1 = _mm256_blendv_ps(*mi1, _mm256_mul_ps(*mw_, _mm256_fmadd_ps(ma, mdiffg, *ms1)), *mmask);
+							*mi2 = _mm256_blendv_ps(*mi2, _mm256_mul_ps(*mw_, _mm256_fmadd_ps(ma, mdiffr, *ms2)), *mmask);
+						}
+
+						const __m256 mdiffb2 = _mm256_fnmadd_ps(norm, *mi0, *ms0);
+						const __m256 mdiffg2 = _mm256_fnmadd_ps(norm, *mi1, *ms1);
+						const __m256 mdiffr2 = _mm256_fnmadd_ps(norm, *mi2, *ms2);
+						const __m256 mdiff2 = _mm256_fmadd_ps(mdiffr2, mdiffr2, _mm256_fmadd_ps(mdiffg2, mdiffg2, _mm256_mul_ps(mdiffb2, mdiffb2)));
+						const __m256 malpha = v_exp_ps<use_fmath>(_mm256_mul_ps(mcoef, mdiff2));
+
+						ms0++; ms1++; ms2++; mmask++;
+						if constexpr (isInit)
+						{
+							*numer0++ = _mm256_mul_ps(malpha, *mi0++);
+							*numer1++ = _mm256_mul_ps(malpha, *mi1++);
+							*numer2++ = _mm256_mul_ps(malpha, *mi2++);
+							*denom_++ = _mm256_mul_ps(malpha, *mw_++);
+						}
+						else
+						{
+							*numer0++ = _mm256_fmadd_ps(malpha, *mi0++, *numer0);
+							*numer1++ = _mm256_fmadd_ps(malpha, *mi1++, *numer1);
+							*numer2++ = _mm256_fmadd_ps(malpha, *mi2++, *numer2);
+							*denom_++ = _mm256_fmadd_ps(malpha, *mw_++, *denom_);
+						}
 					}
 				}
 			}
@@ -2022,6 +2137,7 @@ namespace cp
 		}
 		else if (isUseLocalMu && (statePCA == 2))
 		{
+			//std::cout << "here: using local mu with PCA" << std::endl;
 			if (isInit) mergeRecomputeAlphaForUsingMuPCA<1, true>(vguide, k);
 			else mergeRecomputeAlphaForUsingMuPCA<1, false>(vguide, k);
 			/*
@@ -2236,9 +2352,9 @@ namespace cp
 						}
 					}
 					GF->filter(vecW[k], vecW[k], sigma_space, spatial_order);
-					}
 				}
 			}
+		}
 		else
 		{
 			//std::cout<<"here"<<std::endl;
@@ -2400,7 +2516,7 @@ namespace cp
 				}
 			}
 		}
-		}
+	}
 
 	template<int channels>
 	void ClusteringHDKF_InterpolationSingle::split_blur(const int k, const bool isUseFmath, const bool isUseLSP)
@@ -2579,7 +2695,7 @@ namespace cp
 		}
 		else
 		{
-			//std::cout<<"here"<<std::endl;
+			//std::cout<<"split_blur: isUsePrecomputedWforeachK(false)"<<std::endl;
 			const bool ch1 = true;
 			const bool ch3 = true;
 			//const bool ch1 = false;
@@ -2666,7 +2782,7 @@ namespace cp
 					}
 					GF->filter(split_inter[2], split_inter[2], sigma_space / downSampleImage, spatial_order, borderType);
 
-					if (isUseLocalStatisticsPrior)
+					/*if (isUseLocalStatisticsPrior)
 					{
 						vecW[0].copyTo(blendLSPMask);
 						GF->filter(vecW[0], vecW[0], sigma_space / downSampleImage, spatial_order, borderType);
@@ -2678,6 +2794,14 @@ namespace cp
 						{
 							bilateralFilterLocalStatisticsPriorInternal(vsrcRes, vecW[0], split_inter, (float)sigma_range, (float)sigma_space / downSampleImage, delta, blendLSPMask, BFLSPSchedule::Compute);
 						}
+					}
+					else
+					{
+					}*/
+					if (isUseLocalStatisticsPrior)
+					{
+						GF->filter(vecW[0], blendLSPMask, sigma_space / downSampleImage, spatial_order, borderType);
+						swap(vecW[0], blendLSPMask);
 					}
 					else
 					{
@@ -2967,4 +3091,4 @@ namespace cp
 			normalize(dst);
 		}
 	}
-	}
+}

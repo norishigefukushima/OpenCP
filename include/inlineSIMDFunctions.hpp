@@ -2089,9 +2089,23 @@ STATIC_INLINE float _mm256_reduceadd_ps(__m256 src)
 	//src = _mm256_unpacklo_ps(src, rsum);
 	//return _mm256_hadd_ps(src, src).m256_f32[0];
 }
+
+STATIC_INLINE int _mm256_reduceadd_epi32(__m256i src)
+{
+	int* data = (int*)_mm_malloc(sizeof(int) * 8, AVX_ALIGN);
+	_mm256_store_si256((__m256i*)data, src);
+	int ret = data[0];
+	for (int i = 1; i < 8; i++)
+	{
+		ret += data[i];
+	}
+	_mm_free(data);
+	return ret;
+}
+
 STATIC_INLINE float _mm256_reducemax_ps(__m256 src)
 {
-	float* data = (float*)_mm_malloc(sizeof(float) * 8, 32);
+	float* data = (float*)_mm_malloc(sizeof(float) * 8, AVX_ALIGN);
 	_mm256_store_ps(data, src);
 	float ret = data[0];
 	for (int i = 1; i < 8; i++)
