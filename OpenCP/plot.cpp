@@ -612,7 +612,7 @@ namespace cp
 
 	void Plot::computeWindowXRangeMAXMIN(bool isCenter, double margin_rate, int rounding_value)
 	{
-		if (margin_rate < 0.0 || margin_rate>1.0)margin_rate = 1.0;
+		if (margin_rate < 0.0 || margin_rate>1.0) margin_rate = 1.0;
 
 		xmax_plotwindow = xmax_data;
 		xmin_plotwindow = xmin_data;
@@ -1557,12 +1557,12 @@ namespace cp
 				}
 				else
 				{
-					if (xmax_data - xmin_data > 50)
+					/*if (xmax_data - xmin_data > 50)
 						computeWindowXRangeMAXMIN(false, margin_ratio, 10);
 					else if (xmax_data - xmin_data > 10)
 						computeWindowXRangeMAXMIN(false, margin_ratio, 1);
 					else
-						computeWindowXRangeMAXMIN(false, margin_ratio, 0);
+						computeWindowXRangeMAXMIN(false, margin_ratio, 0);*/
 				}
 			}
 			if (!isSetYRange)
@@ -2310,7 +2310,7 @@ namespace cp
 		}
 		if (isPlotMin)
 		{
-			drawPlus(graph, z_min_point, 8*3, colorIndex[minColorIndex]);
+			drawPlus(graph, z_min_point, 8 * 3, colorIndex[minColorIndex]);
 		}
 
 		GraphTicksGenerator tickx(x_min, x_max, graph.cols, fontSize2, 4);
@@ -2389,22 +2389,22 @@ namespace cp
 
 
 		/*Mat infoImage = getTextImageQt(format("min:%5.2f,%5.2f,%5.2f, max:%5.2f,%5.2f,%5.2f",
-			gridData.at<double>(z_min_point), (z_min_point.x - x_min) * x_interval, (z_min_point.y - y_min) * y_interval, 
+			gridData.at<double>(z_min_point), (z_min_point.x - x_min) * x_interval, (z_min_point.y - y_min) * y_interval,
 			gridData.at<double>(z_max_point), (z_max_point.x - x_min) * x_interval, (z_max_point.y - y_min) * y_interval),
 			font, fontSize, Scalar::all(0), background_color);*/
-		//print_debug(z_min_point);
-		//print_debug(y_min);
-		//print_debug(y_interval);
-		/*const int y = gridDataRes.rows - 1 - z_min_point.y;
-		const double ratex = gridDataRes.cols / gridData.cols;
-		const double ratey = gridDataRes.rows / gridData.rows;
-		Mat infoImage = getTextImageQt(format("min:%5.2f=(%5.2f,%5.2f)",
-			gridDataRes.at<double>(Size(z_min_point.x, y)), z_min_point.x* x_interval/ratex + x_min, y* y_interval/ratey + y_min),
-			font, fontSize, Scalar::all(0), background_color); 
-		Rect ri = Rect(1, 1, infoImage.cols, infoImage.rows);
-		infoImage.copyTo(show(ri));*/
-		
-		//x
+			//print_debug(z_min_point);
+			//print_debug(y_min);
+			//print_debug(y_interval);
+			/*const int y = gridDataRes.rows - 1 - z_min_point.y;
+			const double ratex = gridDataRes.cols / gridData.cols;
+			const double ratey = gridDataRes.rows / gridData.rows;
+			Mat infoImage = getTextImageQt(format("min:%5.2f=(%5.2f,%5.2f)",
+				gridDataRes.at<double>(Size(z_min_point.x, y)), z_min_point.x* x_interval/ratex + x_min, y* y_interval/ratey + y_min),
+				font, fontSize, Scalar::all(0), background_color);
+			Rect ri = Rect(1, 1, infoImage.cols, infoImage.rows);
+			infoImage.copyTo(show(ri));*/
+
+			//x
 		for (int i = 0; i < tickx.num_ticks; i++)
 		{
 			line(show, Point(tickx.impos[i] + offset_left, offset_top + graph.rows - 1), Point(tickx.impos[i] + offset_left, offset_top + graph.rows - 1 - tickLength), Scalar::all(0));

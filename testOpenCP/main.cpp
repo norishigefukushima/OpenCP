@@ -12,7 +12,7 @@ void benchmark()
 void testCore(Mat& img)
 {
 	//testIsSame(); return 0;
-	//testSpearmanRankOrderCorrelationCoefficient(); return 0;
+	testCorrelationCoefficient(); return;
 	//webPAnimationTest(); return 0;
 	//guiPixelizationTest();
 	//testStreamConvert8U(); return 0;
@@ -196,6 +196,7 @@ void testStereo()
 
 int main(int argc, char** argv)
 {
+	/*
 	cp::KMeans kmcluster;
 
 	//AoS
@@ -262,7 +263,7 @@ int main(int argc, char** argv)
 		//kmcluster.gui(a, K, label, criteria, 1, flag, mu, cp::KMeans::MeanFunction::Mean, cp::KMeans::Schedule::SoA_KND);
 		kmcluster.gui(a, K, label, criteria, 1, flag, mu, cp::KMeans::MeanFunction::Mean, cp::KMeans::Schedule::SoA_NKD);
 	}
-
+	*/
 	//cv::ipp::setUseIPP(false);
 	//cv::setUseOptimized(false);
 	const bool isShowInfo = false;
@@ -284,7 +285,7 @@ int main(int argc, char** argv)
 	//Mat img = imread("img/barbara.png", 0);
 #pragma endregion
 
-	testCore(img);
+	testCore(img); return 0;
 	//testImgproc(img);
 	//testStereo();
 	//testFilter(img)
