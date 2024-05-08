@@ -122,7 +122,7 @@ namespace cp
 	{
 		double min = getMin();
 		double max = getMax();
-		const int div = ceil((max - min) / step);
+		const int div = (int)ceil((max - min) / step);
 		drawDistribution(wname, div, min, max);
 	}
 
@@ -130,7 +130,7 @@ namespace cp
 	{
 		const double ave = getMean();
 		const double std = getStd();
-		double domain = ceil(std * sigma / step) * step;
+		double domain = (int)ceil(std * sigma / step) * step;
 		const double min = ave - domain;
 		const double max = ave + domain;
 		const int div = 2.0 * domain / step+1;
