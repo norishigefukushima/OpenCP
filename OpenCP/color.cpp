@@ -2656,7 +2656,7 @@ namespace cp
 	}
 
 	//src 3 x dest n(1-3)
-	static void projectPCA_2xN(const vector<Mat>& src, vector<Mat>& dest, Mat& evec)
+	static void projectPCA_2xN(const vector<Mat>& src, vector<Mat>& dest, const Mat& evec)
 	{
 		CV_Assert(src.size() == 2);
 		const int sizesimd = src[0].size().area() / 8;
@@ -2710,7 +2710,7 @@ namespace cp
 		}
 	}
 
-	static void projectPCA_3xN(const vector<Mat>& src, vector<Mat>& dest, Mat& evec)
+	static void projectPCA_3xN(const vector<Mat>& src, vector<Mat>& dest, const Mat& evec)
 	{
 		CV_Assert(src.size() == 3);
 		const int sizesimd = src[0].size().area() / 8;
@@ -2795,7 +2795,7 @@ namespace cp
 		}
 	}
 
-	static void projectPCA_4xN(const vector<Mat>& src, vector<Mat>& dest, Mat& evec)
+	static void projectPCA_4xN(const vector<Mat>& src, vector<Mat>& dest, const Mat& evec)
 	{
 		CV_Assert(src.size() == 4);
 		const int sizesimd = src[0].size().area() / 8;
@@ -2919,7 +2919,7 @@ namespace cp
 		}
 	}
 
-	static void projectPCA_5xN(const vector<Mat>& src, vector<Mat>& dest, Mat& evec)
+	static void projectPCA_5xN(const vector<Mat>& src, vector<Mat>& dest, const Mat& evec)
 	{
 		CV_Assert(src.size() == 5);
 		const int sizesimd = src[0].size().area() / 8;
@@ -3090,7 +3090,7 @@ namespace cp
 		}
 	}
 
-	static void projectPCA_6xN(const vector<Mat>& src, vector<Mat>& dest, Mat& evec)
+	static void projectPCA_6xN(const vector<Mat>& src, vector<Mat>& dest, const Mat& evec)
 	{
 		CV_Assert(src.size() == 6);
 		const int sizesimd = src[0].size().area() / 8;
@@ -3317,7 +3317,7 @@ namespace cp
 	}
 
 	//src M x dest N
-	static void projectPCA_MxN(const vector<Mat>& src, vector<Mat>& dest, Mat& evec)
+	static void projectPCA_MxN(const vector<Mat>& src, vector<Mat>& dest, const Mat& evec)
 	{
 		const int src_channels = (int)src.size();
 		const int dest_channels = (int)dest.size();
@@ -3361,7 +3361,7 @@ namespace cp
 
 	//src M x dest N
 	template<int src_channels>
-	static void projectPCA_MxN(const vector<Mat>& src, vector<Mat>& dest, Mat& evec)
+	static void projectPCA_MxN(const vector<Mat>& src, vector<Mat>& dest, const Mat& evec)
 	{
 		const int dest_channels = (int)dest.size();
 
@@ -3400,6 +3400,24 @@ namespace cp
 				dptr[d] += 8;
 			}
 		}
+	}
+
+	void projectPCA(const vector<Mat>& src, vector<Mat>& dest, const Mat& projectionMatrix)
+	{
+		const int channels = projectionMatrix.rows;
+		dest.resize(channels);
+		for (int c = 0; c < channels; c++)
+		{
+			dest[c].create(src[0].size(), CV_32F);
+		}
+
+		if (src.size() == 2) projectPCA_2xN(src, dest, projectionMatrix);
+		else if (src.size() == 3) projectPCA_3xN(src, dest, projectionMatrix);
+		else if (src.size() == 4) projectPCA_4xN(src, dest, projectionMatrix);
+		else if (src.size() == 5) projectPCA_5xN(src, dest, projectionMatrix);
+		else if (src.size() == 6) projectPCA_6xN(src, dest, projectionMatrix);
+		else if (src.size() == 33) projectPCA_MxN<33>(src, dest, projectionMatrix);
+		else  projectPCA_MxN(src, dest, projectionMatrix);
 	}
 
 	static void eigenVecConvert(Mat& evec)
@@ -3702,6 +3720,23 @@ namespace cp
 		}
 	}
 
+	void computePCA(const vector<Mat>& src, Mat& evec, Mat& eval)
+	{
+		Mat cov;
+		{
+			//cp::Timer t("cov");
+			if (src.size() == 2) calcCovarMatrix2_(src, cov);
+			else if (src.size() == 3) calcCovarMatrix3_(src, cov);
+			else if (src.size() == 4) calcCovarMatrix4_(src, cov);
+			else if (src.size() == 5) calcCovarMatrix5_(src, cov);
+			else if (src.size() == 6) calcCovarMatrix6_(src, cov);
+			else if (src.size() == 33) calcCovarMatrix__<33>(src, cov);
+			else calcCovarMatrixN_(src, cov);
+		}
+		eigen(cov, eval, evec);
+		sortEigenVecVal(evec, eval);
+	}
+
 	void cvtColorPCA(const vector<Mat>& src, vector<Mat>& dest, const int dest_channels, Mat& projectionMatrix, Mat& eval, Mat& mean)
 	{
 		CV_Assert(src[0].depth() == CV_32F);
@@ -3714,36 +3749,11 @@ namespace cp
 		}
 
 		const int channels = min(dest_channels, (int)src.size());
-		dest.resize(channels);
-		for (int c = 0; c < channels; c++)
-		{
-			dest[c].create(src[0].size(), CV_32F);
-		}
-
-		Mat cov;
-		{
-			//cp::Timer t("cov");
-			if (src.size() == 2) calcCovarMatrix2_(src, cov);
-			else if (src.size() == 3) calcCovarMatrix3_(src, cov);
-			else if (src.size() == 4) calcCovarMatrix4_(src, cov);
-			else if (src.size() == 5) calcCovarMatrix5_(src, cov);
-			else if (src.size() == 6) calcCovarMatrix6_(src, cov);
-			else if (src.size() == 33) calcCovarMatrix__<33>(src, cov);
-			else calcCovarMatrixN_(src, cov);
-		}
-
+		
 		Mat evec;
-		eigen(cov, eval, evec);
-		sortEigenVecVal(evec, eval);
-
+		computePCA(src, evec, eval);
 		evec(Rect(0, 0, evec.cols, channels)).convertTo(projectionMatrix, CV_32F);
-		if (src.size() == 2) projectPCA_2xN(src, dest, projectionMatrix);
-		else if (src.size() == 3) projectPCA_3xN(src, dest, projectionMatrix);
-		else if (src.size() == 4) projectPCA_4xN(src, dest, projectionMatrix);
-		else if (src.size() == 5) projectPCA_5xN(src, dest, projectionMatrix);
-		else if (src.size() == 6) projectPCA_6xN(src, dest, projectionMatrix);
-		else if (src.size() == 33) projectPCA_MxN<33>(src, dest, projectionMatrix);
-		else  projectPCA_MxN(src, dest, projectionMatrix);
+		projectPCA(src, dest, projectionMatrix);
 	}
 
 	void cvtColorPCA(const vector<Mat>& src, vector<Mat>& dest, const int dest_channels, Mat& projectionMatrix, Mat& eval)

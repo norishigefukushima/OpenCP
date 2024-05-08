@@ -80,5 +80,14 @@
     <ClCompile Include="clusteringHDKF\clusteringHDKF_softassignment_single.cpp">
       <Filter>ソース ファイル\clusteringHDKF\soft</Filter>
     </ClCompile>
+    <ClCompile Include="TexturenessSampling.cpp">
+      <Filter>ソース ファイル\clusteringHDKF\base</Filter>
+    </ClCompile>
+    <ClCompile Include="presampling_for_clutering.cpp">
+      <Filter>ソース ファイル\clusteringHDKF\base</Filter>
+    </ClCompile>
+    <ClCompile Include="randomCentroid.cpp">
+      <Filter>ソース ファイル\clusteringHDKF\base</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

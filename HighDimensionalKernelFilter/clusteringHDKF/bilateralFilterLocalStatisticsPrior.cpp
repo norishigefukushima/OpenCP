@@ -4,7 +4,7 @@
 namespace cp
 {
 	//A LOCAL STATISTICS PRIOR
-	void bilateralFilterLocalStatisticsPrior(const std::vector<cv::Mat>&src, std::vector<cv::Mat>&dest, const float sigma_range, const float sigma_space, const float delta, std::vector<cv::Mat>&smooth)
+	void bilateralFilterLocalStatisticsPrior(const std::vector<cv::Mat>& src, std::vector<cv::Mat>& dest, const float sigma_range, const float sigma_space, const float delta, std::vector<cv::Mat>& smooth)
 	{
 		CV_Assert(src.size() == 3);
 		CV_Assert(src[0].depth() == CV_32F);
@@ -91,7 +91,7 @@ namespace cp
 		}*/
 	}
 
-	static void bilateralFilterLocalStatisticsPrior32FC3(const cv::Mat & src, cv::Mat & dest, const float sigma_range, const float sigma_space, const float delta)
+	static void bilateralFilterLocalStatisticsPrior32FC3(const cv::Mat& src, cv::Mat& dest, const float sigma_range, const float sigma_space, const float delta)
 	{
 		CV_Assert(src.channels() == 3);
 		CV_Assert(src.depth() == CV_32F);
@@ -125,7 +125,7 @@ namespace cp
 		}
 	}
 
-	static void bilateralFilterLocalStatisticsPrior32FC1(const cv::Mat & src, cv::Mat & dest, const float sigma_range, const float sigma_space, const float delta)
+	static void bilateralFilterLocalStatisticsPrior32FC1(const cv::Mat& src, cv::Mat& dest, const float sigma_range, const float sigma_space, const float delta)
 	{
 		CV_Assert(src.channels() == 1);
 		CV_Assert(src.depth() == CV_32F);
@@ -155,7 +155,7 @@ namespace cp
 		}
 	}
 
-	void bilateralFilterLocalStatisticsPrior(const cv::Mat & src, cv::Mat & dest, const float sigma_range, const float sigma_space, const float delta)
+	void bilateralFilterLocalStatisticsPrior(const cv::Mat& src, cv::Mat& dest, const float sigma_range, const float sigma_space, const float delta)
 	{
 		if (src.type() == CV_32FC3)
 		{
@@ -171,7 +171,7 @@ namespace cp
 		}
 	}
 
-	void bilateralFilterLocalStatisticsPriorInternal(const std::vector<cv::Mat>&src, const cv::Mat & vecW, std::vector<cv::Mat>&split_inter, const float sigma_range, const float sigma_space, const float delta, cv::Mat & mask, BFLSPSchedule schedule, float* lut)
+	void bilateralFilterLocalStatisticsPriorInternal(const std::vector<cv::Mat>& src, const cv::Mat& vecW, std::vector<cv::Mat>& split_inter, const float sigma_range, const float sigma_space, const float delta, cv::Mat& mask, BFLSPSchedule schedule, float* lut)
 	{
 		CV_Assert(src.size() == 3);
 		CV_Assert(src[0].depth() == CV_32F);
@@ -197,52 +197,104 @@ namespace cp
 
 			if (isSIMD)
 			{
-				const __m256 mexp2 = _mm256_set1_ps(exp2);
-				const __m256 merf2 = _mm256_set1_ps(erf2);
-				const __m256 mflt_epsilon = _mm256_set1_ps(+FLT_EPSILON);
-				const __m256 msqrt2_sr_inv = _mm256_set1_ps(sqrt2_sr_inv);
-				const __m256 msqrt2_sr_divpi = _mm256_set1_ps(sqrt2_sr_divpi);
-				const __m256 mdelta = _mm256_set1_ps(delta);
-				const __m256 mm2f = _mm256_set1_ps(2.f);
-				const __m256 mm1f = _mm256_set1_ps(-1.f);
-				for (int i = 0; i < simdsize8; i++)
+				if constexpr (true)//delta = 0.f
 				{
-					const __m256 mmask = _mm256_load_ps(mask_ptr);
-					if (_mm256_movemask_ps(mmask) == 0)
+					const __m256 mexp2 = _mm256_set1_ps(exp2);
+					const __m256 merf2 = _mm256_set1_ps(erf2 / sqrt2_sr_divpi);
+					const __m256 mflt_epsilon = _mm256_set1_ps(+FLT_EPSILON);
+					const __m256 msqrt2_sr_inv2 = _mm256_set1_ps(sqrt2_sr_inv * 2.f);
+					const __m256 msqrt2_sr_divpi = _mm256_set1_ps(1.f / sqrt2_sr_divpi);
+					const __m256 mm1f = _mm256_set1_ps(-1.f);
+					for (int i = 0; i < simdsize8; i++)
 					{
+						const __m256 mmask = _mm256_load_ps(mask_ptr);
+						if (_mm256_movemask_ps(mmask) == 0)
+						{
+							s0 += 8; s1 += 8; s2 += 8;
+							i0 += 8; i1 += 8; i2 += 8;
+							w_ += 8;
+							mask_ptr += 8;
+							continue;
+						}
+
+						const __m256 ms0 = _mm256_load_ps(s0);
+						const __m256 ms1 = _mm256_load_ps(s1);
+						const __m256 ms2 = _mm256_load_ps(s2);
+						const __m256 mi0 = _mm256_load_ps(i0);
+						const __m256 mi1 = _mm256_load_ps(i1);
+						const __m256 mi2 = _mm256_load_ps(i2);
+						const __m256 mw_ = _mm256_load_ps(w_);
+
+						const __m256 norm = _mm256_div_avoidzerodiv_ps(_mm256_set1_ps(1.f), mw_);
+						const __m256 mdiffb = _mm256_fnmadd_ps(norm, mi0, ms0);
+						const __m256 mdiffg = _mm256_fnmadd_ps(norm, mi1, ms1);
+						const __m256 mdiffr = _mm256_fnmadd_ps(norm, mi2, ms2);
+						const __m256 mdiff = _mm256_add_ps(_mm256_sqrt_ps(_mm256_fmadd_ps(mdiffr, mdiffr, _mm256_fmadd_ps(mdiffg, mdiffg, _mm256_mul_ps(mdiffb, mdiffb)))), mflt_epsilon);
+
+						const __m256 meps1 = _mm256_mul_ps(mdiff, msqrt2_sr_inv2);
+						const __m256 mcoeff = _mm256_sub_ps(_mm256_exp_ps(_mm256_mul_ps(mm1f, _mm256_mul_ps(meps1, meps1))), mexp2);
+						const __m256 ma = _mm256_div_ps(mcoeff, _mm256_mul_ps(mdiff, _mm256_fmadd_ps(msqrt2_sr_divpi, _mm256_erf_ps(meps1), merf2)));
+
+						_mm256_store_ps(i0, _mm256_blendv_ps(mi0, _mm256_mul_ps(mw_, _mm256_fmadd_ps(ma, mdiffb, ms0)), mmask));
+						_mm256_store_ps(i1, _mm256_blendv_ps(mi1, _mm256_mul_ps(mw_, _mm256_fmadd_ps(ma, mdiffg, ms1)), mmask));
+						_mm256_store_ps(i2, _mm256_blendv_ps(mi2, _mm256_mul_ps(mw_, _mm256_fmadd_ps(ma, mdiffr, ms2)), mmask));
+
 						s0 += 8; s1 += 8; s2 += 8;
 						i0 += 8; i1 += 8; i2 += 8;
 						w_ += 8;
 						mask_ptr += 8;
-						continue;
 					}
+				}
+				else
+				{
+					const __m256 mexp2 = _mm256_set1_ps(exp2);
+					const __m256 merf2 = _mm256_set1_ps(erf2);
+					const __m256 mflt_epsilon = _mm256_set1_ps(+FLT_EPSILON);
+					const __m256 msqrt2_sr_inv = _mm256_set1_ps(sqrt2_sr_inv);
+					const __m256 msqrt2_sr_divpi = _mm256_set1_ps(sqrt2_sr_divpi);
+					const __m256 mdelta = _mm256_set1_ps(delta);
+					const __m256 mm2f = _mm256_set1_ps(2.f);
+					const __m256 mm1f = _mm256_set1_ps(-1.f);
+					for (int i = 0; i < simdsize8; i++)
+					{
+						const __m256 mmask = _mm256_load_ps(mask_ptr);
+						if (_mm256_movemask_ps(mmask) == 0)
+						{
+							s0 += 8; s1 += 8; s2 += 8;
+							i0 += 8; i1 += 8; i2 += 8;
+							w_ += 8;
+							mask_ptr += 8;
+							continue;
+						}
 
-					const __m256 ms0 = _mm256_load_ps(s0);
-					const __m256 ms1 = _mm256_load_ps(s1);
-					const __m256 ms2 = _mm256_load_ps(s2);
-					const __m256 mi0 = _mm256_load_ps(i0);
-					const __m256 mi1 = _mm256_load_ps(i1);
-					const __m256 mi2 = _mm256_load_ps(i2);
-					const __m256 mvecw = _mm256_load_ps(w_);
-					const __m256 norm = _mm256_div_avoidzerodiv_ps(_mm256_set1_ps(1.f), mvecw);
-					const __m256 mdiffb = _mm256_fnmadd_ps(norm, mi0, ms0);
-					const __m256 mdiffg = _mm256_fnmadd_ps(norm, mi1, ms1);
-					const __m256 mdiffr = _mm256_fnmadd_ps(norm, mi2, ms2);
-					const __m256 mdiff = _mm256_add_ps(_mm256_sqrt_ps(_mm256_fmadd_ps(mdiffr, mdiffr, _mm256_fmadd_ps(mdiffg, mdiffg, _mm256_mul_ps(mdiffb, mdiffb)))), mflt_epsilon);
-					const __m256 meps1 = _mm256_mul_ps(_mm256_fmadd_ps(mm2f, mdiff, mdelta), msqrt2_sr_inv);
-					const __m256 mcoeff = _mm256_div_ps(_mm256_sub_ps(_mm256_exp_ps(_mm256_mul_ps(mm1f, _mm256_mul_ps(meps1, meps1))), mexp2),
-						_mm256_add_ps(_mm256_erf_ps(meps1), merf2));
-					//const float coeff = (exp(-eps1 * eps1) - exp2) / (erf(eps1) + erf2);
-					const __m256 ma = _mm256_div_ps(_mm256_mul_ps(mcoeff, msqrt2_sr_divpi), mdiff);
+						const __m256 ms0 = _mm256_load_ps(s0);
+						const __m256 ms1 = _mm256_load_ps(s1);
+						const __m256 ms2 = _mm256_load_ps(s2);
+						const __m256 mi0 = _mm256_load_ps(i0);
+						const __m256 mi1 = _mm256_load_ps(i1);
+						const __m256 mi2 = _mm256_load_ps(i2);
+						const __m256 mvecw = _mm256_load_ps(w_);
+						const __m256 norm = _mm256_div_avoidzerodiv_ps(_mm256_set1_ps(1.f), mvecw);
+						const __m256 mdiffb = _mm256_fnmadd_ps(norm, mi0, ms0);
+						const __m256 mdiffg = _mm256_fnmadd_ps(norm, mi1, ms1);
+						const __m256 mdiffr = _mm256_fnmadd_ps(norm, mi2, ms2);
+						const __m256 mdiff = _mm256_add_ps(_mm256_sqrt_ps(_mm256_fmadd_ps(mdiffr, mdiffr, _mm256_fmadd_ps(mdiffg, mdiffg, _mm256_mul_ps(mdiffb, mdiffb)))), mflt_epsilon);
+						const __m256 meps1 = _mm256_mul_ps(_mm256_fmadd_ps(mm2f, mdiff, mdelta), msqrt2_sr_inv);
+						const __m256 mcoeff = _mm256_div_ps(
+							_mm256_sub_ps(_mm256_exp_ps(_mm256_mul_ps(mm1f, _mm256_mul_ps(meps1, meps1))), mexp2),
+							_mm256_add_ps(_mm256_erf_ps(meps1), merf2));
+						//const float coeff = (exp(-eps1 * eps1) - exp2) / (erf(eps1) + erf2);
+						const __m256 ma = _mm256_div_ps(_mm256_mul_ps(mcoeff, msqrt2_sr_divpi), mdiff);
 
-					_mm256_store_ps(i0, _mm256_blendv_ps(mi0, _mm256_mul_ps(mvecw, _mm256_fmadd_ps(ma, mdiffb, ms0)), mmask));
-					_mm256_store_ps(i1, _mm256_blendv_ps(mi1, _mm256_mul_ps(mvecw, _mm256_fmadd_ps(ma, mdiffg, ms1)), mmask));
-					_mm256_store_ps(i2, _mm256_blendv_ps(mi2, _mm256_mul_ps(mvecw, _mm256_fmadd_ps(ma, mdiffr, ms2)), mmask));
+						_mm256_store_ps(i0, _mm256_blendv_ps(mi0, _mm256_mul_ps(mvecw, _mm256_fmadd_ps(ma, mdiffb, ms0)), mmask));
+						_mm256_store_ps(i1, _mm256_blendv_ps(mi1, _mm256_mul_ps(mvecw, _mm256_fmadd_ps(ma, mdiffg, ms1)), mmask));
+						_mm256_store_ps(i2, _mm256_blendv_ps(mi2, _mm256_mul_ps(mvecw, _mm256_fmadd_ps(ma, mdiffr, ms2)), mmask));
 
-					s0 += 8; s1 += 8; s2 += 8;
-					i0 += 8; i1 += 8; i2 += 8;
-					w_ += 8;
-					mask_ptr += 8;
+						s0 += 8; s1 += 8; s2 += 8;
+						i0 += 8; i1 += 8; i2 += 8;
+						w_ += 8;
+						mask_ptr += 8;
+					}
 				}
 			}
 			else
@@ -269,6 +321,7 @@ namespace cp
 		}
 		else
 		{
+			//not work
 			const __m256 mexp2 = _mm256_set1_ps(exp2);
 			const __m256 merf2 = _mm256_set1_ps(erf2);
 			const __m256 mflt_epsilon = _mm256_set1_ps(+FLT_EPSILON);
@@ -287,6 +340,7 @@ namespace cp
 				const __m256 mi1 = _mm256_load_ps(i1);
 				const __m256 mi2 = _mm256_load_ps(i2);
 				const __m256 mvecw = _mm256_load_ps(w_);
+
 				const __m256 norm = _mm256_div_avoidzerodiv_ps(_mm256_set1_ps(1.f), mvecw);
 				const __m256 mdiffb = _mm256_fnmadd_ps(norm, mi0, ms0);
 				const __m256 mdiffg = _mm256_fnmadd_ps(norm, mi1, ms1);

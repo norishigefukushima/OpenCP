@@ -433,7 +433,7 @@
       </OpenMPSupport>
       <DisableSpecificWarnings>4251;4309;4819;4324;4996</DisableSpecificWarnings>
       <AdditionalOptions>/openmp:llvm %(AdditionalOptions)</AdditionalOptions>
-      <FloatingPointModel>Precise</FloatingPointModel>
+      <FloatingPointModel>Fast</FloatingPointModel>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>

@@ -38,7 +38,7 @@ namespace cp
 		;
 	}
 
-
+#pragma region setter
 	void TileClusteringHDKF::setLambdaInterpolation(const float lambda_)
 	{
 		if (div.area() == 1)
@@ -194,6 +194,20 @@ namespace cp
 		}
 	}
 
+	void TileClusteringHDKF::setSampleRate(const float rate)
+	{
+		if (div.area() == 1)
+		{
+			scbf[0]->setSampleRate(rate);
+		}
+		else
+		{
+			for (int i = 0; i < thread_max; i++)
+			{
+				scbf[i]->setSampleRate(rate);
+			}
+		}
+	}
 	void TileClusteringHDKF::setBoundaryLength(const int length)
 	{
 		if (div.area() == 1)
@@ -250,6 +264,36 @@ namespace cp
 			for (int i = 0; i < thread_max; i++)
 			{
 				scbf[i]->setNumIterations(iterations);
+			}
+		}
+	}
+
+	void TileClusteringHDKF::setKMeansPPTrials(const int num)
+	{
+		if (div.area() == 1)
+		{
+			scbf[0]->setKMeansPPTrials(num);
+		}
+		else
+		{
+			for (int i = 0; i < thread_max; i++)
+			{
+				scbf[i]->setKMeansPPTrials(num);
+			}
+		}
+	}
+
+	void TileClusteringHDKF::setKMeansREPPTrials(const int num)
+	{
+		if (div.area() == 1)
+		{
+			scbf[0]->setKMeansREPPTrials(num);
+		}
+		else
+		{
+			for (int i = 0; i < thread_max; i++)
+			{
+				scbf[i]->setKMeansREPPTrials(num);
 			}
 		}
 	}
@@ -380,9 +424,12 @@ namespace cp
 		this->guiTestIndex = index;
 		if (index >= div.area())index = -1;
 	}
+#pragma endregion
 
-
-	void TileClusteringHDKF::filter(const cv::Mat& src, cv::Mat& dst, double sigma_space, double sigma_range, ClusterMethod cm, int K, cp::SpatialFilterAlgorithm gf_method, int gf_order, int depth, bool isDownsampleClustering, int downsampleRate, int downsampleMethod, double truncateBoundary, const int borderType)
+#pragma region filter
+	void TileClusteringHDKF::filter(const cv::Mat& src, cv::Mat& dst, double sigma_space, double sigma_range,
+		ClusterMethod cm, int K, cp::SpatialFilterAlgorithm gf_method, int gf_order, int depth,
+		double downsampleRate, int downsampleMethod, double truncateBoundary, const int borderType)
 	{
 		guide_channels = channels = src.channels();
 
@@ -392,8 +439,9 @@ namespace cp
 
 		if (div.area() == 1)
 		{
-			scbf[0]->filter(src, dst, sigma_space, sigma_range, cm, K, gf_method
-				, gf_order, depth, isDownsampleClustering, downsampleRate, downsampleMethod, borderType);
+			scbf[0]->filter(src, dst, sigma_space, sigma_range,
+				cm, K, gf_method, gf_order, depth,
+				downsampleRate, downsampleMethod, borderType);
 			tileSize = src.size();
 		}
 		else
@@ -423,9 +471,9 @@ namespace cp
 
 			if (src.channels() != 3)split(src, srcSplit);
 
-#ifndef DEBUG_OMP_DISABLE
+			const int threadnum = omp_get_max_threads();
+			if (guiTestIndex < 0) omp_set_num_threads(1);
 #pragma omp parallel for schedule(static)
-#endif
 			for (int n = 0; n < div.area(); n++)
 			{
 				const int thread_num = omp_get_thread_num();
@@ -445,10 +493,14 @@ namespace cp
 				if (n == guiTestIndex) scbf[thread_num]->setTestClustering(true);
 				else scbf[thread_num]->setTestClustering(false);
 
-				scbf[thread_num]->filter(subImageInput[thread_num], subImageOutput[thread_num], sigma_space, sigma_range, cm, K, gf_method, gf_order, depth, isDownsampleClustering, downsampleRate, downsampleMethod, R, borderType);
+				scbf[thread_num]->filter(subImageInput[thread_num], subImageOutput[thread_num], sigma_space, sigma_range,
+					cm, K, gf_method, gf_order, depth,
+					downsampleRate, downsampleMethod, R, borderType);
 				//merge(subImageInput[thread_num], subImageOutput[thread_num]);
 				cp::pasteTileAlign(subImageOutput[thread_num], dst, div, idx, r, vecsize, vecsize);
 			}
+
+			if (guiTestIndex < 0) omp_set_num_threads(threadnum);
 		}
 	}
 
@@ -476,7 +528,9 @@ namespace cp
 		}
 	}
 
-	void TileClusteringHDKF::PCAfilter(const cv::Mat& src, const int reduce_dim, cv::Mat& dst, double sigma_space, double sigma_range, ClusterMethod cm, int K, cp::SpatialFilterAlgorithm gf_method, int gf_order, int depth, bool isDownsampleClustering, int downsampleRate, int downsampleMethod, double truncateBoundary, const int borderType)
+	void TileClusteringHDKF::PCAfilter(const cv::Mat& src, const int reduce_dim, cv::Mat& dst, double sigma_space, double sigma_range,
+		ClusterMethod cm, int K, cp::SpatialFilterAlgorithm gf_method, int gf_order, int depth,
+		double downsampleRate, int downsampleMethod, double truncateBoundary, const int borderType)
 	{
 		guide_channels = channels = src.channels();
 
@@ -486,8 +540,9 @@ namespace cp
 
 		if (div.area() == 1)
 		{
-			scbf[0]->filter(src, dst, sigma_space, sigma_range, cm, K, gf_method
-				, gf_order, depth, isDownsampleClustering, downsampleRate, downsampleMethod, borderType);
+			scbf[0]->filter(src, dst, sigma_space, sigma_range,
+				cm, K, gf_method, gf_order, depth,
+				downsampleRate, downsampleMethod, borderType);
 			tileSize = src.size();
 		}
 		else
@@ -517,9 +572,9 @@ namespace cp
 
 			if (src.channels() != 3)split(src, srcSplit);
 
-#ifndef DEBUG_OMP_DISABLE
+			const int threadnum = omp_get_max_threads();
+			if (guiTestIndex < 0) omp_set_num_threads(1);
 #pragma omp parallel for schedule(static)
-#endif
 			for (int n = 0; n < div.area(); n++)
 			{
 				const int thread_num = omp_get_thread_num();
@@ -537,11 +592,14 @@ namespace cp
 					}
 				}
 
-				scbf[thread_num]->PCAfilter(subImageInput[thread_num], reduce_dim, subImageOutput[thread_num], sigma_space, sigma_range, cm, K, gf_method, gf_order, depth, isDownsampleClustering, downsampleRate, downsampleMethod, R, borderType);
+				scbf[thread_num]->PCAfilter(subImageInput[thread_num], reduce_dim, subImageOutput[thread_num], sigma_space, sigma_range,
+					cm, K, gf_method, gf_order, depth,
+					downsampleRate, downsampleMethod, R, borderType);
 				if (isDebug) mu[n] = scbf[thread_num]->getSamplingPoints();
 				cp::pasteTileAlign(subImageOutput[thread_num], dst, div, idx, r, vecsize, vecsize);
 			}
 
+			if (guiTestIndex < 0) omp_set_num_threads(threadnum);
 			if (isDebug)
 			{
 				cv::Mat p = mu[0].reshape(reduce_dim);
@@ -562,8 +620,11 @@ namespace cp
 		}
 	}
 
-	void TileClusteringHDKF::jointfilter(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dst, double sigma_space, double sigma_range, ClusterMethod cm, int K, cp::SpatialFilterAlgorithm gf_method, int gf_order, int depth, bool isDownsampleClustering, int downsampleRate, int downsampleMethod, double truncateBoundary, const int borderType)
+	void TileClusteringHDKF::jointfilter(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dst, double sigma_space, double sigma_range,
+		ClusterMethod cm, int K, cp::SpatialFilterAlgorithm gf_method, int gf_order, int depth,
+		double downsampleRate, int downsampleMethod, double truncateBoundary, const int borderType)
 	{
+		//std::cout << "jointfilter" << std::endl;
 		channels = src.channels();
 		guide_channels = guide.channels();
 
@@ -580,8 +641,9 @@ namespace cp
 			split(srcB, srcSplit);
 			split(guideB, guideSplit);
 			Mat dest;
-			scbf[0]->jointfilter(srcSplit, guideSplit, dest, sigma_space, sigma_range, cm, K, gf_method
-				, gf_order, depth, isDownsampleClustering, downsampleRate, downsampleMethod, R, borderType);
+			scbf[0]->jointfilter(srcSplit, guideSplit, dest, sigma_space, sigma_range,
+				cm, K, gf_method, gf_order, depth,
+				downsampleRate, downsampleMethod, R, borderType);
 			tileSize = src.size();
 			dest(Rect(R, R, src.cols, src.rows)).copyTo(dst);
 		}
@@ -589,7 +651,6 @@ namespace cp
 		{
 			const int r = (int)ceil(truncateBoundary * sigma_space);
 			const int R = get_simd_ceil(r, 8);
-			//print_debug(R);
 			tileSize = cp::getTileAlignSize(src.size(), div, r, vecsize, vecsize);
 			divImageSize = cv::Size(src.cols / div.width, src.rows / div.height);
 
@@ -624,12 +685,12 @@ namespace cp
 				}
 			}
 
-			if (src.channels() != 3)split(src, srcSplit);
-			if (guide.channels() != 3)split(guide, guideSplit);
+			if (src.channels() != 3) split(src, srcSplit);
+			if (guide.channels() != 3) split(guide, guideSplit);
 
-#ifndef DEBUG_OMP_DISABLE
+			const int threadnum = omp_get_max_threads();
+			if (guiTestIndex >= 0) omp_set_num_threads(1);
 #pragma omp parallel for schedule(static)
-#endif
 			for (int n = 0; n < div.area(); n++)
 			{
 				const int thread_num = omp_get_thread_num();
@@ -659,16 +720,27 @@ namespace cp
 					}
 				}
 
-				if (n == guiTestIndex) scbf[thread_num]->setTestClustering(true);
+				if (n == guiTestIndex)
+				{
+					scbf[thread_num]->setTestClustering(true);
+					Mat debugshow; merge(subImageGuide[thread_num], debugshow);
+					imshowScale("clustering input image", debugshow); waitKey(1);
+				}
 				else scbf[thread_num]->setTestClustering(false);
 
-				scbf[thread_num]->jointfilter(subImageInput[thread_num], subImageGuide[thread_num], subImageOutput[thread_num], sigma_space, sigma_range, cm, K, gf_method, gf_order, depth, isDownsampleClustering, downsampleRate, downsampleMethod, R, borderType);
+				scbf[thread_num]->jointfilter(subImageInput[thread_num], subImageGuide[thread_num], subImageOutput[thread_num], sigma_space, sigma_range,
+					cm, K, gf_method, gf_order, depth,
+					downsampleRate, downsampleMethod, R, borderType);
 				cp::pasteTileAlign(subImageOutput[thread_num], dst, div, idx, r, vecsize, vecsize);
 			}
+
+			if (guiTestIndex >= 0) omp_set_num_threads(threadnum);
 		}
 	}
 
-	void TileClusteringHDKF::jointPCAfilter(const cv::Mat& src, const cv::Mat& guide, const int reduced_dim, cv::Mat& dst, double sigma_space, double sigma_range, ClusterMethod cm, int K, cp::SpatialFilterAlgorithm gf_method, int gf_order, int depth, bool isDownsampleClustering, int downsampleRate, int downsampleMethod, double truncateBoundary, const int borderType)
+	void TileClusteringHDKF::jointPCAfilter(const cv::Mat& src, const cv::Mat& guide, const int reduced_dim, cv::Mat& dst, double sigma_space, double sigma_range,
+		ClusterMethod cm, int K, cp::SpatialFilterAlgorithm gf_method, int gf_order, int depth,
+		double downsampleRate, int downsampleMethod, double truncateBoundary, const int borderType)
 	{
 		CV_Assert(!src.empty());
 		CV_Assert(!guide.empty());
@@ -692,8 +764,9 @@ namespace cp
 			*/
 			//std::cout << "cal" << std::endl;
 			split(guide, guideSplit);
-			scbf[0]->jointPCAfilter(srcSplit, guideSplit, guide_channels, dst, sigma_space, sigma_range, cm, K, gf_method
-				, gf_order, depth, isDownsampleClustering, downsampleRate, downsampleMethod, borderType);
+			scbf[0]->jointPCAfilter(srcSplit, guideSplit, guide_channels, dst, sigma_space, sigma_range,
+				cm, K, gf_method, gf_order, depth,
+				downsampleRate, downsampleMethod, borderType);
 			tileSize = src.size();
 
 			eigenVectors[0] = scbf[0]->cloneEigenValue();
@@ -735,8 +808,8 @@ namespace cp
 					{
 						subImageGuide[n].resize(guide.channels());
 					}
-				}
 			}
+		}
 
 			if (src.channels() != 3) split(src, srcSplit);
 			if (guide.channels() != 3) split(guide, guideSplit);
@@ -744,9 +817,10 @@ namespace cp
 #if DEBUG_CLUSTERING
 			Mat emap(src.size(), CV_32F);
 #endif
-#ifndef DEBUG_OMP_DISABLE
+
+			const int threadnum = omp_get_max_threads();
+			if (guiTestIndex < 0) omp_set_num_threads(1);
 #pragma omp parallel for schedule(static)
-#endif
 			for (int n = 0; n < div.area(); n++)
 			{
 				const int thread_num = omp_get_thread_num();
@@ -770,31 +844,35 @@ namespace cp
 				}
 				else
 				{
-					//subImageGuide[thread_num].resize(guideSplit.size());
-					//print_debug(guideSplit.size());
 					for (int c = 0; c < guideSplit.size(); c++)
 					{
 						cp::cropTileAlign(guideSplit[c], subImageGuide[thread_num][c], div, idx, r, borderType, vecsize, vecsize, vecsize, vecsize);
 					}
-				}
+					}
+
+				if (n == guiTestIndex) scbf[thread_num]->setTestClustering(true);
+				else scbf[thread_num]->setTestClustering(false);
 
 				scbf[thread_num]->jointPCAfilter(subImageInput[thread_num], subImageGuide[thread_num], guide_channels, subImageOutput[thread_num],
-					sigma_space, sigma_range, cm, K, gf_method, gf_order, depth, isDownsampleClustering, downsampleRate, downsampleMethod, R, borderType);
+					sigma_space, sigma_range, cm, K, gf_method, gf_order, depth,
+					downsampleRate, downsampleMethod, R, borderType);
 				cp::pasteTileAlign(subImageOutput[thread_num], dst, div, idx, r, 8, 8);
 				eigenVectors[n] = scbf[thread_num]->cloneEigenValue();
 #if DEBUG_CLUSTERING
 				Mat e; scbf[thread_num]->getClusteringErrorMap(e); cp::pasteTileAlign(e, emap, div, idx, r, 8, 8);
 #endif
-			}
+				}
 #if DEBUG_CLUSTERING
 			imshowScale("emap", emap);
 #endif
+			if (guiTestIndex < 0) omp_set_num_threads(threadnum);
 			}
-
 		//scbf[0]->printRapTime();
-		}
+	}
 
-	void TileClusteringHDKF::jointPCAfilter(const std::vector<cv::Mat>& src, const std::vector<cv::Mat>& guide, const int reduced_dim, cv::Mat& dst, double sigma_space, double sigma_range, ClusterMethod cm, int K, cp::SpatialFilterAlgorithm gf_method, int gf_order, int depth, bool isDownsampleClustering, int downsampleRate, int downsampleMethod, double truncateBoundary, const int borderType)
+	void TileClusteringHDKF::jointPCAfilter(const std::vector<cv::Mat>& src, const std::vector<cv::Mat>& guide, const int reduced_dim, cv::Mat& dst, double sigma_space, double sigma_range,
+		ClusterMethod cm, int K, cp::SpatialFilterAlgorithm gf_method, int gf_order, int depth,
+		double downsampleRate, int downsampleMethod, double truncateBoundary, const int borderType)
 	{
 		CV_Assert(!src.empty());
 		CV_Assert(!guide.empty());
@@ -809,8 +887,9 @@ namespace cp
 		if (div.area() == 1)
 		{
 			cp::cvtColorPCA(guide, guideSplit, guide_channels);
-			scbf[0]->jointfilter(src, guideSplit, dst, sigma_space, sigma_range, cm, K, gf_method
-				, gf_order, depth, isDownsampleClustering, downsampleRate, downsampleMethod, borderType);
+			scbf[0]->jointfilter(src, guideSplit, dst, sigma_space, sigma_range,
+				cm, K, gf_method, gf_order, depth,
+				downsampleRate, downsampleMethod, borderType);
 			tileSize = src[0].size();
 			eigenVectors[0] = scbf[0]->cloneEigenValue();
 		}
@@ -852,13 +931,13 @@ namespace cp
 						subImageGuide[n].resize((int)guide.size());
 					}
 				}
-			}
+		}
 #if DEBUG_CLUSTERING
 			Mat emap(src[0].size(), CV_32F);
 #endif
-#ifndef DEBUG_OMP_DISABLE
+			const int threadnum = omp_get_max_threads();
+			if (guiTestIndex < 0) omp_set_num_threads(1);
 #pragma omp parallel for schedule(static)
-#endif
 			for (int n = 0; n < div.area(); n++)
 			{
 				const int thread_num = omp_get_thread_num();
@@ -875,22 +954,25 @@ namespace cp
 				}
 
 				scbf[thread_num]->jointPCAfilter(subImageInput[thread_num], subImageGuide[thread_num], guide_channels, subImageOutput[thread_num],
-					sigma_space, sigma_range, cm, K, gf_method, gf_order, depth, isDownsampleClustering, downsampleRate, downsampleMethod, R, borderType);
+					sigma_space, sigma_range, cm, K, gf_method, gf_order, depth,
+					downsampleRate, downsampleMethod, R, borderType);
 				cp::pasteTileAlign(subImageOutput[thread_num], dst, div, idx, r, vecsize, vecsize);
 
 				eigenVectors[n] = scbf[thread_num]->cloneEigenValue();
 #if DEBUG_CLUSTERING
 				Mat e; scbf[thread_num]->getClusteringErrorMap(e); cp::pasteTileAlign(e, emap, div, idx, r, 8, 8);
 #endif
-			}
+				}
 #if DEBUG_CLUSTERING
 			imshowScale("emap", emap);
 #endif
+			if (guiTestIndex < 0) omp_set_num_threads(threadnum);
 			}
-				}
+	}
 
-	void TileClusteringHDKF::nlmfilter(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dst, double sigma_space, double sigma_range, const int patch_r, const int reduced_dim,
-		ClusterMethod cm, int K, cp::SpatialFilterAlgorithm gf_method, int gf_order, int depth, bool isDownsampleClustering, int downsampleRate, int downsampleMethod, double truncateBoundary, const int borderType)
+	void TileClusteringHDKF::nlmfilter(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dst, double sigma_space, double sigma_range,
+		const int patch_r, const int reduced_dim, ClusterMethod cm, int K, cp::SpatialFilterAlgorithm gf_method, int gf_order, int depth,
+		double downsampleRate, int downsampleMethod, double truncateBoundary, const int borderType)
 	{
 		channels = src.channels();
 		guide_channels = guide.channels();
@@ -901,8 +983,9 @@ namespace cp
 
 		if (div.area() == 1)
 		{
-			scbf[0]->jointfilter(src, guide, dst, sigma_space, sigma_range, cm, K, gf_method
-				, gf_order, depth, isDownsampleClustering, downsampleRate, downsampleMethod, borderType);
+			scbf[0]->jointfilter(src, guide, dst, sigma_space, sigma_range,
+				cm, K, gf_method, gf_order, depth,
+				downsampleRate, downsampleMethod, borderType);
 			tileSize = src.size();
 		}
 		else
@@ -948,9 +1031,9 @@ namespace cp
 #if DEBUG_CLUSTERING
 			Mat emap(src.size(), CV_32F);
 #endif
-#ifndef DEBUG_OMP_DISABLE
+			const int threadnum = omp_get_max_threads();
+			if (guiTestIndex < 0) omp_set_num_threads(1);
 #pragma omp parallel for schedule(static)
-#endif
 			for (int n = 0; n < div.area(); n++)
 			{
 				const int thread_num = omp_get_thread_num();
@@ -976,10 +1059,12 @@ namespace cp
 					for (int c = 0; c < guideSplit.size(); c++)
 					{
 						cp::cropTileAlign(guideSplit[c], subImageGuide[thread_num][c], div, idx, r, borderType, vecsize, vecsize, vecsize, vecsize);
-					}
 				}
+			}
 				//createSubImageCVAlign(src, subImageInput[thread_num], div, idx, r, borderType, vecsize, vecsize, vecsize, vecsize);
-				scbf[thread_num]->nlmfilter(subImageInput[thread_num], subImageGuide[thread_num], subImageOutput[thread_num], sigma_space, sigma_range, patch_r, reduced_dim, cm, K, gf_method, gf_order, depth, isDownsampleClustering, downsampleRate, downsampleMethod, R, borderType);
+				scbf[thread_num]->nlmfilter(subImageInput[thread_num], subImageGuide[thread_num], subImageOutput[thread_num], sigma_space, sigma_range,
+					patch_r, reduced_dim, cm, K, gf_method, gf_order, depth,
+					downsampleRate, downsampleMethod, R, borderType);
 				//merge(subImageInput[thread_num], subImageOutput[thread_num]);
 
 				cp::pasteTileAlign(subImageOutput[thread_num], dst, div, idx, r, 8, 8);
@@ -987,13 +1072,14 @@ namespace cp
 #if DEBUG_CLUSTERING
 				Mat e; scbf[thread_num]->getClusteringErrorMap(e); cp::pasteTileAlign(e, emap, div, idx, r, 8, 8);
 #endif
-			}
+		}
 #if DEBUG_CLUSTERING
 			imshowScale("emap", emap);
 #endif
-			}
-		}
-
+			if (guiTestIndex < 0) omp_set_num_threads(threadnum);
+	}
+}
+#pragma endregion
 
 	cv::Size TileClusteringHDKF::getTileSize()
 	{
@@ -1029,6 +1115,6 @@ namespace cp
 			//ci("%d: %f (%f) %%", i, ave, ave / total * 100.0);
 		}
 		//ci.show();
-			//ci.clear();
+		//ci.clear();
 	}
-	}
+}
