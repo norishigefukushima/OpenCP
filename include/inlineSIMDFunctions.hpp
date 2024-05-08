@@ -2008,6 +2008,32 @@ STATIC_INLINE void _mm256_cvtps_planar2bgr(const __m256 b, const __m256 g, const
 
 #pragma endregion
 
+#pragma region swizzle
+#define _mm256_permute4x64_ps(src,imm8) (_mm256_castsi256_ps(_mm256_permute4x64_epi64(_mm256_castps_si256(src), imm8)))
+//#define _mm256_permute4x64_ps(src,imm8) (_mm256_castpd_ps(_mm256_permute4x64_pd(_mm256_castps_pd(src), imm8)))
+//for _MM_SHUFFLE(3, 1, 2, 0) 
+/*
+inline __m256 _mm256_permute4x64_ps(__m256 src, const int imm8)
+{
+	//perm128x1, shuffle_pd(1,0.5) x2
+	__m256 tmp = _mm256_permute2f128_ps(src, src, 0x01);
+	__m256d tm2 = _mm256_shuffle_pd(_mm256_castps_pd(src), _mm256_castps_pd(tmp), 0b1100);
+	__m256 ret = _mm256_castpd_ps(_mm256_shuffle_pd(tm2, tm2, 0b0110));
+	return ret;
+}
+*/
+/*
+inline __m256 _mm256_permute4x64_ps(__m256 src, const int imm8)
+{
+	//perm128x1 shuffle_ps(1,0.5) x2, blend(1,0.33) x1
+	__m256 tmp = _mm256_permute2f128_ps(src, src, 0x01);
+	__m256 rt1 = _mm256_shuffle_ps(src, tmp, _MM_SHUFFLE(1, 0, 1, 0));
+	__m256 rt2 = _mm256_shuffle_ps(tmp, src, _MM_SHUFFLE(3, 2, 3, 2));
+	__m256 ret = _mm256_blend_ps(rt1, rt2, 0b11110000);
+	return ret;
+}*/
+#pragma endregion
+
 #pragma region arithmetic
 
 STATIC_INLINE __m128 _mm_abs_ps(__m128 src)
@@ -2634,6 +2660,56 @@ STATIC_INLINE void _mm256_stream_auto_color(uchar* dest, __m256 b, __m256 g, __m
 #pragma endregion
 
 #pragma region store
+
+STATIC_INLINE  __m128i get_storemask1(const int width, const int simdwidth)
+{
+	__m128i ret = _mm_undefined_si128();
+	const int WIDTH = get_simd_floor(width, simdwidth);
+	if ((width - WIDTH) == 2) ret = _mm_cmpeq_epi32(_mm_setr_epi32(0, 1, 1, 1), _mm_setzero_si128());
+	if ((width - WIDTH) == 4) ret = _mm_cmpeq_epi32(_mm_setr_epi32(0, 0, 1, 1), _mm_setzero_si128());
+	if ((width - WIDTH) == 6) ret = _mm_cmpeq_epi32(_mm_setr_epi32(0, 0, 0, 1), _mm_setzero_si128());
+	return ret;
+}
+
+STATIC_INLINE  void get_storemask2(const int width, __m256i& maskl, __m256i& maskr, const int unit)
+{
+	const int WIDTH = get_simd_floor(width, unit);
+	if ((width - WIDTH) == 1)
+	{
+		maskl = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 1, 1, 1, 1, 1, 1), _mm256_setzero_si256());
+		maskr = _mm256_cmpeq_epi32(_mm256_setr_epi32(1, 1, 1, 1, 1, 1, 1, 1), _mm256_setzero_si256());
+	}
+	if ((width - WIDTH) == 2)
+	{
+		maskl = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 1, 1, 1, 1), _mm256_setzero_si256());
+		maskr = _mm256_cmpeq_epi32(_mm256_setr_epi32(1, 1, 1, 1, 1, 1, 1, 1), _mm256_setzero_si256());
+	}
+	if ((width - WIDTH) == 3)
+	{
+		maskl = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 0, 0, 1, 1), _mm256_setzero_si256());
+		maskr = _mm256_cmpeq_epi32(_mm256_setr_epi32(1, 1, 1, 1, 1, 1, 1, 1), _mm256_setzero_si256());
+	}
+	if ((width - WIDTH) == 4)
+	{
+		maskl = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 0, 0, 0, 0), _mm256_setzero_si256());
+		maskr = _mm256_cmpeq_epi32(_mm256_setr_epi32(1, 1, 1, 1, 1, 1, 1, 1), _mm256_setzero_si256());
+	}
+	if ((width - WIDTH) == 5)
+	{
+		maskl = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 0, 0, 0, 0), _mm256_setzero_si256());
+		maskr = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 1, 1, 1, 1, 1, 1), _mm256_setzero_si256());
+	}
+	if ((width - WIDTH) == 6)
+	{
+		maskl = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 0, 0, 0, 0), _mm256_setzero_si256());
+		maskr = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 1, 1, 1, 1), _mm256_setzero_si256());
+	}
+	if ((width - WIDTH) == 7)
+	{
+		maskl = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 0, 0, 0, 0), _mm256_setzero_si256());
+		maskr = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 0, 0, 1, 1), _mm256_setzero_si256());
+	}
+}
 
 STATIC_INLINE void _mm256_store_cvtps_epu8(__m128i* dest, __m256 ms)
 {

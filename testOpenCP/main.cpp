@@ -51,10 +51,12 @@ void testCore(Mat& img)
 	//testVideoSubtitle();
 	//guiWindowFunction();
 }
+
 void testImgproc(Mat& img)
 {
 	//guiCvtColorPCATest(); return 0;
 }
+
 void testFilter(Mat& img)
 {
 	//rangeBlurFilterRef(aa, t0, 5, 3);
@@ -64,7 +66,8 @@ void testFilter(Mat& img)
 	//testUnnormalizedBilateralFilter(); return 0;
 	//detailTest(); return 0;
 	//testGuidedImageFilter(Mat(), Mat()); return 0;
-	highDimentionalGaussianFilterTest(img); return;
+	testGuidedBilateralFilter(img); return;
+	//highDimentionalGaussianFilterTest(img); return;
 	//highDimentionalGaussianFilterHSITest(); return 0;
 	//guiDenoiseTest(img);
 	//testWeightedHistogramFilterDisparity(); return 0;
@@ -187,12 +190,14 @@ void testFilter(Mat& img)
 	//guiDetailEnhancement(src);
 	//guiDomainTransformFilterTest(mega);
 }
+
 void testStereo()
 {
 	//testStereoBase(); return 0;
 	//testCVStereoBM(); return 0;
 	//testCVStereoSGBM(); return 0;
 }
+
 
 int main(int argc, char** argv)
 {
@@ -285,10 +290,10 @@ int main(int argc, char** argv)
 	//Mat img = imread("img/barbara.png", 0);
 #pragma endregion
 
-	testCore(img); return 0;
+	//testCore(img); return 0;
 	//testImgproc(img);
 	//testStereo();
-	//testFilter(img)
+	//testFilter(img);
 	//testSpatialFilter(gra);	
 	testMultiScaleFilter(); return 0;
 	return 0;

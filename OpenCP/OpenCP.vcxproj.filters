@@ -648,6 +648,9 @@
     <ClCompile Include="patchPCA.cpp">
       <Filter>ソース ファイル\imgproc</Filter>
     </ClCompile>
+    <ClCompile Include="guidedImageGaussianFilter.cpp">
+      <Filter>ソース ファイル\filter\guidedImageFilter</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libGaussian\gaussian_conv.h">

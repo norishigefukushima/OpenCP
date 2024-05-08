@@ -53,6 +53,7 @@ void guiInpaint(cv::Mat& src, std::string wname = "inpaint");
 
 //filter
 void testGuidedImageFilter(cv::Mat& img_p, cv::Mat& img_I);
+void testGuidedBilateralFilter(cv::Mat& img);
 void guiHazeRemoveTest();
 
 void guiEdgePresevingFilterOpenCV(cv::Mat& src);

@@ -569,6 +569,7 @@
     <ClCompile Include="dithering.cpp" />
     <ClCompile Include="downsample.cpp" />
     <ClCompile Include="GaussianKDTree.cpp" />
+    <ClCompile Include="guidedImageGaussianFilter.cpp" />
     <ClCompile Include="guidedImageUpsampleAlt.cpp" />
     <ClCompile Include="localLUTUpsample.cpp" />
     <ClCompile Include="patchPCA.cpp" />
