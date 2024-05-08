@@ -851,7 +851,7 @@ namespace cp
 			alphaBlend(s1, s2, 1.0 - a / 100.0, show);
 
 			if (printAlpha) addText(show, cv::format("a = %3d", a), Point(20, 30), "Consolas", 16);
-			cv::imshow("alphaBlend", show);
+			cv::imshow(wname, show);
 
 			if (isVideo)video << show;
 
@@ -863,7 +863,7 @@ namespace cp
 			if (key == 'f')
 			{
 				a = (a > 0) ? 0 : 100;
-				setTrackbarPos("a", "alphaBlend", a);
+				setTrackbarPos("a", wname, a);
 			}
 			if (key == 'p')
 			{
@@ -908,6 +908,13 @@ namespace cp
 		}
 		destroyWindow(wname);
 		return show;
+	}
+
+	cv::Mat guiAlphaBlendScale(InputArray src1, InputArray src2, float scale, bool isShowImageStats, std::string wname)
+	{
+		Mat a; src1.getMat().convertTo(a, CV_8U, scale);
+		Mat b; src2.getMat().convertTo(b, CV_8U, scale);
+		return guiAlphaBlend(a, b, isShowImageStats, wname);
 	}
 
 	template <class srcType>
