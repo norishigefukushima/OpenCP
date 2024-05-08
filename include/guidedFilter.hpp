@@ -210,6 +210,9 @@ namespace cp
 		void upsample(cv::Mat& _src, cv::Mat& _guide_low, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps);
 	};
 
+	//spatial filtering is Gaussian filter
+	void CP_EXPORT guidedImageGaussianFilterGray(const cv::Mat& src, cv::Mat& dest, const int radius, const float sigma, const float eps);
+	void CP_EXPORT guidedImageGaussianFilterGrayEnhance(const cv::Mat& src, cv::Mat& dest, const int radius, const float sigma, const float eps, const float m);
 
 	void CP_EXPORT guidedImageFilter(cv::InputArray src, cv::InputArray guide, cv::OutputArray dest, const int r, const float eps, const GuidedTypes guidedType = GuidedTypes::GUIDED_SEP_VHI, const BoxFilterMethod boxType = BoxFilterMethod::OPENCV, const ParallelTypes parallelType = ParallelTypes::OMP);
 
