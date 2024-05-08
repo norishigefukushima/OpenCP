@@ -1,15 +1,25 @@
 #pragma once
 #include <opencp.hpp>
 
-inline double getPyramidSigma(double sigma, double level)
+static inline double getPyramidSigma(double sigma, double level)
 {
+	/*double ret = sqrt(2.0);
+
+	for (int l = 0; l < level - 1; l++)
+	{
+		double v = pow(2.0, l + 1);
+		ret += v;
+	}
+	return ret * sigma;*/
+
 	double ret = 0.0;
 	for (int l = 1; l <= level; l++)
 	{
 		double v = pow(2, l - 1);
-		ret = ret + (sigma * v) * (sigma * v);
+		ret = ret + v * v;
 	}
-	return sqrt(ret);
+	return sigma * sqrt(ret);
+
 }
 
 enum WindowType
@@ -135,8 +145,11 @@ namespace cp
 		std::string getRangeDescopeMethod();
 		cv::Size getLayerSize(const int level);
 
+		bool isDoGPyramidApprox = false;
+		void setDoGPyramidApprox(bool flag);
 		inline int getGaussianRadius(const float sigma) { return (pyramidComputeMethod == OpenCV) ? 2 : get_simd_ceil(int(ceil(1.5 * sigma)), 2); }
 
+		void showImageStack(std::string wname);
 		static void showPyramid(std::string wname, std::vector<cv::Mat>& pyramid, bool isShowLevel = true);
 		void drawRemap(bool isWait = true, const cv::Size size = cv::Size(512, 512));
 
@@ -166,7 +179,7 @@ namespace cp
 		std::vector<cv::Mat> adaptiveBoostBorder;//level+1
 		float Salpha = 1.f;
 		float Sbeta = 1.f;
-		int windowType = 0;
+		const int windowType = 0;
 
 		std::vector<cv::Mat> ImageStack;
 		float intensityMin = 0.f;
@@ -215,9 +228,9 @@ namespace cp
 		//L0+...resize(Ln-2+resize(Ln-1+resize(Ln)))
 		void collapseLaplacianPyramid(std::vector<cv::Mat>& LaplacianPyramid, cv::Mat& dest);
 
-		void buildGaussianStack(cv::Mat& src, std::vector<cv::Mat>& GaussianStack, const float sigma_s, const int level);
-		void buildDoGStack(cv::Mat& src, std::vector<cv::Mat>& ImageStack, const float sigma_s, const int level);
-		void collapseDoGStack(std::vector<cv::Mat>& ImageStack, cv::Mat& dest);
+		void buildGaussianStack(const cv::Mat& src, std::vector<cv::Mat>& GaussianStack, const float sigma_s, const int level);
+		void buildDoGStack(const cv::Mat& src, std::vector<cv::Mat>& ImageStack, const float sigma_s, const int level);
+		void collapseDoGStack(std::vector<cv::Mat>& ImageStack, cv::Mat& dest, const int depth);
 
 		void body(const cv::Mat& src, cv::Mat& dest);
 		void gray(const cv::Mat& src, cv::Mat& dest);
@@ -245,6 +258,18 @@ namespace cp
 		void pyramid(const cv::Mat& src, cv::Mat& dest)override;
 		void dog(const cv::Mat& src, cv::Mat& dest)override;
 		void buildDoBFStack(const cv::Mat& src, std::vector<cv::Mat>& DoBFStack, const float sigma_r, const float sigma_s, const int level);
+	};
+
+	//multi-scale filtering with guided image filtering-based pyramid
+	class CP_EXPORT MultiScaleGuidedImageFilter : public MultiScaleFilter
+	{
+	public:
+		void filter(const cv::Mat& src, cv::Mat& dest, const float eps, const float sigma_space, const float boost = 1.f, const int level = 2, const ScaleSpace scaleSpaceMethod = ScaleSpace::Pyramid);
+	protected:
+		void pyramid(const cv::Mat& src, cv::Mat& dest)override;
+		void dog(const cv::Mat& src, cv::Mat& dest)override;
+		//for compatible eps = sqrt(sigma_r/1.5), sigma_gif = sqrt(2)*sigma_bf, radius_gif = radius_bf*2
+		void buildDoGIFStack(const cv::Mat& src, std::vector<cv::Mat>& DoBFStack, const float eps, const float sigma_s, const int level);
 	};
 
 
@@ -278,7 +303,7 @@ namespace cp
 		void dog(const cv::Mat& src, cv::Mat& dest)override;
 		void setDoGKernel(float* weight, int* index, const int index_step, cv::Size ksize, const float sigma1, const float sigma2);
 		float getDoGCoeffLnNoremap(cv::Mat& src, const float g, const int y, const int x, const int size, int* index, float* weight);
-		float getRemapDoGCoeffLn(cv::Mat& src, const float g, const int y, const int x, const int size, int* index, float* weight);
+		float getRemapDoGCoeffLn(const cv::Mat& src, const float g, const int y, const int x, const int size, int* index, float* weight);
 	};
 
 	//reference implementation: not optimized
@@ -390,8 +415,6 @@ namespace cp
 		//for parallel and serial test
 		void buildRemapLaplacianPyramidEachOrder(const cv::Mat& src, std::vector<cv::Mat>& destPyramid, const int level, const float sigma, const float g, const float sigma_range, const float boost);
 
-		//last level is not blended; thus, inplace operation for input Gaussian Pyramid is required.
-		void blendLaplacianNearest(const std::vector<std::vector<cv::Mat>>& LaplacianPyramid, std::vector<cv::Mat>& GaussianPyramid, std::vector<cv::Mat>& destPyramid, const int order);
 		inline void getLinearIndex(float v, int& index_l, int& index_h, float& alpha, const int order, const float intensityMin, const float intensityMax)
 		{
 			const float intensityRange = intensityMax - intensityMin;
@@ -424,8 +447,6 @@ namespace cp
 				//print_debug5(v, i * step, step, alpha,vv);
 			}
 		}
-		//do not handle last level
-		void blendLaplacianLinear(const std::vector<std::vector<cv::Mat>>& LaplacianPyramid, std::vector<cv::Mat>& GaussianPyramid, std::vector<cv::Mat>& destPyramid, const int order);
 		inline float getCubicCoeff(const float xn, const float a = -0.5f)
 		{
 			const float d = abs(xn);
@@ -468,7 +489,7 @@ namespace cp
 			return ret;
 		}
 		//do not handle lastlevel
-		void blendLaplacianCubic(const std::vector<std::vector<cv::Mat>>& LaplacianPyramid, std::vector<cv::Mat>& GaussianPyramid, std::vector<cv::Mat>& destPyramid, const int order);
+		void blendDetailStack(const std::vector<std::vector<cv::Mat>>& detailStack, const std::vector<cv::Mat>& approxStack, std::vector<cv::Mat>& destStack, const int order, const int interpolationMethod);
 
 		//for serial
 		template<bool isInit>
@@ -567,14 +588,15 @@ namespace cp
 		bool isUseFourierTableLevel = false;
 
 		const int FourierTableSize = 256;
-		float* sinTable = nullptr;//initialized in initRangeFourier
-		float* cosTable = nullptr;//initialized in initRangeFourier
+		float* sinTable = nullptr;//FourierTableSize*order initialized in initRangeFourier
+		float* cosTable = nullptr;//FourierTableSize*order initialized in initRangeFourier
 		cv::Mat src8u;//used for isUseSplatTable case
 
 		std::vector<std::vector<cv::Mat>> FourierPyramidSin; //[k][l] max(order,threadMax) x (level + 1)
 		std::vector<std::vector<cv::Mat>> FourierPyramidCos; //[k][l] max(order,threadMax) x (level + 1)
-		std::vector<cv::Mat> LaplacianPyramid;//level+1
+		std::vector<cv::Mat> DetailStack;//level+1
 		std::vector<std::vector<cv::Mat>> destEachOrder;//[k][l] max(order,threadMax) x level
+		//dest: T, alpha, omega, (optional: sin-cos table)
 		void initRangeFourier(const int order, const float sigma_range, const float boost);
 		void allocImageBuffer(const int order, const int level);
 
@@ -603,12 +625,9 @@ namespace cp
 		void dog(const cv::Mat& src, cv::Mat& dest)override;
 
 #pragma region DoG
-		std::vector<std::vector<cv::Mat>> sin_pyramid, cos_pyramid;
-		float w_sum;
-		void make_sin_cos(cv::Mat src, cv::Mat& dest_sin, cv::Mat& dest_cos, int k);
-		void splattingBlurring(const cv::Mat& src, float sigma_space, int l, int level, int k, std::vector<std::vector<cv::Mat>>& splatBuffer, bool islast);
-		void productSummingTrig_last(cv::Mat& src, cv::Mat& dest, float sigma_range, int k, std::vector<cv::Mat>& splatBuffer, int level);
-		void productSummingTrig(cv::Mat& srcn, cv::Mat& dest, cv::Mat& src8u, float sigma_range, int k, std::vector<std::vector<cv::Mat>>& splatBuffer, int l);
+		void remapCosSin(const cv::Mat& src, int k, cv::Mat& destCos, cv::Mat& destSin);
+		//makeDoG and then product sum
+		void productSummingTrig(const std::vector <cv::Mat>& src, std::vector <cv::Mat>& dest, float sigma_range);
 #pragma endregion
 	};
 
