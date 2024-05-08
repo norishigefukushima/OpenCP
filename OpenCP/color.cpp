@@ -172,7 +172,7 @@ namespace cp
 	{
 		vector<Mat> s;
 		src.getMatVector(s);
-		dest.create(s[0].size(), CV_MAKETYPE(depth, s.size()));
+		dest.create(s[0].size(), CV_MAKETYPE(depth, (int)s.size()));
 		Mat dst = dest.getMat();
 
 		if (depth == s[0].depth() && scale == 1.0 && offset == 1.0)
