@@ -971,6 +971,88 @@ namespace cp
 		}
 	}
 
+	void Plot::push_back(vector<cv::Point2f>& point, int plotIndex)
+	{
+		data_labelmax = max(data_labelmax, plotIndex + 1);
+		const int size = (int)point.size();
+		if (pinfo[plotIndex].data.size() == 0)
+		{
+			pinfo[plotIndex].data.resize(size);
+			for (int i = 0; i < size; i++)
+			{
+				pinfo[plotIndex].data[i].x = (double)point[i].x;
+				pinfo[plotIndex].data[i].y = (double)point[i].y;
+			}
+		}
+		else
+		{
+			for (int i = 0; i < size; i++)
+			{
+				push_back((double)point[i].x, (double)point[i].y, plotIndex);
+			}
+		}
+	}
+
+	void Plot::push_back(Mat& point, int plotIndex)
+	{
+		data_labelmax = max(data_labelmax, plotIndex + 1);
+		const int size = (int)point.size().area();
+		if (pinfo[plotIndex].data.size() == 0)
+		{
+			pinfo[plotIndex].data.resize(size);
+			if (point.depth() == CV_8U)
+			{
+				for (int i = 0; i < size; i++)
+				{
+					pinfo[plotIndex].data[i].x = (double)i;
+					pinfo[plotIndex].data[i].y = (double)point.at<uchar>(0, i);
+				}
+			}
+			else if (point.depth() == CV_32F)
+			{
+				for (int i = 0; i < size; i++)
+				{
+					pinfo[plotIndex].data[i].x = (double)i;
+					pinfo[plotIndex].data[i].y = (double)point.at<float>(0, i);
+				}
+			}
+			else if (point.depth() == CV_64F)
+			{
+				for (int i = 0; i < size; i++)
+				{
+					pinfo[plotIndex].data[i].x = (double)i;
+					pinfo[plotIndex].data[i].y = point.at<double>(0, i);
+				}
+			}
+		}
+		else
+		{
+			if (point.depth() == CV_8U)
+			{
+				for (int i = 0; i < size; i++)
+				{
+					push_back((double)i, (double)point.at<uchar>(0, i), plotIndex);
+				}
+			}
+			else if (point.depth() == CV_32F)
+			{
+				for (int i = 0; i < size; i++)
+				{
+					push_back((double)i, (double)point.at<float>(0, i), plotIndex);
+				}
+			}
+			else if (point.depth() == CV_64F)
+			{
+				for (int i = 0; i < size; i++)
+				{
+					push_back((double)i, point.at<double>(0, i), plotIndex);
+				}
+			}
+
+		}
+	}
+
+
 	void Plot::erase(int sampleIndex, int plotIndex)
 	{
 		pinfo[plotIndex].data.erase(pinfo[plotIndex].data.begin() + sampleIndex);
@@ -1481,7 +1563,7 @@ namespace cp
 		generateKeyImage(data_labelmax);
 
 		computeDataMaxMin();
-
+		if (!isWait) setIsDrawMousePosition(false);
 		bool isUseMinmaxBar = (xmax_data > 1 && ymax_data > 1);
 		//bool isUseMinmaxBar = false;
 		const int xmin = (int)xmin_data;

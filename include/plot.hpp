@@ -228,8 +228,10 @@ namespace cp
 
 		void push_back(std::vector<float>& x, std::vector<float>& y, int plotIndex = 0);
 		void push_back(std::vector<double>& x, std::vector<double>& y, int plotIndex = 0);
-		void push_back(std::vector<cv::Point>& point, int plotIndex = 0);
-		void push_back(std::vector<cv::Point2d>& point, int plotIndex = 0);
+		void push_back(std::vector<cv::Point>& points, int plotIndex = 0);
+		void push_back(std::vector<cv::Point2f>& points, int plotIndex = 0);
+		void push_back(std::vector<cv::Point2d>& points, int plotIndex = 0);
+		void push_back(cv::Mat& points, int plotIndex = 0);
 		void push_back(double x, double y, int plotIndex = 0);
 		void push_back_HLine(double y, int plotIndex);
 		void push_back_VLine(double x, int plotIndex);
