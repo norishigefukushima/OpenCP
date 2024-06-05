@@ -68,7 +68,7 @@ namespace cp
 		LaplacianPyramid[level] = GaussianPyramid[level];
 
 		//(4) collapse Laplacian Pyramid
-		collapseLaplacianPyramid(LaplacianPyramid, dest);
+		collapseLaplacianPyramid(LaplacianPyramid, dest, src.depth());
 	}
 
 	void FastLLFReference::filter(const Mat& src, Mat& dest, const int order, const float sigma_range, const float sigma_space, const float boost, const int level, const ScaleSpace scaleSpaceMethod, const int interpolationMethod)
@@ -1691,8 +1691,9 @@ namespace cp
 		}
 		else if (pyramidComputeMethod == Fast)
 		{
-			cout << "not supported: buildRemapLaplacianPyramid" << endl;
-			GaussDown(src, destPyramid[1]);
+			//cout << "not supported: buildRemapLaplacianPyramid" << endl;
+			remap(src, destPyramid[0], g, sigma_range, boost);
+			GaussDown(destPyramid[0], destPyramid[1]);
 			GaussUpAdd<false>(destPyramid[1], src, destPyramid[0]);
 			for (int l = 1; l < level; l++)
 			{
@@ -1702,8 +1703,8 @@ namespace cp
 		}
 		else if (pyramidComputeMethod == Full)
 		{
-			cout << "not supported: buildRemapLaplacianPyramid" << endl;
-			GaussDownFull(src, destPyramid[1], sigma, borderType);
+			remap(src, destPyramid[0], g, sigma_range, boost);
+			GaussDownFull(destPyramid[0], destPyramid[1], sigma, borderType);
 			GaussUpAddFull<false>(destPyramid[1], src, destPyramid[0], sigma, borderType);
 			for (int l = 1; l < level; l++)
 			{
@@ -1713,8 +1714,8 @@ namespace cp
 		}
 		else if (pyramidComputeMethod == OpenCV)
 		{
-			cout << "not supported: buildRemapLaplacianPyramid" << endl;
-			buildPyramid(src, destPyramid, level, borderType);
+			remap(src, destPyramid[0], g, sigma_range, boost);
+			buildPyramid(destPyramid[0], destPyramid, level, borderType);
 			for (int i = 0; i < level; i++)
 			{
 				Mat temp;
@@ -1825,66 +1826,50 @@ namespace cp
 	void LocalMultiScaleFilterInterpolation::blendDetailStack(const vector<vector<Mat>>& detailStack, const vector<Mat>& approxStack, vector<Mat>& destStack, const int order, const int interpolationMethod)
 	{
 		const int level = (int)approxStack.size();
-		AutoBuffer<const float*> lptr(order);
+		AutoBuffer<const float*> detail(order);
 
-		if (order == 256)
+		for (int l = 0; l < level - 1; l++)
 		{
-			for (int l = 0; l < level - 1; l++)
+			const float* g = approxStack[l].ptr<float>();
+			float* dest = destStack[l].ptr<float>();
+			for (int k = 0; k < order; k++)
 			{
-				const float* s = approxStack[l].ptr<float>();
-				float* d = destStack[l].ptr<float>();
+				detail[k] = detailStack[k][l].ptr<float>();
+			}
+
+			if (!isParallel) omp_set_num_threads(1);
+
+			if (interpolationMethod == INTER_NEAREST)
+			{
+				const float idelta = (order - 1) / intensityRange;
+#pragma omp parallel for //schedule (dynamic)
 				for (int i = 0; i < approxStack[l].size().area(); i++)
 				{
-					const int c = saturate_cast<uchar>(s[i]);
-					d[i] = detailStack[c][l].at<float>(i);
+					const int c = min(order - 1, (int)saturate_cast<uchar>((g[i] - intensityMin) * idelta));
+					//const int c = min(order - 1, int(g[i] * istep+0.5));
+					dest[i] = detail[c][i];
 				}
 			}
-		}
-		else
-		{
-			for (int l = 0; l < level - 1; l++)
+			else if (interpolationMethod == INTER_LINEAR)
 			{
-				const float* g = approxStack[l].ptr<float>();
-				float* d = destStack[l].ptr<float>();
-				for (int k = 0; k < order; k++)
-				{
-					lptr[k] = detailStack[k][l].ptr<float>();
-				}
-
-				if (!isParallel) omp_set_num_threads(1);
-
-				if (interpolationMethod == INTER_NEAREST)
-				{
-					const float idelta = (order - 1) / intensityRange;
 #pragma omp parallel for //schedule (dynamic)
-					for (int i = 0; i < approxStack[l].size().area(); i++)
-					{
-						const int c = min(order - 1, (int)saturate_cast<uchar>((g[i] - intensityMin) * idelta));
-						//const int c = min(order - 1, int(g[i] * istep+0.5));
-						d[i] = lptr[c][i];
-					}
-				}
-				else if (interpolationMethod == INTER_LINEAR)
+				for (int i = 0; i < approxStack[l].size().area(); i++)
 				{
-#pragma omp parallel for //schedule (dynamic)
-					for (int i = 0; i < approxStack[l].size().area(); i++)
-					{
-						float alpha;
-						int high, low;
-						getLinearIndex(g[i], low, high, alpha, order, intensityMin, intensityMax);
-						d[i] = alpha * lptr[low][i] + (1.f - alpha) * lptr[high][i];
-					}
+					float alpha;
+					int high, low;
+					getLinearIndex(g[i], low, high, alpha, order, intensityMin, intensityMax);
+					dest[i] = alpha * detail[low][i] + (1.f - alpha) * detail[high][i];
 				}
-				else if (interpolationMethod == INTER_CUBIC)
-				{
-#pragma omp parallel for //schedule (dynamic)
-					for (int i = 0; i < approxStack[l].size().area(); i++)
-					{
-						d[i] = getCubicInterpolation(g[i], order, lptr, i, cubicAlpha, intensityMin, intensityMax);
-					}
-				}
-				if (!isParallel) omp_set_num_threads(omp_get_max_threads());
 			}
+			else if (interpolationMethod == INTER_CUBIC)
+			{
+#pragma omp parallel for //schedule (dynamic)
+				for (int i = 0; i < approxStack[l].size().area(); i++)
+				{
+					dest[i] = getCubicInterpolation(g[i], order, detail, i, cubicAlpha, intensityMin, intensityMax);
+				}
+			}
+			if (!isParallel) omp_set_num_threads(omp_get_max_threads());
 		}
 	}
 
@@ -1952,7 +1937,7 @@ namespace cp
 
 		remapIm.resize(threadMax);
 
-		if (GaussianPyramid.size() != level + 1)GaussianPyramid.resize(level + 1);
+		if (GaussianStack.size() != level + 1) GaussianStack.resize(level + 1);
 
 		const int gfRadius = getGaussianRadius(sigma_space);
 		const int lowr = 2 * gfRadius + gfRadius;
@@ -1963,12 +1948,12 @@ namespace cp
 		{
 			if (src.depth() == CV_32F)
 			{
-				copyMakeBorder(src, GaussianPyramid[0], r_pad0, r_pad0, r_pad0, r_pad0, borderType);
+				copyMakeBorder(src, GaussianStack[0], r_pad0, r_pad0, r_pad0, r_pad0, borderType);
 			}
 			else
 			{
 				copyMakeBorder(src, border, r_pad0, r_pad0, r_pad0, r_pad0, borderType);
-				border.convertTo(GaussianPyramid[0], CV_32F);
+				border.convertTo(GaussianStack[0], CV_32F);
 			}
 			if (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
 			{
@@ -1984,12 +1969,13 @@ namespace cp
 		{
 			if (src.depth() == CV_32F)
 			{
-				src.copyTo(GaussianPyramid[0]);
+				src.copyTo(GaussianStack[0]);
 			}
 			else
 			{
-				src.convertTo(GaussianPyramid[0], CV_32F);
+				src.convertTo(GaussianStack[0], CV_32F);
 			}
+			//print_debug(adaptiveMethod);
 			if (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
 			{
 				smap = adaptiveSigmaMap[0];
@@ -2000,11 +1986,11 @@ namespace cp
 		//(1) build Gaussian Pyramid
 		{
 			//cp::Timer t("(1) build Gaussian Pyramid");
-			buildGaussianPyramid(GaussianPyramid[0], GaussianPyramid, level, sigma_space);
+			buildGaussianPyramid(GaussianStack[0], GaussianStack, level, sigma_space);
 		}
 
 		//(2) build Laplacian Pyramid
-		LaplacianPyramid.resize(order);
+		LayerStack.resize(order);
 		{
 			//cp::Timer t("(2) build Laplacian Pyramid");
 			if (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
@@ -2013,8 +1999,8 @@ namespace cp
 				for (int n = 0; n < order; n++)
 				{
 					const int tidx = omp_get_thread_num();
-					remapAdaptive(GaussianPyramid[0], remapIm[tidx], getTau(n), smap, bmap);
-					buildLaplacianPyramid(remapIm[tidx], LaplacianPyramid[n], level, sigma_space);
+					remapAdaptive(GaussianStack[0], remapIm[tidx], getTau(n), smap, bmap);
+					buildLaplacianPyramid(remapIm[tidx], LayerStack[n], level, sigma_space);
 				}
 			}
 			else
@@ -2040,40 +2026,31 @@ namespace cp
 					}
 					_mm_free(linebuff);
 #else
-					buildRemapLaplacianPyramidEachOrder(GaussianPyramid[0], LaplacianPyramid[n], level, sigma_space, getTau(n), sigma_range, boost);
+					buildRemapLaplacianPyramidEachOrder(GaussianStack[0], LayerStack[n], level, sigma_space, getTau(n), sigma_range, boost);
 #endif
 				}
 			}
 
-			blendDetailStack(LaplacianPyramid, GaussianPyramid, GaussianPyramid, order, interpolation_method);//orverride destnation pyramid for saving memory
+			blendDetailStack(LayerStack, GaussianStack, GaussianStack, order, interpolation_method);//orverride destnation pyramid for saving memory
 		}
+		//showPyramid("Laplacian Pyramid fast", GaussianStack, 10.f);
 
 		if (pyramidComputeMethod == IgnoreBoundary)
 		{
-			collapseLaplacianPyramid(GaussianPyramid, GaussianPyramid[0]);
+			collapseLaplacianPyramid(GaussianStack, GaussianStack[0], CV_32F);
 			if (src.depth() == CV_32F)
 			{
-				GaussianPyramid[0](Rect(r_pad0, r_pad0, src.cols, src.rows)).copyTo(dest);
+				GaussianStack[0](Rect(r_pad0, r_pad0, src.cols, src.rows)).copyTo(dest);
 			}
 			else
 			{
-				GaussianPyramid[0](Rect(r_pad0, r_pad0, src.cols, src.rows)).convertTo(dest, src.type());
+				GaussianStack[0](Rect(r_pad0, r_pad0, src.cols, src.rows)).convertTo(dest, src.type());
 			}
 		}
 		else
 		{
-			if (src.depth() == CV_32F)
-			{
-				collapseLaplacianPyramid(GaussianPyramid, dest);
-			}
-			else
-			{
-				Mat srcf;
-				collapseLaplacianPyramid(GaussianPyramid, srcf);//override srcf for saving memory	
-				srcf.convertTo(dest, src.type());
-			}
+			collapseLaplacianPyramid(GaussianStack, dest, src.depth());
 		}
-		//showPyramid("Laplacian Pyramid fast", GaussianPyramid);
 	}
 
 	void LocalMultiScaleFilterInterpolation::pyramidSerial(const Mat& src, Mat& dest)
@@ -2083,7 +2060,7 @@ namespace cp
 		//initRangeTable(sigma_range, boost);
 		if (isUseTable) initRangeTableInteger(sigma_range, boost);
 
-		if (GaussianPyramid.size() != level + 1)GaussianPyramid.resize(level + 1);
+		if (GaussianStack.size() != level + 1)GaussianStack.resize(level + 1);
 
 		const int gfRadius = getGaussianRadius(sigma_space);
 		const int lowr = 2 * gfRadius + gfRadius;
@@ -2094,12 +2071,12 @@ namespace cp
 		{
 			if (src.depth() == CV_8U)
 			{
-				src.convertTo(GaussianPyramid[0], CV_32F);
+				src.convertTo(GaussianStack[0], CV_32F);
 				//src8u = src;
 			}
 			else
 			{
-				src.copyTo(GaussianPyramid[0]);
+				src.copyTo(GaussianStack[0]);
 			}
 
 			if (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
@@ -2112,11 +2089,11 @@ namespace cp
 		{
 			if (src.depth() == CV_32F)
 			{
-				src.copyTo(GaussianPyramid[0]);
+				src.copyTo(GaussianStack[0]);
 			}
 			else
 			{
-				src.convertTo(GaussianPyramid[0], CV_32F);
+				src.convertTo(GaussianStack[0], CV_32F);
 			}
 			if (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
 			{
@@ -2128,25 +2105,25 @@ namespace cp
 		//(1) build Gaussian Pyramid
 		{
 			//cp::Timer t("(1) build Gaussian Pyramid");
-			buildGaussianPyramid(GaussianPyramid[0], GaussianPyramid, level, sigma_space);
-			ImageStack.resize(GaussianPyramid.size());
-			for (int i = 0; i < GaussianPyramid.size() - 1; i++)
+			buildGaussianPyramid(GaussianStack[0], GaussianStack, level, sigma_space);
+			ImageStack.resize(GaussianStack.size());
+			for (int i = 0; i < GaussianStack.size() - 1; i++)
 			{
-				ImageStack[i].create(GaussianPyramid[i].size(), CV_32F);
+				ImageStack[i].create(GaussianStack[i].size(), CV_32F);
 			}
-			ImageStack[level] = GaussianPyramid[level];
+			ImageStack[level] = GaussianStack[level];
 		}
 
 		//(2) build Laplacian Pyramid
-		LaplacianPyramid.resize(1);
+		LayerStack.resize(1);
 		{
 			//cp::Timer t("(2) build Laplacian Pyramid");
 			if (adaptiveMethod == AdaptiveMethod::ADAPTIVE)
 			{
-				buildRemapAdaptiveLaplacianPyramid<true>(GaussianPyramid, LaplacianPyramid[0], ImageStack, level, sigma_space, getTau(0), smap, bmap);
+				buildRemapAdaptiveLaplacianPyramid<true>(GaussianStack, LayerStack[0], ImageStack, level, sigma_space, getTau(0), smap, bmap);
 				for (int n = 1; n < order; n++)
 				{
-					buildRemapAdaptiveLaplacianPyramid<false>(GaussianPyramid, LaplacianPyramid[0], ImageStack, level, sigma_space, getTau(n), smap, bmap);
+					buildRemapAdaptiveLaplacianPyramid<false>(GaussianStack, LayerStack[0], ImageStack, level, sigma_space, getTau(n), smap, bmap);
 				}
 			}
 			else
@@ -2156,15 +2133,15 @@ namespace cp
 				{
 					for (int n = 0; n < order; n++)
 					{
-						buildRemapLaplacianPyramidEachOrder(GaussianPyramid[0], LaplacianPyramid[0], level, sigma_space, getTau(n), sigma_range, boost);
-						if (interpolation_method == 0) productSumLaplacianPyramid<0>(LaplacianPyramid[0], GaussianPyramid, ImageStack, order, getTau(n));
-						if (interpolation_method == 1) productSumLaplacianPyramid<1>(LaplacianPyramid[0], GaussianPyramid, ImageStack, order, getTau(n));
-						if (interpolation_method == 2) productSumLaplacianPyramid<2>(LaplacianPyramid[0], GaussianPyramid, ImageStack, order, getTau(n));
+						buildRemapLaplacianPyramidEachOrder(GaussianStack[0], LayerStack[0], level, sigma_space, getTau(n), sigma_range, boost);
+						if (interpolation_method == 0) productSumLaplacianPyramid<0>(LayerStack[0], GaussianStack, ImageStack, order, getTau(n));
+						if (interpolation_method == 1) productSumLaplacianPyramid<1>(LayerStack[0], GaussianStack, ImageStack, order, getTau(n));
+						if (interpolation_method == 2) productSumLaplacianPyramid<2>(LayerStack[0], GaussianStack, ImageStack, order, getTau(n));
 					}
 				}
 				else
 				{
-					buildRemapLaplacianPyramid<true>(GaussianPyramid, LaplacianPyramid[0], ImageStack, level, sigma_space, getTau(0), sigma_range, boost);
+					buildRemapLaplacianPyramid<true>(GaussianStack, LayerStack[0], ImageStack, level, sigma_space, getTau(0), sigma_range, boost);
 					for (int n = 1; n < order; n++)
 					{
 #if 0
@@ -2184,7 +2161,7 @@ namespace cp
 						}
 						_mm_free(linebuff);
 #else
-						buildRemapLaplacianPyramid<false>(GaussianPyramid, LaplacianPyramid[0], ImageStack, level, sigma_space, getTau(n), sigma_range, boost);
+						buildRemapLaplacianPyramid<false>(GaussianStack, LayerStack[0], ImageStack, level, sigma_space, getTau(n), sigma_range, boost);
 #endif
 					}
 				}
@@ -2193,21 +2170,12 @@ namespace cp
 
 		if (pyramidComputeMethod == IgnoreBoundary)
 		{
-			collapseLaplacianPyramid(ImageStack, dest);
+			collapseLaplacianPyramid(ImageStack, dest, src.depth());
 			//collapseLaplacianPyramid(GaussianPyramid, dest);
 		}
 		else
 		{
-			if (src.depth() == CV_32F)
-			{
-				collapseLaplacianPyramid(GaussianPyramid, dest);
-			}
-			else
-			{
-				Mat srcf;
-				collapseLaplacianPyramid(GaussianPyramid, srcf);//override srcf for saving memory	
-				srcf.convertTo(dest, src.type());
-			}
+			collapseLaplacianPyramid(GaussianStack, dest, src.depth());
 		}
 		//showPyramid("Laplacian Pyramid fast", GaussianPyramid);
 		if (isUseTable)
@@ -2221,8 +2189,10 @@ namespace cp
 	{
 		rangeDescope(src);
 
-		if (isParallel) pyramidParallel(src, dest);
-		else pyramidSerial(src, dest);
+		if (isParallel)
+			pyramidParallel(src, dest);
+		else
+			pyramidSerial(src, dest);
 	}
 
 	void LocalMultiScaleFilterInterpolation::dog(const Mat& src, Mat& dest)
@@ -2248,7 +2218,10 @@ namespace cp
 		}
 
 		//(2) build DoG stack
-		DoGStackLayer.resize(order);
+		if (LayerStack.size() != order)
+		{
+			LayerStack.resize(order);
+		}
 		const float step = 255.f / (order - 1);
 		{
 			//cp::Timer t("(2) build DoG stack");
@@ -2263,10 +2236,104 @@ namespace cp
 				{
 					const int tidx = omp_get_thread_num();
 					remap(srcf, remapIm[tidx], (float)(step * n), sigma_range, boost);
-					buildDoGStack(remapIm[tidx], DoGStackLayer[n], sigma_space, level);
+					buildDoGStack(remapIm[tidx], LayerStack[n], sigma_space, level);
 				}
 			}
-			blendDetailStack(DoGStackLayer, GaussianStack, GaussianStack, order, interpolation_method);//orverride destnation pyramid for saving memory
+			blendDetailStack(LayerStack, GaussianStack, GaussianStack, order, interpolation_method);//orverride destnation pyramid for saving memory
+		}
+
+		collapseDoGStack(GaussianStack, dest, src.depth());
+	}
+
+	void LocalMultiScaleFilterInterpolation::cog(const Mat& src, Mat& dest)
+	{
+		initRangeTable(sigma_range, boost);
+		remapIm.resize(omp_get_max_threads());
+
+		Mat srcf;
+		if (src.depth() == CV_32F)
+		{
+			srcf = src;
+		}
+		else
+		{
+			src.convertTo(srcf, CV_32F);
+		}
+
+		//(1) build Gaussian stack
+		{
+			//merged in next step for parallelization
+			//cp::Timer t("(1) build DoG");
+			//buildGaussianStack(srcf, GaussianStack, sigma_space, level);
+		}
+
+		//(2) build DoG stack
+		if (LayerStack.size() != order)
+		{
+			LayerStack.resize(order);
+		}
+		const float step = 255.f / (order - 1);
+		{
+			//cp::Timer t("(2) build DoG stack");
+#pragma omp parallel for schedule(dynamic)
+			for (int n = -1; n < order; n++)
+			{
+				if (n == -1)
+				{
+					buildGaussianStack(srcf, GaussianStack, sigma_space, level);
+				}
+				else
+				{
+					const int tidx = omp_get_thread_num();
+					remap(srcf, remapIm[tidx], (float)(step * n), sigma_range, boost);
+					buildCoGStack(remapIm[tidx], LayerStack[n], sigma_space, level);
+				}
+			}
+			blendDetailStack(LayerStack, GaussianStack, GaussianStack, order, interpolation_method);//orverride destnation pyramid for saving memory
+		}
+		collapseCoGStack(GaussianStack, dest, src.depth());
+	}
+
+	void LocalMultiScaleFilterInterpolation::dogsep(const Mat& src, Mat& dest)
+	{
+		initRangeTable(sigma_range, boost);
+		remapIm.resize(omp_get_max_threads());
+
+		Mat srcf;
+		if (src.depth() == CV_32F)
+		{
+			srcf = src;
+		}
+		else
+		{
+			src.convertTo(srcf, CV_32F);
+		}
+
+		//(1) build Gaussian stack
+		{
+			//merged in next step for parallelization
+			//cp::Timer t("(1) build DoG");
+			//buildGaussianStack(srcf, GaussianStack, sigma_space, level);
+		}
+
+		GaussianStack.resize(level + 1);
+		for (int l = 0; l < GaussianStack.size(); l++)
+		{
+			GaussianStack[l] = srcf.clone();
+		}
+		//(2) build DoG stack
+		LayerStack.resize(order);
+		const float step = 255.f / (order - 1);
+		{
+			//cp::Timer t("(2) build DoG stack");
+#pragma omp parallel for schedule(dynamic)
+			for (int n = 0; n < order; n++)
+			{
+				const int tidx = omp_get_thread_num();
+				remap(srcf, remapIm[tidx], (float)(step * n), sigma_range, boost);
+				buildDoGSeparableStack(remapIm[tidx], LayerStack[n], sigma_space, level);
+			}
+			blendDetailStack(LayerStack, GaussianStack, GaussianStack, order, interpolation_method);//orverride destnation pyramid for saving memory
 		}
 
 		collapseDoGStack(GaussianStack, dest, src.depth());

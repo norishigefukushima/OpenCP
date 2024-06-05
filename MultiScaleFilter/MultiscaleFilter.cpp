@@ -27,10 +27,14 @@ using namespace std;
 namespace cp
 {
 #pragma region MultiScaleFilter
+	inline float MultiScaleFilter::getGaussianRangeWeight(const float v, const float sigma_range, const float boost)
+	{
+		//int n = 2;const float ret = (float)detail_param * exp(pow(abs(v), n) / (-n * pow(sigma_range, n)));
+		return float(boost * exp(v * v / (-2.0 * sigma_range * sigma_range)));
+	}
 	void MultiScaleFilter::initRangeTable(const float sigma, const float boost)
 	{
 		rangeTable.resize(rangeMax);
-
 		for (int i = 0; i < rangeMax; i++)
 		{
 			rangeTable[i] = getGaussianRangeWeight(float(i), sigma, boost);
@@ -218,6 +222,7 @@ namespace cp
 	{
 		if (rangeDescopeMethod == RangeDescopeMethod::MINMAX)
 		{
+			//cout << "rangeDescopeMethod == RangeDescopeMethod::MINMAX" << endl;
 			double minv, maxv;
 			cv::minMaxLoc(src, &minv, &maxv);
 			intensityMin = float(minv);
@@ -527,6 +532,7 @@ namespace cp
 		_mm_free(W);
 	}
 
+	//D is filtering diameter
 	template<int D>
 	void MultiScaleFilter::GaussDownIgnoreBoundary(const Mat& src, Mat& dest, float* linebuff)
 	{
@@ -1317,7 +1323,7 @@ namespace cp
 		//const int D = 2 * rs + 1;
 		//const int D2 = 2 * D;
 
-		const int step = src.cols;
+		const int step = src.cols;//src.cols
 		//float* linee = (float*)_mm_malloc(sizeof(float) * src.cols, AVX_ALIGN);
 		//float* lineo = (float*)_mm_malloc(sizeof(float) * src.cols, AVX_ALIGN);
 		const int hend = src.cols - 2 * rs;
@@ -1330,13 +1336,14 @@ namespace cp
 			for (int i = 0; i < WIDTH; i += 8)
 			{
 				const float* si = sptr + i;
+				//k=0
 				__m256 sume = _mm256_mul_ps(GW[0], _mm256_loadu_ps(si)); si += step;
 				__m256 sumo = _mm256_setzero_ps();
 				for (int k = 2; k < D2; k += 2)
 				{
 					const __m256 ms = _mm256_loadu_ps(si); si += step;
-					sume = _mm256_fmadd_ps(GW[k], ms, sume);
 					sumo = _mm256_fmadd_ps(GW[k - 1], ms, sumo);
+					sume = _mm256_fmadd_ps(GW[k + 0], ms, sume);
 				}
 				_mm256_storeu_ps(linee + i, _mm256_mul_ps(sume, mevenratio));
 				_mm256_storeu_ps(lineo + i, _mm256_mul_ps(sumo, moddratio));
@@ -1349,7 +1356,7 @@ namespace cp
 				float sumo = 0.f;
 				for (int k = 2; k < D2; k += 2)
 				{
-					sume += GaussWeight[k] * *si;
+					sume += GaussWeight[k + 0] * *si;
 					sumo += GaussWeight[k - 1] * *si;
 					si += step;
 				}
@@ -1360,7 +1367,7 @@ namespace cp
 			// h filter
 			float* deptr = dest.ptr<float>(j, radius);
 			float* doptr = dest.ptr<float>(j + 1, radius);
-			const float* daeptr = addsubsrc.ptr<float>(j, radius);
+			const float* daeptr = addsubsrc.ptr<float>(j + 0, radius);
 			const float* daoptr = addsubsrc.ptr<float>(j + 1, radius);
 			for (int i = 0; i < HEND; i += 8)
 			{
@@ -1438,8 +1445,6 @@ namespace cp
 				}
 			}
 		}
-		//_mm_free(linee);
-		//_mm_free(lineo);
 		_mm_free(GW);
 	}
 
@@ -1599,6 +1604,7 @@ namespace cp
 		else if (pyramidComputeMethod == OpenCV)
 		{
 			buildPyramid(src, destPyramid, level, borderType);
+			destPyramid[0] = src.clone();
 			for (int i = 0; i < level; i++)
 			{
 				Mat temp;
@@ -1608,6 +1614,21 @@ namespace cp
 		}
 	}
 
+	void MultiScaleFilter::buildContrastPyramid(const Mat& src, vector<Mat>& destPyramid, const int level, const float sigma)
+	{
+		if (destPyramid.size() != level + 1) destPyramid.resize(level + 1);
+
+		buildPyramid(src, destPyramid, level);
+		destPyramid[0] = destPyramid[0].clone();
+		for (int l = 0; l < level; l++)
+		{
+			Mat tmp;
+			pyrUp(destPyramid[l + 1], tmp);
+			destPyramid[l] = destPyramid[l] / tmp - 1;
+		}
+	}
+
+	//D: //diameter for downsampling, d2 for upsampling
 	template<int D, int d, int d2>
 	void MultiScaleFilter::buildLaplacianPyramid(const Mat& src, vector<Mat>& destPyramid, const int level, const float sigma, float* linebuff)
 	{
@@ -1692,7 +1713,7 @@ namespace cp
 		}
 	}
 
-	void MultiScaleFilter::collapseLaplacianPyramid(vector<Mat>& LaplacianPyramid, Mat& dest)
+	void MultiScaleFilter::collapseLaplacianPyramid(vector<Mat>& LaplacianPyramid, Mat& dest, const int depth)
 	{
 		const int level = (int)LaplacianPyramid.size();
 
@@ -1702,7 +1723,12 @@ namespace cp
 			{
 				GaussUpAddIgnoreBoundary<true>(LaplacianPyramid[i], LaplacianPyramid[i - 1], LaplacianPyramid[i - 1]);
 			}
-			GaussUpAddIgnoreBoundary<true>(LaplacianPyramid[1], LaplacianPyramid[0], dest);
+			if (depth == CV_32F) GaussUpAddIgnoreBoundary<true>(LaplacianPyramid[1], LaplacianPyramid[0], dest);
+			else
+			{
+				GaussUpAddIgnoreBoundary<true>(LaplacianPyramid[1], LaplacianPyramid[0], LaplacianPyramid[0]);
+				LaplacianPyramid[0].convertTo(dest, depth);
+			}
 		}
 		else if (pyramidComputeMethod == Fast)
 		{
@@ -1710,7 +1736,12 @@ namespace cp
 			{
 				GaussUpAdd<true>(LaplacianPyramid[i], LaplacianPyramid[i - 1], LaplacianPyramid[i - 1]);
 			}
-			GaussUpAdd<true>(LaplacianPyramid[1], LaplacianPyramid[0], dest);
+			if (depth == CV_32F) GaussUpAdd<true>(LaplacianPyramid[1], LaplacianPyramid[0], dest);
+			else
+			{
+				GaussUpAdd<true>(LaplacianPyramid[1], LaplacianPyramid[0], LaplacianPyramid[0]);
+				LaplacianPyramid[0].convertTo(dest, depth);
+			}
 		}
 		else if (pyramidComputeMethod == Full)
 		{
@@ -1718,7 +1749,12 @@ namespace cp
 			{
 				GaussUpAddFull<true>(LaplacianPyramid[i], LaplacianPyramid[i - 1], LaplacianPyramid[i - 1], sigma_space, borderType);
 			}
-			GaussUpAddFull<true>(LaplacianPyramid[1], LaplacianPyramid[0], dest, sigma_space, borderType);
+			if (depth == CV_32F) GaussUpAddFull<true>(LaplacianPyramid[1], LaplacianPyramid[0], dest, sigma_space, borderType);
+			else
+			{
+				GaussUpAddFull<true>(LaplacianPyramid[1], LaplacianPyramid[0], LaplacianPyramid[0], sigma_space, borderType);
+				LaplacianPyramid[0].convertTo(dest, depth);
+			}
 		}
 		else if (pyramidComputeMethod == OpenCV)
 		{
@@ -1729,75 +1765,135 @@ namespace cp
 				cv::add(ret, LaplacianPyramid[i], ret);
 				cv::pyrUp(ret, ret, LaplacianPyramid[i - 1].size(), borderType);
 			}
-			cv::add(ret, LaplacianPyramid[0], dest);
+			if (depth == CV_32F) cv::add(ret, LaplacianPyramid[0], dest);
+			else
+			{
+				cv::add(ret, LaplacianPyramid[0], LaplacianPyramid[0]);
+				LaplacianPyramid[0].convertTo(dest, depth);
+			}
 		}
+	}
 
+	void MultiScaleFilter::collapseContrastPyramid(vector<Mat>& contrastPyramid, Mat& dest, const int depth)
+	{
+		const int level = (int)contrastPyramid.size() - 1;
+		Mat ret;
+		pyrUp(contrastPyramid[level], ret);
+		for (int l = level - 1; l >= 0; l--)
+		{
+			ret = (contrastPyramid[l] + 1).mul(ret);
+			if (l != 0) pyrUp(ret, ret);
+			else
+			{
+				if (depth == CV_32F) ret.copyTo(dest);
+				else ret.convertTo(dest, depth);
+			}
+		}
 	}
 #pragma endregion
 
 #pragma region DoG building
 	void MultiScaleFilter::buildGaussianStack(const Mat& src, vector<Mat>& GaussianStack, const float sigma_s, const int level)
 	{
-		GaussianStack.resize(level + 1);
+		if (GaussianStack.size() != level + 1) GaussianStack.resize(level + 1);
 
-		src.convertTo(GaussianStack[0], CV_32F);
-		constexpr float nsigma = 3.f;//2.f;
-#pragma omp parallel for
-		for (int i = 1; i <= level; i++)
-		{
-			//const float sigma_l = sigma_s * i;
-			const float sigma_l = (float)getPyramidSigma(sigma_s, i);
-			const int r = (int)ceil(sigma_l * nsigma);
-			const Size ksize(2 * r + 1, 2 * r + 1);
-#ifdef USE_SLIDING_DCT
-			gf::SpatialFilterSlidingDCT5_AVX_32F sf(gf::DCT_COEFFICIENTS::FULL_SEARCH_NOOPT);
-			sf.filter(GaussianStack[0], GaussianStack[i], sigma_l, 2);
-#else
-			GaussianBlur(GaussianStack[0], GaussianStack[i], ksize, sigma_l);
-#endif
-		}
-	}
-
-	void MultiScaleFilter::buildDoGStack(const Mat& src, vector<Mat>& ImageStack, const float sigma_s, const int level)
-	{
-		if (ImageStack.size() != level + 1) ImageStack.resize(level + 1);
-		for (int l = 0; l <= level; l++) ImageStack[l].create(src.size(), CV_32F);
-
-		//spatialGradient
-		//gf::SpatialFilter sf(gf::SpatialFilterAlgorithm::SlidingDCT5_AVX, CV_32F);
-#ifdef USE_SLIDING_DCT
-		gf::SpatialFilterSlidingDCT5_AVX_32F sf(gf::DCT_COEFFICIENTS::FULL_SEARCH_NOOPT);
-#endif
-		constexpr float nsigma = 3.f;//2.f;
-
-		Mat prev = src;
+		if (src.depth() == CV_32F) src.copyTo(GaussianStack[0]);
+		else src.convertTo(GaussianStack[0], CV_32F);
 		//#pragma omp parallel for
 		for (int l = 1; l <= level; l++)
 		{
 			const float sigma_l = (float)getPyramidSigma(sigma_s, l);
 			const int r = (int)ceil(sigma_l * nsigma);
 			const Size ksize(2 * r + 1, 2 * r + 1);
-
 #ifdef USE_SLIDING_DCT
-			sf.filter(src, DoGStack[l], sigma_l, 2);
+			gf::SpatialFilterSlidingDCT5_AVX_32F sf(gf::DCT_COEFFICIENTS::FULL_SEARCH_NOOPT);
+			sf.filter(GaussianStack[0], GaussianStack[i], sigma_l, 2);
 #else
-			GaussianBlur(src, ImageStack[l], ksize, sigma_l);//DoG is not separable
-#endif	
+			GaussianBlur(GaussianStack[0], GaussianStack[l], ksize, sigma_l, sigma_l, borderType);
+#endif
+		}
+	}
+
+	void MultiScaleFilter::buildDoGStack(const Mat& src, vector<Mat>& ImageStack, const float sigma_s, const int level)
+	{
+		buildGaussianStack(src, ImageStack, sigma_s, level);
+		for (int l = 0; l < level; l++)
+		{
 			if (isDoGPyramidApprox)
 			{
 				Mat temp;
-				const double ss = pow(2.0, l - 1) * sigma_s;
-				//print_debug(ss);
+				const double ss = pow(2.0, l) * sigma_s;
 				const int rr = int(ceil(ss * nsigma));
-				GaussianBlur(ImageStack[l], temp, Size(2 * rr + 1, 2 * rr + 1), ss);//DoG is not separable	
-				subtract(prev, temp, ImageStack[l - 1]);
+				GaussianBlur(ImageStack[l + 1], temp, Size(2 * rr + 1, 2 * rr + 1), ss);//DoG is not separable	
+				subtract(ImageStack[l], temp, ImageStack[l]);
 			}
 			else
 			{
-				subtract(prev, ImageStack[l], ImageStack[l - 1]);
+				if (l == 0) subtract(src, ImageStack[l + 1], ImageStack[l]);
+				else  subtract(ImageStack[l], ImageStack[l + 1], ImageStack[l]);
 			}
-			prev = ImageStack[l];
 		}
+	}
+
+	void MultiScaleFilter::buildCoGStack(const Mat& src, vector<Mat>& ImageStack, const float sigma_s, const int level)
+	{
+		buildGaussianStack(src, ImageStack, sigma_s, level);
+		for (int l = 0; l < level; l++)
+		{
+			const int size = src.size().area();
+			const int simdsize = get_simd_floor(size, 8);
+			const __m256 mone = _mm256_set1_ps(1.f);
+			const __m256 meps = _mm256_set1_ps(FLT_EPSILON);
+			if (l == 0)
+			{
+				const float* s = src.ptr<float>();
+				const float* d1 = ImageStack[l + 1].ptr<float>();
+				float* d0 = ImageStack[l].ptr<float>();
+				for (int i = 0; i < simdsize; i += 8)
+				{
+					_mm256_storeu_ps(d0 + i, _mm256_sub_ps(_mm256_div_ps(_mm256_loadu_ps(s + i), _mm256_add_ps(meps, _mm256_loadu_ps(d1 + i))), mone));
+				}
+				for (int i = simdsize; i < size; i++)
+				{
+					d0[i] = s[i] / (d1[i] + FLT_EPSILON) - 1.f;
+				}
+			}
+			else
+			{
+				const float* d1 = ImageStack[l + 1].ptr<float>();
+				float* d0 = ImageStack[l + 0].ptr<float>();
+				for (int i = 0; i < simdsize; i += 8)
+				{
+					_mm256_storeu_ps(d0 + i, _mm256_sub_ps(_mm256_div_ps(_mm256_loadu_ps(d0 + i), _mm256_add_ps(meps, _mm256_loadu_ps(d1 + i))), mone));
+				}
+				for (int i = simdsize; i < size; i++)
+				{
+					d0[i] = d0[i] / (d1[i] + FLT_EPSILON) - 1.f;
+				}
+			}
+		}
+	}
+
+	void MultiScaleFilter::buildDoGSeparableStack(const Mat& src, vector<Mat>& ImageStack, const float sigma_s, const int level)
+	{
+		if (ImageStack.size() != level + 1) ImageStack.resize(level + 1);
+		//for (int l = 0; l <= level; l++) ImageStack[l].create(src.size(), CV_32F);
+
+		constexpr float nsigma = 3.f;//3.f;
+
+		//#pragma omp parallel for
+		for (int l = 0; l < level; l++)
+		{
+			const float sigma_c = (float)getPyramidSigma(sigma_s, l + 0);
+			const float sigma_l = (float)getPyramidSigma(sigma_s, l + 1);
+			const int r = (int)ceil(sigma_l * nsigma);
+			const Size ksize(2 * r + 1, 2 * r + 1);
+			Mat gc = getGaussianKernel(2 * r + 1, sigma_c);
+			Mat gl = getGaussianKernel(2 * r + 1, sigma_l);
+			Mat kernel = gc - gl;
+			cv::sepFilter2D(src, ImageStack[l], CV_32F, kernel, kernel);
+		}
+		ImageStack[level] = src.clone();
 	}
 
 	void MultiScaleFilter::collapseDoGStack(vector<Mat>& ImageStack, Mat& dest, const int depth)
@@ -1877,6 +1973,54 @@ namespace cp
 		}
 
 	}
+
+	void MultiScaleFilter::collapseCoGStack(vector<Mat>& ImageStack, Mat& dest, const int depth)
+	{
+		const int level = (int)ImageStack.size() - 1;
+
+		dest.create(ImageStack[0].size(), CV_32F);
+		AutoBuffer<float*> ptr(level + 1);
+		for (int l = 0; l < level + 1; l++)
+		{
+			ptr[l] = ImageStack[l].ptr<float>();
+		}
+		float* dptr = dest.ptr<float>();
+		const int size = ImageStack[0].rows * ImageStack[0].cols;
+		const int simd_end = get_simd_floor(size, 32);
+		const __m256 mone = _mm256_set1_ps(1.f);
+#pragma omp parallel for
+		for (int i = 0; i < simd_end; i += 32)
+		{
+			__m256 sum0 = _mm256_loadu_ps(ptr[level] + i);
+			__m256 sum1 = _mm256_loadu_ps(ptr[level] + i + 8);
+			__m256 sum2 = _mm256_loadu_ps(ptr[level] + i + 16);
+			__m256 sum3 = _mm256_loadu_ps(ptr[level] + i + 24);
+
+			for (int l = level - 1; l >= 0; l--)
+			{
+				const float* idx = ptr[l] + i;
+				sum0 = _mm256_mul_ps(sum0, _mm256_add_ps(mone, _mm256_loadu_ps(idx + 0)));
+				sum1 = _mm256_mul_ps(sum1, _mm256_add_ps(mone, _mm256_loadu_ps(idx + 8)));
+				sum2 = _mm256_mul_ps(sum2, _mm256_add_ps(mone, _mm256_loadu_ps(idx + 16)));
+				sum3 = _mm256_mul_ps(sum3, _mm256_add_ps(mone, _mm256_loadu_ps(idx + 24)));
+			}
+			_mm256_storeu_ps(dptr + i + 0, sum0);
+			_mm256_storeu_ps(dptr + i + 8, sum1);
+			_mm256_storeu_ps(dptr + i + 16, sum2);
+			_mm256_storeu_ps(dptr + i + 24, sum3);
+		}
+		//for (int i = 0; i < size; i++)
+		for (int i = simd_end; i < size; i++)
+		{
+			dptr[i] = ptr[level][i];
+			for (int l = level - 1; l >= 0; l--)
+			{
+				dptr[i] *= (ptr[l][i] + 1.f);
+			}
+		}
+		if (depth != CV_32F) dest.convertTo(dest, depth);
+	}
+
 #pragma endregion
 
 	void MultiScaleFilter::body(const Mat& src, Mat& dest)
@@ -1916,6 +2060,9 @@ namespace cp
 	{
 		if (scalespaceMethod == Pyramid) pyramid(src, dest);
 		if (scalespaceMethod == DoG) dog(src, dest);
+		if (scalespaceMethod == ContrastPyramid) contrastpyramid(src, dest);
+		if (scalespaceMethod == CoG) cog(src, dest);
+		if (scalespaceMethod == DoGSep) dogsep(src, dest);
 	}
 
 	void MultiScaleFilter::showImageStack(string wname)
@@ -1925,7 +2072,7 @@ namespace cp
 		imshowScale(wname, show);
 	}
 
-	void MultiScaleFilter::showPyramid(string wname, vector<Mat>& pyramid, bool isShowLevel)
+	void MultiScaleFilter::showPyramid(string wname, vector<Mat>& pyramid, float scale, bool isShowLevel)
 	{
 		namedWindow(wname);
 		const int size = (int)pyramid.size();
@@ -1937,18 +2084,19 @@ namespace cp
 
 		Mat show;
 		Mat expandv = Mat::zeros(pyramid[1].size(), pyramid[1].type());
-		vconcat(pyramid[1], expandv, expandv);
-		hconcat(pyramid[0], expandv, show);
+		vconcat(pyramid[1] * scale, expandv, expandv);
+		hconcat(pyramid[0] * scale, expandv, show);
 		int vindex = pyramid[1].rows;
 		for (int l = 2; l < size; l++)
 		{
 			Mat roi = show(Rect(pyramid[0].cols, vindex, pyramid[l].cols, pyramid[l].rows));
-			pyramid[l].copyTo(roi);
+			if (l != size - 1) Mat(pyramid[l] * scale).copyTo(roi);
+			else pyramid[l].copyTo(roi);
 			vindex += pyramid[l].rows;
 		}
 		Mat show8u;
 		show.convertTo(show8u, CV_8U);
-		if (show8u.channels() == 1)cvtColor(show8u, show8u, COLOR_GRAY2BGR);
+		if (show8u.channels() == 1) cvtColor(show8u, show8u, COLOR_GRAY2BGR);
 		if (isShowLevel)
 		{
 			const string font = "Consolas";
@@ -1981,7 +2129,7 @@ namespace cp
 	{
 		if (rangeTable.empty())
 		{
-			cout << "do not initialized" << endl;
+			cout << "do not initialized: drawRemap" << endl;
 			return;
 		}
 
@@ -2055,6 +2203,26 @@ namespace cp
 		this->isDoGPyramidApprox = flag;
 	}
 
+	void MultiScaleFilter::setIsCompute(bool flag)
+	{
+		this->isCompute = flag;
+	}
+
+	int MultiScaleFilter::getGaussianRadius(const float sigma)
+	{
+		int ret = 0;
+		if (pyramidComputeMethod == OpenCV)
+		{
+			ret = 2;
+		}
+		else
+		{
+			ret = int(ceil(nsigma * sigma));
+			//ret= get_simd_ceil(int(ceil(nsigma * sigma)), 2);//currently 2 multiple is required for pyramid
+		}
+		return ret;
+	}
+
 	std::string MultiScaleFilter::getRangeDescopeMethod()
 	{
 		string ret = "";
@@ -2093,9 +2261,8 @@ namespace cp
 
 #pragma endregion
 
-#pragma endregion
-
 #pragma region LocalMultiScaleFilter
+#if 1
 	void LocalMultiScaleFilter::pyramid(const Mat& src_, Mat& dest_)
 	{
 		//rangeDescope(src_);
@@ -2126,6 +2293,9 @@ namespace cp
 		AutoBuffer<int> ampl(level + 1);
 		AutoBuffer<int> block_sizel(level + 1);
 		AutoBuffer<int> patch_sizel(level + 1);
+
+		//ComputePyramidSize cps((int)pow(2, level + 1), radius, level + 1);
+		//imshow("py", cps.vizPyramid());
 		for (int l = 0; l <= level; l++)
 		{
 			heightl[l] = src.rows / (int)pow(2, l);
@@ -2137,6 +2307,12 @@ namespace cp
 			ampl[l] = (int)pow(2, l);
 			block_sizel[l] = (int)pow(2, l + 1);
 			patch_sizel[l] = (block_sizel[l] + 2 * lowr) * (int)pow(2, l);
+
+			/*int bl, br, is, bs;
+			bool eo;
+			cps.get(l, bl, br, is, bs, eo);
+			print_debug4(r_pad_gfpyl[l], r_pad_localpyl[l], block_sizel[l], patch_sizel[l]);
+			print_debug5(bl, br, is, bs, eo);*/
 		}
 		copyMakeBorder(srcf, border, r_pad0, r_pad0, r_pad0, r_pad0, borderType);
 
@@ -2200,11 +2376,11 @@ namespace cp
 		//(2) build Laplacian pyramid (0 to level)
 		for (int l = 0; l <= level; l++)
 		{
-			const int height = heightl[l];
-			const int width = widthl[l];
+			const int height = heightl[l];//src.rows / (int)pow(2, l)
+			const int width = widthl[l];// src.colss / (int)pow(2, l)
 			const int r_pad_gfpy = r_pad_gfpyl[l];
 			const int r_pad_localpy = r_pad_localpyl[l];
-			const int amp = ampl[l];
+			const int amp = ampl[l]; //pow(2, l)
 			const int block_size = block_sizel[l];
 			const int patch_size = patch_sizel[l];
 			//const int width = src.cols / (int)pow(2, l);
@@ -2262,16 +2438,23 @@ namespace cp
 				}
 				else
 				{
+					//print_debug(radius);
 #pragma omp parallel for schedule (dynamic)
 					for (int j = 0; j < height; j += block_size)
 					{
 						vector<Mat> llp;
 						Mat rm(patch_size, patch_size, CV_32F);
-						float* linebuff = (float*)_mm_malloc(sizeof(float) * (patch_size), AVX_ALIGN);
+						cv::AutoBuffer<float> linebuff(patch_size);
 						for (int i = 0; i < width; i += block_size)
 						{
 							//generating pyramid from 0 to l+1
-							const Mat rect = ImageStack[0](Rect(i* amp + r_pad0 - r_pad_localpy, j* amp + r_pad0 - r_pad_localpy, patch_size, patch_size)).clone();
+							const int x = i * amp + r_pad0 - r_pad_localpy;
+							const int y = j * amp + r_pad0 - r_pad_localpy;
+							//print_debug5(x, y, patch_size, ImageStack[0].cols, ImageStack[0].rows);
+							//if (ImageStack[0].cols - (x + patch_size) <= 0) cout << "ng x:" << ImageStack[0].cols - (x + patch_size) << endl;
+							//if (ImageStack[0].rows - (y + patch_size) <= 0)cout << "ng y:" << ImageStack[0].rows - (y + patch_size) << endl;
+							//ImageStack[0].size() := Size(src.cols+r_pad0, src.rows + r_pad0)
+							const Mat rect = ImageStack[0](Rect(x, y, patch_size, patch_size)).clone();
 							for (int n = 0; n < block_size; n++)
 							{
 								for (int m = 0; m < block_size; m++)
@@ -2281,6 +2464,10 @@ namespace cp
 									if (radius == 2)
 									{
 										buildLaplacianPyramid<5, 3, 6>(rm, llp, l + 1, sigma_space, linebuff);
+									}
+									else if (radius == 3)
+									{
+										buildLaplacianPyramid<7, 4, 8>(rm, llp, l + 1, sigma_space, linebuff);
 									}
 									else if (radius == 4)
 									{
@@ -2295,18 +2482,16 @@ namespace cp
 								}
 							}
 						}
-						//showPyramid("lLP", llp, false); showPyramid("LP", LaplacianPyramid); waitKey(1);
-						_mm_free(linebuff);
+						//showPyramid("lLP", llp, false); showPyramid("LP", LaplacianPyramid); waitKey(1);					
 					}
 				}
 			}
 		}
-		if (isDebug)showPyramid("Laplacian Pyramid Paris2011", LaplacianPyramid);
-		collapseLaplacianPyramid(LaplacianPyramid, srcf);//override srcf for saving memory	
-		srcf.convertTo(dest, src.type());
+		if (isDebug) showPyramid("Laplacian Pyramid Paris2011", LaplacianPyramid);
+		collapseLaplacianPyramid(LaplacianPyramid, dest, src.depth());//override srcf for saving memory	
 		dest(Rect(r, r, src_.cols, src_.rows)).copyTo(dest_);
 	}
-
+#endif
 	void LocalMultiScaleFilter::dog(const Mat& src, Mat& dest)
 	{
 		initRangeTable(sigma_range, boost);
@@ -2322,18 +2507,17 @@ namespace cp
 		}
 
 		const float sigma_lmax = (float)getPyramidSigma(sigma_space, level);
-		const int rmax = (int)ceil(sigma_lmax * 3.f);
+		const int rmax = (int)ceil(sigma_lmax * nsigma);
 		const Size ksizemax(2 * rmax + 1, 2 * rmax + 1);
 
 		const int r_pad = (int)pow(2, level + 1);//2^(level+1)
-		vector<Mat>  LaplacianStack(level + 1);
+		vector<Mat>  DetailStack(level + 1);
 
 		//(1) build Gaussian stack
 		buildGaussianStack(srcf, ImageStack, sigma_space, level);
-
-		for (int i = 0; i < level; i++)
+		for (int i = 0; i <= level; i++)
 		{
-			LaplacianStack[i].create(ImageStack[0].size(), CV_32F);
+			DetailStack[i].create(ImageStack[0].size(), CV_32F);
 		}
 		Mat im;
 		copyMakeBorder(srcf, im, rmax, rmax, rmax, rmax, borderType);
@@ -2343,11 +2527,13 @@ namespace cp
 		{
 			const float sigma_lc = (float)getPyramidSigma(sigma_space, l + 0);
 			const float sigma_lp = (float)getPyramidSigma(sigma_space, l + 1);
-			const int r = (int)ceil(sigma_lp * 3.f);
-			const Size ksize(2 * r + 1, 2 * r + 1);
-			AutoBuffer<float> weightDoG(ksize.area());
-			AutoBuffer<int> indexDoG(ksize.area());
-			setDoGKernel(weightDoG, indexDoG, im.cols, ksize, sigma_lc, sigma_lp);
+			const int r1 = (int)ceil(sigma_lc * nsigma);
+			const int r2 = (int)ceil(sigma_lp * nsigma);
+			const Size ksize1(2 * r1 + 1, 2 * r1 + 1);
+			const Size ksize2(2 * r2 + 1, 2 * r2 + 1);
+			AutoBuffer<float> weightDoG(ksize2.area());
+			AutoBuffer<int> indexDoG(ksize2.area());
+			setDoGKernel(weightDoG, indexDoG, im.cols, ksize1, ksize2, sigma_lc, sigma_lp);
 
 #pragma omp parallel for schedule (dynamic)
 			for (int j = 0; j < src.rows; j++)
@@ -2355,46 +2541,45 @@ namespace cp
 				for (int i = 0; i < src.cols; i++)
 				{
 					const float g = ImageStack[l].at<float>(j, i);
-					LaplacianStack[l].at<float>(j, i) = getRemapDoGCoeffLn(im, g, j + rmax, i + rmax, ksize.area(), indexDoG, weightDoG);
-					//if(l==0)LaplacianStack[l].at<float>(j, i) = getDoGCoeffLnNoremap(im, g, j + rmax, i + rmax, ksize.area(), index, weight);
-					//else LaplacianStack[l].at<float>(j, i) = getDoGCoeffLn(im, g, j + rmax, i + rmax, ksize.area(), index, weight);
+					DetailStack[l].at<float>(j, i) = getRemapDoGConv(im, g, j + rmax, i + rmax, ksize2.area(), indexDoG, weightDoG, isCompute);
 				}
 			}
 		}
 		//(2) the last level is a copy of the last level of Gaussian stack
-		ImageStack[level].copyTo(LaplacianStack[level]);
+		ImageStack[level].copyTo(DetailStack[level]);
 
 		//(3) collapseDoG
-		collapseDoGStack(LaplacianStack, dest, src.depth());
+		collapseDoGStack(DetailStack, dest, src.depth());
 	}
 
 	void LocalMultiScaleFilter::filter(const Mat& src, Mat& dest, const float sigma_range, const float sigma_space, const float boost, const int level, const ScaleSpace scaleSpaceMethod)
 	{
 		allocSpaceWeight(sigma_space);
 
-		this->sigma_range = sigma_range;
 		this->sigma_space = sigma_space;
-		this->level = level;
+		this->level = max(level, 1);
 		this->boost = boost;
+		this->sigma_range = sigma_range;
 		this->scalespaceMethod = scaleSpaceMethod;
-		body(src, dest);
 
+		body(src, dest);
 		freeSpaceWeight();
 	}
 
-	void LocalMultiScaleFilter::setDoGKernel(float* weight, int* index, const int index_step, Size ksize, const float sigma1, const float sigma2)
+	void LocalMultiScaleFilter::setDoGKernel(float* weight, int* index, const int index_step, Size ksize1, Size ksize2, const float sigma1, const float sigma2)
 	{
 		CV_Assert(sigma2 > sigma1);
 
-		const int r = ksize.width / 2;
+		const int r1 = ksize1.width / 2;
+		const int r2 = ksize2.width / 2;
 		int count = 0;
-		if (sigma1 == 0.f)
+		if (sigma1 <= FLT_EPSILON)
 		{
-			float sum2 = 0.f;
+			double sum2 = 0.0;
 			const float coeff2 = float(1.0 / (-2.0 * sigma2 * sigma2));
-			for (int j = -r; j <= r; j++)
+			for (int j = -r2; j <= r2; j++)
 			{
-				for (int i = -r; i <= r; i++)
+				for (int i = -r2; i <= r2; i++)
 				{
 					const float dist = float(j * j + i * i);
 					const float v2 = exp(dist * coeff2);
@@ -2404,106 +2589,107 @@ namespace cp
 					sum2 += v2;
 				}
 			}
-			sum2 = 1.f / sum2;
-			for (int i = 0; i < ksize.area(); i++)
+			sum2 = 1.0 / sum2;
+			for (int i = 0; i < ksize2.area(); i++)
 			{
-				weight[i] = 0.f - weight[i] * sum2;
+				weight[i] = float(0.0 - weight[i] * sum2);
 			}
-			weight[ksize.area() / 2] = 1.f + weight[ksize.area() / 2];
+			weight[ksize2.area() / 2] = 1.f + weight[ksize2.area() / 2];
 		}
 		else
 		{
-			AutoBuffer<float> buff(ksize.area());
-			float sum1 = 0.f;
-			float sum2 = 0.f;
+			AutoBuffer<float> weight2(ksize2.area());
+			double sum1 = 0.0;
+			double sum2 = 0.0;
 			const float coeff1 = float(1.0 / (-2.0 * sigma1 * sigma1));
 			const float coeff2 = float(1.0 / (-2.0 * sigma2 * sigma2));
-			for (int j = -r; j <= r; j++)
+			for (int j = -r2; j <= r2; j++)
 			{
-				for (int i = -r; i <= r; i++)
+				for (int i = -r2; i <= r2; i++)
 				{
 					float dist = float(j * j + i * i);
-					float v1 = exp(dist * coeff1);
+					float v1 = (abs(i) <= r1 && abs(j) <= r1) ? exp(dist * coeff1) : 0.f;
 					float v2 = exp(dist * coeff2);
 					weight[count] = v1;
-					buff[count] = v2;
+					weight2[count] = v2;
 					index[count] = j * index_step + i;
 					count++;
-					sum1 += v1;
-					sum2 += v2;
+					sum1 += (double)v1;
+					sum2 += (double)v2;
 				}
 			}
-			sum1 = 1.f / sum1;
-			sum2 = 1.f / sum2;
-			for (int i = 0; i < ksize.area(); i++)
+			sum1 = 1.0 / sum1;
+			sum2 = 1.0 / sum2;
+			for (int i = 0; i < ksize2.area(); i++)
 			{
-				weight[i] = weight[i] * sum1 - buff[i] * sum2;
+				weight[i] = float(weight[i] * sum1 - weight2[i] * sum2);
 			}
 		}
 	}
 
-	float LocalMultiScaleFilter::getDoGCoeffLnNoremap(Mat& src, const float g, const int y, const int x, const int size, int* index, float* weight)
-	{
-		float* sptr = src.ptr<float>(y, x);
-		const int simd_size = get_simd_floor(size, 8);
-
-		const __m256 mg = _mm256_set1_ps(g);
-		__m256 msum = _mm256_setzero_ps();
-		for (int i = 0; i < simd_size; i += 8)
-		{
-			__m256i idx = _mm256_load_si256((const __m256i*)index);
-			const __m256 ms = _mm256_i32gather_ps(sptr, idx, sizeof(float));
-			msum = _mm256_fmadd_ps(_mm256_load_ps(weight), ms, msum);
-			weight += 8;
-			index += 8;
-		}
-		float sum = _mm256_reduceadd_ps(msum);
-
-		for (int i = simd_size; i < size; i++)
-		{
-			const float s = sptr[*index];
-			sum += *weight * s;
-			weight++;
-			index++;
-		}
-
-		return sum;
-	}
-
-	float LocalMultiScaleFilter::getRemapDoGCoeffLn(const Mat& src, const float g, const int y, const int x, const int kernelSize, int* index, float* weight)
+	float LocalMultiScaleFilter::getRemapDoGConv(const Mat& src, const float g, const int y, const int x, const int kernelSize, int* index, float* weight, bool isCompute)
 	{
 		const int simd_ksize = get_simd_floor(kernelSize, 8);
 		const float* sptr = src.ptr<float>(y, x);
-		const float* rptr = &rangeTable[0];
 
 		const __m256 mg = _mm256_set1_ps(g);
-
+		float sum = 0.f;
 		__m256 msum = _mm256_setzero_ps();
-		for (int i = 0; i < simd_ksize; i += 8)
+		if (isCompute)
 		{
-			const __m256i idx = _mm256_load_si256((const __m256i*)index);
-			const __m256 ms = _mm256_i32gather_ps(sptr, idx, sizeof(float));
-			const __m256 subsg = _mm256_sub_ps(ms, mg);
-			const __m256 md = _mm256_fmadd_ps(_mm256_i32gather_ps(rptr, _mm256_cvtps_epi32(_mm256_abs_ps(subsg)), sizeof(float)), subsg, ms);
-			msum = _mm256_fmadd_ps(_mm256_load_ps(weight), md, msum);
-			weight += 8;
-			index += 8;
+			const float coeff = 1.f / (-2.f * sigma_range * sigma_range);
+			const __m256 mcoeff = _mm256_set1_ps(coeff);
+			const __m256 mboost = _mm256_set1_ps(boost);
+			for (int i = 0; i < simd_ksize; i += 8)
+			{
+				const __m256i idx = _mm256_load_si256((const __m256i*)index);
+				const __m256 ms = _mm256_i32gather_ps(sptr, idx, sizeof(float));
+				const __m256 mx = _mm256_sub_ps(ms, mg);
+				const __m256 md = _mm256_fmadd_ps(_mm256_mul_ps(mboost, _mm256_exp_ps(_mm256_mul_ps(_mm256_mul_ps(mx, mx), mcoeff))), mx, ms);
+				msum = _mm256_fmadd_ps(_mm256_load_ps(weight), md, msum);
+				weight += 8;
+				index += 8;
+			}
+			sum = _mm256_reduceadd_ps(msum);
+			//for (int i = 0; i < kernelSize; i++)
+			for (int i = simd_ksize; i < kernelSize; i++)
+			{
+				const float s = sptr[*index];
+				const float x = (s - g);
+				const float d = fma(boost * exp(x * x * coeff), x, s);
+				sum += *weight * d;
+				weight++;
+				index++;
+			}
 		}
-
-		float sum = _mm256_reduceadd_ps(msum);
-		//for (int i = 0; i < size; i++)
-		for (int i = simd_ksize; i < kernelSize; i++)
+		else
 		{
-			const float s = sptr[*index];
-			//float d = s - (s - g) * range[saturate_cast<uchar>(abs(s - g))];
-			float d = s + (s - g) * rangeTable[saturate_cast<uchar>(abs(s - g))];
-			//float d = s - (s - g) * -exp((s - g) * (s - g) / (-2.0 * 30.f * 30.f));
-			sum += *weight * d;
-			weight++;
-			index++;
-		}
+			const float* rptr = &rangeTable[0];
+			for (int i = 0; i < simd_ksize; i += 8)
+			{
+				const __m256i idx = _mm256_load_si256((const __m256i*)index);
+				const __m256 ms = _mm256_i32gather_ps(sptr, idx, sizeof(float));
+				const __m256 mx = _mm256_sub_ps(ms, mg);
+				const __m256 md = _mm256_fmadd_ps(_mm256_i32gather_ps(rptr, _mm256_cvtps_epi32(_mm256_abs_ps(mx)), sizeof(float)), mx, ms);
+				msum = _mm256_fmadd_ps(_mm256_load_ps(weight), md, msum);
+				weight += 8;
+				index += 8;
+			}
 
+			sum = _mm256_reduceadd_ps(msum);
+			//for (int i = 0; i < size; i++)
+			for (int i = simd_ksize; i < kernelSize; i++)
+			{
+				const float s = sptr[*index];
+				const float x = (s - g);
+				const float d = s + x * rangeTable[saturate_cast<uchar>(abs(x))];
+				sum += *weight * d;
+				weight++;
+				index++;
+			}
+		}
 		return sum;
 	}
+#pragma endregion
 #pragma endregion
 }

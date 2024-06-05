@@ -3,6 +3,7 @@
 
 static inline double getPyramidSigma(double sigma, double level)
 {
+	if (level == 0) return FLT_EPSILON;
 	/*double ret = sqrt(2.0);
 
 	for (int l = 0; l < level - 1; l++)
@@ -25,20 +26,21 @@ static inline double getPyramidSigma(double sigma, double level)
 enum WindowType
 {
 	GAUSS,
+	LAPLACE,
 	S_TONE,
 	HAT,
 	SMOOTH_HAT
 };
 
 
-inline float getGaussWeight(int x, int y, float sigma)
+static inline float getGaussWeight(int x, int y, float sigma)
 {
 	float ret;
 	ret = (float)exp((x * x + y * y) / (-2.0 * sigma * sigma));
 	return ret;
 }
 
-inline float getSToneWeight(float x, float remap_sigma, float beta, float alpha)
+static inline float getSToneWeight(float x, float remap_sigma, float beta, float alpha)
 {
 	if (abs(x) <= remap_sigma)
 	{
@@ -50,7 +52,7 @@ inline float getSToneWeight(float x, float remap_sigma, float beta, float alpha)
 }
 
 template<typename T>
-inline T getSToneCurve(T i, T g, T remap_sigma, T beta, T alpha)
+static inline T getSToneCurve(T i, T g, T remap_sigma, T beta, T alpha)
 {
 	if (abs(i - g) <= remap_sigma)
 	{
@@ -64,7 +66,7 @@ inline T getSToneCurve(T i, T g, T remap_sigma, T beta, T alpha)
 
 
 
-inline float getSmoothingHat(float x, float t, float sigma, int r)
+static inline float getSmoothingHat(float x, float t, float sigma, int r)
 {
 	float re = 0.f;
 	for (int i = -r; i <= r; i++)
@@ -74,7 +76,7 @@ inline float getSmoothingHat(float x, float t, float sigma, int r)
 	return re / (2 * r + 1);
 }
 
-inline double getSmoothingHat(double x, double t, double sigma, int r)
+static inline double getSmoothingHat(double x, double t, double sigma, int r)
 {
 	double re = 0.0;
 	for (int i = -r; i <= r; i++)
@@ -84,7 +86,7 @@ inline double getSmoothingHat(double x, double t, double sigma, int r)
 	return re / (2 * r + 1);
 }
 
-inline float getremapCoefficient(float i, float g, const int window_type, float sigma, float alpha, float beta, float remap_sigma, float boost)
+static inline float getremapCoefficient(float i, float g, const int window_type, float sigma, float alpha, float beta, float remap_sigma, float boost)
 {
 	float ret = 0.f;
 	switch (window_type)
@@ -106,6 +108,32 @@ inline float getremapCoefficient(float i, float g, const int window_type, float 
 
 namespace cp
 {
+	class CP_EXPORT ComputePyramidSize
+	{
+		const bool isLastConv;
+		const int size;
+		const int r;
+		const int level;
+		int minsize = 0;
+		std::vector<int> borderSizeL;
+		std::vector<int> borderSizeR;
+		std::vector<int> imageSize;
+		std::vector<int> borderSizeActive;
+		std::vector<int> borderSizeRequire;
+		std::vector<int> borderOffset;
+		
+	public:
+		ComputePyramidSize(int size, int r, int level, bool isLastConv);
+		void computeSize(int size, int r, int level, bool isLastConv);
+		cv::Mat vizPyramid(int bs = 16);
+		void print();
+		void get(const int level, int& borderSizeL, int& borderSizeR, int& imageSize, int& borderSizeActive, int& borderSizeRequire, int& borderOffset);
+		int getBorderL(int level);
+		int getBorderR(int level);
+		int getBorderOffset(int level);
+		int getBorderSizeRequire(int level);
+	};
+
 	//abstract class for each multi-scale filter
 	class CP_EXPORT MultiScaleFilter
 	{
@@ -118,7 +146,10 @@ namespace cp
 		enum ScaleSpace
 		{
 			Pyramid,
-			DoG
+			DoG,
+			ContrastPyramid,
+			CoG,
+			DoGSep
 		};
 		enum RangeDescopeMethod
 		{
@@ -147,21 +178,24 @@ namespace cp
 
 		bool isDoGPyramidApprox = false;
 		void setDoGPyramidApprox(bool flag);
-		inline int getGaussianRadius(const float sigma) { return (pyramidComputeMethod == OpenCV) ? 2 : get_simd_ceil(int(ceil(1.5 * sigma)), 2); }
+		void setIsCompute(bool flag);
+		int getGaussianRadius(const float sigma);
 
 		void showImageStack(std::string wname);
-		static void showPyramid(std::string wname, std::vector<cv::Mat>& pyramid, bool isShowLevel = true);
+		static void showPyramid(std::string wname, std::vector<cv::Mat>& pyramid, float scale = 1.f, bool isShowLevel = true);
 		void drawRemap(bool isWait = true, const cv::Size size = cv::Size(512, 512));
 
+		const float nsigma = 3.f;//3.f;
 	protected:
+		bool isCompute = true;
 		std::vector<cv::Size> layerSize;
 		void allocSpaceWeight(const float sigma);
 		void freeSpaceWeight();
-		float evenratio = 0.f;
-		float oddratio = 0.f;
+		float evenratio = 0.f;//set in generateWeight
+		float oddratio = 0.f;//set in generateWeight
 		float* GaussWeight = nullptr;
 		RangeDescopeMethod rangeDescopeMethod = RangeDescopeMethod::MINMAX;
-		int radius = 0;
+		int radius = 0;//set in allocSpaceWeight
 		PyramidComputeMethod pyramidComputeMethod = IgnoreBoundary;
 
 		const int threadMax = omp_get_max_threads();
@@ -188,11 +222,7 @@ namespace cp
 		const int rangeMax = 256;
 		std::vector<float> rangeTable;
 
-		inline float getGaussianRangeWeight(const float v, const float sigma_range, const float boost)
-		{
-			//int n = 2;const float ret = (float)detail_param * exp(pow(abs(v), n) / (-n * pow(sigma_range, n)));
-			return   float(boost * exp(v * v / (-2.0 * sigma_range * sigma_range)));
-		}
+		inline float getGaussianRangeWeight(const float v, const float sigma_range, const float boost);
 		void initRangeTable(const float sigma, const float boost);
 		void remap(const cv::Mat& src, cv::Mat& dest, const float g, const float sigma_range, const float boost);
 		void remapAdaptive(const cv::Mat& src, cv::Mat& dest, const float g, const cv::Mat& sigma_range, const cv::Mat& boost);
@@ -222,21 +252,30 @@ namespace cp
 		void buildGaussianPyramid(const cv::Mat& src, std::vector<cv::Mat>& GaussianPyramid, const int level, const float sigma);
 		void buildGaussianLaplacianPyramid(const cv::Mat& src, std::vector<cv::Mat>& GaussianPyramid, std::vector<cv::Mat>& LaplacianPyramid, const int level, const float sigma);
 		void buildLaplacianPyramid(const cv::Mat& src, std::vector<cv::Mat>& LaplacianPyramid, const int level, const float sigma);
+		void buildContrastPyramid(const cv::Mat& src, std::vector<cv::Mat>& LaplacianPyramid, const int level, const float sigma);
+
 		template<int D, int d, int d2> void buildLaplacianPyramid(const cv::Mat& src, std::vector<cv::Mat>& LaplacianPyramid, const int level, const float sigma, float* linebuff);
 		//using precomputed Gaussian pyramid
 		void buildLaplacianPyramid(const std::vector<cv::Mat>& GaussianPyramid, std::vector<cv::Mat>& destPyramid, const int level, const float sigma);
 		//L0+...resize(Ln-2+resize(Ln-1+resize(Ln)))
-		void collapseLaplacianPyramid(std::vector<cv::Mat>& LaplacianPyramid, cv::Mat& dest);
+		void collapseLaplacianPyramid(std::vector<cv::Mat>& LaplacianPyramid, cv::Mat& dest, const int depth);
+		void collapseContrastPyramid(std::vector<cv::Mat>& LaplacianPyramid, cv::Mat& dest, const int depth);
 
 		void buildGaussianStack(const cv::Mat& src, std::vector<cv::Mat>& GaussianStack, const float sigma_s, const int level);
 		void buildDoGStack(const cv::Mat& src, std::vector<cv::Mat>& ImageStack, const float sigma_s, const int level);
+		void buildCoGStack(const cv::Mat& src, std::vector<cv::Mat>& ImageStack, const float sigma_s, const int level);
+		void buildDoGSeparableStack(const cv::Mat& src, std::vector<cv::Mat>& ImageStack, const float sigma_s, const int level);
 		void collapseDoGStack(std::vector<cv::Mat>& ImageStack, cv::Mat& dest, const int depth);
+		void collapseCoGStack(std::vector<cv::Mat>& ImageStack, cv::Mat& dest, const int depth);
 
 		void body(const cv::Mat& src, cv::Mat& dest);
 		void gray(const cv::Mat& src, cv::Mat& dest);
 
 		virtual void pyramid(const cv::Mat& src, cv::Mat& dest) = 0;
 		virtual void dog(const cv::Mat& src, cv::Mat& dest) = 0;
+		virtual void contrastpyramid(const cv::Mat& src, cv::Mat& dest) {};
+		virtual void cog(const cv::Mat& src, cv::Mat& dest) {};
+		virtual void dogsep(const cv::Mat& src, cv::Mat& dest) {};
 	};
 
 	//classical multi-scale filtering (no edge-preserving filter)
@@ -245,8 +284,11 @@ namespace cp
 	public:
 		void filter(const cv::Mat& src, cv::Mat& dest, const float sigma_range, const float sigma_space, const float boost = 1.f, const int level = 2, const ScaleSpace scaleSpaceMethod = ScaleSpace::Pyramid);
 	protected:
-		void pyramid(const cv::Mat& src, cv::Mat& dest)override;
-		void dog(const cv::Mat& src, cv::Mat& dest)override;
+		void pyramid(const cv::Mat& src, cv::Mat& dest) override;
+		void contrastpyramid(const cv::Mat& src, cv::Mat& dest) override;
+		void dog(const cv::Mat& src, cv::Mat& dest) override;
+		void cog(const cv::Mat& src, cv::Mat& dest) override;
+		void dogsep(const cv::Mat& src, cv::Mat& dest) override;
 	};
 
 	//multi-scale filtering with bilateral filtering-based pyramid
@@ -255,9 +297,11 @@ namespace cp
 	public:
 		void filter(const cv::Mat& src, cv::Mat& dest, const float sigma_range, const float sigma_space, const float boost = 1.f, const int level = 2, const ScaleSpace scaleSpaceMethod = ScaleSpace::Pyramid);
 	protected:
-		void pyramid(const cv::Mat& src, cv::Mat& dest)override;
-		void dog(const cv::Mat& src, cv::Mat& dest)override;
+		void pyramid(const cv::Mat& src, cv::Mat& dest) override;
+		void dog(const cv::Mat& src, cv::Mat& dest) override;
+		void cog(const cv::Mat& src, cv::Mat& dest) override;
 		void buildDoBFStack(const cv::Mat& src, std::vector<cv::Mat>& DoBFStack, const float sigma_r, const float sigma_s, const int level);
+		void buildCoBFStack(const cv::Mat& src, std::vector<cv::Mat>& DoBFStack, const float sigma_r, const float sigma_s, const int level);
 	};
 
 	//multi-scale filtering with guided image filtering-based pyramid
@@ -268,8 +312,10 @@ namespace cp
 	protected:
 		void pyramid(const cv::Mat& src, cv::Mat& dest)override;
 		void dog(const cv::Mat& src, cv::Mat& dest)override;
+		void cog(const cv::Mat& src, cv::Mat& dest)override;
 		//for compatible eps = sqrt(sigma_r/1.5), sigma_gif = sqrt(2)*sigma_bf, radius_gif = radius_bf*2
 		void buildDoGIFStack(const cv::Mat& src, std::vector<cv::Mat>& DoBFStack, const float eps, const float sigma_s, const int level);
+		void buildCoGIFStack(const cv::Mat& src, std::vector<cv::Mat>& DoBFStack, const float eps, const float sigma_s, const int level);
 	};
 
 
@@ -294,6 +340,7 @@ namespace cp
 	public:
 		void filter(const cv::Mat& src, cv::Mat& dest, const float sigma_range, const float sigma_space, const float boost = 1.f, const int level = 2, const ScaleSpace scaleSpaceMethod = ScaleSpace::Pyramid);
 	protected:
+		bool isCompute = true;
 		cv::Mat border;
 		std::vector<cv::Mat> LaplacianPyramid;
 		//Local Laplacian Filter(Paris2011)
@@ -301,9 +348,8 @@ namespace cp
 
 		// DoG
 		void dog(const cv::Mat& src, cv::Mat& dest)override;
-		void setDoGKernel(float* weight, int* index, const int index_step, cv::Size ksize, const float sigma1, const float sigma2);
-		float getDoGCoeffLnNoremap(cv::Mat& src, const float g, const int y, const int x, const int size, int* index, float* weight);
-		float getRemapDoGCoeffLn(const cv::Mat& src, const float g, const int y, const int x, const int size, int* index, float* weight);
+		void setDoGKernel(float* weight, int* index, const int index_step, cv::Size ksize1, cv::Size ksize2, const float sigma1, const float sigma2);
+		float getRemapDoGConv(const cv::Mat& src, const float g, const int y, const int x, const int size, int* index, float* weight, bool isCompute);
 	};
 
 	//reference implementation: not optimized
@@ -380,10 +426,7 @@ namespace cp
 
 		std::vector<cv::Mat> remapIm;
 		std::vector<cv::Mat> GaussianStack;
-		std::vector<std::vector<cv::Mat>> DoGStackLayer;
-
-		std::vector<cv::Mat> GaussianPyramid;
-		std::vector<std::vector<cv::Mat>> LaplacianPyramid;
+		std::vector<std::vector<cv::Mat>> LayerStack;
 
 		cv::Mat border;
 		int interpolation_method = 0;
@@ -394,10 +437,12 @@ namespace cp
 		float* integerSampleTable = nullptr;
 		void initRangeTableInteger(const float sigma, const float boost);
 		////fast Local Laplacian Filter(2014)
-		void pyramid(const cv::Mat& src, cv::Mat& dest) override;
 		void pyramidParallel(const cv::Mat& src, cv::Mat& dest);
 		void pyramidSerial(const cv::Mat& src, cv::Mat& dest);
+		void pyramid(const cv::Mat& src, cv::Mat& dest) override;
 		void dog(const cv::Mat& src, cv::Mat& dest) override;
+		void cog(const cv::Mat& src, cv::Mat& dest) override;
+		void dogsep(const cv::Mat& src, cv::Mat& dest) override;
 
 		template<bool isUseTable>
 		void remapGaussDownIgnoreBoundary(const cv::Mat& src, cv::Mat& remapIm, cv::Mat& dest, const float g, const float sigma_range, const float boost);
@@ -592,8 +637,8 @@ namespace cp
 		float* cosTable = nullptr;//FourierTableSize*order initialized in initRangeFourier
 		cv::Mat src8u;//used for isUseSplatTable case
 
-		std::vector<std::vector<cv::Mat>> FourierPyramidSin; //[k][l] max(order,threadMax) x (level + 1)
-		std::vector<std::vector<cv::Mat>> FourierPyramidCos; //[k][l] max(order,threadMax) x (level + 1)
+		std::vector<std::vector<cv::Mat>> FourierStackSin; //[k][l] max(order,threadMax) x (level + 1)
+		std::vector<std::vector<cv::Mat>> FourierStackCos; //[k][l] max(order,threadMax) x (level + 1)
 		std::vector<cv::Mat> DetailStack;//level+1
 		std::vector<std::vector<cv::Mat>> destEachOrder;//[k][l] max(order,threadMax) x level
 		//dest: T, alpha, omega, (optional: sin-cos table)
@@ -619,15 +664,16 @@ namespace cp
 		//without last level summing
 		void sumPyramid(const std::vector<std::vector<cv::Mat>>& orderPyramid, std::vector<cv::Mat>& destPyramid, const int order, const int level, std::vector<bool>& used);
 
-		void pyramid(const cv::Mat& src, cv::Mat& dest)override;
+		void pyramid(const cv::Mat& src, cv::Mat& dest) override;
 		void pyramidParallel(const cv::Mat& src, cv::Mat& dest);
 		void pyramidSerial(const cv::Mat& src, cv::Mat& dest);
-		void dog(const cv::Mat& src, cv::Mat& dest)override;
+		void dog(const cv::Mat& src, cv::Mat& dest) override;
+		void cog(const cv::Mat& src, cv::Mat& dest) override;
 
 #pragma region DoG
-		void remapCosSin(const cv::Mat& src, int k, cv::Mat& destCos, cv::Mat& destSin);
+		void remapCosSin(const cv::Mat& src, int k, cv::Mat& destCos, cv::Mat& destSin, bool isCompute);
 		//makeDoG and then product sum
-		void productSummingTrig(const std::vector <cv::Mat>& src, std::vector <cv::Mat>& dest, float sigma_range);
+		void productSummingTrig(const std::vector <cv::Mat>& src, std::vector <cv::Mat>& dest, float sigma_range, bool isCompute);
 #pragma endregion
 	};
 

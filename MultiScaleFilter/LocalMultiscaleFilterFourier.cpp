@@ -639,7 +639,7 @@ namespace cp
 		LaplacianPyramid[level] = GaussianPyramid[level];
 
 		//collapse Laplacian Pyramid
-		collapseLaplacianPyramid(LaplacianPyramid, dest);
+		collapseLaplacianPyramid(LaplacianPyramid, dest, src.depth());
 	}
 
 	void LocalMultiScaleFilterFourierReference::filter(const Mat& src, Mat& dest, const int order, const float sigma_range, const float sigma_space, const float boost, const int level, const ScaleSpace scaleSpaceMethod)
@@ -760,7 +760,13 @@ namespace cp
 	void LocalMultiScaleFilterFourier::initRangeFourier(const int order, const float sigma_range, const float boost)
 	{
 		bool isRecompute = true;
-		if (preorder == order && presigma_range == sigma_range && predetail_param == boost && preIntensityMin == intensityMin && preIntensityRange == intensityRange && preperiodMethod == periodMethod) isRecompute = false;
+		if (preorder == order &&
+			presigma_range == sigma_range &&
+			predetail_param == boost &&
+			preIntensityMin == intensityMin &&
+			preIntensityRange == intensityRange &&
+			preperiodMethod == periodMethod)
+			isRecompute = false;
 		if (!isRecompute)return;
 
 		//recomputing flag setting
@@ -930,25 +936,25 @@ namespace cp
 		if (isParallel)
 		{
 			const int OoT = max(order, threadMax);
-			if (FourierPyramidCos.size() != OoT)
+			if (FourierStackCos.size() != OoT)
 			{
-				FourierPyramidCos.resize(OoT);
-				FourierPyramidSin.resize(OoT);
+				FourierStackCos.resize(OoT);
+				FourierStackSin.resize(OoT);
 				destEachOrder.resize(OoT);
 				for (int i = 0; i < OoT; i++)
 				{
-					FourierPyramidCos[i].resize(level + 1);
-					FourierPyramidSin[i].resize(level + 1);
+					FourierStackCos[i].resize(level + 1);
+					FourierStackSin[i].resize(level + 1);
 					destEachOrder[i].resize(level);
 				}
 			}
 		}
 		else
 		{
-			if (FourierPyramidCos.size() != 1)
+			if (FourierStackCos.size() != 1)
 			{
-				FourierPyramidCos.resize(1);
-				FourierPyramidSin.resize(1);
+				FourierStackCos.resize(1);
+				FourierStackSin.resize(1);
 				destEachOrder.resize(1);
 				for (int i = 0; i < 1; i++)
 				{
@@ -965,9 +971,9 @@ namespace cp
 		const int rs = radius >> 1;
 		//const int D = 2 * radius + 1;
 		//const int D2 = 2 * (2 * rs + 1);
-		if (destPyramid.size() != level + 1)destPyramid.resize(level + 1);
-		if (FourierPyramidCos.size() != level + 1)FourierPyramidCos.resize(level + 1);
-		if (FourierPyramidSin.size() != level + 1)FourierPyramidSin.resize(level + 1);
+		if (destPyramid.size() != level + 1) destPyramid.resize(level + 1);
+		if (FourierPyramidCos.size() != level + 1) FourierPyramidCos.resize(level + 1);
+		if (FourierPyramidSin.size() != level + 1) FourierPyramidSin.resize(level + 1);
 
 		const Size imSize = GaussianPyramid[0].size();
 		destPyramid[0].create(imSize, CV_32F);
@@ -7331,7 +7337,7 @@ namespace cp
 		_mm_free(W);
 	}
 
-
+	//summation of srcPyramid for each order -> destPyramid
 	void LocalMultiScaleFilterFourier::sumPyramid(const vector<vector<Mat>>& srcPyramids, vector<Mat>& destPyramid, const int numberPyramids, const int level, vector<bool>& used)
 	{
 		vector<vector<int>> h(level);
@@ -7391,6 +7397,10 @@ namespace cp
 
 	void LocalMultiScaleFilterFourier::pyramidParallel(const Mat& src, Mat& dest)
 	{
+		//cout << "pyramidParallel "<< endl;
+		//print_debug(pyramidComputeMethod);
+		//print_debug(computeScheduleFourier);
+		//print_debug(isUseFourierTable0);
 		layerSize.resize(level + 1);
 		allocImageBuffer(order, level);
 
@@ -7494,36 +7504,36 @@ namespace cp
 							{
 								if (radius == 2)
 								{
-									if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<true, true, true, true, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
-									else buildLaplacianFourierPyramidIgnoreBoundary<true, false, true, true, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
+									if (adaptiveMethod) buildLaplacianFourierPyramidIgnoreBoundary<true, true, true, true, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
+									else buildLaplacianFourierPyramidIgnoreBoundary<true, false, true, true, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
 								}
 								else if (radius == 4)
 								{
-									if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<true, true, true, true, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
-									else buildLaplacianFourierPyramidIgnoreBoundary<true, false, true, true, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
+									if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<true, true, true, true, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
+									else buildLaplacianFourierPyramidIgnoreBoundary<true, false, true, true, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
 								}
 								else
 								{
-									if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<true, true, true, true>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
-									else buildLaplacianFourierPyramidIgnoreBoundary<true, false, true, true>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
+									if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<true, true, true, true>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
+									else buildLaplacianFourierPyramidIgnoreBoundary<true, false, true, true>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
 								}
 							}
 							else
 							{
 								if (radius == 2)
 								{
-									if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<true, true, true, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
-									else buildLaplacianFourierPyramidIgnoreBoundary<true, false, true, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
+									if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<true, true, true, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
+									else buildLaplacianFourierPyramidIgnoreBoundary<true, false, true, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
 								}
 								else if (radius == 4)
 								{
-									if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<true, true, true, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
-									else buildLaplacianFourierPyramidIgnoreBoundary<true, false, true, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
+									if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<true, true, true, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
+									else buildLaplacianFourierPyramidIgnoreBoundary<true, false, true, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
 								}
 								else
 								{
-									if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<true, true, true, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
-									else buildLaplacianFourierPyramidIgnoreBoundary<true, false, true, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
+									if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<true, true, true, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
+									else buildLaplacianFourierPyramidIgnoreBoundary<true, false, true, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
 								}
 							}
 						}
@@ -7531,18 +7541,18 @@ namespace cp
 						{
 							if (radius == 2)
 							{
-								if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<true, true, false, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
-								else buildLaplacianFourierPyramidIgnoreBoundary<true, false, false, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
+								if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<true, true, false, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
+								else buildLaplacianFourierPyramidIgnoreBoundary<true, false, false, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
 							}
 							else if (radius == 4)
 							{
-								if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<true, true, false, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
-								else buildLaplacianFourierPyramidIgnoreBoundary<true, false, false, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
+								if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<true, true, false, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
+								else buildLaplacianFourierPyramidIgnoreBoundary<true, false, false, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
 							}
 							else
 							{
-								if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<true, true, false, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
-								else buildLaplacianFourierPyramidIgnoreBoundary<true, false, false, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
+								if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<true, true, false, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
+								else buildLaplacianFourierPyramidIgnoreBoundary<true, false, false, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
 							}
 						}
 					}
@@ -7554,36 +7564,36 @@ namespace cp
 							{
 								if (radius == 2)
 								{
-									if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, true, true, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
-									else buildLaplacianFourierPyramidIgnoreBoundary<false, false, true, true, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
+									if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, true, true, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
+									else buildLaplacianFourierPyramidIgnoreBoundary<false, false, true, true, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
 								}
 								else if (radius == 4)
 								{
-									if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, true, true, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
-									else buildLaplacianFourierPyramidIgnoreBoundary<false, false, true, true, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
+									if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, true, true, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
+									else buildLaplacianFourierPyramidIgnoreBoundary<false, false, true, true, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
 								}
 								else
 								{
-									if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, true, true>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
-									else buildLaplacianFourierPyramidIgnoreBoundary<false, false, true, true>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
+									if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, true, true>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
+									else buildLaplacianFourierPyramidIgnoreBoundary<false, false, true, true>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
 								}
 							}
 							else
 							{
 								if (radius == 2)
 								{
-									if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, true, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
-									else buildLaplacianFourierPyramidIgnoreBoundary<false, false, true, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
+									if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, true, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
+									else buildLaplacianFourierPyramidIgnoreBoundary<false, false, true, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
 								}
 								else if (radius == 4)
 								{
-									if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, true, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
-									else buildLaplacianFourierPyramidIgnoreBoundary<false, false, true, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
+									if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, true, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
+									else buildLaplacianFourierPyramidIgnoreBoundary<false, false, true, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
 								}
 								else
 								{
-									if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, true, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
-									else buildLaplacianFourierPyramidIgnoreBoundary<false, false, true, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
+									if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, true, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
+									else buildLaplacianFourierPyramidIgnoreBoundary<false, false, true, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
 								}
 							}
 						}
@@ -7591,18 +7601,18 @@ namespace cp
 						{
 							if (radius == 2)
 							{
-								if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, false, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
-								else buildLaplacianFourierPyramidIgnoreBoundary<false, false, false, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
+								if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, false, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
+								else buildLaplacianFourierPyramidIgnoreBoundary<false, false, false, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
 							}
 							else if (radius == 4)
 							{
-								if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, false, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
-								else buildLaplacianFourierPyramidIgnoreBoundary<false, false, false, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
+								if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, false, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
+								else buildLaplacianFourierPyramidIgnoreBoundary<false, false, false, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
 							}
 							else
 							{
-								if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, false, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
-								else buildLaplacianFourierPyramidIgnoreBoundary<false, false, false, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidCos[tidx], FourierPyramidSin[tidx]);
+								if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, false, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
+								else buildLaplacianFourierPyramidIgnoreBoundary<false, false, false, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackCos[tidx], FourierStackSin[tidx]);
 							}
 						}
 					}
@@ -7643,36 +7653,36 @@ namespace cp
 								{
 									if (radius == 2)
 									{
-										if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<true, true, true, true, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-										else          buildLaplacianSinPyramidIgnoreBoundary<true, false, true, true, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+										if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<true, true, true, true, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+										else          buildLaplacianSinPyramidIgnoreBoundary<true, false, true, true, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 									}
 									else if (radius == 4)
 									{
-										if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<true, true, true, true, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-										else          buildLaplacianSinPyramidIgnoreBoundary<true, false, true, true, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+										if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<true, true, true, true, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+										else          buildLaplacianSinPyramidIgnoreBoundary<true, false, true, true, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 									}
 									else
 									{
-										if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<true, true, true, true>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-										else          buildLaplacianSinPyramidIgnoreBoundary<true, false, true, true>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+										if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<true, true, true, true>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+										else          buildLaplacianSinPyramidIgnoreBoundary<true, false, true, true>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 									}
 								}
 								else
 								{
 									if (radius == 2)
 									{
-										if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<true, true, true, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-										else          buildLaplacianSinPyramidIgnoreBoundary<true, false, true, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+										if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<true, true, true, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+										else          buildLaplacianSinPyramidIgnoreBoundary<true, false, true, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 									}
 									else if (radius == 4)
 									{
-										if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<true, true, false, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-										else          buildLaplacianSinPyramidIgnoreBoundary<true, false, false, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+										if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<true, true, false, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+										else          buildLaplacianSinPyramidIgnoreBoundary<true, false, false, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 									}
 									else
 									{
-										if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<true, true, true, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-										else          buildLaplacianSinPyramidIgnoreBoundary<true, false, true, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+										if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<true, true, true, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+										else          buildLaplacianSinPyramidIgnoreBoundary<true, false, true, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 									}
 								}
 							}
@@ -7680,18 +7690,18 @@ namespace cp
 							{
 								if (radius == 2)
 								{
-									if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<true, true, false, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-									else          buildLaplacianSinPyramidIgnoreBoundary<true, false, false, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+									if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<true, true, false, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+									else          buildLaplacianSinPyramidIgnoreBoundary<true, false, false, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 								}
 								else if (radius == 4)
 								{
-									if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<true, true, false, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-									else          buildLaplacianSinPyramidIgnoreBoundary<true, false, false, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+									if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<true, true, false, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+									else          buildLaplacianSinPyramidIgnoreBoundary<true, false, false, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 								}
 								else
 								{
-									if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<true, true, false, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-									else          buildLaplacianSinPyramidIgnoreBoundary<true, false, false, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+									if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<true, true, false, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+									else          buildLaplacianSinPyramidIgnoreBoundary<true, false, false, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 								}
 							}
 						}
@@ -7703,36 +7713,36 @@ namespace cp
 								{
 									if (radius == 2)
 									{
-										if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<true, true, true, true, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-										else          buildLaplacianCosPyramidIgnoreBoundary<true, false, true, true, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+										if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<true, true, true, true, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+										else          buildLaplacianCosPyramidIgnoreBoundary<true, false, true, true, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 									}
 									else if (radius == 4)
 									{
-										if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<true, true, true, true, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-										else          buildLaplacianCosPyramidIgnoreBoundary<true, false, true, true, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+										if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<true, true, true, true, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+										else          buildLaplacianCosPyramidIgnoreBoundary<true, false, true, true, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 									}
 									else
 									{
-										if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<true, true, true, true>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-										else          buildLaplacianCosPyramidIgnoreBoundary<true, false, true, true>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+										if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<true, true, true, true>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+										else          buildLaplacianCosPyramidIgnoreBoundary<true, false, true, true>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 									}
 								}
 								else
 								{
 									if (radius == 2)
 									{
-										if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<true, true, true, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-										else          buildLaplacianCosPyramidIgnoreBoundary<true, false, true, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+										if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<true, true, true, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+										else          buildLaplacianCosPyramidIgnoreBoundary<true, false, true, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 									}
 									else if (radius == 4)
 									{
-										if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<true, true, true, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-										else          buildLaplacianCosPyramidIgnoreBoundary<true, false, true, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+										if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<true, true, true, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+										else          buildLaplacianCosPyramidIgnoreBoundary<true, false, true, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 									}
 									else
 									{
-										if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<true, true, true, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-										else          buildLaplacianCosPyramidIgnoreBoundary<true, false, true, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+										if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<true, true, true, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+										else          buildLaplacianCosPyramidIgnoreBoundary<true, false, true, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 									}
 								}
 							}
@@ -7740,18 +7750,18 @@ namespace cp
 							{
 								if (radius == 2)
 								{
-									if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<true, true, false, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-									else          buildLaplacianCosPyramidIgnoreBoundary<true, false, false, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+									if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<true, true, false, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+									else          buildLaplacianCosPyramidIgnoreBoundary<true, false, false, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 								}
 								else if (radius == 4)
 								{
-									if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<true, true, false, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-									else          buildLaplacianCosPyramidIgnoreBoundary<true, false, false, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+									if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<true, true, false, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+									else          buildLaplacianCosPyramidIgnoreBoundary<true, false, false, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 								}
 								else
 								{
-									if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<true, true, false, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-									else          buildLaplacianCosPyramidIgnoreBoundary<true, false, false, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+									if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<true, true, false, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+									else          buildLaplacianCosPyramidIgnoreBoundary<true, false, false, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 								}
 							}
 						}
@@ -7766,36 +7776,36 @@ namespace cp
 								{
 									if (radius == 2)
 									{
-										if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, true, true, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-										else          buildLaplacianSinPyramidIgnoreBoundary<false, false, true, true, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+										if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, true, true, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+										else          buildLaplacianSinPyramidIgnoreBoundary<false, false, true, true, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 									}
 									else if (radius == 4)
 									{
-										if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, true, true, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-										else          buildLaplacianSinPyramidIgnoreBoundary<false, false, true, true, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+										if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, true, true, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+										else          buildLaplacianSinPyramidIgnoreBoundary<false, false, true, true, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 									}
 									else
 									{
-										if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, true, true>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-										else          buildLaplacianSinPyramidIgnoreBoundary<false, false, true, true>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+										if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, true, true>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+										else          buildLaplacianSinPyramidIgnoreBoundary<false, false, true, true>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 									}
 								}
 								else
 								{
 									if (radius == 2)
 									{
-										if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, true, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-										else          buildLaplacianSinPyramidIgnoreBoundary<false, false, true, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+										if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, true, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+										else          buildLaplacianSinPyramidIgnoreBoundary<false, false, true, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 									}
 									else if (radius == 4)
 									{
-										if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, false, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-										else          buildLaplacianSinPyramidIgnoreBoundary<false, false, false, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+										if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, false, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+										else          buildLaplacianSinPyramidIgnoreBoundary<false, false, false, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 									}
 									else
 									{
-										if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, true, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-										else          buildLaplacianSinPyramidIgnoreBoundary<false, false, true, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+										if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, true, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+										else          buildLaplacianSinPyramidIgnoreBoundary<false, false, true, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 									}
 								}
 							}
@@ -7803,18 +7813,18 @@ namespace cp
 							{
 								if (radius == 2)
 								{
-									if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, false, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-									else          buildLaplacianSinPyramidIgnoreBoundary<false, false, false, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+									if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, false, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+									else          buildLaplacianSinPyramidIgnoreBoundary<false, false, false, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 								}
 								else if (radius == 4)
 								{
-									if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, false, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-									else          buildLaplacianSinPyramidIgnoreBoundary<false, false, false, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+									if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, false, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+									else          buildLaplacianSinPyramidIgnoreBoundary<false, false, false, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 								}
 								else
 								{
-									if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, false, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-									else          buildLaplacianSinPyramidIgnoreBoundary<false, false, false, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+									if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, false, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+									else          buildLaplacianSinPyramidIgnoreBoundary<false, false, false, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 								}
 							}
 						}
@@ -7826,36 +7836,36 @@ namespace cp
 								{
 									if (radius == 2)
 									{
-										if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, true, true, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-										else          buildLaplacianCosPyramidIgnoreBoundary<false, false, true, true, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+										if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, true, true, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+										else          buildLaplacianCosPyramidIgnoreBoundary<false, false, true, true, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 									}
 									else if (radius == 4)
 									{
-										if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, true, true, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-										else          buildLaplacianCosPyramidIgnoreBoundary<false, false, true, true, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+										if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, true, true, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+										else          buildLaplacianCosPyramidIgnoreBoundary<false, false, true, true, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 									}
 									else
 									{
-										if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, true, true>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-										else          buildLaplacianCosPyramidIgnoreBoundary<false, false, true, true>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+										if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, true, true>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+										else          buildLaplacianCosPyramidIgnoreBoundary<false, false, true, true>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 									}
 								}
 								else
 								{
 									if (radius == 2)
 									{
-										if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, true, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-										else          buildLaplacianCosPyramidIgnoreBoundary<false, false, true, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+										if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, true, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+										else          buildLaplacianCosPyramidIgnoreBoundary<false, false, true, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 									}
 									else if (radius == 4)
 									{
-										if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, true, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-										else          buildLaplacianCosPyramidIgnoreBoundary<false, false, true, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+										if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, true, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+										else          buildLaplacianCosPyramidIgnoreBoundary<false, false, true, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 									}
 									else
 									{
-										if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, true, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-										else          buildLaplacianCosPyramidIgnoreBoundary<false, false, true, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+										if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, true, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+										else          buildLaplacianCosPyramidIgnoreBoundary<false, false, true, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 									}
 								}
 							}
@@ -7863,18 +7873,18 @@ namespace cp
 							{
 								if (radius == 2)
 								{
-									if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, false, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-									else          buildLaplacianCosPyramidIgnoreBoundary<false, false, false, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+									if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, false, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+									else          buildLaplacianCosPyramidIgnoreBoundary<false, false, false, false, 5, 6>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 								}
 								else if (radius == 4)
 								{
-									if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, false, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-									else          buildLaplacianCosPyramidIgnoreBoundary<false, false, false, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+									if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, false, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+									else          buildLaplacianCosPyramidIgnoreBoundary<false, false, false, false, 9, 10>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 								}
 								else
 								{
-									if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, false, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
-									else          buildLaplacianCosPyramidIgnoreBoundary<false, false, false, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierPyramidSin[tidx]);
+									if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, false, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
+									else          buildLaplacianCosPyramidIgnoreBoundary<false, false, false, false>(ImageStack, src8u, destEachOrder[tidx], k, level, FourierStackSin[tidx]);
 								}
 							}
 						}
@@ -7889,8 +7899,15 @@ namespace cp
 		}
 		DetailStack[level] = ImageStack[level];
 
-		collapseLaplacianPyramid(DetailStack, DetailStack[0]);
-		DetailStack[0](Rect(r_pad0, r_pad0, src.cols, src.rows)).copyTo(dest);
+		if (pyramidComputeMethod == IgnoreBoundary)
+		{
+			collapseLaplacianPyramid(DetailStack, DetailStack[0], CV_32F);
+			DetailStack[0](Rect(r_pad0, r_pad0, src.cols, src.rows)).copyTo(dest);
+		}
+		else
+		{
+			collapseLaplacianPyramid(DetailStack, dest, src.depth());
+		}
 
 		if (isPlot)
 		{
@@ -7964,18 +7981,18 @@ namespace cp
 					{
 						if (radius == 2)
 						{
-							if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, true, true, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierPyramidCos[0], FourierPyramidSin[0]);
-							else              buildLaplacianFourierPyramidIgnoreBoundary<false, false, true, true, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierPyramidCos[0], FourierPyramidSin[0]);
+							if (adaptiveMethod) buildLaplacianFourierPyramidIgnoreBoundary<false, true, true, true, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierStackCos[0], FourierStackSin[0]);
+							else              buildLaplacianFourierPyramidIgnoreBoundary<false, false, true, true, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierStackCos[0], FourierStackSin[0]);
 						}
 						else if (radius == 4)
 						{
-							if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, true, true, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierPyramidCos[0], FourierPyramidSin[0]);
-							else              buildLaplacianFourierPyramidIgnoreBoundary<false, false, true, true, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierPyramidCos[0], FourierPyramidSin[0]);
+							if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, true, true, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierStackCos[0], FourierStackSin[0]);
+							else              buildLaplacianFourierPyramidIgnoreBoundary<false, false, true, true, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierStackCos[0], FourierStackSin[0]);
 						}
 						else
 						{
-							if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, true, true>(ImageStack, src8u, DetailStack, k, level, FourierPyramidCos[0], FourierPyramidSin[0]);
-							else              buildLaplacianFourierPyramidIgnoreBoundary<false, false, true, true>(ImageStack, src8u, DetailStack, k, level, FourierPyramidCos[0], FourierPyramidSin[0]);
+							if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, true, true>(ImageStack, src8u, DetailStack, k, level, FourierStackCos[0], FourierStackSin[0]);
+							else              buildLaplacianFourierPyramidIgnoreBoundary<false, false, true, true>(ImageStack, src8u, DetailStack, k, level, FourierStackCos[0], FourierStackSin[0]);
 						}
 					}
 				}
@@ -7990,36 +8007,36 @@ namespace cp
 						{
 							if (radius == 2)
 							{
-								if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, true, true, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
-								else          buildLaplacianSinPyramidIgnoreBoundary<false, false, true, true, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
+								if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, true, true, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
+								else          buildLaplacianSinPyramidIgnoreBoundary<false, false, true, true, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
 							}
 							else if (radius == 4)
 							{
-								if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, true, true, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
-								else          buildLaplacianSinPyramidIgnoreBoundary<false, false, true, true, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
+								if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, true, true, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
+								else          buildLaplacianSinPyramidIgnoreBoundary<false, false, true, true, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
 							}
 							else
 							{
-								if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, true, true>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
-								else          buildLaplacianSinPyramidIgnoreBoundary<false, false, true, true>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
+								if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, true, true>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
+								else          buildLaplacianSinPyramidIgnoreBoundary<false, false, true, true>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
 							}
 						}
 						else
 						{
 							if (radius == 2)
 							{
-								if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, true, true, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
-								else          buildLaplacianCosPyramidIgnoreBoundary<false, false, true, true, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
+								if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, true, true, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
+								else          buildLaplacianCosPyramidIgnoreBoundary<false, false, true, true, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
 							}
 							else if (radius == 4)
 							{
-								if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, true, true, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
-								else          buildLaplacianCosPyramidIgnoreBoundary<false, false, true, true, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
+								if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, true, true, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
+								else          buildLaplacianCosPyramidIgnoreBoundary<false, false, true, true, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
 							}
 							else
 							{
-								if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, true, true>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
-								else          buildLaplacianCosPyramidIgnoreBoundary<false, false, true, true>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
+								if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, true, true>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
+								else          buildLaplacianCosPyramidIgnoreBoundary<false, false, true, true>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
 							}
 						}
 					}
@@ -8033,18 +8050,18 @@ namespace cp
 					{
 						if (radius == 2)
 						{
-							if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, true, false, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierPyramidCos[0], FourierPyramidSin[0]);
-							else              buildLaplacianFourierPyramidIgnoreBoundary<false, false, true, false, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierPyramidCos[0], FourierPyramidSin[0]);
+							if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, true, false, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierStackCos[0], FourierStackSin[0]);
+							else              buildLaplacianFourierPyramidIgnoreBoundary<false, false, true, false, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierStackCos[0], FourierStackSin[0]);
 						}
 						else if (radius == 4)
 						{
-							if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, true, false, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierPyramidCos[0], FourierPyramidSin[0]);
-							else              buildLaplacianFourierPyramidIgnoreBoundary<false, false, true, false, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierPyramidCos[0], FourierPyramidSin[0]);
+							if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, true, false, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierStackCos[0], FourierStackSin[0]);
+							else              buildLaplacianFourierPyramidIgnoreBoundary<false, false, true, false, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierStackCos[0], FourierStackSin[0]);
 						}
 						else
 						{
-							if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, true, false>(ImageStack, src8u, DetailStack, k, level, FourierPyramidCos[0], FourierPyramidSin[0]);
-							else              buildLaplacianFourierPyramidIgnoreBoundary<false, false, true, false>(ImageStack, src8u, DetailStack, k, level, FourierPyramidCos[0], FourierPyramidSin[0]);
+							if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, true, false>(ImageStack, src8u, DetailStack, k, level, FourierStackCos[0], FourierStackSin[0]);
+							else              buildLaplacianFourierPyramidIgnoreBoundary<false, false, true, false>(ImageStack, src8u, DetailStack, k, level, FourierStackCos[0], FourierStackSin[0]);
 						}
 					}
 				}
@@ -8059,36 +8076,36 @@ namespace cp
 						{
 							if (radius == 2)
 							{
-								if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, true, false, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
-								else          buildLaplacianSinPyramidIgnoreBoundary<false, false, true, false, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
+								if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, true, false, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
+								else          buildLaplacianSinPyramidIgnoreBoundary<false, false, true, false, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
 							}
 							else if (radius == 4)
 							{
-								if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, true, false, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
-								else          buildLaplacianSinPyramidIgnoreBoundary<false, false, true, false, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
+								if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, true, false, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
+								else          buildLaplacianSinPyramidIgnoreBoundary<false, false, true, false, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
 							}
 							else
 							{
-								if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, true, false>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
-								else          buildLaplacianSinPyramidIgnoreBoundary<false, false, true, false>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
+								if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, true, false>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
+								else          buildLaplacianSinPyramidIgnoreBoundary<false, false, true, false>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
 							}
 						}
 						else
 						{
 							if (radius == 2)
 							{
-								if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, true, false, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
-								else          buildLaplacianCosPyramidIgnoreBoundary<false, false, true, false, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
+								if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, true, false, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
+								else          buildLaplacianCosPyramidIgnoreBoundary<false, false, true, false, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
 							}
 							else if (radius == 4)
 							{
-								if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, true, false, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
-								else          buildLaplacianCosPyramidIgnoreBoundary<false, false, true, false, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
+								if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, true, false, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
+								else          buildLaplacianCosPyramidIgnoreBoundary<false, false, true, false, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
 							}
 							else
 							{
-								if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, true, false>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
-								else          buildLaplacianCosPyramidIgnoreBoundary<false, false, true, false>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
+								if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, true, false>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
+								else          buildLaplacianCosPyramidIgnoreBoundary<false, false, true, false>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
 							}
 						}
 					}
@@ -8103,18 +8120,18 @@ namespace cp
 				{
 					if (radius == 2)
 					{
-						if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, false, false, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierPyramidCos[0], FourierPyramidSin[0]);
-						else buildLaplacianFourierPyramidIgnoreBoundary<false, false, false, false, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierPyramidCos[0], FourierPyramidSin[0]);
+						if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, false, false, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierStackCos[0], FourierStackSin[0]);
+						else buildLaplacianFourierPyramidIgnoreBoundary<false, false, false, false, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierStackCos[0], FourierStackSin[0]);
 					}
 					else if (radius == 4)
 					{
-						if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, false, false, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierPyramidCos[0], FourierPyramidSin[0]);
-						else buildLaplacianFourierPyramidIgnoreBoundary<false, false, false, false, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierPyramidCos[0], FourierPyramidSin[0]);
+						if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, false, false, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierStackCos[0], FourierStackSin[0]);
+						else buildLaplacianFourierPyramidIgnoreBoundary<false, false, false, false, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierStackCos[0], FourierStackSin[0]);
 					}
 					else
 					{
-						if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, false, false>(ImageStack, src8u, DetailStack, k, level, FourierPyramidCos[0], FourierPyramidSin[0]);
-						else buildLaplacianFourierPyramidIgnoreBoundary<false, false, false, false>(ImageStack, src8u, DetailStack, k, level, FourierPyramidCos[0], FourierPyramidSin[0]);
+						if (adaptiveMethod)buildLaplacianFourierPyramidIgnoreBoundary<false, true, false, false>(ImageStack, src8u, DetailStack, k, level, FourierStackCos[0], FourierStackSin[0]);
+						else buildLaplacianFourierPyramidIgnoreBoundary<false, false, false, false>(ImageStack, src8u, DetailStack, k, level, FourierStackCos[0], FourierStackSin[0]);
 					}
 				}
 			}
@@ -8129,36 +8146,36 @@ namespace cp
 					{
 						if (radius == 2)
 						{
-							if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, false, false, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
-							else          buildLaplacianSinPyramidIgnoreBoundary<false, false, false, false, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
+							if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, false, false, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
+							else          buildLaplacianSinPyramidIgnoreBoundary<false, false, false, false, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
 						}
 						else if (radius == 4)
 						{
-							if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, false, false, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
-							else          buildLaplacianSinPyramidIgnoreBoundary<false, false, false, false, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
+							if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, false, false, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
+							else          buildLaplacianSinPyramidIgnoreBoundary<false, false, false, false, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
 						}
 						else
 						{
-							if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, false, false>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
-							else          buildLaplacianSinPyramidIgnoreBoundary<false, false, false, false>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
+							if (adaptiveMethod)buildLaplacianSinPyramidIgnoreBoundary<false, true, false, false>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
+							else          buildLaplacianSinPyramidIgnoreBoundary<false, false, false, false>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
 						}
 					}
 					else
 					{
 						if (radius == 2)
 						{
-							if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, false, false, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
-							else          buildLaplacianCosPyramidIgnoreBoundary<false, false, false, false, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
+							if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, false, false, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
+							else          buildLaplacianCosPyramidIgnoreBoundary<false, false, false, false, 5, 6>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
 						}
 						else if (radius == 4)
 						{
-							if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, false, false, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
-							else          buildLaplacianCosPyramidIgnoreBoundary<false, false, false, false, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
+							if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, false, false, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
+							else          buildLaplacianCosPyramidIgnoreBoundary<false, false, false, false, 9, 10>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
 						}
 						else
 						{
-							if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, false, false>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
-							else          buildLaplacianCosPyramidIgnoreBoundary<false, false, false, false>(ImageStack, src8u, DetailStack, k, level, FourierPyramidSin[0]);
+							if (adaptiveMethod)buildLaplacianCosPyramidIgnoreBoundary<false, true, false, false>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
+							else          buildLaplacianCosPyramidIgnoreBoundary<false, false, false, false>(ImageStack, src8u, DetailStack, k, level, FourierStackSin[0]);
 						}
 					}
 				}
@@ -8166,91 +8183,153 @@ namespace cp
 		}
 
 		DetailStack[level] = ImageStack[level];
-		collapseLaplacianPyramid(DetailStack, dest);
+		collapseLaplacianPyramid(DetailStack, dest, src.depth());
 	}
 
 	void LocalMultiScaleFilterFourier::pyramid(const Mat& src, Mat& dest)
 	{
 		rangeDescope(src);
 
-		if (isParallel)	pyramidParallel(src, dest);
-		else pyramidSerial(src, dest);
+		if (isParallel)	
+			pyramidParallel(src, dest);
+		else 
+			pyramidSerial(src, dest);
 	}
 #pragma endregion
 
 #pragma region DoG
-	void LocalMultiScaleFilterFourier::remapCosSin(const cv::Mat& src, int k, Mat& destCos, Mat& destSin)
+	void LocalMultiScaleFilterFourier::remapCosSin(const cv::Mat& src, int k, Mat& destCos, Mat& destSin, bool isCompute)
 	{
-		if (destCos.empty())destCos.create(src.size(), CV_32F);
-		if (destSin.empty())destSin.create(src.size(), CV_32F);
+		if (destCos.empty()) destCos.create(src.size(), CV_32F);
+		if (destSin.empty()) destSin.create(src.size(), CV_32F);
 
-		int simdsize = sizeof(__m256) / sizeof(float);
+		const int simdsize = sizeof(__m256) / sizeof(float);
 		const __m256* guidePtr = (const __m256*)src.ptr<float>();
 		__m256* mcos = (__m256*)destCos.ptr<float>();
 		__m256* msin = (__m256*)destSin.ptr<float>();
-		const float* sxiPtr = &sinTable[FourierTableSize * k];
-		const float* cxiPtr = &cosTable[FourierTableSize * k];
 
-		for (int i = 0; i < src.size().area() / simdsize; i++)
+		if (isCompute)
 		{
-			const __m256i idx = _mm256_cvtps_epi32(*guidePtr);
-			*(mcos) = _mm256_i32gather_ps(cxiPtr, idx, sizeof(float));
-			*(msin) = _mm256_i32gather_ps(sxiPtr, idx, sizeof(float));
-			guidePtr++;
-			mcos++;
-			msin++;
+			const __m256 momega = _mm256_set1_ps(omega[k]);
+			for (int i = 0; i < src.size().area() / simdsize; i++)
+			{
+				const __m256 idx = _mm256_mul_ps(momega, *guidePtr);
+				*(mcos) = _mm256_cos_ps(idx);
+				*(msin) = _mm256_sin_ps(idx);
+				guidePtr++;
+				mcos++;
+				msin++;
+			}
+		}
+		else
+		{
+			const float* sxiPtr = &sinTable[FourierTableSize * k];
+			const float* cxiPtr = &cosTable[FourierTableSize * k];
+			for (int i = 0; i < src.size().area() / simdsize; i++)
+			{
+				const __m256i idx = _mm256_cvtps_epi32(*guidePtr);
+				*(mcos) = _mm256_i32gather_ps(cxiPtr, idx, sizeof(float));
+				*(msin) = _mm256_i32gather_ps(sxiPtr, idx, sizeof(float));
+				guidePtr++;
+				mcos++;
+				msin++;
+			}
 		}
 	}
 
-	void LocalMultiScaleFilterFourier::productSummingTrig(const std::vector<cv::Mat>& src, std::vector<cv::Mat>& dest, float sigma_range)
+	void LocalMultiScaleFilterFourier::productSummingTrig(const std::vector<cv::Mat>& src, std::vector<cv::Mat>& dest, float sigma_range, bool isCompute)
 	{
-		int simdsize = sizeof(__m256) / sizeof(float);
+		const int simdsize = sizeof(__m256) / sizeof(float);
 
-		AutoBuffer < __m256> malpha(level);
+		AutoBuffer <__m256> malpha(order);
+		AutoBuffer <__m256> momega(order);//for compute
+
 		for (int k = 0; k < order; k++)
 		{
-			float alphak = -sigma_range * sigma_range * omega[k] * alpha[k] * boost;
+			const float alphak = -sigma_range * sigma_range * omega[k] * alpha[k] * boost;
 			malpha[k] = _mm256_set1_ps(alphak);
+			momega[k] = _mm256_set1_ps(omega[k]);
 		}
-		
-		const int size = src[0].cols / simdsize;
-#pragma omp parallel for schedule (dynamic)
-		for (int j = 0; j < src[0].rows; j++)
-		{
-			AutoBuffer<const __m256*> guidePtr(level);
-			AutoBuffer <AutoBuffer<const __m256*>> mcosSplat(level);
-			AutoBuffer <AutoBuffer<const __m256*>> msinSplat(level);
-			AutoBuffer<__m256*> destPtr(level);
-			for (int l = 0; l < level; l++)
-			{
-				guidePtr[l] = (const __m256*)src[l].ptr<float>(j);//sigma_n
-				destPtr[l] = (__m256*)dest[l].ptr<float>(j);
-				mcosSplat[l].resize(order);
-				msinSplat[l].resize(order);
-				for (int k = 0; k < order; k++)
-				{
-					mcosSplat[l][k] = (const __m256*)FourierPyramidCos[k][l].ptr<float>(j);
-					msinSplat[l][k] = (const __m256*)FourierPyramidSin[k][l].ptr<float>(j);
-				}
-			}
 
-			for (int i = 0; i < size; i++)
+		const int size = src[0].cols / simdsize;
+		if (isCompute)
+		{
+#pragma omp parallel for schedule (dynamic)
+			for (int j = 0; j < src[0].rows; j++)
 			{
 				for (int l = 0; l < level; l++)
 				{
-					const __m256i mg = _mm256_cvtps_epi32(*guidePtr[l]);
+					__m256* destPtr = (__m256*)dest[l].ptr<float>(j);
+					const __m256* guidePtr = (const __m256*)src[l].ptr<float>(j);//sigma_n
+					AutoBuffer<const __m256*> mcosSplat(order);
+					AutoBuffer<const __m256*> msinSplat(order);
 					for (int k = 0; k < order; k++)
 					{
-						const int tidx = FourierTableSize * k;
-						const __m256 msin = _mm256_i32gather_ps(sinTable + tidx, mg, 4);
-						const __m256 mcos = _mm256_i32gather_ps(cosTable + tidx, mg, 4);
-						const __m256 a = _mm256_fmsub_ps(msin, *(mcosSplat[l][k]), _mm256_mul_ps(mcos, *(msinSplat[l][k])));
-						*(destPtr[l]) = _mm256_fmadd_ps(malpha[k], a, *(destPtr[l]));
-						mcosSplat[l][k]++;
-						msinSplat[l][k]++;
+						mcosSplat[k] = (const __m256*)FourierStackCos[k][l].ptr<float>(j);
+						msinSplat[k] = (const __m256*)FourierStackSin[k][l].ptr<float>(j);
 					}
-					guidePtr[l]++;
-					destPtr[l]++;
+
+					for (int i = 0; i < size; i++)
+					{
+						__m256 ret = _mm256_setzero_ps();
+						const __m256 mg = *guidePtr;
+						for (int k = order - 1; k >= 0; k--)
+						{
+							const __m256 mog = _mm256_mul_ps(momega[k], mg);
+							const __m256 msin = _mm256_sin_ps(mog);
+							const __m256 mcos = _mm256_cos_ps(mog);
+							const __m256 a = _mm256_fnmadd_ps(mcos, *(msinSplat[k]), _mm256_mul_ps(msin, *(mcosSplat[k])));
+							ret = _mm256_fmadd_ps(malpha[k], a, ret);
+							mcosSplat[k]++;
+							msinSplat[k]++;
+						}
+						*(destPtr) = _mm256_add_ps(*(destPtr), ret);
+						guidePtr++;
+						destPtr++;
+					}
+				}
+			}
+		}
+		else
+		{
+#pragma omp parallel for schedule (dynamic)
+			for (int j = 0; j < src[0].rows; j++)
+			{
+				AutoBuffer<__m256*> destPtr(level);
+				AutoBuffer<const __m256*> guidePtr(level);
+				AutoBuffer <AutoBuffer<const __m256*>> mcosSplat(level);
+				AutoBuffer <AutoBuffer<const __m256*>> msinSplat(level);
+				for (int l = 0; l < level; l++)
+				{
+					destPtr[l] = (__m256*)dest[l].ptr<float>(j);
+					guidePtr[l] = (const __m256*)src[l].ptr<float>(j);//sigma_n
+					mcosSplat[l].resize(order);
+					msinSplat[l].resize(order);
+					for (int k = 0; k < order; k++)
+					{
+						mcosSplat[l][k] = (const __m256*)FourierStackCos[k][l].ptr<float>(j);
+						msinSplat[l][k] = (const __m256*)FourierStackSin[k][l].ptr<float>(j);
+					}
+				}
+
+				for (int i = 0; i < size; i++)
+				{
+					for (int l = 0; l < level; l++)
+					{
+						const __m256i mg = _mm256_cvtps_epi32(*guidePtr[l]);
+						for (int k = 0; k < order; k++)
+						{
+							const int tidx = FourierTableSize * k;
+							const __m256 msin = _mm256_i32gather_ps(sinTable + tidx, mg, 4);
+							const __m256 mcos = _mm256_i32gather_ps(cosTable + tidx, mg, 4);
+							const __m256 a = _mm256_fmsub_ps(msin, *(mcosSplat[l][k]), _mm256_mul_ps(mcos, *(msinSplat[l][k])));
+							*(destPtr[l]) = _mm256_fmadd_ps(malpha[k], a, *(destPtr[l]));
+							mcosSplat[l][k]++;
+							msinSplat[l][k]++;
+						}
+						guidePtr[l]++;
+						destPtr[l]++;
+					}
 				}
 			}
 		}
@@ -8270,52 +8349,96 @@ namespace cp
 		}
 
 		initRangeFourier(order, sigma_range, boost);
-		FourierPyramidCos.resize(order);
-		FourierPyramidSin.resize(order);
-
-#pragma omp parallel for
+		if (FourierStackCos.size() != order)FourierStackCos.resize(order);
+		if (FourierStackSin.size() != order)FourierStackSin.resize(order);
+#pragma omp parallel for schedule (dynamic)
 		for (int k = -1; k < order; k++)
 		{
 			if (k < 0) //for DC
 			{
 				buildGaussianStack(srcf, ImageStack, sigma_space, level);
-				DetailStack.resize(level + 1);
+				if (DetailStack.size() != level + 1)
+				{
+					DetailStack.clear();
+					DetailStack.resize(level + 1);
+				}
 				for (int l = 0; l < level; l++)
 				{
 					cv::subtract(ImageStack[l], ImageStack[l + 1], DetailStack[l]);
 				}
+				DetailStack[level] = ImageStack[level];
 			}
 			else
 			{
-				FourierPyramidCos[k].resize(level + 1);
-				FourierPyramidSin[k].resize(level + 1);
-				remapCosSin(srcf, k, FourierPyramidCos[k][0], FourierPyramidSin[k][0]);
-				buildDoGStack(FourierPyramidCos[k][0], FourierPyramidCos[k], sigma_space, level);
-				buildDoGStack(FourierPyramidSin[k][0], FourierPyramidSin[k], sigma_space, level);
+				if (FourierStackCos[k].size() != level + 1) FourierStackCos[k].resize(level + 1);
+				if (FourierStackSin[k].size() != level + 1) FourierStackSin[k].resize(level + 1);
+				remapCosSin(srcf, k, FourierStackCos[k][0], FourierStackSin[k][0], isCompute);
+				buildDoGStack(FourierStackCos[k][0], FourierStackCos[k], sigma_space, level);
+				buildDoGStack(FourierStackSin[k][0], FourierStackSin[k], sigma_space, level);
 			}
 		}
-		productSummingTrig(ImageStack, DetailStack, sigma_range);
-
-		DetailStack[level] = ImageStack[level];
+		productSummingTrig(ImageStack, DetailStack, sigma_range, isCompute);
 		collapseDoGStack(DetailStack, dest, src.depth());
+	}
+
+	void LocalMultiScaleFilterFourier::cog(const Mat& src, Mat& dest)
+	{
+		//initRangeTable(sigma_range, boost);
+		cv::Mat srcf;
+		if (src.depth() == CV_8U)
+		{
+			src.convertTo(srcf, CV_32F);
+		}
+		else
+		{
+			srcf = src.clone();
+		}
+
+		initRangeFourier(order, sigma_range, boost);
+		if (FourierStackCos.size() != order) FourierStackCos.resize(order);
+		if (FourierStackSin.size() != order) FourierStackSin.resize(order);
+#pragma omp parallel for schedule (dynamic)
+		for (int k = -1; k < order; k++)
+		{
+			if (k < 0) //for DC
+			{
+				buildGaussianStack(srcf, ImageStack, sigma_space, level);
+				if (DetailStack.size() != level + 1)
+				{
+					DetailStack.clear();
+					DetailStack.resize(level + 1);
+				}
+				buildCoGStack(src, DetailStack, sigma_space, level);
+				DetailStack[level] = ImageStack[level];
+			}
+			else
+			{
+				if (FourierStackCos[k].size() != level + 1) FourierStackCos[k].resize(level + 1);
+				if (FourierStackSin[k].size() != level + 1) FourierStackSin[k].resize(level + 1);
+				remapCosSin(srcf, k, FourierStackCos[k][0], FourierStackSin[k][0], isCompute);
+				buildCoGStack(FourierStackCos[k][0], FourierStackCos[k], sigma_space, level);
+				buildCoGStack(FourierStackSin[k][0], FourierStackSin[k], sigma_space, level);
+			}
+		}
+		productSummingTrig(ImageStack, DetailStack, sigma_range, isCompute);
+		collapseCoGStack(DetailStack, dest, src.depth());
 	}
 #pragma endregion
 
 	void LocalMultiScaleFilterFourier::filter(const Mat& src, Mat& dest, const int order, const float sigma_range, const float sigma_space, const float boost, const int level, const ScaleSpace scaleSpaceMethod)
 	{
-		allocSpaceWeight(sigma_space);
+		if(scaleSpaceMethod== ScaleSpace::Pyramid) allocSpaceWeight(sigma_space);
 
 		this->order = order;
 
 		this->sigma_space = sigma_space;
 		this->level = max(level, 1);
-		this->sigma_range = sigma_range;
 		this->boost = boost;
-
+		this->sigma_range = sigma_range;
 		this->scalespaceMethod = scaleSpaceMethod;
 
 		body(src, dest);
-		freeSpaceWeight();
+		if (scaleSpaceMethod == ScaleSpace::Pyramid) freeSpaceWeight();
 	}
 
 #pragma region setter_getter

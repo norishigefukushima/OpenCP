@@ -83,10 +83,8 @@ namespace cp
 				}
 			}
 
-			if (isDebug)showPyramid("Laplacian Pyramid Paris2011", LaplacianPyramid);
-			collapseLaplacianPyramid(LaplacianPyramid, ImageStack[0]);//override srcf for saving memory	
-
-			ImageStack[0].convertTo(dest, src.type());
+			if (isDebug) showPyramid("Laplacian Pyramid Paris2011", LaplacianPyramid);
+			collapseLaplacianPyramid(LaplacianPyramid, dest, src.depth());
 			dest(Rect(r, r, src_.cols, src_.rows)).copyTo(dest_);
 		}
 	}

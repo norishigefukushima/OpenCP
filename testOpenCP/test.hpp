@@ -112,7 +112,7 @@ void imshowAnalysis(cv::String winname, cv::Mat& src);
 
 //MultiscaleFilter
 void testMultiScaleFilter();
-
+void testVizPyramid();
 //SpatialFilter
 void testSpatialFilter(cv::Mat& src);
 

@@ -59,5 +59,8 @@
     <ClCompile Include="MultiscaleGuidedImageFilter.cpp">
       <Filter>ソース ファイル\multiscale</Filter>
     </ClCompile>
+    <ClCompile Include="ComputePyramidSize.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -416,27 +416,33 @@ void testGuidedBilateralFilter(Mat& img_)
 
 	string wname = "BF-GIF test";
 	namedWindow(wname);
-	int sw = 0; createTrackbar("bf(0)-gif(1)", wname, &sw, 1);
+	int sw = 0; createTrackbar("bf(0)-gif(1)", wname, &sw, 2);
 	int r = 8; createTrackbar("r", wname, &r, 10);
 	int sigma_s = 10; createTrackbar("sigma_s", wname, &sigma_s, 10);
 	int sigma_r = 30; createTrackbar("sigma_r", wname, &sigma_r, 200);
 	int eps = int(sigma_r / sqrt(2)); createTrackbar("eps", wname, &eps, 200);
+	int alphaLEPF10 = 10; createTrackbar("alphaLEPF10", wname, &alphaLEPF10, 200);
 	int m10 = 10; createTrackbar("m10", wname, &m10, 200);
 
 	int key = 0;
-	Mat destBF, destGIF;
+	Mat destBF, destGIF, destLEPF;
 	ConsoleImage ci;
 	while (key != 'q')
 	{
-		//guidedImageGaussianFilterGray(img, destGIF, r / 2, float(sigma_s / sqrt(2.0)), float(eps * eps));
-		guidedImageGaussianFilterGrayEnhance(img, destGIF, r / 2, float(sigma_s / sqrt(2.0)), float(eps * eps), -(m10*0.1f));
+		guidedImageGaussianFilterGray(img, destGIF, r / 2, float(sigma_s / sqrt(2.0)), float(eps * eps));
+		//guidedImageGaussianFilterGrayEnhance(img, destGIF, r / 2, float(sigma_s / sqrt(2.0)), float(eps * eps), -(m10*0.1f));
+		localEdgePreservingGaussianFilter(img, destLEPF, r / 2, float(sigma_s / sqrt(2.0)), float(eps * eps), alphaLEPF10*0.1f);
 		bilateralFilter(img, destBF, 2 * r + 1, sigma_r, sigma_s);
-		ci("PSNR %f", getPSNR(destBF, destGIF, 20));
+		ci("PSNR-BF-GIF %f", getPSNR(destBF, destGIF, 20));
+		ci("PSNR-GIF-LEPF %f", getPSNR(destGIF, destLEPF, 20));
 		ci.show();
 		if (sw == 0)imshow(wname, destBF);
 		if (sw == 1)imshow(wname, destGIF);
-		diffshow("diff", destBF, destGIF, 5);
-		destGIF.copyTo(v[0]); merge(v, c); cvtColor(c, c, COLOR_YUV2BGR); imshow("color", c);
+		if (sw == 2)imshow(wname, destLEPF);
+		//diffshow("diff", destBF, destGIF, 5);
+		diffshow("diff", destGIF, destLEPF, 5);
+		//destGIF.copyTo(v[0]); merge(v, c); cvtColor(c, c, COLOR_YUV2BGR); imshow("color", c);
+		destLEPF.copyTo(v[0]); merge(v, c); cvtColor(c, c, COLOR_YUV2BGR); imshow("color", c);
 		key = waitKey(1);
 	}
 }

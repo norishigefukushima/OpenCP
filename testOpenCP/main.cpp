@@ -198,9 +198,9 @@ void testStereo()
 	//testCVStereoSGBM(); return 0;
 }
 
-
 int main(int argc, char** argv)
 {
+	
 	/*
 	cp::KMeans kmcluster;
 
@@ -295,6 +295,7 @@ int main(int argc, char** argv)
 	//testStereo();
 	//testFilter(img);
 	//testSpatialFilter(gra);	
+	testVizPyramid(); return 0;
 	testMultiScaleFilter(); return 0;
 	return 0;
 }

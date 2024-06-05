@@ -1119,6 +1119,39 @@ namespace cp
 		}
 	}
 
+	void gradientSquareRootPrewitt32F(InputArray ref, OutputArray dst)
+	{
+		dst.create(ref.size(), ref.type());
+
+		Mat border;
+		copyMakeBorder(ref, border, 1, 1, 1, 1, BORDER_DEFAULT);
+		Mat s = ref.getMat();
+		Mat d = dst.getMat();
+		const int step = s.size().width;
+		const int simdwidth = get_simd_floor(step, 8);
+		const float normal = 1.f / 9.f;
+		__m256 mnormal = _mm256_set1_ps(normal);
+		for (int j = 0; j < ref.size().height; j++)
+		{
+			float* s = border.ptr<float>(j);
+			float* dst = d.ptr<float>(j);
+			for (int i = 0; i < simdwidth; i += 8)
+			{
+				__m256 mx = _mm256_add_ps(_mm256_add_ps(_mm256_loadu_ps(s + i), _mm256_loadu_ps(s + i + step)), _mm256_loadu_ps(s + i + 2 * step));
+				mx = _mm256_sub_ps(mx, _mm256_add_ps(_mm256_add_ps(_mm256_loadu_ps(s + i + 2), _mm256_loadu_ps(s + i + 2 + step)), _mm256_loadu_ps(s + i + 2 + 2 * step)));
+				__m256 my = _mm256_add_ps(_mm256_add_ps(_mm256_loadu_ps(s + i), _mm256_loadu_ps(s + i + 1)), _mm256_loadu_ps(s + i + 2));
+				my = _mm256_sub_ps(my, _mm256_add_ps(_mm256_add_ps(_mm256_loadu_ps(s + i + 2 * step), _mm256_loadu_ps(s + i + 1 + 2 * step)), _mm256_loadu_ps(s + i + 2 + 2 * step)));
+				_mm256_storeu_ps(dst + i, _mm256_sqrt_ps(_mm256_mul_ps(mnormal, _mm256_fmadd_ps(mx, mx, _mm256_mul_ps(my, my)))));
+			}
+			for (int i = simdwidth; i < step; i++)
+			{
+				float x = (s[i] + s[i + step] + s[i + 2 * step] - s[i + 2] - s[i + 2 + step] - s[i + 2 + 2 * step]);
+				float y = (s[i] + s[i + 1] + s[i + 2] - s[i + 2 * step] - s[i + 1 + 2 * step] - s[i + 2 + 2 * step]);
+				dst[i] = sqrt((x * x + y * y) * normal);
+			}
+		}
+	}
+
 	template<typename T>
 	static void getGradient(InputArray ref, OutputArray dst)
 	{
@@ -1537,7 +1570,7 @@ namespace cp
 		t1 = t1.mul(t2);//25  
 		cv::Mat ssim_map;//26
 		divide(t3, t1, ssim_map);//27
-		
+
 		int r = D / 2;
 		return cp::average(ssim_map, r, r, r, r);
 	}

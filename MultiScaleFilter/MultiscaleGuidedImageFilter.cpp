@@ -14,17 +14,30 @@ namespace cp
 			const float sigma_l = (float)getPyramidSigma(sigma_s, l);
 			const int r = getGaussianRadius(sigma_l);
 			const Size ksize(2 * r + 1, 2 * r + 1);
-
 			guidedImageGaussianFilterGray(src, DoGIFStack[l], r, sigma_l, eps);
-			//print_debug3(r, sigma_l, eps);
-			//guiAlphaBlendScale(src, DoGIFStack[l]);
-			//cv::bilateralFilter(src, DoGIFStack[l], 2 * r + 1, eps, sigma_l, borderType);
-			//cv::bilateralFilter(src, DoGIFStack[l], 2 * r + 1, 1000, sigma_l, borderType);
-
 			subtract(prev, DoGIFStack[l], DoGIFStack[l - 1]);
 			prev = DoGIFStack[l];
 		}
 	}
+
+	void MultiScaleGuidedImageFilter::buildCoGIFStack(const Mat& src, vector<Mat>& CoGIFStack, const float eps, const float sigma_s, const int level)
+	{
+		if (CoGIFStack.size() != level + 1) CoGIFStack.resize(level + 1);
+		for (int l = 0; l <= level; l++) CoGIFStack[l].create(src.size(), CV_32F);
+
+		Mat prev = src;
+		for (int l = 1; l <= level; l++)
+		{
+			const float sigma_l = (float)getPyramidSigma(sigma_s, l);
+			const int r = getGaussianRadius(sigma_l);
+			const Size ksize(2 * r + 1, 2 * r + 1);
+			guidedImageGaussianFilterGray(src, CoGIFStack[l], r, sigma_l, eps);
+			divide(prev, CoGIFStack[l] + FLT_EPSILON, CoGIFStack[l - 1]);
+			CoGIFStack[l - 1] -= 1.f;
+			prev = CoGIFStack[l];
+		}
+	}
+	
 
 	void MultiScaleGuidedImageFilter::pyramid(const Mat& src, Mat& dest)
 	{
@@ -48,10 +61,7 @@ namespace cp
 		{
 			remap(ImageStack[i], ImageStack[i], 0.f, sigma_range, boost);
 		}
-
-		collapseLaplacianPyramid(ImageStack, ImageStack[0]);//override srcf for saving memory	
-
-		ImageStack[0].convertTo(dest, src.type());
+		collapseLaplacianPyramid(ImageStack, dest, src.depth());
 	}
 
 	void MultiScaleGuidedImageFilter::dog(const Mat& src, Mat& dest)
@@ -71,9 +81,26 @@ namespace cp
 		collapseDoGStack(ImageStack, dest, src.depth());
 	}
 
+	void MultiScaleGuidedImageFilter::cog(const Mat& src, Mat& dest)
+	{
+		//cout << "GIF CoG" << endl;
+		ImageStack.resize(level + 1);
+		initRangeTable(sigma_range, boost);
+
+		if (src.depth() == CV_8U) src.convertTo(ImageStack[0], CV_32F);
+		else src.copyTo(ImageStack[0]);
+
+		buildCoGIFStack(src, ImageStack, sigma_range, sigma_space, level);
+		for (int i = 0; i < ImageStack.size() - 1; i++)
+		{
+			remap(ImageStack[i], ImageStack[i], 0.f, sigma_range, boost);
+		}
+		collapseCoGStack(ImageStack, dest, src.depth());
+	}
+
 	void MultiScaleGuidedImageFilter::filter(const Mat& src, Mat& dest, const float eps, const float sigma_space, const float boost, const int level, const ScaleSpace scaleSpaceMethod)
 	{
-		allocSpaceWeight(sigma_space);
+		//allocSpaceWeight(sigma_space);
 		this->sigma_range = eps;
 		this->sigma_space = sigma_space;
 		this->boost = boost;
@@ -82,6 +109,6 @@ namespace cp
 
 		body(src, dest);
 
-		freeSpaceWeight();
+		//freeSpaceWeight();
 	}
 }

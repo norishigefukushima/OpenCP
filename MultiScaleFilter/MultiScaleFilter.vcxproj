@@ -449,6 +449,7 @@
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ComputePyramidSize.cpp" />
     <ClCompile Include="LocalMultiscaleFilterFourier.cpp" />
     <ClCompile Include="LocalMultiscaleFilterFull.cpp" />
     <ClCompile Include="LocalMultiscaleFilterInterpolation.cpp" />
