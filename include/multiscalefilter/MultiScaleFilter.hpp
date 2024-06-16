@@ -121,7 +121,7 @@ namespace cp
 		std::vector<int> borderSizeActive;
 		std::vector<int> borderSizeRequire;
 		std::vector<int> borderOffset;
-		
+
 	public:
 		ComputePyramidSize(int size, int r, int level, bool isLastConv);
 		void computeSize(int size, int r, int level, bool isLastConv);
@@ -186,6 +186,24 @@ namespace cp
 		void drawRemap(bool isWait = true, const cv::Size size = cv::Size(512, 512));
 
 		const float nsigma = 3.f;//3.f;
+		void buildGaussianPyramid(const cv::Mat& src, std::vector<cv::Mat>& GaussianPyramid, const int level, const float sigma);
+		void buildGaussianLaplacianPyramid(const cv::Mat& src, std::vector<cv::Mat>& GaussianPyramid, std::vector<cv::Mat>& LaplacianPyramid, const int level, const float sigma);
+		void buildLaplacianPyramid(const cv::Mat& src, std::vector<cv::Mat>& LaplacianPyramid, const int level, const float sigma);
+		void buildContrastPyramid(const cv::Mat& src, std::vector<cv::Mat>& LaplacianPyramid, const int level, const float sigma);
+
+		template<int D, int d, int d2> void buildLaplacianPyramid(const cv::Mat& src, std::vector<cv::Mat>& LaplacianPyramid, const int level, const float sigma, float* linebuff);
+		//using precomputed Gaussian pyramid
+		void buildLaplacianPyramid(const std::vector<cv::Mat>& GaussianPyramid, std::vector<cv::Mat>& destPyramid, const int level, const float sigma);
+		//L0+...resize(Ln-2+resize(Ln-1+resize(Ln)))
+		void collapseLaplacianPyramid(std::vector<cv::Mat>& LaplacianPyramid, cv::Mat& dest, const int depth);
+		void collapseContrastPyramid(std::vector<cv::Mat>& LaplacianPyramid, cv::Mat& dest, const int depth);
+
+		void buildGaussianStack(const cv::Mat& src, std::vector<cv::Mat>& GaussianStack, const float sigma_s, const int level);
+		void buildDoGStack(const cv::Mat& src, std::vector<cv::Mat>& ImageStack, const float sigma_s, const int level);
+		void buildCoGStack(const cv::Mat& src, std::vector<cv::Mat>& ImageStack, const float sigma_s, const int level);
+		void buildDoGSeparableStack(const cv::Mat& src, std::vector<cv::Mat>& ImageStack, const float sigma_s, const int level);
+		void collapseDoGStack(std::vector<cv::Mat>& ImageStack, cv::Mat& dest, const int depth);
+		void collapseCoGStack(std::vector<cv::Mat>& ImageStack, cv::Mat& dest, const int depth);
 	protected:
 		bool isCompute = true;
 		std::vector<cv::Size> layerSize;
@@ -249,33 +267,22 @@ namespace cp
 		template<bool isAdd> void GaussUpAddIgnoreBoundary(const cv::Mat& src, const cv::Mat& addsubsrc, cv::Mat& dest);
 		template<bool isAdd, int D2> void GaussUpAddIgnoreBoundary(const cv::Mat& src, const cv::Mat& addsubsrc, cv::Mat& dest, float* linee, float* lineo);//linebuffsize = src.cols
 
-		void buildGaussianPyramid(const cv::Mat& src, std::vector<cv::Mat>& GaussianPyramid, const int level, const float sigma);
-		void buildGaussianLaplacianPyramid(const cv::Mat& src, std::vector<cv::Mat>& GaussianPyramid, std::vector<cv::Mat>& LaplacianPyramid, const int level, const float sigma);
-		void buildLaplacianPyramid(const cv::Mat& src, std::vector<cv::Mat>& LaplacianPyramid, const int level, const float sigma);
-		void buildContrastPyramid(const cv::Mat& src, std::vector<cv::Mat>& LaplacianPyramid, const int level, const float sigma);
-
-		template<int D, int d, int d2> void buildLaplacianPyramid(const cv::Mat& src, std::vector<cv::Mat>& LaplacianPyramid, const int level, const float sigma, float* linebuff);
-		//using precomputed Gaussian pyramid
-		void buildLaplacianPyramid(const std::vector<cv::Mat>& GaussianPyramid, std::vector<cv::Mat>& destPyramid, const int level, const float sigma);
-		//L0+...resize(Ln-2+resize(Ln-1+resize(Ln)))
-		void collapseLaplacianPyramid(std::vector<cv::Mat>& LaplacianPyramid, cv::Mat& dest, const int depth);
-		void collapseContrastPyramid(std::vector<cv::Mat>& LaplacianPyramid, cv::Mat& dest, const int depth);
-
-		void buildGaussianStack(const cv::Mat& src, std::vector<cv::Mat>& GaussianStack, const float sigma_s, const int level);
-		void buildDoGStack(const cv::Mat& src, std::vector<cv::Mat>& ImageStack, const float sigma_s, const int level);
-		void buildCoGStack(const cv::Mat& src, std::vector<cv::Mat>& ImageStack, const float sigma_s, const int level);
-		void buildDoGSeparableStack(const cv::Mat& src, std::vector<cv::Mat>& ImageStack, const float sigma_s, const int level);
-		void collapseDoGStack(std::vector<cv::Mat>& ImageStack, cv::Mat& dest, const int depth);
-		void collapseCoGStack(std::vector<cv::Mat>& ImageStack, cv::Mat& dest, const int depth);
-
 		void body(const cv::Mat& src, cv::Mat& dest);
 		void gray(const cv::Mat& src, cv::Mat& dest);
+		void body(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dest);
+		void gray(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dest);
 
 		virtual void pyramid(const cv::Mat& src, cv::Mat& dest) = 0;
 		virtual void dog(const cv::Mat& src, cv::Mat& dest) = 0;
 		virtual void contrastpyramid(const cv::Mat& src, cv::Mat& dest) {};
 		virtual void cog(const cv::Mat& src, cv::Mat& dest) {};
 		virtual void dogsep(const cv::Mat& src, cv::Mat& dest) {};
+
+		virtual void pyramid(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dest) {};
+		virtual void dog(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dest) {};
+		virtual void contrastpyramid(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dest) {};
+		virtual void cog(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dest) {};
+		virtual void dogsep(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dest) {};
 	};
 
 	//classical multi-scale filtering (no edge-preserving filter)
@@ -324,14 +331,16 @@ namespace cp
 	{
 	public:
 		void filter(const cv::Mat& src, cv::Mat& dest, const float sigma_range, const float sigma_space, const float boost = 1.f, const int level = 2, const ScaleSpace scaleSpaceMethod = ScaleSpace::Pyramid);
+		void jointfilter(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dest, const float sigma_range, const float sigma_space, const float boost = 1.f, const int level = 2, const ScaleSpace scaleSpaceMethod = ScaleSpace::Pyramid);
 	protected:
-		void pyramid(const cv::Mat& src, cv::Mat& dest)override;
+		void pyramid(const cv::Mat& src, cv::Mat& dest) override;
+		void dog(const cv::Mat& src, cv::Mat& dest) override;
+		void dog(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dest) override;
 
-		//DoG
-		void dog(const cv::Mat& src, cv::Mat& dest)override;
 		void setDoGKernel(float* weight, int* index, const int index_step, cv::Size ksize, const float sigma1, const float sigma2);
 		float getDoGCoeffLnNoremap(cv::Mat& src, const float g, const int y, const int x, const int size, int* index, float* weight);
-		float getDoGCoeffLn(cv::Mat& src, const float g, const int y, const int x, const int size, int* index, float* weight);
+		float getDoGCoeffLn(const cv::Mat& src, const float g, const int y, const int x, const int size, int* index, float* weight);
+		float getDoGCoeffLn(const cv::Mat& src, const cv::Mat& guide, const float g, const float h, const int y, const int x, const int size, int* index, float* weight);
 	};
 
 	//build scale-space per block (same accuracy as full, pyramid: LLF naive implementation, dog: same as full)
@@ -345,9 +354,9 @@ namespace cp
 		std::vector<cv::Mat> LaplacianPyramid;
 		//Local Laplacian Filter(Paris2011)
 		void pyramid(const cv::Mat& src, cv::Mat& dest)override;
-
 		// DoG
 		void dog(const cv::Mat& src, cv::Mat& dest)override;
+		void dog(const cv::Mat& src, cv::Mat& guide, cv::Mat& dest);
 		void setDoGKernel(float* weight, int* index, const int index_step, cv::Size ksize1, cv::Size ksize2, const float sigma1, const float sigma2);
 		float getRemapDoGConv(const cv::Mat& src, const float g, const int y, const int x, const int size, int* index, float* weight, bool isCompute);
 	};

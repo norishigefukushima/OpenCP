@@ -30,8 +30,40 @@ static void guiMouseMSFOnMouse(int event, int x, int y, int flags, void* param)
 	}
 }
 
+void testJointMultiScaleFilter()
+{
+	string wname = "joint MSF";
+	namedWindow(wname);
+	int sw = 0; createTrackbar("sw", wname, &sw, 1);
+	int m10 = 10; createTrackbar("m10", wname, &m10, 100);
+	int sigma_s = 1; createTrackbar("sigma_s", wname, &sigma_s, 10);
+	int sigma_r = 30; createTrackbar("sigma_r", wname, &sigma_r, 255);
+	int level = 2; createTrackbar("level", wname, &level, 5);
+	LocalMultiScaleFilterFull lmsffull;
+
+	Mat src = imread("img/flash/pot2_noflash512.png");
+	Mat guide = imread("img/flash/pot2_flash512.png");
+	//Mat src = imread("img/flash/cave-noflash.png");
+	//Mat guide = imread("img/flash/cave-flash.png");
+	//Mat src = imread("img/flash/cave-flash.png");
+	//Mat guide; GaussianBlur(src, guide, Size(7, 7), 2);
+	int key = 0;
+	Mat dest;
+	while (key != 'q')
+	{
+		const float m = float(m10 * 0.1f);
+		const float ss = float(sigma_s);
+		const float sr = float(sigma_r);
+		if (sw == 0) lmsffull.jointfilter(src, guide, dest, sr, ss, -m, level, MultiScaleFilter::DoG);
+		if (sw == 1) lmsffull.filter(src, dest, sr, ss, -m, level, MultiScaleFilter::DoG);
+		
+		imshow(wname, dest);
+		key = waitKey(1);
+	}
+}
 void testMultiScaleFilter()
 {
+	testJointMultiScaleFilter();
 	const bool isShowPSNR = true;
 	//const bool isShowPSNR = false;
 
@@ -874,8 +906,8 @@ void testVizPyramid()
 		if (uc.isUpdate(isLastConv, r, level))
 		{
 			cp::ComputePyramidSize cprySize(size, r, level, isLastConv == 1);
-				imshow(wname, cprySize.vizPyramid());
-				cprySize.print();
+			imshow(wname, cprySize.vizPyramid());
+			cprySize.print();
 		}
 		key = waitKey(1);
 	}

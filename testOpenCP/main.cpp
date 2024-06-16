@@ -295,7 +295,7 @@ int main(int argc, char** argv)
 	//testStereo();
 	//testFilter(img);
 	//testSpatialFilter(gra);	
-	testVizPyramid(); return 0;
+	//testVizPyramid(); return 0;
 	testMultiScaleFilter(); return 0;
 	return 0;
 }

@@ -1449,7 +1449,6 @@ namespace cp
 	}
 
 #pragma endregion
-
 #pragma region pyramid building
 	void MultiScaleFilter::buildGaussianPyramid(const Mat& src, vector<Mat>& destPyramid, const int level, const float sigma)
 	{
@@ -1489,7 +1488,7 @@ namespace cp
 	void MultiScaleFilter::buildGaussianLaplacianPyramid(const Mat& src, vector<Mat>& GaussianPyramid, vector<Mat>& LaplacianPyramid, const int level, const float sigma)
 	{
 		GaussianPyramid.resize(level + 1);
-		if (src.data != GaussianPyramid[0].data)	src.copyTo(GaussianPyramid[0]);
+		if (src.data != GaussianPyramid[0].data) src.copyTo(GaussianPyramid[0]);
 
 		if (pyramidComputeMethod == IgnoreBoundary)
 		{
@@ -1565,9 +1564,15 @@ namespace cp
 		}
 	}
 
-
 	void MultiScaleFilter::buildLaplacianPyramid(const Mat& src, vector<Mat>& destPyramid, const int level, const float sigma)
 	{
+		bool isFree = false;
+		if (GaussWeight == nullptr)
+		{
+			allocSpaceWeight(sigma);
+			isFree = true;
+		}
+
 		if (destPyramid.size() != level + 1) destPyramid.resize(level + 1);
 		//destPyramid[0].create(src.size(), CV_32F);
 
@@ -1611,6 +1616,11 @@ namespace cp
 				pyrUp(destPyramid[i + 1], temp, destPyramid[i].size(), borderType);
 				subtract(destPyramid[i], temp, destPyramid[i]);
 			}
+		}
+
+		if (isFree)
+		{
+			freeSpaceWeight();
 		}
 	}
 
@@ -2035,10 +2045,10 @@ namespace cp
 			bool flag = true;
 			if (flag)
 			{
-				Mat gim;;
-				cv::cvtColor(src, gim, COLOR_BGR2YUV);
+				Mat sim;;
+				cv::cvtColor(src, sim, COLOR_BGR2YUV);
 				vector<Mat> vsrc;
-				split(gim, vsrc);
+				split(sim, vsrc);
 				gray(vsrc[0], vsrc[0]);
 				merge(vsrc, dest);
 				cv::cvtColor(dest, dest, COLOR_YUV2BGR);
@@ -2056,6 +2066,44 @@ namespace cp
 		}
 	}
 
+	void MultiScaleFilter::body(const Mat& src, const Mat& guide, Mat& dest)
+	{
+		dest.create(src.size(), src.type());
+		if (src.channels() == 1)
+		{
+			gray(src, guide, dest);
+		}
+		else
+		{
+			bool flag = true;
+			if (flag)
+			{
+				Mat sim, gim;;
+				cv::cvtColor(src, sim, COLOR_BGR2YUV);
+				cv::cvtColor(guide, gim, COLOR_BGR2YUV);
+				vector<Mat> vsrc;
+				vector<Mat> vguide;
+				split(sim, vsrc);
+				split(gim, vguide);
+				gray(vsrc[0], vguide[0], vsrc[0]);
+				merge(vsrc, dest);
+				cv::cvtColor(dest, dest, COLOR_YUV2BGR);
+			}
+			else
+			{
+				vector<Mat> vsrc;
+				vector<Mat> vguide;
+				vector<Mat> vdst(3);
+				split(src, vsrc);
+				split(guide, vguide);
+				gray(vsrc[0], vguide[0], vdst[0]);
+				gray(vsrc[1], vguide[1], vdst[1]);
+				gray(vsrc[2], vguide[2], vdst[2]);
+				merge(vdst, dest);
+			}
+		}
+	}
+
 	void MultiScaleFilter::gray(const Mat& src, Mat& dest)
 	{
 		if (scalespaceMethod == Pyramid) pyramid(src, dest);
@@ -2063,6 +2111,15 @@ namespace cp
 		if (scalespaceMethod == ContrastPyramid) contrastpyramid(src, dest);
 		if (scalespaceMethod == CoG) cog(src, dest);
 		if (scalespaceMethod == DoGSep) dogsep(src, dest);
+	}
+
+	void MultiScaleFilter::gray(const Mat& src, const Mat& guide, Mat& dest)
+	{
+		if (scalespaceMethod == Pyramid) pyramid(src, guide, dest);
+		if (scalespaceMethod == DoG) dog(src, guide, dest);
+		if (scalespaceMethod == ContrastPyramid) contrastpyramid(src, guide, dest);
+		if (scalespaceMethod == CoG) cog(src, guide, dest);
+		if (scalespaceMethod == DoGSep) dogsep(src, guide, dest);
 	}
 
 	void MultiScaleFilter::showImageStack(string wname)
@@ -2691,5 +2748,6 @@ namespace cp
 		return sum;
 	}
 #pragma endregion
+
 #pragma endregion
 }
