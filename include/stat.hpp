@@ -14,6 +14,9 @@ namespace cp
 		double getMin();
 		double getMax();
 		double getMean();
+		double trimRate = 0.8;
+		void setTrimRate(double rate);
+		double getTrimMean();
 		double getVar();
 		double getStd();
 		double getMedian();

@@ -57,6 +57,29 @@ namespace cp
 		return getSum() / (double)getSize();
 	}
 
+	void  Stat::setTrimRate(double rate)
+	{
+		this->trimRate = rate;
+	}
+
+	double Stat::getTrimMean()
+	{
+		if (getSize() == 0) return 0.0;
+		vector<double> v;
+		cv::sort(data, v, cv::SORT_ASCENDING);
+
+		int end = getSize() * trimRate;
+		int start = getSize() * (1.0 - trimRate);
+		const int size = end - start;
+		double sum = 0.0;
+		for (int i = start; i < end; i++)
+		{
+			sum += data[i];
+		}
+
+		return sum / (double)size;
+	}
+
 	double Stat::getVar()
 	{
 		if (getSize() == 0)return 0.0;
