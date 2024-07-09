@@ -124,7 +124,7 @@ namespace cp
 		{
 			FULL,
 			MEAN,
-			CONST,
+			CONST_,
 			NO
 		};
 		CenterMethod getCenterMethod(const DRIM2COLType method);

@@ -175,6 +175,18 @@ namespace cp
 		return cTime;
 	}
 
+	void Timer::setTrimRate(double rate)
+	{
+		stat.setTrimRate(rate);
+	}
+
+	double Timer::getLapTimeTrimMean(bool isPrint, string message)
+	{
+		cTime = stat.getTrimMean();
+		convertTime(isPrint, message);
+		return cTime;
+	}
+
 	double Timer::getLapTimeMedian(bool isPrint, string message)
 	{
 		cTime = stat.getMedian();

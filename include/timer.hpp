@@ -93,6 +93,8 @@ namespace cp
 		double getpushLapTime(bool isPrint = false, std::string message = "");//getTickCount() and push the value to Stat
 
 		double getLapTimeMean(bool isPrint = false, std::string message = "");//get mean value from Stat
+		void setTrimRate(double rate);
+		double getLapTimeTrimMean(bool isPrint = false, std::string message = "");//get mean value from Stat
 		double getLapTimeMedian(bool isPrint = false, std::string message = "");//get median value from Stat
 		double getLapTimeMin(bool isPrint = false, std::string message = "");//get min value from Stat
 		double getLapTimeMax(bool isPrint = false, std::string message = "");//get max value from Stat

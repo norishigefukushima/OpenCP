@@ -545,7 +545,7 @@ CalcPatchCovarMatrix::CenterMethod CalcPatchCovarMatrix::getCenterMethod(const D
 	case DRIM2COLType::CONST_SUB_FFT_64F:
 	case DRIM2COLType::CONST_SUB_FFTF_32F:
 	case DRIM2COLType::CONST_SUB_FFTF_64F:
-		cm = CalcPatchCovarMatrix::CenterMethod::CONST; break;
+		cm = CalcPatchCovarMatrix::CenterMethod::CONST_; break;
 
 	case DRIM2COLType::NO_SUB_HALF_32F:
 	case DRIM2COLType::NO_SUB_HALF_64F:
@@ -3555,7 +3555,7 @@ void CalcPatchCovarMatrix::simdOMPCov_RepCenterConvElement32F(const vector<Mat>&
 			//subtract(src_[c], float(ave), data[c]);
 			sub_const(src_[c], float(ave), data[c]);
 		}
-		else if (method == CenterMethod::CONST)
+		else if (method == CenterMethod::CONST_)
 		{
 			//cout << "Conv const: " <<const_sub<< endl;
 			//subtract(src_[c], constant_sub, data[c]);
@@ -3906,7 +3906,7 @@ void CalcPatchCovarMatrix::simdOMPCov_RepCenterConvElement32FCn(const vector<Mat
 			//subtract(src_[c], float(ave), data[c]);
 			sub_const(src_[c], float(ave), data[c]);
 		}
-		else if (method == CenterMethod::CONST)
+		else if (method == CenterMethod::CONST_)
 		{
 			//cout << "Rep const" << endl;
 			//subtract(src_[c], constant_sub, data[c]);
@@ -4065,7 +4065,7 @@ void CalcPatchCovarMatrix::simdOMPCov_RepCenterConvFElement32F(const vector<Mat>
 			//subtract(src_[c], float(ave), data[c]);
 			sub_const(src_[c], float(ave), data[c]);
 		}
-		else if (method == CenterMethod::CONST)
+		else if (method == CenterMethod::CONST_)
 		{
 			//cout << "ConvF const: " <<const_sub<< endl;
 			sub_const(src_[c], constant_sub, data[c]);
@@ -4231,7 +4231,7 @@ void CalcPatchCovarMatrix::simdOMPCov_RepCenterConvFElement32FCn(const vector<Ma
 			//subtract(src_[c], float(ave), data[c]);
 			sub_const(src_[c], float(ave), data[c]);
 		}
-		else if (method == CenterMethod::CONST)
+		else if (method == CenterMethod::CONST_)
 		{
 			//cout << "Conv const: " <<const_sub<< endl;
 			//subtract(src_[c], constant_sub, data[c]);
@@ -4401,7 +4401,7 @@ void CalcPatchCovarMatrix::covFFT(const vector<Mat>& src_, Mat& cov, const Cente
 			//subtract(src_[c], float(ave), data[c]);
 			sub_const(src_[c], float(ave), data[c]);
 		}
-		else if (method == CenterMethod::CONST)
+		else if (method == CenterMethod::CONST_)
 		{
 			//cout << "Conv const: " <<const_sub<< endl;
 			//subtract(src_[c], constant_sub, data[c]);
@@ -4484,7 +4484,7 @@ void CalcPatchCovarMatrix::covFFTFull(const vector<Mat>& src_, Mat& cov, const C
 			//subtract(src_[c], float(ave), data[c]);
 			sub_const(src_[c], float(ave), data[c]);
 		}
-		else if (method == CenterMethod::CONST)
+		else if (method == CenterMethod::CONST_)
 		{
 			//cout << "Conv const: " <<const_sub<< endl;
 			//subtract(src_[c], constant_sub, data[c]);
@@ -4609,7 +4609,7 @@ void CalcPatchCovarMatrix::simdOMPCov_RepCenterHalfElement32F(const vector<Mat>&
 		{
 			sub_const(src_[c], float(cp::average(src_[c])), data[c]);
 		}
-		else if (method == CenterMethod::CONST)
+		else if (method == CenterMethod::CONST_)
 		{
 			sub_const(src_[c], constant_sub, data[c]);
 		}
@@ -5070,7 +5070,7 @@ void CalcPatchCovarMatrix::simdOMPCov_RepCenterHalfElement32F(const vector<Mat>&
 			{
 				sub_const(src_[c], float(cp::average(src_[c])), data[c]);
 			}
-			else if (method == CenterMethod::CONST)
+			else if (method == CenterMethod::CONST_)
 			{
 				sub_const(src_[c], constant_sub, data[c]);
 			}
@@ -5184,7 +5184,7 @@ void CalcPatchCovarMatrix::simdOMPCov_RepCenterHalfElement32FCn(const vector<Mat
 		{
 			sub_const(src_[c], float(cp::average(src_[c])), data[c]);
 		}
-		else if (method == CenterMethod::CONST)
+		else if (method == CenterMethod::CONST_)
 		{
 			sub_const(src_[c], constant_sub, data[c]);
 		}
@@ -5645,7 +5645,7 @@ void CalcPatchCovarMatrix::simdOMPCov_RepCenterHalfElement32FCn(const vector<Mat
 			{
 				sub_const(src_[c], float(cp::average(src_[c])), data[c]);
 			}
-			else if (method == CenterMethod::CONST)
+			else if (method == CenterMethod::CONST_)
 			{
 				sub_const(src_[c], constant_sub, data[c]);
 			}
@@ -5812,7 +5812,7 @@ void CalcPatchCovarMatrix::simdOMPCov_RepCenterHalfElement64F(const vector<Mat>&
 			if (src_[0].depth() == CV_64F) sub_const(src_[c], average64(src_[c]), data[c]);
 			if (src_[0].depth() == CV_32F) sub_const32to64(src_[c], (float)cp::average(src_[c]), data[c]);
 		}
-		else if (method == CenterMethod::CONST)
+		else if (method == CenterMethod::CONST_)
 		{
 			if (src_[0].depth() == CV_64F) sub_const(src_[c], constant_sub, data[c]);
 			if (src_[0].depth() == CV_32F) sub_const32to64(src_[c], (float)constant_sub, data[c]);
@@ -5943,7 +5943,7 @@ void CalcPatchCovarMatrix::simdOMPCov_RepCenterRepElement32F(const vector<Mat>& 
 			sub_const(src_[c], float(ave), data[c]);
 			meanForCov[c] = 0.0;
 		}
-		else if (method == CenterMethod::CONST)
+		else if (method == CenterMethod::CONST_)
 		{
 			//cout << "Rep const" << endl;
 			//subtract(src_[c], constant_sub, data[c]);
@@ -6712,7 +6712,7 @@ void CalcPatchCovarMatrix::simdOMPCov_RepCenterRepElement32FCn(const vector<Mat>
 			sub_const(src_[c], float(ave), data[c]);
 			meanForCov[c] = 0.0;
 		}
-		else if (method == CenterMethod::CONST)
+		else if (method == CenterMethod::CONST_)
 		{
 			//cout << "Rep const" << endl;
 			//subtract(src_[c], constant_sub, data[c]);
