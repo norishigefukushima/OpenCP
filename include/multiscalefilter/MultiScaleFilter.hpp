@@ -247,7 +247,7 @@ namespace cp
 
 		void rangeDescope(const cv::Mat& src);
 
-		float* generateWeight(int r, const float sigma, float& evenratio, float& oddratio);
+		float* generateGaussianWeight(int r, const float sigma, float& evenratio, float& oddratio);
 		void GaussDownFull(const cv::Mat& src, cv::Mat& dest, const float sigma, const int borderType);
 		void GaussDown(const cv::Mat& src, cv::Mat& dest);
 		template<int D> void GaussDown(const cv::Mat& src, cv::Mat& dest, float* linebuff);//linebuffsize = src.cols+2*radius

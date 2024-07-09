@@ -7405,6 +7405,7 @@ namespace cp
 		allocImageBuffer(order, level);
 
 		const int gfRadius = getGaussianRadius(sigma_space);
+		//print_debug(gfRadius);
 		const int lowr = 2 * gfRadius + gfRadius;
 		const int r_pad0 = lowr * (int)pow(2, level - 1);
 		if (pyramidComputeMethod == IgnoreBoundary)
