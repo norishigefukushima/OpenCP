@@ -73,6 +73,8 @@ namespace cp
 
 	void MultiCameraCalibrator::initRemap()
 	{
+		mapu.resize(0);
+		mapv.resize(0);
 		for (int i = 0; i < numofcamera; i++)
 		{
 			Mat u;
@@ -265,6 +267,13 @@ namespace cp
 		{
 			patternImages[i].push_back(patternImage[i]);
 		}
+	}
+
+	void MultiCameraCalibrator::pushImagePoint(const vector<Point2f>& pointL, const vector<Point2f>& pointR)
+	{
+		numofchessboards++;
+		imagePoints[0].push_back(pointL);
+		imagePoints[1].push_back(pointR);
 	}
 
 	void MultiCameraCalibrator::pushImagePoint(const vector<vector<Point2f>>& point)
@@ -493,6 +502,7 @@ namespace cp
 
 		if (isIndependentCalibration)
 		{
+			cout << "call isIndependentCalibration" << endl;
 			Mat r, t;
 			cv::calibrateCamera(objectPoints, imagePoints[refCamera1], imageSize, intrinsic[refCamera1], distortion[refCamera1], r, t, flag);
 			cv::calibrateCamera(objectPoints, imagePoints[refCamera2], imageSize, intrinsic[refCamera2], distortion[refCamera2], r, t, flag);
@@ -501,7 +511,7 @@ namespace cp
 			{
 				rep_error = stereoCalibrate(objectPoints, imagePoints[refCamera1], imagePoints[i], intrinsic[refCamera1], distortion[refCamera1], intrinsic[i], distortion[i], imageSize,
 					reR[i], reT[i], E, F,
-					flag,
+					flag | CALIB_FIX_INTRINSIC,
 					TermCriteria(TermCriteria::COUNT + TermCriteria::EPS, 30, 1e-6)
 				);
 			}
@@ -525,7 +535,7 @@ namespace cp
 	double MultiCameraCalibrator::calibration(const int flags, int refCamera1, int refCamera2, const bool isIndependentCalibration)
 	{
 		this->flag = flags;
-		return operator()(flags, refCamera1, refCamera2);
+		return operator()(flags, refCamera1, refCamera2, isIndependentCalibration);
 	}
 
 	void MultiCameraCalibrator::rectifyImageRemap(Mat& src, Mat& dest, int numofcamera, const int interpolation)
@@ -543,11 +553,20 @@ namespace cp
 		cv::remap(src, dest, mapu[numofcamera], mapv[numofcamera], interpolation);
 	}
 
-	void MultiCameraCalibrator::drawReprojectionError(string wname, const bool isInteractive)
+	void MultiCameraCalibrator::solvePnP(const int patternIndex, std::vector<cv::Mat>& destR, std::vector<cv::Mat>& destT)
+	{
+		destR.resize(numofcamera);
+		destT.resize(numofcamera);
+		for (int i = 0; i < numofcamera; i++)
+		{
+			cv::solvePnP(objectPoints[patternIndex], imagePoints[i][patternIndex], intrinsic[i], distortion[i], destR[i], destT[i]);
+		}
+	}
+
+	void MultiCameraCalibrator::drawReprojectionError(string wname, const bool isInteractive, const int plotImageRadius)
 	{
 #if 1
-		int length = 400;
-		Size imsize(2 * length + 1, 2 * length + 1);
+		Size imsize(2 * plotImageRadius + 1, 2 * plotImageRadius + 1);
 		Point center(imsize.width / 2, imsize.height / 2);
 		Mat show(imsize, CV_8UC3);
 		show.setTo(255);
@@ -600,7 +619,7 @@ namespace cp
 							vector<Point2f> reprojectPoints;
 							Mat local_r;
 							Mat local_t;
-							solvePnP(objectPoints[i], imagePoints[cam][i], intrinsic[cam], distortion[cam], local_r, local_t);
+							cv::solvePnP(objectPoints[i], imagePoints[cam][i], intrinsic[cam], distortion[cam], local_r, local_t);
 							projectPoints(objectPoints[i], local_r, local_t, intrinsic[cam], distortion[cam], reprojectPoints);
 							for (int n = 0; n < reprojectPoints.size(); n++)
 							{
@@ -619,7 +638,7 @@ namespace cp
 						vector<Point2f> reprojectPoints;
 						Mat local_r;
 						Mat local_t;
-						solvePnP(objectPoints[index], imagePoints[cam][index], intrinsic[cam], distortion[cam], local_r, local_t);
+						cv::solvePnP(objectPoints[index], imagePoints[cam][index], intrinsic[cam], distortion[cam], local_r, local_t);
 						projectPoints(objectPoints[index], local_r, local_t, intrinsic[cam], distortion[cam], reprojectPoints);
 
 						if (gi == objectPoints[0].size())
@@ -689,8 +708,8 @@ namespace cp
 				}
 
 				putText(show, format("Rep.Error(All): %6.4f", rep_error), Point(0, 50), fontType, 0.5, COLOR_GRAY50);
-				putText(show, format("%6.4f", length * 0.5 / scale), Point(length / 2 - 30, length / 2), fontType, 0.5, COLOR_GRAY50);
-				circle(show, center, length / 2, COLOR_GRAY100);
+				putText(show, format("%6.4f", plotImageRadius * 0.5 / scale), Point(plotImageRadius / 2 - 30, plotImageRadius / 2), fontType, 0.5, COLOR_GRAY50);
+				circle(show, center, plotImageRadius / 2, COLOR_GRAY100);
 				drawGridMulti(show, Size(4, 4), COLOR_GRAY200);
 				Mat cres;
 				resize(colorbar.t(), cres, Size(show.cols, 20));

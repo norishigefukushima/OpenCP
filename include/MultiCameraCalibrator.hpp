@@ -7,12 +7,7 @@ namespace cp
 	class CP_EXPORT MultiCameraCalibrator
 	{
 	private:
-		std::vector<std::vector<cv::Mat>> patternImages;
-		std::vector<std::vector<cv::Point3f>> objectPoints;
-		std::vector<std::vector<std::vector<cv::Point2f>>> imagePoints;
 		std::vector<cv::Point3f> chessboard3D;
-		std::vector<cv::Mat> reR;
-		std::vector<cv::Mat> reT;
 		cv::Mat E;
 		cv::Mat F;
 		cv::Mat Q;
@@ -23,13 +18,18 @@ namespace cp
 		void initRemap();
 
 	public:
+		std::vector<cv::Mat> reR;
+		std::vector<cv::Mat> reT;
+		std::vector<std::vector<cv::Point3f>> objectPoints;//[pattern][point]
+		std::vector<std::vector<std::vector<cv::Point2f>>> imagePoints;//[camera][pattarn][point]
+		std::vector<std::vector<cv::Mat>> patternImages;//[camera][pattarn]
 		int flag = cv::CALIB_FIX_K3 | cv::CALIB_FIX_K4 | cv::CALIB_FIX_K5 | cv::CALIB_FIX_K6 | cv::CALIB_ZERO_TANGENT_DIST | cv::CALIB_SAME_FOCAL_LENGTH | cv::CALIB_FIX_ASPECT_RATIO;
 		int rect_flag = cv::CALIB_ZERO_DISPARITY;
 
 		int numofcamera = 0;
 		cv::Size imageSize;
-		std::vector<cv::Mat> intrinsic;
-		std::vector<cv::Mat> distortion;
+		std::vector<cv::Mat> intrinsic;//[camera]
+		std::vector<cv::Mat> distortion;//[camera]
 
 		cv::Size patternSize;
 		cv::Size2f lengthofchess;
@@ -54,7 +54,9 @@ namespace cp
 		bool findChess(std::vector<cv::Mat>& im);
 		bool findChess(std::vector<cv::Mat>& im, std::vector <cv::Mat>& dest);
 		void pushImage(const std::vector<cv::Mat>& patternImage);
+		//input[camera][point], but pushback [camera][patternindex][point]
 		void pushImagePoint(const std::vector<std::vector<cv::Point2f>>& point);
+		void pushImagePoint(const std::vector<cv::Point2f>& pointL, const std::vector<cv::Point2f>& pointR);//for stereo camera
 		void pushObjectPoint(const std::vector<cv::Point3f>& point);
 		void clearPatternData();
 
@@ -73,8 +75,9 @@ namespace cp
 		double operator ()(const int flags, int refCamera1 = 0, int refCamera2 = 0, const bool isIndependentCalibration = false);
 		void rectifyImageRemap(cv::Mat& src, cv::Mat& dest, int numofcamera, const int interpolation = cv::INTER_LINEAR);
 
+		void solvePnP(const int patternIndex, std::vector<cv::Mat>& destR, std::vector<cv::Mat>& destT);
 		void printParameters();
-		void drawReprojectionError(std::string wname = "error", const bool isInteractive = false);
+		void drawReprojectionError(std::string wname = "error", const bool isInteractive = false, const int plotImageRadius=400);
 		//return RMSE between disparityZ and patternZ
 		double plotDiffDisparityZPatternZ(const int cam0, const int cam1, const double f, const double l, const double d_offset);
 		void guiDisparityTest();

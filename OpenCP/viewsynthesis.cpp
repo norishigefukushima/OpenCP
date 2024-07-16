@@ -4026,8 +4026,8 @@ namespace cp
 		for (int i = 0; i < dmapL.size().area(); i++)
 		{
 			if (d1[i] != 0 && d2[i] != 0)d[i] = T((((int)d1[i] + (int)d2[i]) * 0.5) / amp);
-			else if (d1[i] == 0 && d2[i] != 0)d[i] = (T)d2[i] / amp;
-			else if (d1[i] != 0 && d2[i] == 0)d[i] = (T)d1[i] / amp;
+			else if (d1[i] == 0 && d2[i] != 0)d[i] = (T)(d2[i] / amp);
+			else if (d1[i] != 0 && d2[i] == 0)d[i] = (T)(d1[i] / amp);
 			else d[i] = T(0.0);
 		}
 		cp::fillOcclusion(dest);

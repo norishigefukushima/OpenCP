@@ -130,10 +130,10 @@ namespace cp
 		dest = _dest;
 		r = _r;
 		eps = _eps;
-		
+
 		if (isComputeForReuseGuide)
 		{
-			if(isDebug) std::cout << "computing VarCov in GIF Share" << std::endl;
+			if (isDebug) std::cout << "computing VarCov in GIF Share" << std::endl;
 			computeVarCov();
 			isComputeForReuseGuide = false;
 			checkimage.isSame(guide);
@@ -3108,7 +3108,6 @@ namespace cp
 		}
 	}
 
-
 	/*
 	void guidedFilter_matlabconverted(Mat& src, Mat& joint,Mat& dest,const int radius,const double eps)
 	{
@@ -3318,4 +3317,4 @@ namespace cp
 	temp.convertTo(dest,src.type());
 	}
 	*/
-	}
+}

@@ -62,6 +62,5 @@ namespace cp
 	protected:
 		std::string wname;
 		void filterDepth(cv::InputArray src, cv::OutputArray dest);
-
 	};
 }

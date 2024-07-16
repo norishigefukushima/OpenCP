@@ -167,7 +167,7 @@ namespace cp
 					line(graph, Point(p.x, H - cvRound(y_step * (yn - ymin))), Point(cvRound(x_step * (xn - xmin)), H - cvRound(y_step * (yn - ymin))), color, thickness);
 				}
 			}
-			
+
 
 			if constexpr (lt == Plot::NOPOINT)
 			{
@@ -612,7 +612,7 @@ namespace cp
 
 	void Plot::computeWindowXRangeMAXMIN(bool isCenter, double margin_rate, int rounding_value)
 	{
-		if (margin_rate < 0.0 || margin_rate>1.0)margin_rate = 1.0;
+		if (margin_rate < 0.0 || margin_rate>1.0) margin_rate = 1.0;
 
 		xmax_plotwindow = xmax_data;
 		xmin_plotwindow = xmin_data;
@@ -791,12 +791,28 @@ namespace cp
 
 	void Plot::setXLabel(string xlabel)
 	{
+		isLabelXGreekLetter = false;
 		this->xlabel = xlabel;
 	}
 
 	void Plot::setYLabel(string ylabel)
 	{
+		isLabelYGreekLetter = false;
 		this->ylabel = ylabel;
+	}
+
+	void Plot::setXLabelGreekLetter(std::string greeksymbol, std::string subscript)
+	{
+		isLabelXGreekLetter = true;
+		this->xlabel = greeksymbol;
+		this->xlabel_subscript = subscript;
+	}
+
+	void Plot::setYLabelGreekLetter(std::string greeksymbol, std::string subscript)
+	{
+		isLabelXGreekLetter = true;
+		this->ylabel = greeksymbol;
+		this->ylabel_subscript = subscript;
 	}
 
 	void Plot::setGrid(int grid_level)
@@ -955,6 +971,88 @@ namespace cp
 		}
 	}
 
+	void Plot::push_back(vector<cv::Point2f>& point, int plotIndex)
+	{
+		data_labelmax = max(data_labelmax, plotIndex + 1);
+		const int size = (int)point.size();
+		if (pinfo[plotIndex].data.size() == 0)
+		{
+			pinfo[plotIndex].data.resize(size);
+			for (int i = 0; i < size; i++)
+			{
+				pinfo[plotIndex].data[i].x = (double)point[i].x;
+				pinfo[plotIndex].data[i].y = (double)point[i].y;
+			}
+		}
+		else
+		{
+			for (int i = 0; i < size; i++)
+			{
+				push_back((double)point[i].x, (double)point[i].y, plotIndex);
+			}
+		}
+	}
+
+	void Plot::push_back(Mat& point, int plotIndex)
+	{
+		data_labelmax = max(data_labelmax, plotIndex + 1);
+		const int size = (int)point.size().area();
+		if (pinfo[plotIndex].data.size() == 0)
+		{
+			pinfo[plotIndex].data.resize(size);
+			if (point.depth() == CV_8U)
+			{
+				for (int i = 0; i < size; i++)
+				{
+					pinfo[plotIndex].data[i].x = (double)i;
+					pinfo[plotIndex].data[i].y = (double)point.at<uchar>(0, i);
+				}
+			}
+			else if (point.depth() == CV_32F)
+			{
+				for (int i = 0; i < size; i++)
+				{
+					pinfo[plotIndex].data[i].x = (double)i;
+					pinfo[plotIndex].data[i].y = (double)point.at<float>(0, i);
+				}
+			}
+			else if (point.depth() == CV_64F)
+			{
+				for (int i = 0; i < size; i++)
+				{
+					pinfo[plotIndex].data[i].x = (double)i;
+					pinfo[plotIndex].data[i].y = point.at<double>(0, i);
+				}
+			}
+		}
+		else
+		{
+			if (point.depth() == CV_8U)
+			{
+				for (int i = 0; i < size; i++)
+				{
+					push_back((double)i, (double)point.at<uchar>(0, i), plotIndex);
+				}
+			}
+			else if (point.depth() == CV_32F)
+			{
+				for (int i = 0; i < size; i++)
+				{
+					push_back((double)i, (double)point.at<float>(0, i), plotIndex);
+				}
+			}
+			else if (point.depth() == CV_64F)
+			{
+				for (int i = 0; i < size; i++)
+				{
+					push_back((double)i, point.at<double>(0, i), plotIndex);
+				}
+			}
+
+		}
+	}
+
+
 	void Plot::erase(int sampleIndex, int plotIndex)
 	{
 		pinfo[plotIndex].data.erase(pinfo[plotIndex].data.begin() + sampleIndex);
@@ -1031,8 +1129,28 @@ namespace cp
 		Mat labelyimage;
 		if (isPrintLabel)
 		{
-			cv::addText(label, xlabel, Point(0, 100), font, fontSize, COLOR_WHITE);
+			if (isLabelXGreekLetter)
+			{
+				Mat a = getTextImageQt(xlabel, "Symbol", fontSize, Scalar::all(0), background_color, true);
+				if (xlabel_subscript.size() != 0)
+				{
+					Mat b = getTextImageQt(xlabel_subscript, font, int(fontSize / 1.8), Scalar::all(0), background_color, true);
+					copyMakeBorder(b, b, a.rows - b.rows, 0, 0, 0, BORDER_CONSTANT, background_color);
+					hconcat(a, b, label);
+				}
+				else
+				{
+					a.copyTo(label);
+				}
+				label = ~label;
+			}
+			else
+			{
+				cv::addText(label, xlabel, Point(0, 100), font, fontSize, COLOR_WHITE);
+			}
 			boundingRectImage(label, labelximage);
+
+			label.create(plotImage.size(), CV_8UC3);
 			label.setTo(0);
 			cv::addText(label, ylabel, Point(0, 100), font, fontSize, COLOR_WHITE);
 			boundingRectImage(label, labelyimage);
@@ -1445,7 +1563,7 @@ namespace cp
 		generateKeyImage(data_labelmax);
 
 		computeDataMaxMin();
-
+		if (!isWait) setIsDrawMousePosition(false);
 		bool isUseMinmaxBar = (xmax_data > 1 && ymax_data > 1);
 		//bool isUseMinmaxBar = false;
 		const int xmin = (int)xmin_data;
@@ -1521,12 +1639,12 @@ namespace cp
 				}
 				else
 				{
-					if (xmax_data - xmin_data > 50)
+					/*if (xmax_data - xmin_data > 50)
 						computeWindowXRangeMAXMIN(false, margin_ratio, 10);
 					else if (xmax_data - xmin_data > 10)
 						computeWindowXRangeMAXMIN(false, margin_ratio, 1);
 					else
-						computeWindowXRangeMAXMIN(false, margin_ratio, 0);
+						computeWindowXRangeMAXMIN(false, margin_ratio, 0);*/
 				}
 			}
 			if (!isSetYRange)
@@ -1726,7 +1844,6 @@ namespace cp
 		plotImageSize = graph_size;
 		setMinMax(xmin, xmax, xinterval, ymin, ymax, yinterval);
 
-
 		//default gnuplot5.0
 		colorIndex.push_back(CV_RGB(148, 0, 211));
 		colorIndex.push_back(CV_RGB(0, 158, 115));
@@ -1805,12 +1922,19 @@ namespace cp
 		isPlotMin = plot_min;
 	}
 
+	cv::Mat Plot2D::getGridData()
+	{
+		return this->gridData;
+	}
 
 
-	void Plot2D::plotGraph(bool isColor)
+	void Plot2D::plotGraph(bool isColor, Mat& graph)
 	{
 		Mat dataflip;
 		flip(gridData, dataflip, 0);
+		int rate_x = plotImageSize.width / dataflip.cols;
+		int rate_y = plotImageSize.height / dataflip.rows;
+		plotImageSize = Size(dataflip.cols * rate_x, dataflip.rows * rate_y);
 		resize(dataflip, gridDataRes, plotImageSize, 0, 0, cv::INTER_LINEAR);
 		Mat barImageGray(Size(barWidth, plotImageSize.height), CV_8U);
 		for (int j = 0; j < plotImageSize.height; j++)
@@ -1830,8 +1954,11 @@ namespace cp
 			z_max = z_max_temp;
 		}
 
-		Mat graphG;
-		normalize(gridDataRes, graphG, 255, 0, NORM_MINMAX, CV_8U);
+		Mat graphG(gridDataRes.size(), CV_8U);
+		for (int i = 0; i < gridDataRes.size().area(); i++)
+		{
+			graphG.at<uchar>(i) = cv::saturate_cast<uchar>(max(0.0, gridDataRes.at<double>(i) - z_min) / (z_max - z_min) * 255.0);
+		}
 
 		if (isColor)
 		{
@@ -2182,7 +2309,6 @@ namespace cp
 
 			return 0;
 		}
-
 	};
 
 	void embed(Mat& src, Mat& target, Point pt, const bool isCenteringX, const bool isCenteringY)
@@ -2219,47 +2345,54 @@ namespace cp
 		}
 	}
 
-	void Plot2D::addLabelToGraph()
+	void Plot2D::addLabelToGraph(bool isDrawingContour, int keyState, bool isPlotMin, bool isPlotMax)
 	{
-		for (int i = 0; i < contourLabels.size(); i++)
+		if (isDrawingContour)
 		{
-			drawContoursZ(contourThresh[i], colorIndex[i], 2);
+			for (int i = 0; i < contourLabels.size(); i++)
+			{
+				drawContoursZ(contourThresh[i], colorIndex[i], 2);
+			}
+
+			int distance_from_boundary_for_key = 10;
+			generateKeyImage(1);
+			if (keyState == 0)
+			{
+				destroyWindow("key");
+			}
+			else if (keyState == 1)
+			{
+				keyImage.copyTo(graph(Rect(graph.cols - keyImage.cols - distance_from_boundary_for_key, distance_from_boundary_for_key, keyImage.cols, keyImage.rows)));
+				destroyWindow("key");
+			}
+			else if (keyState == 2)
+			{
+				keyImage.copyTo(graph(Rect(distance_from_boundary_for_key, distance_from_boundary_for_key, keyImage.cols, keyImage.rows)));
+				destroyWindow("key");
+			}
+			else if (keyState == 3)
+			{
+				keyImage.copyTo(graph(Rect(distance_from_boundary_for_key, graph.rows - keyImage.rows - distance_from_boundary_for_key, keyImage.cols, keyImage.rows)));
+				destroyWindow("key");
+			}
+			else if (keyState == 4)
+			{
+				keyImage.copyTo(graph(Rect(graph.cols - keyImage.cols - distance_from_boundary_for_key, graph.rows - keyImage.rows - distance_from_boundary_for_key, keyImage.cols, keyImage.rows)));
+				destroyWindow("key");
+			}
+			else if (keyState == 5)
+			{
+				imshow("key", keyImage);
+			}
 		}
 
 		if (isPlotMax)
+		{
 			circle(graph, z_max_point, 5, colorIndex[maxColorIndex], 2);
+		}
 		if (isPlotMin)
-			drawPlus(graph, z_min_point, 8, colorIndex[minColorIndex]);
-
-		int distance_from_boundary_for_key = 10;
-		generateKeyImage(1);
-		if (keyState == 0)
 		{
-			destroyWindow("key");
-		}
-		else if (keyState == 1)
-		{
-			keyImage.copyTo(graph(Rect(graph.cols - keyImage.cols - distance_from_boundary_for_key, distance_from_boundary_for_key, keyImage.cols, keyImage.rows)));
-			destroyWindow("key");
-		}
-		else if (keyState == 2)
-		{
-			keyImage.copyTo(graph(Rect(distance_from_boundary_for_key, distance_from_boundary_for_key, keyImage.cols, keyImage.rows)));
-			destroyWindow("key");
-		}
-		else if (keyState == 3)
-		{
-			keyImage.copyTo(graph(Rect(distance_from_boundary_for_key, graph.rows - keyImage.rows - distance_from_boundary_for_key, keyImage.cols, keyImage.rows)));
-			destroyWindow("key");
-		}
-		else if (keyState == 4)
-		{
-			keyImage.copyTo(graph(Rect(graph.cols - keyImage.cols - distance_from_boundary_for_key, graph.rows - keyImage.rows - distance_from_boundary_for_key, keyImage.cols, keyImage.rows)));
-			destroyWindow("key");
-		}
-		else if (keyState == 5)
-		{
-			imshow("key", keyImage);
+			drawPlus(graph, z_min_point, 8 * 3, colorIndex[minColorIndex]);
 		}
 
 		GraphTicksGenerator tickx(x_min, x_max, graph.cols, fontSize2, 4);
@@ -2336,7 +2469,24 @@ namespace cp
 		Rect rz = Rect(show.cols - labelzImage.cols - 2, 1, labelzImage.cols, labelzImage.rows);
 		labelzImage.copyTo(show(rz));
 
-		//x
+
+		/*Mat infoImage = getTextImageQt(format("min:%5.2f,%5.2f,%5.2f, max:%5.2f,%5.2f,%5.2f",
+			gridData.at<double>(z_min_point), (z_min_point.x - x_min) * x_interval, (z_min_point.y - y_min) * y_interval,
+			gridData.at<double>(z_max_point), (z_max_point.x - x_min) * x_interval, (z_max_point.y - y_min) * y_interval),
+			font, fontSize, Scalar::all(0), background_color);*/
+			//print_debug(z_min_point);
+			//print_debug(y_min);
+			//print_debug(y_interval);
+			/*const int y = gridDataRes.rows - 1 - z_min_point.y;
+			const double ratex = gridDataRes.cols / gridData.cols;
+			const double ratey = gridDataRes.rows / gridData.rows;
+			Mat infoImage = getTextImageQt(format("min:%5.2f=(%5.2f,%5.2f)",
+				gridDataRes.at<double>(Size(z_min_point.x, y)), z_min_point.x* x_interval/ratex + x_min, y* y_interval/ratey + y_min),
+				font, fontSize, Scalar::all(0), background_color);
+			Rect ri = Rect(1, 1, infoImage.cols, infoImage.rows);
+			infoImage.copyTo(show(ri));*/
+
+			//x
 		for (int i = 0; i < tickx.num_ticks; i++)
 		{
 			line(show, Point(tickx.impos[i] + offset_left, offset_top + graph.rows - 1), Point(tickx.impos[i] + offset_left, offset_top + graph.rows - 1 - tickLength), Scalar::all(0));
@@ -2366,10 +2516,10 @@ namespace cp
 			}
 		}
 
+		//z
 		int bar_stx = offset_left + graph.cols + barSpace;
 		int bar_edx = offset_left + graph.cols - 1 + barSpace + barWidth;
 		int bar_sty = offset_top;
-
 		for (int i = 0; i < tickz.num_ticks; i++)
 		{
 			Mat label = tickz.generateImage(i, font, Scalar::all(0), background_color);
@@ -2396,7 +2546,6 @@ namespace cp
 
 		vector<vector<Point>> contours;
 		findContours(mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-
 		drawContours(graph, contours, 0, color, lineWidth);
 	}
 
@@ -2455,7 +2604,9 @@ namespace cp
 		setTrackbarMin("width", wname2, 256);
 		createTrackbar("height", wname2, &plotImageSize.height, 1080);
 		setTrackbarMin("height", wname2, 256);
-		colormap = 18; createTrackbar("colormap", wname2, &colormap, 20);
+		createTrackbar("colormap", wname2, &colormap, 20);
+		plot_x = x_size / 2; createTrackbar("plot x", wname2, &plot_x, x_size - 1);
+		plot_y = y_size / 2; createTrackbar("plot y", wname2, &plot_y, y_size - 1);
 		//int minvalue = 30; createTrackbar("min", wname, &minvalue, 100);
 		//int maxvalue = 50; createTrackbar("max", wname, &maxvalue, 100);
 
@@ -2466,39 +2617,122 @@ namespace cp
 		bool isColorFlag = true;
 		bool isMinMaxSet = false;
 		int key = 0;
+		Plot ptx(plotImageSize);
+		Plot pty(plotImageSize);
+		ptx.setKey(cp::Plot::NOKEY);
+		pty.setKey(cp::Plot::NOKEY);
+		ptx.setYLabel(labelz);
+		pty.setYLabel(labelz);
+
+		if (isLabelXGreekLetter)
+		{
+			ptx.setXLabelGreekLetter(labelx, labelx_subscript);
+		}
+		else
+		{
+			ptx.setXLabel(labelx);
+		}
+		if (isLabelYGreekLetter)
+		{
+			pty.setXLabelGreekLetter(labely, labely_subscript);
+		}
+		else
+		{
+			pty.setXLabel(labely);
+		}
+
+		ptx.setIsDrawMousePosition(false);
+		pty.setIsDrawMousePosition(false);
+		bool isGrid = false;
+		bool isDrawingContour = false;
 		while (key != 'q')
 		{
 			//writeGraph(isColor, PLOT_ARG_MAX, minvalue, maxvalue, isMinMaxSet);
-			plotGraph(isColorFlag);
-			addLabelToGraph();
+			plotGraph(isColorFlag, graph);
+			int resx = graph.cols / gridData.cols;
+			int resy = graph.rows / gridData.rows;
+			if (isGrid) drawGrid(graph, Point(plot_x * resx, plot_y * resy), COLOR_RED);
+			addLabelToGraph(isDrawingContour, keyState, isPlotMin, isPlotMax);
+
+			for (int i = 0; i < gridData.cols; i++)
+			{
+				ptx.push_back((i - x_min) * x_interval, gridData.at<double>(plot_y, i));
+			}
+			for (int i = 0; i < gridData.rows; i++)
+			{
+				pty.push_back((i - y_min) * y_interval, gridData.at<double>(i, plot_x));
+			}
 			imshow(wname, show);
+			ptx.plot(wname + "x", false);
+			pty.plot(wname + "y", false);
+
+
 			//imshow(wname, graphBase);
 			key = waitKey(1);
 			if (key == 'c')
 			{
 				isColorFlag = (isColorFlag) ? false : true;
 			}
+			if (key == 'g')
+			{
+				isGrid = isGrid ? false : true;
+			}
 			if (key == 'k')
 			{
 				keyState++;
-				if (keyState > 5)keyState = 0;
-			}
-			if (key == 'x')
-			{
-				isPlotMax = (isPlotMax) ? false : true;
+				if (keyState > 5) keyState = 0;
 			}
 			if (key == 'n')
 			{
 				isPlotMin = (isPlotMin) ? false : true;
 			}
+			if (key == 's')
+			{
+				imwrite("plot2d.png", show);
+				imwrite("plotx.png", ptx.render);
+				imwrite("ploty.png", pty.render);
+				ptx.saveDatFile("plotx");
+				pty.saveDatFile("ploty");
+			}
+			if (key == 'x')
+			{
+				isPlotMax = (isPlotMax) ? false : true;
+			}
+			if (key == 'z')
+			{
+				isDrawingContour = (isDrawingContour) ? false : true;
+			}
+			if (key == '?' || key == 'h')
+			{
+				cout << "c: flip isColor" << endl;
+				cout << "g: flip drawGrid" << endl;
+				cout << "k: key position" << endl;
+				cout << "n: flip draw cross for min point" << endl;
+				cout << "x: flip draw circle for max point" << endl;
+				cout << "z: flip isDrawContour" << endl;
+			}
+
+			ptx.clear();
+			pty.clear();
+		}
+	}
+
+	void Plot2D::addIndex(int x, int y, double val)
+	{
+		if (
+			x < gridData.cols && x >= 0 &&
+			y < gridData.rows && y >= 0
+			)
+		{
+			gridData.at<double>(y, x) = val;
 		}
 	}
 
 	void Plot2D::add(double x, double y, double val)
 	{
-		int X = int((x - x_min) / x_interval);
-		int Y = int((y - y_min) / y_interval);
-		gridData.at<double>(Y, X) = val;
+		const int X = int((x - x_min) / x_interval);
+		const int Y = int((y - y_min) / y_interval);
+		addIndex(X, Y, val);
 	}
 
 #pragma endregion

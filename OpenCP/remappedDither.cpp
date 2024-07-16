@@ -2,6 +2,11 @@
 #include "inlineSIMDFunctions.hpp"
 #include "inlineMathFunctions.hpp"
 #include "color.hpp"
+
+
+#include "detailEnhancement.hpp"
+#include "statisticalFilter.hpp"
+#include "debugcp.hpp"
 //#include <spatialfilter/SpatialFilter.hpp>
 using namespace std;
 using namespace cv;
@@ -653,149 +658,646 @@ namespace cp
 	}
 	*/
 
-	class TexturenessImportanceMapSampling
+
+	struct xorshift_32_4 {
+		static unsigned int x[4];
+		static int cnt;
+		unsigned int operator()() {
+			if (cnt != 4) return x[cnt++];
+			__m128i a;
+			a = _mm_loadu_si128((__m128i*)x);
+			a = _mm_xor_si128(a, _mm_slli_epi32(a, 13));
+			a = _mm_xor_si128(a, _mm_srli_epi32(a, 17));
+			a = _mm_xor_si128(a, _mm_slli_epi32(a, 5));
+			_mm_storeu_si128((__m128i*)x, a);
+			cnt = 1;
+			return x[0];
+		}
+	};
+	int xorshift_32_4::cnt = 0;
+	unsigned int xorshift_32_4::x[] = { 0xf247756d, 0x1654caaa, 0xb2f5e564, 0x7d986dd7 };
+
+	//https://github.com/Tlapesium/cpp-lib/blob/master/utility/xorshift.cpp
+		//need AVX2
+	struct _MM_XORSHIFT32_AVX2
 	{
+		__m256 normal;
+		__m256i x;
+		int cnt = 0;
+		//public:
+		_MM_XORSHIFT32_AVX2()
+		{
+			x = _mm256_set_epi32(0xd5eae750, 0xc784b986, 0x16bcf701, 0x65032360, 0xb628094f, 0xd8281e7b, 0xecfa5dc8, 0x3b828203);
+			normal = _mm256_set1_ps(1.f / (INT_MAX));
+		}
+		__m256 next32f()
+		{
+			x = _mm256_xor_si256(x, _mm256_slli_epi32(x, 13));
+			x = _mm256_xor_si256(x, _mm256_srli_epi32(x, 17));
+			x = _mm256_xor_si256(x, _mm256_slli_epi32(x, 5));
+			return _mm256_mul_ps(normal, _mm256_abs_ps(_mm256_cvtepi32_ps(x)));
+		}
+		__m256i next()
+		{
+			x = _mm256_xor_si256(x, _mm256_slli_epi32(x, 13));
+			x = _mm256_xor_si256(x, _mm256_srli_epi32(x, 17));
+			x = _mm256_xor_si256(x, _mm256_slli_epi32(x, 5));
+			return x;
+		}
+
+		unsigned int operator()()
+		{
+			if (cnt != 8) return x.m256i_i32[cnt++];
+			x = _mm256_xor_si256(x, _mm256_slli_epi32(x, 13));
+			x = _mm256_xor_si256(x, _mm256_srli_epi32(x, 17));
+			x = _mm256_xor_si256(x, _mm256_slli_epi32(x, 5));
+			cnt = 1;
+			return x.m256i_i32[0];
+		}
+	};
+
+	struct xorshift_64_4 {
+		static unsigned long long int x[4];
+		static int cnt;
+		unsigned long long int operator()() {
+			if (cnt != 4) return x[cnt++];
+			__m256i a;
+			a = _mm256_loadu_si256((__m256i*)x);
+			a = _mm256_xor_si256(a, _mm256_slli_epi64(a, 7));
+			a = _mm256_xor_si256(a, _mm256_srli_epi64(a, 9));
+			_mm256_storeu_si256((__m256i*)x, a);
+			cnt = 1;
+			return x[0];
+		}
+	};
+
+	int xorshift_64_4::cnt = 0;
+	unsigned long long int xorshift_64_4::x[] = { 0xf77bcfb23d5143cfULL, 0xbda154512ac6f703ULL, 0xb2ef653838c2edf3ULL, 0xa7dbfba7cef3c195ULL };
+
+	//type 0 Gaussian (sr is not used)
+	//type 1 gradient (sr is not used)
+	//type 2 bilateral (sr is valid)
+	class TexturenessSampling
+	{
+		RNG rng;
+		Mat histogram;
+
 		Mat importance;
 		Mat src_32f;
 		Mat gray;
 		//Ptr<cp::SpatialFilterBase> gf = cp::createSpatialFilter(cp::SpatialFilterAlgorithm::SlidingDCT5_AVX, CV_32F, cp::SpatialKernel::GAUSSIAN);
 
-		void remap(Mat& v, const float sampling_ratio)
+		float edgeDiffusionSigma = 1.f;
+
+		void gradientMax(const Mat& src, Mat& dest, const bool isAccumurate)
+		{
+			if (dest.empty()) dest.create(src.size(), src.type());
+
+			if (isAccumurate)
+			{
+				for (int j = 0; j < src.rows; j++)
+				{
+					const float* sc = src.ptr<float>(j);
+					const float* sm = src.ptr<float>(max(j - 1, 0));
+					const float* sp = src.ptr<float>(min(j + 1, src.rows - 1));
+					//const float* smm = src.ptr<float>(max(j - 2, 0));
+					//const float* spp = src.ptr<float>(min(j + 2, src.rows - 1));
+					float* d = dest.ptr<float>(j);
+					if constexpr (true)
+					{
+						for (int i = 0; i < src.cols; i += 8)
+						{
+							const __m256 mscp = _mm256_loadu_ps(sc + i - 1);
+							const __m256 mscc = _mm256_loadu_ps(sc + i - 0);
+							const __m256 mscm = _mm256_loadu_ps(sc + i + 1);
+							const __m256 msp = _mm256_loadu_ps(sp + i + 0);
+							const __m256 msm = _mm256_loadu_ps(sm + i + 0);
+
+							_mm256_storeu_ps(d + i, _mm256_add_ps(_mm256_loadu_ps(d + i), _mm256_max_ps(
+								_mm256_max_ps(_mm256_absdiff_ps(mscc, mscp), _mm256_absdiff_ps(mscc, mscm)),
+								_mm256_max_ps(_mm256_absdiff_ps(mscc, msp), _mm256_absdiff_ps(mscc, msm)))
+							));
+						}
+					}
+					else
+					{
+						for (int i = 1; i < src.cols - 1; i++)
+						{
+							//const float dx = 0.25f * (sc[i - 1] + sc[i + 1] + sc[i - 2] + sc[i + 2]);
+							//const float dy = 0.25f * (sm[i] + sp[i] + smm[i] + spp[i]);
+							//const float dx = 0.5f * (sc[i - 1] + sc[i + 1]);
+							//const float dy = 0.5f * (sm[i] + sp[i]);
+
+							//d[i] += sqrt((sc[i] - dx) * (sc[i] - dx) + (sc[i] - dy) * (sc[i] - dy));
+							//d[i] += sqrt(max((sc[i] - dx) * (sc[i] - dx), (sc[i] - dy) * (sc[i] - dy)));
+							d[i] += max(max(abs(sc[i] - sc[i - 1]), abs(sc[i] - sc[i + 1])), max(abs(sc[i] - sm[i]), abs(sc[i] - sp[i])));
+							//d[i] += 0.5f * ((abs(sc[i] - sc[i - 1]), abs(sc[i] - sc[i + 1])) + max(abs(sc[i] - sm[i]), abs(sc[i] - sp[i])));
+						}
+					}
+					d[0] = 0.f;
+					d[src.cols - 1] = 0.f;
+				}
+			}
+			else
+			{
+				for (int j = 0; j < src.rows; j++)
+				{
+					const float* sc = src.ptr<float>(j);
+					const float* sm = src.ptr<float>(max(j - 1, 0));
+					const float* sp = src.ptr<float>(min(j + 1, src.rows - 1));
+					//const float* smm = src.ptr<float>(max(j - 2, 0));
+					//const float* spp = src.ptr<float>(min(j + 2, src.rows - 1));
+					float* d = dest.ptr<float>(j);
+					if constexpr (true)
+					{
+						for (int i = 0; i < src.cols; i += 8)
+						{
+							const __m256 mscp = _mm256_loadu_ps(sc + i - 1);
+							const __m256 mscc = _mm256_loadu_ps(sc + i - 0);
+							const __m256 mscm = _mm256_loadu_ps(sc + i + 1);
+							const __m256 msp = _mm256_loadu_ps(sp + i + 0);
+							const __m256 msm = _mm256_loadu_ps(sm + i + 0);
+
+							_mm256_storeu_ps(d + i, _mm256_max_ps(
+								_mm256_max_ps(_mm256_absdiff_ps(mscc, mscp), _mm256_absdiff_ps(mscc, mscm)),
+								_mm256_max_ps(_mm256_absdiff_ps(mscc, msp), _mm256_absdiff_ps(mscc, msm))
+							));
+						}
+					}
+					else
+					{
+						for (int i = 1; i < src.cols - 1; i++)
+						{
+							//const float dx = 0.25f * (sc[i - 1] + sc[i + 1] + sc[i - 2] + sc[i + 2]);
+							//const float dy = 0.25f * (sm[i] + sp[i] + smm[i] + spp[i]);
+							//const float dx = 0.5f * (sc[i - 1] + sc[i + 1]);
+							//const float dy = 0.5f * (sm[i] + sp[i]);
+
+							//d[i] = sqrt((sc[i] - dx) * (sc[i] - dx) + (sc[i] - dy) * (sc[i] - dy));
+							//d[i] = sqrt(max((sc[i] - dx) * (sc[i] - dx), (sc[i] - dy) * (sc[i] - dy)));
+							d[i] = max(max(abs(sc[i] - sc[i - 1]), abs(sc[i] - sc[i + 1])), max(abs(sc[i] - sm[i]), abs(sc[i] - sp[i])));
+							//d[i] = 0.5f*((abs(sc[i] - sc[i - 1]), abs(sc[i] - sc[i + 1]))+ max(abs(sc[i] - sm[i]), abs(sc[i] - sp[i])));
+						}
+					}
+					d[0] = 0.f;
+					d[src.cols - 1] = 0.f;
+				}
+			}
+		}
+
+		void gradientMaxDiffuse3x3(const Mat& src, Mat& dest, const bool isAccumurate, const float sigma)
+		{
+			if (dest.empty()) dest.create(src.size(), CV_32F);
+			vector<Mat> linebuffer(3);
+			for (int l = 0; l < 3; l++)
+			{
+				linebuffer[l].create(Size(src.cols + 2, 1), CV_32F);
+				linebuffer[l].at<float>(0, 0) = 0.f;
+				linebuffer[l].at<float>(0, 1) = 0.f;
+				linebuffer[l].at<float>(0, linebuffer[l].cols - 2) = 0.f;
+				linebuffer[l].at<float>(0, linebuffer[l].cols - 1) = 0.f;
+			}
+			float w0 = exp(-1.f / (2.f * sigma * sigma));
+			float normal = 2.f * w0 + 1.f;
+			const __m256 g0 = _mm256_set1_ps(w0 / normal);
+			const __m256 g1 = _mm256_set1_ps(1.f / normal);
+			if (isAccumurate)
+			{
+				for (int j = 0; j < src.rows; j++)
+				{
+					const float* sc = src.ptr<float>(j);
+					const float* sm = src.ptr<float>(max(j - 1, 0));
+					const float* sp = src.ptr<float>(min(j + 1, src.rows - 1));
+					float* d = dest.ptr<float>(j);
+					float* b = linebuffer[j % 3].ptr<float>(0, 1);
+					for (int i = 0; i < src.cols; i += 8)
+					{
+						const __m256 mscp = _mm256_loadu_ps(sc + i - 1);
+						const __m256 mscc = _mm256_loadu_ps(sc + i - 0);
+						const __m256 mscm = _mm256_loadu_ps(sc + i + 1);
+						const __m256 msp = _mm256_loadu_ps(sp + i + 0);
+						const __m256 msm = _mm256_loadu_ps(sm + i + 0);
+
+						_mm256_storeu_ps(b + i, _mm256_max_ps(
+							_mm256_max_ps(_mm256_absdiff_ps(mscc, mscp), _mm256_absdiff_ps(mscc, mscm)),
+							_mm256_max_ps(_mm256_absdiff_ps(mscc, msp), _mm256_absdiff_ps(mscc, msm))
+						));
+					}
+					b[0] = 0.f;
+					b[src.cols - 1] = 0.f;
+					for (int i = 0; i < src.cols; i += 8)
+					{
+						__m256 blur = _mm256_mul_ps(g0, _mm256_loadu_ps(b + i - 1));
+						blur = _mm256_fmadd_ps(g1, _mm256_loadu_ps(b + i + 0), blur);
+						blur = _mm256_fmadd_ps(g0, _mm256_loadu_ps(b + i + 1), blur);
+						_mm256_storeu_ps(b + i, blur);
+					}
+					for (int i = 0; i < src.cols; i += 8)
+					{
+						_mm256_store_ps(d + i, _mm256_add_ps(_mm256_loadu_ps(d + i), _mm256_loadu_ps(b + i)));
+					}
+				}
+			}
+			else
+			{
+				for (int j = 0; j < src.rows; j++)
+				{
+					const float* sc = src.ptr<float>(j);
+					const float* sm = src.ptr<float>(max(j - 1, 0));
+					const float* sp = src.ptr<float>(min(j + 1, src.rows - 1));
+					float* d = dest.ptr<float>(j);
+					float* b = linebuffer[j % 3].ptr<float>(0, 1);
+					for (int i = 0; i < src.cols; i += 8)
+					{
+						const __m256 mscp = _mm256_loadu_ps(sc + i - 1);
+						const __m256 mscc = _mm256_loadu_ps(sc + i - 0);
+						const __m256 mscm = _mm256_loadu_ps(sc + i + 1);
+						const __m256 msp = _mm256_loadu_ps(sp + i + 0);
+						const __m256 msm = _mm256_loadu_ps(sm + i + 0);
+
+						_mm256_storeu_ps(b + i, _mm256_max_ps(
+							_mm256_max_ps(_mm256_absdiff_ps(mscc, mscp), _mm256_absdiff_ps(mscc, mscm)),
+							_mm256_max_ps(_mm256_absdiff_ps(mscc, msp), _mm256_absdiff_ps(mscc, msm))
+						));
+					}
+					b[0] = 0.f;
+					b[src.cols - 1] = 0.f;
+					for (int i = 0; i < src.cols; i += 8)
+					{
+						__m256 blur = _mm256_mul_ps(g0, _mm256_loadu_ps(b + i - 1));
+						blur = _mm256_fmadd_ps(g1, _mm256_loadu_ps(b + i + 0), blur);
+						blur = _mm256_fmadd_ps(g0, _mm256_loadu_ps(b + i + 1), blur);
+						_mm256_storeu_ps(b + i, blur);
+					}
+					for (int i = 0; i < src.cols; i += 8)
+					{
+						_mm256_store_ps(d + i, _mm256_loadu_ps(b + i));
+					}
+				}
+			}
+		}
+
+		//return maxval;
+		template<int ch>
+		float gradientMaxDiffuse3x3(const vector<Mat>& src, Mat& dest, const bool isAccumurate, const float sigma)
+		{
+			if (dest.empty()) dest.create(src[0].size(), CV_32F);
+
+			vector<Mat> linebuffer(3);
+			for (int l = 0; l < 3; l++)
+			{
+				linebuffer[l].create(Size(src[0].cols + 2, 1), CV_32F);
+				linebuffer[l].at<float>(0, 0) = 0.f;
+				linebuffer[l].at<float>(0, 1) = 0.f;
+				linebuffer[l].at<float>(0, linebuffer[l].cols - 2) = 0.f;
+				linebuffer[l].at<float>(0, linebuffer[l].cols - 1) = 0.f;
+			}
+
+			const float w0 = exp(-1.f / (2.f * sigma * sigma));
+			const float normal = 2.f * w0 + 1.f;
+			const __m256 g0 = _mm256_set1_ps(w0 / normal);
+			const __m256 g1 = _mm256_set1_ps(1.f / normal);
+			const int w = src[0].cols;
+			const int h = src[0].rows;
+			__m256 mmax = _mm256_setzero_ps();
+			for (int j = 0; j < h; j++)
+			{
+				AutoBuffer<const float*> sc(ch);
+				AutoBuffer<const float*> sm(ch);
+				AutoBuffer<const float*> sp(ch);
+				for (int c = 0; c < ch; c++)
+				{
+					sc[c] = src[c].ptr<float>(j);
+					sm[c] = src[c].ptr<float>(max(j - 1, 0));
+					sp[c] = src[c].ptr<float>(min(j + 1, h - 1));
+				}
+	
+				float* b = linebuffer[j % 3].ptr<float>(0, 1);
+				for (int i = 0; i < h; i += 8)
+				{
+					__m256 macc = _mm256_setzero_ps();
+					for (int c = 0; c < ch; c++)
+					{
+						const __m256 mscp = _mm256_loadu_ps(sc[c] + i - 1);
+						const __m256 mscc = _mm256_loadu_ps(sc[c] + i - 0);
+						const __m256 mscm = _mm256_loadu_ps(sc[c] + i + 1);
+						const __m256 msp = _mm256_loadu_ps(sp[c] + i + 0);
+						const __m256 msm = _mm256_loadu_ps(sm[c] + i + 0);
+
+						macc = _mm256_add_ps(macc, _mm256_max_ps(
+							_mm256_max_ps(_mm256_absdiff_ps(mscc, mscp), _mm256_absdiff_ps(mscc, mscm)),
+							_mm256_max_ps(_mm256_absdiff_ps(mscc, msp), _mm256_absdiff_ps(mscc, msm))
+						));
+					}
+					_mm256_store_ps(b + i, macc);
+				}
+				b[0] = 0.f;
+				b[w - 1] = 0.f;
+				float* d = dest.ptr<float>(j);
+				for (int i = 0; i < w; i += 8)
+				{
+					__m256 blur = _mm256_mul_ps(g0, _mm256_loadu_ps(b + i - 1));
+					blur = _mm256_fmadd_ps(g1, _mm256_loadu_ps(b + i + 0), blur);
+					blur = _mm256_fmadd_ps(g0, _mm256_loadu_ps(b + i + 1), blur);
+					_mm256_storeu_ps(d + i, blur);
+					mmax = _mm256_max_ps(mmax, blur);
+				}
+			}
+
+			return _mm256_reducemax_ps(mmax);
+		}
+
+
+		float getmax(const Mat& src)
+		{
+			const int size = src.size().area();
+			const int simdSize = get_simd_floor(size, 8);
+			__m256 mmax = _mm256_setzero_ps();
+			const float* s = src.ptr<float>();
+			for (int i = 0; i < simdSize; i += 8)
+			{
+				mmax = _mm256_max_ps(mmax, _mm256_load_ps(s + i));
+			}
+			return _mm256_reducemax_ps(mmax);
+		}
+
+		void normalize_max1(Mat& srcdest)
+		{
+			const int size = srcdest.size().area();
+			const int simdSize = get_simd_floor(size, 8);
+			__m256 mmax = _mm256_setzero_ps();
+			float* s = srcdest.ptr<float>();
+			for (int i = 0; i < simdSize; i += 8)
+			{
+				mmax = _mm256_max_ps(mmax, _mm256_load_ps(s + i));
+			}
+			float maxval = 0.f;
+			for (int i = 0; i < 8; i++)
+			{
+				maxval = max(maxval, mmax.m256_f32[i]);
+			}
+
+			__m256 minv = _mm256_set1_ps(1.f / maxval);
+			for (int i = 0; i < simdSize; i += 8)
+			{
+				_mm256_store_ps(s + i, _mm256_mul_ps(minv, _mm256_load_ps(s + i)));
+			}
+		}
+
+		float computeTexturenessDoG(const vector<Mat>& src, Mat& dest, const float sigma)
+		{
+			for (int c = 0; c < src.size(); c++)
+			{
+				const int r = (int)ceil(sigma * 1.5);
+				const int d = 2 * r + 1;
+				GaussianBlur(src[c], src_32f, Size(d, d), sigma);
+				//Laplacian(src[c], src_32f, CV_32F, d);
+				//gf->filter(src[c], src_32f, ss1, 1);
+				if (c == 0)
+				{
+					absdiff(src_32f, src[c], dest);
+				}
+				else
+				{
+					absdiff(src_32f, src[c], src_32f);
+					add(src_32f, dest, dest);
+				}
+			}
+
+			if (edgeDiffusionSigma != 0.f)
+			{
+				Size ksize = Size(3, 3);
+				GaussianBlur(dest, dest, ksize, edgeDiffusionSigma);
+			}
+			return getmax(dest);
+			//normalize_max1(dest);
+			//normalize(dest, dest, 0.f, 1.f, NORM_MINMAX);
+		}
+		float computeTexturenessDoG(const Mat& src, Mat& dest, const float sigma)
+		{
+			vector<Mat> a(1);
+			a[0] = src;
+			return computeTexturenessDoG(a, dest, sigma);
+		}
+
+		float computeTexturenessGradientMax(const vector<Mat>& src, Mat& dest)
+		{
+			float maxval = 0.f;
+			if (src.size() == 3) maxval = gradientMaxDiffuse3x3<3>(src, dest, false, edgeDiffusionSigma);
+			//gradientMaxDiffuse3x3(src[0], dest, false, edgeDiffusionSigma);
+			/*for (int c = 0; c < src.size(); c++)
+			{
+				gradientMaxDiffuse3x3(src[c], dest, c == 0 ? false : true, edgeDiffusionSigma);
+			}*/
+			/*
+			for (int c = 0; c < src.size(); c++)
+			{
+				gradientMax(src[c], dest, c == 0 ? false : true);
+			}
+
+			if (edgeDiffusionSigma != 0)
+			{
+				Size ksize = Size(3, 3);
+				GaussianBlur(dest, dest, ksize, edgeDiffusionSigma);
+			}
+			*/
+			//mul
+			return maxval;
+			//multiply(dest, 1.f / maxval, dest);
+			//normalize_max1(dest);
+			//normalize(dest, dest, 0.f, 1.f, NORM_MINMAX);
+		}
+		float computeTexturenessGradientMax(const Mat& src, Mat& dest)
+		{
+			vector<Mat> a(1);
+			a[0] = src;
+			return computeTexturenessGradientMax(a, dest);
+		}
+
+		void computeTexturenessBilateral(const vector<Mat>& src, Mat& dest, const float sigmaSpace, const float sr = 70.f)
+		{
+			for (int c = 0; c < src.size(); c++)
+			{
+				bilateralFilter(src[c], src_32f, (int)ceil(sigmaSpace * 2) * 2 + 1, sr, sigmaSpace);
+				//bilateralFilterLocalStatisticsPrior(src[c], src_32f, float(sr), (float)ss1, sr * 0.8f);
+				if (c == 0)
+				{
+					absdiff(src_32f, src[c], dest);
+				}
+				else
+				{
+					absdiff(src_32f, src[c], src_32f);
+					add(src_32f, dest, dest);
+				}
+			}
+
+			if (edgeDiffusionSigma != 0)
+			{
+				Size ksize = Size(3, 3);
+				GaussianBlur(dest, dest, ksize, edgeDiffusionSigma);
+			}
+
+			normalize(dest, dest, 0.f, 1.f, NORM_MINMAX);
+		}
+
+		void remap(Mat& srcdest, const float scale, const float rangemax)
+		{
+			const int n = srcdest.size().area();
+			const __m256 ms = _mm256_set1_ps(scale / rangemax);
+			const __m256 ones = _mm256_set1_ps(1.f);
+			//#pragma omp parallel for schedule (dynamic)
+			const int sizeSimd = n / 8;
+			float* srcPtr = srcdest.ptr<float>();
+			//result[i] = min(v[i] * s, 1.f);
+			for (int i = 0; i < sizeSimd; i++)
+			{
+				_mm256_store_ps(srcPtr, _mm256_min_ps(_mm256_mul_ps(_mm256_load_ps(srcPtr), ms), ones));
+				srcPtr += 8;
+			}
+		}
+		float computeScaleHistogram(Mat& src, const float sampling_ratio, const int numBins = 100, const float rangemin = 0.f, const float rangemax = 1.f)
 		{
 			//cp::Timer t("tt2");
 			//int binNum = (int)(bin_ratio*dest.size().area()*sampling_ratio);
-			const int m = 100;//number of bim
-
-			int histSize[] = { m };
-
-			float value_ranges[] = { 0.f,1.f };
-			const float* ranges[] = { value_ranges };
-			Mat hist;
-
-			int channels[] = { 0 };
-			int dims = 1;
-			calcHist(&v, 1, channels, Mat(), hist, dims, histSize, ranges, true, false); //ƒqƒXƒgƒOƒ‰ƒ€ŒvŽZ
-			//double maxVal = 0;
-			//minMaxLoc(hist, 0, &maxVal, 0, 0);
-			//int c = 0;
-			//for (int i = 0; i < binNum; i++)
-			//{
-			//	float binVal = hist.at<float>(i);
-			//	cout << i << "\t" << binVal << endl;
-			//	c += binVal;
-			//}
-			//cout << "c:" << c << endl;
-			//cout << "fn : " << dest.size().area()*sampling_ratio << endl;
-			//getchar();
-
-
+			if constexpr (false) //opencv
+			{
+				int histSize[] = { numBins };
+				float value_ranges[] = { rangemin, rangemax };
+				const float* ranges[] = { value_ranges };
+				const int channels[] = { 0 };
+				const int dims = 1;
+				calcHist(&src, 1, channels, Mat(), histogram, dims, histSize, ranges, true, false);
+			}
+			else
+			{
+				histogram.create(Size(numBins, 1), CV_32S);
+				histogram.setTo(0);
+				int* h = histogram.ptr<int>();
+				const float* s = src.ptr<float>();
+				const float amp = numBins / rangemax;
+				for (int i = 0; i < src.size().area(); i++)
+				{
+					const int idx = int(s[i] * amp);
+					h[idx]++;
+				}
+			}
+			
 			int H_k = 0;//cumulative sum of histogram
 			float X_k = 0.f;//sum of hi*xi
 
-			float s = 0.f;//scaling factor
+			float scale = 0.f;//scaling factor
 			float x = 0.f;//bin center
-			const float inv_m = 1.f / m;//1/m
+			const float inv_m = 1.f / numBins;//1/m
 			const float offset = inv_m * 0.5f;
-			const int n = v.size().area();
+			const int n = src.size().area();
 			const int nt = int(n * (1.f - sampling_ratio));
 			const float sx_max = 1.f + FLT_EPSILON;
 			const float sx_min = 1.f - FLT_EPSILON;
 			//cout << n<<","<<nt<<"," <<sampling_ratio<< endl;
-			for (int i = 0; i < m; i++)
+			for (int i = 0; i < numBins; i++)
 			{
-				const int h_i = saturate_cast<int>(hist.at<float>(i));
+				//const int h_i = saturate_cast<int>(hist.at<float>(i));
+				const int h_i = histogram.at<int>(i);
 				H_k += h_i;
 
 				x = i * inv_m + offset;
 				X_k += x * h_i;
 
-				s = (H_k - nt) / X_k;//eq (5)
-				float sx = s * x;
+				scale = (H_k - nt) / X_k;//eq (5)
+				const float sx = scale * x;
 				if (sx_min < sx /*&& sx < sx_max*/)
 				{
 					break;
 				}
 			}
-
-			const __m256 ms = _mm256_set1_ps(s);
-			const __m256 ones = _mm256_set1_ps(1.f);
-			//#pragma omp parallel for schedule (dynamic)
-			const int n_simd = n / 8;
-			float* v_ptr = v.ptr<float>();
-			//result[i] = min(v[i] * s, 1.f);
-			for (int i = 0; i < n_simd; i++)
-			{
-				_mm256_store_ps(v_ptr, _mm256_min_ps(_mm256_mul_ps(_mm256_load_ps(v_ptr), ms), ones));
-				v_ptr += 8;
-			}
+			return scale;
 		}
 
-		int ss1 = 3;
-		int ss2 = 1;
-		int sr = 70;
-		const int type = 0;
-
-		void computeTextureness(const Mat& src, Mat& dest)
+		//source [0:1]
+		//_MM_XORSHIFT32_AVX2 mrand;
+		int randDither(const Mat& src, Mat& dest)
 		{
-			if (type == 0)
+			const __m256 normal = _mm256_set1_ps(1.f / (INT_MAX * 2.f));
+			__m256i x = _mm256_set_epi32(0xd5eae750, 0xc784b986, 0x16bcf701, 0x65032360, 0xb628094f, 0xd8281e7b, 0xecfa5dc8, 0x3b828203);
+
+			const float* s = src.ptr<float>();
+			uchar* d = dest.ptr<uchar>();
+
+			const __m256 maxval = _mm256_set1_ps(255.f);
+			const __m256 mone = _mm256_set1_ps(1.0f);
+			__m256i mcount = _mm256_setzero_si256();
+			const int size = src.size().area();
+			const __m256i fmask = _mm256_set1_epi32(0x3f800000);
+			//unsigned res = (v >> 9) | 0x3f800000;
+			//return (*(float*)&res) - 1.0f;
+
+			if constexpr (true)
 			{
-				GaussianBlur(src, dest, Size((int)ceil(ss1 * 3) * 2 + 1, (int)ceil(ss1 * 3) * 2 + 1), ss1);
-				//gf->filter(src, dest, ss1, 1);
+				for (int i = 0; i < size; i += 8)
+				{
+					x = _mm256_xor_si256(x, _mm256_slli_epi32(x, 13));
+					x = _mm256_xor_si256(x, _mm256_srli_epi32(x, 17));
+					x = _mm256_xor_si256(x, _mm256_slli_epi32(x, 5));
+					//__m256 mrng = _mm256_mul_ps(normal, _mm256_abs_ps(_mm256_cvtepi32_ps(x)));
+					//__m256 mrng = _mm256_fmadd_ps(normal, _mm256_cvtepi32_ps(x), mone);
+					__m256 mrng = _mm256_sub_ps(_mm256_castsi256_ps(_mm256_or_si256(_mm256_srli_epi32(x, 8), fmask)), mone);
+					//__m256 mrng = _mm256_sub_ps(_mm256_castsi256_ps(_mm256_or_si256(_mm256_srli_epi32(x, 9), fmask)), mone);
+					__m256 mask = _mm256_cmp_ps(_mm256_loadu_ps(s + i), mrng, _CMP_LE_OQ);
+					__m256 mdst = _mm256_andnot_ps(mask, maxval);
+					mcount = _mm256_sub_epi32(mcount, _mm256_castps_si256(mask));
+					_mm_storel_epi64((__m128i*)(d + i), _mm256_cvtps_epu8(mdst));
+				}
 			}
 			else
 			{
-				float sigma_range = sr / 255.f;
-				bilateralFilter(src_32f, dest, ss1 * 2 * 2 + 1, sigma_range, ss1);
-				//bilateralFilterLocalStatisticsPrior(src, dest, sigma_range, (float)ss1, sigma_range * 0.8f);
-			}
-			absdiff(src, dest, dest);
-			//min(dest, 100.f, dest);
-
-			if (ss2 != 0)
-			{
-				Size ksize = Size(5, 5);
-				GaussianBlur(dest, dest, ksize, ss2);
-			}
-			normalize(dest, dest, 0, 1, NORM_MINMAX);
-		}
-		void computeTextureness(const vector<Mat>& src, Mat& dest)
-		{
-			dest.setTo(0.f);
-			for (int c = 0; c < src.size(); c++)
-			{
-				if (type == 0)
+				for (int i = 0; i < size; i += 16)
 				{
-					GaussianBlur(src[c], src_32f, Size((int)ceil(ss1 * 3) * 2 + 1, (int)ceil(ss1 * 3) * 2 + 1), ss1);
-					//gf->filter(src[c], src_32f, ss1, 1);
+					x = _mm256_xor_si256(x, _mm256_slli_epi32(x, 13));
+					x = _mm256_xor_si256(x, _mm256_srli_epi32(x, 17));
+					x = _mm256_xor_si256(x, _mm256_slli_epi32(x, 5));
+					__m256 mrng = _mm256_mul_ps(normal, _mm256_abs_ps(_mm256_cvtepi32_ps(x)));
+					__m256 mask = _mm256_cmp_ps(_mm256_loadu_ps(s + i), mrng, _CMP_LE_OQ);
+					__m256 mdst = _mm256_andnot_ps(mask, maxval);
+					mcount = _mm256_sub_epi32(mcount, _mm256_castps_si256(mask));
+					_mm_storel_epi64((__m128i*)(d + i), _mm256_cvtps_epu8(mdst));
+
+					x = _mm256_xor_si256(x, _mm256_slli_epi32(x, 13));
+					x = _mm256_xor_si256(x, _mm256_srli_epi32(x, 17));
+					x = _mm256_xor_si256(x, _mm256_slli_epi32(x, 5));
+					mrng = _mm256_mul_ps(normal, _mm256_abs_ps(_mm256_cvtepi32_ps(x)));
+					mask = _mm256_cmp_ps(_mm256_loadu_ps(s + i + 8), mrng, _CMP_LE_OQ);
+					mdst = _mm256_andnot_ps(mask, maxval);
+					mcount = _mm256_sub_epi32(mcount, _mm256_castps_si256(mask));
+					_mm_storel_epi64((__m128i*)(d + i + 8), _mm256_cvtps_epu8(mdst));
+				}
+			}
+
+			const int count = size - _mm256_reduceadd_epi32(mcount);
+			//cout << count<<"/"<< src.size().area() << endl;
+			/*
+			//RNG rng;
+			_MM_XORSHIFT32_AVX2 mrand;
+
+			const float* s = src.ptr<float>();
+			uchar* d = dest.ptr<uchar>();
+			int count = 0;
+			for (int i = 0; i < src.size().area(); i++)
+			{
+				__m256 vv = mrand.next32f();
+				//const float v = rng.uniform(0.f, 1.f);
+				const float v = vv.m256_f32[0];
+				if ((v > s[i]))
+				{
+					d[i] = 0;
 				}
 				else
 				{
-					bilateralFilter(src_32f, dest, ss1 * 2 * 2 + 1, sr, ss1);
-					//bilateralFilterLocalStatisticsPrior(src[c], src_32f, float(sr), (float)ss1, sr * 0.8f);
+					d[i] = 255;
+					count++;
 				}
-				//Mat a;
-				//Size ksize = Size(5, 5);
-				//GaussianBlur(src[c], a, ksize, 0.5);
-				//absdiff(a, src[c], src_32f);
-
-				absdiff(src_32f, src[c], src_32f);
-				//min(src_32f, 100.f, src_32f);
-				add(src_32f, dest, dest);
 			}
-
-			if (ss2 != 0)
-			{
-				Size ksize = Size(5, 5);
-				GaussianBlur(dest, dest, ksize, ss2);
-			}
-
-			normalize(dest, dest, 0.f, 1.f, NORM_MINMAX);
-			//pow(dest, 0.7f, dest);
-		}
-
-		int randDither(const Mat& src, Mat& dest)
-		{
-			randu(dest, 0, 256);
+			*/
+			/*randu(dest, 0, 256);
 			const float* s = src.ptr<float>();
 			uchar* d = dest.ptr<uchar>();
 			int count = 0;
@@ -810,17 +1312,79 @@ namespace cp
 					d[i] = 255;
 					count++;
 				}
-			}
+			}*/
+
 			return count;
 		}
 
+		template<int channels>
+		int remapRandomDitherSamples(const int sample_num, const float scale, const float rangemax, const Mat& prob, const vector<cv::Mat>& guide, cv::Mat& dest)
+		{
+			const float smax = scale / rangemax;
+			//const int channels = (int)guide.size();
+			if (dest.size() != Size(sample_num, channels)) dest.create(Size(sample_num, channels), CV_32F);
+
+			AutoBuffer<const float*> s(channels);
+			AutoBuffer<float*> d(channels);
+			for (int c = 0; c < channels; c++)
+			{
+				s[c] = guide[c].ptr<float>();
+			}
+			for (int c = 0; c < channels; c++)
+			{
+				d[c] = dest.ptr<float>(c);
+			}
+
+			const int size = prob.size().area();
+			int count = 0;
+			const float* pptr = prob.ptr<float>();
+			for (int i = 0; i < size; i++)
+			{
+				const float v = rng.uniform(0.f, 1.f);
+				if ((v <= min(1.f, smax * pptr[i])))
+				{
+					for (int c = 0; c < channels; c++)
+					{
+						d[c][count] = s[c][i];
+					}
+					count++;
+					if (count == sample_num) return sample_num;
+				}
+			}
+			for (int i = count; i < sample_num; i++)
+			{
+				const int idx = rng.uniform(0, count);
+				for (int c = 0; c < channels; c++)
+				{
+					d[c][i] = d[c][idx];
+				}
+			}
+
+			return count;
+		}
+
+		int dither(Mat& inportance, Mat& dest, const int ditheringMethod)
+		{
+			int sample_num = 0;
+			if (ditheringMethod >= 0)
+			{
+				sample_num = ditherDestruction(importance, dest, ditheringMethod, MEANDERING);
+			}
+			else
+			{
+				sample_num = randDither(importance, dest);
+			}
+			return sample_num;
+		}
+
 	public:
-		TexturenessImportanceMapSampling(const int ss1, const   int ss2, const  int sr, const int type) :
-			ss1(ss1), ss2(ss2), sr(sr), type(type) 
+		TexturenessSampling(const float edgeDiffusionSigma) :
+			edgeDiffusionSigma(edgeDiffusionSigma)
 		{
 			;
 		}
-		void generate(const vector<Mat>& src, Mat& dest, int& sample_num, const float sampling_ratio, const int ditheringMethod, const bool isUseAverage)
+
+		void generateDoG(const vector<Mat>& src, Mat& dest, int& sample_num, const float sampling_ratio, const int ditheringMethod, const bool isUseAverage, const float sigma)
 		{
 			//generate(src[0], dest, sample_num, sampling_ratio, ditheringMethod); 
 			//cp::imshowScale("src[0]", src[0]); imshow("importance", importance); imshow("mask", dest); waitKey();
@@ -829,34 +1393,89 @@ namespace cp
 			if (isUseAverage)
 			{
 				cp::cvtColorAverageGray(src, gray, true);
-				generate(gray, dest, sample_num, sampling_ratio, ditheringMethod);
+				generateDoG(gray, dest, sample_num, sampling_ratio, ditheringMethod, sigma);
 			}
 			else
 			{
-				if (dest.empty() || dest.type() != CV_8UC1 || dest.size() != src[0].size())dest.create(src[0].size(), CV_8UC1);
+				if (dest.empty() || dest.type() != CV_8UC1 || dest.size() != src[0].size()) dest.create(src[0].size(), CV_8UC1);
 
 				importance.create(src[0].rows, src[0].cols, CV_32F);//importance map (n pixels)
-				computeTextureness(src, importance);
-				remap(importance, sampling_ratio);
-
-				sample_num = ditherDestruction(importance, dest, ditheringMethod, MEANDERING);
-				//sample_num = randDither(importance, dest);
+				float maxval = computeTexturenessDoG(src, importance, sigma);
+				computeScaleHistogram(importance, sampling_ratio, 100, 0.f, maxval);
+				sample_num = dither(importance, dest, ditheringMethod);
 				//cout << sample_num << endl;
 				//cp::imshowScale("src[0]", src[0]); cp::imshowScale("importance", importance, 255); imshow("mask", dest); waitKey();
 			}
 		}
-		void generate(const Mat& src, Mat& dest, int& sample_num, const float sampling_ratio, const int ditheringMethod)
+
+		void generateDoG(const Mat& src, Mat& dest, int& sample_num, const float sampling_ratio, const int ditheringMethod, const float sigma)
 		{
 			//CV_Assert(src.depth() == CV_32F);	
 			if (dest.empty() || dest.type() != CV_8UC1 || dest.size() != src.size())dest.create(src.size(), CV_8UC1);
 
 			importance.create(src.rows, src.cols, CV_32F);//importance map (n pixels)
-			computeTextureness(src, importance);
-			remap(importance, sampling_ratio);
-			sample_num = ditherDestruction(importance, dest, ditheringMethod, MEANDERING);
+			float maxval = computeTexturenessDoG(src, importance, sigma);
+			float scale = computeScaleHistogram(importance, sampling_ratio, 100, 0.f, maxval);
+			remap(importance, scale, maxval);
+			sample_num = dither(importance, dest, ditheringMethod);
+		}
+
+		void generateGradientMax(const vector<Mat>& src, Mat& dest, int& sample_num, const float sampling_ratio, const int ditheringMethod, const bool isUseAverage)
+		{
+			//generate(src[0], dest, sample_num, sampling_ratio, ditheringMethod); 
+			//cp::imshowScale("src[0]", src[0]); imshow("importance", importance); imshow("mask", dest); waitKey();
+			//return;
+
+			if (isUseAverage)
+			{
+				cout << "generateGradientMax use average" << endl;
+				cp::cvtColorAverageGray(src, gray, true);
+				generateGradientMax(gray, dest, sample_num, sampling_ratio, ditheringMethod);
+			}
+			else
+			{
+				if (dest.empty() || dest.type() != CV_8UC1 || dest.size() != src[0].size()) dest.create(src[0].size(), CV_8UC1);
+
+				importance.create(src[0].rows, src[0].cols, CV_32F);//importance map (n pixels)
+				const float maxval = computeTexturenessGradientMax(src, importance);
+				computeScaleHistogram(importance, sampling_ratio, 100, 0.f, maxval);
+				sample_num = dither(importance, dest, ditheringMethod);
+			}
+		}
+		void generateGradientMax(const Mat& src, Mat& dest, int& sample_num, const float sampling_ratio, const int ditheringMethod)
+		{
+			//CV_Assert(src.depth() == CV_32F);	
+			if (dest.empty() || dest.type() != CV_8UC1 || dest.size() != src.size())dest.create(src.size(), CV_8UC1);
+
+			importance.create(src.rows, src.cols, CV_32F);//importance map (n pixels)
+			const float maxval = computeTexturenessGradientMax(src, importance);
+			computeScaleHistogram(importance, sampling_ratio, 100, 0.f, maxval);
+			sample_num = dither(importance, dest, ditheringMethod);
+		}
+
+		int generateGradientMaxSamples(const vector<Mat>& image, Mat& samples, const float sampling_ratio, const int ditheringMethod, const bool isUseAverage)
+		{
+			int sample_num = 0;
+			//generate(src[0], dest, sample_num, sampling_ratio, ditheringMethod); 
+			//cp::imshowScale("src[0]", src[0]); imshow("importance", importance); imshow("mask", dest); waitKey();
+			//return;
+
+			if (isUseAverage)
+			{
+				cout << "generateGradientMax use average" << endl;
+				cp::cvtColorAverageGray(image, gray, true);
+				generateGradientMax(gray, samples, sample_num, sampling_ratio, ditheringMethod);
+			}
+			else
+			{
+				importance.create(image[0].rows, image[0].cols, CV_32F);//importance map (n pixels)
+				const float maxval = computeTexturenessGradientMax(image, importance);
+				const float scale = computeScaleHistogram(importance, sampling_ratio, 100, 0.f, maxval);
+				sample_num = remapRandomDitherSamples<3>(int(image[0].size().area() * (sampling_ratio)), scale, maxval, importance, image, samples);
+			}
+			return sample_num;
 		}
 	};
-
 
 	void generateSamplingMaskRemappedTextureness(const Mat& src, Mat& dest, int& sample_num, const float samplingRatio, const int ditheringMethod, const float bin_ratio)
 	{
@@ -867,14 +1486,14 @@ namespace cp
 		static int sr = 70; createTrackbar("sr", "", &sr, 255);
 		static int type = 0; createTrackbar("type", "", &type, 2);
 #else
-		int ss1 = 3;
-		int ss2 = 1;
-		int sr = 70;
+		float ss1 = 3.f;
+		float ss2 = 1.f;
+		float sr = 70.f;
 		const int type = 0;
 #endif
 		if (dest.empty() || dest.type() != CV_8UC1 || dest.size() != src.size())dest.create(src.size(), CV_8UC1);
-		TexturenessImportanceMapSampling tims(ss1, ss2, sr, type);
-		tims.generate(src, dest, sample_num, samplingRatio, ditheringMethod);
+		TexturenessSampling tims(ss2);
+		tims.generateDoG(src, dest, sample_num, samplingRatio, ditheringMethod, false, ss1);
 	}
 
 
@@ -1082,37 +1701,28 @@ namespace cp
 		}
 	}
 
-	void generateSamplingMaskRemappedDitherTexturenessPackedSoA(vector<cv::Mat>& guide, cv::Mat& dest, const float sampling_ratio, const bool isUseAverage, int ditheringMethod)
+
+	static void mask2sample(const int sample_num, const Mat& sampleMask, const vector<cv::Mat>& guide, cv::Mat& dest)
 	{
-		CV_Assert(guide[0].depth() == CV_32F);
-
 		const int channels = (int)guide.size();
+		if (dest.size() != Size(sample_num, channels)) dest.create(Size(sample_num, channels), CV_32F);
 
-		int sample_num = 0;
-		cv::Mat mask;
-
-		TexturenessImportanceMapSampling ims(3, 1, 70, 0);
-		ims.generate(guide, mask, sample_num, sampling_ratio, ditheringMethod, isUseAverage);
-
-		sample_num = get_simd_floor(sample_num, 8);
-		dest.create(Size(sample_num, channels), CV_32F);
-
-		AutoBuffer<float*> s(channels);
+		AutoBuffer<const float*> s(channels);
 		AutoBuffer<float*> d(channels);
 		for (int c = 0; c < channels; c++)
 		{
 			d[c] = dest.ptr<float>(c);
 		}
 
-		for (int y = 0, count = 0; y < mask.rows; y++)
+		for (int y = 0, count = 0; y < sampleMask.rows; y++)
 		{
-			uchar* mask_ptr = mask.ptr<uchar>(y);
 			for (int c = 0; c < channels; c++)
 			{
 				s[c] = guide[c].ptr<float>(y);
 			}
 
-			for (int x = 0; x < mask.cols; x++)
+			const uchar* mask_ptr = sampleMask.ptr<uchar>(y);
+			for (int x = 0; x < sampleMask.cols; x++)
 			{
 				if (mask_ptr[x] == 255)
 				{
@@ -1121,13 +1731,41 @@ namespace cp
 						d[c][count] = s[c][x];
 					}
 					count++;
-					if (count == sample_num)return;
+					if (count == sample_num) return;
 				}
 			}
 		}
 	}
 
-	void generateSamplingMaskRemappedDitherTexturenessPackedSoA(vector<cv::Mat>& src, vector<cv::Mat>& guide, cv::Mat& dest, const float sampling_ratio, int ditheringMethod)
+	void generateSamplingMaskRemappedDitherTexturenessDoGPackedSoA(const vector<cv::Mat>& guide, cv::Mat& dest, const float sampling_ratio, const bool isUseAverage, int ditheringMethod, cv::Mat sampleMask, const float sigma)
+	{
+		CV_Assert(guide[0].depth() == CV_32F);
+
+		//TexturenessImportanceMapSampling ims(2.9, 0.7, 70, 0);
+		//TexturenessImportanceMapSampling ims(3.5, 1.5, 70, 0);
+		TexturenessSampling ims(0.7f);
+		int sample_num = 0;
+		ims.generateDoG(guide, sampleMask, sample_num, sampling_ratio, ditheringMethod, isUseAverage, sigma);
+		sample_num = get_simd_floor(sample_num, 8);
+		mask2sample(sample_num, sampleMask, guide, dest);
+	}
+
+	void generateSamplingMaskRemappedDitherTexturenessGradientMaxPackedSoA(const vector<cv::Mat>& guide, cv::Mat& dest, const float sampling_ratio, const bool isUseAverage, int ditheringMethod, cv::Mat sampleMask)
+	{
+		CV_Assert(guide[0].depth() == CV_32F);
+
+		//TexturenessImportanceMapSampling ims(2.9, 0.7, 70, 0);
+		TexturenessSampling ims(0.7f);
+		//TexturenessImportanceMapSampling ims(3.5, 1.5, 70, 0);
+		/*
+		ims.generateGradientMax(guide, sampleMask, sample_num, sampling_ratio, ditheringMethod, isUseAverage);
+		sample_num = get_simd_floor(sample_num, 8);
+		mask2sample(sample_num, sampleMask, guide, dest);
+		*/
+		int sample_num = ims.generateGradientMaxSamples(guide, dest, sampling_ratio, ditheringMethod, isUseAverage);
+	}
+
+	void generateSamplingMaskRemappedDitherTexturenessPackedSoA(const vector<cv::Mat>& src, vector<cv::Mat>& guide, cv::Mat& dest, const float sampling_ratio, int ditheringMethod)
 	{
 		CV_Assert(guide[0].depth() == CV_32F);
 		const int channels = (int)guide.size();

@@ -34,7 +34,7 @@ namespace cp
 
 	void ConsoleImage::init(Size size, string wname, const bool isNamedWindow)
 	{
-		if (isNamedWindow)namedWindow(wname);
+		if (isNamedWindow) namedWindow(wname);
 		isLineNumber = false;
 		windowName = wname;
 		image = Mat::zeros(size, CV_8UC3);
@@ -80,9 +80,11 @@ namespace cp
 
 	void ConsoleImage::clear()
 	{
+		count_page = 0;
 		count = 0;
 		image.setTo(0);
 		strings.clear();
+		si.clear();
 	}
 
 	void ConsoleImage::push()
@@ -94,8 +96,8 @@ namespace cp
 	{
 		//namedWindow(windowName);
 		si.setWindowName(windowName);
-		si.show(image);
-		if (isClear)clear();
+		si.show(image, true);
+		if (isClear) clear();
 	}
 
 	void ConsoleImage::operator()(string src)
@@ -129,13 +131,26 @@ namespace cp
 
 	void ConsoleImage::operator()(cv::Scalar color, string src)
 	{
-		if (isLineNumber)strings.push_back(cv::format("%2d ", count) + src);
+		if (isLineNumber)strings.push_back(cv::format("%3d ", count) + src);
 		else strings.push_back(src);
 
-		int skip = fontSize + lineSpaceSize;
-		cv::addText(image, strings[count], Point(skip, skip + count * skip), fontName, fontSize, color);
+		const int skip = fontSize + lineSpaceSize;
+		const int y = skip + count_page * skip;
+		if (y > image.rows)
+		{
+			push();
+			count_page = 0;
+			image.setTo(0);
+			const int y = skip + count_page * skip;
+			cv::addText(image, strings[count], Point(skip, y), fontName, fontSize, color);
+		}
+		else
+		{
+			cv::addText(image, strings[count], Point(skip, y), fontName, fontSize, color);
+		}
 		//cv::putText(image, strings[count], Point(skip, skip + count * skip), CV_FONT_HERSHEY_COMPLEX_SMALL, 1.0, color, 1);
 
+		count_page++;
 		count++;
 	}
 }

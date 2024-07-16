@@ -31,6 +31,9 @@
     <Filter Include="ソース ファイル\bench">
       <UniqueIdentifier>{644d246a-9fde-4912-95cd-872eade2d98d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\test\stereo\multiscalefilter">
+      <UniqueIdentifier>{f6f7c7f5-06e7-4e62-a732-dffd156279f0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -159,9 +162,6 @@
     <ClCompile Include="guiPixelizationTest.cpp">
       <Filter>ソース ファイル\test\imgproc</Filter>
     </ClCompile>
-    <ClCompile Include="multiScaleFilterTest.cpp">
-      <Filter>ソース ファイル\test\filter</Filter>
-    </ClCompile>
     <ClCompile Include="guiEdgePreservingFilterOpenCV.cpp">
       <Filter>ソース ファイル\test\filter</Filter>
     </ClCompile>
@@ -185,6 +185,15 @@
     </ClCompile>
     <ClCompile Include="benchStream.cpp">
       <Filter>ソース ファイル\bench</Filter>
+    </ClCompile>
+    <ClCompile Include="testInpaint.cpp">
+      <Filter>ソース ファイル\test\imgproc</Filter>
+    </ClCompile>
+    <ClCompile Include="guiUnnormalizedBilateralFilter.cpp">
+      <Filter>ソース ファイル\test\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="multiScaleFilterTest.cpp">
+      <Filter>ソース ファイル\test\stereo\multiscalefilter</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

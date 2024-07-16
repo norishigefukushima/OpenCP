@@ -1,10 +1,17 @@
 #include "highDimensionalGaussianFilter.hpp"
-
+#include "inlineCVFunctions.hpp"
+#include "inlineSIMDFunctions.hpp"
+#include "tiling.hpp"
+#include "patchPCA.hpp"
+#include "color.hpp"
+#include "Plot.hpp"//RGB histogram
+#include "imshowExtension.hpp"//imshowScale
 using namespace std;
 using namespace cv;
 
 namespace cp
 {
+#pragma region highDimensionalGaussianFilter
 	inline double get_l2norm_maxval(const int channel)
 	{
 		return sqrt(1024 * 1024 * channel);
@@ -2150,4 +2157,510 @@ namespace cp
 			}
 		}
 	}
+#pragma endregion
+
+#pragma region TileHDGF
+	TileHDGF::TileHDGF(cv::Size div_) :
+		thread_max(omp_get_max_threads()), div(div_)
+	{
+		;
+	}
+
+	TileHDGF::~TileHDGF()
+	{
+		;
+	}
+
+
+	void TileHDGF::nlmFilter(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dst, double sigma_space, double sigma_range, const int patch_r, const int reduced_dim, const int pca_method, double truncateBoundary, const int borderType)
+	{
+		channels = src.channels();
+		guide_channels = guide.channels();
+
+		if (dst.empty() || dst.size() != src.size()) dst.create(src.size(), CV_MAKETYPE(CV_32F, src.channels()));
+
+		const int vecsize = sizeof(__m256) / sizeof(float);//8
+
+		int d = 2 * (int)(ceil(sigma_space * 3.0)) + 1;
+		Size ksize = Size(d, d);
+		if (div.area() == 1)
+		{
+			cp::highDimensionalGaussianFilter(src, guide, dst, ksize, (float)sigma_range, (float)sigma_space, borderType);
+			tileSize = src.size();
+		}
+		else
+		{
+			int r = (int)ceil(truncateBoundary * sigma_space);
+			const int R = get_simd_ceil(r, 8);
+			tileSize = cp::getTileAlignSize(src.size(), div, r, vecsize, vecsize);
+			divImageSize = cv::Size(src.cols / div.width, src.rows / div.height);
+
+			if (split_dst.size() != channels) split_dst.resize(channels);
+
+			for (int c = 0; c < channels; c++)
+			{
+				split_dst[c].create(tileSize, CV_32FC1);
+			}
+
+			if (subImageInput.empty())
+			{
+				subImageInput.resize(thread_max);
+				subImageGuide.resize(thread_max);
+				subImageOutput.resize(thread_max);
+				for (int n = 0; n < thread_max; n++)
+				{
+					subImageInput[n].resize(channels);
+					subImageGuide[n].resize(guide_channels);
+					subImageOutput[n].create(tileSize, CV_MAKETYPE(CV_32F, channels));
+				}
+			}
+			else
+			{
+				if (subImageGuide.empty()) subImageGuide.resize(thread_max);
+				if (subImageGuide[0].size() != guide_channels)
+				{
+					for (int n = 0; n < thread_max; n++)
+					{
+						subImageGuide[n].resize(guide_channels);
+					}
+				}
+			}
+
+
+			if (src.channels() != 3)split(src, srcSplit);
+			if (guide.channels() != 3)split(guide, guideSplit);
+
+#pragma omp parallel for schedule(static)
+			for (int n = 0; n < div.area(); n++)
+			{
+				const int thread_num = omp_get_thread_num();
+				const cv::Point idx = cv::Point(n % div.width, n / div.width);
+
+
+				if (src.channels() == 3)
+				{
+					cp::cropSplitTileAlign(src, subImageInput[thread_num], div, idx, r, borderType, vecsize, vecsize, vecsize, vecsize);
+				}
+				else
+				{
+					for (int c = 0; c < srcSplit.size(); c++)
+					{
+						cp::cropTileAlign(srcSplit[c], subImageInput[thread_num][c], div, idx, r, borderType, vecsize, vecsize, vecsize, vecsize);
+					}
+				}
+				if (guide.channels() == 3)
+				{
+					cp::cropSplitTileAlign(guide, subImageGuide[thread_num], div, idx, r, borderType, vecsize, vecsize, vecsize, vecsize);
+				}
+				else
+				{
+					for (int c = 0; c < guideSplit.size(); c++)
+					{
+						cp::cropTileAlign(guideSplit[c], subImageGuide[thread_num][c], div, idx, r, borderType, vecsize, vecsize, vecsize, vecsize);
+					}
+				}
+				Mat s, g;
+				merge(subImageInput[thread_num], s);
+				std::vector<Mat> buff;
+				cp::DRIM2COL(subImageGuide[thread_num], buff, patch_r, reduced_dim, borderType, pca_method);
+
+				merge(buff, g);
+				cp::highDimensionalGaussianFilter(s, g, subImageOutput[thread_num], ksize, (float)sigma_range, (float)sigma_space, borderType);
+				cp::pasteTileAlign(subImageOutput[thread_num], dst, div, idx, r, 8, 8);
+			}
+		}
+	}
+
+	double getError(Mat& rgb, Mat& gray)
+	{
+		double ret = 0.0;
+		float* s = rgb.ptr<float>();
+		float* g = gray.ptr<float>();
+		for (int i = 0; i < rgb.size().area(); i++)
+		{
+			double dist
+				= (s[3 * i + 0] - g[i]) * (s[3 * i + 0] - g[i])
+				+ (s[3 * i + 1] - g[i]) * (s[3 * i + 1] - g[i])
+				+ (s[3 * i + 2] - g[i]) * (s[3 * i + 2] - g[i]);
+			ret += sqrt(dist);
+		}
+		return ret / rgb.size().area();
+	}
+
+	cp::RGBHistogram rgbh;
+	void TileHDGF::cvtgrayFilter(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dst, double sigma_space, double sigma_range, const int method, double truncateBoundary)
+	{
+		static int bb = 50; createTrackbar("b", "", &bb, 300);
+		static int gg = 50; createTrackbar("g", "", &gg, 300);
+		static int rr = 50; createTrackbar("r", "", &rr, 300);
+		static int index = 0; createTrackbar("index", "", &index, div.area() - 1);
+		channels = src.channels();
+		guide_channels = guide.channels();
+
+		if (dst.empty() || dst.size() != src.size()) dst.create(src.size(), CV_MAKETYPE(CV_32F, src.channels()));
+
+		const int borderType = cv::BORDER_REFLECT;
+		const int vecsize = sizeof(__m256) / sizeof(float);//8
+
+		int d = 2 * (int)(ceil(sigma_space * 3.0)) + 1;
+		Size ksize = Size(d, d);
+		if (div.area() == 1)
+		{
+			cp::highDimensionalGaussianFilter(src, guide, dst, ksize, (float)sigma_range, (float)sigma_space, borderType);
+			tileSize = src.size();
+		}
+		else
+		{
+			int r = (int)ceil(truncateBoundary * sigma_space);
+			const int R = get_simd_ceil(r, 8);
+			tileSize = cp::getTileAlignSize(src.size(), div, r, vecsize, vecsize);
+			divImageSize = cv::Size(src.cols / div.width, src.rows / div.height);
+
+			if (split_dst.size() != channels) split_dst.resize(channels);
+
+			for (int c = 0; c < channels; c++)
+			{
+				split_dst[c].create(tileSize, CV_32FC1);
+			}
+
+			if (subImageInput.empty())
+			{
+				subImageInput.resize(thread_max);
+				subImageGuide.resize(thread_max);
+				subImageOutput.resize(thread_max);
+				for (int n = 0; n < thread_max; n++)
+				{
+					subImageInput[n].resize(channels);
+					subImageGuide[n].resize(guide_channels);
+					subImageOutput[n].create(tileSize, CV_MAKETYPE(CV_32F, channels));
+				}
+			}
+			else
+			{
+				if (subImageGuide.empty()) subImageGuide.resize(thread_max);
+				if (subImageGuide[0].size() != guide_channels)
+				{
+					for (int n = 0; n < thread_max; n++)
+					{
+						subImageGuide[n].resize(guide_channels);
+					}
+				}
+			}
+
+			std::vector<cv::Mat> srcSplit;
+			std::vector<cv::Mat> guideSplit;
+			if (src.channels() != 3)split(src, srcSplit);
+			if (guide.channels() != 3)split(guide, guideSplit);
+
+			//#pragma omp parallel for schedule(static)
+			for (int n = 0; n < div.area(); n++)
+			{
+				const int thread_num = omp_get_thread_num();
+				const cv::Point idx = cv::Point(n % div.width, n / div.width);
+
+				if (src.channels() == 3)
+				{
+					cp::cropSplitTileAlign(src, subImageInput[thread_num], div, idx, r, borderType, vecsize, vecsize, vecsize, vecsize);
+				}
+				else
+				{
+					for (int c = 0; c < srcSplit.size(); c++)
+					{
+						cp::cropTileAlign(srcSplit[c], subImageInput[thread_num][c], div, idx, r, borderType, vecsize, vecsize, vecsize, vecsize);
+					}
+				}
+				if (guide.channels() == 3)
+				{
+					cp::cropSplitTileAlign(guide, subImageGuide[thread_num], div, idx, r, borderType, vecsize, vecsize, vecsize, vecsize);
+				}
+				else
+				{
+					for (int c = 0; c < guideSplit.size(); c++)
+					{
+						cp::cropTileAlign(guideSplit[c], subImageGuide[thread_num][c], div, idx, r, borderType, vecsize, vecsize, vecsize, vecsize);
+					}
+				}
+				Mat s, mergedGuide, mergedGuideReduction;
+				merge(subImageGuide[thread_num], mergedGuide);
+				merge(subImageInput[thread_num], s);
+				if (method == 0)
+				{
+					cp::cvtColorAverageGray(mergedGuide, mergedGuideReduction, true);
+				}
+				else
+				{
+					namedWindow("3DPlot");
+					moveWindow("3DPlot", 800, 200);
+					Scalar a = Scalar(bb, gg, rr, 0);//mean(g);
+					Mat evec, eval, mean, temp;
+					cp::cvtColorPCA(mergedGuide, temp, 1, evec, eval, mean);
+					Scalar ev0 = Scalar(evec.at<double>(0, 0), evec.at<double>(0, 1), evec.at<double>(0, 2), 0);
+					Scalar ev1 = Scalar(evec.at<double>(1, 0), evec.at<double>(1, 1), evec.at<double>(1, 2), 0);
+					a = eval.at<double>(0) * ev0 + eval.at<double>(1) * ev1;
+					Scalar b = Scalar(255.0, 255.0, 255.0, 255.0);
+					Scalar m, v;
+					meanStdDev(mergedGuide, m, v);
+
+					//double al = 0.95;
+					//a = (al * a + (1.0 - al) * b);
+
+
+					Mat mat(1, 3, CV_32F);
+					double norm = 1.f / sqrt(a.val[0] * a.val[0] + a.val[1] * a.val[1] + a.val[2] * a.val[2]);
+					mat.at<float>(0) = float(a.val[0] * norm);
+					mat.at<float>(1) = float(a.val[1] * norm);
+					mat.at<float>(2) = float(a.val[2] * norm);
+					transform(mergedGuide, mergedGuideReduction, mat);
+					if (n == index)
+					{
+
+						Mat evec, eval, mean, temp;
+						cp::cvtColorPCA(mergedGuide, temp, 1, evec, eval, mean);
+						std::cout << evec << std::endl;
+						std::cout << eval << std::endl;
+						//std::system("cls");
+						//std::cout << "index:" << idx.y * div.width + idx.x << std::endl;
+						//std::cout << getError(g, gr) << std::endl;
+						//std::cout << mat << std::endl;
+						//std::cout << "cave" << m << std::endl;
+						//std::cout << "cvar" << v << std::endl;
+						//std::cout << "xxxx" << v * sqrt(3) / (v.val[0] + v.val[1] + v.val[2]) << std::endl;
+						//meanStdDev(mergedGuideReduction, m, v);
+						//std::cout << "gave" << m << std::endl;
+						//std::cout << "gvar" << m << std::endl << std::endl;
+						//rgbh.push_back(g);
+
+#pragma omp critical
+						{
+							//rgbh.push_back_line(0, 0, 0, mat.at<float>(0) * 255*sqrt(3.0), mat.at<float>(1) * 255 * sqrt(3.0), mat.at<float>(2) * 255 * sqrt(3.0));
+							Point3f s = Point3f((float)mean.at<double>(0), (float)mean.at<double>(1), (float)mean.at<double>(2));
+							Point3f d = Point3f(mat.at<float>(0), mat.at<float>(1), mat.at<float>(2)) * 100.f * sqrt(3.f);
+							rgbh.push_back_line(s - d, s + d);
+							cp::imshowScale("a", mergedGuide);
+							rgbh.plot(mergedGuide, false, "3DPlot");
+							rgbh.clear();
+						}
+					}
+
+				}
+				cp::highDimensionalGaussianFilter(s, mergedGuideReduction, subImageOutput[thread_num], ksize, (float)sigma_range, (float)sigma_space, borderType);
+				cp::pasteTileAlign(subImageOutput[thread_num], dst, div, idx, r, 8, 8);
+			}
+		}
+	}
+
+	void TileHDGF::pcaFilter(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dst, double sigma_space, double sigma_range, const int reduced_dim, double truncateBoundary)
+	{
+		channels = src.channels();
+		guide_channels = guide.channels();
+
+		if (dst.empty() || dst.size() != src.size()) dst.create(src.size(), CV_MAKETYPE(CV_32F, src.channels()));
+
+		const int borderType = cv::BORDER_REFLECT;
+		const int vecsize = sizeof(__m256) / sizeof(float);//8
+
+		int d = 2 * (int)(ceil(sigma_space * 3.0)) + 1;
+		Size ksize = Size(d, d);
+		if (div.area() == 1)
+		{
+			cp::highDimensionalGaussianFilter(src, guide, dst, ksize, (float)sigma_range, (float)sigma_space, borderType);
+			tileSize = src.size();
+		}
+		else
+		{
+			int r = (int)ceil(truncateBoundary * sigma_space);
+			const int R = get_simd_ceil(r, 8);
+			tileSize = cp::getTileAlignSize(src.size(), div, r, vecsize, vecsize);
+			divImageSize = cv::Size(src.cols / div.width, src.rows / div.height);
+
+			if (split_dst.size() != channels) split_dst.resize(channels);
+
+			for (int c = 0; c < channels; c++)
+			{
+				split_dst[c].create(tileSize, CV_32FC1);
+			}
+
+			if (subImageInput.empty())
+			{
+				subImageInput.resize(thread_max);
+				subImageGuide.resize(thread_max);
+				subImageOutput.resize(thread_max);
+				for (int n = 0; n < thread_max; n++)
+				{
+					subImageInput[n].resize(channels);
+					subImageGuide[n].resize(guide_channels);
+					subImageOutput[n].create(tileSize, CV_MAKETYPE(CV_32F, channels));
+				}
+			}
+			else
+			{
+				if (subImageGuide.empty()) subImageGuide.resize(thread_max);
+				if (subImageGuide[0].size() != guide_channels)
+				{
+					for (int n = 0; n < thread_max; n++)
+					{
+						subImageGuide[n].resize(guide_channels);
+					}
+				}
+			}
+
+			std::vector<cv::Mat> srcSplit;
+			std::vector<cv::Mat> guideSplit;
+			if (src.channels() != 3)split(src, srcSplit);
+			if (guide.channels() != 3)split(guide, guideSplit);
+
+#pragma omp parallel for schedule(static)
+			for (int n = 0; n < div.area(); n++)
+			{
+				const int thread_num = omp_get_thread_num();
+				const cv::Point idx = cv::Point(n % div.width, n / div.width);
+
+
+				if (src.channels() == 3)
+				{
+					cp::cropSplitTileAlign(src, subImageInput[thread_num], div, idx, r, borderType, vecsize, vecsize, vecsize, vecsize);
+				}
+				else
+				{
+					for (int c = 0; c < srcSplit.size(); c++)
+					{
+						cp::cropTileAlign(srcSplit[c], subImageInput[thread_num][c], div, idx, r, borderType, vecsize, vecsize, vecsize, vecsize);
+					}
+				}
+				if (guide.channels() == 3)
+				{
+					cp::cropSplitTileAlign(guide, subImageGuide[thread_num], div, idx, r, borderType, vecsize, vecsize, vecsize, vecsize);
+				}
+				else
+				{
+					for (int c = 0; c < guideSplit.size(); c++)
+					{
+						cp::cropTileAlign(guideSplit[c], subImageGuide[thread_num][c], div, idx, r, borderType, vecsize, vecsize, vecsize, vecsize);
+					}
+				}
+				Mat s, g;
+				std::vector<Mat> buff;
+				cp::cvtColorPCA(subImageGuide[thread_num], buff, reduced_dim);
+				merge(subImageInput[thread_num], s);
+				merge(buff, g);
+				cp::highDimensionalGaussianFilter(s, g, subImageOutput[thread_num], ksize, (float)sigma_range, (float)sigma_space, borderType);
+				cp::pasteTileAlign(subImageOutput[thread_num], dst, div, idx, r, 8, 8);
+			}
+		}
+	}
+
+	void TileHDGF::filter(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dst, double sigma_space, double sigma_range, double truncateBoundary)
+	{
+		channels = src.channels();
+		guide_channels = guide.channels();
+
+		if (dst.empty() || dst.size() != src.size()) dst.create(src.size(), CV_MAKETYPE(CV_32F, src.channels()));
+
+		const int borderType = cv::BORDER_REFLECT;
+		const int vecsize = sizeof(__m256) / sizeof(float);//8
+
+		int d = 2 * (int)(ceil(sigma_space * 3.0)) + 1;
+		Size ksize = Size(d, d);
+		if (div.area() == 1)
+		{
+			cp::highDimensionalGaussianFilter(src, guide, dst, ksize, (float)sigma_range, (float)sigma_space, borderType);
+			tileSize = src.size();
+		}
+		else
+		{
+			int r = (int)ceil(truncateBoundary * sigma_space);
+			const int R = get_simd_ceil(r, 8);
+			tileSize = cp::getTileAlignSize(src.size(), div, r, vecsize, vecsize);
+			divImageSize = cv::Size(src.cols / div.width, src.rows / div.height);
+
+			if (split_dst.size() != channels) split_dst.resize(channels);
+
+			for (int c = 0; c < channels; c++)
+			{
+				split_dst[c].create(tileSize, CV_32FC1);
+			}
+
+			if (subImageInput.empty())
+			{
+				subImageInput.resize(thread_max);
+				subImageGuide.resize(thread_max);
+				subImageOutput.resize(thread_max);
+				for (int n = 0; n < thread_max; n++)
+				{
+					subImageInput[n].resize(channels);
+					subImageGuide[n].resize(guide_channels);
+					subImageOutput[n].create(tileSize, CV_MAKETYPE(CV_32F, channels));
+				}
+			}
+			else
+			{
+				if (subImageGuide.empty()) subImageGuide.resize(thread_max);
+				if (subImageGuide[0].size() != guide_channels)
+				{
+					for (int n = 0; n < thread_max; n++)
+					{
+						subImageGuide[n].resize(guide_channels);
+					}
+				}
+			}
+
+			std::vector<cv::Mat> srcSplit;
+			std::vector<cv::Mat> guideSplit;
+			if (src.channels() != 3)split(src, srcSplit);
+			if (guide.channels() != 3)split(guide, guideSplit);
+
+#pragma omp parallel for schedule(static)
+			for (int n = 0; n < div.area(); n++)
+			{
+				const int thread_num = omp_get_thread_num();
+				const cv::Point idx = cv::Point(n % div.width, n / div.width);
+
+
+				if (src.channels() == 3)
+				{
+					cp::cropSplitTileAlign(src, subImageInput[thread_num], div, idx, r, borderType, vecsize, vecsize, vecsize, vecsize);
+				}
+				else
+				{
+					for (int c = 0; c < srcSplit.size(); c++)
+					{
+						cp::cropTileAlign(srcSplit[c], subImageInput[thread_num][c], div, idx, r, borderType, vecsize, vecsize, vecsize, vecsize);
+					}
+				}
+				if (guide.channels() == 3)
+				{
+					cp::cropSplitTileAlign(guide, subImageGuide[thread_num], div, idx, r, borderType, vecsize, vecsize, vecsize, vecsize);
+				}
+				else
+				{
+					for (int c = 0; c < guideSplit.size(); c++)
+					{
+						cp::cropTileAlign(guideSplit[c], subImageGuide[thread_num][c], div, idx, r, borderType, vecsize, vecsize, vecsize, vecsize);
+					}
+				}
+				Mat s, g;
+				merge(subImageInput[thread_num], s);
+				merge(subImageGuide[thread_num], g);
+				cp::highDimensionalGaussianFilter(s, g, subImageOutput[thread_num], ksize, (float)sigma_range, (float)sigma_space, borderType);
+				cp::pasteTileAlign(subImageOutput[thread_num], dst, div, idx, r, 8, 8);
+			}
+		}
+	}
+
+
+	cv::Size TileHDGF::getTileSize()
+	{
+		return tileSize;
+	}
+
+	void TileHDGF::getTileInfo()
+	{
+		print_debug(div);
+		print_debug(divImageSize);
+		print_debug(tileSize);
+		int borderLength = (tileSize.width - divImageSize.width) / 2;
+		print_debug(borderLength);
+
+	}
+#pragma endregion
 }

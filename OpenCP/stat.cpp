@@ -57,6 +57,29 @@ namespace cp
 		return getSum() / (double)getSize();
 	}
 
+	void  Stat::setTrimRate(double rate)
+	{
+		this->trimRate = rate;
+	}
+
+	double Stat::getTrimMean()
+	{
+		if (getSize() == 0) return 0.0;
+		vector<double> v;
+		cv::sort(data, v, cv::SORT_ASCENDING);
+
+		int end = getSize() * trimRate;
+		int start = getSize() * (1.0 - trimRate);
+		const int size = end - start;
+		double sum = 0.0;
+		for (int i = start; i < end; i++)
+		{
+			sum += data[i];
+		}
+
+		return sum / (double)size;
+	}
+
 	double Stat::getVar()
 	{
 		if (getSize() == 0)return 0.0;
@@ -122,7 +145,17 @@ namespace cp
 	{
 		double min = getMin();
 		double max = getMax();
-		const int div = ceil((max - min) / step);
+		const int div = (int)ceil((max - min) / step);
+		drawDistribution(wname, div, min, max);
+	}
+
+	void Stat::drawDistributionSigmaClip(string wname, const int div, const float sigmaclip)
+	{
+		const double ave = getMean();
+		const double std = getStd();
+		double domain = std * sigmaclip;
+		const double min = ave - domain;
+		const double max = ave + domain;
 		drawDistribution(wname, div, min, max);
 	}
 
@@ -130,10 +163,10 @@ namespace cp
 	{
 		const double ave = getMean();
 		const double std = getStd();
-		double domain = ceil(std * sigma / step) * step;
+		double domain = (int)ceil(std * sigma / step) * step;
 		const double min = ave - domain;
 		const double max = ave + domain;
-		const int div = 2.0 * domain / step+1;
+		const int div = int(2.0 * domain / step) + 1;
 		drawDistribution(wname, div, min, max);
 	}
 
@@ -207,8 +240,8 @@ namespace cp
 		resize(draw_, draw, Size(div * lw, 256), 0, 0, INTER_NEAREST);
 		for (int i = 0; i < div - 1; i++)
 		{
-			const int x = i * lw + lw * 0.5;
-			const int xp = (i + 1) * lw + lw * 0.5;
+			const int x = i * lw + int(lw * 0.5);
+			const int xp = (i + 1) * lw + int(lw * 0.5);
 			const double v = (histval[i] + 0) - histval[meanv];
 			const double vp = (histval[i + 1] - histval[meanv]);
 			int y = draw.rows - 1 - cvRound((draw.rows - 1) * exp(v * v / (-2.0 * ststd * ststd)));

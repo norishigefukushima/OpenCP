@@ -18,42 +18,42 @@ namespace cp
 		GUIDED_SEP_VHI_SHARE,
 		//--- Merge Algorithm --- 
 	   // SSAT	
-	   GUIDED_MERGE_AVX,
-	   GUIDED_MERGE_TRANSPOSE_AVX,
-	   GUIDED_MERGE_TRANSPOSE_INVERSE_AVX,
-	   // SSAT	(cov reuse)	
-	   GUIDED_MERGE_SHARE_AVX,
-	   GUIDED_MERGE_SHARE_EX_AVX,
-	   GUIDED_MERGE_SHARE_TRANSPOSE_AVX,
-	   GUIDED_MERGE_SHARE_TRANSPOSE_INVERSE_AVX,
+		GUIDED_MERGE_AVX,
+		GUIDED_MERGE_TRANSPOSE_AVX,
+		GUIDED_MERGE_TRANSPOSE_INVERSE_AVX,
+		// SSAT	(cov reuse)	
+		GUIDED_MERGE_SHARE_AVX,
+		GUIDED_MERGE_SHARE_EX_AVX,
+		GUIDED_MERGE_SHARE_TRANSPOSE_AVX,
+		GUIDED_MERGE_SHARE_TRANSPOSE_INVERSE_AVX,
 
-	   GUIDED_MERGE,
-	   GUIDED_MERGE_SSE,
-	   GUIDED_MERGE_TRANSPOSE,
-	   GUIDED_MERGE_TRANSPOSE_SSE,
-	   GUIDED_MERGE_TRANSPOSE_INVERSE,
-	   GUIDED_MERGE_TRANSPOSE_INVERSE_SSE,
-	   GUIDED_MERGE_SHARE,
-	   GUIDED_MERGE_SHARE_SSE,
-	   GUIDED_MERGE_SHARE_EX,
-	   GUIDED_MERGE_SHARE_EX_SSE,
-	   GUIDED_MERGE_SHARE_TRANSPOSE,
-	   GUIDED_MERGE_SHARE_TRANSPOSE_SSE,
-	   GUIDED_MERGE_SHARE_TRANSPOSE_INVERSE,
-	   GUIDED_MERGE_SHARE_TRANSPOSE_INVERSE_SSE,
-	   // SSAT (BGR non-split)
-	   GUIDED_NONSPLIT,
-	   GUIDED_NONSPLIT_SSE,
-	   GUIDED_NONSPLIT_AVX,
-	   // OP-SAT
-	   GUIDED_MERGE_ONEPASS,
-	   GUIDED_MERGE_ONEPASS_2div,
-	   GUIDED_MERGE_ONEPASS_SIMD,
+		GUIDED_MERGE,
+		GUIDED_MERGE_SSE,
+		GUIDED_MERGE_TRANSPOSE,
+		GUIDED_MERGE_TRANSPOSE_SSE,
+		GUIDED_MERGE_TRANSPOSE_INVERSE,
+		GUIDED_MERGE_TRANSPOSE_INVERSE_SSE,
+		GUIDED_MERGE_SHARE,
+		GUIDED_MERGE_SHARE_SSE,
+		GUIDED_MERGE_SHARE_EX,
+		GUIDED_MERGE_SHARE_EX_SSE,
+		GUIDED_MERGE_SHARE_TRANSPOSE,
+		GUIDED_MERGE_SHARE_TRANSPOSE_SSE,
+		GUIDED_MERGE_SHARE_TRANSPOSE_INVERSE,
+		GUIDED_MERGE_SHARE_TRANSPOSE_INVERSE_SSE,
+		// SSAT (BGR non-split)
+		GUIDED_NONSPLIT,
+		GUIDED_NONSPLIT_SSE,
+		GUIDED_NONSPLIT_AVX,
+		// OP-SAT
+		GUIDED_MERGE_ONEPASS,
+		GUIDED_MERGE_ONEPASS_2div,
+		GUIDED_MERGE_ONEPASS_SIMD,
 
-	   // --- Fast Guided Filter --- 
-	   GUIDED_MERGE_ONEPASS_FAST,
+		// --- Fast Guided Filter --- 
+		GUIDED_MERGE_ONEPASS_FAST,
 
-	   NumGuidedTypes	// num of guidedTypes. must be last element
+		NumGuidedTypes	// num of guidedTypes. must be last element
 	};
 	/*
 	enum GuidedTypes
@@ -210,6 +210,11 @@ namespace cp
 		void upsample(cv::Mat& _src, cv::Mat& _guide_low, cv::Mat& _guide, cv::Mat& _dest, int _r, float _eps);
 	};
 
+	//spatial filtering is Gaussian filter
+	void CP_EXPORT guidedImageGaussianFilterGray(const cv::Mat& src, cv::Mat& dest, const int radius, const float sigma, const float eps);
+	void CP_EXPORT guidedImageGaussianFilterGrayEnhance(const cv::Mat& src, cv::Mat& dest, const int radius, const float sigma, const float eps, const float m);
+	void CP_EXPORT localEdgePreservingFilter(const cv::Mat& src, cv::Mat& dest, const int radius, const float eps);
+	void CP_EXPORT localEdgePreservingGaussianFilter(const cv::Mat& src, cv::Mat& dest, const int radius, const float sigma, const float eps, float alpha = 0.1f, float beta = 1.f);
 
 	void CP_EXPORT guidedImageFilter(cv::InputArray src, cv::InputArray guide, cv::OutputArray dest, const int r, const float eps, const GuidedTypes guidedType = GuidedTypes::GUIDED_SEP_VHI, const BoxFilterMethod boxType = BoxFilterMethod::OPENCV, const ParallelTypes parallelType = ParallelTypes::OMP);
 

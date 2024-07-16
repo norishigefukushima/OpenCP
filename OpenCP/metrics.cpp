@@ -1,10 +1,12 @@
 #include "metrics.hpp"
 #include "inlineMathFunctions.hpp"
 #include "inlineSIMDFunctions.hpp"
+#include "onelineCVFunctions.hpp"
 #include "arithmetic.hpp"
 #include "updateCheck.hpp"
 #include "color.hpp"
 #include "debugcp.hpp"
+#include "statistic.hpp"
 
 using namespace std;
 using namespace cv;
@@ -253,7 +255,7 @@ namespace cp
 			}
 			case PSNR_Y_INTEGER:
 			{
-				cp::cvtColorIntegerY(src, dest); 
+				cp::cvtColorIntegerY(src, dest);
 				temp.convertTo(dest, CV_64F); break;
 			}
 			case PSNR_B:
@@ -1051,4 +1053,526 @@ namespace cp
 		return ret;
 	}
 
+#pragma region GMSD
+	static void gradientSquareEdge32F(InputArray ref, OutputArray dst)
+	{
+		dst.create(ref.size(), ref.type());
+
+		Mat border;
+		copyMakeBorder(ref, border, 1, 1, 1, 1, BORDER_DEFAULT);
+		Mat s = ref.getMat();
+		Mat d = dst.getMat();
+		const int step = s.size().width;
+		const int simdwidth = get_simd_floor(step, 8);
+		__m256 norm = _mm256_set1_ps(1.f / 9.f);
+		for (int j = 0; j < ref.size().height; j++)
+		{
+			float* s = border.ptr<float>(j);
+			float* dst = d.ptr<float>(j);
+			for (int i = 0; i < simdwidth; i += 8)
+			{
+				__m256 mx = _mm256_sub_ps(_mm256_loadu_ps(s + i + 0), _mm256_loadu_ps(s + i + 2 + 2 * step));
+				__m256 my = _mm256_sub_ps(_mm256_loadu_ps(s + i + 2), _mm256_loadu_ps(s + i + 0 + 2 * step));
+				//__m256 mx = _mm256_sub_ps(_mm256_loadu_ps(s + i + step), _mm256_loadu_ps(s + i + 2 + step));
+				//__m256 my = _mm256_sub_ps(_mm256_loadu_ps(s + i + 1), _mm256_loadu_ps(s + i + 1 +2*step));
+				_mm256_storeu_ps(dst + i, _mm256_mul_ps(norm, _mm256_fmadd_ps(mx, mx, _mm256_mul_ps(my, my))));
+			}
+			for (int i = simdwidth; i < step; i++)
+			{
+				float x = (s[i + step] - s[i + 2 + step]);
+				float y = (s[i + 1] - s[i + 1 + 2 * step]);
+				dst[i] = x * x + y * y;
+			}
+		}
+	}
+
+	void gradientSquarePrewitt32F(InputArray ref, OutputArray dst)
+	{
+		dst.create(ref.size(), ref.type());
+
+		Mat border;
+		copyMakeBorder(ref, border, 1, 1, 1, 1, BORDER_DEFAULT);
+		Mat s = ref.getMat();
+		Mat d = dst.getMat();
+		const int step = s.size().width;
+		const int simdwidth = get_simd_floor(step, 8);
+		const float normal = 1.f / 9.f;
+		__m256 mnormal = _mm256_set1_ps(normal);
+		for (int j = 0; j < ref.size().height; j++)
+		{
+			float* s = border.ptr<float>(j);
+			float* dst = d.ptr<float>(j);
+			for (int i = 0; i < simdwidth; i += 8)
+			{
+				__m256 mx = _mm256_add_ps(_mm256_add_ps(_mm256_loadu_ps(s + i), _mm256_loadu_ps(s + i + step)), _mm256_loadu_ps(s + i + 2 * step));
+				mx = _mm256_sub_ps(mx, _mm256_add_ps(_mm256_add_ps(_mm256_loadu_ps(s + i + 2), _mm256_loadu_ps(s + i + 2 + step)), _mm256_loadu_ps(s + i + 2 + 2 * step)));
+				__m256 my = _mm256_add_ps(_mm256_add_ps(_mm256_loadu_ps(s + i), _mm256_loadu_ps(s + i + 1)), _mm256_loadu_ps(s + i + 2));
+				my = _mm256_sub_ps(my, _mm256_add_ps(_mm256_add_ps(_mm256_loadu_ps(s + i + 2 * step), _mm256_loadu_ps(s + i + 1 + 2 * step)), _mm256_loadu_ps(s + i + 2 + 2 * step)));
+				_mm256_storeu_ps(dst + i, _mm256_mul_ps(mnormal, _mm256_fmadd_ps(mx, mx, _mm256_mul_ps(my, my))));
+			}
+			for (int i = simdwidth; i < step; i++)
+			{
+				float x = (s[i] + s[i + step] + s[i + 2 * step] - s[i + 2] - s[i + 2 + step] - s[i + 2 + 2 * step]);
+				float y = (s[i] + s[i + 1] + s[i + 2] - s[i + 2 * step] - s[i + 1 + 2 * step] - s[i + 2 + 2 * step]);
+				dst[i] = (x * x + y * y) * normal;
+			}
+		}
+	}
+
+	void gradientSquareRootPrewitt32F(InputArray ref, OutputArray dst)
+	{
+		dst.create(ref.size(), ref.type());
+
+		Mat border;
+		copyMakeBorder(ref, border, 1, 1, 1, 1, BORDER_DEFAULT);
+		Mat s = ref.getMat();
+		Mat d = dst.getMat();
+		const int step = s.size().width;
+		const int simdwidth = get_simd_floor(step, 8);
+		const float normal = 1.f / 9.f;
+		__m256 mnormal = _mm256_set1_ps(normal);
+		for (int j = 0; j < ref.size().height; j++)
+		{
+			float* s = border.ptr<float>(j);
+			float* dst = d.ptr<float>(j);
+			for (int i = 0; i < simdwidth; i += 8)
+			{
+				__m256 mx = _mm256_add_ps(_mm256_add_ps(_mm256_loadu_ps(s + i), _mm256_loadu_ps(s + i + step)), _mm256_loadu_ps(s + i + 2 * step));
+				mx = _mm256_sub_ps(mx, _mm256_add_ps(_mm256_add_ps(_mm256_loadu_ps(s + i + 2), _mm256_loadu_ps(s + i + 2 + step)), _mm256_loadu_ps(s + i + 2 + 2 * step)));
+				__m256 my = _mm256_add_ps(_mm256_add_ps(_mm256_loadu_ps(s + i), _mm256_loadu_ps(s + i + 1)), _mm256_loadu_ps(s + i + 2));
+				my = _mm256_sub_ps(my, _mm256_add_ps(_mm256_add_ps(_mm256_loadu_ps(s + i + 2 * step), _mm256_loadu_ps(s + i + 1 + 2 * step)), _mm256_loadu_ps(s + i + 2 + 2 * step)));
+				_mm256_storeu_ps(dst + i, _mm256_sqrt_ps(_mm256_mul_ps(mnormal, _mm256_fmadd_ps(mx, mx, _mm256_mul_ps(my, my)))));
+			}
+			for (int i = simdwidth; i < step; i++)
+			{
+				float x = (s[i] + s[i + step] + s[i + 2 * step] - s[i + 2] - s[i + 2 + step] - s[i + 2 + 2 * step]);
+				float y = (s[i] + s[i + 1] + s[i + 2] - s[i + 2 * step] - s[i + 1 + 2 * step] - s[i + 2 + 2 * step]);
+				dst[i] = sqrt((x * x + y * y) * normal);
+			}
+		}
+	}
+
+	template<typename T>
+	static void getGradient(InputArray ref, OutputArray dst)
+	{
+		dst.create(ref.size(), ref.type());
+
+		Mat border;
+		copyMakeBorder(ref, border, 1, 1, 1, 1, BORDER_DEFAULT);
+		Mat s = ref.getMat();
+		Mat d = dst.getMat();
+		const int step = s.size().width;
+
+		for (int j = 0; j < ref.size().height; j++)
+		{
+			T* s = border.ptr<T>(j);
+			for (int i = 0; i < ref.size().width; i++)
+			{
+				double x = (s[i] + s[i + step] + s[i + 2 * step] - s[i + 2] - s[i + 2 + step] - s[i + 2 + 2 * step]) / 3.0;
+				double y = (s[i] + s[i + 1] + s[i + 2] - s[i + 2 * step] - s[i + 1 + 2 * step] - s[i + 2 + 2 * step]) / 3.0;
+				T v = T(x * x + y * y);
+				d.at<T>(j, i) = v;
+			}
+		}
+	}
+
+	double stdpool(Mat& src)
+	{
+		const int N = src.size().area();
+		float* s = src.ptr<float>();
+		double x = 0.0;
+		double xx = 0.0;
+		for (int i = 0; i < N; i++)
+		{
+			x += s[i];
+			xx += s[i] * s[i];
+		}
+		return xx / N - (x / N) * (x / N);
+	}
+
+	double meanMinkowskiDistance(Mat& src)
+	{
+		return 0;
+	}
+
+	Mat GMSDMap(InputArray ref, InputArray src, const double c, const bool isDownsample)
+	{
+		const double alpha = 0.5;
+		const bool isUseAdditonalMasking = true;
+		//const bool isUseAdditonalMasking = false;
+
+		Mat gradientRef;
+		Mat gradientSrc;
+		Mat ref32 = cp::convert(ref, CV_32F);
+		Mat src32 = cp::convert(src, CV_32F);
+		if (isDownsample)
+		{
+			resize(ref32, ref32, Size(), 0.5, 0.5, INTER_AREA);
+			resize(src32, src32, Size(), 0.5, 0.5, INTER_AREA);
+		}
+		//getGradient<float>(ref32, gradientRef);
+		//getGradient<float>(src32, gradientSrc);
+		//gradientSquareEdge32F(ref32, gradientRef);
+		//gradientSquareEdge32F(src32, gradientSrc);
+		gradientSquarePrewitt32F(ref32, gradientRef);
+		gradientSquarePrewitt32F(src32, gradientSrc);
+		/*bilateralFilter(ref32, gradientRef, 5, 5, 2);
+		bilateralFilter(ref32, gradientSrc, 5, 5, 2);
+		subtract(gradientRef, ref32, gradientRef);
+		multiply(gradientRef, gradientRef, gradientRef);
+		subtract(gradientSrc, src32, gradientSrc);
+		multiply(gradientSrc, gradientSrc, gradientSrc);*/
+
+
+		const int size = src32.size().area();
+		float* r = gradientRef.ptr<float>();
+		float* s = gradientSrc.ptr<float>();
+		Mat qm(src32.size(), CV_32F);
+		float* dst = qm.ptr<float>();
+
+		if (isUseAdditonalMasking)
+		{
+			const int simdsize = get_simd_floor(size, 8);
+
+			const __m256 m2a = _mm256_set1_ps(2.f - alpha);
+			const __m256 ma = _mm256_set1_ps(-alpha);
+			const __m256 mc = _mm256_set1_ps(max(c, (double)FLT_MIN));
+			for (int i = 0; i < simdsize; i += 8)
+			{
+				const __m256 mr = _mm256_load_ps(r + i);
+				const __m256 ms = _mm256_load_ps(s + i);
+				const __m256 mv = _mm256_sqrt_ps(_mm256_mul_ps(mr, ms));
+				const __m256 mn = _mm256_fmadd_ps(m2a, mv, mc);
+				const __m256 md = _mm256_add_ps(_mm256_add_ps(mr, ms), _mm256_fmadd_ps(ma, mv, mc));
+				_mm256_store_ps(dst + i, _mm256_div_ps(mn, md));
+			}
+			for (int i = simdsize; i < size; i++)
+			{
+				const float v = sqrt(r[i] * s[i]);
+				float n = (2.f - alpha) * v + c;
+				float d = r[i] + s[i] - alpha * v + c;
+				dst[i] = n / d;
+			}
+		}
+		else
+		{
+			for (int i = 0; i < size; i++)
+			{
+				float n = 2.f * sqrt(r[i] * s[i]) + c;
+				float d = r[i] + s[i] + c;
+				dst[i] = n / d;
+			}
+		}
+		return qm;
+	}
+
+	double getGMSD(InputArray ref, InputArray src, const double c, const bool isDownsample)
+	{
+		CV_Assert(ref.channels() == src.channels());
+		const double alpha = 0.5;
+		const bool isUseAdditonalMasking = true;
+		//const bool isUseAdditonalMasking = false;
+
+		Mat gradientRef;
+		Mat gradientSrc;
+		Mat ref32;
+		Mat src32;
+		if (ref.channels() == 1)
+		{
+			ref32 = cp::convert(ref, CV_32F);
+			src32 = cp::convert(src, CV_32F);
+		}
+		else
+		{
+			Mat tmp;
+			cvtColor(ref, tmp, COLOR_BGR2GRAY);
+			ref32 = cp::convert(tmp, CV_32F).clone();
+			cvtColor(src, tmp, COLOR_BGR2GRAY);
+			src32 = cp::convert(tmp, CV_32F).clone();
+		}
+
+		if (isDownsample)
+		{
+			resize(ref32, ref32, Size(), 0.5, 0.5, INTER_AREA);
+			resize(src32, src32, Size(), 0.5, 0.5, INTER_AREA);
+		}
+		//getGradient<float>(ref32, gradientRef);
+		//getGradient<float>(src32, gradientSrc);
+		//gradientSquareEdge32F(ref32, gradientRef);
+		//gradientSquareEdge32F(src32, gradientSrc);
+		gradientSquarePrewitt32F(ref32, gradientRef);
+		gradientSquarePrewitt32F(src32, gradientSrc);
+		/*bilateralFilter(ref32, gradientRef, 5, 5, 2);
+		bilateralFilter(ref32, gradientSrc, 5, 5, 2);
+		subtract(gradientRef, ref32, gradientRef);
+		multiply(gradientRef, gradientRef, gradientRef);
+		subtract(gradientSrc, src32, gradientSrc);
+		multiply(gradientSrc, gradientSrc, gradientSrc);*/
+
+
+		const int size = src32.size().area();
+		float* r = gradientRef.ptr<float>();
+		float* s = gradientSrc.ptr<float>();
+		Mat qm(src32.size(), CV_32F);
+		float* dst = qm.ptr<float>();
+
+		if (isUseAdditonalMasking)
+		{
+			const int simdsize = get_simd_floor(size, 8);
+
+			const __m256 m2a = _mm256_set1_ps(2.f - alpha);
+			const __m256 ma = _mm256_set1_ps(-alpha);
+			const __m256 mc = _mm256_set1_ps(max(c, (double)FLT_MIN));
+			for (int i = 0; i < simdsize; i += 8)
+			{
+				const __m256 mr = _mm256_load_ps(r + i);
+				const __m256 ms = _mm256_load_ps(s + i);
+				const __m256 mv = _mm256_sqrt_ps(_mm256_mul_ps(mr, ms));
+				const __m256 mn = _mm256_fmadd_ps(m2a, mv, mc);
+				const __m256 md = _mm256_add_ps(_mm256_add_ps(mr, ms), _mm256_fmadd_ps(ma, mv, mc));
+				_mm256_store_ps(dst + i, _mm256_div_ps(mn, md));
+			}
+			for (int i = simdsize; i < size; i++)
+			{
+				const float v = sqrt(r[i] * s[i]);
+				float n = (2.f - alpha) * v + c;
+				float d = r[i] + s[i] - alpha * v + c;
+				dst[i] = n / d;
+			}
+		}
+		else
+		{
+			for (int i = 0; i < size; i++)
+			{
+				float n = 2.f * sqrt(r[i] * s[i]) + c;
+				float d = r[i] + s[i] + c;
+				dst[i] = n / d;
+			}
+		}
+		cv::Scalar result;
+		cv::meanStdDev(qm, cv::noArray(), result);
+		return result[0];
+	}
+
+	class GMSDclass
+	{
+		double getIndex(InputArray ref, InputArray src);
+	};
+
+	cv::Scalar GMSD2(InputArray ref, InputArray src, const double c)
+	{
+		const double alpha = 0.5;
+		const bool isUseAdditonalMasking = true;
+		//const bool isUseAdditonalMasking = false;
+
+		Mat gradientRef;
+		Mat gradientSrc;
+		Mat ref32 = cp::convert(ref, CV_32F);
+		Mat src32 = cp::convert(src, CV_32F);
+		//resize(ref32, ref32, Size(), 0.5, 0.5, INTER_AREA);
+		//resize(src32, src32, Size(), 0.5, 0.5, INTER_AREA);
+		//getGradient<float>(ref32, gradientRef);
+		//getGradient<float>(src32, gradientSrc);
+		gradientSquareEdge32F(ref32, gradientRef);
+		gradientSquareEdge32F(src32, gradientSrc);
+		//gradientSquarePrewitt32F(ref32, gradientRef);
+		//gradientSquarePrewitt32F(src32, gradientSrc);
+
+		const int size = src32.size().area();
+		float* r = gradientRef.ptr<float>();
+		float* s = gradientSrc.ptr<float>();
+		Mat qm(src32.size(), CV_32F);
+		float* dst = qm.ptr<float>();
+
+		if (isUseAdditonalMasking)
+		{
+			const int simdsize = get_simd_floor(size, 8);
+
+			const __m256 m2a = _mm256_set1_ps(2.f - alpha);
+			const __m256 ma = _mm256_set1_ps(-alpha);
+			const __m256 mc = _mm256_set1_ps(max(c, (double)FLT_MIN));
+			for (int i = 0; i < simdsize; i += 8)
+			{
+				const __m256 mr = _mm256_load_ps(r + i);
+				const __m256 ms = _mm256_load_ps(s + i);
+				const __m256 mv = _mm256_sqrt_ps(_mm256_mul_ps(mr, ms));
+				const __m256 mn = _mm256_fmadd_ps(m2a, mv, mc);
+				const __m256 md = _mm256_add_ps(_mm256_add_ps(mr, ms), _mm256_fmadd_ps(ma, mv, mc));
+				_mm256_store_ps(dst + i, _mm256_div_ps(mn, md));
+			}
+			for (int i = simdsize; i < size; i++)
+			{
+				const float v = sqrt(r[i] * s[i]);
+				float n = (2.f - alpha) * v + c;
+				float d = r[i] + s[i] - alpha * v + c;
+				dst[i] = n / d;
+			}
+		}
+		else
+		{
+			for (int i = 0; i < size; i++)
+			{
+				float n = 2.f * sqrt(r[i] * s[i]) + c;
+				float d = r[i] + s[i] + c;
+				dst[i] = n / d;
+			}
+		}
+		cv::Scalar result;
+		cv::meanStdDev(qm, cv::noArray(), result);
+		return result;
+	}
+
+	cv::Scalar MSGMSD(InputArray ref, InputArray src, const double c)
+	{
+		vector<double> w = { 0.096, 0.596, 0.289, 0.019 };
+		//vector<double> w = { 0.0, 0.8, 0.0, 1.0 };
+		double wsum = 0.0;
+		for (int i = 0; i < w.size(); i++) wsum += w[i];
+		for (int i = 0; i < w.size(); i++)  w[i] /= wsum;
+
+		const int M = w.size();
+		double index = getGMSD(ref, src, c, false);
+		double ret = w[0] * index * index;
+		//double ret = w[0] * index;
+		Mat r = ref.getMat();
+		Mat s = src.getMat();
+		for (int i = 1; i < M; i++)
+		{
+			pyrDown(r, r);
+			pyrDown(s, s);
+			index = getGMSD(r, s, c, false);
+			ret += w[i] * index * index;
+			//ret *= w[i] * index;
+		}
+		Scalar v;
+		v.val[0] = sqrt(ret);
+		//v.val[0] = ret;
+		return v;
+	}
+
+	//mean deviation similarity index(MDSI)
+	cv::Scalar MDSI(InputArray ref, InputArray deg)
+	{
+		const double c = 170.f;
+		const double alpha = 0.5;
+		//const bool isUseAdditonalMasking = true;
+		const bool isUseAdditonalMasking = false;
+
+		Mat gradientRef;
+		Mat gradientDeg;
+		Mat ref32 = cp::convert(ref, CV_32F);
+		Mat deg32 = cp::convert(deg, CV_32F);
+		resize(ref32, ref32, Size(), 0.5, 0.5, INTER_AREA);
+		resize(deg32, deg32, Size(), 0.5, 0.5, INTER_AREA);
+		Mat ave32, gradientAve;
+		addWeighted(ref32, 0.5f, deg32, 0.5f, 0.f, ave32);
+
+		gradientSquarePrewitt32F(ref32, gradientRef);
+		gradientSquarePrewitt32F(deg32, gradientDeg);
+		gradientSquarePrewitt32F(ave32, gradientAve);
+		//getGradient<float>(ref32, gradientRef);
+		//getGradient<float>(deg32, gradientDeg);
+		//getGradient<float>(ave32, gradientAve);
+
+		const int size = deg32.size().area();
+		float* r = gradientRef.ptr<float>();
+		float* d = gradientDeg.ptr<float>();
+		float* a = gradientAve.ptr<float>();
+		Mat qm(deg32.size(), CV_32F);
+		float* dst = qm.ptr<float>();
+
+		if (isUseAdditonalMasking)
+		{
+			for (int i = 0; i < size; i++)
+			{
+				const float v_rd = sqrt(r[i] * d[i]);
+				float numerator = (2.f - alpha) * v_rd + c;
+				float denominator = r[i] + d[i] - alpha * v_rd + c;
+				float ret = numerator / denominator;
+				const float v_da = sqrt(d[i] * a[i]);
+				numerator = (2.f - alpha) * v_da + c;
+				denominator = d[i] + a[i] - alpha * v_da + c;
+				ret += numerator / denominator;
+				const float v_ra = sqrt(r[i] * a[i]);
+				numerator = (2.f - alpha) * v_ra + c;
+				denominator = r[i] + a[i] - alpha * v_ra + c;
+				ret -= numerator / denominator;
+				dst[i] = ret;
+			}
+		}
+		else
+		{
+			for (int i = 0; i < size; i++)
+			{
+				float numnumerator = 2.f * sqrt(r[i] * d[i]) + c;
+				float denominator = r[i] + d[i] + c;
+				double ret = numnumerator / denominator;
+				numnumerator = 2.f * sqrt(d[i] * a[i]) + c;
+				denominator = a[i] + d[i] + c;
+				ret += numnumerator / denominator;
+				numnumerator = 2.f * sqrt(r[i] * a[i]) + c;
+				denominator = a[i] + r[i] + c;
+				ret -= numnumerator / denominator;
+				dst[i] = ret;
+			}
+		}
+		cv::Scalar result;
+		cv::meanStdDev(qm, cv::noArray(), result);
+		return result;
+	}
+#pragma endregion
+
+#pragma region SSIM
+	double getSSIM(const cv::Mat& src1, const cv::Mat& src2, const double sigma, bool isDownsample)
+	{
+		cv::Mat i1 = src1;
+		cv::Mat i2 = src2;
+		if (src1.channels() == 3) cvtColor(src1, i1, COLOR_BGR2GRAY);
+		if (src2.channels() == 3) cvtColor(src2, i2, COLOR_BGR2GRAY);
+
+		if (isDownsample)
+		{
+			resize(i1, i1, Size(), 0.5, 0.5, INTER_AREA);
+			resize(i2, i2, Size(), 0.5, 0.5, INTER_AREA);
+		}
+		const int D = (int)ceil(sigma * 3.0) * 2 + 1;
+		const Size kernelSize = Size(D, D);
+		const double C1 = 6.5025, C2 = 58.5225;
+		/***************************** INITS **********************************/
+		int d = CV_32F;
+		cv::Mat I1, I2;
+		i1.convertTo(I1, d);            // cannot calculate on one byte large values
+		i2.convertTo(I2, d);
+		cv::Mat I2_2 = I2.mul(I2);//1
+		cv::Mat I1_2 = I1.mul(I1);//2
+		cv::Mat I1_I2 = I1.mul(I2);//3
+		/*************************** END INITS **********************************/
+		cv::Mat mu1, mu2, sigma1_2, sigma2_2, sigma12;
+
+		cv::GaussianBlur(I1, mu1, kernelSize, sigma);//4,5
+		cv::GaussianBlur(I2, mu2, kernelSize, sigma);//6,7
+		cv::GaussianBlur(I1_2, sigma1_2, kernelSize, sigma);//8,9
+		cv::GaussianBlur(I2_2, sigma2_2, kernelSize, sigma);//10,11
+		cv::GaussianBlur(I1_I2, sigma12, kernelSize, sigma);//12,13
+		cv::Mat mu1_2 = mu1.mul(mu1);//14
+		cv::Mat mu2_2 = mu2.mul(mu2);//15
+		cv::Mat mu1_mu2 = mu1.mul(mu2);//16
+		sigma1_2 -= mu1_2;//17
+		sigma2_2 -= mu2_2;//18
+		sigma12 -= mu1_mu2;//19
+		///////////////////////////////// FORMULA ////////////////////////////////
+		cv::Mat t1, t2, t3;
+		t1 = 2 * mu1_mu2 + C1;//20
+		t2 = 2 * sigma12 + C2;//21
+		t3 = t1.mul(t2);//22
+		t1 = mu1_2 + mu2_2 + C1;//23
+		t2 = sigma1_2 + sigma2_2 + C2;//24
+		t1 = t1.mul(t2);//25  
+		cv::Mat ssim_map;//26
+		divide(t3, t1, ssim_map);//27
+
+		int r = D / 2;
+		return cp::average(ssim_map, r, r, r, r);
+	}
+#pragma endregion
 }

@@ -2,6 +2,9 @@
 
 #include <opencv2/opencv.hpp>
 
+#include <opencv2/ximgproc.hpp>
+#include <opencv2/xphoto.hpp>
+
 #ifdef CP_API
 #define CP_EXPORT __declspec(dllexport)
 #else 
@@ -23,14 +26,19 @@
 
 #define CV_LIBRARY(lib_name) CV_LIB_PREFIX CVAUX_STR(lib_name) CV_LIB_SUFFIX
 
-//#define OPENCV_WORLD 
-#ifndef OPENCV_WORLD
+//#define OPENCV_LIB_WORLD 
+#define OPENCV_LIB_MINIMUM
+
+#ifdef OPENCV_LIB_WORLD
+#pragma CV_LIBRARY(world)
+#else
 //#pragma CV_LIBRARY(aruco)
 //#pragma CV_LIBRARY(bgsegm)
 //#pragma CV_LIBRARY(bioinspired)
 #pragma comment(lib, CV_LIBRARY(calib3d))
 //#pragma CV_LIBRARY(ccalib)
 #pragma comment(lib, CV_LIBRARY(core))
+
 /*
 #pragma CV_LIBRARY(cudaarithm)
 #pragma CV_LIBRARY(cudabgsegm)
@@ -46,13 +54,12 @@
 */
 //#pragma CV_LIBRARY(cudev)
 
-
 //#pragma CV_LIBRARY(datasets)
 //#pragma CV_LIBRARY(dnn)
 //#pragma CV_LIBRARY(dpm)
 //#pragma CV_LIBRARY(face)
 #pragma comment(lib, CV_LIBRARY(features2d))
-//#pragma CV_LIBRARY(flann)
+#pragma comment(lib, CV_LIBRARY(flann))
 //#pragma CV_LIBRARY(fuzzy)
 //#pragma CV_LIBRARY(hal)
 #pragma comment(lib, CV_LIBRARY(highgui))
@@ -87,9 +94,7 @@
 #pragma comment(lib, CV_LIBRARY(ximgproc))
 //#pragma CV_LIBRARY(xobjdetect)
 #pragma comment(lib, CV_LIBRARY(xphoto))
-#else
-#pragma CV_LIBRARY(world)
-#endif
+#endif //OPENCV_LIB_WORLD
 
 namespace cp
 {

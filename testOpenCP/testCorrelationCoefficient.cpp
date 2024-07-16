@@ -122,8 +122,11 @@ void testCorrelationCoefficient()
 
 		srcc.setReference(v2i);
 		cout << s << "(int)   : " << srcc.compute(v1i, v2i, true) << "," << srcc.compute(v1i, v2i) << "," << srcc.computeUsingReference(v1i) << endl;
+		
 		srcc.setReference(v2f);
 		cout << s << "(float) : " << srcc.compute(v1f, v2f, true) << "," << srcc.compute(v1f, v2f) << "," << srcc.computeUsingReference(v1f) << endl;
+		srcc.compute(v1f, v2f, true, true);
+		srcc.plot();
 		srcc.setReference(v2d);
 		cout << s << "(double): " << srcc.compute(v1d, v2d, true) << "," << srcc.compute(v1d, v2d) << "," << srcc.computeUsingReference(v1d) << endl;
 	}

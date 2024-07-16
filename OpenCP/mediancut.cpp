@@ -1,4 +1,5 @@
 #include "mediancut.hpp"
+#include "debugcp.hpp"
 
 using namespace std;
 using namespace cv;
@@ -106,13 +107,12 @@ namespace cp
 
 	void mediancut(InputArray src, const int K, OutputArray destLabels, OutputArray destColor, const MedianCutMethod cmethod)
 	{
-		const Mat& input_image = src.getMat();
+		const Mat input_image = src.getMat();
 		Mat	reshaped_input_image;
 		int width, height, pixel_num;
 		if (input_image.channels() == 1 && input_image.rows == 3)
 		{
 			pixel_num = input_image.cols;
-			//print_matinfo(reshaped_input_image);
 			reshaped_input_image = input_image.reshape(3, pixel_num);
 		}
 		else

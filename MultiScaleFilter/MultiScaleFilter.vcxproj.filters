@@ -13,6 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="ソース ファイル\localmultiscale">
+      <UniqueIdentifier>{36ac2aab-27bc-4ab1-8bef-80ac26b80046}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\multiscale">
+      <UniqueIdentifier>{25293319-3b0a-4426-8a01-6f6992cb20d5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\multiscalefilter\MultiScaleFilter.hpp">
@@ -30,6 +36,30 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="MultiscaleFilter.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="MultiscaleFilterAlias.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="LocalMultiscaleFilterFourier.cpp">
+      <Filter>ソース ファイル\localmultiscale</Filter>
+    </ClCompile>
+    <ClCompile Include="LocalMultiscaleFilterFull.cpp">
+      <Filter>ソース ファイル\localmultiscale</Filter>
+    </ClCompile>
+    <ClCompile Include="LocalMultiscaleFilterInterpolation.cpp">
+      <Filter>ソース ファイル\localmultiscale</Filter>
+    </ClCompile>
+    <ClCompile Include="MultiscaleBilateralFilter.cpp">
+      <Filter>ソース ファイル\multiscale</Filter>
+    </ClCompile>
+    <ClCompile Include="MultiscaleGaussianFilter.cpp">
+      <Filter>ソース ファイル\multiscale</Filter>
+    </ClCompile>
+    <ClCompile Include="MultiscaleGuidedImageFilter.cpp">
+      <Filter>ソース ファイル\multiscale</Filter>
+    </ClCompile>
+    <ClCompile Include="ComputePyramidSize.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>

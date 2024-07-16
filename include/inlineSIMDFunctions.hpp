@@ -1,15 +1,17 @@
+#pragma once
 #ifndef __CP_INLINE_SIMD_FUNCTIONS__
 #define __CP_INLINE_SIMD_FUNCTIONS__
 
 #pragma warning(disable:4309)
 
 #ifdef __INTEL_LLVM_COMPILER //#ifdef __INTEL_COMPILER
-//#include <x86intrin.h>
 #include <immintrin.h>
+//#define __INTEL_COMPILER_USE_INTRINSIC_PROTOTYPES 1
 
-//#include <intrin.h>
+//#define _mm512_permutex2var_epi8(a, b, c) _mm512_setzero_si512()
 #else
 #include <intrin.h>
+#define __AVX512FP16__
 #endif
 
 #include <opencv2/core.hpp>
@@ -27,15 +29,25 @@
 #define _MM_SELECT4(x,y) (((y)<<4) + (x))
 
 
+//#define CP_ROUND_NEAREST _MM_FROUND_TO_NEAREST_INT 
+//#define CP_ROUND_NEAREST _MM_ROUND_MODE_NEAREST
+#define CP_ROUND_NEAREST 0
+
 //#ifdef __AVX512F__
 #ifdef __INTEL_LLVM_COMPILER
-/*
+//#define _mm_setr_epi64x _mm_setr_epi64
+
 STATIC_INLINE __m512i _mm512_setr_epi8(char s0, char s1, char s2, char s3, char s4, char s5, char s6, char s7, char s8, char s9, char s10, char s11, char s12, char s13, char s14, char s15, char s16, char s17, char s18, char s19, char s20, char s21, char s22, char s23, char s24, char s25, char s26, char s27, char s28, char s29, char s30, char s31, char s32, char s33, char s34, char s35, char s36, char s37, char s38, char s39, char s40, char s41, char s42, char s43, char s44, char s45, char s46, char s47, char s48, char s49, char s50, char s51, char s52, char s53, char s54, char s55, char s56, char s57, char s58, char s59, char s60, char s61, char s62, char s63)
 {
 	return _mm512_set_epi8(s63, s62, s61, s60, s59, s58, s57, s56, s55, s54, s53, s52, s51, s50, s49, s48, s47, s46, s45, s44, s43, s42, s41, s40, s39, s38, s37, s36, s35, s34, s33, s32, s31, s30, s29, s28, s27, s26, s25, s24, s23, s22, s21, s20, s19, s18, s17, s16, s15, s14, s13, s12, s11, s10, s9, s8, s7, s6, s5, s4, s3, s2, s1, s0);
-}*/
+}
+
+#define _mm512_permutex2var_ph _mm512_permutex2var_epi16
+#define _mm512_mask_blend_ph _mm512_mask_blend_epi16
 #endif
 //#endif
+
+//#define AVX512_VBMI //enable _mm512_permutex2var_epi8 >=TigerLake 
 
 //#define USE_SET4GATHER //for AMD CPU
 //#define UNUSE_FMA
@@ -97,22 +109,66 @@ inline __m256 _mm256_permute4x64_ps(__m256 src, const int imm8)
 
 STATIC_INLINE __m256 _mm256_i32gatherset_ps(const float* s, __m256i index, int offset)
 {
-	return _mm256_setr_ps(s[((int*)&index)[0]], s[((int*)&index)[1]], s[((int*)&index)[2]], s[((int*)&index)[3]], s[((int*)&index)[4]], s[((int*)&index)[5]], s[((int*)&index)[6]], s[((int*)&index)[7]]); \
+	return _mm256_setr_ps(s[((int*)&index)[0]], s[((int*)&index)[1]], s[((int*)&index)[2]], s[((int*)&index)[3]], s[((int*)&index)[4]], s[((int*)&index)[5]], s[((int*)&index)[6]], s[((int*)&index)[7]]);
 }
 STATIC_INLINE __m256i _mm256_i32gatherset_epi32(const int* s, __m256i index, int offset)
 {
-	return _mm256_setr_epi32(s[((int*)&index)[0]], s[((int*)&index)[1]], s[((int*)&index)[2]], s[((int*)&index)[3]], s[((int*)&index)[4]], s[((int*)&index)[5]], s[((int*)&index)[6]], s[((int*)&index)[7]]); \
+	return _mm256_setr_epi32(s[((int*)&index)[0]], s[((int*)&index)[1]], s[((int*)&index)[2]], s[((int*)&index)[3]], s[((int*)&index)[4]], s[((int*)&index)[5]], s[((int*)&index)[6]], s[((int*)&index)[7]]);
 }
-
+#ifdef __AVX512F__
+STATIC_INLINE __m512 _mm512_i32gatherset_ps(__m512i index, const float* s, int offset)
+{
+	return _mm512_setr_ps(
+		s[((int*)&index)[0]], s[((int*)&index)[1]], s[((int*)&index)[2]], s[((int*)&index)[3]], 
+		s[((int*)&index)[4]], s[((int*)&index)[5]], s[((int*)&index)[6]], s[((int*)&index)[7]],
+		s[((int*)&index)[8]], s[((int*)&index)[9]], s[((int*)&index)[10]], s[((int*)&index)[11]], 
+		s[((int*)&index)[12]], s[((int*)&index)[13]], s[((int*)&index)[14]], s[((int*)&index)[15]]
+	);
+}
+STATIC_INLINE __m512i _mm512_i32gatherset_epi32(__m512i index, const int* s, int offset)
+{
+	return _mm512_setr_epi32(
+		s[((int*)&index)[0]], s[((int*)&index)[1]], s[((int*)&index)[2]], s[((int*)&index)[3]],
+		s[((int*)&index)[4]], s[((int*)&index)[5]], s[((int*)&index)[6]], s[((int*)&index)[7]],
+		s[((int*)&index)[8]], s[((int*)&index)[9]], s[((int*)&index)[10]], s[((int*)&index)[11]],
+		s[((int*)&index)[12]], s[((int*)&index)[13]], s[((int*)&index)[14]], s[((int*)&index)[15]]
+	);
+}
+#endif
 #if !defined(__AVX2__) || defined(USE_SET4GATHER)
+#define _mm256_i32gather_force_ps(s, idx, val) _mm256_i32gather_ps(s, idx, val)
+#define _mm256_i32gather_force_epi32(s, idx, val) _mm256_i32gather_epi32(s, idx, val)
 #define _mm256_i32gather_ps(s, idx, val) _mm256_i32gatherset_ps(s, idx, val)
 #define _mm256_i32gather_epi32(s, idx, val) _mm256_i32gatherset_epi32(s, idx, val)
+
 #endif
 
 
 #pragma endregion
 
 #pragma region xxx
+#pragma endregion
+
+#pragma region utility
+STATIC_INLINE std::string getRoundingModeName(const int mode)
+{
+	std::string ret = "";
+	switch (mode)
+	{
+	case _MM_ROUND_NEAREST:		ret = "_MM_ROUND_NEAREST"; break;
+	case _MM_ROUND_DOWN:		ret = "_MM_ROUND_DOWN"; break;
+	case _MM_ROUND_UP:			ret = "_MM_ROUND_UP"; break;
+	case _MM_ROUND_TOWARD_ZERO:	ret = "_MM_ROUND_TOWARD_ZERO"; break;
+	default: break;
+	}
+	return ret;
+}
+
+STATIC_INLINE int _mm_cvtf32_i32(const float src)
+{
+	__m128i d = _mm_cvtps_epi32(_mm_set1_ps(src));
+	return ((int*)&d)[0];
+}
 #pragma endregion
 
 //template for array
@@ -1131,20 +1187,20 @@ STATIC_INLINE void _mm256_load_cvtps_bgr2planar_ps(const float* ptr, __m256& b, 
 
 STATIC_INLINE void _mm256_loadu_cvtps_bgr2planar_ps(const float* ptr, __m256& b, __m256& g, __m256& r)
 {
-	
+
 	const __m256 bgr0 = _mm256_loadu_ps(ptr);
 	const __m256 bgr2 = _mm256_loadu_ps(ptr + 16);
 	const __m256 s02_low = _mm256_permute2f128_ps(bgr0, bgr2, 0 + 2 * 16);
 	const __m256 s02_high = _mm256_permute2f128_ps(bgr0, bgr2, 1 + 3 * 16);
 	const __m256 bgr1 = _mm256_loadu_ps(ptr + 8);
-	
+
 	__m256 b0 = _mm256_blend_ps(_mm256_blend_ps(s02_low, s02_high, 0x24), bgr1, 0x92);
 	b = _mm256_shuffle_ps(b0, b0, 0x6c);
 	__m256 g0 = _mm256_blend_ps(_mm256_blend_ps(s02_high, s02_low, 0x92), bgr1, 0x24);
 	g = _mm256_shuffle_ps(g0, g0, 0xb1);
 	__m256 r0 = _mm256_blend_ps(_mm256_blend_ps(bgr1, s02_low, 0x24), s02_high, 0x92);
 	r = _mm256_shuffle_ps(r0, r0, 0xc6);
-	
+
 }
 #define _mm256_shuffle_epi64(/*__m256i*/ a, /*__m256i*/ b, /*const int*/ imm8)\
  _mm256_castpd_si256(_mm256_shuffle_pd(_mm256_castsi256_pd(a), _mm256_castsi256_pd(b), imm8))
@@ -1176,8 +1232,13 @@ STATIC_INLINE void _mm256_load_cvtepi16bgr2planar_epi16(const short* src, __m256
 	//a1:   2   3   8   9; 14  15  20  21 | 26  27  32  33; 38  39  44  45
 	//a2:   4   5  10  11; 16  17  22  23 | 28  29  34  35; 40  41  46  47
 	//__m128i mask128 = _mm_setr_epi16(255, 0, 3, 2, 5, 4, 7, 6);
-	//__m128i mask128 = _mm_setr_epi8(2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13);
+	// #ifdef 
+
+#ifdef __INTEL_LLVM_COMPILER
+	__m128i mask128 = _mm_setr_epi8(2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13);
+#else
 	static __m128i mask128 = _mm_setr_epi64x(361421592464458498i64, 940142975169071882i64);
+#endif
 	static __m256i mask = _mm256_setr_m128i(mask128, mask128);
 	b = _mm256_blend_epi16(a0, a1, 0xaa);
 	g = _mm256_shuffle_epi8(_mm256_blend_epi16(a2, a0, 0xaa), mask);
@@ -1947,6 +2008,32 @@ STATIC_INLINE void _mm256_cvtps_planar2bgr(const __m256 b, const __m256 g, const
 
 #pragma endregion
 
+#pragma region swizzle
+#define _mm256_permute4x64_ps(src,imm8) (_mm256_castsi256_ps(_mm256_permute4x64_epi64(_mm256_castps_si256(src), imm8)))
+//#define _mm256_permute4x64_ps(src,imm8) (_mm256_castpd_ps(_mm256_permute4x64_pd(_mm256_castps_pd(src), imm8)))
+//for _MM_SHUFFLE(3, 1, 2, 0) 
+/*
+inline __m256 _mm256_permute4x64_ps(__m256 src, const int imm8)
+{
+	//perm128x1, shuffle_pd(1,0.5) x2
+	__m256 tmp = _mm256_permute2f128_ps(src, src, 0x01);
+	__m256d tm2 = _mm256_shuffle_pd(_mm256_castps_pd(src), _mm256_castps_pd(tmp), 0b1100);
+	__m256 ret = _mm256_castpd_ps(_mm256_shuffle_pd(tm2, tm2, 0b0110));
+	return ret;
+}
+*/
+/*
+inline __m256 _mm256_permute4x64_ps(__m256 src, const int imm8)
+{
+	//perm128x1 shuffle_ps(1,0.5) x2, blend(1,0.33) x1
+	__m256 tmp = _mm256_permute2f128_ps(src, src, 0x01);
+	__m256 rt1 = _mm256_shuffle_ps(src, tmp, _MM_SHUFFLE(1, 0, 1, 0));
+	__m256 rt2 = _mm256_shuffle_ps(tmp, src, _MM_SHUFFLE(3, 2, 3, 2));
+	__m256 ret = _mm256_blend_ps(rt1, rt2, 0b11110000);
+	return ret;
+}*/
+#pragma endregion
+
 #pragma region arithmetic
 
 STATIC_INLINE __m128 _mm_abs_ps(__m128 src)
@@ -2028,9 +2115,23 @@ STATIC_INLINE float _mm256_reduceadd_ps(__m256 src)
 	//src = _mm256_unpacklo_ps(src, rsum);
 	//return _mm256_hadd_ps(src, src).m256_f32[0];
 }
+
+STATIC_INLINE int _mm256_reduceadd_epi32(__m256i src)
+{
+	int* data = (int*)_mm_malloc(sizeof(int) * 8, AVX_ALIGN);
+	_mm256_store_si256((__m256i*)data, src);
+	int ret = data[0];
+	for (int i = 1; i < 8; i++)
+	{
+		ret += data[i];
+	}
+	_mm_free(data);
+	return ret;
+}
+
 STATIC_INLINE float _mm256_reducemax_ps(__m256 src)
 {
-	float* data = (float*)_mm_malloc(sizeof(float) * 8, 32);
+	float* data = (float*)_mm_malloc(sizeof(float) * 8, AVX_ALIGN);
 	_mm256_store_ps(data, src);
 	float ret = data[0];
 	for (int i = 1; i < 8; i++)
@@ -2232,9 +2333,49 @@ STATIC_INLINE __m128 _mm_absdiff_ps(__m128 src1, __m128 src2)
 	return _mm_abs_ps(_mm_sub_ps(src1, src2));
 }
 
-STATIC_INLINE __m256 _mm256_absdiff_ps(__m256 src1, __m256 src2)
+STATIC_INLINE __m256 _mm256_absdiff_ps(const __m256 src1, const __m256 src2)
 {
 	return _mm256_andnot_ps(_mm256_set1_ps(-0.f), _mm256_sub_ps(src1, src2));
+}
+
+STATIC_INLINE void _mm256_absdiff_psx2(const __m256 src0, const __m256 ref0, const __m256 src1, const __m256 ref1, __m256& d0, __m256& d1)
+{
+	d0 = _mm256_sub_ps(src0, ref0);
+	d1 = _mm256_sub_ps(src1, ref1);
+	d0 = _mm256_abs_ps(d0);
+	d1 = _mm256_abs_ps(d1);
+}
+
+STATIC_INLINE void _mm256_absdiff_psx4(const __m256 src0, const __m256 ref0, const __m256 src1, const __m256 ref1, const __m256 src2, const __m256 ref2, const __m256 src3, const __m256 ref3, __m256& d0, __m256& d1, __m256& d2, __m256& d3)
+{
+	d0 = _mm256_sub_ps(src0, ref0);
+	d1 = _mm256_sub_ps(src1, ref1);
+	d2 = _mm256_sub_ps(src2, ref2);
+	d3 = _mm256_sub_ps(src3, ref3);
+	d0 = _mm256_abs_ps(d0);
+	d1 = _mm256_abs_ps(d1);
+	d2 = _mm256_abs_ps(d2);
+	d3 = _mm256_abs_ps(d3);
+}
+
+STATIC_INLINE void _mm256_absdiff_psx8(const __m256 src0, const __m256 ref0, const __m256 src1, const __m256 ref1, const __m256 src2, const __m256 ref2, const __m256 src3, const __m256 ref3, const __m256 src4, const __m256 ref4, const __m256 src5, const __m256 ref5, const __m256 src6, const __m256 ref6, const __m256 src7, const __m256 ref7, __m256& d0, __m256& d1, __m256& d2, __m256& d3, __m256& d4, __m256& d5, __m256& d6, __m256& d7)
+{
+	d0 = _mm256_sub_ps(src0, ref0);
+	d1 = _mm256_sub_ps(src1, ref1);
+	d2 = _mm256_sub_ps(src2, ref2);
+	d3 = _mm256_sub_ps(src3, ref3);
+	d4 = _mm256_sub_ps(src4, ref4);
+	d5 = _mm256_sub_ps(src5, ref5);
+	d6 = _mm256_sub_ps(src6, ref6);
+	d7 = _mm256_sub_ps(src7, ref7);
+	d0 = _mm256_abs_ps(d0);
+	d1 = _mm256_abs_ps(d1);
+	d2 = _mm256_abs_ps(d2);
+	d3 = _mm256_abs_ps(d3);
+	d4 = _mm256_abs_ps(d4);
+	d5 = _mm256_abs_ps(d5);
+	d6 = _mm256_abs_ps(d6);
+	d7 = _mm256_abs_ps(d7);
 }
 
 //rsqrt->rcp
@@ -2534,6 +2675,56 @@ STATIC_INLINE void _mm256_stream_auto_color(uchar* dest, __m256 b, __m256 g, __m
 #pragma endregion
 
 #pragma region store
+
+STATIC_INLINE  __m128i get_storemask1(const int width, const int simdwidth)
+{
+	__m128i ret = _mm_undefined_si128();
+	const int WIDTH = get_simd_floor(width, simdwidth);
+	if ((width - WIDTH) == 2) ret = _mm_cmpeq_epi32(_mm_setr_epi32(0, 1, 1, 1), _mm_setzero_si128());
+	if ((width - WIDTH) == 4) ret = _mm_cmpeq_epi32(_mm_setr_epi32(0, 0, 1, 1), _mm_setzero_si128());
+	if ((width - WIDTH) == 6) ret = _mm_cmpeq_epi32(_mm_setr_epi32(0, 0, 0, 1), _mm_setzero_si128());
+	return ret;
+}
+
+STATIC_INLINE  void get_storemask2(const int width, __m256i& maskl, __m256i& maskr, const int unit)
+{
+	const int WIDTH = get_simd_floor(width, unit);
+	if ((width - WIDTH) == 1)
+	{
+		maskl = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 1, 1, 1, 1, 1, 1), _mm256_setzero_si256());
+		maskr = _mm256_cmpeq_epi32(_mm256_setr_epi32(1, 1, 1, 1, 1, 1, 1, 1), _mm256_setzero_si256());
+	}
+	if ((width - WIDTH) == 2)
+	{
+		maskl = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 1, 1, 1, 1), _mm256_setzero_si256());
+		maskr = _mm256_cmpeq_epi32(_mm256_setr_epi32(1, 1, 1, 1, 1, 1, 1, 1), _mm256_setzero_si256());
+	}
+	if ((width - WIDTH) == 3)
+	{
+		maskl = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 0, 0, 1, 1), _mm256_setzero_si256());
+		maskr = _mm256_cmpeq_epi32(_mm256_setr_epi32(1, 1, 1, 1, 1, 1, 1, 1), _mm256_setzero_si256());
+	}
+	if ((width - WIDTH) == 4)
+	{
+		maskl = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 0, 0, 0, 0), _mm256_setzero_si256());
+		maskr = _mm256_cmpeq_epi32(_mm256_setr_epi32(1, 1, 1, 1, 1, 1, 1, 1), _mm256_setzero_si256());
+	}
+	if ((width - WIDTH) == 5)
+	{
+		maskl = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 0, 0, 0, 0), _mm256_setzero_si256());
+		maskr = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 1, 1, 1, 1, 1, 1), _mm256_setzero_si256());
+	}
+	if ((width - WIDTH) == 6)
+	{
+		maskl = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 0, 0, 0, 0), _mm256_setzero_si256());
+		maskr = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 1, 1, 1, 1), _mm256_setzero_si256());
+	}
+	if ((width - WIDTH) == 7)
+	{
+		maskl = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 0, 0, 0, 0), _mm256_setzero_si256());
+		maskr = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 0, 0, 1, 1), _mm256_setzero_si256());
+	}
+}
 
 STATIC_INLINE void _mm256_store_cvtps_epu8(__m128i* dest, __m256 ms)
 {
@@ -3194,7 +3385,26 @@ STATIC_INLINE std::vector<std::string> _MM_PRINT_EXCEPTION(std::string mes = "",
 	return ret;
 }
 
+STATIC_INLINE __m128i _mm256_cvtps_pbh(__m256 a)
+{
+	static __m256i mask = _mm256_setr_epi8(2, 3, 6, 7, 10, 11, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3, 6, 7, 10, 11, 14, 15);
+	__m256i t = _mm256_shuffle_epi8(_mm256_castps_si256(a), mask);
+	__m256i s = _mm256_permute2x128_si256(t, t, 0x01);
+	return _mm256_castsi256_si128(_mm256_blend_epi16(t, s, 0b11110000));
+}
 #ifdef __AVX512F__
+#define _mm512_set_m128i(/* __m128i */ src3, /* __m128i */ src2, /* __m128i */ src1, /* __m128i */ src0) \
+    _mm512_inserti32x4(_mm512_inserti32x4(_mm512_inserti32x4(_mm512_castsi128_si512(src0), (src1), 0x1),(src2), 0x2), (src3), 0x3)
+
+#define _mm512_setr_m128i(/* __m128i */ src0, /* __m128i */ src1, /* __m128i */ src2, /* __m128i */ src3) \
+    _mm512_inserti32x4(_mm512_inserti32x4(_mm512_inserti32x4(_mm512_castsi128_si512(src0), (src1), 0x1),(src2), 0x2), (src3), 0x3)
+
+#define _mm512_set_m256i(/* __m256i */ src1, /* __m256i */ src0) \
+    _mm512_inserti64x4(_mm512_castsi256_si512(src0), (src1), 0x1)
+
+#define _mm512_setr_m256i(/* __m256i */ src0, /* __m256i */ src1) \
+    _mm512_inserti64x4(_mm512_castsi256_si512(src0), (src1), 0x1)
+
 //cvt
 STATIC_INLINE __m128i _mm512_cvtps_epu8(const __m512 ms)
 {
@@ -3345,23 +3555,6 @@ STATIC_INLINE __m512d _mm512_loadu_auto(const double* src)
 	return _mm512_loadu_pd(src);
 }
 
-STATIC_INLINE __m512h _mm512_loadu_auto16(const float* src)
-{
-	__m512i v0 = _mm512_castsi256_si512(_mm512_cvtps_ph(_mm512_loadu_ps(src), _MM_FROUND_TO_NEAREST_INT));
-	__m256i v1 = _mm512_cvtps_ph(_mm512_loadu_ps(src + 16), _MM_FROUND_TO_NEAREST_INT);
-	return _mm512_castsi512_ph(_mm512_inserti64x4(v0, v1, 1));
-}
-
-STATIC_INLINE __m512h _mm512_loadu_auto16(const unsigned char* src)
-{
-	return _mm512_cvtepi16_ph(_mm512_cvtepu8_epi16(_mm256_loadu_si256((__m256i*)src)));
-}
-
-STATIC_INLINE __m512h _mm512_loadu_auto16(const short* src)
-{
-	return _mm512_loadu_si512((__m512h*)src);
-}
-
 #define _mm512_shuffle_epi64(/*__m512i*/ a, /*__m512i*/ b, /*const int*/ imm8)\
  _mm512_castpd_si512(_mm512_shuffle_pd(_mm512_castsi512_pd(a), _mm512_castsi512_pd(b), imm8))
 
@@ -3402,11 +3595,19 @@ STATIC_INLINE void _mm512_load_cvtepu8_bgr2planar_si512(const uchar* ptr, __m512
 	a0 = _mm512_mask_blend_epi16(0xaaaaaaaa, b, g);
 	a2 = _mm512_mask_blend_epi16(0xaaaaaaaa, g, r);
 
+#ifdef AVX512_VBMI
 	//static const __m512i idx4 = _mm512_setr_epi8(1, 64, 3, 66, 5, 68, 7, 70, 9, 72, 11, 74, 13, 76, 15, 78, 17, 80, 19, 82, 21, 84, 23, 86, 25, 88, 27, 90, 29, 92, 31, 94, 33, 96, 35, 98, 37, 100, 39, 102, 41, 104, 43, 106, 45, 108, 47, 110, 49, 112, 51, 114, 53, 116, 55, 118, 57, 120, 59, 122, 61, 124, 63, 126);
 	static const __m512i idx4 = _mm512_setr_epi64(5046076696864964609, 5624798079569577993, 6203519462274191377, 6782240844978804761, 7360962227683418145, 7939683610388031529, 8518404993092644913, 9097126375797258297);
 	g = _mm512_permutex2var_epi8(a0, idx4, a2);
+#else
+	//static const __m512i mask = _mm512_setr_epi8(1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14, 1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14, 1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14, 1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14);
+	__m128i sfl = _mm_setr_epi64x(434320308619640833, 1013041691324254217);
+	static const __m512i mask = _mm512_setr_m128i(sfl, sfl, sfl, sfl);
+	g = _mm512_shuffle_epi8(_mm512_mask_blend_epi8(0xaaaaaaaaaaaaaaaa, a2, a0), mask);
+#endif
 	b = _mm512_mask_blend_epi8(0xaaaaaaaaaaaaaaaa, a0, a1);
 	r = _mm512_mask_blend_epi8(0xaaaaaaaaaaaaaaaa, a1, a2);
+
 }
 
 STATIC_INLINE void _mm512_loadu_cvtepu8_bgr2planar_si512(const uchar* ptr, __m512i& b, __m512i& g, __m512i& r)
@@ -3417,9 +3618,9 @@ STATIC_INLINE void _mm512_loadu_cvtepu8_bgr2planar_si512(const uchar* ptr, __m51
 	__m512i a0 = _mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr + 0)));
 	__m512i a1 = _mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr + 32)));
 	__m512i a2 = _mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr + 64)));
-	a0 = _mm512_inserti32x8(a0, ((const __m256i*)ptr)[3], 1);
-	a1 = _mm512_inserti32x8(a1, ((const __m256i*)ptr)[4], 1);
-	a2 = _mm512_inserti32x8(a2, ((const __m256i*)ptr)[5], 1);
+	a0 = _mm512_inserti32x8(a0, _mm256_loadu_si256((const __m256i*)(ptr + 96)), 1);
+	a1 = _mm512_inserti32x8(a1, _mm256_loadu_si256((const __m256i*)(ptr + 128)), 1);
+	a2 = _mm512_inserti32x8(a2, _mm256_loadu_si256((const __m256i*)(ptr + 160)), 1);
 
 	//static const __m512i idx0 = _mm512_setr_epi32(4, 5, 6, 7, 16, 17, 18, 19, 12, 13, 14, 15, 24, 25, 26, 27);
 	static const __m512i idx0 = _mm512_setr_epi64(21474836484, 30064771078, 73014444048, 81604378642, 55834574860, 64424509454, 107374182424, 115964117018);
@@ -3443,11 +3644,19 @@ STATIC_INLINE void _mm512_loadu_cvtepu8_bgr2planar_si512(const uchar* ptr, __m51
 	a0 = _mm512_mask_blend_epi16(0xaaaaaaaa, b, g);
 	a2 = _mm512_mask_blend_epi16(0xaaaaaaaa, g, r);
 
+#ifdef AVX512_VBMI
 	//static const __m512i idx4 = _mm512_setr_epi8(1, 64, 3, 66, 5, 68, 7, 70, 9, 72, 11, 74, 13, 76, 15, 78, 17, 80, 19, 82, 21, 84, 23, 86, 25, 88, 27, 90, 29, 92, 31, 94, 33, 96, 35, 98, 37, 100, 39, 102, 41, 104, 43, 106, 45, 108, 47, 110, 49, 112, 51, 114, 53, 116, 55, 118, 57, 120, 59, 122, 61, 124, 63, 126);
 	static const __m512i idx4 = _mm512_setr_epi64(5046076696864964609, 5624798079569577993, 6203519462274191377, 6782240844978804761, 7360962227683418145, 7939683610388031529, 8518404993092644913, 9097126375797258297);
 	g = _mm512_permutex2var_epi8(a0, idx4, a2);
+#else
+	//static const __m512i mask = _mm512_setr_epi8(1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14, 1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14, 1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14, 1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14);
+	__m128i sfl = _mm_setr_epi64x(434320308619640833, 1013041691324254217);
+	static const __m512i mask = _mm512_setr_m128i(sfl, sfl, sfl, sfl);
+	g = _mm512_shuffle_epi8(_mm512_mask_blend_epi8(0xaaaaaaaaaaaaaaaa, a2, a0), mask);
+#endif
 	b = _mm512_mask_blend_epi8(0xaaaaaaaaaaaaaaaa, a0, a1);
 	r = _mm512_mask_blend_epi8(0xaaaaaaaaaaaaaaaa, a1, a2);
+
 }
 
 STATIC_INLINE void _mm512_loadu_cvtph_bgr2planar_ph2(const short* ptr, __m512h& b, __m512h& g, __m512h& r, const __m512i idx0, const __m512i idx1, const __m512i idx2, const __m512i idx3)
@@ -4039,6 +4248,46 @@ STATIC_INLINE __m512 _mm512_absdiff_ps(__m512 src1, __m512 src2)
 	return _mm512_abs_ps(_mm512_sub_ps(src1, src2));
 }
 
+STATIC_INLINE void _mm512_absdiff_psx2(const __m512 src0, const __m512 ref0, const __m512 src1, const __m512 ref1, __m512& d0, __m512& d1)
+{
+	d0 = _mm512_sub_ps(src0, ref0);
+	d1 = _mm512_sub_ps(src1, ref1);
+	d0 = _mm512_abs_ps(d0);
+	d1 = _mm512_abs_ps(d1);
+}
+
+STATIC_INLINE void _mm512_absdiff_psx4(const __m512 src0, const __m512 ref0, const __m512 src1, const __m512 ref1, const __m512 src2, const __m512 ref2, const __m512 src3, const __m512 ref3, __m512& d0, __m512& d1, __m512& d2, __m512& d3)
+{
+	d0 = _mm512_sub_ps(src0, ref0);
+	d1 = _mm512_sub_ps(src1, ref1);
+	d2 = _mm512_sub_ps(src2, ref2);
+	d3 = _mm512_sub_ps(src3, ref3);
+	d0 = _mm512_abs_ps(d0);
+	d1 = _mm512_abs_ps(d1);
+	d2 = _mm512_abs_ps(d2);
+	d3 = _mm512_abs_ps(d3);
+}
+
+STATIC_INLINE void _mm512_absdiff_psx8(const __m512 src0, const __m512 ref0, const __m512 src1, const __m512 ref1, const __m512 src2, const __m512 ref2, const __m512 src3, const __m512 ref3, const __m512 src4, const __m512 ref4, const __m512 src5, const __m512 ref5, const __m512 src6, const __m512 ref6, const __m512 src7, const __m512 ref7, __m512& d0, __m512& d1, __m512& d2, __m512& d3, __m512& d4, __m512& d5, __m512& d6, __m512& d7)
+{
+	d0 = _mm512_sub_ps(src0, ref0);
+	d1 = _mm512_sub_ps(src1, ref1);
+	d2 = _mm512_sub_ps(src2, ref2);
+	d3 = _mm512_sub_ps(src3, ref3);
+	d4 = _mm512_sub_ps(src4, ref4);
+	d5 = _mm512_sub_ps(src5, ref5);
+	d6 = _mm512_sub_ps(src6, ref6);
+	d7 = _mm512_sub_ps(src7, ref7);
+	d0 = _mm512_abs_ps(d0);
+	d1 = _mm512_abs_ps(d1);
+	d2 = _mm512_abs_ps(d2);
+	d3 = _mm512_abs_ps(d3);
+	d4 = _mm512_abs_ps(d4);
+	d5 = _mm512_abs_ps(d5);
+	d6 = _mm512_abs_ps(d6);
+	d7 = _mm512_abs_ps(d7);
+}
+
 STATIC_INLINE __m512i _mm512_absdiff_epu8(__m512i src1, __m512i src2)
 {
 	return _mm512_max_epu8(_mm512_subs_epu8(src1, src2), _mm512_subs_epu8(src2, src1));
@@ -4187,6 +4436,14 @@ STATIC_INLINE __m512i _mm512_set_step_epi8(char v, char step = 1)
 	);
 }
 
+STATIC_INLINE __m512i _mm512_set_step_epi16(short v, short step = 1)
+{
+	return _mm512_setr_epi16(
+		v + 0 * step, v + 1 * step, v + 2 * step, v + 3 * step, v + 4 * step, v + 5 * step, v + 6 * step, v + 7 * step, v + 8 * step, v + 9 * step, v + 10 * step, v + 11 * step, v + 12 * step, v + 13 * step, v + 14 * step, v + 15 * step,
+		v + 16 * step, v + 17 * step, v + 18 * step, v + 19 * step, v + 20 * step, v + 21 * step, v + 22 * step, v + 23 * step, v + 24 * step, v + 25 * step, v + 26 * step, v + 27 * step, v + 28 * step, v + 29 * step, v + 30 * step, v + 31 * step
+	);
+}
+
 STATIC_INLINE __m512i _mm512_set_step_epi32(int v, int step = 1)
 {
 	return _mm512_setr_epi32(v, v + step, v + 2 * step, v + 3 * step, v + 4 * step, v + 5 * step, v + 6 * step, v + 7 * step, v + 8 * step, v + 9 * step, v + 10 * step, v + 11 * step, v + 12 * step, v + 13 * step, v + 14 * step, v + 15 * step);
@@ -4201,6 +4458,32 @@ STATIC_INLINE __m512i _mm512_set_step_epi32(int v, int step = 1)
 #define print_m512i_uchar(src) printf_s("%s: %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d\n",#src,((uchar*)&src)[0], ((uchar*)&src)[1], ((uchar*)&src)[2], ((uchar*)&src)[3], ((uchar*)&src)[4], ((uchar*)&src)[5], ((uchar*)&src)[6], ((uchar*)&src)[7], ((uchar*)&src)[8], ((uchar*)&src)[9], ((uchar*)&src)[10], ((uchar*)&src)[11], ((uchar*)&src)[12], ((uchar*)&src)[13], ((uchar*)&src)[14], ((uchar*)&src)[15],((uchar*)&src)[16], ((uchar*)&src)[17], ((uchar*)&src)[18], ((uchar*)&src)[19], ((uchar*)&src)[20], ((uchar*)&src)[21], ((uchar*)&src)[22], ((uchar*)&src)[23], ((uchar*)&src)[24], ((uchar*)&src)[25], ((uchar*)&src)[26], ((uchar*)&src)[27], ((uchar*)&src)[28], ((uchar*)&src)[29], ((uchar*)&src)[30], ((uchar*)&src)[31],((uchar*)&src)[32], ((uchar*)&src)[33], ((uchar*)&src)[34], ((uchar*)&src)[35], ((uchar*)&src)[36], ((uchar*)&src)[37], ((uchar*)&src)[38], ((uchar*)&src)[39], ((uchar*)&src)[40], ((uchar*)&src)[41], ((uchar*)&src)[42], ((uchar*)&src)[43], ((uchar*)&src)[44], ((uchar*)&src)[45], ((uchar*)&src)[46], ((uchar*)&src)[47],((uchar*)&src)[48], ((uchar*)&src)[49], ((uchar*)&src)[50], ((uchar*)&src)[51], ((uchar*)&src)[52], ((uchar*)&src)[53], ((uchar*)&src)[54], ((uchar*)&src)[55], ((uchar*)&src)[56], ((uchar*)&src)[57], ((uchar*)&src)[58], ((uchar*)&src)[59], ((uchar*)&src)[60], ((uchar*)&src)[61], ((uchar*)&src)[62], ((uchar*)&src)[63]);
 #define print_m512i_char(src) printf_s("%s: %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d | %3d %3d %3d %3d\n",#src,((char*)&src)[0], ((char*)&src)[1], ((char*)&src)[2], ((char*)&src)[3], ((char*)&src)[4], ((char*)&src)[5], ((char*)&src)[6], ((char*)&src)[7], ((char*)&src)[8], ((char*)&src)[9], ((char*)&src)[10], ((char*)&src)[11], ((char*)&src)[12], ((char*)&src)[13], ((char*)&src)[14], ((char*)&src)[15],((char*)&src)[16], ((char*)&src)[17], ((char*)&src)[18], ((char*)&src)[19], ((char*)&src)[20], ((char*)&src)[21], ((char*)&src)[22], ((char*)&src)[23], ((char*)&src)[24], ((char*)&src)[25], ((char*)&src)[26], ((char*)&src)[27], ((char*)&src)[28], ((char*)&src)[29], ((char*)&src)[30], ((char*)&src)[31],((char*)&src)[32], ((char*)&src)[33], ((char*)&src)[34], ((char*)&src)[35], ((char*)&src)[36], ((char*)&src)[37], ((char*)&src)[38], ((char*)&src)[39], ((char*)&src)[40], ((char*)&src)[41], ((char*)&src)[42], ((char*)&src)[43], ((char*)&src)[44], ((char*)&src)[45], ((char*)&src)[46], ((char*)&src)[47],((char*)&src)[48], ((char*)&src)[49], ((char*)&src)[50], ((char*)&src)[51], ((char*)&src)[52], ((char*)&src)[53], ((char*)&src)[54], ((char*)&src)[55], ((char*)&src)[56], ((char*)&src)[57], ((char*)&src)[58], ((char*)&src)[59], ((char*)&src)[60], ((char*)&src)[61], ((char*)&src)[62], ((char*)&src)[63]);
 
+//opencp: not implement in VS2022 (checked 2023/8/12)
+#ifndef __INTEL_LLVM_COMPILER
+STATIC_INLINE __m512h _mm512_exp_ph(__m512h src)
+{
+	const __m512 slo = _mm512_cvtph_ps(_mm512_castsi512_si256(src));
+	const __m512 shi = _mm512_cvtph_ps(_mm512_extracti32x8_epi32(src, 1));
+	return _mm512_setr_m256i(_mm512_cvtps_ph(_mm512_exp_ps(slo), CP_ROUND_NEAREST), _mm512_cvtps_ph(_mm512_exp_ps(shi), CP_ROUND_NEAREST));
+}
+//opencp: not implement in VS2022 (checked 2023/8/12)
+inline __m512h _mm512_pow_ph(__m512h src, __m512h pow)
+{
+	const __m512 slo = _mm512_cvtph_ps(_mm512_castsi512_si256(src));
+	const __m512 shi = _mm512_cvtph_ps(_mm512_extracti32x8_epi32(src, 1));
+	const __m512 plo = _mm512_cvtph_ps(_mm512_castsi512_si256(pow));
+	const __m512 phi = _mm512_cvtph_ps(_mm512_extracti32x8_epi32(pow, 1));
+	return _mm512_setr_m256i(_mm512_cvtps_ph(_mm512_pow_ps(slo, plo), CP_ROUND_NEAREST), _mm512_cvtps_ph(_mm512_pow_ps(shi, phi), CP_ROUND_NEAREST));
+}
+inline __m512h _mm512_cbrt_ph(__m512h src)
+{
+	const __m512 slo = _mm512_cvtph_ps(_mm512_castsi512_si256(src));
+	const __m512 shi = _mm512_cvtph_ps(_mm512_extracti32x8_epi32(src, 1));
+	return _mm512_setr_m256i(_mm512_cvtps_ph(_mm512_cbrt_ps(slo), CP_ROUND_NEAREST), _mm512_cvtps_ph(_mm512_cbrt_ps(shi), CP_ROUND_NEAREST));
+}
+#endif
+
+#ifdef __AVX512FP16__
 STATIC_INLINE void _print_m512h(const char* name, __m512h src)
 {
 	__m512 slo = _mm512_cvtph_ps(_mm512_castsi512_si256(src));
@@ -4234,18 +4517,6 @@ STATIC_INLINE void _printInt3_m512h(const char* name, __m512h src)
 #define printInt6_m512h(src) _printInt6_m512h(#src, src);
 #define printInt3_m512h(src) _printInt3_m512h(#src, src);
 
-#define _mm512_set_m128i(/* __m128i */ src3, /* __m128i */ src2, /* __m128i */ src1, /* __m128i */ src0) \
-    _mm512_inserti32x4(_mm512_inserti32x4(_mm512_inserti32x4(_mm512_castsi128_si512(src0), (src1), 0x1),(src2), 0x2), (src3), 0x3)
-
-#define _mm512_setr_m128i(/* __m128i */ src0, /* __m128i */ src1, /* __m128i */ src2, /* __m128i */ src3) \
-    _mm512_inserti32x4(_mm512_inserti32x4(_mm512_inserti32x4(_mm512_castsi128_si512(src0), (src1), 0x1),(src2), 0x2), (src3), 0x3)
-
-#define _mm512_set_m256i(/* __m256i */ src1, /* __m256i */ src0) \
-    _mm512_inserti64x4(_mm512_castsi256_si512(src0), (src1), 0x1)
-
-#define _mm512_setr_m256i(/* __m256i */ src0, /* __m256i */ src1) \
-    _mm512_inserti64x4(_mm512_castsi256_si512(src0), (src1), 0x1)
-
 inline __m512h _mm512_set1_ph(float src)
 {
 	__m128h rh = _mm_cvtps_ph(_mm_set1_ps(src), _MM_FROUND_TO_NEAREST_INT);
@@ -4258,22 +4529,13 @@ inline __m256h _mm256_set1_ph(float src)
 	return _mm256_broadcastw_epi16(rh);
 }
 
-//opencp: not implement in VS2022 (checked 2023/7/25)
-inline __m512h _mm512_exp_ph(__m512h src)
-{
-	const __m512 slo = _mm512_cvtph_ps(_mm512_castsi512_si256(src));
-	const __m512 shi = _mm512_cvtph_ps(_mm512_extracti32x8_epi32(src, 1));
-	return _mm512_setr_m256i(_mm512_cvtps_ph(_mm512_exp_ps(slo), _MM_ROUND_MODE_NEAREST), _mm512_cvtps_ph(_mm512_exp_ps(shi), _MM_ROUND_MODE_NEAREST));
-}
-
 STATIC_INLINE __m512h _mm512_set_step_ph(float v, float step = 1.f)
 {
 	return _mm512_setr_m256i(
-		_mm512_cvtps_ph(_mm512_set_step_ps(v, step), _MM_ROUND_MODE_NEAREST),
-		_mm512_cvtps_ph(_mm512_set_step_ps((v + 16.f) * step, step), _MM_ROUND_MODE_NEAREST)
+		_mm512_cvtps_ph(_mm512_set_step_ps(v, step), CP_ROUND_NEAREST),
+		_mm512_cvtps_ph(_mm512_set_step_ps((v + 16.f) * step, step), CP_ROUND_NEAREST)
 	);
 }
-
 
 STATIC_INLINE void _mm512_load_cvtph_bgr2planar_ph(const short* ptr, __m512h& b, __m512h& g, __m512h& r)
 {
@@ -4377,6 +4639,75 @@ STATIC_INLINE void _mm512_loadu_cvtph_bgr2planar_ph(const short* ptr, __m512h& b
 	b = _mm512_mask_blend_epi16(0xaaaaaaaa, a0, a1);
 	r = _mm512_mask_blend_epi16(0xaaaaaaaa, a1, a2);
 }
+
+STATIC_INLINE __m512h _mm512_loadu_auto16(const float* src)
+{
+	__m512i v0 = _mm512_castsi256_si512(_mm512_cvtps_ph(_mm512_loadu_ps(src), _MM_FROUND_TO_NEAREST_INT));
+	__m256i v1 = _mm512_cvtps_ph(_mm512_loadu_ps(src + 16), _MM_FROUND_TO_NEAREST_INT);
+	return _mm512_castsi512_ph(_mm512_inserti64x4(v0, v1, 1));
+}
+
+STATIC_INLINE __m512h _mm512_loadu_auto16(const unsigned char* src)
+{
+	return _mm512_cvtepi16_ph(_mm512_cvtepu8_epi16(_mm256_loadu_si256((__m256i*)src)));
+}
+
+STATIC_INLINE __m512h _mm512_loadu_auto16(const short* src)
+{
+	return _mm512_loadu_si512((__m512h*)src);
+}
+
+STATIC_INLINE __m256h _mm512_castph512_ph256hi(__m512h src)
+{
+	return _mm512_extracti32x8_epi32(src, 1);
+}
+
+STATIC_INLINE void _mm512_storeu_auto(unsigned char* dest, __m512h src)
+{
+	_mm_storeu_si128((__m128i*)(dest + 0), _mm512_cvtps_epu8(_mm512_cvtph_ps(_mm512_castph512_ph256(src))));
+	_mm_storeu_si128((__m128i*)(dest + 16), _mm512_cvtps_epu8(_mm512_cvtph_ps(_mm512_castph512_ph256hi(src))));
+}
+
+STATIC_INLINE void _mm512_storeu_auto(float* dest, __m512h src)
+{
+	_mm512_storeu_ps(dest + 0, _mm512_cvtph_ps(_mm512_castph512_ph256(src)));
+	_mm512_storeu_ps(dest + 16, _mm512_cvtph_ps(_mm512_castph512_ph256hi(src)));
+}
+
+STATIC_INLINE void _mm512_storescalar_auto(float* dest, __m512h ms, const int numpixel)
+{
+	__m512 ms0 = _mm512_cvtph_ps(_mm512_castph512_ph256(ms));
+	__m512 ms1 = _mm512_cvtph_ps(_mm512_castph512_ph256hi(ms));
+	_mm512_storescalar_ps(dest, ms0, numpixel);
+	_mm512_storescalar_ps(dest + 16, ms1, numpixel);
+}
+
+STATIC_INLINE void _mm512_storeu_auto_color(float* dest, __m512h b, __m512h g, __m512h r)
+{
+	__m512 b0 = _mm512_cvtph_ps(_mm512_castph512_ph256(b));
+	__m512 g0 = _mm512_cvtph_ps(_mm512_castph512_ph256(g));
+	__m512 r0 = _mm512_cvtph_ps(_mm512_castph512_ph256(r));
+	_mm512_storeu_ps_color(dest, b0, g0, r0);
+	__m512 b1 = _mm512_cvtph_ps(_mm512_castph512_ph256hi(b));
+	__m512 g1 = _mm512_cvtph_ps(_mm512_castph512_ph256hi(g));
+	__m512 r1 = _mm512_cvtph_ps(_mm512_castph512_ph256hi(r));
+	_mm512_storeu_ps_color(dest + 48, b1, g1, r1);
+}
+
+STATIC_INLINE void _mm512_storescalar_auto_color(float* dest, __m512h b, __m512h g, __m512h r, const int numpixel)
+{
+	/*__m512 dr, dg, db;
+	_mm512_cvtsoa2aos_ps(b, g, r, db, dg, dr);
+	float CV_DECL_ALIGNED(64) buffscalarstore[48];
+	_mm512_store_ps(buffscalarstore + 0, db);
+	_mm512_store_ps(buffscalarstore + 16, dg);
+	_mm512_store_ps(buffscalarstore + 32, dr);
+
+	for (int i = 0; i < numpixel; i++)
+		dest[i] = buffscalarstore[i];*/
+}
+#endif //__AVX512FP16__
+
 #endif //__AVX512F__
 
 #endif //__CP_INLINE_SIMD_FUNCTIONS__

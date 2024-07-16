@@ -1,4 +1,5 @@
 #include "stdafx.h"
+
 #ifdef _DEBUG
 #pragma comment(lib, "opencpd.lib")
 #else

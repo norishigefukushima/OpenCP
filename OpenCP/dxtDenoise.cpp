@@ -37,7 +37,7 @@ void fDCT2x2_2pack_32f_and_thresh_and_iDCT2x2_2pack(float* src, float* dest, flo
 
 namespace cp
 {
-	
+
 #define _KEEP_00_COEF_
 
 	class DenoiseWeightedDCTShrinkageInvorker8x8 : public cv::ParallelLoopBody
@@ -52,7 +52,7 @@ namespace cp
 
 	public:
 
-		DenoiseWeightedDCTShrinkageInvorker8x8(float *sim, float* dim, float* wmap, float Th, int w, int h) : src(sim), dest(dim), weight(wmap), width(w), height(h), thresh(Th)
+		DenoiseWeightedDCTShrinkageInvorker8x8(float* sim, float* dim, float* wmap, float Th, int w, int h) : src(sim), dest(dim), weight(wmap), width(w), height(h), thresh(Th)
 		{
 			;
 		}
@@ -75,9 +75,9 @@ namespace cp
 				Mat patch(Size(8, 8), CV_32F);
 				float* ptch = patch.ptr<float>(0);
 
-				float* s0 = &src[width*j];
-				float* d0 = &dest[width*j];
-				float* w0 = &weight[width*j];
+				float* s0 = &src[width * j];
+				float* d0 = &dest[width * j];
+				float* w0 = &weight[width * j];
 				const int sz = sizeof(float) * 8;
 				for (int i = 0; i < wstep; i++)
 				{
@@ -146,7 +146,7 @@ namespace cp
 
 	public:
 
-		DenoiseDCTShrinkageInvorker8x8(float *sim, float* dim, float Th, int w, int h) : src(sim), dest(dim), width(w), height(h), thresh(Th)
+		DenoiseDCTShrinkageInvorker8x8(float* sim, float* dim, float Th, int w, int h) : src(sim), dest(dim), width(w), height(h), thresh(Th)
 		{
 			;
 		}
@@ -169,8 +169,8 @@ namespace cp
 				Mat patch(Size(8, 8), CV_32F);
 				float* ptch = patch.ptr<float>(0);
 
-				float* s0 = &src[width*j];
-				float* d0 = &dest[width*j];
+				float* s0 = &src[width * j];
+				float* d0 = &dest[width * j];
 				const int sz = sizeof(float) * 8;
 				for (int i = 0; i < wstep; i++)
 				{
@@ -230,7 +230,7 @@ namespace cp
 		int height;
 
 	public:
-		DenoiseWeightedDCTShrinkageInvorker4x4(float *sim, float* dim, float* wmap, float Th, int w, int h) : src(sim), dest(dim), weight(wmap), width(w), height(h), thresh(Th)
+		DenoiseWeightedDCTShrinkageInvorker4x4(float* sim, float* dim, float* wmap, float Th, int w, int h) : src(sim), dest(dim), weight(wmap), width(w), height(h), thresh(Th)
 		{
 			;
 		}
@@ -250,9 +250,9 @@ namespace cp
 				Mat patch(Size(4, 4), CV_32F);
 				float* ptch = patch.ptr<float>(0);
 
-				float* s0 = &src[width*j];
-				float* d0 = &dest[width*j];
-				float* w0 = &weight[width*j];
+				float* s0 = &src[width * j];
+				float* d0 = &dest[width * j];
+				float* w0 = &weight[width * j];
 				const int sz = sizeof(float) * 4;
 				for (int i = 0; i < wstep; i++)
 				{
@@ -299,7 +299,7 @@ namespace cp
 		int height;
 
 	public:
-		DenoiseDCTShrinkageInvorker4x4(float *sim, float* dim, float Th, int w, int h) : src(sim), dest(dim), width(w), height(h), thresh(Th)
+		DenoiseDCTShrinkageInvorker4x4(float* sim, float* dim, float Th, int w, int h) : src(sim), dest(dim), width(w), height(h), thresh(Th)
 		{
 			;
 		}
@@ -319,8 +319,8 @@ namespace cp
 				Mat patch(Size(4, 4), CV_32F);
 				float* ptch = patch.ptr<float>(0);
 
-				float* s0 = &src[width*j];
-				float* d0 = &dest[width*j];
+				float* s0 = &src[width * j];
+				float* d0 = &dest[width * j];
 				const int sz = sizeof(float) * 4;
 				for (int i = 0; i < wstep; i++)
 				{
@@ -387,7 +387,7 @@ namespace cp
 
 
 	public:
-		ShearableDenoiseDCTShrinkageInvorker4x4(float *sim, float* dim, float Th, int w, int h, int dr) : src(sim), dest(dim), width(w), height(h), thresh(Th), direct(dr)
+		ShearableDenoiseDCTShrinkageInvorker4x4(float* sim, float* dim, float Th, int w, int h, int dr) : src(sim), dest(dim), width(w), height(h), thresh(Th), direct(dr)
 		{
 			;
 		}
@@ -408,8 +408,8 @@ namespace cp
 				Mat patch(Size(4, 4), CV_32F);
 				float* ptch = patch.ptr<float>(0);
 
-				float* s0 = &src[width*j];
-				float* d0 = &dest[width*j];
+				float* s0 = &src[width * j];
+				float* d0 = &dest[width * j];
 				const int sz = sizeof(float) * 4;
 				for (int i = 0; i < wstep; i++)
 				{
@@ -628,7 +628,7 @@ namespace cp
 
 	public:
 
-		DenoiseDCTShrinkageInvorker4x4to8x8(float *sim, float* dim, float Th, int w, int h) : src(sim), dest(dim), width(w), height(h), thresh(Th)
+		DenoiseDCTShrinkageInvorker4x4to8x8(float* sim, float* dim, float Th, int w, int h) : src(sim), dest(dim), width(w), height(h), thresh(Th)
 		{
 			;
 		}
@@ -649,8 +649,8 @@ namespace cp
 				Mat patchU(Size(8, 8), CV_32F, Scalar::all(0));
 				float* ptch = patch.ptr<float>(0);
 
-				float* s0 = &src[width*j];
-				float* d0 = &dest[2 * width*j * 2];
+				float* s0 = &src[width * j];
+				float* d0 = &dest[2 * width * j * 2];
 				const int sz = sizeof(float) * 4;
 				for (int i = 0; i < wstep; i++)
 				{
@@ -670,7 +670,7 @@ namespace cp
 					patchU.setTo(0.f, mask);
 
 #ifdef _KEEP_00_COEF_
-					*(float*)patchU.data = f0;
+					* (float*)patchU.data = f0;
 #endif
 					//dct(patch,patch,DCT_INVERSE);resize(patch,patchU,Size(8,8),0,0,1);
 
@@ -728,7 +728,7 @@ namespace cp
 
 	public:
 
-		DenoiseDCTShrinkageInvorker2x2(float *sim, float* dim, float Th, int w, int h) : src(sim), dest(dim), width(w), height(h), thresh(Th)
+		DenoiseDCTShrinkageInvorker2x2(float* sim, float* dim, float Th, int w, int h) : src(sim), dest(dim), width(w), height(h), thresh(Th)
 		{
 
 		}
@@ -745,8 +745,8 @@ namespace cp
 			{
 				Mat patch(Size(4, 2), CV_32F);
 				float* ptch = patch.ptr<float>(0);
-				float* s0 = &src[width*j];
-				float* d0 = &dest[width*j];
+				float* s0 = &src[width * j];
+				float* d0 = &dest[width * j];
 				const int sz = sizeof(float) * 4;
 				for (int i = 0; i < wstep; i += 4)
 				{
@@ -798,7 +798,7 @@ namespace cp
 
 	public:
 
-		DenoiseDCTShrinkageInvorkerTest(float *sim, float* dim, float Th, int w, int h, Size psize) : src(sim), dest(dim), width(w), height(h), patch_size(psize), thresh(Th)
+		DenoiseDCTShrinkageInvorkerTest(float* sim, float* dim, float Th, int w, int h, Size psize) : src(sim), dest(dim), width(w), height(h), patch_size(psize), thresh(Th)
 		{
 			;
 		}
@@ -819,14 +819,14 @@ namespace cp
 
 				float* ptch = patch.ptr<float>(0);
 
-				float* s0 = &src[width*j];
-				float* d0 = &dest[width*j];
-				const int sz = sizeof(float)*patch_size.width;
+				float* s0 = &src[width * j];
+				float* d0 = &dest[width * j];
+				const int sz = sizeof(float) * patch_size.width;
 				for (int i = 0; i < wstep; i++)
 				{
 					for (int k = 0; k < patch_size.height; k++)
 					{
-						memcpy(ptch + k*patch_size.width, s0 + k*width, sz);
+						memcpy(ptch + k * patch_size.width, s0 + k * width, sz);
 					}
 
 
@@ -837,7 +837,7 @@ namespace cp
 
 					dct(patch, patch);
 					Mat dst;
-					max(abs(patch) - sqrt(80000000000000.3*thresh), 0.f, dst);
+					max(abs(patch) - sqrt(80000000000000.3 * thresh), 0.f, dst);
 					compare(patch, 0, mask, CMP_LT);
 					Mat(-1 * dst).copyTo(dst, mask);
 					dst.at<float>(0, 0) = patch.at<float>(0, 0);
@@ -869,7 +869,7 @@ namespace cp
 
 	public:
 
-		DenoiseDCTShrinkageInvorker(float *sim, float* dim, float Th, int w, int h, Size psize) : src(sim), dest(dim), width(w), height(h), patch_size(psize), thresh(Th)
+		DenoiseDCTShrinkageInvorker(float* sim, float* dim, float Th, int w, int h, Size psize) : src(sim), dest(dim), width(w), height(h), patch_size(psize), thresh(Th)
 		{
 			;
 		}
@@ -890,14 +890,14 @@ namespace cp
 
 				float* ptch = patch.ptr<float>(0);
 
-				float* s0 = &src[width*j];
+				float* s0 = &src[width * j];
 
-				const int sz = sizeof(float)*patch_size.width;
+				const int sz = sizeof(float) * patch_size.width;
 				for (int i = 0; i < wstep; i++)
 				{
 					for (int k = 0; k < patch_size.height; k++)
 					{
-						memcpy(ptch + k*patch_size.width, s0 + k*width, sz);
+						memcpy(ptch + k * patch_size.width, s0 + k * width, sz);
 					}
 
 					//Mat show1; patch.convertTo(show1,CV_8U);imshow("patchb",show1); 
@@ -909,7 +909,7 @@ namespace cp
 					compare(abs(patch), thresh, mask, CMP_LT);
 					patch.setTo(0.f, mask);
 #ifdef _KEEP_00_COEF_
-					*(float*)patch.data = f0;
+					* (float*)patch.data = f0;
 #endif
 
 					dct(patch, patch, DCT_INVERSE);
@@ -934,7 +934,7 @@ namespace cp
 
 	public:
 
-		DenoiseDHTShrinkageInvorker16x16(float *sim, float* dim, float Th, int w, int h) : src(sim), dest(dim), width(w), height(h), thresh(Th)
+		DenoiseDHTShrinkageInvorker16x16(float* sim, float* dim, float Th, int w, int h) : src(sim), dest(dim), width(w), height(h), thresh(Th)
 		{
 			;
 		}
@@ -950,13 +950,13 @@ namespace cp
 				Mat patch(Size(16, 16), CV_32F);
 				float* ptch = patch.ptr<float>(0);
 
-				float* s0 = &src[width*j];
-				float* d0 = &dest[width*j];
+				float* s0 = &src[width * j];
+				float* d0 = &dest[width * j];
 				const int sz = sizeof(float) * 16;
 				for (int i = 0; i < wstep; i++)
 				{
 					for (int n = 0; n < 16; n++)
-						memcpy(ptch + 16 * n, s0 + n*width, sz);
+						memcpy(ptch + 16 * n, s0 + n * width, sz);
 
 					Hadamard2D16x16andThreshandIDHT(ptch, thresh);
 
@@ -1008,7 +1008,7 @@ namespace cp
 
 	public:
 
-		DenoiseDHTShrinkageInvorker8x8(float *sim, float* dim, float Th, int w, int h) : src(sim), dest(dim), width(w), height(h), thresh(Th)
+		DenoiseDHTShrinkageInvorker8x8(float* sim, float* dim, float Th, int w, int h) : src(sim), dest(dim), width(w), height(h), thresh(Th)
 		{
 			;
 		}
@@ -1031,8 +1031,8 @@ namespace cp
 				Mat patch(Size(8, 8), CV_32F);
 				float* ptch = patch.ptr<float>(0);
 
-				float* s0 = &src[width*j];
-				float* d0 = &dest[width*j];
+				float* s0 = &src[width * j];
+				float* d0 = &dest[width * j];
 				const int sz = sizeof(float) * 8;
 				for (int i = 0; i < wstep; i++)
 				{
@@ -1085,7 +1085,7 @@ namespace cp
 
 	public:
 
-		DenoiseDHTShrinkageInvorker4x4(float *sim, float* dim, float Th, int w, int h) : src(sim), dest(dim), width(w), height(h), thresh(Th)
+		DenoiseDHTShrinkageInvorker4x4(float* sim, float* dim, float Th, int w, int h) : src(sim), dest(dim), width(w), height(h), thresh(Th)
 		{
 			;
 		}
@@ -1104,8 +1104,8 @@ namespace cp
 				Mat patch(Size(4, 4), CV_32F);
 				float* ptch = patch.ptr<float>(0);
 
-				float* s0 = &src[width*j];
-				float* d0 = &dest[width*j];
+				float* s0 = &src[width * j];
+				float* d0 = &dest[width * j];
 				const int sz = sizeof(float) * 4;
 				for (int i = 0; i < wstep; i++)
 				{
@@ -1146,7 +1146,7 @@ namespace cp
 
 	public:
 
-		DenoiseDHTShrinkageInvorker4x4S(float *sim, float* dim, float Th, int w, int h) : src(sim), dest(dim), width(w), height(h), thresh(Th)
+		DenoiseDHTShrinkageInvorker4x4S(float* sim, float* dim, float Th, int w, int h) : src(sim), dest(dim), width(w), height(h), thresh(Th)
 		{
 			;
 		}
@@ -1165,8 +1165,8 @@ namespace cp
 				Mat patch(Size(4, 4), CV_32F);
 				float* ptch = patch.ptr<float>(0);
 
-				float* s0 = &src[width*j];
-				float* d0 = &dest[width*j];
+				float* s0 = &src[width * j];
+				float* d0 = &dest[width * j];
 				const int sz = sizeof(float) * 4;
 				for (int i = 0; i < wstep; i++)
 				{
@@ -1206,7 +1206,7 @@ namespace cp
 
 	public:
 
-		DenoiseDHTShrinkageInvorker4x4S2(float *sim, float* dim, float Th, int w, int h) : src(sim), dest(dim), width(w), height(h), thresh(Th)
+		DenoiseDHTShrinkageInvorker4x4S2(float* sim, float* dim, float Th, int w, int h) : src(sim), dest(dim), width(w), height(h), thresh(Th)
 		{
 			;
 		}
@@ -1225,8 +1225,8 @@ namespace cp
 				Mat patch(Size(4, 4), CV_32F);
 				float* ptch = patch.ptr<float>(0);
 
-				float* s0 = &src[width*j];
-				float* d0 = &dest[width*j];
+				float* s0 = &src[width * j];
+				float* d0 = &dest[width * j];
 				const int sz = sizeof(float) * 4;
 				for (int i = 0; i < wstep; i++)
 				{
@@ -1286,15 +1286,15 @@ namespace cp
 		float* s = src;
 		for (int i = 0; i < 8; i++)
 		{
-			float v0 = (s[0] + s[8])*0.5f;
-			float v4 = (s[0] - s[8])*0.5f;
-			float v1 = (s[16] + s[24])*0.5f;
-			float v5 = (s[16] - s[24])*0.5f;
+			float v0 = (s[0] + s[8]) * 0.5f;
+			float v4 = (s[0] - s[8]) * 0.5f;
+			float v1 = (s[16] + s[24]) * 0.5f;
+			float v5 = (s[16] - s[24]) * 0.5f;
 
-			float v2 = (s[32] + s[40])*0.5f;
-			float v6 = (s[32] - s[40])*0.5f;
-			float v3 = (s[48] + s[56])*0.5f;
-			float v7 = (s[48] - s[56])*0.5f;
+			float v2 = (s[32] + s[40]) * 0.5f;
+			float v6 = (s[32] - s[40]) * 0.5f;
+			float v3 = (s[48] + s[56]) * 0.5f;
+			float v7 = (s[48] - s[56]) * 0.5f;
 
 			s[0] = v0; s[16] = v2;
 			s[8] = v1; s[24] = v3;
@@ -1331,15 +1331,15 @@ namespace cp
 		float* s = src;
 		for (int i = 0; i < 8; i++)
 		{
-			float v0 = (s[0] + s[1])*0.5f;
-			float v4 = (s[0] - s[1])*0.5f;
-			float v1 = (s[2] + s[3])*0.5f;
-			float v5 = (s[2] - s[3])*0.5f;
+			float v0 = (s[0] + s[1]) * 0.5f;
+			float v4 = (s[0] - s[1]) * 0.5f;
+			float v1 = (s[2] + s[3]) * 0.5f;
+			float v5 = (s[2] - s[3]) * 0.5f;
 
-			float v2 = (s[4] + s[5])*0.5f;
-			float v6 = (s[4] - s[5])*0.5f;
-			float v3 = (s[6] + s[7])*0.5f;
-			float v7 = (s[6] - s[7])*0.5f;
+			float v2 = (s[4] + s[5]) * 0.5f;
+			float v6 = (s[4] - s[5]) * 0.5f;
+			float v3 = (s[6] + s[7]) * 0.5f;
+			float v7 = (s[6] - s[7]) * 0.5f;
 
 			s[0] = v0; s[2] = v2;
 			s[1] = v1; s[3] = v3;
@@ -1384,10 +1384,10 @@ namespace cp
 		float* s = src;
 		for (int i = 0; i < 4; i++)
 		{
-			float v0 = (s[0] + s[1])*0.5f;
-			float v2 = (s[0] - s[1])*0.5f;
-			float v1 = (s[2] + s[3])*0.5f;
-			float v3 = (s[2] - s[3])*0.5f;
+			float v0 = (s[0] + s[1]) * 0.5f;
+			float v2 = (s[0] - s[1]) * 0.5f;
+			float v1 = (s[2] + s[3]) * 0.5f;
+			float v3 = (s[2] - s[3]) * 0.5f;
 			s[0] = v0; s[2] = v2;
 			s[1] = v1; s[3] = v3;
 			s += 4;
@@ -1398,10 +1398,10 @@ namespace cp
 		float* s = src;
 		for (int i = 0; i < 4; i++)
 		{
-			float v0 = (s[0] + s[4])*0.5f;
-			float v2 = (s[0] - s[4])*0.5f;
-			float v1 = (s[8] + s[12])*0.5f;
-			float v3 = (s[8] - s[12])*0.5f;
+			float v0 = (s[0] + s[4]) * 0.5f;
+			float v2 = (s[0] - s[4]) * 0.5f;
+			float v1 = (s[8] + s[12]) * 0.5f;
+			float v3 = (s[8] - s[12]) * 0.5f;
 			s[0] = v0; s[8] = v2;
 			s[4] = v1; s[12] = v3;
 			s++;
@@ -1473,7 +1473,7 @@ namespace cp
 
 	public:
 
-		DenoiseDWTShrinkageInvorker8x8(float *sim, float* dim, float Th, int w, int h) : src(sim), dest(dim), width(w), height(h), thresh(Th)
+		DenoiseDWTShrinkageInvorker8x8(float* sim, float* dim, float Th, int w, int h) : src(sim), dest(dim), width(w), height(h), thresh(Th)
 		{
 			;
 		}
@@ -1496,8 +1496,8 @@ namespace cp
 				Mat patch(Size(8, 8), CV_32F);
 				float* ptch = patch.ptr<float>(0);
 
-				float* s0 = &src[width*j];
-				float* d0 = &dest[width*j];
+				float* s0 = &src[width * j];
+				float* d0 = &dest[width * j];
 				const int sz = sizeof(float) * 8;
 				for (int i = 0; i < wstep; i++)
 				{
@@ -1569,7 +1569,7 @@ namespace cp
 
 	public:
 
-		DenoiseDWTShrinkageInvorker4x4(float *sim, float* dim, float Th, int w, int h) : src(sim), dest(dim), width(w), height(h), thresh(Th)
+		DenoiseDWTShrinkageInvorker4x4(float* sim, float* dim, float Th, int w, int h) : src(sim), dest(dim), width(w), height(h), thresh(Th)
 		{
 			;
 		}
@@ -1588,8 +1588,8 @@ namespace cp
 				Mat patch(Size(4, 4), CV_32F);
 				float* ptch = patch.ptr<float>(0);
 
-				float* s0 = &src[width*j];
-				float* d0 = &dest[width*j];
+				float* s0 = &src[width * j];
+				float* d0 = &dest[width * j];
 				const int sz = sizeof(float) * 4;
 				for (int i = 0; i < wstep; i++)
 				{
@@ -1599,7 +1599,7 @@ namespace cp
 					memcpy(ptch + 12, s0 + w3, sz);
 
 					fDWT4x4(ptch);
-					float th = thresh*0.2f;
+					float th = thresh * 0.2f;
 					for (int i = 1; i < 16; i++)
 					{
 						//ptch[i] = (abs(ptch[i])<th) ? 0.f: ptch[i];
@@ -1756,7 +1756,7 @@ namespace cp
 			s0 += 4;
 		}
 	}
-	void DenoiseDXTShrinkage::body(float *src0, float* dest0, float *src1, float* dest1, float *src2, float* dest2, float Th)
+	void DenoiseDXTShrinkage::body(float* src0, float* dest0, float* src1, float* dest1, float* src2, float* dest2, float Th)
 	{
 		/*
 		const int hstep= size.height - patch_size.height + 1;
@@ -1885,14 +1885,14 @@ namespace cp
 		*/
 	}
 
-	void DenoiseDXTShrinkage::bodyTest(float *src, float* dest, float Th)
+	void DenoiseDXTShrinkage::bodyTest(float* src, float* dest, float Th)
 	{
 		DenoiseDCTShrinkageInvorkerTest invork(src, dest, Th, size.width, size.height, patch_size);
 		parallel_for_(Range(0, size.height - patch_size.height), invork);
 	}
 
 
-	void DenoiseDXTShrinkage::body(float *src, float* dest, float* wmap, float Th)
+	void DenoiseDXTShrinkage::body(float* src, float* dest, float* wmap, float Th)
 	{
 		if (basis == DenoiseDCT)
 		{
@@ -1979,7 +1979,7 @@ namespace cp
 		}
 	}
 
-	void DenoiseDXTShrinkage::body(float *src, float* dest, float Th)
+	void DenoiseDXTShrinkage::body(float* src, float* dest, float Th)
 	{
 		if (basis == DenoiseDCT)
 		{
@@ -2067,7 +2067,7 @@ namespace cp
 	}
 
 
-	void DenoiseDXTShrinkage::body(float *src, float* dest, float Th, int dr)
+	void DenoiseDXTShrinkage::body(float* src, float* dest, float Th, int dr)
 	{
 		if (basis == DenoiseDCT)
 		{
@@ -2170,7 +2170,7 @@ namespace cp
 
 		const int width = im.cols;
 		const int height = im.rows;
-		const int size1 = width*height;
+		const int size1 = width * height;
 		float* ipixels;
 		float* opixels;
 
@@ -2201,68 +2201,68 @@ namespace cp
 			}
 		}
 
-	{
+		{
 #ifdef _CALCTIME_
-		CalcTime t("body");
+			CalcTime t("body");
 #endif
-		if (channel == 3)
-		{
-			Size s = size;
-			size = Size(size.width + 2 * patch_size.width, size.height);
-			body(ipixels, opixels, Th, direct);
-			body(ipixels + size1, opixels + size1, Th, direct);
-			body(ipixels + 2 * size1, opixels + 2 * size1, Th, direct);
-			size = s;
-		}
-		else
-		{
-			body(ipixels, opixels, Th, direct);
-		}
-		//body(ipixels, opixels,ipixels+size1, opixels+size1,ipixels+2*size1, opixels+2*size1,Th);
+			if (channel == 3)
+			{
+				Size s = size;
+				size = Size(size.width + 2 * patch_size.width, size.height);
+				body(ipixels, opixels, Th, direct);
+				body(ipixels + size1, opixels + size1, Th, direct);
+				body(ipixels + 2 * size1, opixels + 2 * size1, Th, direct);
+				size = s;
+			}
+			else
+			{
+				body(ipixels, opixels, Th, direct);
+			}
+			//body(ipixels, opixels,ipixels+size1, opixels+size1,ipixels+2*size1, opixels+2*size1,Th);
 
-	}
+		}
 
-	{
+		{
 #ifdef _CALCTIME_
-		CalcTime t("div");
+			CalcTime t("div");
 #endif
 
-		if (channel == 3)
-		{
-			float* d0 = &opixels[0];
-			float* d1 = &opixels[size1];
-			float* d2 = &opixels[2 * size1];
-			div(d0, d1, d2, patch_size.area(), size1);
+			if (channel == 3)
+			{
+				float* d0 = &opixels[0];
+				float* d1 = &opixels[size1];
+				float* d2 = &opixels[2 * size1];
+				div(d0, d1, d2, patch_size.area(), size1);
 
+			}
+			else
+			{
+				float* d0 = &opixels[0];
+				div(d0, patch_size.area(), size1);
+			}
 		}
-		else
-		{
-			float* d0 = &opixels[0];
-			div(d0, patch_size.area(), size1);
-		}
-	}
 
-	{
+		{
 #ifdef _CALCTIME_
-		CalcTime t("inv color");
+			CalcTime t("inv color");
 #endif
-		// inverse 3-point DCT transform in the color dimension
-		if (channel == 3)
-		{
-			decorrelateColorInvert(opixels, opixels, width, height);
-			cvtColorOrder32F_BBBBGGGGRRRR2BGR(sum, im);
-		}
-		else
-		{
-			im = sum;
-		}
+			// inverse 3-point DCT transform in the color dimension
+			if (channel == 3)
+			{
+				decorrelateColorInvert(opixels, opixels, width, height);
+				cvtColorOrder32F_BBBBGGGGRRRR2BGR(sum, im);
+			}
+			else
+			{
+				im = sum;
+			}
 
-		Mat im2;
-		if (src_.depth() != CV_32F) im.convertTo(im2, src_.type());
-		else im2 = im;
+			Mat im2;
+			if (src_.depth() != CV_32F) im.convertTo(im2, src_.type());
+			else im2 = im;
 
-		Mat(im2(Rect(patch_size.width * 2, patch_size.height, src.cols, src.rows))).copyTo(dest);
-	}
+			Mat(im2(Rect(patch_size.width * 2, patch_size.height, src.cols, src.rows))).copyTo(dest);
+		}
 	}
 
 
@@ -2282,7 +2282,7 @@ namespace cp
 
 		const int width = im.cols;
 		const int height = im.rows;
-		const int size1 = width*height;
+		const int size1 = width * height;
 		float* ipixels;
 		float* opixels;
 
@@ -2316,77 +2316,77 @@ namespace cp
 			}
 		}
 
-	{
+		{
 #ifdef _CALCTIME_
-		CalcTime t("body");
+			CalcTime t("body");
 #endif
-		if (channel == 3)
-		{
-			float* w0 = weight0.ptr<float>(0);
-			float* w1 = weight1.ptr<float>(0);
-			float* w2 = weight2.ptr<float>(0);
+			if (channel == 3)
+			{
+				float* w0 = weight0.ptr<float>(0);
+				float* w1 = weight1.ptr<float>(0);
+				float* w2 = weight2.ptr<float>(0);
 
-			body(ipixels, opixels, w0, Th);
-			body(ipixels + size1, opixels + size1, w1, Th);
-			body(ipixels + 2 * size1, opixels + 2 * size1, w2, Th);
+				body(ipixels, opixels, w0, Th);
+				body(ipixels + size1, opixels + size1, w1, Th);
+				body(ipixels + 2 * size1, opixels + 2 * size1, w2, Th);
+			}
+			else
+			{
+				body(ipixels, opixels, (float*)weight0.data, Th);
+			}
+			//body(ipixels, opixels,ipixels+size1, opixels+size1,ipixels+2*size1, opixels+2*size1,Th);
+
 		}
-		else
+
 		{
-			body(ipixels, opixels, (float*)weight0.data, Th);
-		}
-		//body(ipixels, opixels,ipixels+size1, opixels+size1,ipixels+2*size1, opixels+2*size1,Th);
-
-	}
-
-	{
 #ifdef _CALCTIME_
-		CalcTime t("div");
+			CalcTime t("div");
 #endif
 
-		if (channel == 3)
-		{
-			float* d0 = &opixels[0];
-			float* d1 = &opixels[size1];
-			float* d2 = &opixels[2 * size1];
+			if (channel == 3)
+			{
+				float* d0 = &opixels[0];
+				float* d1 = &opixels[size1];
+				float* d2 = &opixels[2 * size1];
 
-			float* w0 = weight0.ptr<float>(0);
-			float* w1 = weight1.ptr<float>(0);
-			float* w2 = weight2.ptr<float>(0);
+				float* w0 = weight0.ptr<float>(0);
+				float* w1 = weight1.ptr<float>(0);
+				float* w2 = weight2.ptr<float>(0);
 
-			div(d0, d1, d2, w0, w1, w2, size1);
+				div(d0, d1, d2, w0, w1, w2, size1);
 
-			//guiAlphaBlend(weight0,weight1);
-			//guiAlphaBlend(weight0,weight2);
+				//guiAlphaBlend(weight0,weight1);
+				//guiAlphaBlend(weight0,weight2);
+			}
+			else
+			{
+				float* d0 = &opixels[0];
+				float* w0 = (float*)weight0.data;
+				div(d0, w0, size1);
+			}
 		}
-		else
-		{
-			float* d0 = &opixels[0];
-			float* w0 = (float*)weight0.data;
-			div(d0, w0, size1);
-		}
-	}
 
-	{
+		{
 #ifdef _CALCTIME_
-		CalcTime t("inv color");
+			CalcTime t("inv color");
 #endif
-		// inverse 3-point DCT transform in the color dimension
-		if (channel == 3)
-		{
-			decorrelateColorInvert(opixels, opixels, width, height);
-			cvtColorOrder32F_BBBBGGGGRRRR2BGR(sum, im);
-		}
-		else
-		{
-			im = sum;
-		}
+			// inverse 3-point DCT transform in the color dimension
+			if (channel == 3)
+			{
+				decorrelateColorInvert(opixels, opixels, width, height);
+				cvtColorOrder32F_BBBBGGGGRRRR2BGR(sum, im);
+			}
+			else
+			{
+				im = sum;
+			}
 
-		Mat im2;
-		if (src_.depth() != CV_32F) im.convertTo(im2, src_.type());
-		else im2 = im;
+			Mat im2;
+			if (src_.depth() != CV_32F) im.convertTo(im2, src_.type());
+			else im2 = im;
 
-		Mat(im2(Rect(patch_size.width, patch_size.height, src.cols, src.rows))).copyTo(dest);
-	}
+			Mat(im2(Rect(patch_size.width, patch_size.height, src.cols, src.rows))).copyTo(dest);
+		}
 	}
 
 	void DenoiseDXTShrinkage::operator()(Mat& src_, Mat& dest, float sigma, Size psize, int transform_basis)
@@ -2405,7 +2405,7 @@ namespace cp
 
 		const int width = im.cols;
 		const int height = im.rows;
-		const int size1 = width*height;
+		const int size1 = width * height;
 		float* ipixels;
 		float* opixels;
 
@@ -2432,68 +2432,68 @@ namespace cp
 
 			if (channel == 3)
 			{
-				decorrelateColorForward(ipixels, ipixels, width, height);
+				if (isRGBDCT) decorrelateColorForward(ipixels, ipixels, width, height);
 			}
 		}
 
-	{
+		{
 #ifdef _CALCTIME_
-		CalcTime t("body");
+			CalcTime t("body");
 #endif
-		if (channel == 3)
-		{
-			body(ipixels, opixels, Th);
-			body(ipixels + size1, opixels + size1, Th);
-			body(ipixels + 2 * size1, opixels + 2 * size1, Th);
-		}
-		else
-		{
-			body(ipixels, opixels, Th);
-		}
-		//body(ipixels, opixels,ipixels+size1, opixels+size1,ipixels+2*size1, opixels+2*size1,Th);
+			if (channel == 3)
+			{
+				body(ipixels, opixels, Th);
+				body(ipixels + size1, opixels + size1, Th);
+				body(ipixels + 2 * size1, opixels + 2 * size1, Th);
+			}
+			else
+			{
+				body(ipixels, opixels, Th);
+			}
+			//body(ipixels, opixels,ipixels+size1, opixels+size1,ipixels+2*size1, opixels+2*size1,Th);
 
-	}
+		}
 
-	{
+		{
 #ifdef _CALCTIME_
-		CalcTime t("div");
+			CalcTime t("div");
 #endif
 
-		if (channel == 3)
-		{
-			float* d0 = &opixels[0];
-			float* d1 = &opixels[size1];
-			float* d2 = &opixels[2 * size1];
-			div(d0, d1, d2, patch_size.area(), size1);
+			if (channel == 3)
+			{
+				float* d0 = &opixels[0];
+				float* d1 = &opixels[size1];
+				float* d2 = &opixels[2 * size1];
+				div(d0, d1, d2, patch_size.area(), size1);
+			}
+			else
+			{
+				float* d0 = &opixels[0];
+				div(d0, patch_size.area(), size1);
+			}
 		}
-		else
-		{
-			float* d0 = &opixels[0];
-			div(d0, patch_size.area(), size1);
-		}
-	}
 
-	{
+		{
 #ifdef _CALCTIME_
-		CalcTime t("inv color");
+			CalcTime t("inv color");
 #endif
-		// inverse 3-point DCT transform in the color dimension
-		if (channel == 3)
-		{
-			decorrelateColorInvert(opixels, opixels, width, height);
-			cvtColorOrder32F_BBBBGGGGRRRR2BGR(sum, im);
-		}
-		else
-		{
-			im = sum;
-		}
+			// inverse 3-point DCT transform in the color dimension
+			if (channel == 3)
+			{
+				if (isRGBDCT) decorrelateColorInvert(opixels, opixels, width, height);
+				cvtColorOrder32F_BBBBGGGGRRRR2BGR(sum, im);
+			}
+			else
+			{
+				im = sum;
+			}
 
-		Mat im2;
-		if (src_.depth() != CV_32F) im.convertTo(im2, src_.type());
-		else im2 = im;
+			Mat im2;
+			if (src_.depth() != CV_32F) im.convertTo(im2, src_.type());
+			else im2 = im;
 
-		Mat(im2(Rect(patch_size.width, patch_size.height, src.cols, src.rows))).copyTo(dest);
-	}
+			Mat(im2(Rect(patch_size.width, patch_size.height, src.cols, src.rows))).copyTo(dest);
+		}
 	}
 
 	void DenoiseDXTShrinkage::test(Mat& src, Mat& dest, float sigma, Size psize)
@@ -2504,7 +2504,7 @@ namespace cp
 
 		const int width = im.cols;
 		const int height = im.rows;
-		const int size1 = width*height;
+		const int size1 = width * height;
 
 		float* ipixels;
 		float* opixels;
@@ -2529,36 +2529,36 @@ namespace cp
 			decorrelateColorForward(ipixels, ipixels, width, height);
 		}
 
-	{
+		{
 #ifdef _CALCTIME_
-		CalcTime t("body");
+			CalcTime t("body");
 #endif
-		bodyTest(ipixels, opixels, Th);
-		bodyTest(ipixels + size1, opixels + size1, Th);
-		bodyTest(ipixels + 2 * size1, opixels + 2 * size1, Th);
-		//body(ipixels, opixels,ipixels+size1, opixels+size1,ipixels+2*size1, opixels+2*size1,Th);
+			bodyTest(ipixels, opixels, Th);
+			bodyTest(ipixels + size1, opixels + size1, Th);
+			bodyTest(ipixels + 2 * size1, opixels + 2 * size1, Th);
+			//body(ipixels, opixels,ipixels+size1, opixels+size1,ipixels+2*size1, opixels+2*size1,Th);
 
-	}
-	{
+		}
+		{
 #ifdef _CALCTIME_
-		CalcTime t("div");
+			CalcTime t("div");
 #endif
-		float* d0 = &opixels[0];
-		float* d1 = &opixels[size1];
-		float* d2 = &opixels[2 * size1];
-		div(d0, d1, d2, patch_size.area(), size1);
-	}
+			float* d0 = &opixels[0];
+			float* d1 = &opixels[size1];
+			float* d2 = &opixels[2 * size1];
+			div(d0, d1, d2, patch_size.area(), size1);
+		}
 
-	{
+		{
 #ifdef _CALCTIME_
-		CalcTime t("inv color");
+			CalcTime t("inv color");
 #endif
-		// inverse 3-point DCT transform in the color dimension
+			// inverse 3-point DCT transform in the color dimension
 
-		decorrelateColorInvert(opixels, opixels, width, height);
-		cvtColorOrder32F_BBBBGGGGRRRR2BGR(sum, im);
-		Mat(im(Rect(patch_size.width, patch_size.height, src.cols, src.rows))).copyTo(dest);
-	}
+			decorrelateColorInvert(opixels, opixels, width, height);
+			cvtColorOrder32F_BBBBGGGGRRRR2BGR(sum, im);
+			Mat(im(Rect(patch_size.width, patch_size.height, src.cols, src.rows))).copyTo(dest);
+		}
 	}
 
 	void DenoiseDXTShrinkage::decorrelateColorInvert(float* src, float* dest, int width, int height)
@@ -2568,17 +2568,17 @@ namespace cp
 		const float c02 = 0.408248f;
 		const float c12 = -0.816497f;
 
-		const int size1 = width*height;
+		const int size1 = width * height;
 		const int size2 = 2 * size1;
 
 
 		//#pragma omp parallel for
 		for (int j = 0; j < height; j++)
 		{
-			float* s0 = src + width*j;
+			float* s0 = src + width * j;
 			float* s1 = s0 + size1;
 			float* s2 = s0 + size2;
-			float* d0 = dest + width*j;
+			float* d0 = dest + width * j;
 			float* d1 = d0 + size1;
 			float* d2 = d0 + size2;
 
@@ -2605,9 +2605,9 @@ namespace cp
 			//#endif
 			for (; i < width; i++)
 			{
-				float v0 = c00* *s0 + c01* *s1 + c02* *s2;
-				float v1 = c00* *s0 + c12* *s2;
-				float v2 = c00* *s0 - c01* *s1 + c02* *s2;
+				float v0 = c00 * *s0 + c01 * *s1 + c02 * *s2;
+				float v1 = c00 * *s0 + c12 * *s2;
+				float v2 = c00 * *s0 - c01 * *s1 + c02 * *s2;
 
 				*d0++ = v0;
 				*d1++ = v1;
@@ -2616,7 +2616,7 @@ namespace cp
 			}
 		}
 	}
-	
+
 	void DenoiseDXTShrinkage::decorrelateColorForward(float* src, float* dest, int width,
 		int height)
 	{
@@ -2625,16 +2625,16 @@ namespace cp
 		const float c20 = 0.408248f;
 		const float c21 = -0.816497f;
 
-		const int size1 = width*height;
+		const int size1 = width * height;
 		const int size2 = 2 * size1;
 
 		//#pragma omp parallel for
 		for (int j = 0; j < height; j++)
 		{
-			float* s0 = src + width*j;
+			float* s0 = src + width * j;
 			float* s1 = s0 + size1;
 			float* s2 = s0 + size2;
-			float* d0 = dest + width*j;
+			float* d0 = dest + width * j;
 			float* d1 = d0 + size1;
 			float* d2 = d0 + size2;
 			const __m128 mc0 = _mm_set1_ps(c0);
@@ -2660,9 +2660,9 @@ namespace cp
 			//#endif
 			for (; i < width; i++)
 			{
-				float v0 = c0*(*s0 + *s1 + *s2);
-				float v1 = c1*(*s0 - *s2);
-				float v2 = (*s0 + *s2)*c20 + *s1 *c21;
+				float v0 = c0 * (*s0 + *s1 + *s2);
+				float v1 = c1 * (*s0 - *s2);
+				float v2 = (*s0 + *s2) * c20 + *s1 * c21;
 
 				*d0++ = v0;
 				*d1++ = v1;

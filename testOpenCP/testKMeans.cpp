@@ -50,6 +50,11 @@ void testKMeans(Mat& src)
 	cp::KMeans km;
 	cp::KMeans km2;
 
+	Mat srcf; src.convertTo(srcf, CV_32F);
+	resize(srcf, srcf, Size(), 0.125, 0.125);
+	srcf = srcf.reshape(1, srcf.cols*srcf.rows);
+	km.gui(srcf, k, label, criteria, attempts, cv::KMEANS_PP_CENTERS, centroids, KMeans::MeanFunction::GaussInv, KMeans::Schedule::SoA_KND);
+
 	while (key != 'q')
 	{
 		if (uc.isUpdate(ch, size))

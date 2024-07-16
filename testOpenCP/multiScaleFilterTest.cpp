@@ -16,7 +16,7 @@ struct MouseMSFParameter
 	}
 };
 
-void guiMouseMSFOnMouse(int event, int x, int y, int flags, void* param)
+static void guiMouseMSFOnMouse(int event, int x, int y, int flags, void* param)
 {
 	MouseMSFParameter* retp = (MouseMSFParameter*)param;
 
@@ -30,8 +30,40 @@ void guiMouseMSFOnMouse(int event, int x, int y, int flags, void* param)
 	}
 }
 
+void testJointMultiScaleFilter()
+{
+	string wname = "joint MSF";
+	namedWindow(wname);
+	int sw = 0; createTrackbar("sw", wname, &sw, 1);
+	int m10 = 10; createTrackbar("m10", wname, &m10, 100);
+	int sigma_s = 1; createTrackbar("sigma_s", wname, &sigma_s, 10);
+	int sigma_r = 30; createTrackbar("sigma_r", wname, &sigma_r, 255);
+	int level = 2; createTrackbar("level", wname, &level, 5);
+	LocalMultiScaleFilterFull lmsffull;
+
+	Mat src = imread("img/flash/pot2_noflash512.png");
+	Mat guide = imread("img/flash/pot2_flash512.png");
+	//Mat src = imread("img/flash/cave-noflash.png");
+	//Mat guide = imread("img/flash/cave-flash.png");
+	//Mat src = imread("img/flash/cave-flash.png");
+	//Mat guide; GaussianBlur(src, guide, Size(7, 7), 2);
+	int key = 0;
+	Mat dest;
+	while (key != 'q')
+	{
+		const float m = float(m10 * 0.1f);
+		const float ss = float(sigma_s);
+		const float sr = float(sigma_r);
+		if (sw == 0) lmsffull.jointfilter(src, guide, dest, sr, ss, -m, level, MultiScaleFilter::DoG);
+		if (sw == 1) lmsffull.filter(src, dest, sr, ss, -m, level, MultiScaleFilter::DoG);
+		
+		imshow(wname, dest);
+		key = waitKey(1);
+	}
+}
 void testMultiScaleFilter()
 {
+	testJointMultiScaleFilter();
 	const bool isShowPSNR = true;
 	//const bool isShowPSNR = false;
 
@@ -41,8 +73,10 @@ void testMultiScaleFilter()
 
 	//const bool isDrawRemap = true;
 	const bool isDrawRemap = false;
-	bool isNEPF = false;
-	//bool isNEPF = true;
+
+	constexpr bool isClassicScaleSpace = false;//false
+	//constexpr bool isClassicScaleSpace = true;//true
+
 	//const bool isPlotProfile = true;
 	const bool isPlotProfile = false;
 
@@ -55,13 +89,20 @@ void testMultiScaleFilter()
 	//const bool isShowFourier = true;
 	const bool isShowFourier = false;
 
+	constexpr bool isPyramid = true;//true
+	//constexpr bool isPyramid = false;//false
+	//constexpr bool isDoG = true;//true
+	constexpr bool isDoG = false;//false
+
 	Size tilediv = Size(4, 4);
 
-	string wname = "profile image";
-	string wnameApprox = "approix pyramid";
+	const string wname = "profile image";//profile image
+	const string wnameImage = "image";//image
 	namedWindow(wname);
-	namedWindow(wnameApprox);
-	int showsw2 = 4; createTrackbar("show", wnameApprox, &showsw2, 5);
+	namedWindow(wnameImage);
+	int showsw2 = 0; createTrackbar("show", wnameImage, &showsw2, 5);
+	int dogapprox = 0; createTrackbar("dogapprox", wnameImage, &dogapprox, 1);
+	int scaleMethodSW = 0; createTrackbar("scale", wnameImage, &scaleMethodSW, 5);
 
 	static MouseMSFParameter param(512 / 2, 512 / 2, 512, 512, wname);
 	setMouseCallback(wname, (MouseCallback)guiMouseMSFOnMouse, (void*)&param);
@@ -71,7 +112,7 @@ void testMultiScaleFilter()
 	param.pt.y = 112;
 	param.wname = wname;
 
-	int showsw = 5; createTrackbar("showsw", wname, &showsw, 5);
+	int showsw = 0; createTrackbar("showsw", wname, &showsw, 5);
 	cv::createTrackbar("y", wname, &param.pt.y, 511);
 	cv::createTrackbar("x", wname, &param.pt.x, 511);
 	cv::createTrackbar("window_r", wname, &signal_w, 511);
@@ -109,10 +150,10 @@ void testMultiScaleFilter()
 	int im = 0; createTrackbar("img", "trackbar", &im, 36);
 	int Color = 0; cv::createTrackbar("Color", "trackbar", &Color, 1);
 	int sigma_r_ = 300; createTrackbar("sigma_range", "trackbar", &sigma_r_, 1000);
-	int sigma_s_ = 12; createTrackbar("sigma_space", "trackbar", &sigma_s_, 200);
+	int sigma_s_ = 10; createTrackbar("sigma_space", "trackbar", &sigma_s_, 200);
 	int level = 2; cv::createTrackbar("level", "trackbar", &level, 10); setTrackbarMin("level", "trackbar", 1);
 	int detail_param_ = 5; cv::createTrackbar("detail_param", "trackbar", &detail_param_, 10); cv::setTrackbarMin("detail_param", "trackbar", -5);
-	int order = 6; cv::createTrackbar("order", "trackbar", &order, 300); cv::setTrackbarMin("order", "trackbar", 1);
+	int order = 20; cv::createTrackbar("order", "trackbar", &order, 300); cv::setTrackbarMin("order", "trackbar", 1);
 	int wid = 100;  cv::createTrackbar("width", "trackbar", &wid, 512);
 	int heigh = 100; cv::createTrackbar("height", "trackbar", &heigh, 512);
 	int a = 160;  cv::createTrackbar("a", "trackbar", &a, 512);
@@ -125,9 +166,10 @@ void testMultiScaleFilter()
 	int alpha_ = 5; cv::createTrackbar("alpha", "trackbar", &alpha_, 1000);
 	int beta_ = 75; cv::createTrackbar("beta", "trackbar", &beta_, 1000);
 	int Ssigma_ = 500; cv::createTrackbar("Ssigma", "trackbar", &Ssigma_, 1000);
-	int pyramidComputeMethod = 0; cv::createTrackbar("pyramidMethod", "trackbar", &pyramidComputeMethod, 3);
-	int cubic = 50; cv::createTrackbar("cubic", "trackbar", &cubic, 200);
-	int isFull = 0; cv::createTrackbar("full", "trackbar", &isFull, 1);
+	int pyramidComputeMethod = MultiScaleFilter::PyramidComputeMethod::IgnoreBoundary; cv::createTrackbar("pyramidMethod", "trackbar", &pyramidComputeMethod, 3);
+	int cubic100 = 50; cv::createTrackbar("cubic", "trackbar", &cubic100, 200);
+	int isFull = 0; //0: full computation for reference
+	cv::createTrackbar("full", "trackbar", &isFull, 1);
 	int adaptiveMethod = MultiScaleFilter::AdaptiveMethod::FIX;
 	//int adaptiveMethod = MultiScaleFilter::AdaptiveMethod::ADAPTIVE;
 	cv::createTrackbar("isAdaptive", "trackbar", &adaptiveMethod, 1);
@@ -141,15 +183,16 @@ void testMultiScaleFilter()
 #pragma endregion
 
 #pragma region variable
-	MultiScaleGaussianFilter msf;
+	MultiScaleGaussianFilter msgf;
 	MultiScaleBilateralFilter msbf;
+
 	LocalMultiScaleFilter lmsf;
 	LocalMultiScaleFilterFull lmsffull;
-	LocalMultiScaleFilterInterpolation lmsi;
+	LocalMultiScaleFilterInterpolation lmsInter;
 	TileLocalMultiScaleFilterInterpolation tlmsi;
 	FastLLFReference fllfr;
 	LocalMultiScaleFilterFourierReference llffr;
-	LocalMultiScaleFilterFourier llff;
+	LocalMultiScaleFilterFourier lmsFourier;
 	TileLocalMultiScaleFilterFourier tllff;
 
 	float Salpha, Sbeta, Ssigma;
@@ -157,16 +200,16 @@ void testMultiScaleFilter()
 	Mat src, srcf, dest;
 	Mat destPyramidFull, destPyramidNaive, destPyramidNN, destPyramidLinear, destPyramidCubic, destPyramidFourier, destPyramidFLLFRef, destPyramidFourierRef;
 	Mat destTilePyramidNN, destTilePyramidLinear, destTilePyramidCubic, destTilePyramidFourier;
-	Mat destDoGNaive, destDoGNN, destDoGLinear, destDoGCubic, destDoGCompressive;
-	Mat destPyramid, destDoG, destDoBF;
+	Mat destDoGNaive, destDoGNN, destDoGLinear, destDoGCubic, destDoGFourier;
+	Mat destPyramid, destContrastPyramid, destDoG, destCoG, destDoBF, destCoBF;
 	Mat destUNBF, destUNBFM;
 	Mat fullLLFPrecomp;
 
 	Mat showApprox;
 
-	cp::Stat time_full_py, time_naive_py, time_NN_py, time_linear_py, time_cubic_py, time_Fourier_py, time_fllfref_py, time_FourierRef_py;
+	cp::Stat time_full_py, time_PyNnaive, time_PyNN, time_PyLinear, time_PyCubic, time_PyFourier, time_fllfref_py, time_FourierRef_py;
 	cp::Stat time_TileNN_py, time_Tilelinear_py, time_Tilecubic_py, time_TileFourier_py;
-	cp::Stat time_DoGNaive, time_DoGNN, time_DoGLinear, time_DoGCubic, time_DoGCompre;
+	cp::Stat time_DoGNaive, time_DoGNN, time_DoGLinear, time_DoGCubic, time_DoGFourier;
 
 	bool count_flag = false;
 	int T_ = 440;
@@ -186,10 +229,6 @@ void testMultiScaleFilter()
 	cp::UpdateCheck ucfull(im, Color, sigma_r_, sigma_s_, detail_param_, level, pyramidComputeMethod);
 	cp::UpdateCheck ucim(im, Color);
 
-	//const bool isPyramid = false;
-	const bool isPyramid = true;
-	//const bool isDoG = true;
-	const bool isDoG = false;
 
 	cp::ConsoleImage ci(Size(800, 1000), "info");
 
@@ -205,14 +244,14 @@ void testMultiScaleFilter()
 	while (key != 'q')
 	{
 #pragma region setup
-		cp::Timer t("total", 0, false);
+		cp::Timer time_total("total", 0, false);
 
 		if (ucim.isUpdate(im, Color))
 		{
 			src = imread(filename[im], Color);
 			if (src.empty())
 			{
-				std::cout << "fail" << std::endl;
+				std::cout << "file open fail " << im << std::endl;
 			}
 			resize(src, src, Size(768, 512));
 			//resize(src, src, Size(512, 768));
@@ -231,19 +270,38 @@ void testMultiScaleFilter()
 		Sbeta = beta_ * 0.01f;
 		Ssigma = Ssigma_ * 0.1f;
 		//Ssigma = log(2.5);
-
 #pragma endregion
 
 #pragma region main processing
 
-		if (isNEPF)
+		if (isClassicScaleSpace)
 		{
-			msf.filter(srcf, dest, sigma_r, sigma_s, boost, level, MultiScaleFilter::Pyramid);
+			msgf.setPyramidComputeMethod(MultiScaleFilter::PyramidComputeMethod::OpenCV);
+			//msgf.setPyramidComputeMethod(MultiScaleFilter::PyramidComputeMethod::IgnoreBoundary);
+			//msf.filter(srcf, dest, sigma_r, sigma_s, boost, level, MultiScaleFilter::Pyramid);
+			msgf.filter(srcf, dest, -1.f, sigma_s, boost, level, MultiScaleFilter::Pyramid);
 			cp::streamCopy(dest, destPyramid);
-			msf.filter(srcf, dest, sigma_r, sigma_s, boost, level, MultiScaleFilter::DoG);
+
+			msgf.filter(srcf, dest, -1.f, sigma_s, boost, level, MultiScaleFilter::ContrastPyramid);
+			cp::streamCopy(dest, destContrastPyramid);
+			//msf.filter(srcf, dest, sigma_r, sigma_s, boost, level, MultiScaleFilter::DoG);
+			msgf.setDoGPyramidApprox(dogapprox == 1);
+			msgf.filter(srcf, dest, -1.f, sigma_s, boost, level, MultiScaleFilter::DoG);
 			cp::streamCopy(dest, destDoG);
+			msgf.filter(srcf, dest, -1.f, sigma_s, boost, level, MultiScaleFilter::CoG);
+			cp::streamCopy(dest, destCoG);
 			msbf.filter(srcf, dest, sigma_r, sigma_s, boost, level, MultiScaleFilter::DoG);
 			cp::streamCopy(dest, destDoBF);
+			msbf.filter(srcf, dest, sigma_r, sigma_s, boost, level, MultiScaleFilter::CoG);
+			cp::streamCopy(dest, destCoBF);
+
+			if (showsw2 == 0) imshowScale(wnameImage, destPyramid);
+			if (showsw2 == 1) imshowScale(wnameImage, destContrastPyramid);
+			if (showsw2 == 2) imshowScale(wnameImage, destDoG);
+			if (showsw2 == 3) imshowScale(wnameImage, destCoG);
+			if (showsw2 == 4) imshowScale(wnameImage, destDoBF);
+			if (showsw2 == 5) imshowScale(wnameImage, destCoBF);
+			ci("PSNR py-dog %f", getPSNR(destPyramid, destDoG, 20));
 		}
 
 		if (isPyramid)
@@ -256,74 +314,75 @@ void testMultiScaleFilter()
 
 			lmsf.setPyramidComputeMethod(MultiScaleFilter::PyramidComputeMethod(pyramidComputeMethod));
 			lmsffull.setPyramidComputeMethod(MultiScaleFilter::PyramidComputeMethod(pyramidComputeMethod));
-			llff.setPyramidComputeMethod(MultiScaleFilter::PyramidComputeMethod(pyramidComputeMethod));
-			lmsi.setPyramidComputeMethod(MultiScaleFilter::PyramidComputeMethod(pyramidComputeMethod));
+			lmsFourier.setPyramidComputeMethod(MultiScaleFilter::PyramidComputeMethod(pyramidComputeMethod));
+			lmsInter.setPyramidComputeMethod(MultiScaleFilter::PyramidComputeMethod(pyramidComputeMethod));
 
 			lmsf.setRangeDescopeMethod(MultiScaleFilter::RangeDescopeMethod(minmax));
 			lmsffull.setRangeDescopeMethod(MultiScaleFilter::RangeDescopeMethod(minmax));
-			llff.setRangeDescopeMethod(MultiScaleFilter::RangeDescopeMethod(minmax));
-			lmsi.setRangeDescopeMethod(MultiScaleFilter::RangeDescopeMethod(minmax));
+			lmsFourier.setRangeDescopeMethod(MultiScaleFilter::RangeDescopeMethod(minmax));
+			lmsInter.setRangeDescopeMethod(MultiScaleFilter::RangeDescopeMethod(minmax));
 			tllff.setRangeDescopeMethod(MultiScaleFilter::RangeDescopeMethod(minmax));
 			tlmsi.setRangeDescopeMethod(MultiScaleFilter::RangeDescopeMethod(minmax));
 
 			lmsf.setAdaptive(adaptiveMethod, adaptiveSigmaMap, adaptiveBoostMap, level);
 			lmsffull.setAdaptive(adaptiveMethod, adaptiveSigmaMap, adaptiveBoostMap, level);
 			llffr.setAdaptive(adaptiveMethod, adaptiveSigmaMap, adaptiveBoostMap, level);
-			llff.setAdaptive(adaptiveMethod, adaptiveSigmaMap, adaptiveBoostMap, level);
+			lmsFourier.setAdaptive(adaptiveMethod, adaptiveSigmaMap, adaptiveBoostMap, level);
 			tllff.setAdaptive(adaptiveMethod, tilediv, adaptiveSigmaMap, adaptiveBoostMap);
 
-			llff.setIsPlot(isPlot == 1);
+			lmsFourier.setIsPlot(isPlot == 1);
 			if (FourierSchedule == 0)
 			{
-				lmsi.setComputeScheduleMethod(false);
+				lmsInter.setComputeScheduleMethod(false);
 				tlmsi.setComputeScheduleMethod(false);
-				llff.setComputeScheduleMethod(0, false, false);
+				lmsFourier.setComputeScheduleMethod(0, false, false);
 				tllff.setComputeScheduleMethod(0, false, false);
 			}
 			if (FourierSchedule == 1)
 			{
-				lmsi.setComputeScheduleMethod(true);
+				lmsInter.setComputeScheduleMethod(true);
 				tlmsi.setComputeScheduleMethod(true);
-				llff.setComputeScheduleMethod(0, true, false);
+				lmsFourier.setComputeScheduleMethod(0, true, false);
 				tllff.setComputeScheduleMethod(0, true, false);
 			}
 			if (FourierSchedule == 2)
 			{
-				lmsi.setComputeScheduleMethod(true);
+				lmsInter.setComputeScheduleMethod(true);
 				tlmsi.setComputeScheduleMethod(true);
-				llff.setComputeScheduleMethod(0, true, true);
+				lmsFourier.setComputeScheduleMethod(0, true, true);
 				tllff.setComputeScheduleMethod(0, true, true);
 			}
 			if (FourierSchedule == 3)
 			{
-				lmsi.setComputeScheduleMethod(false);
+				lmsInter.setComputeScheduleMethod(false);
 				tlmsi.setComputeScheduleMethod(false);
-				llff.setComputeScheduleMethod(1, false, false);
+				lmsFourier.setComputeScheduleMethod(1, false, false);
 				tllff.setComputeScheduleMethod(1, false, false);
 			}
 			if (FourierSchedule == 4)
 			{
-				lmsi.setComputeScheduleMethod(true);
+				lmsInter.setComputeScheduleMethod(true);
 				tlmsi.setComputeScheduleMethod(true);
-				llff.setComputeScheduleMethod(1, true, false);
+				lmsFourier.setComputeScheduleMethod(1, true, false);
 				tllff.setComputeScheduleMethod(1, true, false);
 			}
 			if (FourierSchedule == 5)
 			{
-				lmsi.setComputeScheduleMethod(true);
+				lmsInter.setComputeScheduleMethod(true);
 				tlmsi.setComputeScheduleMethod(true);
-				llff.setComputeScheduleMethod(1, true, true);
+				lmsFourier.setComputeScheduleMethod(1, true, true);
 				tllff.setComputeScheduleMethod(1, true, true);
 			}
 
-			lmsi.setAdaptive(adaptiveMethod, adaptiveSigmaMap, adaptiveBoostMap, level);
+			lmsInter.setAdaptive(adaptiveMethod, adaptiveSigmaMap, adaptiveBoostMap, level);
 			tlmsi.setAdaptive(adaptiveMethod, tilediv, adaptiveSigmaMap, adaptiveBoostMap);
-			llff.setPeriodMethod(LocalMultiScaleFilterFourier::Period(periodMethod));
+			lmsFourier.setPeriodMethod(LocalMultiScaleFilterFourier::Period(periodMethod));
 			tllff.setPeriodMethod(periodMethod);
-			lmsi.setCubicAlpha(-cubic * 0.01f);
-			tlmsi.setCubicAlpha(-cubic * 0.01f);
-
+			lmsInter.setCubicAlpha(-cubic100 * 0.01f);
+			tlmsi.setCubicAlpha(-cubic100 * 0.01f);
 #pragma endregion
+
+#pragma region reference
 			bool flag = (isFull == 1);
 			//if (ucfull.isUpdate(im, Color, sigma_r_, sigma_s_, detail_param_, level, pyramidMethod) && flag)
 			if (flag)
@@ -341,17 +400,17 @@ void testMultiScaleFilter()
 				cp::streamCopy(fullLLFPrecomp, destPyramidFull);
 			}
 
-
 			if (ucfull.isUpdate(im, Color, sigma_r_, sigma_s_, detail_param_, level, MultiScaleFilter::Pyramid))//computing only update time for acceleration
 			{
 				//cp::Timer t("LLF pyramid naive");
 				int64 start = cv::getTickCount();
 				lmsf.filter(srcf, dest, sigma_r, sigma_s, boost, level, MultiScaleFilter::Pyramid);
 				int64 end = cv::getTickCount();
-				time_naive_py.push_back((end - start) * 1000 / cv::getTickFrequency());
+				time_PyNnaive.push_back((end - start) * 1000 / cv::getTickFrequency());
 				cp::streamCopy(dest, destPyramidNaive);
 			}
-#if 1
+#pragma endregion
+
 #pragma region Gaussian Fourier pyramid
 			if (isComputeReference)
 			{
@@ -365,15 +424,16 @@ void testMultiScaleFilter()
 
 			{
 				//cp::Timer t("LLF Gaussian Fourier pyramid");
-				llff.filter(srcf, destPyramidFourier, order, sigma_r, sigma_s, boost, level, MultiScaleFilter::Pyramid);
+				lmsFourier.filter(srcf, destPyramidFourier, order, sigma_r, sigma_s, boost, level, MultiScaleFilter::Pyramid);
 				for (int i = 0; i < iteration; i++)
 				{
 					int64 start = cv::getTickCount();
-					llff.filter(srcf, dest, order, sigma_r, sigma_s, boost, level, MultiScaleFilter::Pyramid);
+					lmsFourier.filter(srcf, dest, order, sigma_r, sigma_s, boost, level, MultiScaleFilter::Pyramid);
 					int64 end = cv::getTickCount();
-					time_Fourier_py.push_back((end - start) * 1000 / cv::getTickFrequency());
+					time_PyFourier.push_back((end - start) * 1000 / cv::getTickFrequency());
 				}
 				cp::streamCopy(dest, destPyramidFourier);
+				imshowScale("testFourier", destPyramidFourier);
 			}
 
 			{
@@ -402,38 +462,38 @@ void testMultiScaleFilter()
 			}
 
 			{
-				lmsi.filter(srcf, dest, 2 * order, sigma_r, sigma_s, boost, level, MultiScaleFilter::Pyramid, INTER_NEAREST);
+				lmsInter.filter(srcf, dest, 2 * order, sigma_r, sigma_s, boost, level, MultiScaleFilter::Pyramid, INTER_NEAREST);
 				//cp::Timer t("LLF pyramid");
 				for (int i = 0; i < iteration; i++)
 				{
 					int64 start = cv::getTickCount();
-					lmsi.filter(srcf, dest, 2 * order, sigma_r, sigma_s, boost, level, MultiScaleFilter::Pyramid, INTER_NEAREST);
+					lmsInter.filter(srcf, dest, 2 * order, sigma_r, sigma_s, boost, level, MultiScaleFilter::Pyramid, INTER_NEAREST);
 					int64 end = cv::getTickCount();
-					time_NN_py.push_back((end - start) * 1000 / cv::getTickFrequency());
+					time_PyNN.push_back((end - start) * 1000 / cv::getTickFrequency());
 				}
 				cp::streamCopy(dest, destPyramidNN);
 			}
 			{
-				lmsi.filter(srcf, dest, 2 * order, sigma_r, sigma_s, boost, level, MultiScaleFilter::Pyramid, INTER_LINEAR);
+				lmsInter.filter(srcf, dest, 2 * order, sigma_r, sigma_s, boost, level, MultiScaleFilter::Pyramid, INTER_LINEAR);
 				//cp::Timer t("LLF pyramid");
 				for (int i = 0; i < iteration; i++)
 				{
 					int64 start = cv::getTickCount();
-					lmsi.filter(srcf, dest, 2 * order, sigma_r, sigma_s, boost, level, MultiScaleFilter::Pyramid, INTER_LINEAR);
+					lmsInter.filter(srcf, dest, 2 * order, sigma_r, sigma_s, boost, level, MultiScaleFilter::Pyramid, INTER_LINEAR);
 					int64 end = cv::getTickCount();
-					time_linear_py.push_back((end - start) * 1000 / cv::getTickFrequency());
+					time_PyLinear.push_back((end - start) * 1000 / cv::getTickFrequency());
 				}
 				cp::streamCopy(dest, destPyramidLinear);
 			}
 			{
-				lmsi.filter(srcf, dest, 2 * order, sigma_r, sigma_s, boost, level, MultiScaleFilter::Pyramid, INTER_CUBIC);
+				lmsInter.filter(srcf, dest, 2 * order, sigma_r, sigma_s, boost, level, MultiScaleFilter::Pyramid, INTER_CUBIC);
 				//cp::Timer t("LLF pyramid");
 				for (int i = 0; i < iteration; i++)
 				{
 					int64 start = cv::getTickCount();
-					lmsi.filter(srcf, dest, 2 * order, sigma_r, sigma_s, boost, level, MultiScaleFilter::Pyramid, INTER_CUBIC);
+					lmsInter.filter(srcf, dest, 2 * order, sigma_r, sigma_s, boost, level, MultiScaleFilter::Pyramid, INTER_CUBIC);
 					int64 end = cv::getTickCount();
-					time_cubic_py.push_back((end - start) * 1000 / cv::getTickFrequency());
+					time_PyCubic.push_back((end - start) * 1000 / cv::getTickFrequency());
 				}
 				cp::streamCopy(dest, destPyramidCubic);
 			}
@@ -472,7 +532,7 @@ void testMultiScaleFilter()
 				cp::streamCopy(dest, destTilePyramidCubic);
 			}
 #pragma endregion
-#endif
+
 		}
 
 		if (isDoG)
@@ -487,18 +547,17 @@ void testMultiScaleFilter()
 				cp::streamCopy(dest, destDoGNaive);
 			}
 
-
 			{
 				//cp::Timer t("Compressive Dog", cp::TIME_MSEC, false);
 				int64 start = cv::getTickCount();
-				llff.filter(srcf, destDoGCompressive, order, sigma_r, sigma_s, boost, level, MultiScaleFilter::DoG);
+				lmsFourier.filter(srcf, destDoGFourier, order, sigma_r, sigma_s, boost, level, MultiScaleFilter::DoG);
 				int64 end = cv::getTickCount();
-				time_DoGCompre.push_back((end - start) * 1000 / cv::getTickFrequency());
+				time_DoGFourier.push_back((end - start) * 1000 / cv::getTickFrequency());
 			}
 			{
 				//cp::Timer t("LLF DoGLi", cp::TIME_MSEC, false);
 				int64 start = cv::getTickCount();
-				lmsi.filter(srcf, destDoGNN, order, sigma_r, sigma_s, boost, level, MultiScaleFilter::DoG, INTER_NEAREST);
+				lmsInter.filter(srcf, destDoGNN, order, sigma_r, sigma_s, boost, level, MultiScaleFilter::DoG, INTER_NEAREST);
 				int64 end = cv::getTickCount();
 				time_DoGNN.push_back((end - start) * 1000 / cv::getTickFrequency());
 			}
@@ -506,20 +565,29 @@ void testMultiScaleFilter()
 				//cp::Timer t("LLF DoGLi", cp::TIME_MSEC, false);
 				destDoGLinear.setTo(0);
 				int64 start = cv::getTickCount();
-				lmsi.filter(srcf, destDoGLinear, order, sigma_r, sigma_s, boost, level, MultiScaleFilter::DoG, INTER_LINEAR);
+				lmsInter.filter(srcf, destDoGLinear, order, sigma_r, sigma_s, boost, level, MultiScaleFilter::DoG, INTER_LINEAR);
 				//destDoGLinear = srcf.clone();
 				int64 end = cv::getTickCount();
 				time_DoGLinear.push_back((end - start) * 1000 / cv::getTickFrequency());
 			}
+
 			{
 				//cp::Timer t("LLF DoGLi", cp::TIME_MSEC, false);
 				destDoGCubic.setTo(0);
+				lmsInter.setCubicAlpha(-cubic100 * 0.01f);
 				int64 start = cv::getTickCount();
-				lmsi.filter(srcf, destDoGCubic, order, sigma_r, sigma_s, boost, level, MultiScaleFilter::DoG, INTER_CUBIC);
+				lmsInter.filter(srcf, destDoGCubic, order, sigma_r, sigma_s, boost, level, MultiScaleFilter::DoG, INTER_CUBIC);
 				//destDoGLinear = srcf.clone();
 				int64 end = cv::getTickCount();
 				time_DoGCubic.push_back((end - start) * 1000 / cv::getTickFrequency());
 			}
+
+			cp::guiDiff(destDoGNaive, destDoGFourier, false);
+			cv::imshow("DoGNaive", destDoGNaive / 255);
+			//cv::imshow("destDoGNN", destDoGNN / 255);
+			//cv::imshow("destDoGLinear", destDoGLinear / 255);
+			//cv::imshow("DoGCubic", destDoGCubic / 255);
+			cv::imshow("DoGFourier", destDoGFourier / 255);
 		}
 #pragma endregion
 
@@ -532,14 +600,14 @@ void testMultiScaleFilter()
 		ci("order %d, #Py %d", order, 2 * order + 1);
 		for (int l = 0; l < level + 1; l++)
 		{
-			ci("level %d, Size %04d %04d", l, llff.getLayerSize(l).width, llff.getLayerSize(l).height);
+			ci("level %d, Size %04d %04d", l, lmsFourier.getLayerSize(l).width, lmsFourier.getLayerSize(l).height);
 			//ci("level %d, Size %04d %04d", l, llff.getLayerSize(l).width-2, llff.getLayerSize(l).height - 2);
 		}
-		ci("PeriodName:" + llff.getPeriodName());
+		ci("PeriodName:" + lmsFourier.getPeriodName());
 		ci(tlmsi.getComputeScheduleName());
 		ci(tllff.getComputeScheduleName());
-		ci("ADAPTIVE: %s", llff.getAdaptiveName().c_str());
-		ci("Error: %f", llff.KernelError);
+		ci("ADAPTIVE: %s", lmsFourier.getAdaptiveName().c_str());
+		ci("Error: %f", lmsFourier.KernelError);
 #pragma region PSNR
 		ci("======PSNR======");
 		if (isPyramid)
@@ -582,14 +650,8 @@ void testMultiScaleFilter()
 			ci("DoGNaive-DoGNN   | %5.2f dB", cp::getPSNR(destDoGNaive, destDoGNN, bb));
 			ci("DoGNaive-DoGLin  | %5.2f dB", cp::getPSNR(destDoGNaive, destDoGLinear, bb));
 			ci("DoGNaive-DoGCub  | %5.2f dB", cp::getPSNR(destDoGNaive, destDoGCubic, bb));
-			ci("DoGNaive-DoGComp | %5.2f dB", cp::getPSNR(destDoGNaive, destDoGCompressive, bb));
-			ci("UNBF-DoGComp     | %5.2f dB", cp::getPSNR(destUNBFM, destDoGCompressive, bb));
-			cp::guiDiff(destDoGNaive, destDoGLinear, false);
-			cv::imshow("DoGNaive", destDoGNaive / 255);
-			//cv::imshow("destDoGNN", destDoGNN / 255);
-			//cv::imshow("destDoGLinear", destDoGLinear / 255);
-			cv::imshow("DoGCubic", destDoGCubic / 255);
-			cv::imshow("DoGFourier", destDoGCompressive / 255);
+			ci("DoGNaive-DoGFouri| %5.2f dB", cp::getPSNR(destDoGNaive, destDoGFourier, bb));
+			//ci("UNBF-DoGComp     | %5.2f dB", cp::getPSNR(destUNBFM, destDoGCompressive, bb));
 		}
 #pragma endregion
 #pragma region Time
@@ -597,14 +659,14 @@ void testMultiScaleFilter()
 		if (isPyramid)
 		{
 			if (isFull == 1)ci("Py Full   | %6.2f ms", time_full_py.getMedian());
-			ci("Py.Naive  | %6.2f ms", time_naive_py.getMedian());
-			ci("Py.Nearest| %6.2f ms", time_NN_py.getMedian());
+			ci("Py.Naive  | %6.2f ms", time_PyNnaive.getMedian());
+			ci("Py.Nearest| %6.2f ms", time_PyNN.getMedian());
 			ci("PyTNearest| %6.2f ms", time_TileNN_py.getMedian());
-			ci("Py.Linear | %6.2f ms", time_linear_py.getMedian());
+			ci("Py.Linear | %6.2f ms", time_PyLinear.getMedian());
 			ci("PyTLinear | %6.2f ms", time_Tilelinear_py.getMedian());
-			ci("Py.Cubic  | %6.2f ms", time_cubic_py.getMedian());
+			ci("Py.Cubic  | %6.2f ms", time_PyCubic.getMedian());
 			ci("PyTCubic  | %6.2f ms", time_Tilecubic_py.getMedian());
-			ci("Py.Fourier| %6.2f ms", time_Fourier_py.getMedian());
+			ci("Py.Fourier| %6.2f ms", time_PyFourier.getMedian());
 			ci("PyTFourier| %6.2f ms", time_TileFourier_py.getMedian());
 			if (isComputeReference)
 			{
@@ -617,57 +679,57 @@ void testMultiScaleFilter()
 			ci("DoGnaive  | %6.2f ms", time_DoGNaive.getMedian());
 			ci("DoGNN     | %6.2f ms", time_DoGNN.getMedian());
 			ci("DoGLinear | %6.2f ms", time_DoGLinear.getMedian());
-			ci("DoGFourier| %6.2f ms", time_DoGCompre.getMedian());
 			ci("DoGCubic  | %6.2f ms", time_DoGCubic.getMedian());
-			if (key == 'c')cp::guiAlphaBlend(destDoGNaive, destDoGCompressive, "PyNN   -PyNaive");
+			ci("DoGFourier| %6.2f ms", time_DoGFourier.getMedian());
+			if (key == 'c')cp::guiAlphaBlend(destDoGNaive, destDoGFourier, "dogFourier   -dogNaive");
 		}
 #pragma endregion
 
 #pragma endregion
 
 #pragma region profile_plot
-		if (isDrawRemap) msf.drawRemap(false);
+		if (isDrawRemap) msgf.drawRemap(false);
 
-		if (isNEPF)
+		if (isClassicScaleSpace)
 		{
-			if (src.channels() == 1)
-			{
-				for (int i = param.pt.x - signal_w; i < param.pt.x + signal_w; i++)
-				{
-					const int line = param.pt.y;
-					profile.push_back(i, srcf.at<float>(line, i), 0);
-					//profile.push_back(i, destPyramid.at<float>(line, i), 1);
-					//profile.push_back(i, destDoG.at<float>(line, i), 2);
-					profile.push_back(i, destPyramidNaive.at<float>(line, i), 3);
-					//profile.push_back(i, destPyramidCompressive.at<float>(line, i), 3);
-					profile.push_back(i, destDoGNaive.at<float>(line, i), 4);
-					profile.push_back(i, destDoBF.at<float>(line, i), 5);
-				}
-			}
-			else
-			{
-				vector<Mat> gray(6);
-				cvtColor(srcf, gray[0], COLOR_BGR2GRAY);
-				cvtColor(destPyramid, gray[1], COLOR_BGR2GRAY);
-				cvtColor(destDoG, gray[2], COLOR_BGR2GRAY);
-				cvtColor(destPyramidNaive, gray[3], COLOR_BGR2GRAY);
-				cvtColor(destDoGNaive, gray[4], COLOR_BGR2GRAY);
-				cvtColor(destDoBF, gray[5], COLOR_BGR2GRAY);
-				for (int i = param.pt.x - signal_w; i < param.pt.x + signal_w; i++)
-				{
-					const int line = param.pt.y;
-					profile.push_back(i, gray[0].at<float>(line, i), 0);
-					profile.push_back(i, gray[1].at<float>(line, i), 1);
-					profile.push_back(i, gray[2].at<float>(line, i), 2);
-					profile.push_back(i, gray[3].at<float>(line, i), 3);
-					//profile.push_back(i, destPyramidCompressive.at<float>(line, i), 3);
-					profile.push_back(i, gray[4].at<float>(line, i), 4);
-					profile.push_back(i, gray[5].at<float>(line, i), 5);
-				}
-			}
-
 			if (isPlotProfile)
 			{
+				if (src.channels() == 1)
+				{
+					for (int i = param.pt.x - signal_w; i < param.pt.x + signal_w; i++)
+					{
+						const int line = param.pt.y;
+						profile.push_back(i, srcf.at<float>(line, i), 0);
+						//profile.push_back(i, destPyramid.at<float>(line, i), 1);
+						//profile.push_back(i, destDoG.at<float>(line, i), 2);
+						profile.push_back(i, destPyramidNaive.at<float>(line, i), 3);
+						//profile.push_back(i, destPyramidCompressive.at<float>(line, i), 3);
+						profile.push_back(i, destDoGNaive.at<float>(line, i), 4);
+						profile.push_back(i, destDoBF.at<float>(line, i), 5);
+					}
+				}
+				else
+				{
+					vector<Mat> gray(6);
+					cvtColor(srcf, gray[0], COLOR_BGR2GRAY);
+					cvtColor(destPyramid, gray[1], COLOR_BGR2GRAY);
+					cvtColor(destDoG, gray[2], COLOR_BGR2GRAY);
+					cvtColor(destPyramidNaive, gray[3], COLOR_BGR2GRAY);
+					cvtColor(destDoGNaive, gray[4], COLOR_BGR2GRAY);
+					cvtColor(destDoBF, gray[5], COLOR_BGR2GRAY);
+					for (int i = param.pt.x - signal_w; i < param.pt.x + signal_w; i++)
+					{
+						const int line = param.pt.y;
+						profile.push_back(i, gray[0].at<float>(line, i), 0);
+						profile.push_back(i, gray[1].at<float>(line, i), 1);
+						profile.push_back(i, gray[2].at<float>(line, i), 2);
+						profile.push_back(i, gray[3].at<float>(line, i), 3);
+						//profile.push_back(i, destPyramidCompressive.at<float>(line, i), 3);
+						profile.push_back(i, gray[4].at<float>(line, i), 4);
+						profile.push_back(i, gray[5].at<float>(line, i), 5);
+					}
+				}
+
 				profile.plot("profile", false);
 				profile.clear();
 			}
@@ -720,12 +782,17 @@ void testMultiScaleFilter()
 #pragma region key
 		if (key == 'r' || uc.isUpdate(adaptiveMethod, pyramidComputeMethod, level, order, sigma_s_, periodMethod, Color, FourierSchedule))
 		{
-			time_naive_py.clear();
-			time_naive_py.clear();
-			time_NN_py.clear();
-			time_linear_py.clear();
-			time_cubic_py.clear();
-			time_Fourier_py.clear();
+			time_PyNnaive.clear();
+			time_PyNN.clear();
+			time_PyLinear.clear();
+			time_PyCubic.clear();
+			time_PyFourier.clear();
+
+			time_DoGNaive.clear();
+			time_DoGNN.clear();
+			time_DoGLinear.clear();
+			time_DoGCubic.clear();
+			time_DoGFourier.clear();
 
 			time_fllfref_py.clear();
 			time_FourierRef_py.clear();
@@ -734,11 +801,6 @@ void testMultiScaleFilter()
 			time_Tilelinear_py.clear();
 			time_Tilecubic_py.clear();
 			time_TileFourier_py.clear();
-
-			time_DoGNaive.clear();
-			time_DoGNN.clear();
-			time_DoGLinear.clear();
-			time_DoGCubic.clear();
 		}
 		if (key == 't')
 		{
@@ -773,79 +835,80 @@ void testMultiScaleFilter()
 		key = waitKey(1);
 
 #pragma endregion
+
+#pragma region show
 		//show tile div
 		if (isShowTileDiv) tllff.drawMinMax("minmax", srcf);
 
 		string mes = "";
-		if (showsw2 == 0)
+		if (isPyramid)
 		{
-			mes = "naive";
-			cp::streamConvertTo8U(destPyramidNaive, showApprox);
-		}
-		if (showsw2 == 1)
-		{
-			mes = "Fourier";
-			cp::streamConvertTo8U(destPyramidFourier, showApprox);
-		}
-		if (showsw2 == 2)
-		{
-			mes = "nearest";
-			cp::streamConvertTo8U(destPyramidNN, showApprox);
-		}
-		if (showsw2 == 3)
-		{
-			mes = "linear";
-			cp::streamConvertTo8U(destPyramidLinear, showApprox);
-		}
-		if (showsw2 == 4)
-		{
-			mes = "cubic";
-			cp::streamConvertTo8U(destPyramidCubic, showApprox);
-		}
-		if (showsw2 == 5)
-		{
-			mes = "Full";
-			cp::streamConvertTo8U(destPyramidFull, showApprox);
+			if (showsw2 == 0)
+			{
+				mes = "naive";
+				cp::streamConvertTo8U(destPyramidNaive, showApprox);
+			}
+			if (showsw2 == 1)
+			{
+				mes = "Fourier";
+				cp::streamConvertTo8U(destPyramidFourier, showApprox);
+			}
+			if (showsw2 == 2)
+			{
+				mes = "nearest";
+				cp::streamConvertTo8U(destPyramidNN, showApprox);
+			}
+			if (showsw2 == 3)
+			{
+				mes = "linear";
+				cp::streamConvertTo8U(destPyramidLinear, showApprox);
+			}
+			if (showsw2 == 4)
+			{
+				mes = "cubic";
+				cp::streamConvertTo8U(destPyramidCubic, showApprox);
+			}
+			if (showsw2 == 5)
+			{
+				mes = "Full";
+				cp::streamConvertTo8U(destPyramidFull, showApprox);
+			}
+			cv::imshow(wnameImage, showApprox);
 		}
 
-		cv::displayOverlay(wnameApprox, mes, 1000);
-		cv::imshow(wnameApprox, showApprox);
-		cv::moveWindow(wname, 50, 100);
+		cv::displayOverlay(wnameImage, mes, 1000);
+		//cv::moveWindow(wnameImage, 50, 700);
+		if (isPlotProfile) cv::moveWindow(wname, 50, 100);
 		cv::moveWindow("crop src", 800, 100);
-		cv::moveWindow(wnameApprox, 50, 700);
 
 		cv::moveWindow("destPyramid", 600, 200);
 		cv::moveWindow("destcomprePy", 1200, 200);
 		cv::moveWindow("info", 600, 200);
-		ci("Total     | %6.2f ms", t.getTime());
+		ci("Total     | %6.2f ms", time_total.getTime());
 		ci.show();
+#pragma endregion
 	}
 	return;
 }
 
-void testUnnormalizedBilateralFilter()
+void testVizPyramid()
 {
-	string wname = "UnnormalizedBilateralFilter";
+	const int size = 16;
+	string wname = "pyramid";
 	namedWindow(wname);
-	Mat src = imread("img/flower.png");
-	int sr = 30; createTrackbar("sr", wname, &sr, 255);
-	int ss = 3; createTrackbar("ss", wname, &ss, 10);
-	int isEnhance = 0; createTrackbar("enhance", wname, &isEnhance, 1);
-	
+	int isLastConv = 0; createTrackbar("isLastConv", wname, &isLastConv, 1);
+	int r = 2; createTrackbar("r", wname, &r, 5);
+	int level = 4; createTrackbar("level", wname, &level, 5);
 	int key = 0;
-	Mat dest;
-	cp::ConsoleImage ci;
-	cp::Timer t("", TIME_MSEC);
-	cp::UpdateCheck uc(ss);
+	cp::UpdateCheck uc(isLastConv, r, level);
 	while (key != 'q')
 	{
-		if (uc.isUpdate(ss))t.clearStat();
-		t.start();
-		cp::unnormalizedBilateralFilter(src, dest, (int)ceil(ss * 3.f), float(sr), float(ss), isEnhance==1);
-		t.getpushLapTime();
-		imshow(wname, dest);
-		ci("Time %f (%d)", t.getLapTimeMedian(), t.getStatSize());
-		ci.show();
+		if (uc.isUpdate(isLastConv, r, level))
+		{
+			cp::ComputePyramidSize cprySize(size, r, level, isLastConv == 1);
+			imshow(wname, cprySize.vizPyramid());
+			cprySize.print();
+		}
 		key = waitKey(1);
 	}
 }

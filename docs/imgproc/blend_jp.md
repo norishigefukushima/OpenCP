@@ -58,6 +58,14 @@ alphaBlendのカラーの不一致への対応に加えて，入力画像の一�
 * `?`: ヘルプの表示
 * `q`: 終了
 
+# guiAlphaBlendScale
+```cpp
+cv::Mat guiAlphaBlendScale(cv::InputArray src1, cv::InputArray src2, float scale = 1.f, bool isShowImageStats = false, std::string wname = "alphaBlend");
+```
+## Usage
+guiAlphaBlendScaleは入力画像src1，src2をscale倍した後にunsingned char型にキャストしてguiAlphaBlendを呼びます．
+入力画像がfloat型などを表示するときにも使えます．
+
 # dissolveSlideBlend
 ```cpp
 void dissolveSlideBlend(cv::InputArray src1, cv::InputArray src2, cv::OutputArray dest, const double ratio = 0.5, const double slant_ratio = 0.4, const int direction = 0, cv::Scalar line_color = cv::Scalar::all(255), const int line_thickness = 2);

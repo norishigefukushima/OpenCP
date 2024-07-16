@@ -110,10 +110,10 @@ void testPlot2D()
 {
 	double xmin = 6;
 	double xmax = 32;
-	double xstep = 1;
+	double xstep = 0.5;
 	double ymin = 19;
 	double ymax = 128;
-	double ystep = 1;
+	double ystep = 0.5;
 
 	Plot2D p(Size(512, 512), xmin, xmax, xstep, ymin, ymax, ystep);
 	p.setLabel("sigma space", "sigma range", "PSNR [dB]");

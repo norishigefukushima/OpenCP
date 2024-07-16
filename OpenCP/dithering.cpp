@@ -322,7 +322,7 @@ namespace cp
 		{
 			if (isMeandering)
 			{
-				cout << "do not support for 8U" << endl;
+				cout << "do not support for 8U: ditheringOstromoukhov" << endl;
 			}
 			for (int y = 0; y < remap.rows - 1; y++)
 			{

@@ -12,8 +12,29 @@ using namespace cv;
 namespace cp
 {
 #pragma region merge
+	template<typename srcType, typename dstType>
+	static void mergeConvertBase_(const vector<Mat>& src, Mat& dest, const double scale, const double offset)
+	{
+		if (dest.empty())dest.create(src[0].size(), src[0].depth());
+		const int size = src[0].size().area();
+		dstType* d = dest.ptr<dstType>();
+		const srcType* s0 = src[0].ptr<srcType>();
+		const srcType* s1 = src[1].ptr<srcType>();
+		const srcType* s2 = src[2].ptr<srcType>();
+		for (int i = 0; i < size; i++)
+		{
+			d[0] = saturate_cast<dstType>(scale * s0[0] + offset);
+			d[1] = saturate_cast<dstType>(scale * s1[0] + offset);
+			d[2] = saturate_cast<dstType>(scale * s2[0] + offset);
+			d += 3;
+			s0++;
+			s1++;
+			s2++;
+		}
+	}
+
 	template<class srcType>
-	void mergeBase_(vector<Mat>& src, Mat& dest)
+	static void mergeBase_(vector<Mat>& src, Mat& dest)
 	{
 		if (dest.empty())dest.create(src[0].size(), src[0].depth());
 		const int size = src[0].size().area();
@@ -33,7 +54,7 @@ namespace cp
 		}
 	}
 
-	void mergeStore_8U(vector<Mat>& src, Mat& dest)
+	static void mergeStore_8U(vector<Mat>& src, Mat& dest)
 	{
 		if (dest.empty())dest.create(src[0].size(), src[0].depth());
 
@@ -90,7 +111,7 @@ namespace cp
 		}
 	}
 
-	void mergeStream_8U(vector<Mat>& src, Mat& dest)
+	static void mergeStream_8U(vector<Mat>& src, Mat& dest)
 	{
 		if (dest.empty())dest.create(src[0].size(), src[0].depth());
 
@@ -151,24 +172,37 @@ namespace cp
 	{
 		vector<Mat> s;
 		src.getMatVector(s);
-		if (dest.empty())
-		{
-			dest.create(s[0].size(), s[0].type());
-		}
+		dest.create(s[0].size(), CV_MAKETYPE(depth, (int)s.size()));
 		Mat dst = dest.getMat();
 
-		switch (s[0].depth())
+		if (depth == s[0].depth() && scale == 1.0 && offset == 1.0)
 		{
-		case CV_8U:
-			if (isCache)mergeStore_8U(s, dst);
-			else mergeStream_8U(s, dst);
-			break;
-		case CV_32F:
-			mergeBase_<float>(s, dst);
-			break;
-		default:
-			cout << "not support type" << endl;
-			break;
+			switch (s[0].depth())
+			{
+			case CV_8U:
+				if (isCache) mergeStore_8U(s, dst);
+				else mergeStream_8U(s, dst);
+				break;
+			case CV_32F:
+				mergeBase_<float>(s, dst);
+				break;
+			default:
+				cout << "not support type" << endl;
+				break;
+			}
+		}
+		else
+		{
+			if (s[0].depth() == CV_8U)
+			{
+				if (depth == CV_8U)  mergeConvertBase_<uchar, uchar>(s, dst, scale, offset);
+				if (depth == CV_32F) mergeConvertBase_<uchar, float>(s, dst, scale, offset);
+			}
+			if (s[0].depth() == CV_32F)
+			{
+				if (depth == CV_8U) mergeConvertBase_<float, uchar>(s, dst, scale, offset);
+				if (depth == CV_32F) mergeConvertBase_<float, float>(s, dst, scale, offset);
+			}
 		}
 	}
 #pragma endregion
@@ -1235,7 +1269,7 @@ namespace cp
 
 	void cvtColorBGR8u2BGRA32f(const Mat& src, Mat& dest, const float alpha)
 	{
-		if (dest.empty())dest.create(src.size(), CV_32FC4);
+		if (dest.empty()) dest.create(src.size(), CV_32FC4);
 
 		int size = src.size().area();
 		uchar* s = (uchar*)src.ptr<uchar>(0);
@@ -2622,7 +2656,7 @@ namespace cp
 	}
 
 	//src 3 x dest n(1-3)
-	static void projectPCA_2xN(const vector<Mat>& src, vector<Mat>& dest, Mat& evec)
+	static void projectPCA_2xN(const vector<Mat>& src, vector<Mat>& dest, const Mat& evec)
 	{
 		CV_Assert(src.size() == 2);
 		const int sizesimd = src[0].size().area() / 8;
@@ -2676,7 +2710,7 @@ namespace cp
 		}
 	}
 
-	static void projectPCA_3xN(const vector<Mat>& src, vector<Mat>& dest, Mat& evec)
+	static void projectPCA_3xN(const vector<Mat>& src, vector<Mat>& dest, const Mat& evec)
 	{
 		CV_Assert(src.size() == 3);
 		const int sizesimd = src[0].size().area() / 8;
@@ -2761,7 +2795,7 @@ namespace cp
 		}
 	}
 
-	static void projectPCA_4xN(const vector<Mat>& src, vector<Mat>& dest, Mat& evec)
+	static void projectPCA_4xN(const vector<Mat>& src, vector<Mat>& dest, const Mat& evec)
 	{
 		CV_Assert(src.size() == 4);
 		const int sizesimd = src[0].size().area() / 8;
@@ -2885,7 +2919,7 @@ namespace cp
 		}
 	}
 
-	static void projectPCA_5xN(const vector<Mat>& src, vector<Mat>& dest, Mat& evec)
+	static void projectPCA_5xN(const vector<Mat>& src, vector<Mat>& dest, const Mat& evec)
 	{
 		CV_Assert(src.size() == 5);
 		const int sizesimd = src[0].size().area() / 8;
@@ -3056,7 +3090,7 @@ namespace cp
 		}
 	}
 
-	static void projectPCA_6xN(const vector<Mat>& src, vector<Mat>& dest, Mat& evec)
+	static void projectPCA_6xN(const vector<Mat>& src, vector<Mat>& dest, const Mat& evec)
 	{
 		CV_Assert(src.size() == 6);
 		const int sizesimd = src[0].size().area() / 8;
@@ -3283,7 +3317,7 @@ namespace cp
 	}
 
 	//src M x dest N
-	static void projectPCA_MxN(const vector<Mat>& src, vector<Mat>& dest, Mat& evec)
+	static void projectPCA_MxN(const vector<Mat>& src, vector<Mat>& dest, const Mat& evec)
 	{
 		const int src_channels = (int)src.size();
 		const int dest_channels = (int)dest.size();
@@ -3327,7 +3361,7 @@ namespace cp
 
 	//src M x dest N
 	template<int src_channels>
-	static void projectPCA_MxN(const vector<Mat>& src, vector<Mat>& dest, Mat& evec)
+	static void projectPCA_MxN(const vector<Mat>& src, vector<Mat>& dest, const Mat& evec)
 	{
 		const int dest_channels = (int)dest.size();
 
@@ -3368,6 +3402,24 @@ namespace cp
 		}
 	}
 
+	void projectPCA(const vector<Mat>& src, vector<Mat>& dest, const Mat& projectionMatrix)
+	{
+		const int channels = projectionMatrix.rows;
+		dest.resize(channels);
+		for (int c = 0; c < channels; c++)
+		{
+			dest[c].create(src[0].size(), CV_32F);
+		}
+
+		if (src.size() == 2) projectPCA_2xN(src, dest, projectionMatrix);
+		else if (src.size() == 3) projectPCA_3xN(src, dest, projectionMatrix);
+		else if (src.size() == 4) projectPCA_4xN(src, dest, projectionMatrix);
+		else if (src.size() == 5) projectPCA_5xN(src, dest, projectionMatrix);
+		else if (src.size() == 6) projectPCA_6xN(src, dest, projectionMatrix);
+		else if (src.size() == 33) projectPCA_MxN<33>(src, dest, projectionMatrix);
+		else  projectPCA_MxN(src, dest, projectionMatrix);
+	}
+
 	static void eigenVecConvert(Mat& evec)
 	{
 		CV_Assert(evec.depth() == CV_64F);
@@ -3390,6 +3442,7 @@ namespace cp
 	{
 		CV_Assert(src_.depth() == CV_32F);
 
+
 		if (src_.channels() == 1)
 		{
 			src_.copyTo(dest_);
@@ -3401,6 +3454,7 @@ namespace cp
 
 		Mat src = src_.getMat();
 		Mat dest = dest_.getMat();
+		CV_Assert(src.data != dest.data);
 		Mat cov;
 		if (channels <= 3 && src_.channels() <= 3)
 		{
@@ -3409,11 +3463,11 @@ namespace cp
 				if (src.channels() == 2) calcCovarMatrix2_(src, cov, mean);
 				if (src.channels() == 3) calcCovarMatrix3_(src, cov, mean);
 			}
-
 			eigen(cov, eval, evec);
 			eigenVecConvert(evec);
 			Mat transmat;
 			evec(Rect(0, 0, evec.cols, channels)).convertTo(transmat, CV_32F);
+			//print_matinfo(transmat);
 			{
 				if (src.channels() == 2) projectPCA_2xn(src, dest, transmat);
 				else if (src.channels() == 3) projectPCA_3xN(src, dest, transmat);
@@ -3666,6 +3720,23 @@ namespace cp
 		}
 	}
 
+	void computePCA(const vector<Mat>& src, Mat& evec, Mat& eval)
+	{
+		Mat cov;
+		{
+			//cp::Timer t("cov");
+			if (src.size() == 2) calcCovarMatrix2_(src, cov);
+			else if (src.size() == 3) calcCovarMatrix3_(src, cov);
+			else if (src.size() == 4) calcCovarMatrix4_(src, cov);
+			else if (src.size() == 5) calcCovarMatrix5_(src, cov);
+			else if (src.size() == 6) calcCovarMatrix6_(src, cov);
+			else if (src.size() == 33) calcCovarMatrix__<33>(src, cov);
+			else calcCovarMatrixN_(src, cov);
+		}
+		eigen(cov, eval, evec);
+		sortEigenVecVal(evec, eval);
+	}
+
 	void cvtColorPCA(const vector<Mat>& src, vector<Mat>& dest, const int dest_channels, Mat& projectionMatrix, Mat& eval, Mat& mean)
 	{
 		CV_Assert(src[0].depth() == CV_32F);
@@ -3678,36 +3749,11 @@ namespace cp
 		}
 
 		const int channels = min(dest_channels, (int)src.size());
-		dest.resize(channels);
-		for (int c = 0; c < channels; c++)
-		{
-			dest[c].create(src[0].size(), CV_32F);
-		}
-
-		Mat cov;
-		{
-			//cp::Timer t("cov");
-			if (src.size() == 2) calcCovarMatrix2_(src, cov);
-			else if (src.size() == 3) calcCovarMatrix3_(src, cov);
-			else if (src.size() == 4) calcCovarMatrix4_(src, cov);
-			else if (src.size() == 5) calcCovarMatrix5_(src, cov);
-			else if (src.size() == 6) calcCovarMatrix6_(src, cov);
-			else if (src.size() == 33) calcCovarMatrix__<33>(src, cov);
-			else calcCovarMatrixN_(src, cov);
-		}
-
+		
 		Mat evec;
-		eigen(cov, eval, evec);
-		sortEigenVecVal(evec, eval);
-
+		computePCA(src, evec, eval);
 		evec(Rect(0, 0, evec.cols, channels)).convertTo(projectionMatrix, CV_32F);
-		if (src.size() == 2) projectPCA_2xN(src, dest, projectionMatrix);
-		else if (src.size() == 3) projectPCA_3xN(src, dest, projectionMatrix);
-		else if (src.size() == 4) projectPCA_4xN(src, dest, projectionMatrix);
-		else if (src.size() == 5) projectPCA_5xN(src, dest, projectionMatrix);
-		else if (src.size() == 6) projectPCA_6xN(src, dest, projectionMatrix);
-		else if (src.size() == 33) projectPCA_MxN<33>(src, dest, projectionMatrix);
-		else  projectPCA_MxN(src, dest, projectionMatrix);
+		projectPCA(src, dest, projectionMatrix);
 	}
 
 	void cvtColorPCA(const vector<Mat>& src, vector<Mat>& dest, const int dest_channels, Mat& projectionMatrix, Mat& eval)
@@ -4036,6 +4082,6 @@ namespace cp
 		if (C.empty())C.create(3, 4, CV_64F);
 
 		xcvFindColorMatrix(&CvMat(src_point_crowd1), &CvMat(src_point_crowd2), &CvMat(C));
-	}
+}
 #endif
 }

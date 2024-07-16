@@ -168,238 +168,281 @@ void testGuidedImageFilter(Mat& img_p, Mat& img_I)
 			gfref.setBoxType(BoxFilterMethod::NAIVE_AVX);
 			gfref.filterColorParallel(src64f, guide64f, ref64f, r, eps, 1, parallelType);
 			stats[idx].push_back(t.getTime());
-			
+
 			ref64f.convertTo(ref8u, CV_8U);
 			if (showIndex == idx)ref64f.copyTo(show);
 			idx++;
 		}
 #ifdef OPENCV
+		{
+			destf.setTo(0);
+			Timer t("", TIME_MSEC, false);
+			for (int i = 0; i < loop; i++)
 			{
-				destf.setTo(0);
-				Timer t("", TIME_MSEC, false);
-				for (int i = 0; i < loop; i++)
-				{
-					t.start();
-					guidedImageFilter(srcf, guidef, destfocv, r, eps, GUIDED_XIMGPROC, (BoxFilterMethod)boxType, (ParallelTypes)parallelType);
-					t.getpushLapTime();
-				}
-				stats[idx].push_back(t.getLapTimeMedian());
+				t.start();
+				guidedImageFilter(srcf, guidef, destfocv, r, eps, GUIDED_XIMGPROC, (BoxFilterMethod)boxType, (ParallelTypes)parallelType);
+				t.getpushLapTime();
 			}
-			destf.convertTo(dest, CV_8U);
-			if (showIndex == idx)destf.copyTo(show);
-			idx++;
+			stats[idx].push_back(t.getLapTimeMedian());
+		}
+		destf.convertTo(dest, CV_8U);
+		if (showIndex == idx)destf.copyTo(show);
+		idx++;
 #endif
 
 #ifdef FUNCTION_TEST
+		{
+			destf.setTo(0);
+			Timer t("", TIME_MSEC, false);
+			for (int i = 0; i < loop; i++)
 			{
-				destf.setTo(0);
-				Timer t("", TIME_MSEC, false);
-				for (int i = 0; i < loop; i++)
-				{
-					t.start();
-					guidedImageFilter(srcf, guidef, destf, r, eps, (GuidedTypes)guidedType, (BoxFilterMethod)boxType, (ParallelTypes)parallelType);
-					t.getpushLapTime();
-				}
-				stats[idx].push_back(t.getLapTimeMedian());
+				t.start();
+				guidedImageFilter(srcf, guidef, destf, r, eps, (GuidedTypes)guidedType, (BoxFilterMethod)boxType, (ParallelTypes)parallelType);
+				t.getpushLapTime();
 			}
-			destf.convertTo(dest, CV_8U);
-			if (showIndex == idx)destf.copyTo(show);
-			idx++;
+			stats[idx].push_back(t.getLapTimeMedian());
+		}
+		destf.convertTo(dest, CV_8U);
+		if (showIndex == idx)destf.copyTo(show);
+		idx++;
 #endif
 
 #ifdef CLASS_TEST
-			{
-				destf_class.setTo(0);
-				Timer t("", TIME_MSEC, false);
+		{
+			destf_class.setTo(0);
+			Timer t("", TIME_MSEC, false);
 
-				for (int i = 0; i < loop; i++)
-				{
-					t.start();
-					gf.setBoxType((BoxFilterMethod)boxType);
-					gf.filter(srcf, guidef, destf_class, r, eps, (GuidedTypes)guidedType, (ParallelTypes)parallelType);
-					t.getpushLapTime();
-				}
-				stats[idx].push_back(t.getLapTimeMedian());
+			for (int i = 0; i < loop; i++)
+			{
+				t.start();
+				gf.setBoxType((BoxFilterMethod)boxType);
+				gf.filter(srcf, guidef, destf_class, r, eps, (GuidedTypes)guidedType, (ParallelTypes)parallelType);
+				t.getpushLapTime();
 			}
-			destf_class.convertTo(dest_class, CV_8U);
-			if (showIndex == idx)destf_class.copyTo(show);
-			idx++;
+			stats[idx].push_back(t.getLapTimeMedian());
+		}
+		destf_class.convertTo(dest_class, CV_8U);
+		if (showIndex == idx)destf_class.copyTo(show);
+		idx++;
 #endif
 
 #ifdef CLASS_PRECOMP_TEST
-			{
-				destf_precomp.setTo(0);
-				Timer t("", TIME_MSEC, false);
+		{
+			destf_precomp.setTo(0);
+			Timer t("", TIME_MSEC, false);
 
-				for (int i = 0; i < loop; i++)
-				{
-					t.start();
-					gf.setBoxType((BoxFilterMethod)boxType);
-					gf.filterGuidePrecomputed(srcf, guidef, destf_precomp, r, eps, (GuidedTypes)guidedType, (ParallelTypes)parallelType);
-					t.getpushLapTime();
-				}
-				stats[idx].push_back(t.getLapTimeMedian());
+			for (int i = 0; i < loop; i++)
+			{
+				t.start();
+				gf.setBoxType((BoxFilterMethod)boxType);
+				gf.filterGuidePrecomputed(srcf, guidef, destf_precomp, r, eps, (GuidedTypes)guidedType, (ParallelTypes)parallelType);
+				t.getpushLapTime();
 			}
-			destf_precomp.convertTo(dest_precomp, CV_8U);
-			if (showIndex == idx)destf_precomp.copyTo(show);
-			idx++;
+			stats[idx].push_back(t.getLapTimeMedian());
+		}
+		destf_precomp.convertTo(dest_precomp, CV_8U);
+		if (showIndex == idx)destf_precomp.copyTo(show);
+		idx++;
 #endif
 
 #ifdef CLASS_COLORPARALLEL_TEST
-			{
-				destf_classcolorpara.setTo(0);
-				Timer t("", TIME_MSEC, false);
+		{
+			destf_classcolorpara.setTo(0);
+			Timer t("", TIME_MSEC, false);
 
-				for (int i = 0; i < loop; i++)
-				{
-					t.start();
-					gfcp.setBoxType((BoxFilterMethod)boxType);
-					gfcp.filterColorParallel(srcf, guidef, destf_classcolorpara, r, eps, (GuidedTypes)guidedType, (ParallelTypes)parallelType);
-					t.getpushLapTime();
-				}
-				stats[idx].push_back(t.getLapTimeMedian());
+			for (int i = 0; i < loop; i++)
+			{
+				t.start();
+				gfcp.setBoxType((BoxFilterMethod)boxType);
+				gfcp.filterColorParallel(srcf, guidef, destf_classcolorpara, r, eps, (GuidedTypes)guidedType, (ParallelTypes)parallelType);
+				t.getpushLapTime();
 			}
-			destf_classcolorpara.convertTo(dest_classcolorpara, CV_8U);
-			if (showIndex == idx)destf_classcolorpara.copyTo(show);
-			idx++;
+			stats[idx].push_back(t.getLapTimeMedian());
+		}
+		destf_classcolorpara.convertTo(dest_classcolorpara, CV_8U);
+		if (showIndex == idx)destf_classcolorpara.copyTo(show);
+		idx++;
 #endif
 
 #ifdef FAST_TEST
+		{
+			destf_fast.setTo(0);
+			gffast.setUpsampleMethod(upsample);
+			gffast.setDownsampleMethod(downsample);
+			Mat refsrc;
+			double factor = pow(2, fastres);
+			double amp = 1.0 / factor;
+			resize(srcf, refsrc, Size(), amp, amp);
+			Timer t("", TIME_MSEC, false);
+			for (int i = 0; i < loop; i++)
 			{
-				destf_fast.setTo(0);
-				gffast.setUpsampleMethod(upsample);
-				gffast.setDownsampleMethod(downsample);
-				Mat refsrc;
-				double factor = pow(2, fastres);
-				double amp = 1.0 / factor;
-				resize(srcf, refsrc, Size(), amp, amp);
-				Timer t("", TIME_MSEC, false);
-				for (int i = 0; i < loop; i++)
-				{
-					t.start();
-					gffast.filterFast(srcf, guidef, destf_fast, r, eps, (int)factor, (GuidedTypes)guidedType, (ParallelTypes)parallelType);
-					//gffast.upsample(refsrc, guidef, destf_fast, r, eps, GUIDED_NAIVE, parallelType);
-					t.getpushLapTime();
-				}
-				stats[idx].push_back(t.getLapTimeMedian());
+				t.start();
+				gffast.filterFast(srcf, guidef, destf_fast, r, eps, (int)factor, (GuidedTypes)guidedType, (ParallelTypes)parallelType);
+				//gffast.upsample(refsrc, guidef, destf_fast, r, eps, GUIDED_NAIVE, parallelType);
+				t.getpushLapTime();
 			}
-			destf_fast.convertTo(dest_fast, CV_8U);
-			if (showIndex == idx)destf_fast.copyTo(show);
-			idx++;
+			stats[idx].push_back(t.getLapTimeMedian());
+		}
+		destf_fast.convertTo(dest_fast, CV_8U);
+		if (showIndex == idx)destf_fast.copyTo(show);
+		idx++;
 #endif
 
 #ifdef TILE_TEST
-			{
-				destf_tile.setTo(0);
-				const int radix = 2;
+		{
+			destf_tile.setTo(0);
+			const int radix = 2;
 
-				Timer t("", TIME_MSEC, false);
-				for (int i = 0; i < loop; i++)
-				{
-					t.start();
-					gft.filter(srcf, guidef, destf_tile, r, eps, Size((int)pow(radix, h), (int)pow(radix, v)), (GuidedTypes)guidedType);
-					t.getpushLapTime();
-				}
-				stats[idx].push_back(t.getLapTimeMedian());
+			Timer t("", TIME_MSEC, false);
+			for (int i = 0; i < loop; i++)
+			{
+				t.start();
+				gft.filter(srcf, guidef, destf_tile, r, eps, Size((int)pow(radix, h), (int)pow(radix, v)), (GuidedTypes)guidedType);
+				t.getpushLapTime();
 			}
-			destf_tile.convertTo(dest_tile, CV_8U);
-			if (showIndex == idx)destf_tile.copyTo(show);
-			idx++;
+			stats[idx].push_back(t.getLapTimeMedian());
+		}
+		destf_tile.convertTo(dest_tile, CV_8U);
+		if (showIndex == idx)destf_tile.copyTo(show);
+		idx++;
 #endif
 
-			ci("Guided Type(g-f): %s", getGuidedType(guidedType).c_str());
-			ci("Box Type        : " + getBoxType((BoxFilterMethod)boxType));
-			ci("Parallel Type   : " + getParallelType(parallelType));
-			ci("Parallel Type   : " + cp::getInterpolationName(downsample) + " Up: " + cp::getInterpolationName(upsample));
-			ci("NUM             : %d", stats[0].getSize());
-			ci("======Time======");
-			idx = 0;
-			ci("0: ref64f   : %f", stats[idx++].getMedian());
+		ci("Guided Type(g-f): %s", getGuidedType(guidedType).c_str());
+		ci("Box Type        : " + getBoxType((BoxFilterMethod)boxType));
+		ci("Parallel Type   : " + getParallelType(parallelType));
+		ci("Parallel Type   : " + cp::getInterpolationName(downsample) + " Up: " + cp::getInterpolationName(upsample));
+		ci("NUM             : %d", stats[0].getSize());
+		ci("======Time======");
+		idx = 0;
+		ci("0: ref64f   : %f", stats[idx++].getMedian());
 #ifdef OPENCV
-			ci("1: opencv   : %f", stats[idx++].getMedian());
+		ci("1: opencv   : %f", stats[idx++].getMedian());
 #endif
 #ifdef FUNCTION_TEST
-			ci("2: function : %f", stats[idx++].getMedian());
+		ci("2: function : %f", stats[idx++].getMedian());
 #endif
 #ifdef CLASS_TEST
-			ci("3: class    : %f", stats[idx++].getMedian());
+		ci("3: class    : %f", stats[idx++].getMedian());
 #endif
 #ifdef CLASS_PRECOMP_TEST
-			ci("4: precomp  : %f", stats[idx++].getMedian());
+		ci("4: precomp  : %f", stats[idx++].getMedian());
 #endif
 #ifdef CLASS_COLORPARALLEL_TEST
-			ci("5: colorPara: %f", stats[idx++].getMedian());
+		ci("5: colorPara: %f", stats[idx++].getMedian());
 #endif
 #ifdef FAST_TEST
-			ci("6: fast     : %f", stats[idx++].getMedian());
+		ci("6: fast     : %f", stats[idx++].getMedian());
 #endif
 #ifdef TILE_TEST
-			ci("7: tiling   : %f", stats[idx++].getMedian());
+		ci("7: tiling   : %f", stats[idx++].getMedian());
 #endif
-			{
-				//Timer t("PSNR");
-				ci("======PSNR between 32F and 64F======");
+		{
+			//Timer t("PSNR");
+			ci("======PSNR between 32F and 64F======");
 #ifdef OPENCV
-				ci("opencv   : %f", psnr.getPSNR(destfocv, ref64f, bb));
+			ci("opencv   : %f", psnr.getPSNR(destfocv, ref64f, bb));
 #endif
 #ifdef FUNCTION_TEST
-				ci("function : %f", psnr.getPSNR(destf, ref64f, bb));
+			ci("function : %f", psnr.getPSNR(destf, ref64f, bb));
 #endif
 #ifdef CLASS_TEST
-				ci("class    : %f", psnr.getPSNR(destf_class, ref64f, bb));
+			ci("class    : %f", psnr.getPSNR(destf_class, ref64f, bb));
 #endif
 #ifdef CLASS_PRECOMP_TEST
-				ci("precomp  : %f", psnr.getPSNR(destf_precomp, ref64f, bb));
+			ci("precomp  : %f", psnr.getPSNR(destf_precomp, ref64f, bb));
 #endif
 #ifdef CLASS_COLORPARALLEL_TEST
-				ci("colorPara: %f", psnr.getPSNR(destf_classcolorpara, ref64f, bb));
+			ci("colorPara: %f", psnr.getPSNR(destf_classcolorpara, ref64f, bb));
 #endif
 #ifdef FAST_TEST
-				ci("Fast     : %f", psnr.getPSNR(destf_fast, ref64f, bb));
+			ci("Fast     : %f", psnr.getPSNR(destf_fast, ref64f, bb));
 #endif
 #ifdef TILE_TEST
-				ci("tiling   : %f", psnr.getPSNR(destf_tile, ref64f, bb));
+			ci("tiling   : %f", psnr.getPSNR(destf_tile, ref64f, bb));
 #endif
-			}
-			ci.show();
+		}
+		ci.show();
 
-			show.convertTo(show8u, CV_8U);
-			imshow("show", show8u);
+		show.convertTo(show8u, CV_8U);
+		imshow("show", show8u);
 
-			//Mat sub;
-			//absdiffScale(show, ref64f, sub, subCoeff);
-			//imshow("Sub", sub);
+		//Mat sub;
+		//absdiffScale(show, ref64f, sub, subCoeff);
+		//imshow("Sub", sub);
 
-			cp::guiDiff(show, ref64f, false);
-			//imshowAnalysis("ana", show8u);
-			//cout << endl;
-			key = waitKey(1);
-			if (key == 'g')
+		cp::guiDiff(show, ref64f, false);
+		//imshowAnalysis("ana", show8u);
+		//cout << endl;
+		key = waitKey(1);
+		if (key == 'g')
+		{
+			guidedType++;
+			guidedType = (guidedType > GuidedTypes::NumGuidedTypes - 1) ? 0 : guidedType;
+			setTrackbarPos("GuidedType", "param", guidedType);
+		}
+		if (key == 'f')
+		{
+			guidedType--;
+			guidedType = (guidedType < 0) ? GuidedTypes::NumGuidedTypes - 2 : guidedType;
+			setTrackbarPos("GuidedType", "param", guidedType);
+		}
+		if (key == 'r')
+		{
+			for (Stat& s : stats)
 			{
-				guidedType++;
-				guidedType = (guidedType > GuidedTypes::NumGuidedTypes - 1) ? 0 : guidedType;
-				setTrackbarPos("GuidedType", "param", guidedType);
+				s.clear();
 			}
-			if (key == 'f')
-			{
-				guidedType--;
-				guidedType = (guidedType < 0) ? GuidedTypes::NumGuidedTypes - 2 : guidedType;
-				setTrackbarPos("GuidedType", "param", guidedType);
-			}
-			if (key == 'r')
-			{
-				for (Stat& s : stats)
-				{
-					s.clear();
-				}
-			}
+		}
 
-			if (uck.isUpdate(r, guidedType, boxType, parallelType, src_GRAY_RGB, guide_GRAY_RGB, h, v))
+		if (uck.isUpdate(r, guidedType, boxType, parallelType, src_GRAY_RGB, guide_GRAY_RGB, h, v))
+		{
+			for (Stat& s : stats)
 			{
-				for (Stat& s : stats)
-				{
-					s.clear();
-				}
+				s.clear();
 			}
 		}
 	}
+}
+
+void testGuidedBilateralFilter(Mat& img_)
+{
+	vector<Mat> v;
+	Mat c;
+	cvtColor(img_, c, COLOR_BGR2YUV);
+	split(c, v);
+	Mat img;
+	if (img_.channels() == 1) img = img_;
+	else cvtColor(img_, img, COLOR_BGR2GRAY);
+
+	string wname = "BF-GIF test";
+	namedWindow(wname);
+	int sw = 0; createTrackbar("bf(0)-gif(1)", wname, &sw, 2);
+	int r = 8; createTrackbar("r", wname, &r, 10);
+	int sigma_s = 10; createTrackbar("sigma_s", wname, &sigma_s, 10);
+	int sigma_r = 30; createTrackbar("sigma_r", wname, &sigma_r, 200);
+	int eps = int(sigma_r / sqrt(2)); createTrackbar("eps", wname, &eps, 200);
+	int alphaLEPF10 = 10; createTrackbar("alphaLEPF10", wname, &alphaLEPF10, 200);
+	int m10 = 10; createTrackbar("m10", wname, &m10, 200);
+
+	int key = 0;
+	Mat destBF, destGIF, destLEPF;
+	ConsoleImage ci;
+	while (key != 'q')
+	{
+		guidedImageGaussianFilterGray(img, destGIF, r / 2, float(sigma_s / sqrt(2.0)), float(eps * eps));
+		//guidedImageGaussianFilterGrayEnhance(img, destGIF, r / 2, float(sigma_s / sqrt(2.0)), float(eps * eps), -(m10*0.1f));
+		localEdgePreservingGaussianFilter(img, destLEPF, r / 2, float(sigma_s / sqrt(2.0)), float(eps * eps), alphaLEPF10*0.1f);
+		bilateralFilter(img, destBF, 2 * r + 1, sigma_r, sigma_s);
+		ci("PSNR-BF-GIF %f", getPSNR(destBF, destGIF, 20));
+		ci("PSNR-GIF-LEPF %f", getPSNR(destGIF, destLEPF, 20));
+		ci.show();
+		if (sw == 0)imshow(wname, destBF);
+		if (sw == 1)imshow(wname, destGIF);
+		if (sw == 2)imshow(wname, destLEPF);
+		//diffshow("diff", destBF, destGIF, 5);
+		diffshow("diff", destGIF, destLEPF, 5);
+		//destGIF.copyTo(v[0]); merge(v, c); cvtColor(c, c, COLOR_YUV2BGR); imshow("color", c);
+		destLEPF.copyTo(v[0]); merge(v, c); cvtColor(c, c, COLOR_YUV2BGR); imshow("color", c);
+		key = waitKey(1);
+	}
+}

@@ -417,7 +417,7 @@ namespace cp
 				switch (downsample_method)
 				{
 				case Downsample::CP_NEAREST:
-					if (scale == 2 && src.cols % 2 == 0 && src.rows && 2)downsampleNN2_32F(src, dest);
+					if (scale == 2 && src.cols % 2 == 0 && src.rows % 2 == 0) downsampleNN2_32F(src, dest);
 					else downsampleNN_<float>(src, dest, scale); break;
 				case Downsample::CP_LINEAR:
 					downsampleLinear_<float>(src, dest, scale, r); break;

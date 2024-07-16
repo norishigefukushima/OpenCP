@@ -6,5 +6,8 @@
 #include <updateCheck.hpp>
 #include <highguiex.hpp>
 #include <plot.hpp>
+#include <blend.hpp>
+
 #include <inlineCVFunctions.hpp>
 #include <inlineMathFunctions.hpp>
+#include <inlineSIMDFunctions.hpp>

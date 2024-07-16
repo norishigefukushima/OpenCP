@@ -1,34 +1,46 @@
 #pragma once
 #include <opencp.hpp>
 
-inline double getPyramidSigma(double sigma, double level)
+static inline double getPyramidSigma(double sigma, double level)
 {
+	if (level == 0) return FLT_EPSILON;
+	/*double ret = sqrt(2.0);
+
+	for (int l = 0; l < level - 1; l++)
+	{
+		double v = pow(2.0, l + 1);
+		ret += v;
+	}
+	return ret * sigma;*/
+
 	double ret = 0.0;
 	for (int l = 1; l <= level; l++)
 	{
 		double v = pow(2, l - 1);
-		ret = ret + (sigma * v) * (sigma * v);
+		ret = ret + v * v;
 	}
-	return sqrt(ret);
+	return sigma * sqrt(ret);
+
 }
 
 enum WindowType
 {
 	GAUSS,
+	LAPLACE,
 	S_TONE,
 	HAT,
 	SMOOTH_HAT
 };
 
 
-inline float getGaussWeight(int x, int y, float sigma)
+static inline float getGaussWeight(int x, int y, float sigma)
 {
 	float ret;
 	ret = (float)exp((x * x + y * y) / (-2.0 * sigma * sigma));
 	return ret;
 }
 
-inline float getSToneWeight(float x, float remap_sigma, float beta, float alpha)
+static inline float getSToneWeight(float x, float remap_sigma, float beta, float alpha)
 {
 	if (abs(x) <= remap_sigma)
 	{
@@ -40,7 +52,7 @@ inline float getSToneWeight(float x, float remap_sigma, float beta, float alpha)
 }
 
 template<typename T>
-inline T getSToneCurve(T i, T g, T remap_sigma, T beta, T alpha)
+static inline T getSToneCurve(T i, T g, T remap_sigma, T beta, T alpha)
 {
 	if (abs(i - g) <= remap_sigma)
 	{
@@ -54,7 +66,7 @@ inline T getSToneCurve(T i, T g, T remap_sigma, T beta, T alpha)
 
 
 
-inline float getSmoothingHat(float x, float t, float sigma, int r)
+static inline float getSmoothingHat(float x, float t, float sigma, int r)
 {
 	float re = 0.f;
 	for (int i = -r; i <= r; i++)
@@ -64,7 +76,7 @@ inline float getSmoothingHat(float x, float t, float sigma, int r)
 	return re / (2 * r + 1);
 }
 
-inline double getSmoothingHat(double x, double t, double sigma, int r)
+static inline double getSmoothingHat(double x, double t, double sigma, int r)
 {
 	double re = 0.0;
 	for (int i = -r; i <= r; i++)
@@ -74,7 +86,7 @@ inline double getSmoothingHat(double x, double t, double sigma, int r)
 	return re / (2 * r + 1);
 }
 
-inline float getremapCoefficient(float i, float g, const int window_type, float sigma, float alpha, float beta, float remap_sigma, float boost)
+static inline float getremapCoefficient(float i, float g, const int window_type, float sigma, float alpha, float beta, float remap_sigma, float boost)
 {
 	float ret = 0.f;
 	switch (window_type)
@@ -96,6 +108,33 @@ inline float getremapCoefficient(float i, float g, const int window_type, float 
 
 namespace cp
 {
+	class CP_EXPORT ComputePyramidSize
+	{
+		const bool isLastConv;
+		const int size;
+		const int r;
+		const int level;
+		int minsize = 0;
+		std::vector<int> borderSizeL;
+		std::vector<int> borderSizeR;
+		std::vector<int> imageSize;
+		std::vector<int> borderSizeActive;
+		std::vector<int> borderSizeRequire;
+		std::vector<int> borderOffset;
+
+	public:
+		ComputePyramidSize(int size, int r, int level, bool isLastConv);
+		void computeSize(int size, int r, int level, bool isLastConv);
+		cv::Mat vizPyramid(int bs = 16);
+		void print();
+		void get(const int level, int& borderSizeL, int& borderSizeR, int& imageSize, int& borderSizeActive, int& borderSizeRequire, int& borderOffset);
+		int getBorderL(int level);
+		int getBorderR(int level);
+		int getBorderOffset(int level);
+		int getBorderSizeRequire(int level);
+	};
+
+	//abstract class for each multi-scale filter
 	class CP_EXPORT MultiScaleFilter
 	{
 	public:
@@ -104,20 +143,20 @@ namespace cp
 			FIX,
 			ADAPTIVE,
 		};
-
 		enum ScaleSpace
 		{
 			Pyramid,
-			DoG
+			DoG,
+			ContrastPyramid,
+			CoG,
+			DoGSep
 		};
-
 		enum RangeDescopeMethod
 		{
 			FULL,
 			MINMAX,
 			LOCAL,
 		};
-
 		enum PyramidComputeMethod
 		{
 			IgnoreBoundary,
@@ -128,7 +167,6 @@ namespace cp
 
 		void setAdaptive(const bool adaptiveMethod, cv::Mat& adaptiveSigmaMap, cv::Mat& adaptiveBoostMap, const int level);
 		std::string getAdaptiveName();
-
 		std::string getScaleSpaceName();
 
 		void setPyramidComputeMethod(const PyramidComputeMethod scaleSpaceMethod);
@@ -136,23 +174,46 @@ namespace cp
 
 		void setRangeDescopeMethod(RangeDescopeMethod scaleSpaceMethod);
 		std::string getRangeDescopeMethod();
-
 		cv::Size getLayerSize(const int level);
 
-		inline int getGaussianRadius(const float sigma) { return (pyramidComputeMethod == OpenCV) ? 2 : get_simd_ceil(int(ceil(1.5 * sigma)), 2); }
+		bool isDoGPyramidApprox = false;
+		void setDoGPyramidApprox(bool flag);
+		void setIsCompute(bool flag);
+		int getGaussianRadius(const float sigma);
 
-		static void showPyramid(std::string wname, std::vector<cv::Mat>& pyramid, bool isShowLevel = true);
+		void showImageStack(std::string wname);
+		static void showPyramid(std::string wname, std::vector<cv::Mat>& pyramid, float scale = 1.f, bool isShowLevel = true);
 		void drawRemap(bool isWait = true, const cv::Size size = cv::Size(512, 512));
 
+		const float nsigma = 3.f;//3.f;
+		void buildGaussianPyramid(const cv::Mat& src, std::vector<cv::Mat>& GaussianPyramid, const int level, const float sigma);
+		void buildGaussianLaplacianPyramid(const cv::Mat& src, std::vector<cv::Mat>& GaussianPyramid, std::vector<cv::Mat>& LaplacianPyramid, const int level, const float sigma);
+		void buildLaplacianPyramid(const cv::Mat& src, std::vector<cv::Mat>& LaplacianPyramid, const int level, const float sigma);
+		void buildContrastPyramid(const cv::Mat& src, std::vector<cv::Mat>& LaplacianPyramid, const int level, const float sigma);
+
+		template<int D, int d, int d2> void buildLaplacianPyramid(const cv::Mat& src, std::vector<cv::Mat>& LaplacianPyramid, const int level, const float sigma, float* linebuff);
+		//using precomputed Gaussian pyramid
+		void buildLaplacianPyramid(const std::vector<cv::Mat>& GaussianPyramid, std::vector<cv::Mat>& destPyramid, const int level, const float sigma);
+		//L0+...resize(Ln-2+resize(Ln-1+resize(Ln)))
+		void collapseLaplacianPyramid(std::vector<cv::Mat>& LaplacianPyramid, cv::Mat& dest, const int depth);
+		void collapseContrastPyramid(std::vector<cv::Mat>& LaplacianPyramid, cv::Mat& dest, const int depth);
+
+		void buildGaussianStack(const cv::Mat& src, std::vector<cv::Mat>& GaussianStack, const float sigma_s, const int level);
+		void buildDoGStack(const cv::Mat& src, std::vector<cv::Mat>& ImageStack, const float sigma_s, const int level);
+		void buildCoGStack(const cv::Mat& src, std::vector<cv::Mat>& ImageStack, const float sigma_s, const int level);
+		void buildDoGSeparableStack(const cv::Mat& src, std::vector<cv::Mat>& ImageStack, const float sigma_s, const int level);
+		void collapseDoGStack(std::vector<cv::Mat>& ImageStack, cv::Mat& dest, const int depth);
+		void collapseCoGStack(std::vector<cv::Mat>& ImageStack, cv::Mat& dest, const int depth);
 	protected:
+		bool isCompute = true;
 		std::vector<cv::Size> layerSize;
 		void allocSpaceWeight(const float sigma);
 		void freeSpaceWeight();
-		float evenratio = 0.f;
-		float oddratio = 0.f;
+		float evenratio = 0.f;//set in generateWeight
+		float oddratio = 0.f;//set in generateWeight
 		float* GaussWeight = nullptr;
 		RangeDescopeMethod rangeDescopeMethod = RangeDescopeMethod::MINMAX;
-		int radius = 0;
+		int radius = 0;//set in allocSpaceWeight
 		PyramidComputeMethod pyramidComputeMethod = IgnoreBoundary;
 
 		const int threadMax = omp_get_max_threads();
@@ -170,7 +231,7 @@ namespace cp
 		std::vector<cv::Mat> adaptiveBoostBorder;//level+1
 		float Salpha = 1.f;
 		float Sbeta = 1.f;
-		int windowType = 0;
+		const int windowType = 0;
 
 		std::vector<cv::Mat> ImageStack;
 		float intensityMin = 0.f;
@@ -179,116 +240,128 @@ namespace cp
 		const int rangeMax = 256;
 		std::vector<float> rangeTable;
 
-		inline float getGaussianRangeWeight(const float v, const float sigma_range, const float boost)
-		{
-			//int n = 2;const float ret = (float)detail_param * exp(pow(abs(v), n) / (-n * pow(sigma_range, n)));
-			return   float(boost * exp(v * v / (-2.0 * sigma_range * sigma_range)));
-		}
+		inline float getGaussianRangeWeight(const float v, const float sigma_range, const float boost);
 		void initRangeTable(const float sigma, const float boost);
 		void remap(const cv::Mat& src, cv::Mat& dest, const float g, const float sigma_range, const float boost);
 		void remapAdaptive(const cv::Mat& src, cv::Mat& dest, const float g, const cv::Mat& sigma_range, const cv::Mat& boost);
 
 		void rangeDescope(const cv::Mat& src);
 
-		float* generateWeight(int r, const float sigma, float& evenratio, float& oddratio);
+		float* generateGaussianWeight(int r, const float sigma, float& evenratio, float& oddratio);
 		void GaussDownFull(const cv::Mat& src, cv::Mat& dest, const float sigma, const int borderType);
 		void GaussDown(const cv::Mat& src, cv::Mat& dest);
-		template<int D>
-		void GaussDown(const cv::Mat& src, cv::Mat& dest, float* linebuff);//linebuffsize = src.cols+2*radius
+		template<int D> void GaussDown(const cv::Mat& src, cv::Mat& dest, float* linebuff);//linebuffsize = src.cols+2*radius
 		void GaussDownIgnoreBoundary(const cv::Mat& src, cv::Mat& dest);
-		template<int D>
-		void GaussDownIgnoreBoundary(const cv::Mat& src, cv::Mat& dest, float* linebuff);//linebuffsize = src.cols
+		template<int D> void GaussDownIgnoreBoundary(const cv::Mat& src, cv::Mat& dest, float* linebuff);//linebuffsize = src.cols
 
 		void GaussUpFull(const cv::Mat& src, cv::Mat& dest, const float sigma, const int borderType);
 		void GaussUp(const cv::Mat& src, cv::Mat& dest);
 		void GaussUpIgnoreBoundary(const cv::Mat& src, cv::Mat& dest);
 
 		//dest = addsubsrc +/- srcup
-		template<bool isAdd>
-		void GaussUpAddFull(const cv::Mat& src, const cv::Mat& addsubsrc, cv::Mat& dest, const float sigma, const int borderType);
+		template<bool isAdd> void GaussUpAddFull(const cv::Mat& src, const cv::Mat& addsubsrc, cv::Mat& dest, const float sigma, const int borderType);
 		//dest = addsubsrc +/- srcup
-		template<bool isAdd>
-		void GaussUpAdd(const cv::Mat& src, const cv::Mat& addsubsrc, cv::Mat& dest);
-		template<bool isAdd, int D, int D2>
-		void GaussUpAdd(const cv::Mat& src, const cv::Mat& addsubsrc, cv::Mat& dest);
+		template<bool isAdd> void GaussUpAdd(const cv::Mat& src, const cv::Mat& addsubsrc, cv::Mat& dest);
+		template<bool isAdd, int D, int D2> void GaussUpAdd(const cv::Mat& src, const cv::Mat& addsubsrc, cv::Mat& dest);
 		//dest = addsubsrc +/- srcup
-		template<bool isAdd>
-		void GaussUpAddIgnoreBoundary(const cv::Mat& src, const cv::Mat& addsubsrc, cv::Mat& dest);
-		template<bool isAdd, int D2>
-		void GaussUpAddIgnoreBoundary(const cv::Mat& src, const cv::Mat& addsubsrc, cv::Mat& dest, float* linee, float* lineo);//linebuffsize = src.cols
-
-		void buildGaussianPyramid(const cv::Mat& src, std::vector<cv::Mat>& GaussianPyramid, const int level, const float sigma);
-		void buildGaussianLaplacianPyramid(const cv::Mat& src, std::vector<cv::Mat>& GaussianPyramid, std::vector<cv::Mat>& LaplacianPyramid, const int level, const float sigma);
-		void buildLaplacianPyramid(const cv::Mat& src, std::vector<cv::Mat>& LaplacianPyramid, const int level, const float sigma);
-		template<int D, int d, int d2>
-		void buildLaplacianPyramid(const cv::Mat& src, std::vector<cv::Mat>& LaplacianPyramid, const int level, const float sigma, float* linebuff);
-		//using precomputed Gaussian pyramid
-		void buildLaplacianPyramid(const std::vector<cv::Mat>& GaussianPyramid, std::vector<cv::Mat>& destPyramid, const int level, const float sigma);
-		//L0+...resize(Ln-2+resize(Ln-1+resize(Ln)))
-		void collapseLaplacianPyramid(std::vector<cv::Mat>& LaplacianPyramid, cv::Mat& dest);
-
-		void buildGaussianStack(cv::Mat& src, std::vector<cv::Mat>& GaussianStack, const float sigma_s, const int level);
-		void buildDoGStack(cv::Mat& src, std::vector<cv::Mat>& ImageStack, const float sigma_s, const int level);
-		void collapseDoGStack(std::vector<cv::Mat>& ImageStack, cv::Mat& dest);
+		template<bool isAdd> void GaussUpAddIgnoreBoundary(const cv::Mat& src, const cv::Mat& addsubsrc, cv::Mat& dest);
+		template<bool isAdd, int D2> void GaussUpAddIgnoreBoundary(const cv::Mat& src, const cv::Mat& addsubsrc, cv::Mat& dest, float* linee, float* lineo);//linebuffsize = src.cols
 
 		void body(const cv::Mat& src, cv::Mat& dest);
 		void gray(const cv::Mat& src, cv::Mat& dest);
+		void body(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dest);
+		void gray(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dest);
 
 		virtual void pyramid(const cv::Mat& src, cv::Mat& dest) = 0;
 		virtual void dog(const cv::Mat& src, cv::Mat& dest) = 0;
+		virtual void contrastpyramid(const cv::Mat& src, cv::Mat& dest) {};
+		virtual void cog(const cv::Mat& src, cv::Mat& dest) {};
+		virtual void dogsep(const cv::Mat& src, cv::Mat& dest) {};
+
+		virtual void pyramid(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dest) {};
+		virtual void dog(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dest) {};
+		virtual void contrastpyramid(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dest) {};
+		virtual void cog(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dest) {};
+		virtual void dogsep(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dest) {};
 	};
 
-
+	//classical multi-scale filtering (no edge-preserving filter)
 	class CP_EXPORT MultiScaleGaussianFilter : public MultiScaleFilter
 	{
 	public:
 		void filter(const cv::Mat& src, cv::Mat& dest, const float sigma_range, const float sigma_space, const float boost = 1.f, const int level = 2, const ScaleSpace scaleSpaceMethod = ScaleSpace::Pyramid);
 	protected:
-		void pyramid(const cv::Mat& src, cv::Mat& dest)override;
-		void dog(const cv::Mat& src, cv::Mat& dest)override;
+		void pyramid(const cv::Mat& src, cv::Mat& dest) override;
+		void contrastpyramid(const cv::Mat& src, cv::Mat& dest) override;
+		void dog(const cv::Mat& src, cv::Mat& dest) override;
+		void cog(const cv::Mat& src, cv::Mat& dest) override;
+		void dogsep(const cv::Mat& src, cv::Mat& dest) override;
 	};
 
+	//multi-scale filtering with bilateral filtering-based pyramid
 	class CP_EXPORT MultiScaleBilateralFilter : public MultiScaleFilter
 	{
 	public:
 		void filter(const cv::Mat& src, cv::Mat& dest, const float sigma_range, const float sigma_space, const float boost = 1.f, const int level = 2, const ScaleSpace scaleSpaceMethod = ScaleSpace::Pyramid);
 	protected:
+		void pyramid(const cv::Mat& src, cv::Mat& dest) override;
+		void dog(const cv::Mat& src, cv::Mat& dest) override;
+		void cog(const cv::Mat& src, cv::Mat& dest) override;
+		void buildDoBFStack(const cv::Mat& src, std::vector<cv::Mat>& DoBFStack, const float sigma_r, const float sigma_s, const int level);
+		void buildCoBFStack(const cv::Mat& src, std::vector<cv::Mat>& DoBFStack, const float sigma_r, const float sigma_s, const int level);
+	};
+
+	//multi-scale filtering with guided image filtering-based pyramid
+	class CP_EXPORT MultiScaleGuidedImageFilter : public MultiScaleFilter
+	{
+	public:
+		void filter(const cv::Mat& src, cv::Mat& dest, const float eps, const float sigma_space, const float boost = 1.f, const int level = 2, const ScaleSpace scaleSpaceMethod = ScaleSpace::Pyramid);
+	protected:
 		void pyramid(const cv::Mat& src, cv::Mat& dest)override;
 		void dog(const cv::Mat& src, cv::Mat& dest)override;
-		void buildDoBFStack(const cv::Mat& src, std::vector<cv::Mat>& DoBFStack, const float sigma_r, const float sigma_s, const int level);
+		void cog(const cv::Mat& src, cv::Mat& dest)override;
+		//for compatible eps = sqrt(sigma_r/1.5), sigma_gif = sqrt(2)*sigma_bf, radius_gif = radius_bf*2
+		void buildDoGIFStack(const cv::Mat& src, std::vector<cv::Mat>& DoBFStack, const float eps, const float sigma_s, const int level);
+		void buildCoGIFStack(const cv::Mat& src, std::vector<cv::Mat>& DoBFStack, const float eps, const float sigma_s, const int level);
 	};
 
 
+	//build scale-space per image (very slow)
+	class CP_EXPORT LocalMultiScaleFilterFull : public MultiScaleFilter
+	{
+	public:
+		void filter(const cv::Mat& src, cv::Mat& dest, const float sigma_range, const float sigma_space, const float boost = 1.f, const int level = 2, const ScaleSpace scaleSpaceMethod = ScaleSpace::Pyramid);
+		void jointfilter(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dest, const float sigma_range, const float sigma_space, const float boost = 1.f, const int level = 2, const ScaleSpace scaleSpaceMethod = ScaleSpace::Pyramid);
+	protected:
+		void pyramid(const cv::Mat& src, cv::Mat& dest) override;
+		void dog(const cv::Mat& src, cv::Mat& dest) override;
+		void dog(const cv::Mat& src, const cv::Mat& guide, cv::Mat& dest) override;
+
+		void setDoGKernel(float* weight, int* index, const int index_step, cv::Size ksize, const float sigma1, const float sigma2);
+		float getDoGCoeffLnNoremap(cv::Mat& src, const float g, const int y, const int x, const int size, int* index, float* weight);
+		float getDoGCoeffLn(const cv::Mat& src, const float g, const int y, const int x, const int size, int* index, float* weight);
+		float getDoGCoeffLn(const cv::Mat& src, const cv::Mat& guide, const float g, const float h, const int y, const int x, const int size, int* index, float* weight);
+	};
+
+	//build scale-space per block (same accuracy as full, pyramid: LLF naive implementation, dog: same as full)
 	class CP_EXPORT LocalMultiScaleFilter : public MultiScaleFilter
 	{
 	public:
 		void filter(const cv::Mat& src, cv::Mat& dest, const float sigma_range, const float sigma_space, const float boost = 1.f, const int level = 2, const ScaleSpace scaleSpaceMethod = ScaleSpace::Pyramid);
 	protected:
+		bool isCompute = true;
 		cv::Mat border;
 		std::vector<cv::Mat> LaplacianPyramid;
 		//Local Laplacian Filter(Paris2011)
 		void pyramid(const cv::Mat& src, cv::Mat& dest)override;
-
 		// DoG
 		void dog(const cv::Mat& src, cv::Mat& dest)override;
-		void setDoGKernel(float* weight, int* index, const int index_step, cv::Size ksize, const float sigma1, const float sigma2);
-		float getDoGCoeffLnNoremap(cv::Mat& src, const float g, const int y, const int x, const int size, int* index, float* weight);
-		float getRemapDoGCoeffLn(cv::Mat& src, const float g, const int y, const int x, const int size, int* index, float* weight);
+		void dog(const cv::Mat& src, cv::Mat& guide, cv::Mat& dest);
+		void setDoGKernel(float* weight, int* index, const int index_step, cv::Size ksize1, cv::Size ksize2, const float sigma1, const float sigma2);
+		float getRemapDoGConv(const cv::Mat& src, const float g, const int y, const int x, const int size, int* index, float* weight, bool isCompute);
 	};
 
-	class CP_EXPORT LocalMultiScaleFilterFull : public MultiScaleFilter
-	{
-	public:
-		void filter(const cv::Mat& src, cv::Mat& dest, const float sigma_range, const float sigma_space, const float boost = 1.f, const int level = 2, const ScaleSpace scaleSpaceMethod = ScaleSpace::Pyramid);
-	protected:
-		void pyramid(const cv::Mat& src, cv::Mat& dest)override;
-		void dog(const cv::Mat& src, cv::Mat& dest)override;
-
-		void setDoGKernel(float* weight, int* index, const int index_step, cv::Size ksize, const float sigma1, const float sigma2);
-		float getDoGCoeffLnNoremap(cv::Mat& src, const float g, const int y, const int x, const int size, int* index, float* weight);
-		float getDoGCoeffLn(cv::Mat& src, const float g, const int y, const int x, const int size, int* index, float* weight);
-	};
-
+	//reference implementation: not optimized
 	class CP_EXPORT FastLLFReference : public MultiScaleFilter
 	{
 	public:
@@ -362,10 +435,7 @@ namespace cp
 
 		std::vector<cv::Mat> remapIm;
 		std::vector<cv::Mat> GaussianStack;
-		std::vector<std::vector<cv::Mat>> DoGStackLayer;
-
-		std::vector<cv::Mat> GaussianPyramid;
-		std::vector<std::vector<cv::Mat>> LaplacianPyramid;
+		std::vector<std::vector<cv::Mat>> LayerStack;
 
 		cv::Mat border;
 		int interpolation_method = 0;
@@ -376,10 +446,12 @@ namespace cp
 		float* integerSampleTable = nullptr;
 		void initRangeTableInteger(const float sigma, const float boost);
 		////fast Local Laplacian Filter(2014)
-		void pyramid(const cv::Mat& src, cv::Mat& dest) override;
 		void pyramidParallel(const cv::Mat& src, cv::Mat& dest);
 		void pyramidSerial(const cv::Mat& src, cv::Mat& dest);
+		void pyramid(const cv::Mat& src, cv::Mat& dest) override;
 		void dog(const cv::Mat& src, cv::Mat& dest) override;
+		void cog(const cv::Mat& src, cv::Mat& dest) override;
+		void dogsep(const cv::Mat& src, cv::Mat& dest) override;
 
 		template<bool isUseTable>
 		void remapGaussDownIgnoreBoundary(const cv::Mat& src, cv::Mat& remapIm, cv::Mat& dest, const float g, const float sigma_range, const float boost);
@@ -397,8 +469,6 @@ namespace cp
 		//for parallel and serial test
 		void buildRemapLaplacianPyramidEachOrder(const cv::Mat& src, std::vector<cv::Mat>& destPyramid, const int level, const float sigma, const float g, const float sigma_range, const float boost);
 
-		//last level is not blended; thus, inplace operation for input Gaussian Pyramid is required.
-		void blendLaplacianNearest(const std::vector<std::vector<cv::Mat>>& LaplacianPyramid, std::vector<cv::Mat>& GaussianPyramid, std::vector<cv::Mat>& destPyramid, const int order);
 		inline void getLinearIndex(float v, int& index_l, int& index_h, float& alpha, const int order, const float intensityMin, const float intensityMax)
 		{
 			const float intensityRange = intensityMax - intensityMin;
@@ -431,8 +501,6 @@ namespace cp
 				//print_debug5(v, i * step, step, alpha,vv);
 			}
 		}
-		//do not handle last level
-		void blendLaplacianLinear(const std::vector<std::vector<cv::Mat>>& LaplacianPyramid, std::vector<cv::Mat>& GaussianPyramid, std::vector<cv::Mat>& destPyramid, const int order);
 		inline float getCubicCoeff(const float xn, const float a = -0.5f)
 		{
 			const float d = abs(xn);
@@ -475,7 +543,7 @@ namespace cp
 			return ret;
 		}
 		//do not handle lastlevel
-		void blendLaplacianCubic(const std::vector<std::vector<cv::Mat>>& LaplacianPyramid, std::vector<cv::Mat>& GaussianPyramid, std::vector<cv::Mat>& destPyramid, const int order);
+		void blendDetailStack(const std::vector<std::vector<cv::Mat>>& detailStack, const std::vector<cv::Mat>& approxStack, std::vector<cv::Mat>& destStack, const int order, const int interpolationMethod);
 
 		//for serial
 		template<bool isInit>
@@ -487,7 +555,7 @@ namespace cp
 		void productSumLaplacianPyramid(const std::vector<cv::Mat>& LaplacianPyramid, std::vector<cv::Mat>& GaussianPyramid, std::vector<cv::Mat>& destPyramid, const int order, const float g);
 	};
 
-
+	//reference implementation: not optimized
 	class CP_EXPORT LocalMultiScaleFilterFourierReference : public MultiScaleFilter
 	{
 	public:
@@ -574,14 +642,15 @@ namespace cp
 		bool isUseFourierTableLevel = false;
 
 		const int FourierTableSize = 256;
-		float* sinTable = nullptr;//initialized in initRangeFourier
-		float* cosTable = nullptr;//initialized in initRangeFourier
+		float* sinTable = nullptr;//FourierTableSize*order initialized in initRangeFourier
+		float* cosTable = nullptr;//FourierTableSize*order initialized in initRangeFourier
 		cv::Mat src8u;//used for isUseSplatTable case
 
-		std::vector<std::vector<cv::Mat>> FourierPyramidSin; //[k][l] max(order,threadMax) x (level + 1)
-		std::vector<std::vector<cv::Mat>> FourierPyramidCos; //[k][l] max(order,threadMax) x (level + 1)
-		std::vector<cv::Mat> LaplacianPyramid;//level+1
+		std::vector<std::vector<cv::Mat>> FourierStackSin; //[k][l] max(order,threadMax) x (level + 1)
+		std::vector<std::vector<cv::Mat>> FourierStackCos; //[k][l] max(order,threadMax) x (level + 1)
+		std::vector<cv::Mat> DetailStack;//level+1
 		std::vector<std::vector<cv::Mat>> destEachOrder;//[k][l] max(order,threadMax) x level
+		//dest: T, alpha, omega, (optional: sin-cos table)
 		void initRangeFourier(const int order, const float sigma_range, const float boost);
 		void allocImageBuffer(const int order, const int level);
 
@@ -604,18 +673,16 @@ namespace cp
 		//without last level summing
 		void sumPyramid(const std::vector<std::vector<cv::Mat>>& orderPyramid, std::vector<cv::Mat>& destPyramid, const int order, const int level, std::vector<bool>& used);
 
-		void pyramid(const cv::Mat& src, cv::Mat& dest)override;
+		void pyramid(const cv::Mat& src, cv::Mat& dest) override;
 		void pyramidParallel(const cv::Mat& src, cv::Mat& dest);
 		void pyramidSerial(const cv::Mat& src, cv::Mat& dest);
-		void dog(const cv::Mat& src, cv::Mat& dest)override;
+		void dog(const cv::Mat& src, cv::Mat& dest) override;
+		void cog(const cv::Mat& src, cv::Mat& dest) override;
 
 #pragma region DoG
-		std::vector<std::vector<cv::Mat>> sin_pyramid, cos_pyramid;
-		float w_sum;
-		void make_sin_cos(cv::Mat src, cv::Mat& dest_sin, cv::Mat& dest_cos, int k);
-		void splattingBlurring(const cv::Mat& src, float sigma_space, int l, int level, int k, std::vector<std::vector<cv::Mat>>& splatBuffer, bool islast);
-		void productSummingTrig_last(cv::Mat& src, cv::Mat& dest, float sigma_range, int k, std::vector<cv::Mat>& splatBuffer, int level);
-		void productSummingTrig(cv::Mat& srcn, cv::Mat& dest, cv::Mat& src8u, float sigma_range, int k, std::vector<std::vector<cv::Mat>>& splatBuffer, int l);
+		void remapCosSin(const cv::Mat& src, int k, cv::Mat& destCos, cv::Mat& destSin, bool isCompute);
+		//makeDoG and then product sum
+		void productSummingTrig(const std::vector <cv::Mat>& src, std::vector <cv::Mat>& dest, float sigma_range, bool isCompute);
 #pragma endregion
 	};
 
@@ -665,4 +732,19 @@ namespace cp
 		void process(const cv::Mat& src, cv::Mat& dst, const int threadIndex, const int imageIndex);
 		void filter(const cv::Size div, const cv::Mat& src, cv::Mat& dest, const int order, const float sigma_range, const float sigma_space, const float boost, const int level, const MultiScaleFilter::ScaleSpace scaleSpaceMethod);
 	};
+
+	//alias: LocalMultiScaleFilterFull
+	CP_EXPORT void localLaplacianFilterFull(cv::InputArray src, cv::OutputArray dest, const float sigma_range, const float sigma_space, const float boost, const int level);
+	//alias: LocalMultiScaleFilter with pyramid
+	CP_EXPORT void localLaplacianFilter(cv::InputArray src, cv::OutputArray dest, const float sigma_range, const float sigma_space, const float boost, const int level);
+	//alias: LocalMultiScaleFilter with DoG
+	CP_EXPORT void localDoGFilter(cv::InputArray src, cv::OutputArray dest, const float sigma_range, const float sigma_space, const float boost, const int level);
+	//alias: LocalMultiScaleFilterInterpolation with pyramid
+	CP_EXPORT void fastLocalLaplacianFilter(cv::InputArray src, cv::OutputArray dest, const int order, const float sigma_range, const float sigma_space, const float boost, const int level);
+	//alias: LocalMultiScaleFilterInterpolation with DoG
+	CP_EXPORT void fastLocalDoGFilter(cv::InputArray src, cv::OutputArray dest, const int order, const float sigma_range, const float sigma_space, const float boost, const int level);
+	//alias: LocalMultiScaleFilterFourier with pyramid
+	CP_EXPORT void FourierLocalLaplacianFilter(cv::InputArray src, cv::OutputArray dest, const int order, const float sigma_range, const float sigma_space, const float boost, const int level);
+	//alias: LocalMultiScaleFilterFourier with DoG
+	CP_EXPORT void FourierLocalDoGFilter(cv::InputArray src, cv::OutputArray dest, const int order, const float sigma_range, const float sigma_space, const float boost, const int level);
 }

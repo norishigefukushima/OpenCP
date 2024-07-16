@@ -35,7 +35,11 @@
 #include <float.h>
 #include <string.h> // for memcpy
 #if defined(_WIN32) && !defined(__GNUC__)
+#ifdef __INTEL_LLVM_COMPILER //#ifdef __INTEL_COMPILER
+#include <immintrin.h>
+#else
 #include <intrin.h>
+#endif
 #ifndef MIE_ALIGN
 #define MIE_ALIGN(x) __declspec(align(x))
 #endif
@@ -65,10 +69,8 @@
 
 namespace fmath
 {
-
 	namespace local
 	{
-
 		const size_t EXP_TABLE_SIZE = 10;
 		const size_t EXPD_TABLE_SIZE = 11;
 		const size_t LOG_TABLE_SIZE = 12;
@@ -176,14 +178,14 @@ namespace fmath
 					C2[i] = 0.16666666685227835064;
 					C3[i] = 3.0000000027955394;
 #endif
-			}
+				}
 				for (int i = 0; i < s; i++) {
 					di di;
 					di.d = ::pow(2.0, i * (1.0 / s));
 					tbl[i] = di.i & mask64(52);
 				}
-		}
-	};
+			}
+		};
 
 		template<size_t N = LOG_TABLE_SIZE>
 		struct LogVar {
@@ -383,7 +385,7 @@ namespace fmath
 				jmp(".retry");
 				outLocalLabel();
 			}
-};
+		};
 #endif
 
 		/* to define static variables in fmath.hpp */
@@ -396,7 +398,7 @@ namespace fmath
 			static const ExpCode& getInstance() {
 				static const ExpCode expCode(&expVar);
 				return expCode;
-		}
+			}
 #endif
 		};
 
@@ -824,7 +826,7 @@ namespace fmath
 		__m256i u8 = _mm256_add_epi32(r, *reinterpret_cast<const __m256i*>(expVar.i127s));
 		u8 = _mm256_srli_epi32(u8, expVar.s);
 		u8 = _mm256_slli_epi32(u8, 23);
-#ifndef USE_SET4GATHER
+#if 1
 		__m256i ti = _mm256_i32gather_epi32((const int*)expVar.tbl, v8, 4);
 #else
 		unsigned int v0, v1, v2, v3, v4, v5, v6, v7;
@@ -1012,9 +1014,9 @@ namespace fmath
 		for given y > 0
 		get f_y(x) := pow(x, y) for x >= 0
 	*/
-	class PowGenerator 
+	class PowGenerator
 	{
-		enum 
+		enum
 		{
 			N = 11
 		};
@@ -1127,24 +1129,7 @@ namespace fmath
 #if 1
 		__m512i ti = _mm512_i32gather_epi32(v8, (const int*)expVar.tbl, 4);
 #else
-		unsigned int v0, v1, v2, v3, v4, v5, v6, v7;
-		v0 = _mm256_extract_epi16(v8, 0);
-		v1 = _mm256_extract_epi16(v8, 2);
-		v2 = _mm256_extract_epi16(v8, 4);
-		v3 = _mm256_extract_epi16(v8, 6);
-		v4 = _mm256_extract_epi16(v8, 8);
-		v5 = _mm256_extract_epi16(v8, 10);
-		v6 = _mm256_extract_epi16(v8, 12);
-		v7 = _mm256_extract_epi16(v8, 14);
-		__m256i ti = _mm256_setzero_si256();
-		ti = _mm256_insert_epi32(ti, expVar.tbl[v0], 0);
-		ti = _mm256_insert_epi32(ti, expVar.tbl[v1], 1);
-		ti = _mm256_insert_epi32(ti, expVar.tbl[v2], 2);
-		ti = _mm256_insert_epi32(ti, expVar.tbl[v3], 3);
-		ti = _mm256_insert_epi32(ti, expVar.tbl[v4], 4);
-		ti = _mm256_insert_epi32(ti, expVar.tbl[v5], 5);
-		ti = _mm256_insert_epi32(ti, expVar.tbl[v6], 6);
-		ti = _mm256_insert_epi32(ti, expVar.tbl[v7], 7);
+		__m512i ti = _mm512_i32gatherset_epi32(v8, (const int*)expVar.tbl, 4);
 #endif
 		__m512 t0 = _mm512_castsi512_ps(ti);
 		t0 = _mm512_or_ps(t0, _mm512_castsi512_ps(u8));

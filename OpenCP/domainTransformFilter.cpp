@@ -2366,10 +2366,10 @@ namespace cp
 	void domainTransformFilter_RF_BGRA_SSE_SINGLE(const Mat& src, const Mat& guide, Mat& dest, float sigma_r, float sigma_s, int maxiter, int norm)
 	{
 		Mat img;
-		cvtColorBGR8u2BGRA32f(src, img);
-
-		int width = img.cols;
-		int height = img.rows;
+		if (src.depth() == CV_8U) cvtColorBGR8u2BGRA32f(src, img);
+		else cvtColorBGR2BGRA(src, img);
+		const int width = img.cols;
+		const int height = img.rows;
 
 		// compute derivatives of transformed domain "dct"
 		cv::Mat dctx = cv::Mat::zeros(height, width - 1, CV_32FC1);
@@ -2398,12 +2398,11 @@ namespace cp
 			// and a = exp(-sqrt(2) / sigma_H) to the power of "dct"
 			float a = fmath::exp(-sqrt(2.f) / sigma_h);
 			recursiveFilterPowHorizontalBGRA_SSE(img, dctx, a);
-
 			recursiveFilterPowVerticalBGRA_SSE(img, dcty, a);
-
 		}
 
-		cvtColorBGRA32f2BGR8u(img, dest);
+		if(src.depth()==CV_8U) cvtColorBGRA32f2BGR8u(img, dest);
+		else cvtColorBGRA2BGR(img, dest);
 	}
 
 	void domainTransformFilter_RF_BGRA_SSE_SINGLE(const Mat& src, Mat& dest, float sigma_r, float sigma_s, int maxiter, int norm)
@@ -2739,7 +2738,6 @@ namespace cp
 	// Domain transform filtering: baseline implimentation for optimization
 	void domainTransformFilter_RF_Base(const Mat& src, const Mat& guide, Mat& dest, float sigma_r, float sigma_s, int maxiter, int norm)
 	{
-		//cout << "DTF here" << endl;
 		Mat img;
 		src.convertTo(img, CV_32F);
 
@@ -2800,7 +2798,6 @@ namespace cp
 	void domainTransformFilterRF(const Mat& src, const Mat& guide, Mat& dst, float sigma_r, float sigma_s, int maxiter, int norm, int implementation)
 	{
 		//setNumThreads(4);
-
 		if (implementation == DTF_SLOWEST)
 		{
 			domainTransformFilter_RF_Base(src, guide, dst, sigma_r, sigma_s, maxiter, norm);
@@ -3710,7 +3707,7 @@ namespace cp
 	void domainTransformFilter(InputArray srcImage, InputArray guideImage, OutputArray destImage, const float sigma_r, const float sigma_s, const int maxiter, const int norm, const int convolutionType, const int implementation)
 	{
 		Mat src = srcImage.getMat();
-		if (destImage.empty())destImage.create(src.size(), src.type());
+		if (destImage.empty()) destImage.create(src.size(), src.type());
 		Mat guide = guideImage.getMat();
 		Mat dst = destImage.getMat();
 

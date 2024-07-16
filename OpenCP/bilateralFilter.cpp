@@ -17,7 +17,7 @@ namespace cp
 		Mat src_border;
 
 		const int r = max(kernel.width, kernel.height) / 2;
-		
+
 		const int hr = kernel.width / 2;
 		const int vr = kernel.height / 2;
 		const int r2 = hr * hr + vr * vr;
@@ -36,12 +36,12 @@ namespace cp
 					{
 						for (int k = -hr; k <= hr; k++)
 						{
-							if (sqrt(l*l + k * k) <= r && i + k >= 0 && i + k < src.cols && j + l >= 0 && j + l < src.rows)
+							if (sqrt(l * l + k * k) <= r && i + k >= 0 && i + k < src.cols && j + l >= 0 && j + l < src.rows)
 							{
-								double c = exp(-0.5*((srcd.at<double>(j + l, i + k) - srcd.at<double>(j, i))*(srcd.at<double>(j + l, i + k) - srcd.at<double>(j, i))) / (sigma_color*sigma_color));
-								double s = exp(-0.5*(l*l + k * k) / (sigma_space*sigma_space));
+								double c = exp(-0.5 * ((srcd.at<double>(j + l, i + k) - srcd.at<double>(j, i)) * (srcd.at<double>(j + l, i + k) - srcd.at<double>(j, i))) / (sigma_color * sigma_color));
+								double s = exp(-0.5 * (l * l + k * k) / (sigma_space * sigma_space));
 								coeff += c * s;
-								sum += srcd.at<double>(j + l, i + k)*c*s;
+								sum += srcd.at<double>(j + l, i + k) * c * s;
 							}
 						}
 					}
@@ -51,8 +51,8 @@ namespace cp
 		}
 		else if (channels == 3)
 		{
-			const double color_coeff = 1.0 / (-2.0*sigma_color*sigma_color);
-			const double space_coeff = 1.0 / (-2.0*sigma_space*sigma_space);
+			const double color_coeff = 1.0 / (-2.0 * sigma_color * sigma_color);
+			const double space_coeff = 1.0 / (-2.0 * sigma_space * sigma_space);
 #pragma omp parallel for
 			for (int j = 0; j < src.rows; j++)
 			{
@@ -80,18 +80,18 @@ namespace cp
 							double refr = src_border.at<double>(j + l, 3 * (i + k) + 2);
 
 							double w = exp(
-								space_coeff*(sdist)+
-								color_coeff*(
-								(refb - centerb)*(refb - centerb) +
-								(refg - centerg)*(refg - centerg) +
-								(refr - centerr)*(refr - centerr)
-								)
+								space_coeff * (sdist)+
+								color_coeff * (
+									(refb - centerb) * (refb - centerb) +
+									(refg - centerg) * (refg - centerg) +
+									(refr - centerr) * (refr - centerr)
+									)
 							);
-							
+
 							coeff += w;
-							sumb += refb*w;
-							sumg += refg*w;
-							sumr += refr*w;
+							sumb += refb * w;
+							sumg += refg * w;
+							sumr += refr * w;
 						}
 					}
 					destd.at<double>(j, 3 * i + 0) = sumb / coeff;
@@ -123,12 +123,12 @@ namespace cp
 					{
 						for (int k = -hr; k <= hr; k++)
 						{
-							if (sqrt(l*l + k * k) <= r && i + k >= 0 && i + k < src.cols && j + l >= 0 && j + l < src.rows)
+							if (sqrt(l * l + k * k) <= r && i + k >= 0 && i + k < src.cols && j + l >= 0 && j + l < src.rows)
 							{
-								double c = exp(-0.5*((srcd.at<double>(j + l, i + k) - srcd.at<double>(j, i))*(srcd.at<double>(j + l, i + k) - srcd.at<double>(j, i))) / (sigma_color*sigma_color));
-								double s = exp(-0.5*(l*l + k * k) / (sigma_space*sigma_space));
+								double c = exp(-0.5 * ((srcd.at<double>(j + l, i + k) - srcd.at<double>(j, i)) * (srcd.at<double>(j + l, i + k) - srcd.at<double>(j, i))) / (sigma_color * sigma_color));
+								double s = exp(-0.5 * (l * l + k * k) / (sigma_space * sigma_space));
 								coeff += c * s;
-								sum += srcd.at<double>(j + l, i + k)*c*s;
+								sum += srcd.at<double>(j + l, i + k) * c * s;
 							}
 						}
 					}
@@ -150,18 +150,18 @@ namespace cp
 					{
 						for (int k = -hr; k <= hr; k++)
 						{
-							if (sqrt(l*l + k * k) <= r && i + k >= 0 && i + k < src.cols && j + l >= 0 && j + l < src.rows)
+							if (sqrt(l * l + k * k) <= r && i + k >= 0 && i + k < src.cols && j + l >= 0 && j + l < src.rows)
 							{
-								double c = exp(-0.5*(
-									(srcd.at<double>(j + l, 3 * (i + k) + 0) - srcd.at<double>(j, 3 * i + 0))*(srcd.at<double>(j + l, 3 * (i + k) + 0) - srcd.at<double>(j, 3 * i + 0)) +
-									(srcd.at<double>(j + l, 3 * (i + k) + 1) - srcd.at<double>(j, 3 * i + 1))*(srcd.at<double>(j + l, 3 * (i + k) + 1) - srcd.at<double>(j, 3 * i + 1)) +
-									(srcd.at<double>(j + l, 3 * (i + k) + 2) - srcd.at<double>(j, 3 * i + 2))*(srcd.at<double>(j + l, 3 * (i + k) + 2) - srcd.at<double>(j, 3 * i + 2))
-									) / (sigma_color*sigma_color));
-								double s = exp(-0.5*(l*l + k * k) / (sigma_space*sigma_space));
+								double c = exp(-0.5 * (
+									(srcd.at<double>(j + l, 3 * (i + k) + 0) - srcd.at<double>(j, 3 * i + 0)) * (srcd.at<double>(j + l, 3 * (i + k) + 0) - srcd.at<double>(j, 3 * i + 0)) +
+									(srcd.at<double>(j + l, 3 * (i + k) + 1) - srcd.at<double>(j, 3 * i + 1)) * (srcd.at<double>(j + l, 3 * (i + k) + 1) - srcd.at<double>(j, 3 * i + 1)) +
+									(srcd.at<double>(j + l, 3 * (i + k) + 2) - srcd.at<double>(j, 3 * i + 2)) * (srcd.at<double>(j + l, 3 * (i + k) + 2) - srcd.at<double>(j, 3 * i + 2))
+									) / (sigma_color * sigma_color));
+								double s = exp(-0.5 * (l * l + k * k) / (sigma_space * sigma_space));
 								coeff += c * s;
-								sumb += srcd.at<double>(j + l, 3 * (i + k) + 0)*c*s;
-								sumg += srcd.at<double>(j + l, 3 * (i + k) + 1)*c*s;
-								sumr += srcd.at<double>(j + l, 3 * (i + k) + 2)*c*s;
+								sumb += srcd.at<double>(j + l, 3 * (i + k) + 0) * c * s;
+								sumg += srcd.at<double>(j + l, 3 * (i + k) + 1) * c * s;
+								sumr += srcd.at<double>(j + l, 3 * (i + k) + 2) * c * s;
 							}
 						}
 					}
@@ -186,8 +186,8 @@ namespace cp
 
 		CV_Assert(src.type() == CV_8UC1 || src.type() == CV_8UC3);
 
-		float gauss_color_coeff = -0.5f / (float)(sigma_color*sigma_color);
-		float gauss_space_coeff = -0.5f / (float)(sigma_space*sigma_space);
+		float gauss_color_coeff = -0.5f / (float)(sigma_color * sigma_color);
+		float gauss_space_coeff = -0.5f / (float)(sigma_space * sigma_space);
 
 		const int cn = src.channels();
 
@@ -195,8 +195,8 @@ namespace cp
 		Mat sim;
 		copyMakeBorder(src, sim, radius, radius, radius, radius, borderType);
 
-		vector<float> _space_weight(d*d);
-		vector<int> _space_ofs_src(d*d);
+		vector<float> _space_weight(d * d);
+		vector<int> _space_ofs_src(d * d);
 		float* space_weight = &_space_weight[0];
 		int* space_ofs_src = &_space_ofs_src[0];
 
@@ -206,11 +206,11 @@ namespace cp
 		{
 			for (int j = -radius; j <= radius; j++)
 			{
-				float r = std::sqrt((float)i*i + (float)j*j);
+				float r = std::sqrt((float)i * i + (float)j * j);
 				if (r > radius) continue;
 
-				space_weight[maxk] = fmath::exp(r*r*gauss_space_coeff);
-				space_ofs_src[maxk++] = (int)(i*sim.cols*cn + j * cn);
+				space_weight[maxk] = fmath::exp(r * r * gauss_space_coeff);
+				space_ofs_src[maxk++] = (int)(i * sim.cols * cn + j * cn);
 			}
 		}
 
@@ -230,7 +230,7 @@ namespace cp
 					for (int k = 0; k < maxk; k++)
 					{
 						uchar val = sptr[j + space_ofs_src[k]];
-						float w = space_weight[k] * fmath::exp((val - val0)*(val - val0)*gauss_color_coeff);
+						float w = space_weight[k] * fmath::exp((val - val0) * (val - val0) * gauss_color_coeff);
 						sum += val * w;
 						wsum += w;
 					}
@@ -248,7 +248,7 @@ namespace cp
 						const uchar* sptr_k = sptr + j + space_ofs_src[k];
 						uchar b = sptr_k[0], g = sptr_k[1], r = sptr_k[2];
 
-						float c_w = fmath::exp(((b - b0)*(b - b0) + (g - g0)*(g - g0) + (r - r0)*(r - r0)) *gauss_color_coeff);
+						float c_w = fmath::exp(((b - b0) * (b - b0) + (g - g0) * (g - g0) + (r - r0) * (r - r0)) * gauss_color_coeff);
 						float w = space_weight[k] * c_w;
 
 						sum_b += b * w; sum_g += g * w; sum_r += r * w;
@@ -274,8 +274,8 @@ namespace cp
 
 		CV_Assert(src.type() == CV_32FC1 || src.type() == CV_32FC3);
 
-		float gauss_color_coeff = -0.5f / (float)(sigma_color*sigma_color);
-		float gauss_space_coeff = -0.5f / (float)(sigma_space*sigma_space);
+		float gauss_color_coeff = -0.5f / (float)(sigma_color * sigma_color);
+		float gauss_space_coeff = -0.5f / (float)(sigma_space * sigma_space);
 
 		const int cn = src.channels();
 
@@ -283,8 +283,8 @@ namespace cp
 		Mat sim;
 		copyMakeBorder(src, sim, radius, radius, radius, radius, borderType);
 
-		vector<float> _space_weight(d*d);
-		vector<int> _space_ofs_src(d*d);
+		vector<float> _space_weight(d * d);
+		vector<int> _space_ofs_src(d * d);
 		float* space_weight = &_space_weight[0];
 		int* space_ofs_src = &_space_ofs_src[0];
 
@@ -294,11 +294,11 @@ namespace cp
 		{
 			for (int j = -radius; j <= radius; j++)
 			{
-				float r = std::sqrt((float)i*i + (float)j*j);
+				float r = std::sqrt((float)i * i + (float)j * j);
 				if (r > radius) continue;
 
-				space_weight[maxk] = fmath::exp(r*r*gauss_space_coeff);
-				space_ofs_src[maxk++] = (int)(i*sim.cols*cn + j * cn);
+				space_weight[maxk] = fmath::exp(r * r * gauss_space_coeff);
+				space_ofs_src[maxk++] = (int)(i * sim.cols * cn + j * cn);
 			}
 		}
 
@@ -318,7 +318,7 @@ namespace cp
 					for (int k = 0; k < maxk; k++)
 					{
 						float val = sptr[j + space_ofs_src[k]];
-						float w = space_weight[k] * fmath::exp((val - val0)*(val - val0)*gauss_color_coeff);
+						float w = space_weight[k] * fmath::exp((val - val0) * (val - val0) * gauss_color_coeff);
 						sum += val * w;
 						wsum += w;
 					}
@@ -336,7 +336,7 @@ namespace cp
 						const float* sptr_k = sptr + j + space_ofs_src[k];
 						float b = sptr_k[0], g = sptr_k[1], r = sptr_k[2];
 
-						float c_w = fmath::exp(((b - b0)*(b - b0) + (g - g0)*(g - g0) + (r - r0)*(r - r0)) *gauss_color_coeff);
+						float c_w = fmath::exp(((b - b0) * (b - b0) + (g - g0) * (g - g0) + (r - r0) * (r - r0)) * gauss_color_coeff);
 						float w = space_weight[k] * c_w;
 
 						sum_b += b * w; sum_g += g * w; sum_r += r * w;
@@ -354,7 +354,7 @@ namespace cp
 	{
 	public:
 		BilateralFilter_L2Naive_32f_InvokerSSE4(Mat& _dest, const Mat& _temp, int _radiusH, int _radiusV, int _maxk,
-			int* _space_ofs, float *_space_weight, float _sigma_color) :
+			int* _space_ofs, float* _space_weight, float _sigma_color) :
 			temp(&_temp), dest(&_dest), radiusH(_radiusH), radiusV(_radiusV),
 			maxk(_maxk), space_ofs(_space_ofs), space_weight(_space_weight), sigma_color(_sigma_color)
 		{
@@ -365,7 +365,7 @@ namespace cp
 			int i, j, k;
 			int cn = dest->channels();
 			Size size = dest->size();
-			float gauss_color_coeff = -0.5f / (sigma_color*sigma_color);
+			float gauss_color_coeff = -0.5f / (sigma_color * sigma_color);
 
 #if CV_SSE4_1
 			bool haveSSE4 = checkHardwareSupport(CV_CPU_SSE4_1);
@@ -407,11 +407,11 @@ namespace cp
 								sref = _mm_mul_ps(_w, sref);
 								tval = _mm_add_ps(tval, sref);
 								wval = _mm_add_ps(wval, _w);
-			}
+							}
 							tval = _mm_div_ps(tval, wval);
 							_mm_stream_ps((dptr + j), tval);
-	}
-}
+						}
+					}
 #endif
 					for (; j < size.width; j++)
 					{
@@ -422,7 +422,7 @@ namespace cp
 						{
 							float val = sptr[j + space_ofs[k]];
 
-							float w = space_weight[k] * fmath::exp(gauss_color_coeff*((val - val0)*(val - val0)));
+							float w = space_weight[k] * fmath::exp(gauss_color_coeff * ((val - val0) * (val - val0)));
 							sum += val * w;
 							wsum += w;
 						}
@@ -506,7 +506,7 @@ namespace cp
 							_mm_stream_ps((dptrc), _mm_blend_ps(_mm_blend_ps(b, a, 4), c, 2));
 							_mm_stream_ps((dptrc + 4), _mm_blend_ps(_mm_blend_ps(c, b, 4), a, 2));
 							_mm_stream_ps((dptrc + 8), _mm_blend_ps(_mm_blend_ps(a, c, 4), b, 2));
-			}
+						}
 					}
 #endif
 					for (; j < size.width; j++)
@@ -524,7 +524,7 @@ namespace cp
 						for (k = 0; k < maxk; k++)
 						{
 							float r = sptrrj[space_ofs[k]], g = sptrgj[space_ofs[k]], b = sptrbj[space_ofs[k]];
-							float w = space_weight[k] * fmath::exp(gauss_color_coeff*((b - b0)*(b - b0) + (g - g0)*(g - g0) + (r - r0)*(r - r0)));
+							float w = space_weight[k] * fmath::exp(gauss_color_coeff * ((b - b0) * (b - b0) + (g - g0) * (g - g0) + (r - r0) * (r - r0)));
 							sum_b += b * w;
 							sum_g += g * w;
 							sum_r += r * w;
@@ -538,11 +538,11 @@ namespace cp
 			}
 		}
 	private:
-		const Mat *temp;
+		const Mat* temp;
 
-		Mat *dest;
-		int radiusH, radiusV, maxk, *space_ofs;
-		float *space_weight;
+		Mat* dest;
+		int radiusH, radiusV, maxk, * space_ofs;
+		float* space_weight;
 		float sigma_color;
 	};
 
@@ -561,7 +561,7 @@ namespace cp
 			src.type() == dst.type() && src.size() == dst.size());
 
 
-		double gauss_space_coeff = -0.5 / (sigma_space*sigma_space);
+		double gauss_space_coeff = -0.5 / (sigma_space * sigma_space);
 
 		int radiusH = kernelSize.width >> 1;
 		int radiusV = kernelSize.height >> 1;
@@ -594,11 +594,11 @@ namespace cp
 		{
 			for (j = -radiusH; j <= radiusH; j++)
 			{
-				double r = std::sqrt((double)i*i + (double)j*j);
+				double r = std::sqrt((double)i * i + (double)j * j);
 				if (r > max(radiusV, radiusH))
 					continue;
-				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-				space_ofs[maxk++] = (int)(i*temp.cols*cn + j);
+				space_weight[maxk] = (float)std::exp(r * r * gauss_space_coeff);
+				space_ofs[maxk++] = (int)(i * temp.cols * cn + j);
 			}
 		}
 
@@ -633,14 +633,14 @@ namespace cp
 			sigma_color = 1.0;
 		if (sigma_space <= 0.0)
 			sigma_space = 1.0;
-		double gauss_color_coeff = -0.5 / (sigma_color*sigma_color);
-		double gauss_space_coeff = -0.5 / (sigma_space*sigma_space);
+		double gauss_color_coeff = -0.5 / (sigma_color * sigma_color);
+		double gauss_space_coeff = -0.5 / (sigma_space * sigma_space);
 
 		const int cn = src.channels();
 
 		int radius;
 		if (d <= 0)
-			radius = cvRound(sigma_space*1.5);
+			radius = cvRound(sigma_space * 1.5);
 		else
 			radius = d / 2;
 		radius = max(radius, 1);
@@ -650,15 +650,15 @@ namespace cp
 		copyMakeBorder(src, sim, radius, radius, radius, radius, borderType);
 
 		vector<float> _color_weight(cn * 256);
-		vector<float> _space_weight(d*d);
-		vector<int> _space_ofs_src(d*d);
+		vector<float> _space_weight(d * d);
+		vector<int> _space_ofs_src(d * d);
 		float* color_weight = &_color_weight[0];
 		float* space_weight = &_space_weight[0];
 		int* space_ofs_src = &_space_ofs_src[0];
 
 		// initialize color-related bilateral filter coefficients
 		for (int i = 0; i < 256 * cn; i++)
-			color_weight[i] = (float)std::exp(i*i*gauss_color_coeff);
+			color_weight[i] = (float)std::exp(i * i * gauss_color_coeff);
 
 		int maxk = 0;
 		// initialize space-related bilateral filter coefficients
@@ -666,18 +666,18 @@ namespace cp
 		{
 			for (int j = -radius; j <= radius; j++)
 			{
-				double r = std::sqrt((double)i*i + (double)j*j);
+				double r = std::sqrt((double)i * i + (double)j * j);
 				if (r > radius)
 					continue;
-				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-				space_ofs_src[maxk++] = (int)(i*sim.step + j * cn);
+				space_weight[maxk] = (float)std::exp(r * r * gauss_space_coeff);
+				space_ofs_src[maxk++] = (int)(i * sim.step + j * cn);
 			}
 		}
 
 		//#pragma omp parallel for
 		for (int i = 0; i < size.height; i++)
 		{
-			const uchar* sptr = sim.data + (i + radius)*sim.step + radius * cn;
+			const uchar* sptr = sim.data + (i + radius) * sim.step + radius * cn;
 			uchar* dptr = dst.data + i * dst.step;
 
 			if (cn == 1)
@@ -713,9 +713,9 @@ namespace cp
 						wsum += w;
 					}
 					wsum = 1.f / wsum;
-					b0 = cvRound(sum_b*wsum);
-					g0 = cvRound(sum_g*wsum);
-					r0 = cvRound(sum_r*wsum);
+					b0 = cvRound(sum_b * wsum);
+					g0 = cvRound(sum_g * wsum);
+					r0 = cvRound(sum_r * wsum);
 					dptr[j] = (uchar)b0; dptr[j + 1] = (uchar)g0; dptr[j + 2] = (uchar)r0;
 				}
 			}
@@ -736,8 +736,8 @@ namespace cp
 		if (sigma_space <= 0.0)
 			sigma_space = 1.0;
 
-		double gauss_color_coeff = -0.5 / (sigma_color*sigma_color);
-		double gauss_space_coeff = -0.5 / (sigma_space*sigma_space);
+		double gauss_color_coeff = -0.5 / (sigma_color * sigma_color);
+		double gauss_space_coeff = -0.5 / (sigma_space * sigma_space);
 
 		const int cn = src.channels();
 
@@ -752,20 +752,20 @@ namespace cp
 		minMaxLoc(src, &minv, &maxv);
 		const int color_range = cvRound(maxv - minv);
 
-		vector<float> _color_weight(cn*color_range);
-		vector<float> _space_weight(d*d);
+		vector<float> _color_weight(cn * color_range);
+		vector<float> _space_weight(d * d);
 		float* color_weight = &_color_weight[0];
 		float* space_weight = &_space_weight[0];
 
-		vector<int> _space_ofs_src(d*d);
+		vector<int> _space_ofs_src(d * d);
 		int* space_ofs_src = &_space_ofs_src[0];
 
 		// initialize color-related bilateral filter coefficients
 
 
-		for (int i = 0; i < color_range*cn; i++)
+		for (int i = 0; i < color_range * cn; i++)
 		{
-			color_weight[i] = (float)std::exp(i*i*gauss_color_coeff);
+			color_weight[i] = (float)std::exp(i * i * gauss_color_coeff);
 		}
 
 		int maxk = 0;
@@ -774,11 +774,11 @@ namespace cp
 		{
 			for (int j = -radius; j <= radius; j++)
 			{
-				double r = std::sqrt((double)i*i + (double)j*j);
+				double r = std::sqrt((double)i * i + (double)j * j);
 				if (r > radius)
 					continue;
-				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-				space_ofs_src[maxk++] = (int)(i*sim.cols*cn + j * cn);
+				space_weight[maxk] = (float)std::exp(r * r * gauss_space_coeff);
+				space_ofs_src[maxk++] = (int)(i * sim.cols * cn + j * cn);
 			}
 		}
 
@@ -858,14 +858,14 @@ namespace cp
 			sigma_color = 1.0;
 		if (sigma_space <= 0.0)
 			sigma_space = 1.0;
-		double gauss_color_coeff = -0.5 / (sigma_color*sigma_color);
-		double gauss_space_coeff = -0.5 / (sigma_space*sigma_space);
+		double gauss_color_coeff = -0.5 / (sigma_color * sigma_color);
+		double gauss_space_coeff = -0.5 / (sigma_space * sigma_space);
 
 		const int cn = src.channels();
 
 		int radius;
 		if (d <= 0)
-			radius = cvRound(sigma_space*1.5);
+			radius = cvRound(sigma_space * 1.5);
 		else
 			radius = d / 2;
 		radius = MAX(radius, 1);
@@ -875,16 +875,16 @@ namespace cp
 		copyMakeBorder(src, sim, radius, radius, radius, radius, borderType);
 
 		vector<float> _color_weight(cn * 256);
-		vector<float> _space_weight(d*d);
+		vector<float> _space_weight(d * d);
 		float* color_weight = &_color_weight[0];
 		float* space_weight = &_space_weight[0];
 
-		vector<int> _space_ofs_src(d*d);
+		vector<int> _space_ofs_src(d * d);
 		int* space_ofs_src = &_space_ofs_src[0];
 
 		// initialize color-related bilateral filter coefficients
 		for (int i = 0; i < 256 * cn; i++)//trilateral(5)
-			color_weight[i] = (float)std::exp(i*i*gauss_color_coeff);
+			color_weight[i] = (float)std::exp(i * i * gauss_color_coeff);
 
 		int maxk = 0;
 		// initialize space-related bilateral filter coefficients
@@ -892,11 +892,11 @@ namespace cp
 		{
 			for (int j = -radius; j <= radius; j++)
 			{
-				double r = std::sqrt((double)i*i + (double)j*j);
+				double r = std::sqrt((double)i * i + (double)j * j);
 				if (r > radius)
 					continue;
-				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-				space_ofs_src[maxk++] = (int)(i*sim.cols*cn + j * cn);
+				space_weight[maxk] = (float)std::exp(r * r * gauss_space_coeff);
+				space_ofs_src[maxk++] = (int)(i * sim.cols * cn + j * cn);
 			}
 		}
 
@@ -973,7 +973,7 @@ namespace cp
 		{
 			int i, j, cn = dest->channels(), k;
 			Size size = dest->size();
-			const float color2_f = 1.f / (color_f*color_f);
+			const float color2_f = 1.f / (color_f * color_f);
 #if CV_SSE4_1
 			bool haveSSE4 = checkHardwareSupport(CV_CPU_SSE4_1);
 #endif
@@ -1054,8 +1054,8 @@ namespace cp
 							tval3 = _mm_div_ps(tval3, wval3);
 							tval4 = _mm_div_ps(tval4, wval4);
 							_mm_stream_si128((__m128i*)(dptr + j), _mm_packus_epi16(_mm_packs_epi32(_mm_cvtps_epi32(tval1), _mm_cvtps_epi32(tval2)), _mm_packs_epi32(_mm_cvtps_epi32(tval3), _mm_cvtps_epi32(tval4))));
-			}
-		}
+						}
+					}
 #endif
 					for (; j < size.width; j++)
 					{
@@ -1066,14 +1066,14 @@ namespace cp
 						{
 							int val = sptr[j + space_ofs[k]];
 							int v = (val - val0);
-							float w = max(1.f - (color2_f*v*v), 0.000001f);
+							float w = max(1.f - (color2_f * v * v), 0.000001f);
 							sum += val * w;
 							wsum += w;
 						}
 						//overflow is not possible here => there is no need to use CV_CAST_8U
 						dptr[j] = (uchar)cvRound(sum / wsum);
 					}
-	}
+				}
 			}
 			else
 			{
@@ -1281,7 +1281,7 @@ namespace cp
 							_mm_stream_si128((__m128i*)(dptrc), _mm_blendv_epi8(c, _mm_blendv_epi8(a, b, bmask1), bmask2));
 							_mm_stream_si128((__m128i*)(dptrc + 16), _mm_blendv_epi8(b, _mm_blendv_epi8(a, c, bmask2), bmask1));
 							_mm_stream_si128((__m128i*)(dptrc + 32), _mm_blendv_epi8(c, _mm_blendv_epi8(b, a, bmask2), bmask1));
-			}
+						}
 					}
 #endif
 					for (; j < size.width; j++)
@@ -1299,7 +1299,7 @@ namespace cp
 						for (k = 0; k < maxk; k++)
 						{
 							int r = sptrrj[space_ofs[k]], g = sptrgj[space_ofs[k]], b = sptrbj[space_ofs[k]];
-							float w = max(1.f - color2_f * ((r - r0)*(r - r0) + (g - g0)*(g - g0) + (b - b0)*(b - b0)), 0.000001f);
+							float w = max(1.f - color2_f * ((r - r0) * (r - r0) + (g - g0) * (g - g0) + (b - b0) * (b - b0)), 0.000001f);
 
 							sum_b += b * w;
 							sum_g += g * w;
@@ -1309,16 +1309,16 @@ namespace cp
 						//overflow is not possible here => there is no need to use CV_CAST_8U
 
 						wsum = 1.f / wsum;
-						dptr[3 * j] = (uchar)cvRound(sum_b*wsum); dptr[3 * j + 1] = (uchar)cvRound(sum_g*wsum); dptr[3 * j + 2] = (uchar)cvRound(sum_r*wsum);
+						dptr[3 * j] = (uchar)cvRound(sum_b * wsum); dptr[3 * j + 1] = (uchar)cvRound(sum_g * wsum); dptr[3 * j + 2] = (uchar)cvRound(sum_r * wsum);
 					}
 				}
 			}
 		}
 	private:
-		const Mat *temp;
+		const Mat* temp;
 
-		Mat *dest;
-		int radiusH, radiusV, maxk, *space_ofs;
+		Mat* dest;
+		int radiusH, radiusV, maxk, * space_ofs;
 		float color_f;
 	};
 
@@ -1326,7 +1326,7 @@ namespace cp
 	{
 	public:
 		BilateralFilterORDER2_8u_InvokerSSE4(Mat& _dest, const Mat& _temp, int _radiusH, int _radiusV, int _maxk,
-			int* _space_ofs, float *_space_weight, float _color_f) :
+			int* _space_ofs, float* _space_weight, float _color_f) :
 			temp(&_temp), dest(&_dest), radiusH(_radiusH), radiusV(_radiusV),
 			maxk(_maxk), space_ofs(_space_ofs), space_weight(_space_weight), color_f(_color_f)
 		{
@@ -1335,7 +1335,7 @@ namespace cp
 		{
 			int i, j, cn = dest->channels(), k;
 			Size size = dest->size();
-			const float color2_f = 1.f / (color_f*color_f);
+			const float color2_f = 1.f / (color_f * color_f);
 #if CV_SSE4_1
 			bool haveSSE4 = checkHardwareSupport(CV_CPU_SSE4_1);
 #endif
@@ -1419,8 +1419,8 @@ namespace cp
 							tval3 = _mm_div_ps(tval3, wval3);
 							tval4 = _mm_div_ps(tval4, wval4);
 							_mm_stream_si128((__m128i*)(dptr + j), _mm_packus_epi16(_mm_packs_epi32(_mm_cvtps_epi32(tval1), _mm_cvtps_epi32(tval2)), _mm_packs_epi32(_mm_cvtps_epi32(tval3), _mm_cvtps_epi32(tval4))));
-			}
-		}
+						}
+					}
 #endif
 					for (; j < size.width; j++)
 					{
@@ -1431,14 +1431,14 @@ namespace cp
 						{
 							int val = sptr[j + space_ofs[k]];
 							int v = (val - val0);
-							float w = space_weight[k] * max(1.f - (color2_f*v*v), 0.000001f);
+							float w = space_weight[k] * max(1.f - (color2_f * v * v), 0.000001f);
 							sum += val * w;
 							wsum += w;
 						}
 						//overflow is not possible here => there is no need to use CV_CAST_8U
 						dptr[j] = (uchar)cvRound(sum / wsum);
 					}
-	}
+				}
 			}
 			else
 			{
@@ -1648,7 +1648,7 @@ namespace cp
 							_mm_stream_si128((__m128i*)(dptrc), _mm_blendv_epi8(c, _mm_blendv_epi8(a, b, bmask1), bmask2));
 							_mm_stream_si128((__m128i*)(dptrc + 16), _mm_blendv_epi8(b, _mm_blendv_epi8(a, c, bmask2), bmask1));
 							_mm_stream_si128((__m128i*)(dptrc + 32), _mm_blendv_epi8(c, _mm_blendv_epi8(b, a, bmask2), bmask1));
-			}
+						}
 					}
 #endif
 					for (; j < size.width; j++)
@@ -1666,7 +1666,7 @@ namespace cp
 						for (k = 0; k < maxk; k++)
 						{
 							int r = sptrrj[space_ofs[k]], g = sptrgj[space_ofs[k]], b = sptrbj[space_ofs[k]];
-							float w = space_weight[k] * max(1.f - color2_f * ((r - r0)*(r - r0) + (g - g0)*(g - g0) + (b - b0)*(b - b0)), 0.000001f);
+							float w = space_weight[k] * max(1.f - color2_f * ((r - r0) * (r - r0) + (g - g0) * (g - g0) + (b - b0) * (b - b0)), 0.000001f);
 
 							sum_b += b * w;
 							sum_g += g * w;
@@ -1676,17 +1676,17 @@ namespace cp
 						//overflow is not possible here => there is no need to use CV_CAST_8U
 
 						wsum = 1.f / wsum;
-						dptr[3 * j] = (uchar)cvRound(sum_b*wsum); dptr[3 * j + 1] = (uchar)cvRound(sum_g*wsum); dptr[3 * j + 2] = (uchar)cvRound(sum_r*wsum);
+						dptr[3 * j] = (uchar)cvRound(sum_b * wsum); dptr[3 * j + 1] = (uchar)cvRound(sum_g * wsum); dptr[3 * j + 2] = (uchar)cvRound(sum_r * wsum);
 					}
 				}
 			}
 		}
 	private:
-		const Mat *temp;
+		const Mat* temp;
 
-		Mat *dest;
-		int radiusH, radiusV, maxk, *space_ofs;
-		float *space_weight;
+		Mat* dest;
+		int radiusH, radiusV, maxk, * space_ofs;
+		float* space_weight;
 		float color_f;
 	};
 
@@ -1695,7 +1695,7 @@ namespace cp
 	{
 	public:
 		BilateralWeightMap_32f_InvokerSSE4(Mat& _dest, const Mat& _temp, int _radiusH, int _radiusV, int _maxk,
-			int* _space_ofs, float *_space_weight, float *_color_weight) :
+			int* _space_ofs, float* _space_weight, float* _color_weight) :
 			temp(&_temp), dest(&_dest), radiusH(_radiusH), radiusV(_radiusV),
 			maxk(_maxk), space_ofs(_space_ofs), space_weight(_space_weight), color_weight(_color_weight)
 		{
@@ -1743,10 +1743,10 @@ namespace cp
 								__m128 _w = _mm_mul_ps(_sw, _mm_set_ps(color_weight[buf[3]], color_weight[buf[2]], color_weight[buf[1]], color_weight[buf[0]]));
 								wval1 = _mm_add_ps(wval1, _w);
 
-			}
+							}
 							_mm_stream_ps(dptr + j, wval1);
-		}
-	}
+						}
+					}
 #endif
 					for (; j < size.width; j++)
 					{
@@ -1814,7 +1814,7 @@ namespace cp
 								const __m128 _sw = _mm_set1_ps(*spw);
 								_w = _mm_mul_ps(_sw, _mm_set_ps(color_weight[buf[3]], color_weight[buf[2]], color_weight[buf[1]], color_weight[buf[0]]));
 								wval1 = _mm_add_ps(wval1, _w);
-			}
+							}
 							_mm_stream_ps(dptr + j, wval1);
 						}
 					}
@@ -1842,18 +1842,18 @@ namespace cp
 			}
 		}
 	private:
-		const Mat *temp;
+		const Mat* temp;
 
-		Mat *dest;
-		int radiusH, radiusV, maxk, *space_ofs;
-		float *space_weight, *color_weight;
+		Mat* dest;
+		int radiusH, radiusV, maxk, * space_ofs;
+		float* space_weight, * color_weight;
 	};
 
 	class BilateralWeightMap_8u_InvokerSSE4 : public cv::ParallelLoopBody
 	{
 	public:
 		BilateralWeightMap_8u_InvokerSSE4(Mat& _dest, const Mat& _temp, int _radiusH, int _radiusV, int _maxk,
-			int* _space_ofs, float *_space_weight, float *_color_weight) :
+			int* _space_ofs, float* _space_weight, float* _color_weight) :
 			temp(&_temp), dest(&_dest), radiusH(_radiusH), radiusV(_radiusV),
 			maxk(_maxk), space_ofs(_space_ofs), space_weight(_space_weight), color_weight(_color_weight)
 		{
@@ -1915,13 +1915,13 @@ namespace cp
 
 								_w = _mm_mul_ps(_sw, _mm_set_ps(color_weight[buf[15]], color_weight[buf[14]], color_weight[buf[13]], color_weight[buf[12]]));
 								wval4 = _mm_add_ps(wval4, _w);
-			}
+							}
 							_mm_stream_ps(dptr + j, wval1);
 							_mm_stream_ps(dptr + j + 4, wval2);
 							_mm_stream_ps(dptr + j + 8, wval3);
 							_mm_stream_ps(dptr + j + 12, wval4);
-		}
-		}
+						}
+					}
 #endif
 					for (; j < size.width; j++)
 					{
@@ -1936,7 +1936,7 @@ namespace cp
 						//overflow is not possible here => there is no need to use CV_CAST_8U
 						dptr[j] = wsum;
 					}
-	}
+				}
 			}
 			else
 			{
@@ -2015,7 +2015,7 @@ namespace cp
 
 								_w = _mm_mul_ps(_sw, _mm_set_ps(color_weight[buf[15]], color_weight[buf[14]], color_weight[buf[13]], color_weight[buf[12]]));
 								wval4 = _mm_add_ps(wval4, _w);
-			}
+							}
 							_mm_stream_ps(dptr + j, wval1);
 							_mm_stream_ps(dptr + j + 4, wval2);
 							_mm_stream_ps(dptr + j + 8, wval3);
@@ -2046,11 +2046,11 @@ namespace cp
 			}
 		}
 	private:
-		const Mat *temp;
+		const Mat* temp;
 
-		Mat *dest;
-		int radiusH, radiusV, maxk, *space_ofs;
-		float *space_weight, *color_weight;
+		Mat* dest;
+		int radiusH, radiusV, maxk, * space_ofs;
+		float* space_weight, * color_weight;
 	};
 
 
@@ -2058,7 +2058,7 @@ namespace cp
 	{
 	public:
 		BilateralFilter_8u_InvokerSSE4(Mat& _dest, const Mat& _temp, int _radiusH, int _radiusV, int _maxk,
-			int* _space_ofs, float *_space_weight, float *_color_weight) :
+			int* _space_ofs, float* _space_weight, float* _color_weight) :
 			temp(&_temp), dest(&_dest), radiusH(_radiusH), radiusV(_radiusV),
 			maxk(_maxk), space_ofs(_space_ofs), space_weight(_space_weight), color_weight(_color_weight)
 		{
@@ -2154,8 +2154,8 @@ namespace cp
 							tval3 = _mm_div_ps(tval3, wval3);
 							tval4 = _mm_div_ps(tval4, wval4);
 							_mm_stream_si128((__m128i*)(dptr + j), _mm_packus_epi16(_mm_packs_epi32(_mm_cvtps_epi32(tval1), _mm_cvtps_epi32(tval2)), _mm_packs_epi32(_mm_cvtps_epi32(tval3), _mm_cvtps_epi32(tval4))));
-			}
-		}
+						}
+					}
 #endif
 					for (; j < size.width; j++)
 					{
@@ -2172,7 +2172,7 @@ namespace cp
 						//overflow is not possible here => there is no need to use CV_CAST_8U
 						dptr[j] = (uchar)cvRound(sum / wsum);
 					}
-	}
+				}
 			}
 			else
 			{
@@ -2186,7 +2186,7 @@ namespace cp
 				for (int n = 0; n < div; n++)
 				{
 					int stepst = n * (size.width / div);
-					int stepend = (n + 1)*(size.width / div);
+					int stepend = (n + 1) * (size.width / div);
 					uchar* sptrr = (uchar*)temp->ptr(3 * radiusV + 3 * range.start) + 16 * (radiusH / 16 + 1);
 					uchar* sptrg = (uchar*)temp->ptr(3 * radiusV + 3 * range.start + 1) + 16 * (radiusH / 16 + 1);
 					uchar* sptrb = (uchar*)temp->ptr(3 * radiusV + 3 * range.start + 2) + 16 * (radiusH / 16 + 1);
@@ -2404,8 +2404,8 @@ namespace cp
 								_mm_stream_si128((__m128i*)(dptrc), _mm_blendv_epi8(c, _mm_blendv_epi8(a, b, bmask1), bmask2));
 								_mm_stream_si128((__m128i*)(dptrc + 16), _mm_blendv_epi8(b, _mm_blendv_epi8(a, c, bmask2), bmask1));
 								_mm_stream_si128((__m128i*)(dptrc + 32), _mm_blendv_epi8(c, _mm_blendv_epi8(b, a, bmask2), bmask1));
-				}
-			}
+							}
+						}
 #endif
 
 						for (; j < stepend; j++)
@@ -2432,9 +2432,9 @@ namespace cp
 							//overflow is not possible here => there is no need to use CV_CAST_8U
 
 							wsum = 1.f / wsum;
-							b0 = cvRound(sum_b*wsum);
-							g0 = cvRound(sum_g*wsum);
-							r0 = cvRound(sum_r*wsum);
+							b0 = cvRound(sum_b * wsum);
+							g0 = cvRound(sum_g * wsum);
+							r0 = cvRound(sum_r * wsum);
 							dptr[3 * j] = (uchar)r0; dptr[3 * j + 1] = (uchar)g0; dptr[3 * j + 2] = (uchar)b0;
 						}
 					}
@@ -2442,18 +2442,18 @@ namespace cp
 			}
 		}
 	private:
-		const Mat *temp;
+		const Mat* temp;
 
-		Mat *dest;
-		int radiusH, radiusV, maxk, *space_ofs;
-		float *space_weight, *color_weight;
+		Mat* dest;
+		int radiusH, radiusV, maxk, * space_ofs;
+		float* space_weight, * color_weight;
 	};
 
 	class BilateralFilterORDER2_32f_InvokerSSE4 : public cv::ParallelLoopBody
 	{
 	public:
 		BilateralFilterORDER2_32f_InvokerSSE4(Mat& _dest, const Mat& _temp, int _radiusH, int _radiusV, int _maxk,
-			int* _space_ofs, float *_space_weight, float _color_f) :
+			int* _space_ofs, float* _space_weight, float _color_f) :
 			temp(&_temp), dest(&_dest), radiusH(_radiusH), radiusV(_radiusV),
 			maxk(_maxk), space_ofs(_space_ofs), space_weight(_space_weight), color_f(_color_f)
 		{
@@ -2464,7 +2464,7 @@ namespace cp
 			int i, j, k;
 			int cn = dest->channels();
 			Size size = dest->size();
-			const float color2_f = 1.f / (color_f*color_f);
+			const float color2_f = 1.f / (color_f * color_f);
 #if CV_SSE4_1
 			bool haveSSE4 = checkHardwareSupport(CV_CPU_SSE4_1);
 #endif
@@ -2506,11 +2506,11 @@ namespace cp
 								sref = _mm_mul_ps(_w, sref);
 								tval = _mm_add_ps(tval, sref);
 								wval = _mm_add_ps(wval, _w);
-			}
+							}
 							tval = _mm_div_ps(tval, wval);
 							_mm_stream_ps((dptr + j), tval);
-		}
-	}
+						}
+					}
 #endif
 					for (; j < size.width; j++)
 					{
@@ -2521,7 +2521,7 @@ namespace cp
 						{
 							float val = sptr[j + space_ofs[k]];
 							float v = (val - val0);
-							float w = space_weight[k] * max(1.f - (color2_f*v*v), 0.000001f);
+							float w = space_weight[k] * max(1.f - (color2_f * v * v), 0.000001f);
 							sum += val * w;
 							wsum += w;
 						}
@@ -2604,7 +2604,7 @@ namespace cp
 							_mm_stream_ps((dptrc), _mm_blend_ps(_mm_blend_ps(b, a, 4), c, 2));
 							_mm_stream_ps((dptrc + 4), _mm_blend_ps(_mm_blend_ps(c, b, 4), a, 2));
 							_mm_stream_ps((dptrc + 8), _mm_blend_ps(_mm_blend_ps(a, c, 4), b, 2));
-			}
+						}
 					}
 #endif
 					for (; j < size.width; j++)
@@ -2622,8 +2622,8 @@ namespace cp
 						for (k = 0; k < maxk; k++)
 						{
 							float r = sptrrj[space_ofs[k]], g = sptrgj[space_ofs[k]], b = sptrbj[space_ofs[k]];
-							float v = (b - b0)*(b - b0) + (g - g0)*(g - g0) + (r - r0)*(r - r0);
-							float w = space_weight[k] * max(1.f - (color2_f*v), 0.000001f);
+							float v = (b - b0) * (b - b0) + (g - g0) * (g - g0) + (r - r0) * (r - r0);
+							float w = space_weight[k] * max(1.f - (color2_f * v), 0.000001f);
 							sum_b += b * w;
 							sum_g += g * w;
 							sum_r += r * w;
@@ -2638,11 +2638,11 @@ namespace cp
 			}
 		}
 	private:
-		const Mat *temp;
+		const Mat* temp;
 
-		Mat *dest;
-		int radiusH, radiusV, maxk, *space_ofs;
-		float *space_weight;
+		Mat* dest;
+		int radiusH, radiusV, maxk, * space_ofs;
+		float* space_weight;
 		float color_f;
 	};
 
@@ -2661,7 +2661,7 @@ namespace cp
 			int i, j, k;
 			int cn = dest->channels();
 			Size size = dest->size();
-			const float color2_f = 1.f / (color_f*color_f);
+			const float color2_f = 1.f / (color_f * color_f);
 #if CV_SSE4_1
 			bool haveSSE4 = checkHardwareSupport(CV_CPU_SSE4_1);
 #endif
@@ -2700,11 +2700,11 @@ namespace cp
 								sref = _mm_mul_ps(_w, sref);
 								tval = _mm_add_ps(tval, sref);
 								wval = _mm_add_ps(wval, _w);
-			}
+							}
 							tval = _mm_div_ps(tval, wval);
 							_mm_stream_ps((dptr + j), tval);
-		}
-	}
+						}
+					}
 #endif
 					for (; j < size.width; j++)
 					{
@@ -2715,7 +2715,7 @@ namespace cp
 						{
 							float val = sptr[j + space_ofs[k]];
 							float v = (val - val0);
-							float w = max(1.f - (color2_f*v*v), 0.000001f);
+							float w = max(1.f - (color2_f * v * v), 0.000001f);
 							sum += val * w;
 							wsum += w;
 						}
@@ -2796,7 +2796,7 @@ namespace cp
 							_mm_stream_ps((dptrc), _mm_blend_ps(_mm_blend_ps(b, a, 4), c, 2));
 							_mm_stream_ps((dptrc + 4), _mm_blend_ps(_mm_blend_ps(c, b, 4), a, 2));
 							_mm_stream_ps((dptrc + 8), _mm_blend_ps(_mm_blend_ps(a, c, 4), b, 2));
-			}
+						}
 					}
 #endif
 					for (; j < size.width; j++)
@@ -2814,8 +2814,8 @@ namespace cp
 						for (k = 0; k < maxk; k++)
 						{
 							float r = sptrrj[space_ofs[k]], g = sptrgj[space_ofs[k]], b = sptrbj[space_ofs[k]];
-							float v = (b - b0)*(b - b0) + (g - g0)*(g - g0) + (r - r0)*(r - r0);
-							float w = max(1.f - (color2_f*v), 0.000001f);
+							float v = (b - b0) * (b - b0) + (g - g0) * (g - g0) + (r - r0) * (r - r0);
+							float w = max(1.f - (color2_f * v), 0.000001f);
 							sum_b += b * w;
 							sum_g += g * w;
 							sum_r += r * w;
@@ -2830,10 +2830,10 @@ namespace cp
 			}
 		}
 	private:
-		const Mat *temp;
+		const Mat* temp;
 
-		Mat *dest;
-		int radiusH, radiusV, maxk, *space_ofs;
+		Mat* dest;
+		int radiusH, radiusV, maxk, * space_ofs;
 		float color_f;
 	};
 
@@ -2841,7 +2841,7 @@ namespace cp
 	{
 	public:
 		BilateralFilter_32f_InvokerSSE4(Mat& _dest, const Mat& _temp, int _radiusH, int _radiusV, int _maxk,
-			int* _space_ofs, float *_space_weight, float *_color_weight) :
+			int* _space_ofs, float* _space_weight, float* _color_weight) :
 			temp(&_temp), dest(&_dest), radiusH(_radiusH), radiusV(_radiusV),
 			maxk(_maxk), space_ofs(_space_ofs), space_weight(_space_weight), color_weight(_color_weight)
 		{
@@ -2853,10 +2853,9 @@ namespace cp
 			int cn = dest->channels();
 			Size size = dest->size();
 
-#if CV_SSE4_1
 			const int CV_DECL_ALIGNED(16) v32f_absmask[] = { 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff };
 			bool haveSSE4 = checkHardwareSupport(CV_CPU_SSE4_1);
-#endif
+
 			if (cn == 1)
 			{
 				int CV_DECL_ALIGNED(16) buf[4];
@@ -2870,7 +2869,6 @@ namespace cp
 				for (i = range.start; i != range.end; i++, dptr += dstep, sptr += sstep)
 				{
 					j = 0;
-#if CV_SSE4_1
 					if (haveSSE4)
 					{
 						for (; j < size.width; j += 4)//4 pixel unit
@@ -2884,7 +2882,7 @@ namespace cp
 							__m128 tval = _mm_set1_ps(0.f);
 							__m128 wval = _mm_set1_ps(0.f);
 
-							for (k = 0; k < maxk; k++, ofs++, spw++)
+							for (k = 0; k < maxk; k++)
 							{
 								__m128 sref = _mm_loadu_ps((sptrj + *ofs));
 								_mm_store_si128((__m128i*)buf, _mm_cvtps_epi32(_mm_and_ps(_mm_sub_ps(sval0, sref), *(const __m128*)v32f_absmask)));
@@ -2895,12 +2893,12 @@ namespace cp
 								sref = _mm_mul_ps(_w, sref);
 								tval = _mm_add_ps(tval, sref);
 								wval = _mm_add_ps(wval, _w);
-			}
+								ofs++, spw++;
+							}
 							tval = _mm_div_ps(tval, wval);
 							_mm_stream_ps((dptr + j), tval);
-	}
+						}
 					}
-#endif
 					for (; j < size.width; j++)
 					{
 						const float val0 = sptr[0];
@@ -2994,7 +2992,7 @@ namespace cp
 							_mm_stream_ps((dptrc), _mm_blend_ps(_mm_blend_ps(b, a, 4), c, 2));
 							_mm_stream_ps((dptrc + 4), _mm_blend_ps(_mm_blend_ps(c, b, 4), a, 2));
 							_mm_stream_ps((dptrc + 8), _mm_blend_ps(_mm_blend_ps(a, c, 4), b, 2));
-			}
+						}
 					}
 #endif
 					for (; j < size.width; j++)
@@ -3027,11 +3025,11 @@ namespace cp
 			}
 		}
 	private:
-		const Mat *temp;
+		const Mat* temp;
 
-		Mat *dest;
-		int radiusH, radiusV, maxk, *space_ofs;
-		float *space_weight, *color_weight;
+		Mat* dest;
+		int radiusH, radiusV, maxk, * space_ofs;
+		float* space_weight, * color_weight;
 	};
 
 
@@ -3040,7 +3038,7 @@ namespace cp
 	{
 	public:
 		BilateralFilter_32f_shuffle_InvokerSSE4(Mat& _dest, const Mat& _temp, int _radiusH, int _radiusV, int _maxk,
-			int* _space_ofs, float *_space_weight, float *_color_weight) :
+			int* _space_ofs, float* _space_weight, float* _color_weight) :
 			temp(&_temp), dest(&_dest), radiusH(_radiusH), radiusV(_radiusV),
 			maxk(_maxk), space_ofs(_space_ofs), space_weight(_space_weight), color_weight(_color_weight)
 		{
@@ -3096,10 +3094,10 @@ namespace cp
 								sref = _mm_mul_ps(_w, sref);
 								tval = _mm_add_ps(tval, sref);
 								wval = _mm_add_ps(wval, _w);
-			}
+							}
 							tval = _mm_div_ps(tval, wval);
 							_mm_stream_ps((dptr + j), tval);
-	}
+						}
 					}
 #endif
 					for (; j < size.width; j++)
@@ -3195,7 +3193,7 @@ namespace cp
 							_mm_stream_ps((dptrc), _mm_blend_ps(_mm_blend_ps(b, a, 4), c, 2));
 							_mm_stream_ps((dptrc + 4), _mm_blend_ps(_mm_blend_ps(c, b, 4), a, 2));
 							_mm_stream_ps((dptrc + 8), _mm_blend_ps(_mm_blend_ps(a, c, 4), b, 2));
-			}
+						}
 					}
 #endif
 					for (; j < size.width; j++)
@@ -3228,17 +3226,17 @@ namespace cp
 			}
 		}
 	private:
-		const Mat *temp;
+		const Mat* temp;
 
-		Mat *dest;
-		int radiusH, radiusV, maxk, *space_ofs;
-		float *space_weight, *color_weight;
+		Mat* dest;
+		int radiusH, radiusV, maxk, * space_ofs;
+		float* space_weight, * color_weight;
 	};
 	class WeightedBilateralFilter_32f_InvokerSSE4 : public cv::ParallelLoopBody
 	{
 	public:
 		WeightedBilateralFilter_32f_InvokerSSE4(Mat& _dest, const Mat& _temp, const Mat& _weightMap, int _radiusH, int _radiusV, int _maxk,
-			int* _space_ofs, int* _space_w_ofs, float *_space_weight, float *_color_weight) :
+			int* _space_ofs, int* _space_w_ofs, float* _space_weight, float* _color_weight) :
 			temp(&_temp), weightMap(&_weightMap), dest(&_dest), radiusH(_radiusH), radiusV(_radiusV),
 			maxk(_maxk), space_ofs(_space_ofs), space_w_ofs(_space_w_ofs), space_weight(_space_weight), color_weight(_color_weight)
 		{
@@ -3292,11 +3290,11 @@ namespace cp
 								sref = _mm_mul_ps(_w, sref);
 								tval = _mm_add_ps(tval, sref);
 								wval = _mm_add_ps(wval, _w);
-			}
+							}
 							tval = _mm_div_ps(tval, wval);
 							_mm_stream_ps((dptr + j), tval);
-		}
-		}
+						}
+					}
 #endif
 					for (; j < size.width; j++)
 					{
@@ -3313,7 +3311,7 @@ namespace cp
 						//overflow is not possible here => there is no need to use CV_CAST_8U
 						dptr[j] = (uchar)cvRound(sum / wsum);
 					}
-	}
+				}
 			}
 			else
 			{
@@ -3399,7 +3397,7 @@ namespace cp
 							_mm_stream_ps((dptrc), _mm_blend_ps(_mm_blend_ps(b, a, 4), c, 2));
 							_mm_stream_ps((dptrc + 4), _mm_blend_ps(_mm_blend_ps(c, b, 4), a, 2));
 							_mm_stream_ps((dptrc + 8), _mm_blend_ps(_mm_blend_ps(a, c, 4), b, 2));
-			}
+						}
 					}
 #endif
 					for (; j < size.width; j++)
@@ -3432,18 +3430,18 @@ namespace cp
 			}
 		}
 	private:
-		const Mat *temp;
-		const Mat *weightMap;
-		Mat *dest;
-		int radiusH, radiusV, maxk, *space_ofs, *space_w_ofs;
-		float *space_weight, *color_weight;
+		const Mat* temp;
+		const Mat* weightMap;
+		Mat* dest;
+		int radiusH, radiusV, maxk, * space_ofs, * space_w_ofs;
+		float* space_weight, * color_weight;
 	};
 
 	class WeightedBilateralFilter_8u_InvokerSSE4 : public cv::ParallelLoopBody
 	{
 	public:
 		WeightedBilateralFilter_8u_InvokerSSE4(Mat& _dest, const Mat& _temp, const Mat& _weightMap, int _radiusH, int _radiusV, int _maxk,
-			int* _space_ofs, int* _space_w_ofs, float *_space_weight, float *_color_weight) :
+			int* _space_ofs, int* _space_w_ofs, float* _space_weight, float* _color_weight) :
 			temp(&_temp), weightMap(&_weightMap), dest(&_dest), radiusH(_radiusH), radiusV(_radiusV),
 			maxk(_maxk), space_ofs(_space_ofs), space_w_ofs(_space_w_ofs), space_weight(_space_weight), color_weight(_color_weight)
 		{
@@ -3541,8 +3539,8 @@ namespace cp
 							tval3 = _mm_div_ps(tval3, wval3);
 							tval4 = _mm_div_ps(tval4, wval4);
 							_mm_stream_si128((__m128i*)(dptr + j), _mm_packus_epi16(_mm_packs_epi32(_mm_cvtps_epi32(tval1), _mm_cvtps_epi32(tval2)), _mm_packs_epi32(_mm_cvtps_epi32(tval3), _mm_cvtps_epi32(tval4))));
-			}
-		}
+						}
+					}
 #endif
 					for (; j < size.width; j++)
 					{
@@ -3560,7 +3558,7 @@ namespace cp
 						//overflow is not possible here => there is no need to use CV_CAST_8U
 						dptr[j] = (uchar)cvRound(sum / wsum);
 					}
-	}
+				}
 			}
 			else
 			{
@@ -3771,7 +3769,7 @@ namespace cp
 							_mm_stream_si128((__m128i*)(dptrc), _mm_blendv_epi8(b1, _mm_blendv_epi8(r1, g1, bmask1), bmask2));
 							_mm_stream_si128((__m128i*)(dptrc + 16), _mm_blendv_epi8(g1, _mm_blendv_epi8(r1, b1, bmask2), bmask1));
 							_mm_stream_si128((__m128i*)(dptrc + 32), _mm_blendv_epi8(b1, _mm_blendv_epi8(g1, r1, bmask2), bmask1));
-			}
+						}
 					}
 #endif
 					for (; j < size.width; j++)
@@ -3799,20 +3797,20 @@ namespace cp
 						//overflow is not possible here => there is no need to use CV_CAST_8U
 
 						wsum = 1.f / wsum;
-						b0 = cvRound(sum_b*wsum);
-						g0 = cvRound(sum_g*wsum);
-						r0 = cvRound(sum_r*wsum);
+						b0 = cvRound(sum_b * wsum);
+						g0 = cvRound(sum_g * wsum);
+						r0 = cvRound(sum_r * wsum);
 						dptr[3 * j] = (uchar)r0; dptr[3 * j + 1] = (uchar)g0; dptr[3 * j + 2] = (uchar)b0;
 					}
 				}
 			}
 		}
 	private:
-		const Mat *temp;
-		const Mat *weightMap;
-		Mat *dest;
-		int radiusH, radiusV, maxk, *space_ofs, *space_w_ofs;
-		float *space_weight, *color_weight;
+		const Mat* temp;
+		const Mat* weightMap;
+		Mat* dest;
+		int radiusH, radiusV, maxk, * space_ofs, * space_w_ofs;
+		float* space_weight, * color_weight;
 	};
 
 	void weightedBilateralFilter_32f(const Mat& src, Mat& weight, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int borderType, bool isRectangle)
@@ -3832,8 +3830,8 @@ namespace cp
 		if (sigma_space <= 0)
 			sigma_space = 1;
 
-		double gauss_color_coeff = -0.5 / (sigma_color*sigma_color);
-		double gauss_space_coeff = -0.5 / (sigma_space*sigma_space);
+		double gauss_color_coeff = -0.5 / (sigma_color * sigma_color);
+		double gauss_space_coeff = -0.5 / (sigma_space * sigma_space);
 
 		int radiusH = kernelSize.width >> 1;
 		int radiusV = kernelSize.height >> 1;
@@ -3862,7 +3860,7 @@ namespace cp
 		minMaxLoc(src, &minv, &maxv);
 		const int color_range = cvRound(maxv - minv);
 
-		vector<float> _color_weight(cn*color_range);
+		vector<float> _color_weight(cn * color_range);
 		vector<float> _space_weight(kernelSize.area() + 1);
 		vector<int> _space_ofs(kernelSize.area() + 1);
 		vector<int> _space_w_ofs(kernelSize.area() + 1);
@@ -3873,8 +3871,8 @@ namespace cp
 
 		// initialize color-related bilateral filter coefficients
 
-		for (i = 0; i < cn*color_range; i++)
-			color_weight[i] = (float)std::exp(i*i*gauss_color_coeff);
+		for (i = 0; i < cn * color_range; i++)
+			color_weight[i] = (float)std::exp(i * i * gauss_color_coeff);
 
 		// initialize space-related bilateral filter coefficients
 		if (isRectangle)
@@ -3885,10 +3883,10 @@ namespace cp
 
 				for (; j <= radiusH; j++)
 				{
-					double r = std::sqrt((double)i*i + (double)j*j);
-					space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-					space_ofs[maxk] = (int)(i*temp.cols*cn + j);
-					space_w_ofs[maxk++] = (int)(i*tempw.cols + j);
+					double r = std::sqrt((double)i * i + (double)j * j);
+					space_weight[maxk] = (float)std::exp(r * r * gauss_space_coeff);
+					space_ofs[maxk] = (int)(i * temp.cols * cn + j);
+					space_w_ofs[maxk++] = (int)(i * tempw.cols + j);
 				}
 			}
 		}
@@ -3900,11 +3898,11 @@ namespace cp
 
 				for (; j <= radiusH; j++)
 				{
-					double r = std::sqrt((double)i*i + (double)j*j);
+					double r = std::sqrt((double)i * i + (double)j * j);
 					if (r > max(radiusV, radiusH)) continue;
-					space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-					space_ofs[maxk] = (int)(i*temp.cols*cn + j);
-					space_w_ofs[maxk++] = (int)(i*tempw.cols + j);
+					space_weight[maxk] = (float)std::exp(r * r * gauss_space_coeff);
+					space_ofs[maxk] = (int)(i * temp.cols * cn + j);
+					space_w_ofs[maxk++] = (int)(i * tempw.cols + j);
 				}
 			}
 		}
@@ -3930,8 +3928,8 @@ namespace cp
 		if (sigma_space <= 0)
 			sigma_space = 1;
 
-		double gauss_color_coeff = -0.5 / (sigma_color*sigma_color);
-		double gauss_space_coeff = -0.5 / (sigma_space*sigma_space);
+		double gauss_color_coeff = -0.5 / (sigma_color * sigma_color);
+		double gauss_space_coeff = -0.5 / (sigma_space * sigma_space);
 
 		int radiusH = kernelSize.width >> 1;
 		int radiusV = kernelSize.height >> 1;
@@ -3959,7 +3957,7 @@ namespace cp
 		const int color_range = cvRound(maxv-minv);*/
 		const int color_range = 256;
 
-		vector<float> _color_weight(cn*color_range);
+		vector<float> _color_weight(cn * color_range);
 		vector<float> _space_weight(kernelSize.area());
 		vector<int> _space_ofs(kernelSize.area());
 		vector<int> _space_w_ofs(kernelSize.area());
@@ -3969,8 +3967,8 @@ namespace cp
 		int* space_w_ofs = &_space_w_ofs[0];
 
 		// initialize color-related bilateral filter coefficients
-		for (i = 0; i < color_range*cn; i++)
-			color_weight[i] = (float)std::exp(i*i*gauss_color_coeff);
+		for (i = 0; i < color_range * cn; i++)
+			color_weight[i] = (float)std::exp(i * i * gauss_color_coeff);
 
 		// initialize space-related bilateral filter coefficients
 		if (isRectangle)
@@ -3981,10 +3979,10 @@ namespace cp
 
 				for (; j <= radiusH; j++)
 				{
-					double r = std::sqrt((double)i*i + (double)j*j);
-					space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-					space_ofs[maxk] = (int)(i*temp.cols*cn + j);
-					space_w_ofs[maxk++] = (int)(i*tempw.cols + j);
+					double r = std::sqrt((double)i * i + (double)j * j);
+					space_weight[maxk] = (float)std::exp(r * r * gauss_space_coeff);
+					space_ofs[maxk] = (int)(i * temp.cols * cn + j);
+					space_w_ofs[maxk++] = (int)(i * tempw.cols + j);
 				}
 			}
 		}
@@ -3996,11 +3994,11 @@ namespace cp
 
 				for (; j <= radiusH; j++)
 				{
-					double r = std::sqrt((double)i*i + (double)j*j);
+					double r = std::sqrt((double)i * i + (double)j * j);
 					if (r > max(radiusV, radiusH)) continue;
-					space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-					space_ofs[maxk] = (int)(i*temp.cols*cn + j);
-					space_w_ofs[maxk++] = (int)(i*tempw.cols + j);
+					space_weight[maxk] = (float)std::exp(r * r * gauss_space_coeff);
+					space_ofs[maxk] = (int)(i * temp.cols * cn + j);
+					space_w_ofs[maxk++] = (int)(i * tempw.cols + j);
 				}
 			}
 		}
@@ -4025,8 +4023,8 @@ namespace cp
 		if (sigma_space <= 0)
 			sigma_space = 1;
 
-		double gauss_color_coeff = -0.5 / (sigma_color*sigma_color);
-		double gauss_space_coeff = -0.5 / (sigma_space*sigma_space);
+		double gauss_color_coeff = -0.5 / (sigma_color * sigma_color);
+		double gauss_space_coeff = -0.5 / (sigma_space * sigma_space);
 
 		int radiusH = kernelSize.width >> 1;
 		int radiusV = kernelSize.height >> 1;
@@ -4054,7 +4052,7 @@ namespace cp
 		minMaxLoc(src, &minv, &maxv);
 		const int color_range = cvRound(maxv - minv);
 
-		vector<float> _color_weight(cn*color_range);
+		vector<float> _color_weight(cn * color_range);
 
 		//float CV_DECL_ALIGNED(16) _space_weight[255];
 		vector<float> _space_weight(kernelSize.area());
@@ -4065,8 +4063,8 @@ namespace cp
 
 		// initialize color-related bilateral filter coefficients
 
-		for (i = 0; i < color_range*cn; i++)
-			color_weight[i] = (float)std::exp(i*i*gauss_color_coeff);
+		for (i = 0; i < color_range * cn; i++)
+			color_weight[i] = (float)std::exp(i * i * gauss_color_coeff);
 
 		// initialize space-related bilateral filter coefficients
 		for (i = -radiusV, maxk = 0; i <= radiusV; i++)
@@ -4075,11 +4073,11 @@ namespace cp
 
 			for (; j <= radiusH; j++)
 			{
-				double r = std::sqrt((double)i*i + (double)j*j);
+				double r = std::sqrt((double)i * i + (double)j * j);
 				if (r > max(radiusV, radiusH))
 					continue;
-				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-				space_ofs[maxk++] = (int)(i*temp.cols*cn + j);
+				space_weight[maxk] = (float)std::exp(r * r * gauss_space_coeff);
+				space_ofs[maxk++] = (int)(i * temp.cols * cn + j);
 			}
 		}
 
@@ -4104,8 +4102,8 @@ namespace cp
 		if (sigma_space <= 0)
 			sigma_space = 1;
 
-		double gauss_color_coeff = -0.5 / (sigma_color*sigma_color);
-		double gauss_space_coeff = -0.5 / (sigma_space*sigma_space);
+		double gauss_color_coeff = -0.5 / (sigma_color * sigma_color);
+		double gauss_space_coeff = -0.5 / (sigma_space * sigma_space);
 
 		int radiusH = kernelSize.width >> 1;
 		int radiusV = kernelSize.height >> 1;
@@ -4135,7 +4133,7 @@ namespace cp
 		*/
 		const int color_range = 256;
 
-		vector<float> _color_weight(cn*color_range);
+		vector<float> _color_weight(cn * color_range);
 
 		//float CV_DECL_ALIGNED(16) _space_weight[255];
 		vector<float> _space_weight(kernelSize.area());
@@ -4146,8 +4144,8 @@ namespace cp
 
 		// initialize color-related bilateral filter coefficients
 
-		for (i = 0; i < color_range*cn; i++)
-			color_weight[i] = (float)std::exp(i*i*gauss_color_coeff);
+		for (i = 0; i < color_range * cn; i++)
+			color_weight[i] = (float)std::exp(i * i * gauss_color_coeff);
 
 		// initialize space-related bilateral filter coefficients
 		for (i = -radiusV, maxk = 0; i <= radiusV; i++)
@@ -4156,11 +4154,11 @@ namespace cp
 
 			for (; j <= radiusH; j++)
 			{
-				double r = std::sqrt((double)i*i + (double)j*j);
+				double r = std::sqrt((double)i * i + (double)j * j);
 				if (r > max(radiusV, radiusH))
 					continue;
-				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-				space_ofs[maxk++] = (int)(i*temp.cols*cn + j);
+				space_weight[maxk] = (float)std::exp(r * r * gauss_space_coeff);
+				space_ofs[maxk++] = (int)(i * temp.cols * cn + j);
 			}
 		}
 
@@ -4213,10 +4211,10 @@ namespace cp
 		{
 			for (j = -radiusH; j <= radiusH; j++)
 			{
-				double r = std::sqrt((double)i*i + (double)j*j);
+				double r = std::sqrt((double)i * i + (double)j * j);
 				if (r > max(radiusV, radiusH))
 					continue;
-				space_ofs[maxk++] = (int)(i*temp.cols*cn + j);
+				space_ofs[maxk++] = (int)(i * temp.cols * cn + j);
 			}
 		}
 
@@ -4241,7 +4239,7 @@ namespace cp
 		if (sigma_space <= 0)
 			sigma_space = 1;
 
-		double gauss_space_coeff = -0.5 / (sigma_space*sigma_space);
+		double gauss_space_coeff = -0.5 / (sigma_space * sigma_space);
 
 		int radiusH = kernelSize.width >> 1;
 		int radiusV = kernelSize.height >> 1;
@@ -4275,11 +4273,11 @@ namespace cp
 		{
 			for (j = -radiusH; j <= radiusH; j++)
 			{
-				double r = std::sqrt((double)i*i + (double)j*j);
+				double r = std::sqrt((double)i * i + (double)j * j);
 				if (r > max(radiusV, radiusH))
 					continue;
-				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-				space_ofs[maxk++] = (int)(i*temp.cols*cn + j);
+				space_weight[maxk] = (float)std::exp(r * r * gauss_space_coeff);
+				space_ofs[maxk++] = (int)(i * temp.cols * cn + j);
 			}
 		}
 
@@ -4292,8 +4290,8 @@ namespace cp
 	void bilateralFilter_32f(const Mat& src, Mat& dst, Size kernelSize, double sigma_color, double sigma_space, int borderType, bool isRectangle)
 	{
 		if (kernelSize.width == 0 || kernelSize.height == 0) { src.copyTo(dst); return; }
-		int cn = src.channels();
-		Size size = src.size();
+		const int channels = src.channels();
+		const Size size = src.size();
 
 		CV_Assert((src.type() == CV_32FC1 || src.type() == CV_32FC3) &&
 			src.type() == dst.type() && src.size() == dst.size());
@@ -4303,8 +4301,8 @@ namespace cp
 		if (sigma_space <= 0)
 			sigma_space = 1;
 
-		double gauss_color_coeff = -0.5 / (sigma_color*sigma_color);
-		double gauss_space_coeff = -0.5 / (sigma_space*sigma_space);
+		double gauss_color_coeff = -0.5 / (sigma_color * sigma_color);
+		double gauss_space_coeff = -0.5 / (sigma_space * sigma_space);
 
 		int radiusH = kernelSize.width >> 1;
 		int radiusV = kernelSize.height >> 1;
@@ -4316,11 +4314,11 @@ namespace cp
 		if (spad < 4) spad += 4;
 		int lpad = 4 * (radiusH / 4 + 1) - radiusH;
 		int rpad = spad - lpad;
-		if (cn == 1)
+		if (channels == 1)
 		{
 			copyMakeBorder(src, temp, radiusV, radiusV, radiusH + lpad, radiusH + rpad, borderType);
 		}
-		else if (cn == 3)
+		else if (channels == 3)
 		{
 			Mat temp2;
 			copyMakeBorder(src, temp2, radiusV, radiusV, radiusH + lpad, radiusH + rpad, borderType);
@@ -4331,7 +4329,7 @@ namespace cp
 		minMaxLoc(src, &minv, &maxv);
 		const int color_range = cvRound(maxv - minv);
 
-		vector<float> _color_weight(cn*color_range);
+		vector<float> _color_weight(channels * color_range);
 
 		//float CV_DECL_ALIGNED(16) _space_weight[255];
 		vector<float> _space_weight(kernelSize.area());
@@ -4341,14 +4339,14 @@ namespace cp
 		int* space_ofs = &_space_ofs[0];
 
 		// initialize color-related bilateral filter coefficients
-		for (int i = 0; i < color_range*cn; i++)
+		for (int i = 0; i < color_range * channels; i++)
 		{
-			color_weight[i] = (float)std::exp(i*i*gauss_color_coeff);
+			color_weight[i] = (float)std::exp(i * i * gauss_color_coeff);
 		}
 
 		// initialize space-related bilateral filter coefficients
 		int maxk = 0;
-		setSpaceKernel(space_weight, space_ofs, maxk, radiusH, radiusV, gauss_space_coeff, temp.cols*cn, isRectangle);
+		setSpaceKernel(space_weight, space_ofs, maxk, radiusH, radiusV, gauss_space_coeff, temp.cols * channels, isRectangle);
 
 		Mat dest = Mat::zeros(Size(src.cols + dpad, src.rows), dst.type());
 		BilateralFilter_32f_InvokerSSE4 body(dest, temp, radiusH, radiusV, maxk, space_ofs, space_weight, color_weight);
@@ -4398,10 +4396,10 @@ namespace cp
 		{
 			for (j = -radiusH; j <= radiusH; j++)
 			{
-				double r = std::sqrt((double)i*i + (double)j*j);
+				double r = std::sqrt((double)i * i + (double)j * j);
 				if (r > max(radiusV, radiusH))
 					continue;
-				space_ofs[maxk++] = (int)(i*temp.cols*cn + j);
+				space_ofs[maxk++] = (int)(i * temp.cols * cn + j);
 			}
 		}
 		//cout<<"MAXK: "<<maxk<<","<<kernelSize.area()<< endl;
@@ -4427,7 +4425,7 @@ namespace cp
 		if (sigma_space <= 0)
 			sigma_space = 1;
 
-		double gauss_space_coeff = -0.5 / (sigma_space*sigma_space);
+		double gauss_space_coeff = -0.5 / (sigma_space * sigma_space);
 
 		int radiusH = kernelSize.width >> 1;
 		int radiusV = kernelSize.height >> 1;
@@ -4462,11 +4460,11 @@ namespace cp
 		{
 			for (j = -radiusH; j <= radiusH; j++)
 			{
-				double r = std::sqrt((double)i*i + (double)j*j);
+				double r = std::sqrt((double)i * i + (double)j * j);
 				if (r > max(radiusV, radiusH))
 					continue;
-				space_weight[maxk] = (float)std::exp(r*r*gauss_space_coeff);
-				space_ofs[maxk++] = (int)(i*temp.cols*cn + j);
+				space_weight[maxk] = (float)std::exp(r * r * gauss_space_coeff);
+				space_ofs[maxk++] = (int)(i * temp.cols * cn + j);
 			}
 		}
 		//cout<<"MAXK: "<<maxk<<","<<kernelSize.area()<< endl;
@@ -4491,8 +4489,8 @@ namespace cp
 		if (sigma_space <= 0)
 			sigma_space = 1;
 
-		double gauss_color_coeff = -0.5 / (sigma_color*sigma_color);
-		double gauss_space_coeff = -0.5 / (sigma_space*sigma_space);
+		double gauss_color_coeff = -0.5 / (sigma_color * sigma_color);
+		double gauss_space_coeff = -0.5 / (sigma_space * sigma_space);
 
 
 		int radiusH = kernelSize.width >> 1;
@@ -4517,7 +4515,7 @@ namespace cp
 		}
 
 		const int color_range = 256;
-		vector<float> _color_weight(cn*color_range);
+		vector<float> _color_weight(cn * color_range);
 		vector<float> _space_weight(kernelSize.area());
 		vector<int> _space_ofs(kernelSize.area());
 		float* color_weight = &_color_weight[0];
@@ -4525,14 +4523,14 @@ namespace cp
 		int* space_ofs = &_space_ofs[0];
 
 		// initialize color-related bilateral filter coefficients
-		for (int i = 0; i < color_range*cn; i++)
+		for (int i = 0; i < color_range * cn; i++)
 		{
-			color_weight[i] = (float)std::exp(i*i*gauss_color_coeff);
+			color_weight[i] = (float)std::exp(i * i * gauss_color_coeff);
 		}
 
 		// initialize space-related bilateral filter coefficients
 		int maxk = 0;
-		setSpaceKernel(space_weight, space_ofs, maxk, radiusH, radiusV, gauss_space_coeff, temp.cols*cn, isRectangle);
+		setSpaceKernel(space_weight, space_ofs, maxk, radiusH, radiusV, gauss_space_coeff, temp.cols * cn, isRectangle);
 
 		Mat dest = Mat::zeros(Size(src.cols + dpad, src.rows), src.type());
 		BilateralFilter_8u_InvokerSSE4 body(dest, temp, radiusH, radiusV, maxk, space_ofs, space_weight, color_weight);
@@ -4576,8 +4574,8 @@ namespace cp
 		if (sigma_space <= 0)
 			sigma_space = 1;
 
-		double gauss_color_coeff = -0.5 / (sigma_color*sigma_color);
-		double gauss_space_coeff = -0.5 / (sigma_space*sigma_space);
+		double gauss_color_coeff = -0.5 / (sigma_color * sigma_color);
+		double gauss_space_coeff = -0.5 / (sigma_space * sigma_space);
 
 
 		int radiusH = kernelSize.width >> 1;
@@ -4602,7 +4600,7 @@ namespace cp
 		}
 
 		const int color_range = 256;
-		vector<float> _color_weight(cn*color_range);
+		vector<float> _color_weight(cn * color_range);
 		vector<float> _space_weight(kernelSize.area() + 1);
 		vector<int> _space_ofs(kernelSize.area() + 1);
 		float* color_weight = &_color_weight[0];
@@ -4610,20 +4608,20 @@ namespace cp
 		int* space_ofs = &_space_ofs[0];
 
 		// initialize color-related bilateral filter coefficients
-		for (int i = 0; i < color_range*cn; i++)
+		for (int i = 0; i < color_range * cn; i++)
 		{
-			color_weight[i] = (float)std::exp(i*i*gauss_color_coeff);
+			color_weight[i] = (float)std::exp(i * i * gauss_color_coeff);
 		}
 
 		// initialize space-related bilateral filter coefficients
 		int maxk = 0;
 		if (direction > 0)
 		{
-			set1DSpaceKernel45(space_weight, space_ofs, maxk, radiusH, radiusV, gauss_color_coeff, temp.cols*cn, isRectangle);
+			set1DSpaceKernel45(space_weight, space_ofs, maxk, radiusH, radiusV, gauss_color_coeff, temp.cols * cn, isRectangle);
 		}
 		else
 		{
-			set1DSpaceKernel135(space_weight, space_ofs, maxk, radiusH, radiusV, gauss_color_coeff, temp.cols*cn, isRectangle);
+			set1DSpaceKernel135(space_weight, space_ofs, maxk, radiusH, radiusV, gauss_color_coeff, temp.cols * cn, isRectangle);
 		}
 
 		Mat dest = Mat::zeros(Size(src.cols + dpad, src.rows), src.type());
@@ -4637,36 +4635,36 @@ namespace cp
 		if (method == DUAL_KERNEL_HV)
 		{
 			bilateralFilter(src, dst, Size(kernelSize.width, 1), sigma_color, sigma_space, FILTER_RECTANGLE, borderType);
-			jointBilateralFilter(dst, src, dst, Size(1, kernelSize.height), sigma_color*alpha, sigma_space, FILTER_RECTANGLE, borderType);
+			jointBilateralFilter(dst, src, dst, Size(1, kernelSize.height), sigma_color * alpha, sigma_space, FILTER_RECTANGLE, borderType);
 		}
 		else if (method == DUAL_KERNEL_VH)
 		{
 			bilateralFilter(src, dst, Size(1, kernelSize.height), sigma_color, sigma_space, FILTER_RECTANGLE, borderType);
-			jointBilateralFilter(dst, src, dst, Size(kernelSize.width, 1), sigma_color*alpha, sigma_space, FILTER_RECTANGLE, borderType);
+			jointBilateralFilter(dst, src, dst, Size(kernelSize.width, 1), sigma_color * alpha, sigma_space, FILTER_RECTANGLE, borderType);
 		}
 		else if (method == DUAL_KERNEL_HVVH)
 		{
 			bilateralFilter(src, dst, Size(kernelSize.width, 1), sigma_color, sigma_space, FILTER_RECTANGLE, borderType);
-			jointBilateralFilter(dst, src, dst, Size(1, kernelSize.height), sigma_color*alpha, sigma_space, FILTER_RECTANGLE, borderType);
+			jointBilateralFilter(dst, src, dst, Size(1, kernelSize.height), sigma_color * alpha, sigma_space, FILTER_RECTANGLE, borderType);
 			Mat dst2;
 			bilateralFilter(src, dst2, Size(1, kernelSize.height), sigma_color, sigma_space, FILTER_RECTANGLE, borderType);
-			jointBilateralFilter(dst2, src, dst2, Size(kernelSize.width, 1), sigma_color*alpha, sigma_space, FILTER_RECTANGLE, borderType);
+			jointBilateralFilter(dst2, src, dst2, Size(kernelSize.width, 1), sigma_color * alpha, sigma_space, FILTER_RECTANGLE, borderType);
 
 			alphaBlend(dst, dst2, 0.5, dst);
 		}
 		else if (method == DUAL_KERNEL_CROSS)
 		{
 			bilateralFilter_direction_8u(src, dst, kernelSize, sigma_color, sigma_space, borderType, 1, true);
-			jointBilateralFilter_direction_8u(dst, src, dst, kernelSize, sigma_color*alpha, sigma_space, borderType, -1, true);
+			jointBilateralFilter_direction_8u(dst, src, dst, kernelSize, sigma_color * alpha, sigma_space, borderType, -1, true);
 		}
 		else if (method == DUAL_KERNEL_CROSSCROSS)
 		{
 			bilateralFilter_direction_8u(src, dst, kernelSize, sigma_color, sigma_space, borderType, 1, true);
-			jointBilateralFilter_direction_8u(dst, src, dst, kernelSize, sigma_color*alpha, sigma_space, borderType, -1, true);
+			jointBilateralFilter_direction_8u(dst, src, dst, kernelSize, sigma_color * alpha, sigma_space, borderType, -1, true);
 
 			Mat dst2(src.size(), src.type());
 			bilateralFilter_direction_8u(src, dst2, kernelSize, sigma_color, sigma_space, borderType, -1, true);
-			jointBilateralFilter_direction_8u(dst2, src, dst2, kernelSize, sigma_color*alpha, sigma_space, borderType, 1, true);
+			jointBilateralFilter_direction_8u(dst2, src, dst2, kernelSize, sigma_color * alpha, sigma_space, borderType, 1, true);
 
 			alphaBlend(dst, dst2, 0.5, dst);
 		}
@@ -4826,7 +4824,7 @@ namespace cp
 
 		if (method == FILTER_CIRCLE || method == FILTER_DEFAULT)
 		{
-			if (src.depth() ==CV_8U)
+			if (src.depth() == CV_8U)
 			{
 				bilateralWeightMap_8u(src, dst, kernelSize, sigma_color, sigma_space, borderType);
 			}

@@ -68,6 +68,7 @@
 #include "mediancut.hpp"
 #include "metrics.hpp"
 #include "metricsDD.hpp"
+#include "patchPCA.hpp"
 #include "pixelization.hpp"
 #include "ppmx.hpp"
 #include "remappedDither.hpp"
@@ -117,11 +118,13 @@
 
 //GaussianFilter
 #include "GaussianBlurIPOL.hpp"
+
 //resize
 #include "bilateralGuidedUpsample.hpp"
 #include "depthUpsample.hpp"
 #include "downsample.hpp"
 #include "jointBilateralUpsample.hpp"
+#include "localLUTUpsample.hpp"
 #include "NEDI.hpp"
 #include "upsample.hpp"
 

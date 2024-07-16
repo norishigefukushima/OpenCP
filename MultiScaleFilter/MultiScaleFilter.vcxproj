@@ -5,12 +5,12 @@
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="RelaseModerateOpt|Win32">
-      <Configuration>RelaseModerateOpt</Configuration>
+    <ProjectConfiguration Include="ReleaseModerateOpt|Win32">
+      <Configuration>ReleaseModerateOpt</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="RelaseModerateOpt|x64">
-      <Configuration>RelaseModerateOpt</Configuration>
+    <ProjectConfiguration Include="ReleaseModerateOpt|x64">
+      <Configuration>ReleaseModerateOpt</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="ReleaseCompileFast|Win32">
@@ -70,7 +70,7 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelaseModerateOpt|Win32'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseModerateOpt|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
@@ -104,7 +104,7 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelaseModerateOpt|x64'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseModerateOpt|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
@@ -132,7 +132,7 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReOpenCPOnly|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='RelaseModerateOpt|Win32'" Label="PropertySheets">
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseModerateOpt|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseCompileFast|Win32'" Label="PropertySheets">
@@ -147,7 +147,7 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReOpenCPOnly|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='RelaseModerateOpt|x64'" Label="PropertySheets">
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseModerateOpt|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseCompileFast|x64'" Label="PropertySheets">
@@ -163,7 +163,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReOpenCPOnly|Win32'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelaseModerateOpt|Win32'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseModerateOpt|Win32'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseCompileFast|Win32'">
@@ -188,7 +188,7 @@
     <LibraryPath>../lib;$(ICC_NEW_LIB);$(OPENCP_LIB_DIR);$(OPENCV_LIB_DIR);$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
     <OutDir>$(SolutionDir)lib\</OutDir>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelaseModerateOpt|x64'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseModerateOpt|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>../incluide;$(OPENCV_INCLUDE_DIR);$(OPENCP_INCLUDE_DIR);$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <LibraryPath>../lib;$(OPENCP_LIB_DIR);$(OPENCV_LIB_DIR);$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
@@ -244,7 +244,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelaseModerateOpt|Win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseModerateOpt|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -369,7 +369,7 @@
       <Command>move $(SolutionDir)lib\MultiScaleFilter.dll  $(SolutionDir)bin</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelaseModerateOpt|x64'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseModerateOpt|x64'">
     <ClCompile>
       <WarningLevel>Level2</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -449,7 +449,15 @@
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ComputePyramidSize.cpp" />
+    <ClCompile Include="LocalMultiscaleFilterFourier.cpp" />
+    <ClCompile Include="LocalMultiscaleFilterFull.cpp" />
+    <ClCompile Include="LocalMultiscaleFilterInterpolation.cpp" />
+    <ClCompile Include="MultiscaleBilateralFilter.cpp" />
     <ClCompile Include="MultiscaleFilter.cpp" />
+    <ClCompile Include="MultiscaleFilterAlias.cpp" />
+    <ClCompile Include="MultiscaleGaussianFilter.cpp" />
+    <ClCompile Include="MultiscaleGuidedImageFilter.cpp" />
     <ClCompile Include="stdafx.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

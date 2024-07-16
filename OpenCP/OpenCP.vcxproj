@@ -374,21 +374,21 @@
       <WarningLevel>Level3</WarningLevel>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <Optimization>Full</Optimization>
+      <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>CP_API;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <OpenMPSupport>
       </OpenMPSupport>
       <DisableSpecificWarnings>4251;4309;4819;4324;4996</DisableSpecificWarnings>
-      <AdditionalOptions>/openmp:llvm %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/openmp %(AdditionalOptions)</AdditionalOptions>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <EnableFiberSafeOptimizations>false</EnableFiberSafeOptimizations>
       <AdditionalIncludeDirectories>../include</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <WholeProgramOptimization>true</WholeProgramOptimization>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
       <SDLCheck>
       </SDLCheck>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
@@ -408,7 +408,7 @@
       <OptimizeReferences>
       </OptimizeReferences>
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <LinkTimeCodeGeneration>UseFastLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>libcmt.lib</IgnoreSpecificDefaultLibraries>
@@ -433,7 +433,7 @@
       </OpenMPSupport>
       <DisableSpecificWarnings>4251;4309;4819;4324;4996</DisableSpecificWarnings>
       <AdditionalOptions>/openmp:llvm %(AdditionalOptions)</AdditionalOptions>
-      <FloatingPointModel>Precise</FloatingPointModel>
+      <FloatingPointModel>Fast</FloatingPointModel>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
@@ -569,6 +569,10 @@
     <ClCompile Include="dithering.cpp" />
     <ClCompile Include="downsample.cpp" />
     <ClCompile Include="GaussianKDTree.cpp" />
+    <ClCompile Include="guidedImageGaussianFilter.cpp" />
+    <ClCompile Include="guidedImageUpsampleAlt.cpp" />
+    <ClCompile Include="localLUTUpsample.cpp" />
+    <ClCompile Include="patchPCA.cpp" />
     <ClCompile Include="threshold.cpp" />
     <ClCompile Include="highDimensionalGaussianFilter.cpp" />
     <ClCompile Include="IM2COL.cpp" />
@@ -815,10 +819,12 @@
     <ClInclude Include="..\include\IM2COL.hpp" />
     <ClInclude Include="..\include\inlineCVFunctions.hpp" />
     <ClInclude Include="..\include\kmeans.hpp" />
+    <ClInclude Include="..\include\localLUTUpsample.hpp" />
     <ClInclude Include="..\include\mediancut.hpp" />
     <ClInclude Include="..\include\metricsDD.hpp" />
     <ClInclude Include="..\include\NEDI.hpp" />
     <ClInclude Include="..\include\onelineCVFunctions.hpp" />
+    <ClInclude Include="..\include\patchPCA.hpp" />
     <ClInclude Include="..\include\pixelization.hpp" />
     <ClInclude Include="..\include\poissonDiskSampling.hpp" />
     <ClInclude Include="..\include\remappedDither.hpp" />
