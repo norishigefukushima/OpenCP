@@ -2415,6 +2415,7 @@ STATIC_INLINE void print_ushort(__m256i src)
 	printf_s("\n");
 }
 
+#define print_m128i_long(src) printf_s("%s: %3lld %3lld\n",#src,((long long*)&src)[0], ((long long*)&src)[1]);
 #define print_m128i_int(src) printf_s("%s: %3d %3d %3d %3d\n",#src,((int*)&src)[0], ((int*)&src)[1], ((int*)&src)[2], ((int*)&src)[3]);
 #define print_m256i_int(src) printf_s("%s: %3d %3d %3d %3d | %3d %3d %3d %3d\n",#src,((int*)&src)[0], ((int*)&src)[1], ((int*)&src)[2], ((int*)&src)[3], ((int*)&src)[4], ((int*)&src)[5], ((int*)&src)[6], ((int*)&src)[7]);
 
