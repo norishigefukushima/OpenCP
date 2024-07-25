@@ -149,6 +149,16 @@ namespace cp
 		drawDistribution(wname, div, min, max);
 	}
 
+	void Stat::drawDistributionSigmaClip(string wname, const int div, const float sigmaclip)
+	{
+		const double ave = getMean();
+		const double std = getStd();
+		double domain = std * sigmaclip;
+		const double min = ave - domain;
+		const double max = ave + domain;
+		drawDistribution(wname, div, min, max);
+	}
+
 	void Stat::drawDistributionStepSigma(string wname, const float step, const float sigma)
 	{
 		const double ave = getMean();

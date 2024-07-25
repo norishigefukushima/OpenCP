@@ -228,6 +228,12 @@ namespace cp
 			stat.drawDistribution(wname, div, minv, maxv);
 	}
 
+	void Timer::drawDistributionSigmaClip(string wname, int div, double sigmaclip)
+	{
+		if (stat.getSize() > 1)
+			stat.drawDistributionSigmaClip(wname, div, sigmaclip);
+	}
+
 	void Timer::drawPlofilePlot(string wname)
 	{
 		const int mode = (timeMode == TIME_AUTO) ? getAutoTimeMode() : timeMode;

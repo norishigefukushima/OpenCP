@@ -237,7 +237,7 @@ namespace cp
 		}
 	}
 
-	float* MultiScaleFilter::generateWeight(int r, const float sigma, float& evenratio, float& oddratio)
+	float* MultiScaleFilter::generateGaussianWeight(int r, const float sigma, float& evenratio, float& oddratio)
 	{
 		const int D = 2 * r + 1;
 		float* w = (float*)_mm_malloc(D * sizeof(float), AVX_ALIGN);
@@ -275,7 +275,7 @@ namespace cp
 	{
 		_mm_free(GaussWeight);
 		radius = getGaussianRadius(sigma);
-		GaussWeight = generateWeight(radius, sigma, evenratio, oddratio);
+		GaussWeight = generateGaussianWeight(radius, sigma, evenratio, oddratio);
 	}
 
 	void MultiScaleFilter::freeSpaceWeight()
@@ -1173,133 +1173,259 @@ namespace cp
 		{
 			GW[i] = _mm256_set1_ps(GaussWeight[i]);
 		}
+		/*const __m256 mevenoddratio = (radius % 2 == 0) ?
+			_mm256_setr_ps(evenratio, oddratio, evenratio, oddratio, evenratio, oddratio, evenratio, oddratio) :
+			_mm256_setr_ps(oddratio, evenratio, oddratio, evenratio, oddratio, evenratio, oddratio, evenratio);*/
 		const __m256 mevenoddratio = _mm256_setr_ps(evenratio, oddratio, evenratio, oddratio, evenratio, oddratio, evenratio, oddratio);
 		const __m256 mevenratio = _mm256_set1_ps(evenratio);
 		const __m256 moddratio = _mm256_set1_ps(oddratio);
 		const int rs = radius >> 1;
-		const int D2 = 2 * (2 * rs + 1);
-
+		//const int D2 = 2 * (2 * rs + 1);
+		const int D2 = 2 * radius + 1;
+		//print_debug2(2 * radius + 1, D2);
 		const int step = src.cols;
 		float* linee = (float*)_mm_malloc(sizeof(float) * src.cols, AVX_ALIGN);
 		float* lineo = (float*)_mm_malloc(sizeof(float) * src.cols, AVX_ALIGN);
 		const int hend = src.cols - 2 * rs;
 		const int HEND = get_simd_floor(hend, 8);
 		const int WIDTH = get_simd_floor(src.cols, 8);
-		for (int j = radius; j < dest.rows - radius; j += 2)
+		//if (radius % 2 == 0)
 		{
-			const float* sptr = src.ptr<float>((j - radius) >> 1);
-			//v filter
-			for (int i = 0; i < WIDTH; i += 8)
+			for (int j = radius; j < dest.rows - radius; j += 2)
 			{
-				const float* si = sptr + i;
-				__m256 sume = _mm256_mul_ps(GW[0], _mm256_loadu_ps(si)); si += step;
-				__m256 sumo = _mm256_setzero_ps();
-				for (int k = 2; k < D2; k += 2)
+				const float* sptr = src.ptr<float>((j - radius) >> 1);
+				//v filter
+				for (int i = 0; i < WIDTH; i += 8)
 				{
-					const __m256 ms = _mm256_loadu_ps(si); si += step;
-					sume = _mm256_fmadd_ps(GW[k], ms, sume);
-					sumo = _mm256_fmadd_ps(GW[k - 1], ms, sumo);
-				}
-				_mm256_storeu_ps(linee + i, _mm256_mul_ps(sume, mevenratio));
-				_mm256_storeu_ps(lineo + i, _mm256_mul_ps(sumo, moddratio));
+					const float* si = sptr + i;
+					__m256 sume = _mm256_mul_ps(GW[0], _mm256_loadu_ps(si)); si += step;
+					__m256 sumo = _mm256_setzero_ps();
+					for (int k = 2; k < D2; k += 2)
+					{
+						const __m256 ms = _mm256_loadu_ps(si); si += step;
+						sume = _mm256_fmadd_ps(GW[k], ms, sume);
+						sumo = _mm256_fmadd_ps(GW[k - 1], ms, sumo);
+					}
+					_mm256_storeu_ps(linee + i, _mm256_mul_ps(sume, mevenratio));
+					_mm256_storeu_ps(lineo + i, _mm256_mul_ps(sumo, moddratio));
 
-			}
-			for (int i = WIDTH; i < src.cols; i++)
-			{
-				const float* si = sptr + i;
-				float sume = GaussWeight[0] * *si; si += step;
-				float sumo = 0.f;
-				for (int k = 2; k < D2; k += 2)
-				{
-					sume += GaussWeight[k] * *si;
-					sumo += GaussWeight[k - 1] * *si;
-					si += step;
 				}
-				linee[i] = sume * evenratio;
-				lineo[i] = sumo * oddratio;
-			}
-
-			// h filter
-			float* deptr = dest.ptr<float>(j, radius);
-			float* doptr = dest.ptr<float>(j + 1, radius);
-			const float* daeptr = addsubsrc.ptr<float>(j, radius);
-			const float* daoptr = addsubsrc.ptr<float>(j + 1, radius);
-			for (int i = 0; i < HEND; i += 8)
-			{
-				float* sie = linee + i;
-				float* sio = lineo + i;
-				__m256 sumee = _mm256_mul_ps(GW[0], _mm256_loadu_ps(sie++));
-				__m256 sumoe = _mm256_setzero_ps();
-				__m256 sumeo = _mm256_mul_ps(GW[0], _mm256_loadu_ps(sio++));
-				__m256 sumoo = _mm256_setzero_ps();
-				for (int k = 2; k < D2; k += 2)
+				for (int i = WIDTH; i < src.cols; i++)
 				{
-					const __m256 msie = _mm256_loadu_ps(sie++);
-					sumee = _mm256_fmadd_ps(GW[k], msie, sumee);
-					sumoe = _mm256_fmadd_ps(GW[k - 1], msie, sumoe);
-					const __m256 msio = _mm256_loadu_ps(sio++);
-					sumeo = _mm256_fmadd_ps(GW[k], msio, sumeo);
-					sumoo = _mm256_fmadd_ps(GW[k - 1], msio, sumoo);
-				}
-				__m256 s1 = _mm256_unpacklo_ps(sumee, sumoe);
-				__m256 s2 = _mm256_unpackhi_ps(sumee, sumoe);
-				if constexpr (isAdd)
-				{
-					_mm256_storeu_ps((float*)(deptr + 2 * i + 0), _mm256_fmadd_ps(mevenoddratio, _mm256_permute2f128_ps(s1, s2, 0x20), _mm256_loadu_ps(daeptr + 2 * i + 0)));
-					_mm256_storeu_ps((float*)(deptr + 2 * i + 8), _mm256_fmadd_ps(mevenoddratio, _mm256_permute2f128_ps(s1, s2, 0x31), _mm256_loadu_ps(daeptr + 2 * i + 8)));
-				}
-				else
-				{
-					_mm256_storeu_ps((float*)(deptr + 2 * i + 0), _mm256_fnmadd_ps(mevenoddratio, _mm256_permute2f128_ps(s1, s2, 0x20), _mm256_loadu_ps(daeptr + 2 * i + 0)));
-					_mm256_storeu_ps((float*)(deptr + 2 * i + 8), _mm256_fnmadd_ps(mevenoddratio, _mm256_permute2f128_ps(s1, s2, 0x31), _mm256_loadu_ps(daeptr + 2 * i + 8)));
+					const float* si = sptr + i;
+					float sume = GaussWeight[0] * *si; si += step;
+					float sumo = 0.f;
+					for (int k = 2; k < D2; k += 2)
+					{
+						sume += GaussWeight[k] * *si;
+						sumo += GaussWeight[k - 1] * *si;
+						si += step;
+					}
+					linee[i] = sume * evenratio;
+					lineo[i] = sumo * oddratio;
 				}
 
-				s1 = _mm256_unpacklo_ps(sumeo, sumoo);
-				s2 = _mm256_unpackhi_ps(sumeo, sumoo);
-				if constexpr (isAdd)
+				// h filter
+				float* deptr = dest.ptr<float>(j + 0, radius);
+				float* doptr = dest.ptr<float>(j + 1, radius);
+				const float* daeptr = addsubsrc.ptr<float>(j + 0, radius);
+				const float* daoptr = addsubsrc.ptr<float>(j + 1, radius);
+				for (int i = 0; i < HEND; i += 8)
 				{
-					_mm256_storeu_ps((float*)(doptr + 2 * i + 0), _mm256_fmadd_ps(mevenoddratio, _mm256_permute2f128_ps(s1, s2, 0x20), _mm256_loadu_ps(daoptr + 2 * i + 0)));
-					_mm256_storeu_ps((float*)(doptr + 2 * i + 8), _mm256_fmadd_ps(mevenoddratio, _mm256_permute2f128_ps(s1, s2, 0x31), _mm256_loadu_ps(daoptr + 2 * i + 8)));
-				}
-				else
-				{
-					_mm256_storeu_ps((float*)(doptr + 2 * i + 0), _mm256_fnmadd_ps(mevenoddratio, _mm256_permute2f128_ps(s1, s2, 0x20), _mm256_loadu_ps(daoptr + 2 * i + 0)));
-					_mm256_storeu_ps((float*)(doptr + 2 * i + 8), _mm256_fnmadd_ps(mevenoddratio, _mm256_permute2f128_ps(s1, s2, 0x31), _mm256_loadu_ps(daoptr + 2 * i + 8)));
-				}
-			}
-			for (int i = HEND; i < hend; i++)
-			{
-				float* sie = linee + i;
-				float* sio = lineo + i;
-				float sumee = GaussWeight[0] * *sie++;
-				float sumoe = 0.f;
-				float sumeo = GaussWeight[0] * *sio++;
-				float sumoo = 0.f;
-				for (int k = 2; k < D2; k += 2)
-				{
-					sumee += GaussWeight[k] * *sie;
-					sumoe += GaussWeight[k - 1] * *sie++;
-					sumeo += GaussWeight[k] * *sio;
-					sumoo += GaussWeight[k - 1] * *sio++;
-				}
-				const int I = i << 1;
-				if constexpr (isAdd)
-				{
-					deptr[I + 0] = daeptr[I + 0] + sumee * evenratio;
-					deptr[I + 1] = daeptr[I + 1] + sumoe * oddratio;
-					doptr[I + 0] = daoptr[I + 0] + sumeo * evenratio;
-					doptr[I + 1] = daoptr[I + 1] + sumoo * oddratio;
-				}
-				else
-				{
+					float* sie = linee + i;
+					float* sio = lineo + i;
+					__m256 sumee = _mm256_mul_ps(GW[0], _mm256_loadu_ps(sie++));
+					__m256 sumoe = _mm256_setzero_ps();
+					__m256 sumeo = _mm256_mul_ps(GW[0], _mm256_loadu_ps(sio++));
+					__m256 sumoo = _mm256_setzero_ps();
+					for (int k = 2; k < D2; k += 2)
+					{
+						const __m256 msie = _mm256_loadu_ps(sie++);
+						sumee = _mm256_fmadd_ps(GW[k + 0], msie, sumee);
+						sumoe = _mm256_fmadd_ps(GW[k - 1], msie, sumoe);
+						const __m256 msio = _mm256_loadu_ps(sio++);
+						sumeo = _mm256_fmadd_ps(GW[k + 0], msio, sumeo);
+						sumoo = _mm256_fmadd_ps(GW[k - 1], msio, sumoo);
+					}
+					__m256 s1 = _mm256_unpacklo_ps(sumee, sumoe);
+					__m256 s2 = _mm256_unpackhi_ps(sumee, sumoe);
+					if constexpr (isAdd)
+					{
+						_mm256_storeu_ps((float*)(deptr + 2 * i + 0), _mm256_fmadd_ps(mevenoddratio, _mm256_permute2f128_ps(s1, s2, 0x20), _mm256_loadu_ps(daeptr + 2 * i + 0)));
+						_mm256_storeu_ps((float*)(deptr + 2 * i + 8), _mm256_fmadd_ps(mevenoddratio, _mm256_permute2f128_ps(s1, s2, 0x31), _mm256_loadu_ps(daeptr + 2 * i + 8)));
+					}
+					else
+					{
+						_mm256_storeu_ps((float*)(deptr + 2 * i + 0), _mm256_fnmadd_ps(mevenoddratio, _mm256_permute2f128_ps(s1, s2, 0x20), _mm256_loadu_ps(daeptr + 2 * i + 0)));
+						_mm256_storeu_ps((float*)(deptr + 2 * i + 8), _mm256_fnmadd_ps(mevenoddratio, _mm256_permute2f128_ps(s1, s2, 0x31), _mm256_loadu_ps(daeptr + 2 * i + 8)));
+					}
 
-					deptr[I + 0] = daeptr[I + 0] - sumee * evenratio;
-					deptr[I + 1] = daeptr[I + 1] - sumoe * oddratio;
-					doptr[I + 0] = daoptr[I + 0] - sumeo * evenratio;
-					doptr[I + 1] = daoptr[I + 1] - sumoo * oddratio;
+					s1 = _mm256_unpacklo_ps(sumeo, sumoo);
+					s2 = _mm256_unpackhi_ps(sumeo, sumoo);
+					if constexpr (isAdd)
+					{
+						_mm256_storeu_ps((float*)(doptr + 2 * i + 0), _mm256_fmadd_ps(mevenoddratio, _mm256_permute2f128_ps(s1, s2, 0x20), _mm256_loadu_ps(daoptr + 2 * i + 0)));
+						_mm256_storeu_ps((float*)(doptr + 2 * i + 8), _mm256_fmadd_ps(mevenoddratio, _mm256_permute2f128_ps(s1, s2, 0x31), _mm256_loadu_ps(daoptr + 2 * i + 8)));
+					}
+					else
+					{
+						_mm256_storeu_ps((float*)(doptr + 2 * i + 0), _mm256_fnmadd_ps(mevenoddratio, _mm256_permute2f128_ps(s1, s2, 0x20), _mm256_loadu_ps(daoptr + 2 * i + 0)));
+						_mm256_storeu_ps((float*)(doptr + 2 * i + 8), _mm256_fnmadd_ps(mevenoddratio, _mm256_permute2f128_ps(s1, s2, 0x31), _mm256_loadu_ps(daoptr + 2 * i + 8)));
+					}
+				}
+				for (int i = HEND; i < hend; i++)
+				{
+					float* sie = linee + i;
+					float* sio = lineo + i;
+					float sumee = GaussWeight[0] * *sie++;
+					float sumoe = 0.f;
+					float sumeo = GaussWeight[0] * *sio++;
+					float sumoo = 0.f;
+					for (int k = 2; k < D2; k += 2)
+					{
+						sumee += GaussWeight[k] * *sie;
+						sumoe += GaussWeight[k - 1] * *sie++;
+						sumeo += GaussWeight[k] * *sio;
+						sumoo += GaussWeight[k - 1] * *sio++;
+					}
+					const int I = i << 1;
+					if constexpr (isAdd)
+					{
+						deptr[I + 0] = daeptr[I + 0] + sumee * evenratio;
+						deptr[I + 1] = daeptr[I + 1] + sumoe * oddratio;
+						doptr[I + 0] = daoptr[I + 0] + sumeo * evenratio;
+						doptr[I + 1] = daoptr[I + 1] + sumoo * oddratio;
+					}
+					else
+					{
+
+						deptr[I + 0] = daeptr[I + 0] - sumee * evenratio;
+						deptr[I + 1] = daeptr[I + 1] - sumoe * oddratio;
+						doptr[I + 0] = daoptr[I + 0] - sumeo * evenratio;
+						doptr[I + 1] = daoptr[I + 1] - sumoo * oddratio;
+					}
 				}
 			}
 		}
+		/*
+		else
+		{
+			for (int j = radius; j < dest.rows - radius; j += 2)
+			{
+				const float* sptr = src.ptr<float>((j - radius) >> 1);
+				//v filter
+				for (int i = 0; i < WIDTH; i += 8)
+				{
+					const float* si = sptr + i;
+					__m256 sumo = _mm256_mul_ps(GW[0], _mm256_loadu_ps(si)); si += step;
+					__m256 sume = _mm256_setzero_ps();
+					for (int k = 2; k < D2; k += 2)
+					{
+						const __m256 ms = _mm256_loadu_ps(si); si += step;
+						sumo = _mm256_fmadd_ps(GW[k], ms, sume);
+						sume = _mm256_fmadd_ps(GW[k - 1], ms, sumo);
+					}
+					_mm256_storeu_ps(linee + i, _mm256_mul_ps(sume, mevenratio));
+					_mm256_storeu_ps(lineo + i, _mm256_mul_ps(sumo, moddratio));
+				}
+				for (int i = WIDTH; i < src.cols; i++)
+				{
+					const float* si = sptr + i;
+					float sume = GaussWeight[0] * *si; si += step;
+					float sumo = 0.f;
+					for (int k = 2; k < D2; k += 2)
+					{
+						sume += GaussWeight[k] * *si;
+						sumo += GaussWeight[k - 1] * *si;
+						si += step;
+					}
+					linee[i] = sume * evenratio;
+					lineo[i] = sumo * oddratio;
+				}
+
+				// h filter
+				float* deptr = dest.ptr<float>(j + 0, radius);
+				float* doptr = dest.ptr<float>(j + 1, radius);
+				const float* daeptr = addsubsrc.ptr<float>(j + 0, radius);
+				const float* daoptr = addsubsrc.ptr<float>(j + 1, radius);
+				for (int i = 0; i < HEND; i += 8)
+				{
+					float* sie = linee + i;
+					float* sio = lineo + i;
+					__m256 sumee = _mm256_mul_ps(GW[0], _mm256_loadu_ps(sie++));
+					__m256 sumoe = _mm256_setzero_ps();
+					__m256 sumeo = _mm256_mul_ps(GW[0], _mm256_loadu_ps(sio++));
+					__m256 sumoo = _mm256_setzero_ps();
+					for (int k = 2; k < D2; k += 2)
+					{
+						const __m256 msie = _mm256_loadu_ps(sie++);
+						sumee = _mm256_fmadd_ps(GW[k + 0], msie, sumee);
+						sumoe = _mm256_fmadd_ps(GW[k - 1], msie, sumoe);
+						const __m256 msio = _mm256_loadu_ps(sio++);
+						sumeo = _mm256_fmadd_ps(GW[k + 0], msio, sumeo);
+						sumoo = _mm256_fmadd_ps(GW[k - 1], msio, sumoo);
+					}
+					__m256 s1 = _mm256_unpacklo_ps(sumee, sumoe);
+					__m256 s2 = _mm256_unpackhi_ps(sumee, sumoe);
+					if constexpr (isAdd)
+					{
+						_mm256_storeu_ps((float*)(deptr + 2 * i + 0), _mm256_fmadd_ps(mevenoddratio, _mm256_permute2f128_ps(s1, s2, 0x20), _mm256_loadu_ps(daeptr + 2 * i + 0)));
+						_mm256_storeu_ps((float*)(deptr + 2 * i + 8), _mm256_fmadd_ps(mevenoddratio, _mm256_permute2f128_ps(s1, s2, 0x31), _mm256_loadu_ps(daeptr + 2 * i + 8)));
+					}
+					else
+					{
+						_mm256_storeu_ps((float*)(deptr + 2 * i + 0), _mm256_fnmadd_ps(mevenoddratio, _mm256_permute2f128_ps(s1, s2, 0x20), _mm256_loadu_ps(daeptr + 2 * i + 0)));
+						_mm256_storeu_ps((float*)(deptr + 2 * i + 8), _mm256_fnmadd_ps(mevenoddratio, _mm256_permute2f128_ps(s1, s2, 0x31), _mm256_loadu_ps(daeptr + 2 * i + 8)));
+					}
+
+					s1 = _mm256_unpacklo_ps(sumeo, sumoo);
+					s2 = _mm256_unpackhi_ps(sumeo, sumoo);
+					if constexpr (isAdd)
+					{
+						_mm256_storeu_ps((float*)(doptr + 2 * i + 0), _mm256_fmadd_ps(mevenoddratio, _mm256_permute2f128_ps(s1, s2, 0x20), _mm256_loadu_ps(daoptr + 2 * i + 0)));
+						_mm256_storeu_ps((float*)(doptr + 2 * i + 8), _mm256_fmadd_ps(mevenoddratio, _mm256_permute2f128_ps(s1, s2, 0x31), _mm256_loadu_ps(daoptr + 2 * i + 8)));
+					}
+					else
+					{
+						_mm256_storeu_ps((float*)(doptr + 2 * i + 0), _mm256_fnmadd_ps(mevenoddratio, _mm256_permute2f128_ps(s1, s2, 0x20), _mm256_loadu_ps(daoptr + 2 * i + 0)));
+						_mm256_storeu_ps((float*)(doptr + 2 * i + 8), _mm256_fnmadd_ps(mevenoddratio, _mm256_permute2f128_ps(s1, s2, 0x31), _mm256_loadu_ps(daoptr + 2 * i + 8)));
+					}
+				}
+				for (int i = HEND; i < hend; i++)
+				{
+					float* sie = linee + i;
+					float* sio = lineo + i;
+					float sumee = GaussWeight[0] * *sie++;
+					float sumoe = 0.f;
+					float sumeo = GaussWeight[0] * *sio++;
+					float sumoo = 0.f;
+					for (int k = 2; k < D2; k += 2)
+					{
+						sumee += GaussWeight[k] * *sie;
+						sumoe += GaussWeight[k - 1] * *sie++;
+						sumeo += GaussWeight[k] * *sio;
+						sumoo += GaussWeight[k - 1] * *sio++;
+					}
+					const int I = i << 1;
+					if constexpr (isAdd)
+					{
+						deptr[I + 0] = daeptr[I + 0] + sumee * evenratio;
+						deptr[I + 1] = daeptr[I + 1] + sumoe * oddratio;
+						doptr[I + 0] = daoptr[I + 0] + sumeo * evenratio;
+						doptr[I + 1] = daoptr[I + 1] + sumoo * oddratio;
+					}
+					else
+					{
+
+						deptr[I + 0] = daeptr[I + 0] - sumee * evenratio;
+						deptr[I + 1] = daeptr[I + 1] - sumoe * oddratio;
+						doptr[I + 0] = daoptr[I + 0] - sumeo * evenratio;
+						doptr[I + 1] = daoptr[I + 1] - sumoo * oddratio;
+					}
+				}
+			}
+		}
+		*/
 		_mm_free(linee);
 		_mm_free(lineo);
 		_mm_free(GW);

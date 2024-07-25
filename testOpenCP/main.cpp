@@ -198,9 +198,121 @@ void testStereo()
 	//testCVStereoSGBM(); return 0;
 }
 
+class GridImage
+{
+	cv::Size gridSize;
+	int gridPixel;
+	int lineWidth = 1;
+	int cellSize = 0;
+	cv::Scalar backgroundColor = COLOR_GRAY200;
+	cv::Scalar gridColor = COLOR_BLACK;
+
+	void setGridImage()
+	{
+		for (int j = 0; j < gridSize.height; j++)
+		{
+			for (int i = 0; i < gridSize.width; i++)
+			{
+				rectangle(image, Rect(i * cellSize, j * cellSize, cellSize, cellSize), gridColor, lineWidth);
+			}
+		}
+	}
+public:
+	cv::Mat image;
+
+	void overlayKernelColor(int i, int j, int diameter, Scalar color, double ratio)
+	{
+		const int x = i * cellSize;
+		const int y = j * cellSize;
+		const int w = cellSize * diameter;
+		if (x<0 || y<0 || x + w>image.cols || y + w>image.rows)
+		{
+			cout << "out of range" << endl;
+			return;
+		}
+
+		Mat buff = image.clone();
+		rectangle(buff, Rect(x, y, w, w), color, cv::FILLED);
+		alphaBlend(buff, image, ratio, image);
+	}
+
+	void overlayKernelCenterColor(int i, int j, int radius, Scalar color, double ratio)
+	{
+		const int x = (i - radius) * cellSize;
+		const int y = (j - radius) * cellSize;
+		const int w = cellSize * (2 * radius + 1);
+		if (x<0 || y<0 || x + w>image.cols || y + w>image.rows)
+		{
+			cout << "out of range" << endl;
+			return;
+		}
+
+		Mat buff = image.clone();
+		rectangle(buff, Rect(x, y, w, w), color, cv::FILLED);
+		alphaBlend(buff, image, ratio, image);
+	}
+
+	void setGridColor(int i, int j, Scalar color, bool isFill)
+	{
+		if (isFill) rectangle(image, Rect(i * cellSize, j * cellSize, cellSize, cellSize), color, cv::FILLED);
+		else rectangle(image, Rect(i * cellSize, j * cellSize, cellSize, cellSize), color, lineWidth);
+	}
+
+	GridImage(Size gridsize, int gridpixel) : gridSize(gridsize), gridPixel(gridpixel)
+	{
+		cellSize = gridPixel + 2 * lineWidth;
+		image.create(Size(gridSize.width * cellSize, gridSize.height * cellSize), CV_8UC4);
+		image.setTo(backgroundColor);
+	}
+	void show(string wname)
+	{
+		setGridImage();
+		imshow(wname, image);
+	}
+};
+void testGridImage()
+{
+	int gs = 24;
+	int key = 0;
+	string wname = "grid";
+	namedWindow(wname);
+	int r = 10; createTrackbar("r", wname, &r, 10);
+	int x = 0; createTrackbar("x", wname, &x, 6);
+	int y = 0; createTrackbar("y", wname, &y, 6);
+	while (key != 'q')
+	{
+		GridImage gi(Size(gs, gs), 32);
+		for (int j = 0; j < gs; j++)
+		{
+			for (int i = 0; i < gs; i++)
+			{
+				if (i % 2 == 0 && j % 2 == 0) gi.setGridColor(i, j, COLOR_ORANGE, true);
+			}
+		}
+		gi.overlayKernelColor(gs / 2 - x, gs / 2 - y, r, Scalar(100, 200, 100), 0.3);
+		gi.show(wname);
+		key = waitKey(1);
+	}
+}
 int main(int argc, char** argv)
 {
-	
+	Mat a = imread("img/1.png");
+	Mat b = imread("img/2.png");
+	int step = 16;
+	for (int j = 0; j < a.rows; j+=16)
+	{
+		line(a, Point(0, j), Point(a.cols, j), COLOR_WHITE, 1);
+		line(b, Point(0, j), Point(a.cols, j), COLOR_WHITE, 1);
+	}
+	for (int i = 0; i < a.cols; i += 16)
+	{
+		line(a, Point(i, 0), Point(i, a.rows), COLOR_WHITE, 1);
+		line(b, Point(i, 0), Point(i, a.rows), COLOR_WHITE, 1);
+	}
+	print_matinfo(a);
+	guiAlphaBlend(a, b);
+	testGridImage();
+
 	/*
 	cp::KMeans kmcluster;
 
