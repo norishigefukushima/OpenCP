@@ -2118,15 +2118,20 @@ STATIC_INLINE float _mm256_reduceadd_ps(__m256 src)
 
 STATIC_INLINE int _mm256_reduceadd_epi32(__m256i src)
 {
-	int* data = (int*)_mm_malloc(sizeof(int) * 8, AVX_ALIGN);
+	/*int* data = (int*)_mm_malloc(sizeof(int) * 8, AVX_ALIGN);
 	_mm256_store_si256((__m256i*)data, src);
 	int ret = data[0];
 	for (int i = 1; i < 8; i++)
 	{
 		ret += data[i];
 	}
-	_mm_free(data);
-	return ret;
+	_mm_free(data);*/
+	__m256i ret = _mm256_shuffle_epi32(src, _MM_SHUFFLE(2, 3, 0, 1));
+	ret = _mm256_add_epi32(src, ret);
+	__m256i ret2 = _mm256_shuffle_epi32(ret, _MM_SHUFFLE(1, 0, 3, 2));
+	ret = _mm256_add_epi32(ret, ret2);
+	return ret.m256i_i32[0]+ ret.m256i_i32[4];
+	//return _mm256_cvtsi256_si32(_mm256_add_epi32(ret, _mm256_permute2x128_si256(ret, ret, 1)));
 }
 
 STATIC_INLINE float _mm256_reducemax_ps(__m256 src)
