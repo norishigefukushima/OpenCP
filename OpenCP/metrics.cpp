@@ -972,11 +972,42 @@ namespace cp
 		cv::split(src, im);
 
 		double ret = 0.0;
+		for (int c = 0; c < src.channels(); c++)
+		{
+			double minv, maxv;
+			cv::minMaxLoc(im[c], &minv, &maxv);
+			int minvi = (int)minv;
+			const int range = (int)ceil(maxv - minv) + 1;
+			AutoBuffer<int> hist(range);
+			for (int i = 0; i < range; i++) hist[i] = 0;
+
+			const short* s = im[c].ptr<short>();
+			for (int i = 0; i < im[c].size().area(); i++)
+			{
+				hist[s[i]-minvi]++;
+			}
+			const double invsum = 1.0/im[c].size().area();
+
+			for (int i = 0; i < range; i++)
+			{
+				const double v = (double)hist[i] * invsum;
+				if (v != 0) ret -= v * log2(v);
+			}
+		}
+		return ret;
+	}
+
+	double calcEntropy16U(Mat& src, Mat& mask)
+	{
+		vector<Mat> im;
+		cv::split(src, im);
+
+		double ret = 0.0;
 		for (int i = 0; i < src.channels(); i++)
 		{
 			cv::Mat hist;
 			const int hdims[] = { USHRT_MAX + 1 };
-			const float hranges[] = { SHRT_MIN, SHRT_MAX };
+			const float hranges[] = { 0, USHRT_MAX };
 			const float* ranges[] = { hranges };
 
 			cv::calcHist(&im[i], 1, 0, mask, hist, 1, hdims, ranges);
@@ -1033,7 +1064,7 @@ namespace cp
 
 	double getEntropy(cv::InputArray src, cv::InputArray mask_)
 	{
-		CV_Assert(src.depth() == CV_8U || src.depth() == CV_16S);
+		CV_Assert(src.depth() == CV_8U || src.depth() == CV_16S || src.depth() == CV_16U);
 
 		Mat mask = mask_.getMat();
 		Mat src_ = src.getMat();
@@ -1045,6 +1076,10 @@ namespace cp
 		else if (src.depth() == CV_16S)
 		{
 			ret = calcEntropy16S(src_, mask);
+		}
+		else if (src.depth() == CV_16U)
+		{
+			ret = calcEntropy16U(src_, mask);
 		}
 		else
 		{
