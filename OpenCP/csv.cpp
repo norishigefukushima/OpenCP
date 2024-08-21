@@ -114,8 +114,8 @@ namespace cp
 		ret = _fseeki64(fp, 0, SEEK_SET);*/
 
 		int countSep = 0;
-		cv::AutoBuffer<char> str(INT_MAX);
-		fgets(str, INT_MAX, fp);
+		cv::AutoBuffer<char> str(CSV_READLINE_MAX);
+		fgets(str, CSV_READLINE_MAX, fp);
 		size_t size = strlen(str);
 
 		for (int i = 0; i < size; i++)
@@ -128,45 +128,58 @@ namespace cp
 		width = countSep + 1;
 	}
 
-	void CSV::readDataLineByLine()
+	int CSV::readDataLineByLine(const bool isFirstString)
 	{
-		char vv[1024];
-		char str[1024];
+		char* cell = (char*)_mm_malloc(sizeof(char) * CSV_READLINE_MAX, 32);
+		char* str = (char*)_mm_malloc(sizeof(char) * CSV_READLINE_MAX, 32);
+
 		size_t line = 0;
-		vector<double> v;
-		while (fgets(str, 1024, fp) != NULL)
+		vector<double> localvec;
+		while (fgets(str, CSV_READLINE_MAX, fp) != NULL)
 		{
+			bool isFirst = true;
 			size_t size = strlen(str);
 			int c = 0;
 			for (size_t i = 0; i < size; i++)
 			{
 				if (str[i] == ',')
 				{
-					vv[c] = '\0';
-					double d = atof(vv);
+					cell[c] = '\0';
 					c = 0;
-					v.push_back(d);
+					if (isFirst && isFirstString)
+					{
+						firstlabel.push_back(string(cell));
+					}
+					else
+					{
+						double d = atof(cell);
+						localvec.push_back(d);
+					}
+					isFirst = false;
 				}
 				else if (str[i] == '\n')
 				{
-					vv[c] = '\0';
-					double d = atof(vv);
+					cell[c] = '\0';
+					double d = atof(cell);
 					c = 0;
-					v.push_back(d);
+					localvec.push_back(d);
 
-					data.push_back(v);
-					v.clear();
+					data.push_back(localvec);
+					localvec.clear();
 					break;
 				}
 				else
 				{
-					vv[c] = str[i];
+					cell[c] = str[i];
 					c++;
 				}
 			}
 			line++;
 		}
-		cout << "line " << line << endl;
+		//cout << "num lines " << line << endl;
+		_mm_free(cell);
+		_mm_free(str);
+		return line;
 	}
 
 	void CSV::readData()
@@ -196,7 +209,7 @@ namespace cp
 		}
 
 		size_t ret = fread(str, sizeof(char), fileSize, fp);
-		cout << "ret fread/fileSize: "<<ret << "/"<<fileSize<<"| "<<fileSize-ret << endl;
+		cout << "ret fread/fileSize: " << ret << "/" << fileSize << "| " << fileSize - ret << endl;
 		/*for (int i = 0; i < 20; i++)
 		{
 			cout << str[i] << " ";
@@ -204,7 +217,7 @@ namespace cp
 		 cout<< endl;
 		*/
 		int c = 0;
-		vector<double> v;
+		vector<double> localvec;
 		//int start = 3;//with BOM
 		int start = 0;//without BOM
 		for (size_t i = start; i < ret; i++)
@@ -219,7 +232,7 @@ namespace cp
 					cout << d << endl; getchar();
 				}*/
 				c = 0;
-				v.push_back(d);
+				localvec.push_back(d);
 			}
 			else if (str[i] == '\n')
 			{
@@ -227,21 +240,21 @@ namespace cp
 				localBuffer[c] = '\0';
 				const double d = atof(localBuffer);
 				c = 0;
-				v.push_back(d);
+				localvec.push_back(d);
 
 				/*for(int n=0;n<v.size();n++)
 				cout<<v[n]<<",";
 				cout<<endl;*/
 
-				data.push_back(v);
-				v.clear();
+				data.push_back(localvec);
+				localvec.clear();
 			}
 			else if (i == ret - 1)
 			{
 				localBuffer[c] = '\0';
 				const double d = atof(localBuffer);
-				v.push_back(d);
-				data.push_back(v);
+				localvec.push_back(d);
+				data.push_back(localvec);
 			}
 			else
 			{
@@ -249,14 +262,14 @@ namespace cp
 				c++;
 			}
 		}
-		
+
 		delete[] str;
 	}
 
 	cv::Mat CSV::getMat()
 	{
 		readData();
-		cv::Mat_<double> ret(data.size(), data[0].size());
+		cv::Mat_<double> ret((int)data.size(), (int)data[0].size());
 		for (int j = 0; j < data.size(); j++)
 		{
 			for (int i = 0; i < data[0].size(); i++)
@@ -267,6 +280,8 @@ namespace cp
 		return ret;
 	}
 
+	//file open then read header if true
+	// if(isClear==true) clear csv files
 	void CSV::init(string name, bool isWrite, bool isClear, bool isHeader)
 	{
 		isTop = true;
@@ -304,8 +319,7 @@ namespace cp
 			}
 			else
 			{
-				//if(isHeader) 
-				readHeader();
+				if (isHeader) readHeader();
 			}
 		}
 	}

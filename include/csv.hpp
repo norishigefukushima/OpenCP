@@ -3,6 +3,7 @@
 
 namespace cp
 {
+	constexpr int CSV_READLINE_MAX = USHRT_MAX;
 	class CP_EXPORT CSV
 	{
 		FILE* fp = NULL;
@@ -14,6 +15,7 @@ namespace cp
 		std::vector<double> argMin;
 		std::vector<double> argMax;
 		std::vector<std::vector<double>> data;
+		std::vector<std::string> firstlabel;
 		std::vector<bool> filter;
 		int width;
 		void setSeparator(bool flag);//true:","comma, false, " "space
@@ -24,11 +26,11 @@ namespace cp
 		void readHeader();
 		void readData();
 		cv::Mat getMat();
-		void readDataLineByLine();
+		int readDataLineByLine(const bool isFirstString = false);//return number of lines
 
 		void init(std::string name, bool isWrite, bool isClear, bool isHeader);
 		CSV();
-		CSV(std::string name, bool isWrite = true, bool isClear = true, bool isHeader=true);
+		CSV(std::string name, bool isWrite = true, bool isClear = true, bool isHeader = true);
 		~CSV();
 		void write(std::string v);
 		void write(double v);
