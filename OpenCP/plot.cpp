@@ -893,6 +893,15 @@ namespace cp
 		foregroundIndex = plotnum;
 	}
 
+	void Plot::setFontSize(int fontSiz)
+	{
+		this->fontSize = fontSize;
+	}
+
+	void Plot::setFontSize2(int fontSize2)
+	{
+		this->fontSize2 = fontSize2;
+	}
 
 	void Plot::push_back_HLine(double y, int plotIndex)
 	{
@@ -1358,7 +1367,7 @@ namespace cp
 		int height = (int)(0.8 * keyImage.rows);
 		for (int i = 0; i < num; i++)
 		{
-			if (pinfo[i].data.size() == 0)continue;
+			if (pinfo[i].data.size() == 0) continue;
 
 			vector<Point2d> data;
 			data.push_back(Point2d(keyImage.cols/3.0*4.0, keyImage.rows - (i + 1) * step));
@@ -1983,9 +1992,9 @@ namespace cp
 		return int(length / (fontSize * fontSpace)) + 1;
 	}
 
-	//1ˆÈ‰º‚Í•‚“®¬”“_
-	//ticks‚ª2ŒÂ‚È‚çmin max
-	//ticks‚ª3ŒÂ‚È‚çmin max
+	//1ï¿½È‰ï¿½ï¿½Í•ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½_
+	//ticksï¿½ï¿½2ï¿½Â‚È‚ï¿½min max
+	//ticksï¿½ï¿½3ï¿½Â‚È‚ï¿½min max
 	class GraphTicksGenerator
 	{
 		double minv;
