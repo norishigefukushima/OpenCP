@@ -53,6 +53,7 @@ namespace cp
 		double ymax_data;//y max of data
 		double ymin_data;//y min of data
 
+		bool isWideKey = false;
 		int keyPosition = RIGHT_TOP;
 
 		bool isZeroCross;
@@ -154,6 +155,7 @@ namespace cp
 		};
 		*/
 		void setKey(const KEY key_method);
+		void setWideKey(bool flag);
 		void setXLabel(std::string xlabel);
 		void setYLabel(std::string ylabel);
 		void setXLabelGreekLetter(std::string greeksymbol, std::string subscript);
@@ -222,7 +224,7 @@ namespace cp
 		void plotMat(cv::InputArray src, const std::string name = "Plot", bool isWait = true, const std::string gnuplotpath = "gnuplot.exe");
 		void plot(const std::string name = "Plot", bool isWait = true, const std::string gnuplotpath = "C:/bin/gnuplot/bin/gnuplot.exe", const std::string message = "");
 
-		void generateKeyImage(int num);
+		void generateKeyImage(int num, bool isWideKey);
 
 		void saveDatFile(const std::string name, const bool isPrint = true);
 

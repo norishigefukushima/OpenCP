@@ -204,7 +204,8 @@ namespace cp
 			getImageLine(src[i], v[i], line_height, color);
 			p.push_back(v[i], i);
 		}
-		p.generateKeyImage((int)src.size());
+		bool isWideKey = false;
+		p.generateKeyImage((int)src.size(), isWideKey);
 		p.plotData();
 		p.render.copyTo(dest);
 	}

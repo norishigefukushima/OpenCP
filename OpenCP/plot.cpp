@@ -789,6 +789,11 @@ namespace cp
 		keyPosition = (int)key;
 	}
 
+	void Plot::setWideKey(bool flag)
+	{
+		this->isWideKey = flag;
+	}
+
 	void Plot::setXLabel(string xlabel)
 	{
 		isLabelXGreekLetter = false;
@@ -1340,13 +1345,14 @@ namespace cp
 		}
 	}
 
-	void Plot::generateKeyImage(int num)
+	void Plot::generateKeyImage(int num, bool isWideKey)
 	{
 		const int step = 24;
 		const int offset = 3;
 
 		keyImage.release();
-		keyImage.create(Size(256, step * (num + 2) + offset), CV_8UC3);
+		if (isWideKey) keyImage.create(Size(256 * 2, step * (num + 2) + offset), CV_8UC3);
+		else keyImage.create(Size(256, step * (num + 2) + offset), CV_8UC3);
 		keyImage.setTo(background_color);
 
 		int height = (int)(0.8 * keyImage.rows);
@@ -1355,7 +1361,7 @@ namespace cp
 			if (pinfo[i].data.size() == 0)continue;
 
 			vector<Point2d> data;
-			data.push_back(Point2d(192.0, keyImage.rows - (i + 1) * step));
+			data.push_back(Point2d(keyImage.cols/3.0*4.0, keyImage.rows - (i + 1) * step));
 			data.push_back(Point2d(keyImage.cols - step, keyImage.rows - (i + 1) * step));
 
 			plotGraph(keyImage, data, 0, keyImage.cols, 0, keyImage.rows, pinfo[i].color, pinfo[i].symbolType, pinfo[i].lineType, pinfo[i].lineWidth);
@@ -1560,7 +1566,7 @@ namespace cp
 
 		setMouseCallback(wname, (MouseCallback)guiPreviewMousePlot, (void*)&pt);
 
-		generateKeyImage(data_labelmax);
+		generateKeyImage(data_labelmax, isWideKey);
 
 		computeDataMaxMin();
 		if (!isWait) setIsDrawMousePosition(false);
