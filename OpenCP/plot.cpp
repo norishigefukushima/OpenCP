@@ -888,6 +888,15 @@ namespace cp
 		foregroundIndex = plotnum;
 	}
 
+	void Plot::setFontSize(int fontSiz)
+	{
+		this->fontSize = fontSize;
+	}
+
+	void Plot::setFontSize2(int fontSize2)
+	{
+		this->fontSize2 = fontSize2;
+	}
 
 	void Plot::push_back_HLine(double y, int plotIndex)
 	{
@@ -1352,11 +1361,13 @@ namespace cp
 		int height = (int)(0.8 * keyImage.rows);
 		for (int i = 0; i < num; i++)
 		{
-			if (pinfo[i].data.size() == 0)continue;
+			if (pinfo[i].data.size() == 0) continue;
 
 			vector<Point2d> data;
-			data.push_back(Point2d(192.0, keyImage.rows - (i + 1) * step));
-			data.push_back(Point2d(keyImage.cols - step, keyImage.rows - (i + 1) * step));
+			double linest = 192.0;
+			double lineed = (double)(keyImage.cols - step);
+			data.push_back(Point2d(linest, keyImage.rows - (i + 1) * step));
+			data.push_back(Point2d(lineed, keyImage.rows - (i + 1) * step));
 
 			plotGraph(keyImage, data, 0, keyImage.cols, 0, keyImage.rows, pinfo[i].color, pinfo[i].symbolType, pinfo[i].lineType, pinfo[i].lineWidth);
 			//putText(keyImage, pinfo[i].keyname, Point(0, (i + 1) * step + 3), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, pinfo[i].color);

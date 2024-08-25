@@ -211,7 +211,8 @@ namespace cp
 
 		void setPlotTitle(int plotnum, std::string name);
 		void setPlotForeground(int plotnum);
-
+		void setFontSize(int fontSize = 20);
+		void setFontSize2(int fontSize2 = 18);
 		void setIsDrawMousePosition(const bool flag);
 
 
