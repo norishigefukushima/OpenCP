@@ -94,7 +94,7 @@ namespace cp
 		}
 
 		// add a last fake frame to signal the last duration
-		WebPAnimEncoderAdd(enc, NULL, timems_per_frame* (int)src.size(), NULL);
+		WebPAnimEncoderAdd(enc, NULL, timems_per_frame * (int)src.size(), NULL);
 
 		WebPData webp_data = { 0 };
 		WebPDataInit(&webp_data);
@@ -118,5 +118,75 @@ namespace cp
 		WebPDataClear(&webp_data);
 		WebPMuxDelete(mux);
 		return ret;
+	}
+
+	int imencodeWebP(const Mat& src, vector<uchar>& buff, const vector<int>& parameters)
+	{
+		const int width = src.cols;
+		const int height = src.rows;
+		uint8_t* rgb_data = src.data;
+
+		// WebP設定
+		WebPConfig config;
+		WebPPicture picture;
+		WebPMemoryWriter writer;
+
+		if (!WebPConfigInit(&config) || !WebPPictureInit(&picture))
+		{
+			fprintf(stderr, "WebP初期化に失敗しました\n");
+			free(rgb_data);
+			return 1;
+		}
+
+		int color = 0;
+		for (int n = 0; n < parameters.size(); n += 2)
+		{
+			if (parameters[n] == IMWRITE_WEBP_QUALITY) config.quality = parameters[n + 1];
+			if (parameters[n] == IMWRITE_WEBP_METHOD) config.method = parameters[n + 1];
+			if (parameters[n] == IMWRITE_WEBP_COLORSPACE) color = parameters[n + 1];
+		}
+
+		picture.width = width;
+		picture.height = height;
+		if (color == 0 || color == 1)
+		{
+			picture.use_argb = 0;  // ARGB使用
+			if (color == 1) config.use_sharp_yuv = 1;
+			WebPPictureImportBGR(&picture, rgb_data, width * 3);
+			//WebPPictureARGBToYUVA(&picture, WebPEncCSP::WEBP_YUV420);
+		}
+		else
+		{
+			picture.use_argb = 1;  // ARGB使用
+			WebPPictureImportBGR(&picture, rgb_data, width * 3);
+		}
+
+		//std::cout << color << "," << picture.colorspace<<","<<config.use_sharp_yuv << std::endl;
+		// メモリへの書き出しをセットアップ
+		WebPMemoryWriterInit(&writer);
+		picture.writer = WebPMemoryWrite;
+		picture.custom_ptr = &writer;
+
+		// 圧縮
+		if (!WebPEncode(&config, &picture))
+		{
+			fprintf(stderr, "圧縮に失敗しました: %s\n", WebPEncodingError(picture.error_code));
+			WebPPictureFree(&picture);
+			free(rgb_data);
+			return 1;
+		}
+
+		// メモリに圧縮されたデータが入っているので、ここでファイルに保存したり、他の処理を行ったりできます
+		buff.resize(writer.size);
+		for (int i = 0; i < writer.size; i++)
+		{
+			buff[i] = writer.mem[i];
+		}
+		// メモリの解放
+		WebPPictureFree(&picture);
+		WebPMemoryWriterClear(&writer);
+
+		return 0;
+
 	}
 }

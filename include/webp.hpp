@@ -12,4 +12,5 @@ namespace cp
 
 	//return writting data size
 	CP_EXPORT int imwriteAnimationWebp(std::string name, std::vector<cv::Mat>& src, const std::vector<int>& parameters = std::vector<int>());
+	CP_EXPORT int imencodeWebP(const cv::Mat& src, std::vector<uchar>& buff, const std::vector<int>& parameters);
 }
