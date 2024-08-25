@@ -13,7 +13,7 @@
 #define print_debug6(a, b, c, d, e, f)			std::cout << #a << ": " << a <<", "<< #b << ": " << b <<", "<< #c << ": " << c <<", "<< #d << ": " << d <<", "<< #e << ": " << e <<", "<< #f << ": " << f << std::endl;
 #define print_debug7(a, b, c, d, e, f, g)		std::cout << #a << ": " << a <<", "<< #b << ": " << b <<", "<< #c << ": " << c <<", "<< #d << ": " << d <<", "<< #e << ": " << e <<", "<< #f << ": " << f << ", "<< #g << ": " << g << std::endl;
 #define print_debug8(a, b, c, d, e, f, g, h)	std::cout << #a << ": " << a <<", "<< #b << ": " << b <<", "<< #c << ": " << c <<", "<< #d << ": " << d <<", "<< #e << ": " << e <<", "<< #f << ": " << f << ", "<< #g << ": " << g <<", "<< #h << ": " << h << std::endl;
-#define print_debug9(a, b, c, d, e, f, g, h, i)	std::cout << #a << ": " << a <<", "<< #b << ": " << b <<", "<< #c << ": " << c <<", "<< #d << ": " << d <<", "<< #e << ": " << e <<", "<< #f << ": " << f << ", "<< #g << ": " << g <<", "<< #h << ": " << h << #i << ": " << i << std::endl;
+#define print_debug9(a, b, c, d, e, f, g, h, i)	std::cout << #a << ": " << a <<", "<< #b << ": " << b <<", "<< #c << ": " << c <<", "<< #d << ": " << d <<", "<< #e << ": " << e <<", "<< #f << ": " << f << ", "<< #g << ": " << g <<", "<< #h << ": " << h <<", "<< #i << ": " << i << std::endl;
 
 inline void print_mat_format(cv::Mat& src, std::string mes = "", std::string format = "%8.2f ")
 {
@@ -287,7 +287,7 @@ namespace cp
 
 	inline std::string getBorderName(int borderType)
 	{
-		std::string ret="";
+		std::string ret = "";
 		switch (borderType)
 		{
 		case cv::BORDER_CONSTANT:		ret = "BORDER_CONSTANT"; break;
