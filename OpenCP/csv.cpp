@@ -301,6 +301,10 @@ namespace cp
 				filename = n;
 				fp = fopen(n.c_str(), "w");
 			}
+			else
+			{
+				cout << "file open error " << name << endl;
+			}
 		}
 		else
 		{
