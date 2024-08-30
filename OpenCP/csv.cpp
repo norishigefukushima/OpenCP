@@ -300,11 +300,12 @@ namespace cp
 				string n = name + "(1)";
 				filename = n;
 				fp = fopen(n.c_str(), "w");
+				if (fp == NULL)
+				{
+					cout << "file open error " << name << endl;
+				}
 			}
-			else
-			{
-				cout << "file open error " << name << endl;
-			}
+
 		}
 		else
 		{
