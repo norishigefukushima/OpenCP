@@ -984,9 +984,9 @@ namespace cp
 			const short* s = im[c].ptr<short>();
 			for (int i = 0; i < im[c].size().area(); i++)
 			{
-				hist[s[i]-minvi]++;
+				hist[s[i] - minvi]++;
 			}
-			const double invsum = 1.0/im[c].size().area();
+			const double invsum = 1.0 / im[c].size().area();
 
 			for (int i = 0; i < range; i++)
 			{
@@ -1121,6 +1121,8 @@ namespace cp
 		}
 	}
 
+	//dx*dx+dy*dy
+	//[+1 0 -1]*1/3
 	void gradientSquarePrewitt32F(InputArray ref, OutputArray dst)
 	{
 		dst.create(ref.size(), ref.type());
@@ -1486,98 +1488,166 @@ namespace cp
 	}
 
 	//mean deviation similarity index(MDSI)
-	cv::Scalar MDSI(InputArray ref, InputArray deg)
+	void cvtColorOpponentSplit32F(Mat& src, vector<Mat>& vdst)
 	{
-		const double c = 170.f;
-		const double alpha = 0.5;
-		//const bool isUseAdditonalMasking = true;
-		const bool isUseAdditonalMasking = false;
+		// color space
+		cv::Mat mat(3, 3, CV_32F);
+		mat.at<float>(0, 2) = +0.2989f;
+		mat.at<float>(0, 1) = +0.5870f;
+		mat.at<float>(0, 0) = +0.1140f;
+		mat.at<float>(1, 2) = +0.30f;
+		mat.at<float>(1, 1) = +0.04f;
+		mat.at<float>(1, 0) = -0.35f;
+		mat.at<float>(2, 2) = +0.34f;
+		mat.at<float>(2, 1) = -0.60f;
+		mat.at<float>(2, 0) = +0.17f;
+		Mat sf = cp::convert(src, CV_32F);
+		transform(sf, sf, mat);
+		split(sf, vdst);
+	}
 
-		Mat gradientRef;
-		Mat gradientDeg;
-		Mat ref32 = cp::convert(ref, CV_32F);
-		Mat deg32 = cp::convert(deg, CV_32F);
-		resize(ref32, ref32, Size(), 0.5, 0.5, INTER_AREA);
-		resize(deg32, deg32, Size(), 0.5, 0.5, INTER_AREA);
-		Mat ave32, gradientAve;
-		addWeighted(ref32, 0.5f, deg32, 0.5f, 0.f, ave32);
-
-		gradientSquarePrewitt32F(ref32, gradientRef);
-		gradientSquarePrewitt32F(deg32, gradientDeg);
-		gradientSquarePrewitt32F(ave32, gradientAve);
-		//getGradient<float>(ref32, gradientRef);
-		//getGradient<float>(deg32, gradientDeg);
-		//getGradient<float>(ave32, gradientAve);
-
-		const int size = deg32.size().area();
-		float* r = gradientRef.ptr<float>();
-		float* d = gradientDeg.ptr<float>();
-		float* a = gradientAve.ptr<float>();
-		Mat qm(deg32.size(), CV_32F);
-		float* dst = qm.ptr<float>();
-
-		if (isUseAdditonalMasking)
+	double getMADPoolongQuarter(Mat& map)
+	{
+		Mat tmp(map.size(), CV_32F);
+		double ret = 0.0;
+		const float* s = map.ptr<float>();
+		float* t = tmp.ptr<float>();
+		for (int i = 0; i < map.size().area(); i++)
 		{
-			for (int i = 0; i < size; i++)
+			float v = sqrt(s[i]);
+			v = sqrt(v);
+			t[i] = v;
+			ret += v;
+		}
+		const float m = ret / map.size().area();
+
+		ret = 0.0;
+		for (int i = 0; i < map.size().area(); i++)
+		{
+			ret += abs(t[i] - m);
+		}
+
+		ret = ret / map.size().area();
+		ret = sqrt(ret);
+		ret = sqrt(ret);
+		return ret;
+	}
+
+	double getMDSI(InputArray ref, InputArray deg, const bool isDownsample)
+	{
+		//almost c_3 = 4c_1 = 10c_2
+		const float C1 = 140.f;
+		const float C2 = 55.f;
+		const float C3 = 550.f;
+		const float alpha = 0.6f;
+		Mat R, D;
+		if (isDownsample)
+		{
+			const int length = max(ref.size().width, ref.size().height);
+			if (length > 256)
 			{
-				const float v_rd = sqrt(r[i] * d[i]);
-				float numerator = (2.f - alpha) * v_rd + c;
-				float denominator = r[i] + d[i] - alpha * v_rd + c;
-				float ret = numerator / denominator;
-				const float v_da = sqrt(d[i] * a[i]);
-				numerator = (2.f - alpha) * v_da + c;
-				denominator = d[i] + a[i] - alpha * v_da + c;
-				ret += numerator / denominator;
-				const float v_ra = sqrt(r[i] * a[i]);
-				numerator = (2.f - alpha) * v_ra + c;
-				denominator = r[i] + a[i] - alpha * v_ra + c;
-				ret -= numerator / denominator;
-				dst[i] = ret;
+				if (ref.size().width > ref.size().height)
+				{
+					const int h = ref.size().height * 256.0 / double(ref.size().width);
+					resize(ref, R, Size(256, h), 0.0, 0.0, INTER_AREA);
+					resize(deg, D, Size(256, h), 0.0, 0.0, INTER_AREA);
+				}
+				else
+				{
+					const int w = ref.size().width * 256.0 / double(ref.size().height);
+					resize(ref, R, Size(w, 256), 0.0, 0.0, INTER_AREA);
+					resize(deg, D, Size(w, 256), 0.0, 0.0, INTER_AREA);
+				}
+			}
+			else
+			{
+				R = ref.getMat();
+				D = deg.getMat();
 			}
 		}
 		else
 		{
-			for (int i = 0; i < size; i++)
-			{
-				float numnumerator = 2.f * sqrt(r[i] * d[i]) + c;
-				float denominator = r[i] + d[i] + c;
-				double ret = numnumerator / denominator;
-				numnumerator = 2.f * sqrt(d[i] * a[i]) + c;
-				denominator = a[i] + d[i] + c;
-				ret += numnumerator / denominator;
-				numnumerator = 2.f * sqrt(r[i] * a[i]) + c;
-				denominator = a[i] + r[i] + c;
-				ret -= numnumerator / denominator;
-				dst[i] = ret;
-			}
+			R = ref.getMat();
+			D = deg.getMat();
 		}
-		cv::Scalar result;
-		cv::meanStdDev(qm, cv::noArray(), result);
-		return result;
+		vector<Mat> vLHM_R, vLHM_D;
+		cvtColorOpponentSplit32F(R, vLHM_R);
+		cvtColorOpponentSplit32F(D, vLHM_D);
+
+		Mat gradientRef;
+		Mat gradientDeg;
+		Mat refL = vLHM_R[0];
+		Mat degL = vLHM_D[0];
+		Mat aveL, gradientAve;
+		addWeighted(refL, 0.5f, degL, 0.5f, 0.f, aveL);
+
+		gradientSquarePrewitt32F(refL, gradientRef);
+		gradientSquarePrewitt32F(degL, gradientDeg);
+		gradientSquarePrewitt32F(aveL, gradientAve);
+		//getGradient<float>(ref32, gradientRef);
+		//getGradient<float>(deg32, gradientDeg);
+		//getGradient<float>(ave32, gradientAve);
+
+		const int size = degL.size().area();
+		const float* rl = gradientRef.ptr<float>();
+		const float* dl = gradientDeg.ptr<float>();
+		const float* al = gradientAve.ptr<float>();
+		const float* rh = vLHM_R[1].ptr<float>();
+		const float* dh = vLHM_D[1].ptr<float>();
+		const float* rm = vLHM_R[2].ptr<float>();
+		const float* dm = vLHM_D[2].ptr<float>();
+		Mat gcs(degL.size(), CV_32F);
+		float* dst = gcs.ptr<float>();
+		for (int i = 0; i < size; i++)
+		{
+			//L
+			float numnumerator = 2.f * sqrt(rl[i] * dl[i]) + C1;
+			float denominator = rl[i] + dl[i] + C1;
+			float ret = numnumerator / denominator;
+			numnumerator = 2.f * sqrt(dl[i] * al[i]) + C2;
+			denominator = al[i] + dl[i] + C2;
+			ret += numnumerator / denominator;
+			numnumerator = 2.f * sqrt(rl[i] * al[i]) + C2;
+			denominator = al[i] + rl[i] + C2;
+			ret -= numnumerator / denominator;
+
+			//HM
+			ret *= alpha;
+			numnumerator = 2.f * (rh[i] * dh[i] + rm[i] * dm[i]) + C3;
+			denominator = rh[i] * rh[i] + dh[i] * dh[i] + rm[i] * rm[i] + dm[i] * dm[i] + C3;
+			ret += (1.f - alpha) * numnumerator / denominator;
+			dst[i] = ret;
+		}
+
+		double v = getMADPoolongQuarter(gcs);
+		return v;
+		/*cv::Scalar result;
+		cv::meanStdDev(gcs, cv::noArray(), result);
+		return result;*/
 	}
 #pragma endregion
 
 #pragma region SSIM
-	double getSSIM(const cv::Mat& src1, const cv::Mat& src2, const double sigma, bool isDownsample)
+	double getSSIM(const cv::Mat& src1, const cv::Mat& src2, const double sigma, const bool isDownsample)
 	{
-		cv::Mat i1 = src1;
-		cv::Mat i2 = src2;
-		if (src1.channels() == 3) cvtColor(src1, i1, COLOR_BGR2GRAY);
-		if (src2.channels() == 3) cvtColor(src2, i2, COLOR_BGR2GRAY);
+		constexpr int depth = CV_32F;
+		cv::Mat I1, I2;
+		src1.convertTo(I1, depth);
+		src2.convertTo(I2, depth);
+		if (src1.channels() == 3) cvtColor(I1, I1, COLOR_BGR2GRAY);
+		if (src2.channels() == 3) cvtColor(I2, I2, COLOR_BGR2GRAY);
 
 		if (isDownsample)
 		{
-			resize(i1, i1, Size(), 0.5, 0.5, INTER_AREA);
-			resize(i2, i2, Size(), 0.5, 0.5, INTER_AREA);
+			resize(I1, I1, Size(), 0.5, 0.5, INTER_AREA);
+			resize(I2, I2, Size(), 0.5, 0.5, INTER_AREA);
 		}
 		const int D = (int)ceil(sigma * 3.0) * 2 + 1;
 		const Size kernelSize = Size(D, D);
-		const double C1 = 6.5025, C2 = 58.5225;
+		constexpr float C1 = 6.5025f, C2 = 58.5225f;
 		/***************************** INITS **********************************/
-		int d = CV_32F;
-		cv::Mat I1, I2;
-		i1.convertTo(I1, d);            // cannot calculate on one byte large values
-		i2.convertTo(I2, d);
+
+
 		cv::Mat I2_2 = I2.mul(I2);//1
 		cv::Mat I1_2 = I1.mul(I1);//2
 		cv::Mat I1_I2 = I1.mul(I2);//3
@@ -1606,7 +1676,7 @@ namespace cp
 		cv::Mat ssim_map;//26
 		divide(t3, t1, ssim_map);//27
 
-		int r = D / 2;
+		const int r = D / 2;
 		return cp::average(ssim_map, r, r, r, r);
 	}
 #pragma endregion
