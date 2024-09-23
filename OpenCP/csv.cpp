@@ -179,9 +179,50 @@ namespace cp
 		//cout << "num lines " << line << endl;
 		_mm_free(cell);
 		_mm_free(str);
-		return line;
+		return (int)line;
 	}
 
+	int CSV::readDataLineByLineAsString()
+	{
+		char* cell = (char*)_mm_malloc(sizeof(char) * CSV_READLINE_MAX, 32);
+		char* str = (char*)_mm_malloc(sizeof(char) * CSV_READLINE_MAX, 32);
+
+		size_t line = 0;
+		while (fgets(str, CSV_READLINE_MAX, fp) != NULL)
+		{
+			vector<string> localstr;
+			size_t size = strlen(str);
+			int c = 0;
+			for (size_t i = 0; i < size; i++)
+			{
+				if (str[i] == ',')
+				{
+					cell[c] = '\0';
+					c = 0;
+					localstr.push_back(string(cell));
+				}
+				else if (str[i] == '\n')
+				{
+					cell[c] = '\0';
+					localstr.push_back(string(cell));
+					c = 0;
+
+					datastr.push_back(localstr);
+					break;
+				}
+				else
+				{
+					cell[c] = str[i];
+					c++;
+				}
+			}
+			line++;
+		}
+		//cout << "num lines " << line << endl;
+		_mm_free(cell);
+		_mm_free(str);
+		return (int)line;
+	}
 	void CSV::readData()
 	{
 		/*size_t line = 1;
@@ -282,43 +323,56 @@ namespace cp
 
 	//file open then read header if true
 	// if(isClear==true) clear csv files
-	void CSV::init(string name, bool isWrite, bool isClear, bool isHeader)
+	void CSV::init(string name, bool isWrite, bool isClear, bool isHeader, bool isBinary)
 	{
 		isTop = true;
+
 		if (isWrite)
 		{
+			filename = name;
+			string mode = (isBinary) ? "wb" : "w";
 			if (isClear)
 			{
-				fp = fopen(name.c_str(), "w");
+				fp = fopen(name.c_str(), mode.c_str());
 			}
 			else
 			{
-				fp = fopen(name.c_str(), "w+");
+				string m = mode + "+";
+				fp = fopen(name.c_str(), m.c_str());
 			}
-			if (fp == NULL)
+			if (fp == nullptr)
 			{
 				string n = name + "(1)";
 				filename = n;
-				fp = fopen(n.c_str(), "w");
+				if (isClear)
+				{
+					fp = fopen(filename.c_str(), mode.c_str());
+				}
+				else
+				{
+					string m = mode + "+";
+					fp = fopen(filename.c_str(), m.c_str());
+				}
 				if (fp == NULL)
 				{
 					cout << "file open error " << name << endl;
 				}
 			}
-
 		}
 		else
 		{
+			string mode = isBinary ? "rb" : "r";
 			if (isClear)
 			{
-				fp = fopen(name.c_str(), "r");
+				fp = fopen(name.c_str(), mode.c_str());
 			}
 			else
 			{
-				fp = fopen(name.c_str(), "r+");
+				string m = mode + "+";
+				fp = fopen(name.c_str(), m.c_str());
 			}
 			filename = name;
-			if (fp == NULL)
+			if (fp == nullptr)
 			{
 				cout << "file open error " << name << endl;
 			}
@@ -334,15 +388,15 @@ namespace cp
 		fp = nullptr;
 	}
 
-	CSV::CSV(string name, bool isWrite, bool isClear, bool isHeader)
+	CSV::CSV(string name, bool isWrite, bool isClear, bool isHeader, bool isBinary)
 	{
 		fp = nullptr;
-		init(name, isWrite, isClear, isHeader);
+		init(name, isWrite, isClear, isHeader, isBinary);
 	}
 
 	CSV::~CSV()
 	{
-		if (fp != NULL) fclose(fp);
+		if (fp != nullptr) fclose(fp);
 		//ifstream file1(filename);
 		//ofstream file2("backup"+filename);
 		//char ch;
@@ -354,14 +408,11 @@ namespace cp
 
 	void CSV::write(string v)
 	{
-		if (isTop)
-			fprintf(fp, "%s", v.c_str());
+		if (isTop) fprintf(fp, "%s", v.c_str());
 		else
 		{
-			if (isCommaSeparator)
-				fprintf(fp, ",%s", v.c_str());
-			else
-				fprintf(fp, " %s", v.c_str());
+			if (isCommaSeparator) fprintf(fp, ",%s", v.c_str());
+			else fprintf(fp, " %s", v.c_str());
 		}
 
 		isTop = false;
@@ -384,18 +435,11 @@ namespace cp
 
 	void CSV::write(double v)
 	{
-		if (isTop)
-			fprintf(fp, "%f", v);
+		if (isTop) fprintf(fp, "%f", v);
 		else
 		{
-			if (isCommaSeparator)
-			{
-				fprintf(fp, ",%f", v);
-			}
-			else
-			{
-				fprintf(fp, " %f", v);
-			}
+			if (isCommaSeparator) fprintf(fp, ",%f", v);
+			else fprintf(fp, " %f", v);
 		}
 		isTop = false;
 	}
@@ -409,6 +453,42 @@ namespace cp
 	void CSV::setSeparator(bool flag)
 	{
 		isCommaSeparator = flag;
+	}
+
+	void CSV::dumpDataAsBinary(string name, int depth)
+	{
+		FILE* file = fopen(name.c_str(), "wb");
+		if (file == nullptr)
+		{
+			cout << "file open error " << name << endl;
+			return;
+		}
+
+		if (depth == CV_32F)
+		{
+			for (int j = 0; j < data.size(); j++)
+			{
+				cv::AutoBuffer<float> buff(data[j].size());
+				for (int i = 0; i < data[j].size(); i++)
+				{
+					buff[i] = (float)data[j][i];
+				}
+				fwrite(buff, sizeof(float), data[j].size(), file);
+			}
+		}
+		else
+		{
+			for (int j = 0; j < data.size(); j++)
+			{
+				cv::AutoBuffer<double> buff(data[j].size());
+				for (int i = 0; i < data[j].size(); i++)
+				{
+					buff[i] = data[j][i];
+				}
+				fwrite(buff, sizeof(double), data[j].size(), file);
+			}
+		}
+		fclose(fp);
 	}
 
 	template<typename srcType>
