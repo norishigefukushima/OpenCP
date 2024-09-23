@@ -640,5 +640,57 @@ namespace cp
 		pt.plot("SROCC-RANK", isWait);
 		pt.clear();
 	}
+
+	void SpearmanRankOrderCorrelationCoefficient::plotwithAdditionalPoints(vector<Point2d>& additionalPoints, const bool isWait, const double rawMin, const double rawMax, vector<string> labels)
+	{
+		if (labels.size() == 0) pt.setKey(Plot::KEY::NOKEY);
+		else
+		{
+			if (labels.size() == plotsRAW.size())
+			{
+				for (int i = 0; i < plotsRAW.size(); i++)
+				{
+					pt.setPlotTitle(i, labels[i]);
+					if (i == 0) pt.setPlotColor(i, COLOR_RED);
+					if (i == 1) pt.setPlotColor(i, COLOR_GREEN);
+					if (i == 2) pt.setPlotColor(i, COLOR_BLUE);
+				}
+			}
+		}
+
+		pt.setKey(Plot::KEY::NOKEY);
+
+		for (int i = 0; i < plotsRAW.size(); i++)
+		{
+			pt.setPlotLineType(i, Plot::LINE::NOLINE);
+			pt.push_back(plotsRAW[i], i);
+		}
+
+		for (int i = 0; i < additionalPoints.size(); i++)
+		{
+			const int additionalIndex = (int)plotsRAW.size() + i;
+			pt.setPlotSymbol(additionalIndex, 4);
+			pt.setPlotColor(additionalIndex, COLOR_RED);
+			pt.setPlotLineWidth(additionalIndex, 4);
+			pt.push_back(additionalPoints[i].x, additionalPoints[i].y, additionalIndex);
+		}
+		//if (rawMin != 0.0 || rawMax != 0.0) pt.setYRange(rawMin, rawMax);
+		pt.plot("SROCC-RAW", isWait);
+		pt.clear();
+		pt.unsetXYRange();
+		for (int i = 0; i < plotsRAW.size(); i++)
+		{
+			pt.push_back(plotsRANK[i], i);
+		}
+		pt.plot("SROCC-RANK", isWait);
+		pt.clear();
+	}
+
+	void SpearmanRankOrderCorrelationCoefficient::plotwithAdditionalPoints(Point2d& additionalPoints, const bool isWait, const double rawMin, const double rawMax, vector<string> labels)
+	{
+		vector<Point2d> v;
+		v.push_back(additionalPoints);
+		plotwithAdditionalPoints(v, isWait, rawMin, rawMax, labels);
+	}
 #pragma endregion
 }
