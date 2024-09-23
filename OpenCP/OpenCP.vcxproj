@@ -774,6 +774,7 @@
     <ClCompile Include="unnormalizedBilateralFilter.cpp" />
     <ClCompile Include="updateCheck.cpp" />
     <ClCompile Include="upsample.cpp" />
+    <ClCompile Include="vectorio.cpp" />
     <ClCompile Include="video.cpp" />
     <ClCompile Include="viewsynthesis.cpp" />
     <ClCompile Include="webp.cpp" />
@@ -906,6 +907,7 @@
     <ClInclude Include="..\include\unnormalizedBilateralFilter.hpp" />
     <ClInclude Include="..\include\updateCheck.hpp" />
     <ClInclude Include="..\include\upsample.hpp" />
+    <ClInclude Include="..\include\vectorio.hpp" />
     <ClInclude Include="..\include\video.hpp" />
     <ClInclude Include="..\include\VideoSubtitle.hpp" />
     <ClInclude Include="..\include\viewsynthesis.hpp" />
