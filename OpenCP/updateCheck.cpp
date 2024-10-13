@@ -78,6 +78,7 @@ namespace cp
 	void UpdateCheck::init(double p0, double p1, double p2, double p3, double p4, double p5)
 	{
 		parameters.clear();
+		parameters.resize(0);
 		parameters.push_back(p0);
 		parameters.push_back(p1);
 		parameters.push_back(p2);
@@ -88,6 +89,7 @@ namespace cp
 
 	void UpdateCheck::init(double p0, double p1, double p2, double p3, double p4, double p5, double p6)
 	{
+		parameters.clear();
 		parameters.resize(0);
 		parameters.push_back(p0);
 		parameters.push_back(p1);
