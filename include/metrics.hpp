@@ -133,11 +133,13 @@ namespace cp
 
 	//bad pixel ratio for stere matching evaluation
 	CP_EXPORT double getInacceptableRatio(cv::InputArray src, cv::InputArray ref, const int threshold);
-
+	//for CV_8UC1, CV_8UC3, CV_16SC1, CV_16SC3, CV_16UC1, CV_16UC3
 	CP_EXPORT double getEntropy(cv::InputArray src, cv::InputArray mask = cv::noArray());
 
 	CP_EXPORT double getTotalVariation(cv::InputArray src);
 
 	CP_EXPORT double getSSIM(const cv::Mat& i1, const cv::Mat& i2, const double sigma = 1.5, const bool isDownsample = true);//valid pooling
 	CP_EXPORT double getGMSD(cv::InputArray ref, cv::InputArray src, const double c = 170.0, const bool isDownsample = true);
+	//Mean Deviation Similarity Index
+	CP_EXPORT double getMDSI(cv::InputArray ref, cv::InputArray deg, const bool isDownsample = true);
 }

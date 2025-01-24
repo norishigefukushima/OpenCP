@@ -47,6 +47,7 @@
 #include "tiling.hpp"
 #include "timer.hpp"
 #include "updateCheck.hpp"
+#include "vectorio.hpp"
 #include "video.hpp"
 #include "VideoSubtitle.hpp"
 #include "webp.hpp"

@@ -50,6 +50,7 @@ namespace cp
 		template<typename T>
 		void setPlotData(const std::vector<T>& v1, const std::vector<T>& v2, std::vector<cv::Point2d>& data);
 
+		std::vector<size_t> indices;
 
 		cp::Plot pt;
 		std::vector<std::vector<cv::Point2d>> plotsRAW;
@@ -64,6 +65,7 @@ namespace cp
 			T data;
 			int order;
 		};
+
 		std::vector<SpearmanOrder<int>> sporder32i;
 		std::vector<SpearmanOrder<float>> sporder32f;
 		std::vector<SpearmanOrder<double>> sporder64f;
@@ -85,5 +87,8 @@ namespace cp
 		std::vector<double> compute(std::vector<std::vector<float>>& v1, std::vector<std::vector<float>>& v2, const bool ignoreTie = false, const bool isPlot = false);//compute SROCC (vector<float> thread safe). 
 		std::vector<double> compute(std::vector<std::vector<double>>& v1, std::vector<std::vector<double>>& v2, const bool ignoreTie = false, const bool isPlot = false);//compute SROCC ((vector<double>) thread safe). 
 		void plot(const bool isWait = true, const double rawMin = 0.0, const double rawMax = 0.0, std::vector<std::string> labels = std::vector<std::string>());
+		void plotwithAdditionalPoints(const std::vector<std::vector<cv::Point2d>>& additionalPoint, const bool isWait = true, const double rawMin = 0.0, const double rawMax = 0.0, std::vector<std::string> labels = std::vector<std::string>());
+		void plotwithAdditionalPoints(const std::vector<cv::Point2d>& additionalPoint, const bool isWait = true, const double rawMin = 0.0, const double rawMax = 0.0, std::vector<std::string> labels = std::vector<std::string>());
+		void plotwithAdditionalPoints(const cv::Point2d& additionalPoint, const bool isWait = true, const double rawMin = 0.0, const double rawMax = 0.0, std::vector<std::string> labels = std::vector<std::string>());
 	};
 }

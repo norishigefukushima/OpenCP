@@ -1,5 +1,5 @@
 #include "noise.hpp"
-
+#include "webp.hpp"
 using namespace std;
 using namespace cv;
 
@@ -159,7 +159,8 @@ namespace cp
 		}
 	}
 	
-	void addJPEGNoise(InputArray src, OutputArray dest, const int quality)
+#pragma region coding
+	double addJPEGNoise(InputArray src, OutputArray dest, const int quality)
 	{
 		std::vector<uchar> buff;
 		std::vector<int> param(2);
@@ -168,5 +169,53 @@ namespace cp
 		imencode(".jpg", src, buff, param);
 		Mat dst = imdecode(buff, IMREAD_ANYCOLOR);
 		dst.copyTo(dest);
+		return 8.0 * buff.size() / src.size().area();
 	}
+
+	double addJPEG2000Noise(InputArray src, OutputArray dest, const int quality)
+	{
+		vector<uchar> buf;
+		vector<int> param;
+		param.push_back(IMWRITE_JPEG2000_COMPRESSION_X1000);
+		param.push_back(quality * 10);
+		imencode(".jp2", src, buf, param);
+		Mat dst = imdecode(buf, 1);
+		dst.copyTo(dest);
+		return 8.0 * buf.size() / src.size().area();
+	}
+
+	double addWebPNoise(InputArray src, OutputArray dest, const int quality, const int method, const int colorSpace)
+	{
+		vector<uchar> buf;
+		vector<int> param;
+		param.push_back(IMWRITE_WEBP_QUALITY);
+		param.push_back(quality);
+		param.push_back(IMWRITE_WEBP_METHOD);
+		param.push_back(method);
+		param.push_back(IMWRITE_WEBP_COLORSPACE);
+		param.push_back(colorSpace);
+		if (colorSpace == 0) cp::imencodeWebP(src.getMat(), buf, param);
+		else imencode(".webp", src, buf, param);
+		Mat dst = imdecode(buf, 1);
+		dst.copyTo(dest);
+		return 8.0 * buf.size() / src.size().area();
+	}
+
+#ifdef USE_OPENCP_AVIF
+	double addAVIFNoise(InputArray src, OutputArray dest, const int quality, const int method)
+	{
+		vector<uchar> buf;
+		vector<int> param;
+		param.push_back(IMWRITE_AVIF_QUALITY);
+		param.push_back(quality);
+		param.push_back(IMWRITE_AVIF_SPEED);
+		param.push_back(method);
+		imencode(".avif", src, buf, param);
+		Mat dst = imdecode(buf, 1);
+		dst.copyTo(dest);
+		return 8.0 * buf.size() / src.size().area();
+	}
+#endif
+	
+#pragma endregion
 }
