@@ -18,6 +18,7 @@ void testAlphaBlend(cv::Mat& src1, cv::Mat& src2);
 void testAlphaBlendMask(cv::Mat& src1, cv::Mat& src2);
 void consoleImageTest();
 void testAddNoise(cv::Mat& src);
+void testCSV();
 void testIsSame();
 void testConcat();
 void copyMakeBorderTest(cv::Mat& src);

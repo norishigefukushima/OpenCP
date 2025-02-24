@@ -11,6 +11,7 @@ void benchmark()
 
 void testCore(Mat& img)
 {
+	testCSV(); return;
 	//testIsSame(); return 0;
 	testCorrelationCoefficient(); return;
 	//webPAnimationTest(); return 0;
@@ -296,23 +297,21 @@ void testGridImage()
 }
 int main(int argc, char** argv)
 {
-	Mat a = imread("img/1.png");
-	Mat b = imread("img/2.png");
-	int step = 16;
-	for (int j = 0; j < a.rows; j+=16)
-	{
-		line(a, Point(0, j), Point(a.cols, j), COLOR_WHITE, 1);
-		line(b, Point(0, j), Point(a.cols, j), COLOR_WHITE, 1);
-	}
-	for (int i = 0; i < a.cols; i += 16)
-	{
-		line(a, Point(i, 0), Point(i, a.rows), COLOR_WHITE, 1);
-		line(b, Point(i, 0), Point(i, a.rows), COLOR_WHITE, 1);
-	}
-	print_matinfo(a);
-	guiAlphaBlend(a, b);
-	testGridImage();
-
+	
+	Mat ori = imread("kodim5.png",0);
+	Mat deg = imread("FRQI33BoxFilter.png", 0);
+	
+	Mat ref;
+	blur(ori, ref, Size(3, 3));
+	
+	guiAlphaBlend(deg, ref);
+	imshow("ori", ori);
+	imshow("ref", ref);
+	//guiAlphaBlend(ref, deg);
+	guiShift(ref, deg);
+	
+	
+	return 0;
 	/*
 	cp::KMeans kmcluster;
 
@@ -402,7 +401,7 @@ int main(int argc, char** argv)
 	//Mat img = imread("img/barbara.png", 0);
 #pragma endregion
 
-	//testCore(img); return 0;
+	testCore(img); return 0;
 	//testImgproc(img);
 	//testStereo();
 	//testFilter(img);
