@@ -185,7 +185,7 @@ namespace cp
 	}
 
 
-	void fnmsub(Mat& a, Mat& x, Mat& b, Mat& dest)
+	void fnmsub(const Mat& a, const Mat& x, const Mat& b, Mat& dest)
 	{
 		CV_Assert(!a.empty());
 		CV_Assert(!x.empty());
@@ -196,9 +196,9 @@ namespace cp
 		const int size = a.size().area() * a.channels();
 		if (a.depth() == CV_32F)
 		{
-			float* aptr = a.ptr<float>();
-			float* xptr = x.ptr<float>();
-			float* bptr = b.ptr<float>();
+			const float* aptr = a.ptr<float>();
+			const float* xptr = x.ptr<float>();
+			const float* bptr = b.ptr<float>();
 			float* dptr = dest.ptr<float>();
 			const int simdsize = size / 8;
 			const int rem = simdsize * 8;
@@ -217,9 +217,9 @@ namespace cp
 		}
 		else if (a.depth() == CV_64F)
 		{
-			double* aptr = a.ptr<double>();
-			double* xptr = x.ptr<double>();
-			double* bptr = b.ptr<double>();
+			const double* aptr = a.ptr<double>();
+			const double* xptr = x.ptr<double>();
+			const double* bptr = b.ptr<double>();
 			double* dptr = dest.ptr<double>();
 			const int simdsize = size / 4;
 			const int rem = simdsize * 4;
@@ -238,7 +238,7 @@ namespace cp
 		}
 	}
 
-	void fnmadd(Mat& a, Mat& x, Mat& b, Mat& dest)
+	void fnmadd(const Mat& a, const Mat& x, const Mat& b, Mat& dest)
 	{
 		CV_Assert(!a.empty());
 		CV_Assert(!x.empty());
@@ -249,9 +249,9 @@ namespace cp
 		const int size = a.size().area() * a.channels();
 		if (a.depth() == CV_32F)
 		{
-			float* aptr = a.ptr<float>();
-			float* xptr = x.ptr<float>();
-			float* bptr = b.ptr<float>();
+			const float* aptr = a.ptr<float>();
+			const float* xptr = x.ptr<float>();
+			const float* bptr = b.ptr<float>();
 			float* dptr = dest.ptr<float>();
 			const int simdsize = size / 8;
 			const int rem = simdsize * 8;
@@ -270,9 +270,9 @@ namespace cp
 		}
 		else if (a.depth() == CV_64F)
 		{
-			double* aptr = a.ptr<double>();
-			double* xptr = x.ptr<double>();
-			double* bptr = b.ptr<double>();
+			const double* aptr = a.ptr<double>();
+			const double* xptr = x.ptr<double>();
+			const double* bptr = b.ptr<double>();
 			double* dptr = dest.ptr<double>();
 			const int simdsize = size / 4;
 			const int rem = simdsize * 4;
@@ -291,7 +291,7 @@ namespace cp
 		}
 	}
 
-	void fmsub(Mat& a, Mat& x, Mat& b, Mat& dest)
+	void fmsub(const Mat& a, const Mat& x, const Mat& b, Mat& dest)
 	{
 		CV_Assert(!a.empty());
 		CV_Assert(!x.empty());
@@ -302,9 +302,9 @@ namespace cp
 		const int size = a.size().area() * a.channels();
 		if (a.depth() == CV_32F)
 		{
-			float* aptr = a.ptr<float>();
-			float* xptr = x.ptr<float>();
-			float* bptr = b.ptr<float>();
+			const float* aptr = a.ptr<float>();
+			const float* xptr = x.ptr<float>();
+			const float* bptr = b.ptr<float>();
 			float* dptr = dest.ptr<float>();
 			const int simdsize = size / 8;
 			const int rem = simdsize * 8;
@@ -323,9 +323,9 @@ namespace cp
 		}
 		else if (a.depth() == CV_64F)
 		{
-			double* aptr = a.ptr<double>();
-			double* xptr = x.ptr<double>();
-			double* bptr = b.ptr<double>();
+			const double* aptr = a.ptr<double>();
+			const double* xptr = x.ptr<double>();
+			const double* bptr = b.ptr<double>();
 			double* dptr = dest.ptr<double>();
 			const int simdsize = size / 4;
 			const int rem = simdsize * 4;
@@ -344,7 +344,7 @@ namespace cp
 		}
 	}
 
-	void fmadd(Mat& a, Mat& x, Mat& b, Mat& dest)
+	void fmadd(const Mat& a, const Mat& x, const Mat& b, Mat& dest)
 	{
 		CV_Assert(!a.empty());
 		CV_Assert(!x.empty());
@@ -355,9 +355,9 @@ namespace cp
 		const int size = a.size().area() * a.channels();
 		if (a.depth() == CV_32F)
 		{
-			float* aptr = a.ptr<float>();
-			float* xptr = x.ptr<float>();
-			float* bptr = b.ptr<float>();
+			const float* aptr = a.ptr<float>();
+			const float* xptr = x.ptr<float>();
+			const float* bptr = b.ptr<float>();
 			float* dptr = dest.ptr<float>();
 			const int simdsize = size / 8;
 			const int rem = simdsize * 8;
@@ -376,9 +376,9 @@ namespace cp
 		}
 		else if (a.depth() == CV_64F)
 		{
-			double* aptr = a.ptr<double>();
-			double* xptr = x.ptr<double>();
-			double* bptr = b.ptr<double>();
+			const double* aptr = a.ptr<double>();
+			const double* xptr = x.ptr<double>();
+			const double* bptr = b.ptr<double>();
 			double* dptr = dest.ptr<double>();
 			const int simdsize = size / 4;
 			const int rem = simdsize * 4;

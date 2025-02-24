@@ -12,13 +12,13 @@ namespace cp
 	CP_EXPORT void setTypeMinValue(cv::InputOutputArray src);
 
 	//a*x+b
-	CP_EXPORT void fmadd(cv::Mat& a, cv::Mat& x, cv::Mat& b, cv::Mat& dest);
+	CP_EXPORT void fmadd(const cv::Mat& a, const cv::Mat& x, const cv::Mat& b, cv::Mat& dest);
 	//a*x-b
-	CP_EXPORT void fmsub(cv::Mat& a, cv::Mat& x, cv::Mat& b, cv::Mat& dest);
+	CP_EXPORT void fmsub(const cv::Mat& a, const cv::Mat& x, const cv::Mat& b, cv::Mat& dest);
 	//-a*x+b
-	CP_EXPORT void fnmadd(cv::Mat& a, cv::Mat& x, cv::Mat& b, cv::Mat& dest);
+	CP_EXPORT void fnmadd(const cv::Mat& a, const cv::Mat& x, const cv::Mat& b, cv::Mat& dest);
 	//-a*x-b
-	CP_EXPORT void fnmsub(cv::Mat& a, cv::Mat& x, cv::Mat& b, cv::Mat& dest);
+	CP_EXPORT void fnmsub(const cv::Mat& a, const cv::Mat& x, const cv::Mat& b, cv::Mat& dest);
 
 	//dest=src>>shift, lostbit=src-dest<<shift
 	CP_EXPORT void bitshiftRight(cv::InputArray src, cv::OutputArray dest, cv::OutputArray lostbit, const int shift);
