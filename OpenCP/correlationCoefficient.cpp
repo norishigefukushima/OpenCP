@@ -146,7 +146,7 @@ namespace cp
 
 	SpearmanRankOrderCorrelationCoefficient::SpearmanRankOrderCorrelationCoefficient()
 	{
-
+		;
 	}
 #pragma region rankTransform
 	template<>
@@ -277,7 +277,7 @@ namespace cp
 			sporder32i[i].data = src[i];
 			sporder32i[i].order = i;
 		}
-		
+
 		sort(sporder32i.begin(), sporder32i.end(), [](const SpearmanOrder<int>& ls, const SpearmanOrder<int>& rs) {return ls.data < rs.data; });//ascending order
 		for (int i = 0; i < n; i++)
 		{
@@ -312,8 +312,8 @@ namespace cp
 	{
 		const int n = (int)src.size();
 		if (dst.size() != n) dst.resize(n);
-		
-		if(false)
+
+		if (false)
 		{
 			if (sporder32f.size() != n) sporder32f.resize(n);
 			for (int i = 0; i < n; i++)
@@ -329,7 +329,7 @@ namespace cp
 		}
 		else
 		{
-			if(indices.size()!=n) indices.resize(src.size());
+			if (indices.size() != n) indices.resize(src.size());
 			std::iota(indices.begin(), indices.end(), 0);
 			avx2_argsort(src.data(), indices.data(), src.size(), false);
 			//avx512_argsort(src.data(), indices.data(), src.size(), false);
@@ -378,6 +378,7 @@ namespace cp
 	}
 #pragma endregion
 
+#pragma region compute
 	template<typename T>
 	double SpearmanRankOrderCorrelationCoefficient::computeRankDifference(std::vector<T>& Rsrc, std::vector<T>& Rref)
 	{
@@ -389,7 +390,7 @@ namespace cp
 			__m256 msum = _mm256_setzero_ps();
 			const float* s = &Rsrc[0];
 			const float* r = &Rref[0];
-			for (int i = 0; i < N; i+=8)
+			for (int i = 0; i < N; i += 8)
 			{
 				__m256 msub = _mm256_sub_ps(_mm256_loadu_ps(s + i), _mm256_loadu_ps(r + i));
 				msum = _mm256_fmadd_ps(msub, msub, msum);
@@ -583,7 +584,9 @@ namespace cp
 		}
 		return ret;
 	}
+#pragma endregion
 
+#pragma region set
 	void SpearmanRankOrderCorrelationCoefficient::setReference(std::vector<int>& ref, const bool isIgnoreTie)
 	{
 		if (isIgnoreTie)
@@ -622,7 +625,7 @@ namespace cp
 			Tref = rankTransformUsingAverageTieScore<double>(ref, refRank);
 		}
 	}
-
+#pragma endregion
 
 	double SpearmanRankOrderCorrelationCoefficient::computeUsingReference(std::vector<int>& src, const bool isIgnoreTie)
 	{
@@ -663,7 +666,7 @@ namespace cp
 		return (nnn - D2 - Tsrc - Tref) / (sqrt((nnn - 2.0 * Tsrc) * (nnn - 2.0 * Tref)));
 	}
 
-
+#pragma region plot
 	template<typename T>
 	void SpearmanRankOrderCorrelationCoefficient::setPlotData(const vector<T>& v1, const vector<T>& v2, vector<Point2d>& data)
 	{
@@ -709,7 +712,7 @@ namespace cp
 		pt.clear();
 	}
 
-	void SpearmanRankOrderCorrelationCoefficient::plotwithAdditionalPoints(const vector<vector<Point2d>>& additionalPoints, const bool isWait, const double rawMin, const double rawMax, vector<string> labels)
+	void SpearmanRankOrderCorrelationCoefficient::plotwithAdditionalPoints(const vector<vector<Point2d>>& additionalPoints, const bool isWait, const double rawMin, const double rawMax, vector<string> labels, vector<string> xylabels)
 	{
 		if (labels.size() == 0) pt.setKey(Plot::KEY::NOKEY);
 		else
@@ -727,8 +730,16 @@ namespace cp
 		}
 
 		pt.setKey(Plot::KEY::NOKEY);
-		pt.setYLabel("SROCC-MOS");
-		pt.setYLabel("SROCC-SCORE");
+		if (xylabels.size() == 0)
+		{
+			pt.setXLabel("SROCC-MOS");
+			pt.setYLabel("SROCC-SCORE");
+		}
+		else
+		{
+			pt.setXLabel("SROCC-" + xylabels[0]);
+			pt.setYLabel("SROCC-" + xylabels[1]);
+		}
 		vector<vector<double>> error(additionalPoints.size());
 		vector<vector<int>> argmin(additionalPoints.size());
 		for (int ai = 0; ai < additionalPoints.size(); ai++)
@@ -764,7 +775,7 @@ namespace cp
 
 			for (int ai = 0; ai < additionalPoints.size(); ai++)
 			{
-				const int additionalIndex = (int)plotsRAW.size()+ai;
+				const int additionalIndex = (int)plotsRAW.size() + ai;
 				Scalar color = ai == 0 ? COLOR_RED : (ai == 1) ? COLOR_GREEN : COLOR_BLUE;
 				for (int a = 0; a < additionalPoints[ai].size(); a++)
 				{
@@ -780,9 +791,16 @@ namespace cp
 		//if (rawMin != 0.0 || rawMax != 0.0) pt.setYRange(rawMin, rawMax);
 		pt.plot("SROCC-RAW", isWait);
 		pt.clear();
-
-		pt.setYLabel("SROCC-MOS-RANK");
-		pt.setYLabel("SROCC-SCORE-RANK");
+		if (xylabels.size() == 0)
+		{
+			pt.setYLabel("SROCC-RANK-MOS");
+			pt.setYLabel("SROCC-RANK-SCORE");
+		}
+		else
+		{
+			pt.setXLabel("SROCC-RANK-" + xylabels[0]);
+			pt.setYLabel("SROCC-RANK-" + xylabels[1]);
+		}
 		pt.unsetXYRange();
 		for (int i = 0; i < plotsRAW.size(); i++)
 		{
@@ -806,20 +824,21 @@ namespace cp
 		pt.clear();
 	}
 
-	void SpearmanRankOrderCorrelationCoefficient::plotwithAdditionalPoints(const vector<Point2d>& additionalPoints, const bool isWait, const double rawMin, const double rawMax, vector<string> labels)
+	void SpearmanRankOrderCorrelationCoefficient::plotwithAdditionalPoints(const vector<Point2d>& additionalPoints, const bool isWait, const double rawMin, const double rawMax, vector<string> labels, vector<string> xylabels)
 	{
 		vector<vector<Point2d>> vv;
 		vv.push_back(additionalPoints);
-		plotwithAdditionalPoints(vv, isWait, rawMin, rawMax, labels);
+		plotwithAdditionalPoints(vv, isWait, rawMin, rawMax, labels, xylabels);
 	}
 
-	void SpearmanRankOrderCorrelationCoefficient::plotwithAdditionalPoints(const Point2d& additionalPoints, const bool isWait, const double rawMin, const double rawMax, vector<string> labels)
+	void SpearmanRankOrderCorrelationCoefficient::plotwithAdditionalPoints(const Point2d& additionalPoints, const bool isWait, const double rawMin, const double rawMax, vector<string> labels, vector<string> xylabels)
 	{
 		vector<vector<Point2d>> vv;
 		vector<Point2d> v;
 		v.push_back(additionalPoints);
 		vv.push_back(v);
-		plotwithAdditionalPoints(vv, isWait, rawMin, rawMax, labels);
+		plotwithAdditionalPoints(vv, isWait, rawMin, rawMax, labels, xylabels);
 	}
+#pragma endregion
 #pragma endregion
 }
