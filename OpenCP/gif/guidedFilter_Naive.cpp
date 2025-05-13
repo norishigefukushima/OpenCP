@@ -1202,11 +1202,14 @@ void guidedFilter_Naive::filter_Guide3(cv::Mat& input, std::vector<cv::Mat>& gui
 
 void guidedFilter_Naive::ab_up_2q_Guide3(std::vector<cv::Mat>& guide, cv::Mat& output)
 {
-	average(a_b, a_b, r);
-	average(a_g, a_g, r);
-	average(a_r, a_r, r);
-	average(b, b, r);
-
+	bool isAverage = true;
+	if (isAverage)
+	{
+		average(a_b, a_b, r);
+		average(a_g, a_g, r);
+		average(a_r, a_r, r);
+		average(b, b, r);
+	}
 
 	/*
 	vector<Mat> v(4);

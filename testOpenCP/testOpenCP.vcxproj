@@ -493,6 +493,7 @@
     <ClCompile Include="guiEdgePreservingFilterOpenCV.cpp" />
     <ClCompile Include="guiEPFWeightMapTest.cpp" />
     <ClCompile Include="testCorrelationCoefficient.cpp" />
+    <ClCompile Include="testCSV.cpp" />
     <ClCompile Include="testGuidedImageFilter.cpp" />
     <ClCompile Include="guiHazeRemoveTest.cpp" />
     <ClCompile Include="testInpaint.cpp" />

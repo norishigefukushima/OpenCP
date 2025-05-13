@@ -1549,7 +1549,7 @@ void Ip2ab_Guide3Src3_sep_VHIShare_AVX_omp(std::vector<cv::Mat>& I, std::vector<
 
 	Mat buff(Size(width + 2 * R, 21 * omp_get_max_threads()), CV_32FC1);
 
-#pragma omp parallel for
+#pragma omp parallel for schedule (dynamic)
 	for (int i = 0; i < height; i++)
 	{
 		Mat temp = buff(Rect(0, 21 * omp_get_thread_num(), width + 2 * R, 21));
@@ -5376,6 +5376,7 @@ void guidedFilter_SepVHI_Share::upsample()
 		vdest[1].create(src.size(), depth);
 		vdest[2].create(src.size(), depth);
 
+		bool isAverage = false;
 		if (guide.channels() == 1)
 		{
 			if (parallelType == NAIVE)
@@ -5403,20 +5404,38 @@ void guidedFilter_SepVHI_Share::upsample()
 				Ip2ab_Guide1Src3_sep_VHIShare_AVX_omp(guide_low, vsrc_low, r, eps, ab_p, b_p);
 
 				Size s = guide.size();
-				blurSeparableVHI_omp(ab_p[0], b_p[0], r, mean_a_b, mean_b);
-				resize(mean_a_b, vdest[0], s, 0, 0, upsample_method);
-				resize(mean_b, a_high_b, s, 0, 0, upsample_method);
-				fmadd(vdest[0], guide, a_high_b, vdest[0]);
 
-				blurSeparableVHI_omp(ab_p[1], b_p[1], r, mean_a_b, mean_b);
-				resize(mean_a_b, vdest[1], s, 0, 0, upsample_method);
-				resize(mean_b, a_high_b, s, 0, 0, upsample_method);
-				fmadd(vdest[1], guide, a_high_b, vdest[1]);
+				if (isAverage)
+				{
+					blurSeparableVHI_omp(ab_p[0], b_p[0], r, mean_a_b, mean_b);
+					resize(mean_a_b, vdest[0], s, 0, 0, upsample_method);
+					resize(mean_b, a_high_b, s, 0, 0, upsample_method);
+					fmadd(vdest[0], guide, a_high_b, vdest[0]);
 
-				blurSeparableVHI_omp(ab_p[2], b_p[2], r, mean_a_b, mean_b);
-				resize(mean_a_b, vdest[2], s, 0, 0, upsample_method);
-				resize(mean_b, a_high_b, s, 0, 0, upsample_method);
-				fmadd(vdest[2], guide, a_high_b, vdest[2]);
+					blurSeparableVHI_omp(ab_p[1], b_p[1], r, mean_a_b, mean_b);
+					resize(mean_a_b, vdest[1], s, 0, 0, upsample_method);
+					resize(mean_b, a_high_b, s, 0, 0, upsample_method);
+					fmadd(vdest[1], guide, a_high_b, vdest[1]);
+
+					blurSeparableVHI_omp(ab_p[2], b_p[2], r, mean_a_b, mean_b);
+					resize(mean_a_b, vdest[2], s, 0, 0, upsample_method);
+					resize(mean_b, a_high_b, s, 0, 0, upsample_method);
+					fmadd(vdest[2], guide, a_high_b, vdest[2]);
+				}
+				else
+				{
+					resize(ab_p[0], vdest[0], s, 0, 0, upsample_method);
+					resize(b_p[0], a_high_b, s, 0, 0, upsample_method);
+					fmadd(vdest[0], guide, a_high_b, vdest[0]);
+
+					resize(ab_p[1], vdest[1], s, 0, 0, upsample_method);
+					resize(b_p[1], a_high_b, s, 0, 0, upsample_method);
+					fmadd(vdest[1], guide, a_high_b, vdest[1]);
+
+					resize(ab_p[2], vdest[2], s, 0, 0, upsample_method);
+					resize(b_p[2], a_high_b, s, 0, 0, upsample_method);
+					fmadd(vdest[2], guide, a_high_b, vdest[2]);
+				}
 			}
 		}
 		else if (guide.channels() == 3)
@@ -5456,26 +5475,49 @@ void guidedFilter_SepVHI_Share::upsample()
 				//Ip2ab_Guide3Src3_sep_VHIShare_AVX_omp(vsrc_low, vguide_low, r, eps, ab_p, ag_p, ar_p, b_p);
 
 				Size s = vguide[0].size();
-				blurSeparableVHI_omp(ab_p[0], ag_p[0], ar_p[0], b_p[0], r, mean_a_b, mean_a_g, mean_a_r, mean_b);
-				resize(mean_b, vdest[0], s, 0, 0, upsample_method);
-				resize(mean_a_b, a_high_b, s, 0, 0, upsample_method);
-				resize(mean_a_g, a_high_g, s, 0, 0, upsample_method);
-				resize(mean_a_r, a_high_r, s, 0, 0, upsample_method);
-				ab2q_fmadd_omp(a_high_b, a_high_g, a_high_r, vguide[0], vguide[1], vguide[2], vdest[0], vdest[0]);
+				if (isAverage)
+				{
+					blurSeparableVHI_omp(ab_p[0], ag_p[0], ar_p[0], b_p[0], r, mean_a_b, mean_a_g, mean_a_r, mean_b);
+					resize(mean_b, vdest[0], s, 0, 0, upsample_method);
+					resize(mean_a_b, a_high_b, s, 0, 0, upsample_method);
+					resize(mean_a_g, a_high_g, s, 0, 0, upsample_method);
+					resize(mean_a_r, a_high_r, s, 0, 0, upsample_method);
+					ab2q_fmadd_omp(a_high_b, a_high_g, a_high_r, vguide[0], vguide[1], vguide[2], vdest[0], vdest[0]);
 
-				blurSeparableVHI_omp(ab_p[1], ag_p[1], ar_p[1], b_p[1], r, mean_a_b, mean_a_g, mean_a_r, mean_b);
-				resize(mean_b, vdest[1], s, 0, 0, upsample_method);
-				resize(mean_a_b, a_high_b, s, 0, 0, upsample_method);
-				resize(mean_a_g, a_high_g, s, 0, 0, upsample_method);
-				resize(mean_a_r, a_high_r, s, 0, 0, upsample_method);
-				ab2q_fmadd_omp(a_high_b, a_high_g, a_high_r, vguide[0], vguide[1], vguide[2], vdest[1], vdest[1]);
+					blurSeparableVHI_omp(ab_p[1], ag_p[1], ar_p[1], b_p[1], r, mean_a_b, mean_a_g, mean_a_r, mean_b);
+					resize(mean_b, vdest[1], s, 0, 0, upsample_method);
+					resize(mean_a_b, a_high_b, s, 0, 0, upsample_method);
+					resize(mean_a_g, a_high_g, s, 0, 0, upsample_method);
+					resize(mean_a_r, a_high_r, s, 0, 0, upsample_method);
+					ab2q_fmadd_omp(a_high_b, a_high_g, a_high_r, vguide[0], vguide[1], vguide[2], vdest[1], vdest[1]);
 
-				blurSeparableVHI_omp(ab_p[2], ag_p[2], ar_p[2], b_p[2], r, mean_a_b, mean_a_g, mean_a_r, mean_b);
-				resize(mean_b, vdest[2], s, 0, 0, upsample_method);
-				resize(mean_a_b, a_high_b, s, 0, 0, upsample_method);
-				resize(mean_a_g, a_high_g, s, 0, 0, upsample_method);
-				resize(mean_a_r, a_high_r, s, 0, 0, upsample_method);
-				ab2q_fmadd_omp(a_high_b, a_high_g, a_high_r, vguide[0], vguide[1], vguide[2], vdest[2], vdest[2]);
+					blurSeparableVHI_omp(ab_p[2], ag_p[2], ar_p[2], b_p[2], r, mean_a_b, mean_a_g, mean_a_r, mean_b);
+					resize(mean_b, vdest[2], s, 0, 0, upsample_method);
+					resize(mean_a_b, a_high_b, s, 0, 0, upsample_method);
+					resize(mean_a_g, a_high_g, s, 0, 0, upsample_method);
+					resize(mean_a_r, a_high_r, s, 0, 0, upsample_method);
+					ab2q_fmadd_omp(a_high_b, a_high_g, a_high_r, vguide[0], vguide[1], vguide[2], vdest[2], vdest[2]);
+				}
+				else
+				{
+					resize(b_p[0], vdest[0], s, 0, 0, upsample_method);
+					resize(ab_p[0], a_high_b, s, 0, 0, upsample_method);
+					resize(ag_p[0], a_high_g, s, 0, 0, upsample_method);
+					resize(ar_p[0], a_high_r, s, 0, 0, upsample_method);
+					ab2q_fmadd_omp(a_high_b, a_high_g, a_high_r, vguide[0], vguide[1], vguide[2], vdest[0], vdest[0]);
+
+					resize(b_p[1], vdest[1], s, 0, 0, upsample_method);
+					resize(ab_p[1], a_high_b, s, 0, 0, upsample_method);
+					resize(ag_p[1], a_high_g, s, 0, 0, upsample_method);
+					resize(ar_p[1], a_high_r, s, 0, 0, upsample_method);
+					ab2q_fmadd_omp(a_high_b, a_high_g, a_high_r, vguide[0], vguide[1], vguide[2], vdest[1], vdest[1]);
+
+					resize(b_p[2], vdest[2], s, 0, 0, upsample_method);
+					resize(ab_p[2], a_high_b, s, 0, 0, upsample_method);
+					resize(ag_p[2], a_high_g, s, 0, 0, upsample_method);
+					resize(ar_p[2], a_high_r, s, 0, 0, upsample_method);
+					ab2q_fmadd_omp(a_high_b, a_high_g, a_high_r, vguide[0], vguide[1], vguide[2], vdest[2], vdest[2]);
+				}
 			}
 		}
 

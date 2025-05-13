@@ -623,7 +623,10 @@ namespace cp
 					dest_border[i].setTo(0);
 				}
 
-				if (method == 0)upsampleGrayDoubleLU(image_border[i], dest_border[i], threshold, WindowSize, float(eps * 1.0 / 2560.0));
+				if (method == 0)
+				{
+					upsampleGrayDoubleLU(image_border[i], dest_border[i], threshold, WindowSize, float(eps * 1.0 / 2560.0));
+				}
 				else if (method == 1)
 				{
 					//upsampleGrayDoubleLU(image_border[i], dest_border[i], threshold, WindowSize);
@@ -633,7 +636,7 @@ namespace cp
 
 			int i = level - 1;
 			dest_border[i](Rect((WindowSize + 1) * 2, (WindowSize + 1) * 2, dest_border[i].cols - (WindowSize + 1) * 4, dest_border[i].rows - (WindowSize + 1) * 4)).copyTo(destf);
-			cout<<destf.size() << endl;
+			//cout<<destf.size() << endl;
 			destf.convertTo(dest, src.depth(), 255);
 		}
 		else if (src.channels() == 3)

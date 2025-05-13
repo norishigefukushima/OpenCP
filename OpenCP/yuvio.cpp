@@ -170,16 +170,15 @@ namespace cp
 		//imshow("aa",dest);waitKey();
 	}
 
-	void writeYUV(InputArray src_, string name, int mode)
+	void writeYUV(InputArray src_, string name, int color, int mode)
 	{
-		Mat src; cvtColor(src_, src, COLOR_BGR2YUV);
-
+		Mat src; cvtColor(src_, src, color);
 		int s = 1;
 		if (src.type() == CV_16S) s = 2;
 		if (mode == 0 || s == 1)
 		{
 			FILE* fp = fopen(name.c_str(), "wb");
-			fwrite(src.data, sizeof(uchar), src.size().area() * s, fp);
+			fwrite(src.data, sizeof(uchar), src.size().area() * s*src.channels(), fp);
 			fclose(fp);
 		}
 		else
@@ -211,6 +210,18 @@ namespace cp
 			fclose(fp);
 			delete[] buff;
 		}
+	}
+
+	void writeYUVI444(InputArray src_, string name)
+	{
+		Mat src; cvtColor(src_, src, COLOR_BGR2YCrCb);
+		vector<Mat> vsrc;
+		split(src, vsrc);
+		FILE* fp = fopen(name.c_str(), "wb");
+		fwrite(vsrc[0].data, sizeof(uchar), src.size().area(), fp);
+		fwrite(vsrc[1].data, sizeof(uchar), src.size().area(), fp);
+		fwrite(vsrc[2].data, sizeof(uchar), src.size().area(), fp);
+		fclose(fp);
 	}
 
 

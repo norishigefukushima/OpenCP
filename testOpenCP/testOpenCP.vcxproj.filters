@@ -195,6 +195,9 @@
     <ClCompile Include="multiScaleFilterTest.cpp">
       <Filter>ソース ファイル\test\stereo\multiscalefilter</Filter>
     </ClCompile>
+    <ClCompile Include="testCSV.cpp">
+      <Filter>ソース ファイル\test\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="test.hpp">

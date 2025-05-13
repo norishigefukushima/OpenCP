@@ -34,5 +34,5 @@ namespace cp
 	CP_EXPORT void writeYUVBGR(std::string fname, cv::InputArray src);
 	CP_EXPORT void writeYUVGray(std::string fname, cv::InputArray src);
 	CP_EXPORT void readY16(std::string fname, cv::OutputArray dest, cv::Size size, int frame);
-	CP_EXPORT void writeYUV(cv::Mat& InputArray, std::string name, int mode = 1);
+	CP_EXPORT void writeYUV(cv::InputArray src, std::string name, int color = cv::COLOR_BGR2YCrCb, int depthmode = 1);
 }

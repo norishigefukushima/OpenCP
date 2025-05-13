@@ -1903,7 +1903,8 @@ namespace cp
 		cv::transform(src, dest, transmat);
 	}
 
-	static void calcCovarMatrix2_(const Mat& src, Mat& dest, Mat& average_value)
+#pragma region calcCovarMatrixN_32F
+	static void calcCovarMatrix2_32F_(const Mat& src, Mat& dest, Mat& average_value)
 	{
 		dest.create(src.channels(), src.channels(), CV_64F);
 		CV_Assert(src.channels() <= 4);
@@ -1942,7 +1943,7 @@ namespace cp
 		dest.at<double>(1, 1) = gg / simdsize;
 	}
 
-	static void calcCovarMatrix3_(const Mat& src, Mat& dest, Mat& average_value)
+	static void calcCovarMatrix3_32F_(const Mat& src, Mat& dest, Mat& average_value)
 	{
 		dest.create(src.channels(), src.channels(), CV_64F);
 		CV_Assert(src.channels() <= 4);
@@ -1998,7 +1999,7 @@ namespace cp
 	}
 
 
-	static void calcCovarMatrix2_(const vector<Mat>& src, Mat& dest)
+	static void calcCovarMatrix2_32F_(const vector<Mat>& src, Mat& dest)
 	{
 		dest.create((int)src.size(), (int)src.size(), CV_64F);
 		CV_Assert(src.size() <= 4);
@@ -2035,7 +2036,7 @@ namespace cp
 		dest.at<double>(1, 1) = gg / simdsize;
 	}
 
-	static void calcCovarMatrix3_(const vector<Mat>& src, Mat& dest)
+	static void calcCovarMatrix3_32F_(const vector<Mat>& src, Mat& dest)
 	{
 		dest.create((int)src.size(), (int)src.size(), CV_64F);
 		CV_Assert(src.size() <= 4);
@@ -2090,7 +2091,7 @@ namespace cp
 		dest.at<double>(2, 2) = rr / simdsize;
 	}
 
-	static void calcCovarMatrix4_(const vector<Mat>& src, Mat& dest)
+	static void calcCovarMatrix4_32F_(const vector<Mat>& src, Mat& dest)
 	{
 		dest.create((int)src.size(), (int)src.size(), CV_64F);
 
@@ -2176,7 +2177,7 @@ namespace cp
 		dest.at<double>(3, 3) = v33 / simdsize;
 	}
 
-	static void calcCovarMatrix5_(const vector<Mat>& src, Mat& dest)
+	static void calcCovarMatrix5_32F_(const vector<Mat>& src, Mat& dest)
 	{
 		dest.create((int)src.size(), (int)src.size(), CV_64F);
 
@@ -2292,7 +2293,7 @@ namespace cp
 		dest.at<double>(4, 4) = v44 / simdsize;
 	}
 
-	static void calcCovarMatrix6_(const vector<Mat>& src, Mat& dest)
+	static void calcCovarMatrix6_32F_(const vector<Mat>& src, Mat& dest)
 	{
 		dest.create((int)src.size(), (int)src.size(), CV_64F);
 
@@ -2444,7 +2445,7 @@ namespace cp
 	}
 
 	template<int N>
-	static void calcCovarMatrix__(const vector<Mat>& src, Mat& dest)
+	static void calcCovarMatrix__32F_(const vector<Mat>& src, Mat& dest)
 	{
 		const int simdsize = get_simd_ceil(src[0].size().area(), 8);
 
@@ -2493,7 +2494,7 @@ namespace cp
 		}
 	}
 
-	static void calcCovarMatrixN_(const vector<Mat>& src, Mat& dest)
+	static void calcCovarMatrixN_32F_(const vector<Mat>& src, Mat& dest)
 	{
 		const int N = (int)src.size();
 		const int simdsize = get_simd_ceil(src[0].size().area(), 8);
@@ -2542,9 +2543,62 @@ namespace cp
 			}
 		}
 	}
+#pragma endregion
+#pragma region calcCovarMatrixN_64F
+	static void calcCovarMatrixN_64F_(const vector<Mat>& src, Mat& dest)
+	{
+		const int N = (int)src.size();
+		const int simdsize = get_simd_ceil(src[0].size().area(), 4);
 
+		dest.create((int)src.size(), (int)src.size(), CV_64F);
+
+		AutoBuffer<double> ave(N);
+		//for (int c = 0; c < N; c++) ave[c] = cp::average(src[c]);
+		for (int c = 0; c < N; c++) ave[c] = cv::mean(src[c])[0];
+		AutoBuffer<const double*> s(N);
+		for (int c = 0; c < N; c++) s[c] = src[c].ptr<double>();
+
+		AutoBuffer<__m256d> mc(N * N);
+		for (int c = 0; c < N * N; c++) mc[c] = _mm256_setzero_pd();
+		AutoBuffer<__m256d> ma(N);
+		for (int c = 0; c < N; c++) ma[c] = _mm256_set1_pd(ave[c]);
+		AutoBuffer<__m256d> m(N);
+
+		for (int i = 0; i < simdsize; i += 4)
+		{
+			for (int c = 0; c < N; c++) m[c] = _mm256_sub_pd(_mm256_load_pd(s[c] + i), ma[c]);
+
+			int idx = 0;
+			for (int c = 0; c < N; c++)
+			{
+				for (int d = c; d < N; d++)
+				{
+					mc[idx] = _mm256_fmadd_pd(m[c], m[d], mc[idx]);
+					idx++;
+				}
+			}
+		}
+		int idx = 0;
+		for (int c = 0; c < N; c++)
+		{
+			for (int d = c; d < N; d++)
+			{
+				dest.at<double>(c, d) = _mm256_reduceadd_pd(mc[idx]) / simdsize;
+				idx++;
+			}
+		}
+		for (int c = 0; c < N; c++)
+		{
+			for (int d = 0; d < c; d++)
+			{
+				dest.at<double>(c, d) = dest.at<double>(d, c);
+			}
+		}
+	}
+#pragma endregion
+#pragma region projectPCA_MxN_32F
 	//src 3 x dest n(1-3)
-	static void projectPCA_2xn(const Mat& src, Mat& dest, Mat& evec)
+	static void projectPCA_2xn_32F(const Mat& src, Mat& dest, Mat& evec)
 	{
 		CV_Assert(src.channels() == 2);
 		const int sizesimd = src.size().area() / 8;
@@ -2589,7 +2643,7 @@ namespace cp
 		}
 	}
 
-	static void projectPCA_3xN(const Mat& src, Mat& dest, Mat& evec)
+	static void projectPCA_3xN_32F(const Mat& src, Mat& dest, Mat& evec)
 	{
 		CV_Assert(src.channels() == 3);
 		const int sizesimd = src.size().area() / 8;
@@ -2650,13 +2704,13 @@ namespace cp
 		}
 	}
 
-	static void projectPCA_MxN(const Mat& src, Mat& dest, Mat& evec)
+	static void projectPCA_MxN_32F(const Mat& src, Mat& dest, Mat& evec)
 	{
 		cv::transform(src, dest, evec);
 	}
 
 	//src 3 x dest n(1-3)
-	static void projectPCA_2xN(const vector<Mat>& src, vector<Mat>& dest, const Mat& evec)
+	static void projectPCA_2xN_32F(const vector<Mat>& src, vector<Mat>& dest, const Mat& evec)
 	{
 		CV_Assert(src.size() == 2);
 		const int sizesimd = src[0].size().area() / 8;
@@ -2710,7 +2764,7 @@ namespace cp
 		}
 	}
 
-	static void projectPCA_3xN(const vector<Mat>& src, vector<Mat>& dest, const Mat& evec)
+	static void projectPCA_3xN_32F(const vector<Mat>& src, vector<Mat>& dest, const Mat& evec)
 	{
 		CV_Assert(src.size() == 3);
 		const int sizesimd = src[0].size().area() / 8;
@@ -2795,7 +2849,7 @@ namespace cp
 		}
 	}
 
-	static void projectPCA_4xN(const vector<Mat>& src, vector<Mat>& dest, const Mat& evec)
+	static void projectPCA_4xN_32F(const vector<Mat>& src, vector<Mat>& dest, const Mat& evec)
 	{
 		CV_Assert(src.size() == 4);
 		const int sizesimd = src[0].size().area() / 8;
@@ -2919,7 +2973,7 @@ namespace cp
 		}
 	}
 
-	static void projectPCA_5xN(const vector<Mat>& src, vector<Mat>& dest, const Mat& evec)
+	static void projectPCA_5xN_32F(const vector<Mat>& src, vector<Mat>& dest, const Mat& evec)
 	{
 		CV_Assert(src.size() == 5);
 		const int sizesimd = src[0].size().area() / 8;
@@ -3090,7 +3144,7 @@ namespace cp
 		}
 	}
 
-	static void projectPCA_6xN(const vector<Mat>& src, vector<Mat>& dest, const Mat& evec)
+	static void projectPCA_6xN_32F(const vector<Mat>& src, vector<Mat>& dest, const Mat& evec)
 	{
 		CV_Assert(src.size() == 6);
 		const int sizesimd = src[0].size().area() / 8;
@@ -3317,7 +3371,7 @@ namespace cp
 	}
 
 	//src M x dest N
-	static void projectPCA_MxN(const vector<Mat>& src, vector<Mat>& dest, const Mat& evec)
+	static void projectPCA_MxN_32F(const vector<Mat>& src, vector<Mat>& dest, const Mat& evec)
 	{
 		const int src_channels = (int)src.size();
 		const int dest_channels = (int)dest.size();
@@ -3361,7 +3415,7 @@ namespace cp
 
 	//src M x dest N
 	template<int src_channels>
-	static void projectPCA_MxN(const vector<Mat>& src, vector<Mat>& dest, const Mat& evec)
+	static void projectPCA_MxN_32F(const vector<Mat>& src, vector<Mat>& dest, const Mat& evec)
 	{
 		const int dest_channels = (int)dest.size();
 
@@ -3401,23 +3455,79 @@ namespace cp
 			}
 		}
 	}
+#pragma endregion
+#pragma region projectPCA_MxN_64F
+	//src M x dest N
+	static void projectPCA_MxN_64F(const vector<Mat>& src, vector<Mat>& dest, const Mat& evec)
+	{
+		const int src_channels = (int)src.size();
+		const int dest_channels = (int)dest.size();
 
+		const int sizesimd = src[0].size().area() / 4;
+
+		AutoBuffer<const double*> sptr(src_channels);
+		for (int c = 0; c < src_channels; c++)sptr[c] = src[c].ptr<double>();
+		AutoBuffer<double*> dptr(dest_channels);
+		for (int c = 0; c < dest_channels; c++)dptr[c] = (double*)dest[c].ptr<double>();
+
+		AutoBuffer<__m256d> mv(evec.cols * evec.rows);
+		for (int i = 0; i < evec.rows; i++)
+		{
+			for (int j = 0; j < evec.cols; j++)
+			{
+				mv[evec.cols * i + j] = _mm256_set1_pd(evec.at<double>(i, j));
+			}
+		}
+
+		AutoBuffer<__m256d> ms(src_channels);
+		for (int i = 0; i < sizesimd; i++)
+		{
+			for (int c = 0; c < src_channels; c++)
+			{
+				ms[c] = _mm256_load_pd(sptr[c]);
+				sptr[c] += 4;
+			}
+			for (int d = 0, idx = 0; d < dest_channels; d++)
+			{
+				__m256d md = _mm256_mul_pd(ms[0], mv[idx++]);
+				for (int c = 1; c < src_channels; c++)
+				{
+					md = _mm256_fmadd_pd(ms[c], mv[idx++], md);
+				}
+				_mm256_store_pd(dptr[d], md);
+				dptr[d] += 4;
+			}
+		}
+	}
+#pragma endregion
 	void projectPCA(const vector<Mat>& src, vector<Mat>& dest, const Mat& projectionMatrix)
 	{
 		const int channels = projectionMatrix.rows;
 		dest.resize(channels);
-		for (int c = 0; c < channels; c++)
-		{
-			dest[c].create(src[0].size(), CV_32F);
-		}
 
-		if (src.size() == 2) projectPCA_2xN(src, dest, projectionMatrix);
-		else if (src.size() == 3) projectPCA_3xN(src, dest, projectionMatrix);
-		else if (src.size() == 4) projectPCA_4xN(src, dest, projectionMatrix);
-		else if (src.size() == 5) projectPCA_5xN(src, dest, projectionMatrix);
-		else if (src.size() == 6) projectPCA_6xN(src, dest, projectionMatrix);
-		else if (src.size() == 33) projectPCA_MxN<33>(src, dest, projectionMatrix);
-		else  projectPCA_MxN(src, dest, projectionMatrix);
+		if (src[0].depth() == CV_32F)
+		{
+			for (int c = 0; c < channels; c++)
+			{
+				dest[c].create(src[0].size(), CV_32F);
+			}
+
+			if (src.size() == 2) projectPCA_2xN_32F(src, dest, projectionMatrix);
+			else if (src.size() == 3) projectPCA_3xN_32F(src, dest, projectionMatrix);
+			else if (src.size() == 4) projectPCA_4xN_32F(src, dest, projectionMatrix);
+			else if (src.size() == 5) projectPCA_5xN_32F(src, dest, projectionMatrix);
+			else if (src.size() == 6) projectPCA_6xN_32F(src, dest, projectionMatrix);
+			else if (src.size() == 33) projectPCA_MxN_32F<33>(src, dest, projectionMatrix);
+			else projectPCA_MxN_32F(src, dest, projectionMatrix);
+		}
+		else
+		{
+			for (int c = 0; c < channels; c++)
+			{
+				dest[c].create(src[0].size(), CV_64F);
+			}
+			projectPCA_MxN_64F(src, dest, projectionMatrix);
+		}
 	}
 
 	static void eigenVecConvert(Mat& evec)
@@ -3431,18 +3541,19 @@ namespace cp
 				sum += evec.at<double>(j, i);
 			}
 			if (sum < 0)
+			{
 				for (int i = 0; i < evec.cols; i++)
 				{
 					evec.at<double>(j, i) *= -1.0;
 				}
+			}
 		}
 	}
 
 	void cvtColorPCA(InputArray src_, OutputArray dest_, const int dest_channels, Mat& evec, Mat& eval, Mat& mean)
 	{
-		CV_Assert(src_.depth() == CV_32F);
-
-
+		CV_Assert(src_.depth() == CV_32F || src_.depth() == CV_64F);
+		const int depth = src_.depth();
 		if (src_.channels() == 1)
 		{
 			src_.copyTo(dest_);
@@ -3450,42 +3561,62 @@ namespace cp
 		}
 
 		const int channels = min(dest_channels, src_.channels());
-		dest_.create(src_.size(), CV_MAKE_TYPE(CV_32F, channels));
+		dest_.create(src_.size(), CV_MAKE_TYPE(depth, channels));
 
 		Mat src = src_.getMat();
 		Mat dest = dest_.getMat();
 		CV_Assert(src.data != dest.data);
 		Mat cov;
-		if (channels <= 3 && src_.channels() <= 3)
+		if (depth == CV_32F)
 		{
+			if (channels <= 3 && src_.channels() <= 3)
 			{
-				//cp::Timer t("cov");
-				if (src.channels() == 2) calcCovarMatrix2_(src, cov, mean);
-				if (src.channels() == 3) calcCovarMatrix3_(src, cov, mean);
+				{
+					//cp::Timer t("cov");
+					if (src.channels() == 2) calcCovarMatrix2_32F_(src, cov, mean);
+					if (src.channels() == 3) calcCovarMatrix3_32F_(src, cov, mean);
+				}
+				eigen(cov, eval, evec);
+				eigenVecConvert(evec);
+				Mat transmat;
+				evec(Rect(0, 0, evec.cols, channels)).convertTo(transmat, CV_32F);
+				//print_matinfo(transmat);
+				{
+					if (src.channels() == 2) projectPCA_2xn_32F(src, dest, transmat);
+					else if (src.channels() == 3) projectPCA_3xN_32F(src, dest, transmat);
+					else projectPCA_MxN_32F(src, dest, transmat);
+				}
 			}
-			eigen(cov, eval, evec);
-			eigenVecConvert(evec);
-			Mat transmat;
-			evec(Rect(0, 0, evec.cols, channels)).convertTo(transmat, CV_32F);
-			//print_matinfo(transmat);
+			else
 			{
-				if (src.channels() == 2) projectPCA_2xn(src, dest, transmat);
-				else if (src.channels() == 3) projectPCA_3xN(src, dest, transmat);
-				else projectPCA_MxN(src, dest, transmat);
+				//if (src.channels() <= 6)
+				{
+					vector<Mat> vsrc; split(src, vsrc);
+					vector<Mat> vdst;
+					cvtColorPCA(vsrc, vdst, dest_channels);
+					merge(vdst, dest);
+				}
+				//else
+				{
+					//cvtColorPCAOpenCVCovMat(src, dest, channels, eval, evec);
+				}
 			}
 		}
-		else
+		else if (depth == CV_64F)
 		{
-			//if (src.channels() <= 6)
+			vector<Mat> vsrc; split(src, vsrc);
+			vector<Mat> vdst;
+			cvtColorPCA(vsrc, vdst, dest_channels);
+			merge(vdst, dest);
 			{
-				vector<Mat> vsrc; split(src, vsrc);
-				vector<Mat> vdst;
-				cvtColorPCA(vsrc, vdst, dest_channels);
-				merge(vdst, dest);
-			}
-			//else
-			{
-				//cvtColorPCAOpenCVCovMat(src, dest, channels, eval, evec);
+				//if (src.channels() <= 6)
+				{
+
+				}
+				//else
+				{
+					//cvtColorPCAOpenCVCovMat(src, dest, channels, eval, evec);
+				}
 			}
 		}
 	}
@@ -3563,8 +3694,8 @@ namespace cp
 		{
 			{
 				//cp::Timer t("cov");
-				if (src.channels() == 2) calcCovarMatrix2_(src, cov, mean);
-				if (src.channels() == 3) calcCovarMatrix3_(src, cov, mean);
+				if (src.channels() == 2) calcCovarMatrix2_32F_(src, cov, mean);
+				if (src.channels() == 3) calcCovarMatrix3_32F_(src, cov, mean);
 			}
 
 			eigen(cov, eval, evec);
@@ -3576,9 +3707,9 @@ namespace cp
 
 
 			{
-				if (src.channels() == 2) projectPCA_2xn(src, dest, transmat);
-				else if (src.channels() == 3) projectPCA_3xN(src, dest, transmat);
-				else projectPCA_MxN(src, dest, transmat);
+				if (src.channels() == 2) projectPCA_2xn_32F(src, dest, transmat);
+				else if (src.channels() == 3) projectPCA_3xN_32F(src, dest, transmat);
+				else projectPCA_MxN_32F(src, dest, transmat);
 			}
 		}
 		else
@@ -3627,13 +3758,13 @@ namespace cp
 		Mat cov;
 		{
 			//cp::Timer t("cov");
-			if (src.size() == 2) calcCovarMatrix2_(src, cov);
-			else if (src.size() == 3) calcCovarMatrix3_(src, cov);
-			else if (src.size() == 4) calcCovarMatrix4_(src, cov);
-			else if (src.size() == 5) calcCovarMatrix5_(src, cov);
-			else if (src.size() == 6) calcCovarMatrix6_(src, cov);
-			else if (src.size() == 33) calcCovarMatrix__<33>(src, cov);
-			else calcCovarMatrixN_(src, cov);
+			if (src.size() == 2) calcCovarMatrix2_32F_(src, cov);
+			else if (src.size() == 3) calcCovarMatrix3_32F_(src, cov);
+			else if (src.size() == 4) calcCovarMatrix4_32F_(src, cov);
+			else if (src.size() == 5) calcCovarMatrix5_32F_(src, cov);
+			else if (src.size() == 6) calcCovarMatrix6_32F_(src, cov);
+			else if (src.size() == 33) calcCovarMatrix__32F_<33>(src, cov);
+			else calcCovarMatrixN_32F_(src, cov);
 		}
 
 		Mat eval, evec;
@@ -3641,13 +3772,13 @@ namespace cp
 
 		Mat transmat;
 		evec.convertTo(transmat, CV_32F);
-		if (src.size() == 2) projectPCA_2xN(src, dest, transmat);
-		else if (src.size() == 3) projectPCA_3xN(src, dest, transmat);
-		else if (src.size() == 4) projectPCA_4xN(src, dest, transmat);
-		else if (src.size() == 5) projectPCA_5xN(src, dest, transmat);
-		else if (src.size() == 6) projectPCA_6xN(src, dest, transmat);
-		else if (src.size() == 33) projectPCA_MxN<33>(src, dest, transmat);
-		else  projectPCA_MxN(src, dest, transmat);
+		if (src.size() == 2) projectPCA_2xN_32F(src, dest, transmat);
+		else if (src.size() == 3) projectPCA_3xN_32F(src, dest, transmat);
+		else if (src.size() == 4) projectPCA_4xN_32F(src, dest, transmat);
+		else if (src.size() == 5) projectPCA_5xN_32F(src, dest, transmat);
+		else if (src.size() == 6) projectPCA_6xN_32F(src, dest, transmat);
+		else if (src.size() == 33) projectPCA_MxN_32F<33>(src, dest, transmat);
+		else  projectPCA_MxN_32F(src, dest, transmat);
 
 		const int s = (int)src.size() - channels;
 		vector<Mat> a(s);
@@ -3674,6 +3805,8 @@ namespace cp
 
 	static void sortEigenVecVal(Mat& vec, Mat& val)
 	{
+		CV_Assert(vec.depth() == CV_64F);
+		CV_Assert(val.depth() == CV_64F);
 		//ordering check
 		bool ret = true;
 		for (int i = 0; i < val.size().area() - 1; i++)
@@ -3723,15 +3856,20 @@ namespace cp
 	void computePCA(const vector<Mat>& src, Mat& evec, Mat& eval)
 	{
 		Mat cov;
+		if (src[0].depth() == CV_32F)
 		{
 			//cp::Timer t("cov");
-			if (src.size() == 2) calcCovarMatrix2_(src, cov);
-			else if (src.size() == 3) calcCovarMatrix3_(src, cov);
-			else if (src.size() == 4) calcCovarMatrix4_(src, cov);
-			else if (src.size() == 5) calcCovarMatrix5_(src, cov);
-			else if (src.size() == 6) calcCovarMatrix6_(src, cov);
-			else if (src.size() == 33) calcCovarMatrix__<33>(src, cov);
-			else calcCovarMatrixN_(src, cov);
+			if (src.size() == 2) calcCovarMatrix2_32F_(src, cov);
+			else if (src.size() == 3) calcCovarMatrix3_32F_(src, cov);
+			else if (src.size() == 4) calcCovarMatrix4_32F_(src, cov);
+			else if (src.size() == 5) calcCovarMatrix5_32F_(src, cov);
+			else if (src.size() == 6) calcCovarMatrix6_32F_(src, cov);
+			else if (src.size() == 33) calcCovarMatrix__32F_<33>(src, cov);
+			else calcCovarMatrixN_32F_(src, cov);
+		}
+		else if (src[0].depth() == CV_64F)
+		{
+			calcCovarMatrixN_64F_(src, cov);
 		}
 		eigen(cov, eval, evec);
 		sortEigenVecVal(evec, eval);
@@ -3739,7 +3877,7 @@ namespace cp
 
 	void cvtColorPCA(const vector<Mat>& src, vector<Mat>& dest, const int dest_channels, Mat& projectionMatrix, Mat& eval, Mat& mean)
 	{
-		CV_Assert(src[0].depth() == CV_32F);
+		CV_Assert(src[0].depth() == CV_32F|| src[0].depth() == CV_64F);
 
 		if (src.size() == 1)
 		{
@@ -3749,10 +3887,10 @@ namespace cp
 		}
 
 		const int channels = min(dest_channels, (int)src.size());
-		
+
 		Mat evec;
 		computePCA(src, evec, eval);
-		evec(Rect(0, 0, evec.cols, channels)).convertTo(projectionMatrix, CV_32F);
+		evec(Rect(0, 0, evec.cols, channels)).convertTo(projectionMatrix, src[0].depth());
 		projectPCA(src, dest, projectionMatrix);
 	}
 
@@ -4082,6 +4220,6 @@ namespace cp
 		if (C.empty())C.create(3, 4, CV_64F);
 
 		xcvFindColorMatrix(&CvMat(src_point_crowd1), &CvMat(src_point_crowd2), &CvMat(C));
-}
+	}
 #endif
 }
