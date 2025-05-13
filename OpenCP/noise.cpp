@@ -194,8 +194,14 @@ namespace cp
 		param.push_back(method);
 		param.push_back(IMWRITE_WEBP_COLORSPACE);
 		param.push_back(colorSpace);
-		if (colorSpace == 0) cp::imencodeWebP(src.getMat(), buf, param);
-		else imencode(".webp", src, buf, param);
+		if (colorSpace < 0)
+		{
+			imencode(".webp", src, buf, param);
+		}
+		else
+		{
+			cp::imencodeWebP(src.getMat(), buf, param);
+		}
 		Mat dst = imdecode(buf, 1);
 		dst.copyTo(dest);
 		return 8.0 * buf.size() / src.size().area();
