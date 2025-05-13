@@ -128,8 +128,8 @@ namespace cp
 		void printTime(const double time, const std::string mes);
 		double cvtTick2Time(const double tick, const bool isStateChange = true);
 	public:
-		//order=0: average prediction
-		double predict(const int order = 0, const bool isDiff = false, const bool isPrint = true);
+		//order=0: average prediction, return pair(current, estimated)
+		std::pair<double, double> predict(const int order = 0, const bool isDiff = false, const bool isPrint = true);
 
 		void init(const int loopCountMax);
 		DestinationTimePrediction();

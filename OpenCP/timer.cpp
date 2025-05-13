@@ -617,9 +617,8 @@ namespace cp
 		return ret;
 	}
 
-	double DestinationTimePrediction::predict(const int order, const bool isDiff, const bool isPrint)
+	std::pair<double, double> DestinationTimePrediction::predict(const int order, const bool isDiff, const bool isPrint)
 	{
-		double ret = 0.0;
 		int64 cstamp = getTickCount();
 		time_stamp.push_back(cstamp);
 		double per = (time_stamp.size()) / (double)(loopMax);
@@ -636,7 +635,7 @@ namespace cp
 			printTime(etime, " | estimated ");
 			cout << endl;
 		}
-
+		std::pair<double, double> ret(ctime, etime);
 		return ret;
 	}
 
