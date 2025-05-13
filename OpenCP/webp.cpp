@@ -3,7 +3,10 @@
 #include "./webp/decode.h"
 #include "./webp/mux.h"
 #pragma comment(lib,"./webp/libwebp.lib")
+#pragma comment(lib,"./webp/libwebpdecoder.lib")
 #pragma comment(lib,"./webp/libwebpmux.lib")
+#pragma comment(lib,"./webp/libwebpdemux.lib")
+#pragma comment(lib,"./webp/libsharpyuv.lib")
 
 #include "debugcp.hpp"
 
@@ -144,25 +147,24 @@ namespace cp
 			if (parameters[n] == IMWRITE_WEBP_QUALITY) config.quality = (float)parameters[n + 1];
 			if (parameters[n] == IMWRITE_WEBP_METHOD) config.method = parameters[n + 1];
 			if (parameters[n] == IMWRITE_WEBP_COLORSPACE) color = parameters[n + 1];
-			//config.pass
+
+		//	std::cout << n<<": "<<parameters[n] << "," << parameters[n + 1] << endl;
 		}
 
 		picture.width = width;
 		picture.height = height;
 		if (color == 0 || color == 1)
 		{
-			picture.use_argb = 0;  
+			picture.use_argb = 1;
 			if (color == 1) config.use_sharp_yuv = 1;
 			WebPPictureImportBGR(&picture, rgb_data, width * 3);
 			//WebPPictureARGBToYUVA(&picture, WebPEncCSP::WEBP_YUV420);
 		}
 		else
 		{
-			picture.use_argb = 1;  
+			picture.use_argb = 1;
 			WebPPictureImportBGR(&picture, rgb_data, width * 3);
 		}
-
-		//std::cout << color << "," << picture.colorspace<<","<<config.use_sharp_yuv << std::endl;
 		WebPMemoryWriterInit(&writer);
 		picture.writer = WebPMemoryWrite;
 		picture.custom_ptr = &writer;
@@ -171,7 +173,7 @@ namespace cp
 		{
 			fprintf(stderr, "compression error: %d\n", WebPEncodingError(picture.error_code));
 			WebPPictureFree(&picture);
-			free(rgb_data);
+			//free(rgb_data);
 			return 1;
 		}
 
@@ -180,7 +182,7 @@ namespace cp
 		{
 			buff[i] = writer.mem[i];
 		}
-		
+
 		WebPPictureFree(&picture);
 		WebPMemoryWriterClear(&writer);
 
