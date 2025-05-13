@@ -135,6 +135,7 @@ namespace cp
 	CP_EXPORT double getInacceptableRatio(cv::InputArray src, cv::InputArray ref, const int threshold);
 	//for CV_8UC1, CV_8UC3, CV_16SC1, CV_16SC3, CV_16UC1, CV_16UC3
 	CP_EXPORT double getEntropy(cv::InputArray src, cv::InputArray mask = cv::noArray());
+	CP_EXPORT double getEntropyWeight(cv::InputArray src, const std::vector<double>& weight, cv::InputArray mask = cv::noArray());
 
 	CP_EXPORT double getTotalVariation(cv::InputArray src);
 

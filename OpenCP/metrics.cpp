@@ -966,97 +966,114 @@ namespace cp
 		return (double)sum / (double)count;
 	}
 
-	double calcEntropy16S(Mat& src, Mat& mask)
+	static double calcEntropy16S(Mat& src, Mat& mask)
 	{
-		vector<Mat> im;
-		cv::split(src, im);
-
 		double ret = 0.0;
-		for (int c = 0; c < src.channels(); c++)
+
+		double minv, maxv;
+		cv::minMaxLoc(src, &minv, &maxv);
+		int minvi = (int)minv;
+		const int range = (int)ceil(maxv - minv) + 1;
+		AutoBuffer<int> hist(range);
+		for (int i = 0; i < range; i++) hist[i] = 0;
+
+		const short* s = src.ptr<short>();
+		for (int i = 0; i < src.size().area(); i++)
 		{
-			double minv, maxv;
-			cv::minMaxLoc(im[c], &minv, &maxv);
-			int minvi = (int)minv;
-			const int range = (int)ceil(maxv - minv) + 1;
-			AutoBuffer<int> hist(range);
-			for (int i = 0; i < range; i++) hist[i] = 0;
+			hist[s[i] - minvi]++;
+		}
+		const double invsum = 1.0 / src.size().area();
 
-			const short* s = im[c].ptr<short>();
-			for (int i = 0; i < im[c].size().area(); i++)
-			{
-				hist[s[i] - minvi]++;
-			}
-			const double invsum = 1.0 / im[c].size().area();
-
-			for (int i = 0; i < range; i++)
-			{
-				const double v = (double)hist[i] * invsum;
-				if (v != 0) ret -= v * log2(v);
-			}
+		for (int i = 0; i < range; i++)
+		{
+			const double v = (double)hist[i] * invsum;
+			if (v != 0) ret -= v * log2(v);
 		}
 		return ret;
 	}
 
-	double calcEntropy16U(Mat& src, Mat& mask)
+	static double calcEntropy16U(Mat& src, Mat& mask)
 	{
-		vector<Mat> im;
-		cv::split(src, im);
-
 		double ret = 0.0;
-		for (int i = 0; i < src.channels(); i++)
+		cv::Mat hist;
+		const int hdims[] = { USHRT_MAX + 1 };
+		const float hranges[] = { 0, USHRT_MAX };
+		const float* ranges[] = { hranges };
+
+		cv::calcHist(&src, 1, 0, mask, hist, 1, hdims, ranges);
+
+		double sum = 0.0;
+		for (int j = 0; j < hdims[0]; ++j)
 		{
-			cv::Mat hist;
-			const int hdims[] = { USHRT_MAX + 1 };
-			const float hranges[] = { 0, USHRT_MAX };
-			const float* ranges[] = { hranges };
+			sum += hist.at<float>(j);
+		}
 
-			cv::calcHist(&im[i], 1, 0, mask, hist, 1, hdims, ranges);
+		double invsum = 1.0 / sum;
 
-			double sum = 0.0;
-			for (int j = 0; j < hdims[0]; ++j)
-			{
-				sum += hist.at<float>(j);
-			}
-
-			double invsum = 1.0 / sum;
-
-			for (int j = 0; j < hdims[0]; ++j)
-			{
-				const double v = (double)hist.at<float>(j) * invsum;
-				if (v != 0) ret -= v * log2(v);
-			}
+		for (int j = 0; j < hdims[0]; ++j)
+		{
+			const double v = (double)hist.at<float>(j) * invsum;
+			if (v != 0) ret -= v * log2(v);
 		}
 		return ret;
 	}
 
-	double calcEntropy8U(Mat& src, Mat& mask)
+	static double calcEntropy8U(Mat& src, Mat& mask)
 	{
-		vector<Mat> im;
-		cv::split(src, im);
+		double ret = 0.0;
+		cv::Mat hist;
+		const int hdims[] = { 256 };
+		const float hranges[] = { 0, 256 };
+		//const float hranges[] = {-minv,maxv};
+		const float* ranges[] = { hranges };
+
+		cv::calcHist(&src, 1, 0, mask, hist, 1, hdims, ranges);
+
+		double sum = 0.0;
+		for (int j = 0; j < hdims[0]; ++j)
+		{
+			sum += hist.at<float>(j);
+		}
+
+		double invsum = 1.0 / sum;
+
+		for (int j = 0; j < hdims[0]; ++j)
+		{
+			const double v = (double)hist.at<float>(j) * invsum;
+			if (v != 0) ret -= v * log2(v);
+		}
+		return ret;
+	}
+
+	double getEntropyWeight(cv::InputArray src, const vector<double>& weight, cv::InputArray mask_)
+	{
+		CV_Assert(src.depth() == CV_8U || src.depth() == CV_16S || src.depth() == CV_16U);
+
+		Mat mask = mask_.getMat();
+		Mat src_ = src.getMat();
+		int channels = src_.channels();
+		vector<Mat> im(channels);
+		if (channels != 1)cv::split(src, im);
+		else im[0] = src.getMat();
 
 		double ret = 0.0;
-		for (int i = 0; i < src.channels(); i++)
+		for (int c = 0; c < channels; c++)
 		{
-			cv::Mat hist;
-			const int hdims[] = { 256 };
-			const float hranges[] = { 0, 256 };
-			//const float hranges[] = {-minv,maxv};
-			const float* ranges[] = { hranges };
-
-			cv::calcHist(&im[i], 1, 0, mask, hist, 1, hdims, ranges);
-
-			double sum = 0.0;
-			for (int j = 0; j < hdims[0]; ++j)
+			if (src.depth() == CV_8U)
 			{
-				sum += hist.at<float>(j);
+				ret += weight[c] * calcEntropy8U(im[c], mask);
 			}
-
-			double invsum = 1.0 / sum;
-
-			for (int j = 0; j < hdims[0]; ++j)
+			else if (src.depth() == CV_16S)
 			{
-				const double v = (double)hist.at<float>(j) * invsum;
-				if (v != 0) ret -= v * log2(v);
+				ret += weight[c] * calcEntropy16S(im[c], mask);
+			}
+			else if (src.depth() == CV_16U)
+			{
+				ret += weight[c] * calcEntropy16U(im[c], mask);
+			}
+			else
+			{
+				;
 			}
 		}
 		return ret;
@@ -1065,28 +1082,13 @@ namespace cp
 	double getEntropy(cv::InputArray src, cv::InputArray mask_)
 	{
 		CV_Assert(src.depth() == CV_8U || src.depth() == CV_16S || src.depth() == CV_16U);
-
-		Mat mask = mask_.getMat();
-		Mat src_ = src.getMat();
-		double ret = 0.0;
-		if (src.depth() == CV_8U)
-		{
-			ret = calcEntropy8U(src_, mask);
-		}
-		else if (src.depth() == CV_16S)
-		{
-			ret = calcEntropy16S(src_, mask);
-		}
-		else if (src.depth() == CV_16U)
-		{
-			ret = calcEntropy16U(src_, mask);
-		}
-		else
-		{
-			;
-		}
-		return ret;
+		int channels = src.channels();
+		vector<double> weight;
+		for (int i = 0; i < channels; i++) weight.push_back(1.0);
+		return getEntropyWeight(src, weight, mask_);
 	}
+
+
 
 #pragma region GMSD
 	static void gradientSquareEdge32F(InputArray ref, OutputArray dst)
