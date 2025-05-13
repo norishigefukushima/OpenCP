@@ -238,6 +238,7 @@ namespace cp
 	void stdFilter(InputArray src, OutputArray dest, const Size kernelSize)
 	{
 		varianceFilter(src, dest, kernelSize);
+		max(dest, 0, dest);
 		sqrt(dest, dest);
 	}
 
