@@ -341,27 +341,10 @@ class CP_EXPORT DestinationTimePrediction
 パラメータの更新確認クラス．
 * [class UpdateCheck](core/UpdateCheck_jp.md "#class UpdateCheck")
 
-## [Todo] vecotr.hpp
-vector配列をバイナリデータとして保存する関数群
-```cpp
-CP_EXPORT void writevector(std::vector<char>& buf, const std::string name);
-CP_EXPORT void writevector(std::vector<uchar>& buf, const std::string name);
-CP_EXPORT void writevector(std::vector<short>& buf, const std::string name);
-CP_EXPORT void writevector(std::vector<ushort>& buf, const std::string name);
-CP_EXPORT void writevector(std::vector<int>& buf, const std::string name);
-CP_EXPORT void writevector(std::vector<uint>& buf, const std::string name);
-CP_EXPORT void writevector(std::vector<float>& buf, const std::string name);
-CP_EXPORT void writevector(std::vector<double>& buf, const std::string name);
-
-CP_EXPORT void readvector(std::vector<char>& buf, const std::string name);
-CP_EXPORT void readvector(std::vector<uchar>& buf, const std::string name);
-CP_EXPORT void readvector(std::vector<short>& buf, const std::string name);
-CP_EXPORT void readvector(std::vector<ushort>& buf, const std::string name);
-CP_EXPORT void readvector(std::vector<int>& buf, const std::string name);
-CP_EXPORT void readvector(std::vector<uint>& buf, const std::string name);
-CP_EXPORT void readvector(std::vector<float>& buf, const std::string name);
-CP_EXPORT void readvector(std::vector<double>& buf, const std::string name);
-```
+## vectorio.hpp
+std::vectorの配列の中身をバイナリとしてダンプする関数．
+* [writevector](core/vectorio_jp.md "#writevector")
+* [readvector](core/vectorio_jp.md "#readvector")
 
 ## [Todo] video.hpp
 動画を表示するだけ．
