@@ -337,9 +337,10 @@ namespace cp
 			}
 			else
 			{
-				string m = mode + "+";
+				string m = "a+";
 				fp = fopen(name.c_str(), m.c_str());
 			}
+
 			if (fp == nullptr)
 			{
 				string n = name + "(1)";
@@ -350,7 +351,7 @@ namespace cp
 				}
 				else
 				{
-					string m = mode + "+";
+					string m = "a+";
 					fp = fopen(filename.c_str(), m.c_str());
 				}
 				if (fp == NULL)
