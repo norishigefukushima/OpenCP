@@ -360,7 +360,9 @@ namespace cp
 	{
 		double cTime = tick / getTickFrequency();
 		if (isStateChange)
+		{
 			timeMode = getAutoTimeMode(cTime);
+		}
 
 		switch (timeMode)
 		{
@@ -619,7 +621,7 @@ namespace cp
 
 	std::pair<double, double> DestinationTimePrediction::predict(const int order, const bool isDiff, const bool isPrint)
 	{
-		int64 cstamp = getTickCount();
+		const int64 cstamp = getTickCount();
 		time_stamp.push_back(cstamp);
 		double per = (time_stamp.size()) / (double)(loopMax);
 		//print_debug2(time_stamp.size(), destCount);
@@ -650,8 +652,9 @@ namespace cp
 		;
 	}
 
-	DestinationTimePrediction::DestinationTimePrediction(const int loopMax)
+	DestinationTimePrediction::DestinationTimePrediction(const int loopMax, int timeMode)
 	{
+		this->timeMode = timeMode;
 		init(loopMax);
 	}
 

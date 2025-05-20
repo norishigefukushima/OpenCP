@@ -119,7 +119,7 @@ namespace cp
 		cv::Mat coefficients;
 		int getAutoTimeMode(const double cTime);
 		std::string unit = "";
-		int timeMode = 0;
+		int timeMode = TIME_AUTO;
 		std::vector<int64> time_stamp;
 		int order = 1;
 		int loopMax = 0;
@@ -133,7 +133,7 @@ namespace cp
 
 		void init(const int loopCountMax);
 		DestinationTimePrediction();
-		DestinationTimePrediction(const int loopCountMax);
+		DestinationTimePrediction(const int loopCountMax, int timeMode = TIME_AUTO);
 		~DestinationTimePrediction();
 	};
 }
