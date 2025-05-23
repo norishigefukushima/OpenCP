@@ -43,6 +43,7 @@
 #include "statistic.hpp"
 #include "stencil.hpp"
 #include "stream.hpp"
+#include "string_cp.hpp"
 #include "threshold.hpp"
 #include "tiling.hpp"
 #include "timer.hpp"

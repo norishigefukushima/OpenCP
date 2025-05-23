@@ -288,6 +288,13 @@ class CP_EXPORT RandomizedQueue
 * [streamCopy](stream_jp.md "#streamCopy")
 * [streamConvertTo8U](stream_jp.md "#streamConvertTo8U")
 
+## string_cp.hpp
+stringクラスの拡張
+
+* [string_split](string_cp_jp.md "#string_split")
+* [string_remove](string_cp_jp.md "#string_remove")
+* [string_format_with_commas](string_cp_jp.md "#string_format_with_commas")
+
 ## [Todo] tiling.hpp
 
 タイリング用．いろいろデバッグ途中

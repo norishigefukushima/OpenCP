@@ -654,6 +654,9 @@
     <ClCompile Include="vectorio.cpp">
       <Filter>ソース ファイル\core</Filter>
     </ClCompile>
+    <ClCompile Include="string_cp.cpp">
+      <Filter>ソース ファイル\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libGaussian\gaussian_conv.h">
@@ -1176,6 +1179,9 @@
       <Filter>ヘッダー ファイル\imgproc</Filter>
     </ClInclude>
     <ClInclude Include="..\include\vectorio.hpp">
+      <Filter>ヘッダー ファイル\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\string_cp.hpp">
       <Filter>ヘッダー ファイル\core</Filter>
     </ClInclude>
   </ItemGroup>
