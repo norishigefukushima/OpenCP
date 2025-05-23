@@ -129,9 +129,9 @@ namespace cp
 		double cvtTick2Time(const double tick, const bool isStateChange = true);
 	public:
 		//order=0: average prediction, return pair(current, estimated)
-		std::pair<double, double> predict(const int order = 0, const bool isDiff = false, const bool isPrint = true);
+		std::pair<double, double> predict(const int order = 0, const bool isDiff = false, const bool isPrint = true, const bool isParallel = false);
 
-		void init(const int loopCountMax);
+		void init(const int loopCountMax, const int timeMode = TIME_AUTO);
 		DestinationTimePrediction();
 		DestinationTimePrediction(const int loopCountMax, int timeMode = TIME_AUTO);
 		~DestinationTimePrediction();

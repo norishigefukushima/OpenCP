@@ -619,30 +619,61 @@ namespace cp
 		return ret;
 	}
 
-	std::pair<double, double> DestinationTimePrediction::predict(const int order, const bool isDiff, const bool isPrint)
+	std::pair<double, double> DestinationTimePrediction::predict(const int order, const bool isDiff, const bool isPrint, const bool isParallel)
 	{
-		const int64 cstamp = getTickCount();
-		time_stamp.push_back(cstamp);
-		double per = (time_stamp.size()) / (double)(loopMax);
-		//print_debug2(time_stamp.size(), destCount);
-		const double pred_stamp = predict_endstamp((int)time_stamp.size() - 1, order, isDiff);
-		const double etime = cvtTick2Time(pred_stamp);
-		const double ctime = cvtTick2Time(double(cstamp - time_stamp[0]), false);
-
-		if (isPrint)
+		double per = 0.0;
+		double pred_stamp = 0.0;
+		double etime = 0.0;
+		double ctime = 0.0;
+		if (isParallel)
 		{
-			cout << format("%4.1f %% %d/%d, ", 100.0 * per, (int)time_stamp.size() - 1, loopMax);
-			printTime(ctime, "current");
-			printTime(etime - ctime, " | last");
-			printTime(etime, " | estimated ");
-			cout << endl;
+#pragma omp critical
+			{
+				const int64 cstamp = getTickCount();
+				time_stamp.push_back(cstamp);
+				double per = (time_stamp.size()) / (double)(loopMax);
+				//print_debug2(time_stamp.size(), destCount);
+				pred_stamp = predict_endstamp((int)time_stamp.size() - 1, order, isDiff);
+				etime = cvtTick2Time(pred_stamp);
+				ctime = cvtTick2Time(double(cstamp - time_stamp[0]), false);
+
+				if (isPrint)
+				{
+					cout << format("%4.1f %% %d/%d, ", 100.0 * per, (int)time_stamp.size() - 1, loopMax);
+					printTime(ctime, "current");
+					printTime(etime - ctime, " | last");
+					printTime(etime, " | estimated ");
+					cout << endl;
+				}
+			}
 		}
+		else
+		{
+			const int64 cstamp = getTickCount();
+			time_stamp.push_back(cstamp);
+			double per = (time_stamp.size()) / (double)(loopMax);
+			//print_debug2(time_stamp.size(), destCount);
+			pred_stamp = predict_endstamp((int)time_stamp.size() - 1, order, isDiff);
+			etime = cvtTick2Time(pred_stamp);
+			ctime = cvtTick2Time(double(cstamp - time_stamp[0]), false);
+
+			if (isPrint)
+			{
+				cout << format("%4.1f %% %d/%d, ", 100.0 * per, (int)time_stamp.size() - 1, loopMax);
+				printTime(ctime, "current");
+				printTime(etime - ctime, " | last");
+				printTime(etime, " | estimated ");
+				cout << endl;
+			}
+		}
+	
 		std::pair<double, double> ret(ctime, etime);
 		return ret;
 	}
 
-	void DestinationTimePrediction::init(const int loopMax)
+	void DestinationTimePrediction::init(const int loopMax, const int timeMode)
 	{
+		this->timeMode = timeMode;
 		this->loopMax = loopMax;
 		time_stamp.push_back(getTickCount());
 	}
@@ -654,8 +685,7 @@ namespace cp
 
 	DestinationTimePrediction::DestinationTimePrediction(const int loopMax, int timeMode)
 	{
-		this->timeMode = timeMode;
-		init(loopMax);
+		init(loopMax, timeMode);
 	}
 
 	DestinationTimePrediction::~DestinationTimePrediction()
