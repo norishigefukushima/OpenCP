@@ -26,79 +26,92 @@
 
 #define CV_LIBRARY(lib_name) CV_LIB_PREFIX CVAUX_STR(lib_name) CV_LIB_SUFFIX
 
+//#define USE_OPENCV_CUDA 1 //use
+#define USE_OPENCV_CUDA 0 //not use
 //#define OPENCV_LIB_WORLD 
 #define OPENCV_LIB_MINIMUM
 
 #ifdef OPENCV_LIB_WORLD
 #pragma CV_LIBRARY(world)
 #else
-//#pragma CV_LIBRARY(aruco)
-//#pragma CV_LIBRARY(bgsegm)
-//#pragma CV_LIBRARY(bioinspired)
+
+//#pragma comment(CV_LIBRARY(alphamat))
+//#pragma comment(CV_LIBRARY(aruco))
+//#pragma comment(CV_LIBRARY(bgsegm))
+//#pragma comment(CV_LIBRARY(bioinspired))
 #pragma comment(lib, CV_LIBRARY(calib3d))
-//#pragma CV_LIBRARY(ccalib)
+#pragma comment(lib, CV_LIBRARY(ccalib))
 #pragma comment(lib, CV_LIBRARY(core))
+#pragma comment(lib, CV_LIBRARY(cvv))
 
-/*
-#pragma CV_LIBRARY(cudaarithm)
-#pragma CV_LIBRARY(cudabgsegm)
-#pragma CV_LIBRARY(cudacodec)
-#pragma CV_LIBRARY(cudafeatures2d)
-#pragma CV_LIBRARY(cudafilters)
-#pragma CV_LIBRARY(cudaimgproc)
-#pragma CV_LIBRARY(cudalegacy)
-#pragma CV_LIBRARY(cudaobjdetect)
-#pragma CV_LIBRARY(cudaoptflow)
-#pragma CV_LIBRARY(cudastereo)
-#pragma CV_LIBRARY(cudawarping)
-*/
-//#pragma CV_LIBRARY(cudev)
+#if USE_OPENCV_CUDA
+#pragma comment(lib, CV_LIBRARY(cudaarithm))
+#pragma comment(lib, CV_LIBRARY(cudabgsegm))
+#pragma comment(lib, CV_LIBRARY(cudacodec))
+#pragma comment(lib, CV_LIBRARY(cudafeatures2d))
+#pragma comment(lib, CV_LIBRARY(cudafilters))
+#pragma comment(lib, CV_LIBRARY(cudaimgproc))
+#pragma comment(lib, CV_LIBRARY(cudalegacy))
+#pragma comment(lib, CV_LIBRARY(cudaobjdetect))
+#pragma comment(lib, CV_LIBRARY(cudaoptflow))
+#pragma comment(lib, CV_LIBRARY(cudastereo))
+#pragma comment(lib, CV_LIBRARY(cudawarping))
+#pragma comment(lib, CV_LIBRARY(cudev))
+#endif
 
-//#pragma CV_LIBRARY(datasets)
-//#pragma CV_LIBRARY(dnn)
-//#pragma CV_LIBRARY(dpm)
-//#pragma CV_LIBRARY(face)
+//#pragma comment(lib, CV_LIBRARY(datasets))
+//#pragma comment(lib, CV_LIBRARY(dnn))
+//#pragma comment(lib, CV_LIBRARY(dnn_objdetect))
+//#pragma comment(lib, CV_LIBRARY(dpm))
+//#pragma comment(lib, CV_LIBRARY(face))
 #pragma comment(lib, CV_LIBRARY(features2d))
 #pragma comment(lib, CV_LIBRARY(flann))
-//#pragma CV_LIBRARY(fuzzy)
-//#pragma CV_LIBRARY(hal)
+//#pragma comment(lib, CV_LIBRARY(fuzzy))
+//#pragma comment(lib, CV_LIBRARY(gapi))
+//#pragma comment(lib, CV_LIBRARY(hal))
+//#pragma comment(lib, CV_LIBRARY(hfs))
 #pragma comment(lib, CV_LIBRARY(highgui))
 #pragma comment(lib, CV_LIBRARY(imgcodecs))
 #pragma comment(lib, CV_LIBRARY(imgproc))
-
-//#pragma CV_LIBRARY(latentsvm)
-//#pragma CV_LIBRARY(line_descriptor)
-//#pragma CV_LIBRARY(ml)
-//#pragma CV_LIBRARY(objdetect)
+//#pragma comment(lib, CV_LIBRARY(img_hash))
+//#pragma comment(lib, CV_LIBRARY(img_intensity_transform))
+//#pragma comment(lib, CV_LIBRARY(latentsvm))?
+//#pragma comment(lib, CV_LIBRARY(line_descriptor))
+//#pragma comment(lib, CV_LIBRARY(mcc))
+//#pragma comment(lib, CV_LIBRARY(ml))
+//#pragma comment(lib, CV_LIBRARY(objdetect))
 #pragma comment(lib, CV_LIBRARY(optflow))
+//#pragma comment(lib, CV_LIBRARY(phase_unwrapping))
 #pragma comment(lib, CV_LIBRARY(photo))
-//#pragma CV_LIBRARY(plot)
-//#pragma CV_LIBRARY(quality)
-//#pragma CV_LIBRARY(reg)
-//#pragma CV_LIBRARY(rgbd)
-//#pragma CV_LIBRARY(saliency)
-//#pragma CV_LIBRARY(shape)
-//#pragma CV_LIBRARY(stereo)
-//#pragma CV_LIBRARY(stitching)
-//#pragma CV_LIBRARY(structured_light)
-//#pragma CV_LIBRARY(superres)
-//#pragma CV_LIBRARY(surface_matching)
-//#pragma CV_LIBRARY(text)
-//#pragma CV_LIBRARY(tracking)
-//#pragma CV_LIBRARY(ts)
+//#pragma comment(lib, CV_LIBRARY(plot))
+//#pragma comment(lib, CV_LIBRARY(quality))
+//#pragma comment(lib, CV_LIBRARY(rapid))
+//#pragma comment(lib, CV_LIBRARY(reg))
+//#pragma comment(lib, CV_LIBRARY(rgbd))
+//#pragma comment(lib, CV_LIBRARY(saliency))
+//#pragma comment(lib, CV_LIBRARY(shape))
+//#pragma comment(lib, CV_LIBRARY(signal))
+//#pragma comment(lib, CV_LIBRARY(stereo))
+//#pragma comment(lib, CV_LIBRARY(stitching))
+//#pragma comment(lib, CV_LIBRARY(structured_light))
+//#pragma comment(lib, CV_LIBRARY(superres))
+//#pragma comment(lib, CV_LIBRARY(surface_matching))
+//#pragma comment(lib, CV_LIBRARY(text))
+//#pragma comment(lib, CV_LIBRARY(tracking))
+//#pragma comment(lib, CV_LIBRARY(ts))
 #pragma comment(lib, CV_LIBRARY(video))
 #pragma comment(lib, CV_LIBRARY(videoio))
-//#pragma CV_LIBRARY(videostab)
-//#pragma CV_LIBRARY(viz)
-//#pragma CV_LIBRARY(xfeatures2d)
+//#pragma comment(lib, CV_LIBRARY(videostab))
+//#pragma comment(lib, CV_LIBRARY(viz))
+//#pragma comment(lib, CV_LIBRARY(xfeatures2d))
 #pragma comment(lib, CV_LIBRARY(ximgproc))
-//#pragma CV_LIBRARY(xobjdetect)
+//#pragma comment(lib, CV_LIBRARY(xobjdetect))
 #pragma comment(lib, CV_LIBRARY(xphoto))
 #endif //OPENCV_LIB_WORLD
 
 namespace cp
 {
-// key define
+	// key define
 #ifndef VK_ESCAPE
 #define VK_ESCAPE 0x1B
 #endif // VK_ESCAPE
