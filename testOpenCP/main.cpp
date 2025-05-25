@@ -295,91 +295,111 @@ void testGridImage()
 		key = waitKey(1);
 	}
 }
+
+void imageIOSpeedTest()
+{
+	const int iter = 10;
+	cp::ConsoleImage ci;
+	vector<Mat> img(24);
+	for (int i = 1;i < 25;i++)
+	{
+		img[i - 1] = imread(format("img/Kodak/kodim%02d.png", i));
+	}
+
+	int key = 0;
+	//string dir = "./";
+	string dir = "Z:/";
+	while (key != 'q')
+	{
+		{
+			cp::Timer t("", TIME_MSEC, false);
+			for (int i = 0;i < img.size();i++)
+			{
+				imwrite(dir + format("%d.bmp", i), img[i]);
+				Mat a = imread(dir + format("%d.bmp", i));
+				imwrite(dir + format("%d.bmp", i), a);
+			}
+			ci(format("bmp     %f", t.getTime()));
+		}
+		{
+			cp::Timer t("", TIME_MSEC, false);
+			for (int i = 0;i < img.size();i++)
+			{
+				imwrite(dir + format("%d.ppm", i), img[i]);
+				Mat a = imread(dir + format("%d.ppm", i));
+				imwrite(dir + format("%d.ppm", i), a);
+			}
+			ci(format("ppm     %f", t.getTime()));
+		}
+		{
+			vector<int> params;
+			params.push_back(IMWRITE_PNG_COMPRESSION);
+			params.push_back(0);
+			//params.push_back(IMWRITE_PNG_STRATEGY);
+			//params.push_back(IMWRITE_PNG_STRATEGY_FIXED);
+			cp::Timer t("", TIME_MSEC, false);
+			for (int i = 0;i < img.size();i++)
+			{
+				imwrite(dir + format("%d.png", i), img[i], params);
+				Mat a = imread(dir + format("%d.png", i));
+				imwrite(dir + format("%d.png", i), a, params);
+			}
+			ci(format("png rle %f", t.getTime()));
+		}
+		{
+			vector<int> params;
+			params.push_back(IMWRITE_PNG_COMPRESSION);
+			params.push_back(0);
+			params.push_back(IMWRITE_PNG_STRATEGY);
+			params.push_back(IMWRITE_PNG_STRATEGY_RLE);
+			cp::Timer t("", TIME_MSEC, false);
+			for (int i = 0;i < img.size();i++)
+			{
+				imwrite(dir + format("%d.png", i), img[i], params);
+				Mat a = imread(dir + format("%d.png", i));
+				imwrite(dir + format("%d.png", i), a, params);
+			}
+			ci(format("png rle %f", t.getTime()));
+		}
+		{
+			vector<int> params;
+			params.push_back(IMWRITE_PNG_COMPRESSION);
+			params.push_back(0);
+			params.push_back(IMWRITE_PNG_STRATEGY);
+			params.push_back(IMWRITE_PNG_STRATEGY_HUFFMAN_ONLY);
+			cp::Timer t("", TIME_MSEC, false);
+			for (int i = 0;i < img.size();i++)
+			{
+				imwrite(dir + format("%d.png", i), img[i], params);
+				Mat a = imread(dir + format("%d.png", i));
+				imwrite(dir + format("%d.png", i), a, params);
+			}
+			ci(format("png huf %f", t.getTime()));
+		}
+		if (false)
+		{
+			vector<int> params;
+			params.push_back(IMWRITE_PNG_COMPRESSION);
+			params.push_back(9);
+			params.push_back(IMWRITE_PNG_STRATEGY);
+			params.push_back(IMWRITE_PNG_STRATEGY_FILTERED);
+			cp::Timer t("", TIME_MSEC, false);
+			for (int i = 0;i < img.size();i++)
+			{
+				imwrite(dir + format("%d.png", i), img[i], params);
+				Mat a = imread(dir + format("%d.png", i));
+				imwrite(dir + format("%d.png", i), a, params);
+			}
+			ci(format("png max %f", t.getTime()));
+		}
+		ci.show();
+		key = waitKey(1);
+	}
+}
+
+
 int main(int argc, char** argv)
 {
-	
-	Mat ori = imread("kodim5.png",0);
-	Mat deg = imread("FRQI33BoxFilter.png", 0);
-	
-	Mat ref;
-	blur(ori, ref, Size(3, 3));
-	
-	guiAlphaBlend(deg, ref);
-	imshow("ori", ori);
-	imshow("ref", ref);
-	//guiAlphaBlend(ref, deg);
-	guiShift(ref, deg);
-	
-	
-	return 0;
-	/*
-	cp::KMeans kmcluster;
-
-	//AoS
-	int K = 10;
-	int n = 16*10;
-	Mat a;
-	RNG rng;
-	const bool isAoS = false;
-	//const bool isAoS = true;
-	if (isAoS)
-	{
-		a.create(K * n, 3, CV_32F);
-		for (int i = 0; i < K; i++)
-		{
-			const int step = a.rows / K;
-
-			const float x = rng.uniform(0.f, 255.f);
-			const float y = rng.uniform(0.f, 255.f);
-			const float z = rng.uniform(0.f, 255.f);
-			//print_debug3(x, y, z);
-			const float sigma = 5.f;
-			for (int j = 0; j < step; j++)
-			{
-				a.at<float>(i * step + j, 0) = x + rng.gaussian(sigma);
-				a.at<float>(i * step + j, 1) = y + rng.gaussian(sigma);
-				a.at<float>(i * step + j, 2) = z + rng.gaussian(sigma);
-			}
-		}
-	}
-	else
-	{
-		a.create(3, K * n, CV_32F);
-		for (int i = 0; i < K; i++)
-		{
-			const int step = a.cols / K;
-
-			const float x = rng.uniform(0.f, 255.f);
-			const float y = rng.uniform(0.f, 255.f);
-			const float z = rng.uniform(0.f, 255.f);
-			//print_debug3(x, y, z);
-			const float sigma = 5.f;
-			for (int j = 0; j < step; j++)
-			{
-				a.at<float>(0, i * step + j) = x + rng.gaussian(sigma);
-				a.at<float>(1, i * step + j) = y + rng.gaussian(sigma);
-				a.at<float>(2, i * step + j) = z + rng.gaussian(sigma);
-			}
-		}
-	}
-
-	Mat mu;
-	Mat label;// = Mat::zeros(a.cols, 1, CV_32S);
-	cv::TermCriteria criteria(cv::TermCriteria::COUNT, 100, 1);
-	//kmcluster.gui(a, K, label, criteria, 1, cv::KMEANS_PP_CENTERS, mu, cp::KMeans::MeanFunction::Mean, cp::KMeans::Schedule::SoA_KND);
-	//int flag = KMEANS_RANDOM_CENTERS;
-	int flag = cv::KMEANS_PP_CENTERS;
-	if (isAoS)
-	{
-		kmcluster.gui(a, K, label, criteria, 1, flag, mu, cp::KMeans::MeanFunction::Mean, cp::KMeans::Schedule::AoS_KND);
-		//kmcluster.gui(a, K, label, criteria, 1, flag, mu, cp::KMeans::MeanFunction::Mean, cp::KMeans::Schedule::AoS_NKD);
-	}
-	else
-	{
-		//kmcluster.gui(a, K, label, criteria, 1, flag, mu, cp::KMeans::MeanFunction::Mean, cp::KMeans::Schedule::SoA_KND);
-		kmcluster.gui(a, K, label, criteria, 1, flag, mu, cp::KMeans::MeanFunction::Mean, cp::KMeans::Schedule::SoA_NKD);
-	}
-	*/
 	//cv::ipp::setUseIPP(false);
 	//cv::setUseOptimized(false);
 	const bool isShowInfo = false;
@@ -388,9 +408,12 @@ int main(int argc, char** argv)
 		cout << getInformation() << endl;
 		cout << cv::getBuildInformation() << endl;
 		cout << getOpenCLInformation() << endl;
+#if USE_OPENCV_CUDA
 		cv::cuda::printCudaDeviceInfo(0);
+#endif
 	}
 
+	imageIOSpeedTest(); return 0;
 	//benchmark(); return 0;
 
 #pragma region setup
