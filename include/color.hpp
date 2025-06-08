@@ -26,10 +26,12 @@ namespace cp
 
 	//color correction colorcorrection whilebalance
 	CP_EXPORT void findColorMatrixAvgStdDev(cv::InputArray ref_image, cv::InputArray target_image, cv::OutputArray colorMatrix, const double validMin, const double validMax);
-
+	//ITU-R BT601
+	CP_EXPORT void splitConvertYCrCb(cv::InputArray src, cv::OutputArrayOfArrays dest, const int depth = -1, const double scale = 1.0, const double offset = 0.0, const bool isCache = true);
 	CP_EXPORT void splitConvert(cv::InputArray src, cv::OutputArrayOfArrays dest, const int depth = -1, const double scale = 1.0, const double offset = 0.0, const bool isCache = true);
 	CP_EXPORT void mergeConvert(cv::InputArrayOfArrays src, cv::OutputArray dest, const int depth = -1, const double scale = 1.0, const double offset = 0.0, const bool isCache = true);
 
+	CP_EXPORT void cvtColorGray8U32F(cv::InputArray in, cv::OutputArray out);
 	CP_EXPORT void cvtColorAverageGray(cv::InputArray src, cv::OutputArray dest, const bool isKeepDistance = false);
 	CP_EXPORT void cvtColorIntegerY(cv::InputArray src, cv::OutputArray dest);
 

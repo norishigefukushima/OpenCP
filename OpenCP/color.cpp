@@ -700,8 +700,304 @@ namespace cp
 		}*/
 	}
 
-#pragma endregion
 
+	template<int store_method, typename srcType, typename dstType>
+	void splitConvertYCrCb_(Mat& src, vector<Mat>& dst, const int unroll = 4)
+	{
+		CV_Assert(src.channels() == 3);
+		CV_Assert(1 <= unroll && unroll <= 4);
+
+		srcType* s = src.ptr<srcType>();
+		dstType* y_ = dst[0].ptr<dstType>();
+		dstType* cr = dst[1].ptr<dstType>();
+		dstType* cb = dst[2].ptr<dstType>();
+
+		for (int i = 0; i < src.size().area(); i++)
+		{
+			y_[i] = saturate_cast<dstType>(0.114 * s[3 * i + 0] + 0.587 * s[3 * i + 1] + 0.299 * s[3 * i + 2]);
+			cr[i] = saturate_cast<dstType>(0.5 * s[3 * i + 0] - 0.331264 * s[3 * i + 1] - 0.168736 * s[3 * i + 2]);
+			cb[i] = saturate_cast<dstType>(-0.081312 * s[3 * i + 0] - 0.418688 * s[3 * i + 1] + 0.5 * s[3 * i + 2]);
+		}
+	}
+
+	template<int store_method>
+	void splitConvertYCrCb32F32F_(Mat& src, vector<Mat>& dst, const int unroll = 4)
+	{
+		CV_Assert(src.channels() == 3);
+		CV_Assert(1 <= unroll && unroll <= 4);
+
+		float* s = src.ptr   <float>();
+		float* b = dst[0].ptr<float>();
+		float* g = dst[1].ptr<float>();
+		float* r = dst[2].ptr<float>();
+		const int step = 8 * unroll;
+		const int simdsize = get_simd_floor(src.size().area(), step);
+
+		if (unroll == 1)
+		{
+			for (int i = 0; i < simdsize; i += step)
+			{
+				__m256 mb, mg, mr;
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i, mb, mg, mr);
+				v_store32f<store_method>(b + i, mb);
+				v_store32f<store_method>(g + i, mg);
+				v_store32f<store_method>(r + i, mr);
+			}
+		}
+		else if (unroll == 2)
+		{
+			for (int i = 0; i < simdsize; i += step)
+			{
+				__m256 mb, mg, mr;
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i, mb, mg, mr);
+				v_store32f<store_method>(b + i, mb);
+				v_store32f<store_method>(g + i, mg);
+				v_store32f<store_method>(r + i, mr);
+
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 24, mb, mg, mr);
+				v_store32f<store_method>(b + i + 8, mb);
+				v_store32f<store_method>(g + i + 8, mg);
+				v_store32f<store_method>(r + i + 8, mr);
+			}
+		}
+		else if (unroll == 3)
+		{
+			for (int i = 0; i < simdsize; i += step)
+			{
+				__m256 mb, mg, mr;
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i, mb, mg, mr);
+				v_store32f<store_method>(b + i, mb);
+				v_store32f<store_method>(g + i, mg);
+				v_store32f<store_method>(r + i, mr);
+
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 24, mb, mg, mr);
+				v_store32f<store_method>(b + i + 8, mb);
+				v_store32f<store_method>(g + i + 8, mg);
+				v_store32f<store_method>(r + i + 8, mr);
+
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 48, mb, mg, mr);
+				v_store32f<store_method>(b + i + 16, mb);
+				v_store32f<store_method>(g + i + 16, mg);
+				v_store32f<store_method>(r + i + 16, mr);
+			}
+		}
+		else if (unroll == 4)
+		{
+			for (int i = 0; i < simdsize; i += step)
+			{
+				__m256 mb, mg, mr;
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i, mb, mg, mr);
+				v_store32f<store_method>(b + i, mb);
+				v_store32f<store_method>(g + i, mg);
+				v_store32f<store_method>(r + i, mr);
+
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 24, mb, mg, mr);
+				v_store32f<store_method>(b + i + 8, mb);
+				v_store32f<store_method>(g + i + 8, mg);
+				v_store32f<store_method>(r + i + 8, mr);
+
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 48, mb, mg, mr);
+				v_store32f<store_method>(b + i + 16, mb);
+				v_store32f<store_method>(g + i + 16, mg);
+				v_store32f<store_method>(r + i + 16, mr);
+
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 72, mb, mg, mr);
+				v_store32f<store_method>(b + i + 24, mb);
+				v_store32f<store_method>(g + i + 24, mg);
+				v_store32f<store_method>(r + i + 24, mr);
+			}
+		}
+
+		for (int i = simdsize; i < src.size().area(); i++)
+		{
+			b[i] = saturate_cast<float>(0.114f * s[3 * i + 0] + 0.587f * s[3 * i + 1] + 0.299f * s[3 * i + 2]);
+			g[i] = saturate_cast<float>(0.5f * s[3 * i + 0] - 0.331264f * s[3 * i + 1] - 0.168736f * s[3 * i + 2]);
+			r[i] = saturate_cast<float>(-0.081312f * s[3 * i + 0] - 0.418688f * s[3 * i + 1] + 0.5f * s[3 * i + 2]);
+		}
+	}
+
+	template<int store_method>
+	void splitConvertYCrCb8U32F_(Mat& src, vector<Mat>& dst, const int unroll = 4)
+	{
+		CV_Assert(src.channels() == 3);
+		CV_Assert(1 <= unroll && unroll <= 4);
+
+		const uchar* s = src.ptr<uchar>();
+		float* b = dst[0].ptr<float>();
+		float* g = dst[1].ptr<float>();
+		float* r = dst[2].ptr<float>();
+		const int step = 8 * unroll;
+		const int simdsize = get_simd_floor(src.size().area(), step);
+
+		//y_[i] = saturate_cast<dstType>(0.114 * s[3 * i + 0] + 0.587 * s[3 * i + 1] + 0.299 * s[3 * i + 2]);
+		//cr[i] = saturate_cast<dstType>(0.5 * s[3 * i + 0] - 0.331264 * s[3 * i + 1] - 0.168736 * s[3 * i + 2]);
+		//cb[i] = saturate_cast<dstType>(-0.081312 * s[3 * i + 0] - 0.418688 * s[3 * i + 1] + 0.5 * s[3 * i + 2]);
+		const __m256 cy0 = _mm256_set1_ps(0.114f);
+		const __m256 cy1 = _mm256_set1_ps(0.587f);
+		const __m256 cy2 = _mm256_set1_ps(0.299f);
+
+		const __m256 ccr = _mm256_set1_ps(0.713f);
+		const __m256 ccb = _mm256_set1_ps(0.564f);
+		const __m256 m128 = _mm256_set1_ps(128.f);
+		if (unroll == 1)
+		{
+			for (int i = 0; i < simdsize; i += step)
+			{
+				__m256 mb0, mg0, mr0, mb1, mg1, mr1;
+				_mm256_load_cvtepu8bgr2planar_ps(s + 3 * i, mb0, mb1, mg0);
+				const __m256 my0 = _mm256_fmadd_ps(cy0, mb0, _mm256_fmadd_ps(cy1, mg0, _mm256_mul_ps(cy2, mr0)));
+				v_store32f<store_method>(b + i + 0, my0);
+				v_store32f<store_method>(g + i + 0, _mm256_fmadd_ps(ccr, _mm256_sub_ps(mr0, my0), m128));
+				v_store32f<store_method>(r + i + 0, _mm256_fmadd_ps(ccb, _mm256_sub_ps(mb0, my0), m128));
+			}
+		}
+		else if (unroll == 2)
+		{
+			for (int i = 0; i < simdsize; i += step)
+			{
+				__m256 mb0, mg0, mr0, mb1, mg1, mr1;
+				_mm256_load_cvtepu8bgr2planar_psx2(s + 3 * i, mb0, mb1, mg0, mg1, mr0, mr1);
+				const __m256 my0 = _mm256_fmadd_ps(cy0, mb0, _mm256_fmadd_ps(cy1, mg0, _mm256_mul_ps(cy2, mr0)));
+				const __m256 my1 = _mm256_fmadd_ps(cy0, mb1, _mm256_fmadd_ps(cy1, mg1, _mm256_mul_ps(cy2, mr1)));
+				v_store32f<store_method>(b + i + 0, my0);
+				v_store32f<store_method>(g + i + 0, _mm256_fmadd_ps(ccr, _mm256_sub_ps(mr0, my0), m128));
+				v_store32f<store_method>(r + i + 0, _mm256_fmadd_ps(ccb, _mm256_sub_ps(mb0, my0), m128));
+				v_store32f<store_method>(b + i + 8, my1);
+				v_store32f<store_method>(g + i + 8, _mm256_fmadd_ps(ccr, _mm256_sub_ps(mr1, my1), m128));
+				v_store32f<store_method>(r + i + 8, _mm256_fmadd_ps(ccb, _mm256_sub_ps(mb1, my1), m128));
+			}
+		}
+		for (int i = simdsize; i < src.size().area(); i++)
+		{
+			const float y = saturate_cast<float>(0.114f * s[3 * i + 0] + 0.587f * s[3 * i + 1] + 0.299f * s[3 * i + 2]);
+			b[i] = y;
+			g[i] = saturate_cast<float>((s[3 * i + 2] - y) * 0.713f + 128.f);
+			r[i] = saturate_cast<float>((s[3 * i + 0] - y) * 0.564f + 128.f);
+		}
+		/*
+		else if (unroll == 3)
+		{
+			for (int i = 0; i < simdsize; i += step)
+			{
+				__m256 mb, mg, mr;
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i, mb, mg, mr);
+				v_store<store_method>(b + i, mb);
+				v_store<store_method>(g + i, mg);
+				v_store<store_method>(r + i, mr);
+
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 24, mb, mg, mr);
+				v_store<store_method>(b + i + 8, mb);
+				v_store<store_method>(g + i + 8, mg);
+				v_store<store_method>(r + i + 8, mr);
+
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 48, mb, mg, mr);
+				v_store<store_method>(b + i + 16, mb);
+				v_store<store_method>(g + i + 16, mg);
+				v_store<store_method>(r + i + 16, mr);
+			}
+		}
+		else if (unroll == 4)
+		{
+			for (int i = 0; i < simdsize; i += step)
+			{
+				__m256 mb, mg, mr;
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i, mb, mg, mr);
+				v_store<store_method>(b + i, mb);
+				v_store<store_method>(g + i, mg);
+				v_store<store_method>(r + i, mr);
+
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 24, mb, mg, mr);
+				v_store<store_method>(b + i + 8, mb);
+				v_store<store_method>(g + i + 8, mg);
+				v_store<store_method>(r + i + 8, mr);
+
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 48, mb, mg, mr);
+				v_store<store_method>(b + i + 16, mb);
+				v_store<store_method>(g + i + 16, mg);
+				v_store<store_method>(r + i + 16, mr);
+
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 72, mb, mg, mr);
+				v_store<store_method>(b + i + 24, mb);
+				v_store<store_method>(g + i + 24, mg);
+				v_store<store_method>(r + i + 24, mr);
+			}
+		}
+
+		for (int i = simdsize; i < src.size().area(); i++)
+		{
+			b[i] = float(s[3 * i + 0]);
+			g[i] = float(s[3 * i + 1]);
+			r[i] = float(s[3 * i + 2]);
+		}
+		*/
+	}
+
+	void splitConvertYCrCb(cv::InputArray src, cv::OutputArrayOfArrays dest, const int depth, const double scale, const double offset, const bool isCache)
+	{
+		Mat s = src.getMat();
+
+		vector<Mat> dst;
+		if (dest.empty())
+		{
+			dest.create(3, 1, src.type());
+
+			dest.getMatVector(dst);
+
+			dst[0].create(src.size(), depth);
+			dst[1].create(src.size(), depth);
+			dst[2].create(src.size(), depth);
+
+			dest.getMatRef(0) = dst[0];
+			dest.getMatRef(1) = dst[1];
+			dest.getMatRef(2) = dst[2];
+		}
+		else
+		{
+			dest.getMatVector(dst);
+
+			for (int i = 0; i < dst.size(); i++)
+			{
+				if (dst[i].empty() ||
+					dst[i].depth() != src.depth())
+				{
+					dst[i].create(src.size(), depth);
+					dest.getMatRef(i) = dst[i];
+				}
+			}
+		}
+
+		if (src.depth() == CV_32F && depth == CV_32F)
+		{
+			const int unroll = 1;
+			if (isCache && dst[0].cols % 8 == 0)splitConvertYCrCb32F32F_<STORE>(s, dst, unroll);
+			else if (isCache && dst[0].cols % 8 != 0)splitConvertYCrCb32F32F_<STOREU>(s, dst, unroll);
+			else splitConvertYCrCb32F32F_<STREAM>(s, dst, unroll);
+		}
+		else if (src.depth() == CV_8U && depth == CV_32F)
+		{
+			const int unroll = 2;
+			if (isCache && dst[0].cols % 8 == 0)splitConvertYCrCb8U32F_<STORE>(s, dst, unroll);
+			else if (isCache && dst[0].cols % 8 != 0)splitConvertYCrCb8U32F_<STOREU>(s, dst, unroll);
+			else splitConvertYCrCb8U32F_<STREAM>(s, dst, unroll);
+		}
+		/*
+		switch (s.depth())
+		{
+		case CV_8U:
+			if (isCache)splitStore_8U(s, dst);
+			else splitStream_8U(s, dst);
+			break;
+		case CV_32F:
+
+			break;
+		default:
+			//splitBase_<float>(s, dst);
+			cout << "not support type" << endl;
+			break;
+		}*/
+	}
+
+#pragma endregion
 
 
 #pragma region convert
@@ -1709,6 +2005,33 @@ namespace cp
 	}
 
 #pragma endregion
+
+	void cvtColorGray8U32F(cv::InputArray in, cv::OutputArray out)
+	{
+		CV_Assert(in.channels() == 3);
+		if (out.empty()) out.create(in.size(), CV_32F);
+		const Mat src = in.getMat();
+		Mat dst = out.getMat();
+		const __m256 cb = _mm256_set1_ps(0.114f);
+		const __m256 cg = _mm256_set1_ps(0.587f);
+		const __m256 cr = _mm256_set1_ps(0.299f);
+		const int size = src.size().area();
+		const int simdsize = get_simd_floor(size, 8);
+
+		const uchar* s = src.ptr<uchar>();
+		float* d = dst.ptr<float>();
+		for (int i = 0;i < simdsize;i += 8)
+		{
+			__m256 b0, b1, g0, g1, r0, r1;
+			_mm256_load_cvtepu8bgr2planar_psx2(s + 3 * i, b0, b1, g0, g1, r0, r1);
+			_mm256_storeu_ps(d + i + 0, _mm256_fmadd_ps(cb, b0, _mm256_fmadd_ps(cg, g0, _mm256_mul_ps(cr, r0))));
+			_mm256_storeu_ps(d + i + 8, _mm256_fmadd_ps(cb, b1, _mm256_fmadd_ps(cg, g1, _mm256_mul_ps(cr, r1))));
+		}
+		for (int i = simdsize;i < size;i++)
+		{
+			d[i] = float(0.114f * s[3 * i + 0] + 0.587f * s[3 * i + 1] + 0.299f * s[3 * i + 2]);
+		}
+	}
 
 #pragma region cvtColorAverageGray
 	static void cvtColorAverageGray_32F(vector<Mat>& src, Mat& dest, const float normalize)
@@ -3877,7 +4200,7 @@ namespace cp
 
 	void cvtColorPCA(const vector<Mat>& src, vector<Mat>& dest, const int dest_channels, Mat& projectionMatrix, Mat& eval, Mat& mean)
 	{
-		CV_Assert(src[0].depth() == CV_32F|| src[0].depth() == CV_64F);
+		CV_Assert(src[0].depth() == CV_32F || src[0].depth() == CV_64F);
 
 		if (src.size() == 1)
 		{
