@@ -726,22 +726,29 @@ namespace cp
 		CV_Assert(src.channels() == 3);
 		CV_Assert(1 <= unroll && unroll <= 4);
 
-		float* s = src.ptr   <float>();
-		float* b = dst[0].ptr<float>();
-		float* g = dst[1].ptr<float>();
-		float* r = dst[2].ptr<float>();
+		float* __restrict s = src.ptr   <float>();
+		float* __restrict b = dst[0].ptr<float>();
+		float* __restrict g = dst[1].ptr<float>();
+		float* __restrict r = dst[2].ptr<float>();
 		const int step = 8 * unroll;
 		const int simdsize = get_simd_floor(src.size().area(), step);
+		const __m256 cy0 = _mm256_set1_ps(0.114f);
+		const __m256 cy1 = _mm256_set1_ps(0.587f);
+		const __m256 cy2 = _mm256_set1_ps(0.299f);
 
+		const __m256 ccr = _mm256_set1_ps(0.713f);
+		const __m256 ccb = _mm256_set1_ps(0.564f);
+		const __m256 m128 = _mm256_set1_ps(128.f);
 		if (unroll == 1)
 		{
 			for (int i = 0; i < simdsize; i += step)
 			{
-				__m256 mb, mg, mr;
-				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i, mb, mg, mr);
-				v_store32f<store_method>(b + i, mb);
-				v_store32f<store_method>(g + i, mg);
-				v_store32f<store_method>(r + i, mr);
+				__m256 mb0, mg0, mr0;
+				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i, mb0, mg0, mr0);
+				const __m256 my0 = _mm256_fmadd_ps(cy0, mb0, _mm256_fmadd_ps(cy1, mg0, _mm256_mul_ps(cy2, mr0)));
+				v_store32f<store_method>(b + i + 0, my0);
+				v_store32f<store_method>(g + i + 0, _mm256_fmadd_ps(ccr, _mm256_sub_ps(mr0, my0), m128));
+				v_store32f<store_method>(r + i + 0, _mm256_fmadd_ps(ccb, _mm256_sub_ps(mb0, my0), m128));
 			}
 		}
 		else if (unroll == 2)
@@ -811,8 +818,8 @@ namespace cp
 		for (int i = simdsize; i < src.size().area(); i++)
 		{
 			b[i] = saturate_cast<float>(0.114f * s[3 * i + 0] + 0.587f * s[3 * i + 1] + 0.299f * s[3 * i + 2]);
-			g[i] = saturate_cast<float>(0.5f * s[3 * i + 0] - 0.331264f * s[3 * i + 1] - 0.168736f * s[3 * i + 2]);
-			r[i] = saturate_cast<float>(-0.081312f * s[3 * i + 0] - 0.418688f * s[3 * i + 1] + 0.5f * s[3 * i + 2]);
+			g[i] = saturate_cast<float>(0.5f * s[3 * i + 0] - 0.331264f * s[3 * i + 1] - 0.168736f * s[3 * i + 2] + 128.f);
+			r[i] = saturate_cast<float>(-0.081312f * s[3 * i + 0] - 0.418688f * s[3 * i + 1] + 0.5f * s[3 * i + 2] + 128.f);
 		}
 	}
 
@@ -822,10 +829,10 @@ namespace cp
 		CV_Assert(src.channels() == 3);
 		CV_Assert(1 <= unroll && unroll <= 4);
 
-		const uchar* s = src.ptr<uchar>();
-		float* b = dst[0].ptr<float>();
-		float* g = dst[1].ptr<float>();
-		float* r = dst[2].ptr<float>();
+		const uchar* __restrict s = src.ptr<uchar>();
+		float* __restrict b = dst[0].ptr<float>();
+		float* __restrict g = dst[1].ptr<float>();
+		float* __restrict r = dst[2].ptr<float>();
 		const int step = 8 * unroll;
 		const int simdsize = get_simd_floor(src.size().area(), step);
 
@@ -843,8 +850,8 @@ namespace cp
 		{
 			for (int i = 0; i < simdsize; i += step)
 			{
-				__m256 mb0, mg0, mr0, mb1, mg1, mr1;
-				_mm256_load_cvtepu8bgr2planar_ps(s + 3 * i, mb0, mb1, mg0);
+				__m256 mb0, mg0, mr0;
+				_mm256_load_cvtepu8bgr2planar_ps(s + 3 * i, mb0, mr0, mg0);
 				const __m256 my0 = _mm256_fmadd_ps(cy0, mb0, _mm256_fmadd_ps(cy1, mg0, _mm256_mul_ps(cy2, mr0)));
 				v_store32f<store_method>(b + i + 0, my0);
 				v_store32f<store_method>(g + i + 0, _mm256_fmadd_ps(ccr, _mm256_sub_ps(mr0, my0), m128));
@@ -938,10 +945,10 @@ namespace cp
 		CV_Assert(src.channels() == 3);
 		CV_Assert(1 <= unroll && unroll <= 4);
 
-		const uchar* s = src.ptr<uchar>();
-		uchar* b = dst[0].ptr<uchar>();
-		uchar* g = dst[1].ptr<uchar>();
-		uchar* r = dst[2].ptr<uchar>();
+		const uchar* __restrict s = src.ptr<uchar>();
+		uchar* __restrict b = dst[0].ptr<uchar>();
+		uchar* __restrict g = dst[1].ptr<uchar>();
+		uchar* __restrict r = dst[2].ptr<uchar>();
 		const int step = 8 * unroll;
 		const int simdsize = get_simd_floor(src.size().area(), step);
 
@@ -959,8 +966,8 @@ namespace cp
 		{
 			for (int i = 0; i < simdsize; i += step)
 			{
-				__m256 mb0, mg0, mr0, mb1, mg1, mr1;
-				_mm256_load_cvtepu8bgr2planar_ps(s + 3 * i, mb0, mb1, mg0);
+				__m256 mb0, mg0, mr0;
+				_mm256_load_cvtepu8bgr2planar_ps(s + 3 * i, mb0, mr0, mg0);
 				const __m256 my0 = _mm256_fmadd_ps(cy0, mb0, _mm256_fmadd_ps(cy1, mg0, _mm256_mul_ps(cy2, mr0)));
 				_mm_storel_epi64((__m128i*)(b + i + 0), _mm256_cvtps_epu8(my0));
 				_mm_storel_epi64((__m128i*)(g + i + 0), _mm256_cvtps_epu8(_mm256_fmadd_ps(ccr, _mm256_sub_ps(mr0, my0), m128)));
@@ -997,7 +1004,7 @@ namespace cp
 		Mat s = src.getMat();
 
 		vector<Mat> dst;
-		if (dest.empty())
+		if (dest.empty() || src.size() != dest.size())
 		{
 			dest.create(3, 1, src.type());
 
@@ -2073,30 +2080,72 @@ namespace cp
 
 #pragma endregion
 
-	void cvtColorGray8U32F(cv::InputArray in, cv::OutputArray out)
+	static void cvtColorGray8U32F(cv::InputArray in, cv::OutputArray out)
 	{
+		CV_Assert(in.depth() == CV_8U);
 		CV_Assert(in.channels() == 3);
-		if (out.empty()) out.create(in.size(), CV_32F);
+
+		if (out.empty() || in.size() != out.size()) out.create(in.size(), CV_32F);
 		const Mat src = in.getMat();
 		Mat dst = out.getMat();
+
 		const __m256 cb = _mm256_set1_ps(0.114f);
 		const __m256 cg = _mm256_set1_ps(0.587f);
 		const __m256 cr = _mm256_set1_ps(0.299f);
 		const int size = src.size().area();
-		const int simdsize = get_simd_floor(size, 8);
+		const int simdsize = get_simd_floor(size, 16);
 
-		const uchar* s = src.ptr<uchar>();
-		float* d = dst.ptr<float>();
-		for (int i = 0;i < simdsize;i += 8)
+		const uchar* __restrict s = src.ptr<uchar>();
+		float* __restrict d = dst.ptr<float>();
+		for (int i = 0; i < simdsize; i += 16)
 		{
 			__m256 b0, b1, g0, g1, r0, r1;
 			_mm256_load_cvtepu8bgr2planar_psx2(s + 3 * i, b0, b1, g0, g1, r0, r1);
 			_mm256_storeu_ps(d + i + 0, _mm256_fmadd_ps(cb, b0, _mm256_fmadd_ps(cg, g0, _mm256_mul_ps(cr, r0))));
 			_mm256_storeu_ps(d + i + 8, _mm256_fmadd_ps(cb, b1, _mm256_fmadd_ps(cg, g1, _mm256_mul_ps(cr, r1))));
 		}
-		for (int i = simdsize;i < size;i++)
+		for (int i = simdsize; i < size; i++)
 		{
 			d[i] = float(0.114f * s[3 * i + 0] + 0.587f * s[3 * i + 1] + 0.299f * s[3 * i + 2]);
+		}
+	}
+
+	static void cvtColorGray32F32F(cv::InputArray in, cv::OutputArray out)
+	{
+		CV_Assert(in.depth() == CV_32F);
+		CV_Assert(in.channels() == 3);
+
+		if (out.empty() || in.size() != out.size()) out.create(in.size(), CV_32F);
+		const Mat src = in.getMat();
+		Mat dst = out.getMat();
+
+		const __m256 cb = _mm256_set1_ps(0.114f);
+		const __m256 cg = _mm256_set1_ps(0.587f);
+		const __m256 cr = _mm256_set1_ps(0.299f);
+		const int size = src.size().area();
+		const int simdsize = get_simd_floor(size, 8);
+
+		const float* __restrict s = src.ptr<float>();
+		float* __restrict d = dst.ptr<float>();
+		for (int i = 0; i < simdsize; i += 8)
+		{
+			__m256 b0, g0, r0;
+			_mm256_load_cvtps_bgr2planar_ps(s + 3 * i, b0, g0, r0);
+			_mm256_storeu_ps(d + i + 0, _mm256_fmadd_ps(cb, b0, _mm256_fmadd_ps(cg, g0, _mm256_mul_ps(cr, r0))));
+		}
+		for (int i = simdsize; i < size; i++)
+		{
+			d[i] = float(0.114f * s[3 * i + 0] + 0.587f * s[3 * i + 1] + 0.299f * s[3 * i + 2]);
+		}
+	}
+
+	void cvtColorGray(cv::InputArray in, cv::OutputArray out, int depth)
+	{
+		if (in.depth() == CV_8U && depth == CV_32F) cvtColorGray8U32F(in, out);
+		else if (in.depth() == CV_32F && depth == CV_32F) cvtColorGray32F32F(in, out);
+		else
+		{
+			cout << "do not support this type cvtColorGray: in(depth)" << in.depth() << ", dest depth " << depth << endl;
 		}
 	}
 
