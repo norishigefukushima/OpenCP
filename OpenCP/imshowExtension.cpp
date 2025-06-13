@@ -804,12 +804,12 @@ namespace cp
 	StackImage::StackImage(std::string window_name)
 	{
 		wname = window_name;
-		namedWindow(wname);
+		//namedWindow(wname);
 	}
 
 	StackImage::~StackImage()
 	{
-		destroyWindow(wname);
+		if (stack.size() != 0)destroyWindow(wname);
 	}
 
 	void StackImage::setWindowName(std::string window_name)
@@ -892,7 +892,6 @@ namespace cp
 				else  imshow(wname, stack[num_stack]);
 			}
 		}
-
 	}
 
 	void StackImage::show()

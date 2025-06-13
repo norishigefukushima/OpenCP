@@ -41,6 +41,7 @@ namespace cp
 		fontName = "Consolas";
 		fontSize = 20;
 		lineSpaceSize = 5;
+		si.setWindowName(windowName);
 		clear();
 	}
 
@@ -95,7 +96,6 @@ namespace cp
 	void ConsoleImage::show(bool isClear)
 	{
 		//namedWindow(windowName);
-		si.setWindowName(windowName);
 		si.show(image, true);
 		if (isClear) clear();
 	}
