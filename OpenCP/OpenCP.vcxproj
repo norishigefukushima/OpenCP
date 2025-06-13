@@ -561,6 +561,7 @@
     <ClCompile Include="copyMakeBorder.cpp" />
     <ClCompile Include="costVolumeFilter.cpp" />
     <ClCompile Include="count.cpp" />
+    <ClCompile Include="DCCI.cpp" />
     <ClCompile Include="string_cp.cpp" />
     <ClCompile Include="crossBasedLocalFilter.cpp" />
     <ClCompile Include="crossBasedLocalMultipointFilter.cpp" />
@@ -813,6 +814,7 @@
     <ClInclude Include="..\include\crossBasedLocalFilter.hpp" />
     <ClInclude Include="..\include\crossBasedLocalMultipointFilter.hpp" />
     <ClInclude Include="..\include\csv.hpp" />
+    <ClInclude Include="..\include\DCCI.hpp" />
     <ClInclude Include="..\include\dctFilter.hpp" />
     <ClInclude Include="..\include\depth2disparity.hpp" />
     <ClInclude Include="..\include\depthUpsample.hpp" />

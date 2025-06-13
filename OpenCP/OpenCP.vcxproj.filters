@@ -657,6 +657,9 @@
     <ClCompile Include="string_cp.cpp">
       <Filter>ソース ファイル\core</Filter>
     </ClCompile>
+    <ClCompile Include="DCCI.cpp">
+      <Filter>ソース ファイル\resize</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libGaussian\gaussian_conv.h">
@@ -1183,6 +1186,9 @@
     </ClInclude>
     <ClInclude Include="..\include\string_cp.hpp">
       <Filter>ヘッダー ファイル\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\DCCI.hpp">
+      <Filter>ヘッダー ファイル\resize</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

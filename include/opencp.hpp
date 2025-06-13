@@ -123,6 +123,7 @@
 
 //resize
 #include "bilateralGuidedUpsample.hpp"
+#include "DCCI.hpp"
 #include "depthUpsample.hpp"
 #include "downsample.hpp"
 #include "jointBilateralUpsample.hpp"

@@ -301,7 +301,7 @@ void imageIOSpeedTest()
 	const int iter = 10;
 	cp::ConsoleImage ci;
 	vector<Mat> img(24);
-	for (int i = 1;i < 25;i++)
+	for (int i = 1; i < 25; i++)
 	{
 		img[i - 1] = imread(format("img/Kodak/kodim%02d.png", i));
 	}
@@ -313,7 +313,7 @@ void imageIOSpeedTest()
 	{
 		{
 			cp::Timer t("", TIME_MSEC, false);
-			for (int i = 0;i < img.size();i++)
+			for (int i = 0; i < img.size(); i++)
 			{
 				imwrite(dir + format("%d.bmp", i), img[i]);
 				Mat a = imread(dir + format("%d.bmp", i));
@@ -323,7 +323,7 @@ void imageIOSpeedTest()
 		}
 		{
 			cp::Timer t("", TIME_MSEC, false);
-			for (int i = 0;i < img.size();i++)
+			for (int i = 0; i < img.size(); i++)
 			{
 				imwrite(dir + format("%d.ppm", i), img[i]);
 				Mat a = imread(dir + format("%d.ppm", i));
@@ -338,7 +338,7 @@ void imageIOSpeedTest()
 			//params.push_back(IMWRITE_PNG_STRATEGY);
 			//params.push_back(IMWRITE_PNG_STRATEGY_FIXED);
 			cp::Timer t("", TIME_MSEC, false);
-			for (int i = 0;i < img.size();i++)
+			for (int i = 0; i < img.size(); i++)
 			{
 				imwrite(dir + format("%d.png", i), img[i], params);
 				Mat a = imread(dir + format("%d.png", i));
@@ -353,7 +353,7 @@ void imageIOSpeedTest()
 			params.push_back(IMWRITE_PNG_STRATEGY);
 			params.push_back(IMWRITE_PNG_STRATEGY_RLE);
 			cp::Timer t("", TIME_MSEC, false);
-			for (int i = 0;i < img.size();i++)
+			for (int i = 0; i < img.size(); i++)
 			{
 				imwrite(dir + format("%d.png", i), img[i], params);
 				Mat a = imread(dir + format("%d.png", i));
@@ -368,7 +368,7 @@ void imageIOSpeedTest()
 			params.push_back(IMWRITE_PNG_STRATEGY);
 			params.push_back(IMWRITE_PNG_STRATEGY_HUFFMAN_ONLY);
 			cp::Timer t("", TIME_MSEC, false);
-			for (int i = 0;i < img.size();i++)
+			for (int i = 0; i < img.size(); i++)
 			{
 				imwrite(dir + format("%d.png", i), img[i], params);
 				Mat a = imread(dir + format("%d.png", i));
@@ -384,7 +384,7 @@ void imageIOSpeedTest()
 			params.push_back(IMWRITE_PNG_STRATEGY);
 			params.push_back(IMWRITE_PNG_STRATEGY_FILTERED);
 			cp::Timer t("", TIME_MSEC, false);
-			for (int i = 0;i < img.size();i++)
+			for (int i = 0; i < img.size(); i++)
 			{
 				imwrite(dir + format("%d.png", i), img[i], params);
 				Mat a = imread(dir + format("%d.png", i));
@@ -397,9 +397,23 @@ void imageIOSpeedTest()
 	}
 }
 
+void DCCITest()
+{
+	int num = 1;
+	Mat a = imread(format("calib/%02d.png", num), 0);
+	Mat b, c, d;
+	cp::DCCI(a, b);
 
+	resize(a, c, b.size(), 0, 0, INTER_LINEAR);
+	//resize(a, d, b.size(), 0, 0, INTER_CUBIC);
+	resize(a, d, b.size(), 0, 0, INTER_NEAREST);
+	print_debug(a.size());
+	print_debug(b.size());
+	cp::guiAlphaBlend(b, c);
+}
 int main(int argc, char** argv)
 {
+	DCCITest(); return 0;
 	//cv::ipp::setUseIPP(false);
 	//cv::setUseOptimized(false);
 	const bool isShowInfo = false;
