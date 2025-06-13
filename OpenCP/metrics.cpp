@@ -1503,8 +1503,16 @@ namespace cp
 		mat.at<float>(2, 2) = +0.34f;
 		mat.at<float>(2, 1) = -0.60f;
 		mat.at<float>(2, 0) = +0.17f;
-		Mat sf = cp::convert(src, CV_32F);
-		transform(sf, sf, mat);
+		Mat sf;
+		if (src.depth() == CV_32F)
+		{
+			transform(src, sf, mat);
+		}
+		else
+		{
+			src.convertTo(sf, CV_32F);
+			transform(sf, sf, mat);
+		}
 		split(sf, vdst);
 	}
 
