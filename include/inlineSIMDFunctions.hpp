@@ -169,6 +169,12 @@ STATIC_INLINE int _mm_cvtf32_i32(const float src)
 	__m128i d = _mm_cvtps_epi32(_mm_set1_ps(src));
 	return ((int*)&d)[0];
 }
+
+STATIC_INLINE __m256 _mm256_downsamplenn_ps(const __m256& src1, const __m256& src2)
+{
+	__m256 a = _mm256_shuffle_ps(src1, src2, _MM_SHUFFLE(2, 0, 2, 0));
+	return _mm256_castsi256_ps(_mm256_permute4x64_epi64(_mm256_castps_si256(a), _MM_SHUFFLE(3, 1, 2, 0)));
+}
 #pragma endregion
 
 //template for array
