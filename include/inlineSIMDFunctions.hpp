@@ -119,9 +119,9 @@ STATIC_INLINE __m256i _mm256_i32gatherset_epi32(const int* s, __m256i index, int
 STATIC_INLINE __m512 _mm512_i32gatherset_ps(__m512i index, const float* s, int offset)
 {
 	return _mm512_setr_ps(
-		s[((int*)&index)[0]], s[((int*)&index)[1]], s[((int*)&index)[2]], s[((int*)&index)[3]], 
+		s[((int*)&index)[0]], s[((int*)&index)[1]], s[((int*)&index)[2]], s[((int*)&index)[3]],
 		s[((int*)&index)[4]], s[((int*)&index)[5]], s[((int*)&index)[6]], s[((int*)&index)[7]],
-		s[((int*)&index)[8]], s[((int*)&index)[9]], s[((int*)&index)[10]], s[((int*)&index)[11]], 
+		s[((int*)&index)[8]], s[((int*)&index)[9]], s[((int*)&index)[10]], s[((int*)&index)[11]],
 		s[((int*)&index)[12]], s[((int*)&index)[13]], s[((int*)&index)[14]], s[((int*)&index)[15]]
 	);
 }
@@ -232,7 +232,7 @@ STATIC_INLINE __m256i get_simd_residualmask_epi32(const int width)
 	__m256i ret = _mm256_undefined_si256();
 	switch (rem)
 	{
-	case 0: ret = _mm256_cmpeq_epi32(_mm256_set1_epi32(1), _mm256_setzero_si256()); break;
+	case 0: ret = _mm256_cmpeq_epi32(_mm256_set1_epi32(0), _mm256_setzero_si256()); break;
 	case 1: ret = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 1, 1, 1, 1, 1, 1, 1), _mm256_setzero_si256()); break;
 	case 2: ret = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 1, 1, 1, 1, 1, 1), _mm256_setzero_si256()); break;
 	case 3: ret = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 1, 1, 1, 1, 1), _mm256_setzero_si256()); break;
@@ -244,6 +244,112 @@ STATIC_INLINE __m256i get_simd_residualmask_epi32(const int width)
 	return ret;
 }
 
+STATIC_INLINE void get_simd_residualmask16_epi32(const int width,  __m256i& mask0, __m256i& mask1)
+{
+	const int rem = width - get_simd_floor(width, 16);
+	const __m256i mOK = _mm256_cmpeq_epi32(_mm256_setzero_si256(), _mm256_setzero_si256()); 
+	const __m256i mNG = _mm256_cmpeq_epi32(_mm256_set1_epi32(1), _mm256_setzero_si256());
+	switch (rem)
+	{
+	case 0:
+	{
+		mask1 = mNG;
+		mask0 = mNG;
+		break;
+	}
+	case 1:
+	{
+		mask0 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 1, 1, 1, 1, 1, 1, 1), _mm256_setzero_si256()); 
+		mask1 = mNG;
+		break;
+	}
+	case 2:
+	{
+		mask0 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 1, 1, 1, 1, 1, 1), _mm256_setzero_si256()); 
+		mask1 = mNG;
+		break;
+	}
+	case 3:
+	{
+		mask0 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 1, 1, 1, 1, 1), _mm256_setzero_si256()); 
+		mask1 = mNG;
+		break;
+	}
+	case 4:
+	{
+		mask0 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 1, 1, 1, 1), _mm256_setzero_si256()); 
+		mask1 = mNG;
+		break;
+	}
+	case 5:
+	{
+		mask0 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 0, 1, 1, 1), _mm256_setzero_si256()); 
+		mask1 = mNG;
+		break;
+	}
+	case 6:
+	{
+		mask0 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 0, 0, 1, 1), _mm256_setzero_si256()); 
+		mask1 = mNG;
+		break;
+	}
+	case 7:
+	{
+		mask0 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 0, 0, 0, 1), _mm256_setzero_si256()); 
+		mask1 = mNG;
+		break;
+	}
+	case 8:
+	{
+		mask0 = mOK;
+		mask1 = mNG;
+		break;
+	}
+	case 9:
+	{
+		mask0 = mOK;
+		mask1 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 1, 1, 1, 1, 1, 1, 1), _mm256_setzero_si256()); 
+		break;
+	}
+	case 10:
+	{
+		mask0 = mOK;
+		mask1 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 1, 1, 1, 1, 1, 1), _mm256_setzero_si256()); 
+		break;
+	}
+	case 11:
+	{
+		mask0 = mOK;
+		mask1 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 1, 1, 1, 1, 1), _mm256_setzero_si256()); 
+		break;
+	}
+	case 12:
+	{
+		mask0 = mOK;
+		mask1 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 1, 1, 1, 1), _mm256_setzero_si256()); 
+		break;
+	}
+	case 13:
+	{
+		mask0 = mOK;
+		mask1 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 0, 1, 1, 1), _mm256_setzero_si256()); 
+		break;
+	}
+	case 14:
+	{
+		mask0 = mOK; 
+		mask1 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 0, 0, 1, 1), _mm256_setzero_si256()); 
+		break;
+	}
+	case 15:
+	{
+		mask0 = mOK;
+		mask1 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 0, 0, 0, 1), _mm256_setzero_si256()); 
+		break;
+	}
+
+	}
+}
 STATIC_INLINE __m256 get_simd_residualmask_ps(const int width)
 {
 	const int rem = width - get_simd_floor(width, 8);
@@ -1359,7 +1465,7 @@ STATIC_INLINE void _mm256_load_cvtepu8bgr2planar_ps(const uchar* ptr, __m256& b,
 	const __m128i m1 = _mm_setr_epi8(-1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0);
 	const __m128i m2 = _mm_setr_epi8(0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0);
 	__m128i s0 = _mm_load_si128((const __m128i*)ptr);
-	__m128i s1 = _mm_load_si128((const __m128i*)(ptr + 16));
+	__m128i s1 = _mm_loadl_epi64((const __m128i*)(ptr + 16));
 
 	__m128i a0 = _mm_blendv_epi8(s0, s1, m0);
 	__m128i b0 = _mm_blendv_epi8(s0, s1, m1);
@@ -2136,7 +2242,7 @@ STATIC_INLINE int _mm256_reduceadd_epi32(__m256i src)
 	ret = _mm256_add_epi32(src, ret);
 	__m256i ret2 = _mm256_shuffle_epi32(ret, _MM_SHUFFLE(1, 0, 3, 2));
 	ret = _mm256_add_epi32(ret, ret2);
-	return ret.m256i_i32[0]+ ret.m256i_i32[4];
+	return ret.m256i_i32[0] + ret.m256i_i32[4];
 	//return _mm256_cvtsi256_si32(_mm256_add_epi32(ret, _mm256_permute2x128_si256(ret, ret, 1)));
 }
 
