@@ -1099,6 +1099,11 @@ namespace cp
 			pinfo[datanum].data.clear();
 	}
 
+	cv::Point2d Plot::getPlotPoint(const int pointIndex, const int plotIndex)
+	{
+		return pinfo[max(0, min((int)pinfo.size() - 1, plotIndex))].data[max(0, min((int)pinfo[0].data.size() - 1, pointIndex))];
+	}
+
 	void Plot::swapPlot(int plotIndex1, int plotIndex2)
 	{
 		swap(pinfo[plotIndex1].data, pinfo[plotIndex2].data);
@@ -1370,7 +1375,7 @@ namespace cp
 			if (pinfo[i].data.size() == 0) continue;
 
 			vector<Point2d> data;
-			data.push_back(Point2d(keyImage.cols/3.0*4.0, keyImage.rows - (i + 1) * step));
+			data.push_back(Point2d(keyImage.cols / 3.0 * 4.0, keyImage.rows - (i + 1) * step));
 			data.push_back(Point2d(keyImage.cols - step, keyImage.rows - (i + 1) * step));
 
 			plotGraph(keyImage, data, 0, keyImage.cols, 0, keyImage.rows, pinfo[i].color, pinfo[i].symbolType, pinfo[i].lineType, pinfo[i].lineWidth);

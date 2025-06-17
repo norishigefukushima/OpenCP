@@ -839,12 +839,12 @@ namespace cp
 		//y_[i] = saturate_cast<dstType>(0.114 * s[3 * i + 0] + 0.587 * s[3 * i + 1] + 0.299 * s[3 * i + 2]);
 		//cr[i] = saturate_cast<dstType>(0.5 * s[3 * i + 0] - 0.331264 * s[3 * i + 1] - 0.168736 * s[3 * i + 2]);
 		//cb[i] = saturate_cast<dstType>(-0.081312 * s[3 * i + 0] - 0.418688 * s[3 * i + 1] + 0.5 * s[3 * i + 2]);
-		const __m256 cy0 = _mm256_set1_ps(0.114f);
-		const __m256 cy1 = _mm256_set1_ps(0.587f);
-		const __m256 cy2 = _mm256_set1_ps(0.299f);
+		const __m256 cy0 = _mm256_set1_ps(0.114f);//0.114f
+		const __m256 cy1 = _mm256_set1_ps(0.587f);//0.587f
+		const __m256 cy2 = _mm256_set1_ps(0.299f);//0.299f
 
-		const __m256 ccr = _mm256_set1_ps(0.713f);
-		const __m256 ccb = _mm256_set1_ps(0.564f);
+		const __m256 ccr = _mm256_set1_ps(0.713f);//0.713f
+		const __m256 ccb = _mm256_set1_ps(0.564f);//0.564f
 		const __m256 m128 = _mm256_set1_ps(128.f);
 		if (unroll == 1)
 		{
@@ -2085,7 +2085,7 @@ namespace cp
 		CV_Assert(in.depth() == CV_8U);
 		CV_Assert(in.channels() == 3);
 
-		if (out.empty() || in.size() != out.size()) out.create(in.size(), CV_32F);
+		if (out.empty() || in.size() != out.size()||out.depth()!=CV_32F) out.create(in.size(), CV_32F);
 		const Mat src = in.getMat();
 		Mat dst = out.getMat();
 
@@ -2093,18 +2093,18 @@ namespace cp
 		const __m256 cg = _mm256_set1_ps(0.587f);
 		const __m256 cr = _mm256_set1_ps(0.299f);
 		const int size = src.size().area();
-		const int simdsize = get_simd_floor(size, 16);
+		const int size16 = get_simd_floor(size, 16);
 
 		const uchar* __restrict s = src.ptr<uchar>();
 		float* __restrict d = dst.ptr<float>();
-		for (int i = 0; i < simdsize; i += 16)
+		for (int i = 0; i < size16; i += 16)
 		{
 			__m256 b0, b1, g0, g1, r0, r1;
 			_mm256_load_cvtepu8bgr2planar_psx2(s + 3 * i, b0, b1, g0, g1, r0, r1);
 			_mm256_storeu_ps(d + i + 0, _mm256_fmadd_ps(cb, b0, _mm256_fmadd_ps(cg, g0, _mm256_mul_ps(cr, r0))));
 			_mm256_storeu_ps(d + i + 8, _mm256_fmadd_ps(cb, b1, _mm256_fmadd_ps(cg, g1, _mm256_mul_ps(cr, r1))));
 		}
-		for (int i = simdsize; i < size; i++)
+		for (int i = size16; i < size; i++)
 		{
 			d[i] = float(0.114f * s[3 * i + 0] + 0.587f * s[3 * i + 1] + 0.299f * s[3 * i + 2]);
 		}
@@ -2141,8 +2141,14 @@ namespace cp
 
 	void cvtColorGray(cv::InputArray in, cv::OutputArray out, int depth)
 	{
-		if (in.depth() == CV_8U && depth == CV_32F) cvtColorGray8U32F(in, out);
-		else if (in.depth() == CV_32F && depth == CV_32F) cvtColorGray32F32F(in, out);
+		if (in.depth() == CV_8U && depth == CV_32F)
+		{
+			cvtColorGray8U32F(in, out);
+		}
+		else if (in.depth() == CV_32F && depth == CV_32F)
+		{
+			cvtColorGray32F32F(in, out);
+		}
 		else
 		{
 			cout << "do not support this type cvtColorGray: in(depth)" << in.depth() << ", dest depth " << depth << endl;

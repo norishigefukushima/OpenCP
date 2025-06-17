@@ -246,7 +246,7 @@ namespace cp
 		void insert(double x, double y, int sampleIndex, int plotIndex = 0);
 
 		void clear(int datanum = -1);
-
+		cv::Point2d getPlotPoint(const int pointIndex, const int plotIndex);
 		void swapPlot(int plotIndex1, int plotIndex2);
 	};
 
