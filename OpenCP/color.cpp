@@ -721,7 +721,543 @@ namespace cp
 	}
 
 	template<int store_method>
-	void splitConvertYCrCb32F32F_(Mat& src, vector<Mat>& dst, const int unroll = 4)
+	void splitConvertYCrCb32F32F_(Mat& src, vector<Mat>& dst, const vector<float>& coeff, const int unroll)
+	{
+		CV_Assert(src.channels() == 3);
+		CV_Assert(1 <= unroll && unroll <= 4);
+
+		float* __restrict s = src.ptr<float>();
+		float* __restrict y = dst[0].ptr<float>();
+		float* __restrict cr = dst[1].ptr<float>();
+		float* __restrict cb = dst[2].ptr<float>();
+		const int step = 8 * unroll;
+		const int simdsize = get_simd_floor(src.size().area(), step);
+
+		const __m256 cy0 = _mm256_set1_ps(coeff[0]);
+		const __m256 cy1 = _mm256_set1_ps(coeff[1]);
+		const __m256 cy2 = _mm256_set1_ps(coeff[2]);
+
+		const __m256 ccr = _mm256_set1_ps(coeff[3]);
+		const __m256 ccb = _mm256_set1_ps(coeff[4]);
+		if (coeff.size() == 5)
+		{
+			//vector<float> coeff{ 0.114f , 0.587f,0.299f,0.7132667617689016f,0.564334085778781f,0.f, 127.5 };
+			if (unroll == 1)
+			{
+				for (int i = 0; i < simdsize; i += step)
+				{
+					__m256 mb, mg, mr;
+					_mm256_load_cvtps_bgr2planar_ps(s + 3 * i, mb, mg, mr);
+					__m256 my = _mm256_fmadd_ps(cy0, mb, _mm256_fmadd_ps(cy1, mg, _mm256_mul_ps(cy2, mr)));
+					v_store32f<store_method>(y + i + 0, my);
+					v_store32f<store_method>(cr + i + 0, _mm256_mul_ps(ccr, _mm256_sub_ps(mr, my)));
+					v_store32f<store_method>(cb + i + 0, _mm256_mul_ps(ccb, _mm256_sub_ps(mb, my)));
+				}
+			}
+			else if (unroll == 2)
+			{
+				for (int i = 0; i < simdsize; i += step)
+				{
+					__m256 mb, mg, mr;
+					_mm256_load_cvtps_bgr2planar_ps(s + 3 * i, mb, mg, mr);
+					__m256 my = _mm256_fmadd_ps(cy0, mb, _mm256_fmadd_ps(cy1, mg, _mm256_mul_ps(cy2, mr)));
+					v_store32f<store_method>(y + i + 0, my);
+					v_store32f<store_method>(cr + i + 0, _mm256_mul_ps(ccr, _mm256_sub_ps(mr, my)));
+					v_store32f<store_method>(cb + i + 0, _mm256_mul_ps(ccb, _mm256_sub_ps(mb, my)));
+
+					_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 24, mb, mg, mr);
+					my = _mm256_fmadd_ps(cy0, mb, _mm256_fmadd_ps(cy1, mg, _mm256_mul_ps(cy2, mr)));
+					v_store32f<store_method>(y + i + 8, my);
+					v_store32f<store_method>(cr + i + 8, _mm256_mul_ps(ccr, _mm256_sub_ps(mr, my)));
+					v_store32f<store_method>(cb + i + 8, _mm256_mul_ps(ccb, _mm256_sub_ps(mb, my)));
+				}
+			}
+			else if (unroll == 3)
+			{
+				for (int i = 0; i < simdsize; i += step)
+				{
+					__m256 mb, mg, mr;
+					_mm256_load_cvtps_bgr2planar_ps(s + 3 * i, mb, mg, mr);
+					__m256 my = _mm256_fmadd_ps(cy0, mb, _mm256_fmadd_ps(cy1, mg, _mm256_mul_ps(cy2, mr)));
+					v_store32f<store_method>(y + i + 0, my);
+					v_store32f<store_method>(cr + i + 0, _mm256_mul_ps(ccr, _mm256_sub_ps(mr, my)));
+					v_store32f<store_method>(cb + i + 0, _mm256_mul_ps(ccb, _mm256_sub_ps(mb, my)));
+
+					_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 24, mb, mg, mr);
+					my = _mm256_fmadd_ps(cy0, mb, _mm256_fmadd_ps(cy1, mg, _mm256_mul_ps(cy2, mr)));
+					v_store32f<store_method>(y + i + 8, my);
+					v_store32f<store_method>(cr + i + 8, _mm256_mul_ps(ccr, _mm256_sub_ps(mr, my)));
+					v_store32f<store_method>(cb + i + 8, _mm256_mul_ps(ccb, _mm256_sub_ps(mb, my)));
+
+					_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 48, mb, mg, mr);
+					my = _mm256_fmadd_ps(cy0, mb, _mm256_fmadd_ps(cy1, mg, _mm256_mul_ps(cy2, mr)));
+					v_store32f<store_method>(y + i + 16, my);
+					v_store32f<store_method>(cr + i + 16, _mm256_mul_ps(ccr, _mm256_sub_ps(mr, my)));
+					v_store32f<store_method>(cb + i + 16, _mm256_mul_ps(ccb, _mm256_sub_ps(mb, my)));
+				}
+			}
+			else if (unroll == 4)
+			{
+				for (int i = 0; i < simdsize; i += step)
+				{
+					__m256 mb, mg, mr;
+					_mm256_load_cvtps_bgr2planar_ps(s + 3 * i, mb, mg, mr);
+					__m256 my = _mm256_fmadd_ps(cy0, mb, _mm256_fmadd_ps(cy1, mg, _mm256_mul_ps(cy2, mr)));
+					v_store32f<store_method>(y + i + 0, my);
+					v_store32f<store_method>(cr + i + 0, _mm256_mul_ps(ccr, _mm256_sub_ps(mr, my)));
+					v_store32f<store_method>(cb + i + 0, _mm256_mul_ps(ccb, _mm256_sub_ps(mb, my)));
+
+					_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 24, mb, mg, mr);
+					my = _mm256_fmadd_ps(cy0, mb, _mm256_fmadd_ps(cy1, mg, _mm256_mul_ps(cy2, mr)));
+					v_store32f<store_method>(y + i + 8, my);
+					v_store32f<store_method>(cr + i + 8, _mm256_mul_ps(ccr, _mm256_sub_ps(mr, my)));
+					v_store32f<store_method>(cb + i + 8, _mm256_mul_ps(ccb, _mm256_sub_ps(mb, my)));
+
+					_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 48, mb, mg, mr);
+					my = _mm256_fmadd_ps(cy0, mb, _mm256_fmadd_ps(cy1, mg, _mm256_mul_ps(cy2, mr)));
+					v_store32f<store_method>(y + i + 16, my);
+					v_store32f<store_method>(cr + i + 16, _mm256_mul_ps(ccr, _mm256_sub_ps(mr, my)));
+					v_store32f<store_method>(cb + i + 16, _mm256_mul_ps(ccb, _mm256_sub_ps(mb, my)));
+
+					_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 72, mb, mg, mr);
+					v_store32f<store_method>(y + i + 24, my);
+					v_store32f<store_method>(cr + i + 24, _mm256_mul_ps(ccr, _mm256_sub_ps(mr, my)));
+					v_store32f<store_method>(cb + i + 24, _mm256_mul_ps(ccb, _mm256_sub_ps(mb, my)));
+				}
+			}
+
+			for (int i = simdsize; i < src.size().area(); i++)
+			{
+				y[i] = fma(coeff[0], s[3 * i + 0], fma(coeff[1], s[3 * i + 1], coeff[2] * s[3 * i + 2]));
+				cr[i] = coeff[3] * (s[3 * i + 2] - y[i]);
+				cb[i] = coeff[4] * (s[3 * i + 2] - y[i]);
+			}
+		}
+		else
+		{
+			const __m256 myo = _mm256_set1_ps(coeff[5]);
+			const __m256 mhalf = _mm256_set1_ps(coeff[6]);
+			if (unroll == 1)
+			{
+				for (int i = 0; i < simdsize; i += step)
+				{
+					__m256 mb, mg, mr;
+					_mm256_load_cvtps_bgr2planar_ps(s + 3 * i, mb, mg, mr);
+					const __m256 my = _mm256_fmadd_ps(cy0, mb, _mm256_fmadd_ps(cy1, mg, _mm256_fmadd_ps(cy2, mr, myo)));
+					v_store32f<store_method>(y + i + 0, my);
+					v_store32f<store_method>(cr + i + 0, _mm256_fmadd_ps(ccr, _mm256_sub_ps(mr, my), mhalf));
+					v_store32f<store_method>(cb + i + 0, _mm256_fmadd_ps(ccb, _mm256_sub_ps(mb, my), mhalf));
+				}
+			}
+			else if (unroll == 2)
+			{
+				for (int i = 0; i < simdsize; i += step)
+				{
+					__m256 mb, mg, mr;
+					_mm256_load_cvtps_bgr2planar_ps(s + 3 * i, mb, mg, mr);
+					__m256 my = _mm256_fmadd_ps(cy0, mb, _mm256_fmadd_ps(cy1, mg, _mm256_fmadd_ps(cy2, mr, myo)));
+					v_store32f<store_method>(y + i + 0, my);
+					v_store32f<store_method>(cr + i + 0, _mm256_fmadd_ps(ccr, _mm256_sub_ps(mr, my), mhalf));
+					v_store32f<store_method>(cb + i + 0, _mm256_fmadd_ps(ccb, _mm256_sub_ps(mb, my), mhalf));
+
+					_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 24, mb, mg, mr);
+					my = _mm256_fmadd_ps(cy0, mb, _mm256_fmadd_ps(cy1, mg, _mm256_fmadd_ps(cy2, mr, myo)));
+					v_store32f<store_method>(y + i + 8, my);
+					v_store32f<store_method>(cr + i + 8, _mm256_fmadd_ps(ccr, _mm256_sub_ps(mr, my), mhalf));
+					v_store32f<store_method>(cb + i + 8, _mm256_fmadd_ps(ccb, _mm256_sub_ps(mb, my), mhalf));
+				}
+			}
+			else if (unroll == 3)
+			{
+				for (int i = 0; i < simdsize; i += step)
+				{
+					__m256 mb, mg, mr;
+					_mm256_load_cvtps_bgr2planar_ps(s + 3 * i, mb, mg, mr);
+					__m256 my = _mm256_fmadd_ps(cy0, mb, _mm256_fmadd_ps(cy1, mg, _mm256_fmadd_ps(cy2, mr, myo)));
+					v_store32f<store_method>(y + i + 0, my);
+					v_store32f<store_method>(cr + i + 0, _mm256_fmadd_ps(ccr, _mm256_sub_ps(mr, my), mhalf));
+					v_store32f<store_method>(cb + i + 0, _mm256_fmadd_ps(ccb, _mm256_sub_ps(mb, my), mhalf));
+
+					_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 24, mb, mg, mr);
+					my = _mm256_fmadd_ps(cy0, mb, _mm256_fmadd_ps(cy1, mg, _mm256_fmadd_ps(cy2, mr, myo)));
+					v_store32f<store_method>(y + i + 8, my);
+					v_store32f<store_method>(cr + i + 8, _mm256_fmadd_ps(ccr, _mm256_sub_ps(mr, my), mhalf));
+					v_store32f<store_method>(cb + i + 8, _mm256_fmadd_ps(ccb, _mm256_sub_ps(mb, my), mhalf));
+
+					_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 48, mb, mg, mr);
+					my = _mm256_fmadd_ps(cy0, mb, _mm256_fmadd_ps(cy1, mg, _mm256_fmadd_ps(cy2, mr, myo)));
+					v_store32f<store_method>(y + i + 16, my);
+					v_store32f<store_method>(cr + i + 16, _mm256_fmadd_ps(ccr, _mm256_sub_ps(mr, my), mhalf));
+					v_store32f<store_method>(cb + i + 16, _mm256_fmadd_ps(ccb, _mm256_sub_ps(mb, my), mhalf));
+				}
+			}
+			else if (unroll == 4)
+			{
+				for (int i = 0; i < simdsize; i += step)
+				{
+					__m256 mb, mg, mr;
+					_mm256_load_cvtps_bgr2planar_ps(s + 3 * i, mb, mg, mr);
+					__m256 my = _mm256_fmadd_ps(cy0, mb, _mm256_fmadd_ps(cy1, mg, _mm256_fmadd_ps(cy2, mr, myo)));
+					v_store32f<store_method>(y + i + 0, my);
+					v_store32f<store_method>(cr + i + 0, _mm256_fmadd_ps(ccr, _mm256_sub_ps(mr, my), mhalf));
+					v_store32f<store_method>(cb + i + 0, _mm256_fmadd_ps(ccb, _mm256_sub_ps(mb, my), mhalf));
+
+					_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 24, mb, mg, mr);
+					my = _mm256_fmadd_ps(cy0, mb, _mm256_fmadd_ps(cy1, mg, _mm256_fmadd_ps(cy2, mr, myo)));
+					v_store32f<store_method>(y + i + 8, my);
+					v_store32f<store_method>(cr + i + 8, _mm256_fmadd_ps(ccr, _mm256_sub_ps(mr, my), mhalf));
+					v_store32f<store_method>(cb + i + 8, _mm256_fmadd_ps(ccb, _mm256_sub_ps(mb, my), mhalf));
+
+					_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 48, mb, mg, mr);
+					my = _mm256_fmadd_ps(cy0, mb, _mm256_fmadd_ps(cy1, mg, _mm256_fmadd_ps(cy2, mr, myo)));
+					v_store32f<store_method>(y + i + 16, my);
+					v_store32f<store_method>(cr + i + 16, _mm256_fmadd_ps(ccr, _mm256_sub_ps(mr, my), mhalf));
+					v_store32f<store_method>(cb + i + 16, _mm256_fmadd_ps(ccb, _mm256_sub_ps(mb, my), mhalf));
+
+					_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 72, mb, mg, mr);
+					my = _mm256_fmadd_ps(cy0, mb, _mm256_fmadd_ps(cy1, mg, _mm256_fmadd_ps(cy2, mr, myo)));
+					v_store32f<store_method>(y + i + 24, my);
+					v_store32f<store_method>(cr + i + 24, _mm256_fmadd_ps(ccr, _mm256_sub_ps(mr, my), mhalf));
+					v_store32f<store_method>(cb + i + 24, _mm256_fmadd_ps(ccb, _mm256_sub_ps(mb, my), mhalf));
+				}
+			}
+			for (int i = simdsize; i < src.size().area(); i++)
+			{
+				y[i] = fma(coeff[0], s[3 * i + 0], fma(coeff[1], s[3 * i + 1], fma(coeff[2], s[3 * i + 2], coeff[5])));
+				cr[i] = fma(coeff[3], (s[3 * i + 2] - y[i]), coeff[6]);
+				cb[i] = fma(coeff[4], (s[3 * i + 2] - y[i]), coeff[6]);
+			}
+		}
+
+	}
+
+	template<int store_method>
+	void splitConvertYCrCb8U32F_(Mat& src, vector<Mat>& dst, const vector<float>& coeff, const int unroll)
+	{
+		CV_Assert(src.channels() == 3);
+		CV_Assert(1 <= unroll && unroll <= 4);
+
+		const uchar* __restrict s = src.ptr<uchar>();
+		float* __restrict y = dst[0].ptr<float>();
+		float* __restrict cr = dst[1].ptr<float>();
+		float* __restrict cb = dst[2].ptr<float>();
+		const int step = 8 * unroll;
+		const int simdsize = get_simd_floor(src.size().area(), step);
+
+		const __m256 cy0 = _mm256_set1_ps(coeff[0]);
+		const __m256 cy1 = _mm256_set1_ps(coeff[1]);
+		const __m256 cy2 = _mm256_set1_ps(coeff[2]);
+
+		const __m256 ccr = _mm256_set1_ps(coeff[3]);
+		const __m256 ccb = _mm256_set1_ps(coeff[4]);
+		if (coeff.size() == 5)
+		{
+			if (unroll == 1)
+			{
+				for (int i = 0; i < simdsize; i += step)
+				{
+					__m256 mb0, mg0, mr0;
+					_mm256_load_cvtepu8bgr2planar_ps(s + 3 * i, mb0, mr0, mg0);
+					const __m256 my0 = _mm256_fmadd_ps(cy0, mb0, _mm256_fmadd_ps(cy1, mg0, _mm256_mul_ps(cy2, mr0)));
+					v_store32f<store_method>(y + i + 0, my0);
+					v_store32f<store_method>(cr + i + 0, _mm256_mul_ps(ccr, _mm256_sub_ps(mr0, my0)));
+					v_store32f<store_method>(cb + i + 0, _mm256_mul_ps(ccb, _mm256_sub_ps(mb0, my0)));
+				}
+			}
+			else if (unroll == 2)
+			{
+				for (int i = 0; i < simdsize; i += step)
+				{
+					__m256 mb0, mg0, mr0, mb1, mg1, mr1;
+					_mm256_load_cvtepu8bgr2planar_psx2(s + 3 * i, mb0, mb1, mg0, mg1, mr0, mr1);
+					const __m256 my0 = _mm256_fmadd_ps(cy0, mb0, _mm256_fmadd_ps(cy1, mg0, _mm256_mul_ps(cy2, mr0)));
+					const __m256 my1 = _mm256_fmadd_ps(cy0, mb1, _mm256_fmadd_ps(cy1, mg1, _mm256_mul_ps(cy2, mr1)));
+					v_store32f<store_method>(y + i + 0, my0);
+					v_store32f<store_method>(cr + i + 0, _mm256_mul_ps(ccr, _mm256_sub_ps(mr0, my0)));
+					v_store32f<store_method>(cb + i + 0, _mm256_mul_ps(ccb, _mm256_sub_ps(mb0, my0)));
+					v_store32f<store_method>(y + i + 8, my1);
+					v_store32f<store_method>(cr + i + 8, _mm256_mul_ps(ccr, _mm256_sub_ps(mr1, my1)));
+					v_store32f<store_method>(cb + i + 8, _mm256_mul_ps(ccb, _mm256_sub_ps(mb1, my1)));
+				}
+			}
+			for (int i = simdsize; i < src.size().area(); i++)
+			{
+				y[i] = fma(coeff[0], s[3 * i + 0], fma(coeff[1], s[3 * i + 1], coeff[2] * s[3 * i + 2]));
+				cr[i] = coeff[3] * (s[3 * i + 2] - y[i]);
+				cb[i] = coeff[4] * (s[3 * i + 2] - y[i]);
+			}
+		}
+		else
+		{
+			const __m256 myo = _mm256_set1_ps(coeff[5]);
+			const __m256 mhalf = _mm256_set1_ps(coeff[6]);
+			if (unroll == 1)
+			{
+				for (int i = 0; i < simdsize; i += step)
+				{
+					__m256 mb0, mg0, mr0;
+					_mm256_load_cvtepu8bgr2planar_ps(s + 3 * i, mb0, mr0, mg0);
+					const __m256 my0 = _mm256_fmadd_ps(cy0, mb0, _mm256_fmadd_ps(cy1, mg0, _mm256_fmadd_ps(cy2, mr0, myo)));
+					v_store32f<store_method>(y + i + 0, my0);
+					v_store32f<store_method>(cr + i + 0, _mm256_fmadd_ps(ccr, _mm256_sub_ps(mr0, my0), mhalf));
+					v_store32f<store_method>(cb + i + 0, _mm256_fmadd_ps(ccb, _mm256_sub_ps(mb0, my0), mhalf));
+				}
+			}
+			else if (unroll == 2)
+			{
+				for (int i = 0; i < simdsize; i += step)
+				{
+					__m256 mb0, mg0, mr0, mb1, mg1, mr1;
+					_mm256_load_cvtepu8bgr2planar_psx2(s + 3 * i, mb0, mb1, mg0, mg1, mr0, mr1);
+					const __m256 my0 = _mm256_fmadd_ps(cy0, mb0, _mm256_fmadd_ps(cy1, mg0, _mm256_fmadd_ps(cy2, mr0, myo)));
+					const __m256 my1 = _mm256_fmadd_ps(cy0, mb1, _mm256_fmadd_ps(cy1, mg1, _mm256_fmadd_ps(cy2, mr1, myo)));
+					v_store32f<store_method>(y + i + 0, my0);
+					v_store32f<store_method>(cr + i + 0, _mm256_fmadd_ps(ccr, _mm256_sub_ps(mr0, my0), mhalf));
+					v_store32f<store_method>(cb + i + 0, _mm256_fmadd_ps(ccb, _mm256_sub_ps(mb0, my0), mhalf));
+					v_store32f<store_method>(y + i + 8, my1);
+					v_store32f<store_method>(cr + i + 8, _mm256_fmadd_ps(ccr, _mm256_sub_ps(mr1, my1), mhalf));
+					v_store32f<store_method>(cb + i + 8, _mm256_fmadd_ps(ccb, _mm256_sub_ps(mb1, my1), mhalf));
+				}
+			}
+			for (int i = simdsize; i < src.size().area(); i++)
+			{
+				y[i] = fma(coeff[0], s[3 * i + 0], fma(coeff[1], s[3 * i + 1], fma(coeff[2], s[3 * i + 2], coeff[5])));
+				cr[i] = fma(coeff[3], (s[3 * i + 2] - y[i]), coeff[6]);
+				cb[i] = fma(coeff[4], (s[3 * i + 2] - y[i]), coeff[6]);
+			}
+		}
+	}
+
+	template<int store_method>
+	void splitConvertYCrCb8U8U_(Mat& src, vector<Mat>& dst, const vector<float>& coeff, const int unroll)
+	{
+		CV_Assert(src.channels() == 3);
+		CV_Assert(1 <= unroll && unroll <= 4);
+
+		const uchar* __restrict s = src.ptr<uchar>();
+		uchar* __restrict y = dst[0].ptr <uchar>();
+		uchar* __restrict cr = dst[1].ptr<uchar>();
+		uchar* __restrict cb = dst[2].ptr<uchar>();
+		const int step = 8 * unroll;
+		const int simdsize = get_simd_floor(src.size().area(), step);
+
+		const __m256 cy0 = _mm256_set1_ps(coeff[0]);
+		const __m256 cy1 = _mm256_set1_ps(coeff[1]);
+		const __m256 cy2 = _mm256_set1_ps(coeff[2]);
+
+		const __m256 ccr = _mm256_set1_ps(coeff[3]);
+		const __m256 ccb = _mm256_set1_ps(coeff[4]);
+		if (coeff.size() == 5)
+		{
+			if (unroll == 1)
+			{
+				for (int i = 0; i < simdsize; i += step)
+				{
+					__m256 mb0, mg0, mr0;
+					_mm256_load_cvtepu8bgr2planar_ps(s + 3 * i, mb0, mr0, mg0);
+					const __m256 my0 = _mm256_fmadd_ps(cy0, mb0, _mm256_fmadd_ps(cy1, mg0, _mm256_mul_ps(cy2, mr0)));
+					_mm_storel_epi64((__m128i*)(y + i + 0), _mm256_cvtps_epu8(my0));
+					_mm_storel_epi64((__m128i*)(cr + i + 0), _mm256_cvtps_epu8(_mm256_mul_ps(ccr, _mm256_sub_ps(mr0, my0))));
+					_mm_storel_epi64((__m128i*)(cb + i + 0), _mm256_cvtps_epu8(_mm256_mul_ps(ccb, _mm256_sub_ps(mb0, my0))));
+				}
+			}
+			else if (unroll == 2)
+			{
+				for (int i = 0; i < simdsize; i += step)
+				{
+					__m256 mb0, mg0, mr0, mb1, mg1, mr1;
+					_mm256_load_cvtepu8bgr2planar_psx2(s + 3 * i, mb0, mb1, mg0, mg1, mr0, mr1);
+					const __m256 my0 = _mm256_fmadd_ps(cy0, mb0, _mm256_fmadd_ps(cy1, mg0, _mm256_mul_ps(cy2, mr0)));
+					const __m256 my1 = _mm256_fmadd_ps(cy0, mb1, _mm256_fmadd_ps(cy1, mg1, _mm256_mul_ps(cy2, mr1)));
+					_mm_storel_epi64((__m128i*)(y + i + 0), _mm256_cvtps_epu8(my0));
+					_mm_storel_epi64((__m128i*)(cr + i + 0), _mm256_cvtps_epu8(_mm256_mul_ps(ccr, _mm256_sub_ps(mr0, my0))));
+					_mm_storel_epi64((__m128i*)(cb + i + 0), _mm256_cvtps_epu8(_mm256_mul_ps(ccb, _mm256_sub_ps(mb0, my0))));
+					_mm_storel_epi64((__m128i*)(y + i + 8), _mm256_cvtps_epu8(my1));
+					_mm_storel_epi64((__m128i*)(cr + i + 8), _mm256_cvtps_epu8(_mm256_mul_ps(ccr, _mm256_sub_ps(mr1, my1))));
+					_mm_storel_epi64((__m128i*)(cb + i + 8), _mm256_cvtps_epu8(_mm256_mul_ps(ccb, _mm256_sub_ps(mb1, my1))));
+				}
+			}
+			for (int i = simdsize; i < src.size().area(); i++)
+			{
+				y[i] = cv::saturate_cast<uchar>(fma(coeff[0], s[3 * i + 0], fma(coeff[1], s[3 * i + 1], coeff[2] * s[3 * i + 2])));
+				cr[i] = cv::saturate_cast<uchar>(coeff[3] * (s[3 * i + 2] - y[i]));
+				cb[i] = cv::saturate_cast<uchar>(coeff[4] * (s[3 * i + 2] - y[i]));
+			}
+		}
+		else
+		{
+			const __m256 myo = _mm256_set1_ps(coeff[5]);
+			const __m256 mhalf = _mm256_set1_ps(coeff[6]);
+			if (unroll == 1)
+			{
+				for (int i = 0; i < simdsize; i += step)
+				{
+					__m256 mb0, mg0, mr0;
+					_mm256_load_cvtepu8bgr2planar_ps(s + 3 * i, mb0, mr0, mg0);
+					const __m256 my0 = _mm256_fmadd_ps(cy0, mb0, _mm256_fmadd_ps(cy1, mg0, _mm256_fmadd_ps(cy2, mr0, myo)));
+					_mm_storel_epi64((__m128i*)(y + i + 0), _mm256_cvtps_epu8(my0));
+					_mm_storel_epi64((__m128i*)(cr + i + 0), _mm256_cvtps_epu8(_mm256_fmadd_ps(ccr, _mm256_sub_ps(mr0, my0), mhalf)));
+					_mm_storel_epi64((__m128i*)(cb + i + 0), _mm256_cvtps_epu8(_mm256_fmadd_ps(ccb, _mm256_sub_ps(mb0, my0), mhalf)));
+				}
+			}
+			else if (unroll == 2)
+			{
+				for (int i = 0; i < simdsize; i += step)
+				{
+					__m256 mb0, mg0, mr0, mb1, mg1, mr1;
+					_mm256_load_cvtepu8bgr2planar_psx2(s + 3 * i, mb0, mb1, mg0, mg1, mr0, mr1);
+					const __m256 my0 = _mm256_fmadd_ps(cy0, mb0, _mm256_fmadd_ps(cy1, mg0, _mm256_fmadd_ps(cy2, mr0, myo)));
+					const __m256 my1 = _mm256_fmadd_ps(cy0, mb1, _mm256_fmadd_ps(cy1, mg1, _mm256_fmadd_ps(cy2, mr1, myo)));
+					_mm_storel_epi64((__m128i*)(y + i + 0), _mm256_cvtps_epu8(my0));
+					_mm_storel_epi64((__m128i*)(cr + i + 0), _mm256_cvtps_epu8(_mm256_fmadd_ps(ccr, _mm256_sub_ps(mr0, my0), mhalf)));
+					_mm_storel_epi64((__m128i*)(cb + i + 0), _mm256_cvtps_epu8(_mm256_fmadd_ps(ccb, _mm256_sub_ps(mb0, my0), mhalf)));
+					_mm_storel_epi64((__m128i*)(y + i + 8), _mm256_cvtps_epu8(my1));
+					_mm_storel_epi64((__m128i*)(cr + i + 8), _mm256_cvtps_epu8(_mm256_fmadd_ps(ccr, _mm256_sub_ps(mr1, my1), mhalf)));
+					_mm_storel_epi64((__m128i*)(cb + i + 8), _mm256_cvtps_epu8(_mm256_fmadd_ps(ccb, _mm256_sub_ps(mb1, my1), mhalf)));
+				}
+			}
+			for (int i = simdsize; i < src.size().area(); i++)
+			{
+				y[i] = cv::saturate_cast<uchar>(fma(coeff[0], s[3 * i + 0], fma(coeff[1], s[3 * i + 1], fma(coeff[2], s[3 * i + 2], coeff[5]))));
+				cr[i] = cv::saturate_cast<uchar>(fma(coeff[3], (s[3 * i + 2] - y[i]), coeff[6]));
+				cb[i] = cv::saturate_cast<uchar>(fma(coeff[4], (s[3 * i + 2] - y[i]), coeff[6]));
+			}
+		}
+	}
+
+	void splitConvertYCrCb(cv::InputArray src, cv::OutputArrayOfArrays dest, const int depth, const double scale, const int offsetMode, const bool isCache)
+	{
+		vector<float> coeff{ 0.114f , 0.587f,0.299f,0.7132667617689016f,0.564334085778781f,0.f, 127.5 };
+		if (offsetMode == 0)
+		{
+			coeff.pop_back();
+			coeff.pop_back();
+		}
+		for (int i = 0; i < coeff.size(); i++)coeff[i] *= scale;
+
+		Mat s = src.getMat();
+
+		vector<Mat> dst;
+		if (dest.empty() || src.size() != dest.size())
+		{
+			dest.create(3, 1, src.type());
+
+			dest.getMatVector(dst);
+
+			dst[0].create(src.size(), depth);
+			dst[1].create(src.size(), depth);
+			dst[2].create(src.size(), depth);
+
+			dest.getMatRef(0) = dst[0];
+			dest.getMatRef(1) = dst[1];
+			dest.getMatRef(2) = dst[2];
+		}
+		else
+		{
+			dest.getMatVector(dst);
+
+			for (int i = 0; i < dst.size(); i++)
+			{
+				if (dst[i].empty() ||
+					dst[i].depth() != src.depth())
+				{
+					dst[i].create(src.size(), depth);
+					dest.getMatRef(i) = dst[i];
+				}
+			}
+		}
+
+		if (src.depth() == CV_32F && depth == CV_32F)
+		{
+			const int unroll = 1;
+			if (isCache && dst[0].cols % 8 == 0) splitConvertYCrCb32F32F_<STORE>(s, dst, coeff, unroll);
+			else if (isCache && dst[0].cols % 8 != 0)splitConvertYCrCb32F32F_<STOREU>(s, dst, coeff, unroll);
+			else splitConvertYCrCb32F32F_<STREAM>(s, dst, coeff, unroll);
+		}
+		else if (src.depth() == CV_8U && depth == CV_32F)
+		{
+			const int unroll = 2;
+			if (isCache && dst[0].cols % 8 == 0)splitConvertYCrCb8U32F_<STORE>(s, dst, coeff, unroll);
+			else if (isCache && dst[0].cols % 8 != 0)splitConvertYCrCb8U32F_<STOREU>(s, dst, coeff, unroll);
+			else splitConvertYCrCb8U32F_<STREAM>(s, dst, coeff, unroll);
+		}
+		else if (src.depth() == CV_8U && depth == CV_8U)
+		{
+			const int unroll = 2;
+			if (isCache && dst[0].cols % 8 == 0)splitConvertYCrCb8U8U_<STORE>(s, dst, coeff, unroll);
+			else if (isCache && dst[0].cols % 8 != 0)splitConvertYCrCb8U8U_<STOREU>(s, dst, coeff, unroll);
+			else splitConvertYCrCb8U8U_<STREAM>(s, dst, coeff, unroll);
+		}
+	}
+
+	void splitConvertYCrCb709(cv::InputArray src, cv::OutputArrayOfArrays dest, const int depth, const double scale, const int offsetMode, const bool isCache)
+	{
+		vector<float> coeff{ 0.0722f, 0.7152f, 0.2126f,0.63500127000254f,0.5389092476826902f,0.f, 127.5 };
+		if (offsetMode == 0)
+		{
+			coeff.pop_back();
+			coeff.pop_back();
+		}
+		for (int i = 0; i < coeff.size(); i++)coeff[i] *= scale;
+
+		Mat s = src.getMat();
+
+		vector<Mat> dst;
+		if (dest.empty() || src.size() != dest.size())
+		{
+			dest.create(3, 1, src.type());
+
+			dest.getMatVector(dst);
+
+			dst[0].create(src.size(), depth);
+			dst[1].create(src.size(), depth);
+			dst[2].create(src.size(), depth);
+
+			dest.getMatRef(0) = dst[0];
+			dest.getMatRef(1) = dst[1];
+			dest.getMatRef(2) = dst[2];
+		}
+		else
+		{
+			dest.getMatVector(dst);
+
+			for (int i = 0; i < dst.size(); i++)
+			{
+				if (dst[i].empty() ||
+					dst[i].depth() != src.depth())
+				{
+					dst[i].create(src.size(), depth);
+					dest.getMatRef(i) = dst[i];
+				}
+			}
+		}
+
+		if (src.depth() == CV_32F && depth == CV_32F)
+		{
+			const int unroll = 1;
+			if (isCache && dst[0].cols % 8 == 0) splitConvertYCrCb32F32F_<STORE>(s, dst, coeff, unroll);
+			else if (isCache && dst[0].cols % 8 != 0)splitConvertYCrCb32F32F_<STOREU>(s, dst, coeff, unroll);
+			else splitConvertYCrCb32F32F_<STREAM>(s, dst, coeff, unroll);
+		}
+		else if (src.depth() == CV_8U && depth == CV_32F)
+		{
+			const int unroll = 2;
+			if (isCache && dst[0].cols % 8 == 0)splitConvertYCrCb8U32F_<STORE>(s, dst, coeff, unroll);
+			else if (isCache && dst[0].cols % 8 != 0)splitConvertYCrCb8U32F_<STOREU>(s, dst, coeff, unroll);
+			else splitConvertYCrCb8U32F_<STREAM>(s, dst, coeff, unroll);
+		}
+		else if (src.depth() == CV_8U && depth == CV_8U)
+		{
+			const int unroll = 2;
+			if (isCache && dst[0].cols % 8 == 0)splitConvertYCrCb8U8U_<STORE>(s, dst, coeff, unroll);
+			else if (isCache && dst[0].cols % 8 != 0)splitConvertYCrCb8U8U_<STOREU>(s, dst, coeff, unroll);
+			else splitConvertYCrCb8U8U_<STREAM>(s, dst, coeff, unroll);
+		}
+	}
+
+
+	template<int store_method>
+	void splitConvertYIQ32F32F_(Mat& src, vector<Mat>& dst, const int unroll = 4)
 	{
 		CV_Assert(src.channels() == 3);
 		CV_Assert(1 <= unroll && unroll <= 4);
@@ -732,13 +1268,23 @@ namespace cp
 		float* __restrict r = dst[2].ptr<float>();
 		const int step = 8 * unroll;
 		const int simdsize = get_simd_floor(src.size().area(), step);
-		const __m256 cy0 = _mm256_set1_ps(0.114f);
-		const __m256 cy1 = _mm256_set1_ps(0.587f);
-		const __m256 cy2 = _mm256_set1_ps(0.299f);
-
-		const __m256 ccr = _mm256_set1_ps(0.713f);
-		const __m256 ccb = _mm256_set1_ps(0.564f);
-		const __m256 m128 = _mm256_set1_ps(128.f);
+		//Y = 0.299 * R_ref + 0.587 * G_ref + 0.114 * B_ref;
+		//I = 0.596 * R_ref - 0.274 * G_ref - 0.322 * B_ref;
+		//Q = 0.211 * R_ref - 0.523 * G_ref + 0.312 * B_ref;
+		vector<float> c{
+			0.114f, 0.587f, 0.299f,
+			-0.322f,-0.274f,0.596f,
+			0.312f,-0.523f,0.211f
+		};
+		const __m256 cy0 = _mm256_set1_ps(c[0]);
+		const __m256 cy1 = _mm256_set1_ps(c[1]);
+		const __m256 cy2 = _mm256_set1_ps(c[2]);
+		const __m256 ci0 = _mm256_set1_ps(c[3]);
+		const __m256 ci1 = _mm256_set1_ps(c[4]);
+		const __m256 ci2 = _mm256_set1_ps(c[5]);
+		const __m256 cq0 = _mm256_set1_ps(c[6]);
+		const __m256 cq1 = _mm256_set1_ps(c[7]);
+		const __m256 cq2 = _mm256_set1_ps(c[8]);
 		if (unroll == 1)
 		{
 			for (int i = 0; i < simdsize; i += step)
@@ -746,9 +1292,11 @@ namespace cp
 				__m256 mb0, mg0, mr0;
 				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i, mb0, mg0, mr0);
 				const __m256 my0 = _mm256_fmadd_ps(cy0, mb0, _mm256_fmadd_ps(cy1, mg0, _mm256_mul_ps(cy2, mr0)));
+				const __m256 mi0 = _mm256_fmadd_ps(ci0, mb0, _mm256_fmadd_ps(ci1, mg0, _mm256_mul_ps(ci2, mr0)));
+				const __m256 mq0 = _mm256_fmadd_ps(cq0, mb0, _mm256_fmadd_ps(cq1, mg0, _mm256_mul_ps(cq2, mr0)));
 				v_store32f<store_method>(b + i + 0, my0);
-				v_store32f<store_method>(g + i + 0, _mm256_fmadd_ps(ccr, _mm256_sub_ps(mr0, my0), m128));
-				v_store32f<store_method>(r + i + 0, _mm256_fmadd_ps(ccb, _mm256_sub_ps(mb0, my0), m128));
+				v_store32f<store_method>(g + i + 0, mi0);
+				v_store32f<store_method>(r + i + 0, mq0);
 			}
 		}
 		else if (unroll == 2)
@@ -757,74 +1305,33 @@ namespace cp
 			{
 				__m256 mb, mg, mr;
 				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i, mb, mg, mr);
-				v_store32f<store_method>(b + i, mb);
-				v_store32f<store_method>(g + i, mg);
-				v_store32f<store_method>(r + i, mr);
+				__m256 my = _mm256_fmadd_ps(cy0, mb, _mm256_fmadd_ps(cy1, mg, _mm256_mul_ps(cy2, mr)));
+				__m256 mi = _mm256_fmadd_ps(ci0, mb, _mm256_fmadd_ps(ci1, mg, _mm256_mul_ps(ci2, mr)));
+				__m256 mq = _mm256_fmadd_ps(cq0, mb, _mm256_fmadd_ps(cq1, mg, _mm256_mul_ps(cq2, mr)));
+				v_store32f<store_method>(b + i, my);
+				v_store32f<store_method>(g + i, mi);
+				v_store32f<store_method>(r + i, mq);
 
 				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 24, mb, mg, mr);
-				v_store32f<store_method>(b + i + 8, mb);
-				v_store32f<store_method>(g + i + 8, mg);
-				v_store32f<store_method>(r + i + 8, mr);
-			}
-		}
-		else if (unroll == 3)
-		{
-			for (int i = 0; i < simdsize; i += step)
-			{
-				__m256 mb, mg, mr;
-				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i, mb, mg, mr);
-				v_store32f<store_method>(b + i, mb);
-				v_store32f<store_method>(g + i, mg);
-				v_store32f<store_method>(r + i, mr);
-
-				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 24, mb, mg, mr);
-				v_store32f<store_method>(b + i + 8, mb);
-				v_store32f<store_method>(g + i + 8, mg);
-				v_store32f<store_method>(r + i + 8, mr);
-
-				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 48, mb, mg, mr);
-				v_store32f<store_method>(b + i + 16, mb);
-				v_store32f<store_method>(g + i + 16, mg);
-				v_store32f<store_method>(r + i + 16, mr);
-			}
-		}
-		else if (unroll == 4)
-		{
-			for (int i = 0; i < simdsize; i += step)
-			{
-				__m256 mb, mg, mr;
-				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i, mb, mg, mr);
-				v_store32f<store_method>(b + i, mb);
-				v_store32f<store_method>(g + i, mg);
-				v_store32f<store_method>(r + i, mr);
-
-				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 24, mb, mg, mr);
-				v_store32f<store_method>(b + i + 8, mb);
-				v_store32f<store_method>(g + i + 8, mg);
-				v_store32f<store_method>(r + i + 8, mr);
-
-				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 48, mb, mg, mr);
-				v_store32f<store_method>(b + i + 16, mb);
-				v_store32f<store_method>(g + i + 16, mg);
-				v_store32f<store_method>(r + i + 16, mr);
-
-				_mm256_load_cvtps_bgr2planar_ps(s + 3 * i + 72, mb, mg, mr);
-				v_store32f<store_method>(b + i + 24, mb);
-				v_store32f<store_method>(g + i + 24, mg);
-				v_store32f<store_method>(r + i + 24, mr);
+				my = _mm256_fmadd_ps(cy0, mb, _mm256_fmadd_ps(cy1, mg, _mm256_mul_ps(cy2, mr)));
+				mi = _mm256_fmadd_ps(ci0, mb, _mm256_fmadd_ps(ci1, mg, _mm256_mul_ps(ci2, mr)));
+				mq = _mm256_fmadd_ps(cq0, mb, _mm256_fmadd_ps(cq1, mg, _mm256_mul_ps(cq2, mr)));
+				v_store32f<store_method>(b + i + 8, my);
+				v_store32f<store_method>(g + i + 8, mi);
+				v_store32f<store_method>(r + i + 8, mq);
 			}
 		}
 
 		for (int i = simdsize; i < src.size().area(); i++)
 		{
-			b[i] = saturate_cast<float>(0.114f * s[3 * i + 0] + 0.587f * s[3 * i + 1] + 0.299f * s[3 * i + 2]);
-			g[i] = saturate_cast<float>(0.5f * s[3 * i + 0] - 0.331264f * s[3 * i + 1] - 0.168736f * s[3 * i + 2] + 128.f);
-			r[i] = saturate_cast<float>(-0.081312f * s[3 * i + 0] - 0.418688f * s[3 * i + 1] + 0.5f * s[3 * i + 2] + 128.f);
+			b[i] = saturate_cast<float>(c[0] * s[3 * i + 0] + c[1] * s[3 * i + 1] + c[2] * s[3 * i + 2]);
+			g[i] = saturate_cast<float>(c[3] * s[3 * i + 0] + c[4] * s[3 * i + 1] + c[5] * s[3 * i + 2]);
+			r[i] = saturate_cast<float>(c[6] * s[3 * i + 0] + c[7] * s[3 * i + 1] + c[8] * s[3 * i + 2]);
 		}
 	}
 
 	template<int store_method>
-	void splitConvertYCrCb8U32F_(Mat& src, vector<Mat>& dst, const int unroll = 4)
+	void splitConvertYIQ8U32F_(Mat& src, vector<Mat>& dst, const int unroll = 4)
 	{
 		CV_Assert(src.channels() == 3);
 		CV_Assert(1 <= unroll && unroll <= 4);
@@ -836,16 +1343,23 @@ namespace cp
 		const int step = 8 * unroll;
 		const int simdsize = get_simd_floor(src.size().area(), step);
 
-		//y_[i] = saturate_cast<dstType>(0.114 * s[3 * i + 0] + 0.587 * s[3 * i + 1] + 0.299 * s[3 * i + 2]);
-		//cr[i] = saturate_cast<dstType>(0.5 * s[3 * i + 0] - 0.331264 * s[3 * i + 1] - 0.168736 * s[3 * i + 2]);
-		//cb[i] = saturate_cast<dstType>(-0.081312 * s[3 * i + 0] - 0.418688 * s[3 * i + 1] + 0.5 * s[3 * i + 2]);
-		const __m256 cy0 = _mm256_set1_ps(0.114f);//0.114f
-		const __m256 cy1 = _mm256_set1_ps(0.587f);//0.587f
-		const __m256 cy2 = _mm256_set1_ps(0.299f);//0.299f
-
-		const __m256 ccr = _mm256_set1_ps(0.713f);//0.713f
-		const __m256 ccb = _mm256_set1_ps(0.564f);//0.564f
-		const __m256 m128 = _mm256_set1_ps(128.f);
+		//Y = 0.299 * R_ref + 0.587 * G_ref + 0.114 * B_ref;
+		//I = 0.596 * R_ref - 0.274 * G_ref - 0.322 * B_ref;
+		//Q = 0.211 * R_ref - 0.523 * G_ref + 0.312 * B_ref;
+		vector<float> c{
+			0.114f, 0.587f, 0.299f,
+			-0.322f,-0.274f,0.596f,
+			0.312f,-0.523f,0.211f
+		};
+		const __m256 cy0 = _mm256_set1_ps(c[0]);
+		const __m256 cy1 = _mm256_set1_ps(c[1]);
+		const __m256 cy2 = _mm256_set1_ps(c[2]);
+		const __m256 ci0 = _mm256_set1_ps(c[3]);
+		const __m256 ci1 = _mm256_set1_ps(c[4]);
+		const __m256 ci2 = _mm256_set1_ps(c[5]);
+		const __m256 cq0 = _mm256_set1_ps(c[6]);
+		const __m256 cq1 = _mm256_set1_ps(c[7]);
+		const __m256 cq2 = _mm256_set1_ps(c[8]);
 		if (unroll == 1)
 		{
 			for (int i = 0; i < simdsize; i += step)
@@ -853,9 +1367,11 @@ namespace cp
 				__m256 mb0, mg0, mr0;
 				_mm256_load_cvtepu8bgr2planar_ps(s + 3 * i, mb0, mr0, mg0);
 				const __m256 my0 = _mm256_fmadd_ps(cy0, mb0, _mm256_fmadd_ps(cy1, mg0, _mm256_mul_ps(cy2, mr0)));
+				const __m256 mi0 = _mm256_fmadd_ps(ci0, mb0, _mm256_fmadd_ps(ci1, mg0, _mm256_mul_ps(ci2, mr0)));
+				const __m256 mq0 = _mm256_fmadd_ps(cq0, mb0, _mm256_fmadd_ps(cq1, mg0, _mm256_mul_ps(cq2, mr0)));
 				v_store32f<store_method>(b + i + 0, my0);
-				v_store32f<store_method>(g + i + 0, _mm256_fmadd_ps(ccr, _mm256_sub_ps(mr0, my0), m128));
-				v_store32f<store_method>(r + i + 0, _mm256_fmadd_ps(ccb, _mm256_sub_ps(mb0, my0), m128));
+				v_store32f<store_method>(g + i + 0, mi0);
+				v_store32f<store_method>(r + i + 0, mq0);
 			}
 		}
 		else if (unroll == 2)
@@ -866,20 +1382,23 @@ namespace cp
 				_mm256_load_cvtepu8bgr2planar_psx2(s + 3 * i, mb0, mb1, mg0, mg1, mr0, mr1);
 				const __m256 my0 = _mm256_fmadd_ps(cy0, mb0, _mm256_fmadd_ps(cy1, mg0, _mm256_mul_ps(cy2, mr0)));
 				const __m256 my1 = _mm256_fmadd_ps(cy0, mb1, _mm256_fmadd_ps(cy1, mg1, _mm256_mul_ps(cy2, mr1)));
+				const __m256 mi0 = _mm256_fmadd_ps(ci0, mb0, _mm256_fmadd_ps(ci1, mg0, _mm256_mul_ps(ci2, mr0)));
+				const __m256 mi1 = _mm256_fmadd_ps(ci0, mb1, _mm256_fmadd_ps(ci1, mg1, _mm256_mul_ps(ci2, mr1)));
+				const __m256 mq0 = _mm256_fmadd_ps(cq0, mb0, _mm256_fmadd_ps(cq1, mg0, _mm256_mul_ps(cq2, mr0)));
+				const __m256 mq1 = _mm256_fmadd_ps(cq0, mb1, _mm256_fmadd_ps(cq1, mg1, _mm256_mul_ps(cq2, mr1)));
 				v_store32f<store_method>(b + i + 0, my0);
-				v_store32f<store_method>(g + i + 0, _mm256_fmadd_ps(ccr, _mm256_sub_ps(mr0, my0), m128));
-				v_store32f<store_method>(r + i + 0, _mm256_fmadd_ps(ccb, _mm256_sub_ps(mb0, my0), m128));
 				v_store32f<store_method>(b + i + 8, my1);
-				v_store32f<store_method>(g + i + 8, _mm256_fmadd_ps(ccr, _mm256_sub_ps(mr1, my1), m128));
-				v_store32f<store_method>(r + i + 8, _mm256_fmadd_ps(ccb, _mm256_sub_ps(mb1, my1), m128));
+				v_store32f<store_method>(g + i + 0, mi0);
+				v_store32f<store_method>(g + i + 8, mi1);
+				v_store32f<store_method>(r + i + 0, mq0);
+				v_store32f<store_method>(r + i + 8, mq1);
 			}
 		}
 		for (int i = simdsize; i < src.size().area(); i++)
 		{
-			const float y = saturate_cast<float>(0.114f * s[3 * i + 0] + 0.587f * s[3 * i + 1] + 0.299f * s[3 * i + 2]);
-			b[i] = y;
-			g[i] = saturate_cast<float>((s[3 * i + 2] - y) * 0.713f + 128.f);
-			r[i] = saturate_cast<float>((s[3 * i + 0] - y) * 0.564f + 128.f);
+			b[i] = saturate_cast<float>(c[0] * s[3 * i + 0] + c[1] * s[3 * i + 1] + c[2] * s[3 * i + 2]);
+			g[i] = saturate_cast<float>(c[3] * s[3 * i + 0] + c[4] * s[3 * i + 1] + c[5] * s[3 * i + 2]);
+			r[i] = saturate_cast<float>(c[6] * s[3 * i + 0] + c[7] * s[3 * i + 1] + c[8] * s[3 * i + 2]);
 		}
 		/*
 		else if (unroll == 3)
@@ -940,7 +1459,7 @@ namespace cp
 	}
 
 	template<int store_method>
-	void splitConvertYCrCb8U8U_(Mat& src, vector<Mat>& dst, const int unroll = 4)
+	void splitConvertYIQ8U8U_(Mat& src, vector<Mat>& dst, const int unroll = 4)
 	{
 		CV_Assert(src.channels() == 3);
 		CV_Assert(1 <= unroll && unroll <= 4);
@@ -952,16 +1471,25 @@ namespace cp
 		const int step = 8 * unroll;
 		const int simdsize = get_simd_floor(src.size().area(), step);
 
-		//y_[i] = saturate_cast<dstType>(0.114 * s[3 * i + 0] + 0.587 * s[3 * i + 1] + 0.299 * s[3 * i + 2]);
-		//cr[i] = saturate_cast<dstType>(0.5 * s[3 * i + 0] - 0.331264 * s[3 * i + 1] - 0.168736 * s[3 * i + 2]);
-		//cb[i] = saturate_cast<dstType>(-0.081312 * s[3 * i + 0] - 0.418688 * s[3 * i + 1] + 0.5 * s[3 * i + 2]);
-		const __m256 cy0 = _mm256_set1_ps(0.114f);
-		const __m256 cy1 = _mm256_set1_ps(0.587f);
-		const __m256 cy2 = _mm256_set1_ps(0.299f);
-
-		const __m256 ccr = _mm256_set1_ps(0.713f);
-		const __m256 ccb = _mm256_set1_ps(0.564f);
-		const __m256 m128 = _mm256_set1_ps(128.f);
+		//Y = 0.299 * R_ref + 0.587 * G_ref + 0.114 * B_ref;
+		//I = 0.596 * R_ref - 0.274 * G_ref - 0.322 * B_ref;
+		//Q = 0.211 * R_ref - 0.523 * G_ref + 0.312 * B_ref;
+		vector<float> c{
+			0.114f, 0.587f, 0.299f,
+			-0.322f,-0.274f,0.596f,
+			0.312f,-0.523f,0.211f
+		};
+		const float offset = 128.f;
+		const __m256 m128 = _mm256_set1_ps(offset);
+		const __m256 cy0 = _mm256_set1_ps(c[0]);
+		const __m256 cy1 = _mm256_set1_ps(c[1]);
+		const __m256 cy2 = _mm256_set1_ps(c[2]);
+		const __m256 ci0 = _mm256_set1_ps(c[3]);
+		const __m256 ci1 = _mm256_set1_ps(c[4]);
+		const __m256 ci2 = _mm256_set1_ps(c[5]);
+		const __m256 cq0 = _mm256_set1_ps(c[6]);
+		const __m256 cq1 = _mm256_set1_ps(c[7]);
+		const __m256 cq2 = _mm256_set1_ps(c[8]);
 		if (unroll == 1)
 		{
 			for (int i = 0; i < simdsize; i += step)
@@ -969,9 +1497,11 @@ namespace cp
 				__m256 mb0, mg0, mr0;
 				_mm256_load_cvtepu8bgr2planar_ps(s + 3 * i, mb0, mr0, mg0);
 				const __m256 my0 = _mm256_fmadd_ps(cy0, mb0, _mm256_fmadd_ps(cy1, mg0, _mm256_mul_ps(cy2, mr0)));
+				const __m256 mi0 = _mm256_fmadd_ps(ci0, mb0, _mm256_fmadd_ps(ci1, mg0, _mm256_fmadd_ps(ci2, mr0, m128)));
+				const __m256 mq0 = _mm256_fmadd_ps(cq0, mb0, _mm256_fmadd_ps(cq1, mg0, _mm256_fmadd_ps(cq2, mr0, m128)));
 				_mm_storel_epi64((__m128i*)(b + i + 0), _mm256_cvtps_epu8(my0));
-				_mm_storel_epi64((__m128i*)(g + i + 0), _mm256_cvtps_epu8(_mm256_fmadd_ps(ccr, _mm256_sub_ps(mr0, my0), m128)));
-				_mm_storel_epi64((__m128i*)(r + i + 0), _mm256_cvtps_epu8(_mm256_fmadd_ps(ccb, _mm256_sub_ps(mb0, my0), m128)));
+				_mm_storel_epi64((__m128i*)(g + i + 0), _mm256_cvtps_epu8(mi0));
+				_mm_storel_epi64((__m128i*)(r + i + 0), _mm256_cvtps_epu8(mq0));
 			}
 		}
 		else if (unroll == 2)
@@ -982,24 +1512,27 @@ namespace cp
 				_mm256_load_cvtepu8bgr2planar_psx2(s + 3 * i, mb0, mb1, mg0, mg1, mr0, mr1);
 				const __m256 my0 = _mm256_fmadd_ps(cy0, mb0, _mm256_fmadd_ps(cy1, mg0, _mm256_mul_ps(cy2, mr0)));
 				const __m256 my1 = _mm256_fmadd_ps(cy0, mb1, _mm256_fmadd_ps(cy1, mg1, _mm256_mul_ps(cy2, mr1)));
+				const __m256 mi0 = _mm256_fmadd_ps(ci0, mb0, _mm256_fmadd_ps(ci1, mg0, _mm256_fmadd_ps(ci2, mr0, m128)));
+				const __m256 mi1 = _mm256_fmadd_ps(ci0, mb1, _mm256_fmadd_ps(ci1, mg1, _mm256_fmadd_ps(ci2, mr1, m128)));
+				const __m256 mq0 = _mm256_fmadd_ps(cq0, mb0, _mm256_fmadd_ps(cq1, mg0, _mm256_fmadd_ps(cq2, mr0, m128)));
+				const __m256 mq1 = _mm256_fmadd_ps(cq0, mb1, _mm256_fmadd_ps(cq1, mg1, _mm256_fmadd_ps(cq2, mr1, m128)));
 				_mm_storel_epi64((__m128i*)(b + i + 0), _mm256_cvtps_epu8(my0));
-				_mm_storel_epi64((__m128i*)(g + i + 0), _mm256_cvtps_epu8(_mm256_fmadd_ps(ccr, _mm256_sub_ps(mr0, my0), m128)));
-				_mm_storel_epi64((__m128i*)(r + i + 0), _mm256_cvtps_epu8(_mm256_fmadd_ps(ccb, _mm256_sub_ps(mb0, my0), m128)));
+				_mm_storel_epi64((__m128i*)(g + i + 0), _mm256_cvtps_epu8(mi0));
+				_mm_storel_epi64((__m128i*)(r + i + 0), _mm256_cvtps_epu8(mq0));
 				_mm_storel_epi64((__m128i*)(b + i + 8), _mm256_cvtps_epu8(my1));
-				_mm_storel_epi64((__m128i*)(g + i + 8), _mm256_cvtps_epu8(_mm256_fmadd_ps(ccr, _mm256_sub_ps(mr1, my1), m128)));
-				_mm_storel_epi64((__m128i*)(r + i + 8), _mm256_cvtps_epu8(_mm256_fmadd_ps(ccb, _mm256_sub_ps(mb1, my1), m128)));
+				_mm_storel_epi64((__m128i*)(g + i + 8), _mm256_cvtps_epu8(mi1));
+				_mm_storel_epi64((__m128i*)(r + i + 8), _mm256_cvtps_epu8(mq1));
 			}
 		}
 		for (int i = simdsize; i < src.size().area(); i++)
 		{
-			const float y = saturate_cast<float>(0.114f * s[3 * i + 0] + 0.587f * s[3 * i + 1] + 0.299f * s[3 * i + 2]);
-			b[i] = saturate_cast<uchar>(y);
-			g[i] = saturate_cast<uchar>((s[3 * i + 2] - y) * 0.713f + 128.f);
-			r[i] = saturate_cast<uchar>((s[3 * i + 0] - y) * 0.564f + 128.f);
+			b[i] = saturate_cast<uchar>(c[0] * s[3 * i + 0] + c[1] * s[3 * i + 1] + c[2] * s[3 * i + 2] + offset);
+			g[i] = saturate_cast<uchar>(c[3] * s[3 * i + 0] + c[4] * s[3 * i + 1] + c[5] * s[3 * i + 2] + offset);
+			r[i] = saturate_cast<uchar>(c[6] * s[3 * i + 0] + c[7] * s[3 * i + 1] + c[8] * s[3 * i + 2] + offset);
 		}
 	}
 
-	void splitConvertYCrCb(cv::InputArray src, cv::OutputArrayOfArrays dest, const int depth, const double scale, const double offset, const bool isCache)
+	void splitConvertYIQ(cv::InputArray src, cv::OutputArrayOfArrays dest, const int depth, const double scale, const double offset, const bool isCache)
 	{
 		Mat s = src.getMat();
 
@@ -1036,23 +1569,26 @@ namespace cp
 		if (src.depth() == CV_32F && depth == CV_32F)
 		{
 			const int unroll = 1;
-			if (isCache && dst[0].cols % 8 == 0)splitConvertYCrCb32F32F_<STORE>(s, dst, unroll);
-			else if (isCache && dst[0].cols % 8 != 0)splitConvertYCrCb32F32F_<STOREU>(s, dst, unroll);
-			else splitConvertYCrCb32F32F_<STREAM>(s, dst, unroll);
+			if (isCache && dst[0].cols % 8 == 0)splitConvertYIQ32F32F_<STORE>(s, dst, unroll);
+			else if (isCache && dst[0].cols % 8 != 0)splitConvertYIQ32F32F_<STOREU>(s, dst, unroll);
+			else splitConvertYIQ32F32F_<STREAM>(s, dst, unroll);
 		}
 		else if (src.depth() == CV_8U && depth == CV_32F)
 		{
 			const int unroll = 2;
-			if (isCache && dst[0].cols % 8 == 0)splitConvertYCrCb8U32F_<STORE>(s, dst, unroll);
-			else if (isCache && dst[0].cols % 8 != 0)splitConvertYCrCb8U32F_<STOREU>(s, dst, unroll);
-			else splitConvertYCrCb8U32F_<STREAM>(s, dst, unroll);
+			if (isCache && dst[0].cols % 8 == 0)splitConvertYIQ8U32F_<STORE>(s, dst, unroll);
+			else if (isCache && dst[0].cols % 8 != 0)splitConvertYIQ8U32F_<STOREU>(s, dst, unroll);
+			else splitConvertYIQ8U32F_<STREAM>(s, dst, unroll);
 		}
 		else if (src.depth() == CV_8U && depth == CV_8U)
 		{
 			const int unroll = 2;
-			if (isCache && dst[0].cols % 8 == 0)splitConvertYCrCb8U8U_<STORE>(s, dst, unroll);
-			else if (isCache && dst[0].cols % 8 != 0)splitConvertYCrCb8U8U_<STOREU>(s, dst, unroll);
-			else splitConvertYCrCb8U8U_<STREAM>(s, dst, unroll);
+			if (isCache && dst[0].cols % 8 == 0)splitConvertYIQ8U8U_<STORE>(s, dst, unroll);
+			else if (isCache && dst[0].cols % 8 != 0)splitConvertYIQ8U8U_<STOREU>(s, dst, unroll);
+			else splitConvertYIQ8U8U_<STREAM>(s, dst, unroll);
+			//if (isCache && dst[0].cols % 8 == 0)splitConvertYCrCb8U8U_<STORE>(s, dst, unroll);
+			//else if (isCache && dst[0].cols % 8 != 0)splitConvertYCrCb8U8U_<STOREU>(s, dst, unroll);
+			//else splitConvertYCrCb8U8U_<STREAM>(s, dst, unroll);
 		}
 		/*
 		switch (s.depth())
@@ -1070,7 +1606,6 @@ namespace cp
 			break;
 		}*/
 	}
-
 #pragma endregion
 
 
@@ -2080,18 +2615,69 @@ namespace cp
 
 #pragma endregion
 
-	static void cvtColorGray8U32F(cv::InputArray in, cv::OutputArray out)
+	/*void bt709(const Mat& src, Mat& Y)
+	{
+		Y.create(src.size(), CV_8U);
+		const uchar* s = src.ptr<uchar>();
+		uchar* d = Y.ptr<uchar>();
+		for (int i = 0; i < src.size().area(); i++)
+		{
+			//d[i] = saturate_cast<uchar>((24.966f * s[3 * i + 0] + 128.553f * s[3 * i + 1] + 65.481f * s[3 * i + 2]) / 255.f + 16.f);
+			d[i] = saturate_cast<uchar>(0.0722f * s[3 * i + 0] + 0.7152f * s[3 * i + 1] + 0.2126f * s[3 * i + 2]);
+		}
+	}
+	*/
+	/*
+	*
+	*/
+	static void cvtColorGray8U8U(cv::InputArray in, cv::OutputArray out, const vector<float>& coeff, const bool isNormalize)
 	{
 		CV_Assert(in.depth() == CV_8U);
 		CV_Assert(in.channels() == 3);
 
-		if (out.empty() || in.size() != out.size()||out.depth()!=CV_32F) out.create(in.size(), CV_32F);
+		if (out.empty() || in.size() != out.size() || out.depth() != CV_32F) out.create(in.size(), CV_32F);
 		const Mat src = in.getMat();
 		Mat dst = out.getMat();
 
-		const __m256 cb = _mm256_set1_ps(0.114f);
-		const __m256 cg = _mm256_set1_ps(0.587f);
-		const __m256 cr = _mm256_set1_ps(0.299f);
+		const float coeffb = isNormalize ? coeff[0] / 255.f : coeff[0];
+		const float coeffg = isNormalize ? coeff[1] / 255.f : coeff[1];
+		const float coeffr = isNormalize ? coeff[2] / 255.f : coeff[2];
+		const __m256 cb = _mm256_set1_ps(coeffb);
+		const __m256 cg = _mm256_set1_ps(coeffg);
+		const __m256 cr = _mm256_set1_ps(coeffr);
+		const int size = src.size().area();
+		const int size16 = get_simd_floor(size, 16);
+
+		const uchar* __restrict s = src.ptr<uchar>();
+		uchar* __restrict d = dst.ptr<uchar>();
+		for (int i = 0; i < size16; i += 16)
+		{
+			__m256 b0, b1, g0, g1, r0, r1;
+			_mm256_load_cvtepu8bgr2planar_psx2(s + 3 * i, b0, b1, g0, g1, r0, r1);
+			_mm_storel_epi64((__m128i*)(d + i + 0), _mm256_cvtps_epu8(_mm256_fmadd_ps(cb, b0, _mm256_fmadd_ps(cg, g0, _mm256_mul_ps(cr, r0)))));
+			_mm_storel_epi64((__m128i*)(d + i + 8), _mm256_cvtps_epu8(_mm256_fmadd_ps(cb, b1, _mm256_fmadd_ps(cg, g1, _mm256_mul_ps(cr, r1)))));
+		}
+		for (int i = size16; i < size; i++)
+		{
+			d[i] = cv::saturate_cast<uchar>(coeffb * s[3 * i + 0] + coeffg * s[3 * i + 1] + coeffr * s[3 * i + 2]);
+		}
+	}
+
+	static void cvtColorGray8U32F(cv::InputArray in, cv::OutputArray out, const vector<float>& coeff, const bool isNormalize)
+	{
+		CV_Assert(in.depth() == CV_8U);
+		CV_Assert(in.channels() == 3);
+
+		if (out.empty() || in.size() != out.size() || out.depth() != CV_32F) out.create(in.size(), CV_32F);
+		const Mat src = in.getMat();
+		Mat dst = out.getMat();
+
+		const float coeffb = isNormalize ? coeff[0] / 255.f : coeff[0];
+		const float coeffg = isNormalize ? coeff[1] / 255.f : coeff[1];
+		const float coeffr = isNormalize ? coeff[2] / 255.f : coeff[2];
+		const __m256 cb = _mm256_set1_ps(coeffb);
+		const __m256 cg = _mm256_set1_ps(coeffg);
+		const __m256 cr = _mm256_set1_ps(coeffr);
 		const int size = src.size().area();
 		const int size16 = get_simd_floor(size, 16);
 
@@ -2106,11 +2692,11 @@ namespace cp
 		}
 		for (int i = size16; i < size; i++)
 		{
-			d[i] = float(0.114f * s[3 * i + 0] + 0.587f * s[3 * i + 1] + 0.299f * s[3 * i + 2]);
+			d[i] = float(coeffb * s[3 * i + 0] + coeffg * s[3 * i + 1] + coeffr * s[3 * i + 2]);
 		}
 	}
 
-	static void cvtColorGray32F32F(cv::InputArray in, cv::OutputArray out)
+	static void cvtColorGray32F32F(cv::InputArray in, cv::OutputArray out, const vector<float>& coeff, const bool isNormalize)
 	{
 		CV_Assert(in.depth() == CV_32F);
 		CV_Assert(in.channels() == 3);
@@ -2118,10 +2704,12 @@ namespace cp
 		if (out.empty() || in.size() != out.size()) out.create(in.size(), CV_32F);
 		const Mat src = in.getMat();
 		Mat dst = out.getMat();
-
-		const __m256 cb = _mm256_set1_ps(0.114f);
-		const __m256 cg = _mm256_set1_ps(0.587f);
-		const __m256 cr = _mm256_set1_ps(0.299f);
+		const float coeffb = isNormalize ? coeff[0] / 255.f : coeff[0];
+		const float coeffg = isNormalize ? coeff[1] / 255.f : coeff[1];
+		const float coeffr = isNormalize ? coeff[2] / 255.f : coeff[2];
+		const __m256 cb = _mm256_set1_ps(coeffb);
+		const __m256 cg = _mm256_set1_ps(coeffg);
+		const __m256 cr = _mm256_set1_ps(coeffr);
 		const int size = src.size().area();
 		const int simdsize = get_simd_floor(size, 8);
 
@@ -2135,19 +2723,46 @@ namespace cp
 		}
 		for (int i = simdsize; i < size; i++)
 		{
-			d[i] = float(0.114f * s[3 * i + 0] + 0.587f * s[3 * i + 1] + 0.299f * s[3 * i + 2]);
+			d[i] = float(coeffb * s[3 * i + 0] + coeffg * s[3 * i + 1] + coeffr * s[3 * i + 2]);
 		}
 	}
 
-	void cvtColorGray(cv::InputArray in, cv::OutputArray out, int depth)
+
+
+	void cvtColorGray(cv::InputArray in, cv::OutputArray out, const int depth, const bool isNormalize)
 	{
+		vector<float> coeff = { 0.114f, 0.587f, 0.299f };
 		if (in.depth() == CV_8U && depth == CV_32F)
 		{
-			cvtColorGray8U32F(in, out);
+			cvtColorGray8U32F(in, out, coeff, isNormalize);
 		}
 		else if (in.depth() == CV_32F && depth == CV_32F)
 		{
-			cvtColorGray32F32F(in, out);
+			cvtColorGray32F32F(in, out, coeff, isNormalize);
+		}
+		else if (in.depth() == CV_8U && depth == CV_8U)
+		{
+			cvtColorGray8U8U(in, out, coeff, isNormalize);
+		}
+		else
+		{
+			cout << "do not support this type cvtColorGray: in(depth)" << in.depth() << ", dest depth " << depth << endl;
+		}
+	}
+	void cvtColorGray709(cv::InputArray in, cv::OutputArray out, const int depth, const bool isNormalize)
+	{
+		vector<float> coeff = { 0.0722f, 0.7152f, 0.2126f };
+		if (in.depth() == CV_8U && depth == CV_32F)
+		{
+			cvtColorGray8U32F(in, out, coeff, isNormalize);
+		}
+		else if (in.depth() == CV_32F && depth == CV_32F)
+		{
+			cvtColorGray32F32F(in, out, coeff, isNormalize);
+		}
+		else if (in.depth() == CV_8U && depth == CV_8U)
+		{
+			cvtColorGray8U8U(in, out, coeff, isNormalize);
 		}
 		else
 		{
