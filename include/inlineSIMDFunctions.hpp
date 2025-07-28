@@ -244,10 +244,24 @@ STATIC_INLINE __m256i get_simd_residualmask_epi32(const int width)
 	return ret;
 }
 
-STATIC_INLINE void get_simd_residualmask16_epi32(const int width,  __m256i& mask0, __m256i& mask1)
+STATIC_INLINE __m256i get_simd_residualmask_epi64(const int width)
+{
+	const int rem = width - get_simd_floor(width, 4);
+	__m256i ret = _mm256_undefined_si256();
+	switch (rem)
+	{
+	case 0: ret = _mm256_cmpeq_epi32(_mm256_set1_epi32(0), _mm256_setzero_si256()); break;
+	case 1: ret = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 1, 1, 1, 1, 1, 1), _mm256_setzero_si256()); break;
+	case 2: ret = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 1, 1, 1, 1), _mm256_setzero_si256()); break;
+	case 3: ret = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 0, 0, 1, 1), _mm256_setzero_si256()); break;
+	}
+	return ret;
+}
+
+STATIC_INLINE void get_simd_residualmask16_epi32(const int width, __m256i& mask0, __m256i& mask1)
 {
 	const int rem = width - get_simd_floor(width, 16);
-	const __m256i mOK = _mm256_cmpeq_epi32(_mm256_setzero_si256(), _mm256_setzero_si256()); 
+	const __m256i mOK = _mm256_cmpeq_epi32(_mm256_setzero_si256(), _mm256_setzero_si256());
 	const __m256i mNG = _mm256_cmpeq_epi32(_mm256_set1_epi32(1), _mm256_setzero_si256());
 	switch (rem)
 	{
@@ -259,43 +273,43 @@ STATIC_INLINE void get_simd_residualmask16_epi32(const int width,  __m256i& mask
 	}
 	case 1:
 	{
-		mask0 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 1, 1, 1, 1, 1, 1, 1), _mm256_setzero_si256()); 
+		mask0 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 1, 1, 1, 1, 1, 1, 1), _mm256_setzero_si256());
 		mask1 = mNG;
 		break;
 	}
 	case 2:
 	{
-		mask0 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 1, 1, 1, 1, 1, 1), _mm256_setzero_si256()); 
+		mask0 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 1, 1, 1, 1, 1, 1), _mm256_setzero_si256());
 		mask1 = mNG;
 		break;
 	}
 	case 3:
 	{
-		mask0 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 1, 1, 1, 1, 1), _mm256_setzero_si256()); 
+		mask0 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 1, 1, 1, 1, 1), _mm256_setzero_si256());
 		mask1 = mNG;
 		break;
 	}
 	case 4:
 	{
-		mask0 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 1, 1, 1, 1), _mm256_setzero_si256()); 
+		mask0 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 1, 1, 1, 1), _mm256_setzero_si256());
 		mask1 = mNG;
 		break;
 	}
 	case 5:
 	{
-		mask0 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 0, 1, 1, 1), _mm256_setzero_si256()); 
+		mask0 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 0, 1, 1, 1), _mm256_setzero_si256());
 		mask1 = mNG;
 		break;
 	}
 	case 6:
 	{
-		mask0 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 0, 0, 1, 1), _mm256_setzero_si256()); 
+		mask0 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 0, 0, 1, 1), _mm256_setzero_si256());
 		mask1 = mNG;
 		break;
 	}
 	case 7:
 	{
-		mask0 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 0, 0, 0, 1), _mm256_setzero_si256()); 
+		mask0 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 0, 0, 0, 1), _mm256_setzero_si256());
 		mask1 = mNG;
 		break;
 	}
@@ -308,46 +322,45 @@ STATIC_INLINE void get_simd_residualmask16_epi32(const int width,  __m256i& mask
 	case 9:
 	{
 		mask0 = mOK;
-		mask1 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 1, 1, 1, 1, 1, 1, 1), _mm256_setzero_si256()); 
+		mask1 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 1, 1, 1, 1, 1, 1, 1), _mm256_setzero_si256());
 		break;
 	}
 	case 10:
 	{
 		mask0 = mOK;
-		mask1 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 1, 1, 1, 1, 1, 1), _mm256_setzero_si256()); 
+		mask1 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 1, 1, 1, 1, 1, 1), _mm256_setzero_si256());
 		break;
 	}
 	case 11:
 	{
 		mask0 = mOK;
-		mask1 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 1, 1, 1, 1, 1), _mm256_setzero_si256()); 
+		mask1 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 1, 1, 1, 1, 1), _mm256_setzero_si256());
 		break;
 	}
 	case 12:
 	{
 		mask0 = mOK;
-		mask1 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 1, 1, 1, 1), _mm256_setzero_si256()); 
+		mask1 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 1, 1, 1, 1), _mm256_setzero_si256());
 		break;
 	}
 	case 13:
 	{
 		mask0 = mOK;
-		mask1 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 0, 1, 1, 1), _mm256_setzero_si256()); 
+		mask1 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 0, 1, 1, 1), _mm256_setzero_si256());
 		break;
 	}
 	case 14:
 	{
-		mask0 = mOK; 
-		mask1 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 0, 0, 1, 1), _mm256_setzero_si256()); 
+		mask0 = mOK;
+		mask1 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 0, 0, 1, 1), _mm256_setzero_si256());
 		break;
 	}
 	case 15:
 	{
 		mask0 = mOK;
-		mask1 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 0, 0, 0, 1), _mm256_setzero_si256()); 
+		mask1 = _mm256_cmpeq_epi32(_mm256_setr_epi32(0, 0, 0, 0, 0, 0, 0, 1), _mm256_setzero_si256());
 		break;
 	}
-
 	}
 }
 STATIC_INLINE __m256 get_simd_residualmask_ps(const int width)
@@ -2250,7 +2263,7 @@ STATIC_INLINE float _mm256_reducemax_ps(__m256 src)
 {
 	float* data = (float*)_mm_malloc(sizeof(float) * 8, AVX_ALIGN);
 	_mm256_store_ps(data, src);
-	float ret = data[0];
+	float ret = *data;
 	for (int i = 1; i < 8; i++)
 	{
 		ret = std::max(ret, data[i]);
