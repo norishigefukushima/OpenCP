@@ -16,7 +16,7 @@
 #define print_debug9(a, b, c, d, e, f, g, h, i)	    std::cout << #a << ": " << a <<", "<< #b << ": " << b <<", "<< #c << ": " << c <<", "<< #d << ": " << d <<", "<< #e << ": " << e <<", "<< #f << ": " << f << ", "<< #g << ": " << g <<", "<< #h << ": " << h <<", "<< #i << ": " << i << std::endl;
 #define print_debug10(a, b, c, d, e, f, g, h, i, j) std::cout << #a << ": " << a <<", "<< #b << ": " << b <<", "<< #c << ": " << c <<", "<< #d << ": " << d <<", "<< #e << ": " << e <<", "<< #f << ": " << f << ", "<< #g << ": " << g <<", "<< #h << ": " << h <<", "<< #i << ": " << i<<", " << #j << ": " << j << std::endl;
 
-inline void print_mat_format(cv::Mat& src, std::string mes = "", std::string format = "%8.2f ")
+inline void print_mat_format(const cv::Mat& src, std::string mes = "", std::string format = "%8.2f ")
 {
 	printf("%s:\n", mes.c_str());
 	if (src.depth() == CV_64F)
