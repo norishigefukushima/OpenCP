@@ -26,12 +26,18 @@ namespace cp
 
 	//color correction colorcorrection whilebalance
 	CP_EXPORT void findColorMatrixAvgStdDev(cv::InputArray ref_image, cv::InputArray target_image, cv::OutputArray colorMatrix, const double validMin, const double validMax);
-	//ITU-R BT601
-	CP_EXPORT void splitConvertYCrCb(cv::InputArray src, cv::OutputArrayOfArrays dest, const int depth = -1, const double scale = 1.0, const double offset = 0.0, const bool isCache = true);
+	
+	//ITU-R BT601: rangeMode 0 full, 1 full+uv 127.5
+	CP_EXPORT void splitConvertYCrCb(cv::InputArray src, cv::OutputArrayOfArrays dest, const int depth = -1, const double scale = 1.0, const int rangeMode = 0, const bool isCache = true);
+	//ITU-R BT709: rangeMode 0 full, 1 full+uv 127.5
+	CP_EXPORT void splitConvertYCrCb709(cv::InputArray src, cv::OutputArrayOfArrays dest, const int depth = -1, const double scale = 1.0, const int rangeMode = 0, const bool isCache = true);
+	CP_EXPORT void splitConvertYIQ(cv::InputArray src, cv::OutputArrayOfArrays dest, const int depth = -1, const double scale = 1.0, const double offset = 0.0, const bool isCache = true);
 	CP_EXPORT void splitConvert(cv::InputArray src, cv::OutputArrayOfArrays dest, const int depth = -1, const double scale = 1.0, const double offset = 0.0, const bool isCache = true);
 	CP_EXPORT void mergeConvert(cv::InputArrayOfArrays src, cv::OutputArray dest, const int depth = -1, const double scale = 1.0, const double offset = 0.0, const bool isCache = true);
-
-	CP_EXPORT void cvtColorGray(cv::InputArray in, cv::OutputArray out, const int depth);
+	//ITU-R BT601, isNormalize->0-1
+	CP_EXPORT void cvtColorGray(cv::InputArray in, cv::OutputArray out, const int depth, const bool isNormalize = false);
+	//ITU-R BT709, isNormalize->0-1
+	CP_EXPORT void cvtColorGray709(cv::InputArray in, cv::OutputArray out, const int depth, const bool isNormalize = false);
 	CP_EXPORT void cvtColorAverageGray(cv::InputArray src, cv::OutputArray dest, const bool isKeepDistance = false);
 	CP_EXPORT void cvtColorIntegerY(cv::InputArray src, cv::OutputArray dest);
 
