@@ -694,4 +694,98 @@ namespace cp
 		if (src.depth() == CV_32F)clip<float>(s, d, float(minval), float(maxval));
 		if (src.depth() == CV_64F)clip <double>(s, d, double(minval), double(maxval));
 	}
+
+	static void squareDiff_32F(const cv::Mat& src1, const cv::Mat& src2, cv::Mat& dest)
+	{
+		const int size = src1.size().area() * src1.channels();
+		const int size32 = get_simd_floor(size, 32);
+		const int size16 = get_simd_floor(size, 16);
+		const int size8 = get_simd_floor(size, 8);
+		const float* s1 = src1.ptr<float>();
+		const float* s2 = src2.ptr<float>();
+		float* d = dest.ptr<float>();
+		const __m256i mask = get_simd_residualmask_epi32(size);
+		for (int i = 0; i < size32; i += 32)
+		{
+			__m256 d0 = _mm256_sub_ps(_mm256_loadu_ps(s1 + i + 0), _mm256_loadu_ps(s2 + i + 0));
+			__m256 d1 = _mm256_sub_ps(_mm256_loadu_ps(s1 + i + 8), _mm256_loadu_ps(s2 + i + 8));
+			__m256 d2 = _mm256_sub_ps(_mm256_loadu_ps(s1 + i + 16), _mm256_loadu_ps(s2 + i + 16));
+			__m256 d3 = _mm256_sub_ps(_mm256_loadu_ps(s1 + i + 24), _mm256_loadu_ps(s2 + i + 24));
+			_mm256_storeu_ps(d + i + 0, _mm256_mul_ps(d0, d0));
+			_mm256_storeu_ps(d + i + 8, _mm256_mul_ps(d1, d1));
+			_mm256_storeu_ps(d + i + 16, _mm256_mul_ps(d2, d2));
+			_mm256_storeu_ps(d + i + 24, _mm256_mul_ps(d3, d3));
+		}
+		for (int i = size32; i < size16; i += 16)
+		{
+			__m256 d0 = _mm256_sub_ps(_mm256_loadu_ps(s1 + i + 0), _mm256_loadu_ps(s2 + i + 0));
+			__m256 d1 = _mm256_sub_ps(_mm256_loadu_ps(s1 + i + 8), _mm256_loadu_ps(s2 + i + 8));
+			_mm256_storeu_ps(d + i + 0, _mm256_mul_ps(d0, d0));
+			_mm256_storeu_ps(d + i + 8, _mm256_mul_ps(d1, d1));
+		}
+		for (int i = size16; i < size8; i += 8)
+		{
+			__m256 d0 = _mm256_sub_ps(_mm256_loadu_ps(s1 + i + 0), _mm256_loadu_ps(s2 + i + 0));
+			_mm256_storeu_ps(d + i + 0, _mm256_mul_ps(d0, d0));
+		}
+		if (size8 < size)
+		{
+			int i = size8;
+			__m256 d0 = _mm256_sub_ps(_mm256_loadu_ps(s1 + i + 0), _mm256_loadu_ps(s2 + i + 0));
+			_mm256_maskstore_ps(d + i + 0, mask, _mm256_mul_ps(d0, d0));
+		}
+	}
+
+	static void squareDiff_64F(const cv::Mat& src1, const cv::Mat& src2, cv::Mat& dest)
+	{
+		const int size = src1.size().area() * src1.channels();
+		const int size16 = get_simd_floor(size, 16);
+		const int size8 = get_simd_floor(size, 8);
+		const int size4 = get_simd_floor(size, 4);
+		const float* s1 = src1.ptr<float>();
+		const float* s2 = src2.ptr<float>();
+		float* d = dest.ptr<float>();
+		const __m256i mask = get_simd_residualmask_epi32(size);
+		for (int i = 0; i < size16; i += 16)
+		{
+			__m256 d0 = _mm256_sub_ps(_mm256_loadu_ps(s1 + i + 0), _mm256_loadu_ps(s2 + i + 0));
+			__m256 d1 = _mm256_sub_ps(_mm256_loadu_ps(s1 + i + 4), _mm256_loadu_ps(s2 + i + 4));
+			__m256 d2 = _mm256_sub_ps(_mm256_loadu_ps(s1 + i + 8), _mm256_loadu_ps(s2 + i + 8));
+			__m256 d3 = _mm256_sub_ps(_mm256_loadu_ps(s1 + i + 12), _mm256_loadu_ps(s2 + i + 12));
+			_mm256_storeu_ps(d + i + 0, _mm256_mul_ps(d0, d0));
+			_mm256_storeu_ps(d + i + 4, _mm256_mul_ps(d1, d1));
+			_mm256_storeu_ps(d + i + 8, _mm256_mul_ps(d2, d2));
+			_mm256_storeu_ps(d + i + 12, _mm256_mul_ps(d3, d3));
+		}
+		for (int i = size16; i < size8; i += 8)
+		{
+			__m256 d0 = _mm256_sub_ps(_mm256_loadu_ps(s1 + i + 0), _mm256_loadu_ps(s2 + i + 0));
+			__m256 d1 = _mm256_sub_ps(_mm256_loadu_ps(s1 + i + 4), _mm256_loadu_ps(s2 + i + 4));
+			_mm256_storeu_ps(d + i + 0, _mm256_mul_ps(d0, d0));
+			_mm256_storeu_ps(d + i + 4, _mm256_mul_ps(d1, d1));
+		}
+		for (int i = size8; i < size4; i += 4)
+		{
+			__m256 d0 = _mm256_sub_ps(_mm256_loadu_ps(s1 + i + 0), _mm256_loadu_ps(s2 + i + 0));
+			_mm256_storeu_ps(d + i + 0, _mm256_mul_ps(d0, d0));
+		}
+		if (size4 < size)
+		{
+			int i = size4;
+			__m256 d0 = _mm256_sub_ps(_mm256_loadu_ps(s1 + i + 0), _mm256_loadu_ps(s2 + i + 0));
+			_mm256_maskstore_ps(d + i + 0, mask, _mm256_mul_ps(d0, d0));
+		}
+	}
+
+	void squareDiff(cv::InputArray src1, cv::InputArray src2, cv::OutputArray dest)
+	{
+		CV_Assert(src1.depth() == CV_32F || src1.depth() == CV_64F);
+		CV_Assert(src1.isContinuous());
+		if (dest.size() != src1.size() || src1.type() != dest.type()) dest.create(src1.size(), src1.type());
+		Mat s1 = src1.getMat();
+		Mat s2 = src2.getMat();
+		Mat d = dest.getMat();
+		if (s1.depth() == CV_32F) squareDiff_32F(s1, s2, d);
+		else if (s1.depth() == CV_64F) squareDiff_64F(s1, s2, d);
+	}
 }

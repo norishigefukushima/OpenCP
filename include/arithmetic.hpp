@@ -25,7 +25,10 @@ namespace cp
 	//src>>shift (if shift==0, there is no processing)
 	CP_EXPORT void bitshiftRight(cv::InputArray src, cv::OutputArray dest, const int shift);
 
-	CP_EXPORT void clip(cv::InputArray src, cv::OutputArray dst, const double minval=0.0, const double maxval=255.0);
+	CP_EXPORT void clip(cv::InputArray src, cv::OutputArray dst, const double minval = 0.0, const double maxval = 255.0);
+
+	//dest=(src1-src2)^2
+	CP_EXPORT void squareDiff(cv::InputArray src1, cv::InputArray src2, cv::OutputArray dest);
 
 	//sqrt(max(src, 0))
 	CP_EXPORT void sqrtZeroClip(cv::InputArray src, cv::OutputArray dest);
