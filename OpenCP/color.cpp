@@ -2634,8 +2634,6 @@ namespace cp
 	{
 		CV_Assert(in.depth() == CV_8U);
 		CV_Assert(in.channels() == 3);
-
-		if (out.empty() || in.size() != out.size() || out.depth() != CV_32F) out.create(in.size(), CV_32F);
 		const Mat src = in.getMat();
 		Mat dst = out.getMat();
 
@@ -2732,6 +2730,11 @@ namespace cp
 	void cvtColorGray(cv::InputArray in, cv::OutputArray out, const int depth, const bool isNormalize)
 	{
 		vector<float> coeff = { 0.114f, 0.587f, 0.299f };
+		if (out.empty() || out.depth() != depth || out.size() != in.size())
+		{
+			out.create(in.size(), depth);
+		}
+
 		if (in.depth() == CV_8U && depth == CV_32F)
 		{
 			cvtColorGray8U32F(in, out, coeff, isNormalize);
@@ -2749,9 +2752,16 @@ namespace cp
 			cout << "do not support this type cvtColorGray: in(depth)" << in.depth() << ", dest depth " << depth << endl;
 		}
 	}
+
 	void cvtColorGray709(cv::InputArray in, cv::OutputArray out, const int depth, const bool isNormalize)
 	{
+		//cout << "cvtColorGray709" << endl;
 		vector<float> coeff = { 0.0722f, 0.7152f, 0.2126f };
+		if (out.empty() || out.depth() != depth || out.size() != in.size())
+		{
+			out.create(in.size(), depth);
+		}
+
 		if (in.depth() == CV_8U && depth == CV_32F)
 		{
 			cvtColorGray8U32F(in, out, coeff, isNormalize);
