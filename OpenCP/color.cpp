@@ -1205,6 +1205,7 @@ namespace cp
 		vector<Mat> dst;
 		if (dest.empty() || src.size() != dest.size())
 		{
+			dest.release();
 			dest.create(3, 1, src.type());
 
 			dest.getMatVector(dst);
@@ -2423,6 +2424,40 @@ namespace cp
 		}
 	}
 
+	void cvtColorBGR2OPP(InputArray src, vector<Mat>& dest)
+	{
+		vector<Mat> v(3);
+		Mat dst(Size(src.size().width, src.size().height * 3), CV_32F);
+		Mat a(src.size(), CV_32F, dst.ptr<float>(0));
+		Mat b(src.size(), CV_32F, dst.ptr<float>(src.size().height));
+		Mat c(src.size(), CV_32F, dst.ptr<float>(2 * src.size().height));
+		v[0] = a;
+		v[1] = b;
+		v[2] = c;
+		
+		if (src.depth() != CV_32F)
+		{
+			Mat t;
+			src.getMat().convertTo(t, CV_32F);
+			split(t, v);
+		}
+		else
+		{
+			split(src, v);
+		}
+		DecorrelateColorForward((float*)dst.data, (float*)dst.data, src.size().width, src.size().height);
+
+		Size size_ = src.size();
+		if (dest.size() != 3) dest.resize(3);
+		Mat aa(size_, CV_32F, (float*)dst.ptr<float>(0));
+		Mat bb(size_, CV_32F, (float*)dst.ptr<float>(size_.height));
+		Mat cc(size_, CV_32F, (float*)dst.ptr<float>(2 * size_.height));
+		
+		dest[0] = aa.clone();
+		dest[1] = bb.clone();
+		dest[2] = cc.clone();
+	}
+
 	void cvtColorBGR2OPP(InputArray src, OutputArray dest)
 	{
 		vector<Mat> v(3);
@@ -2433,7 +2468,16 @@ namespace cp
 		v[0] = a;
 		v[1] = b;
 		v[2] = c;
-		split(src, v);
+		if (src.depth() != CV_32F)
+		{
+			Mat t;
+			src.getMat().convertTo(t, CV_32F);
+			split(t, v);
+		}
+		else
+		{
+			split(src, v);
+		}
 
 		DecorrelateColorForward((float*)dst.data, (float*)dst.data, src.size().width, src.size().height);
 

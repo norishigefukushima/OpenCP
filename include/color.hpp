@@ -22,6 +22,7 @@ namespace cp
 
 	CP_EXPORT void cvtColorOPP2BGR(cv::InputArray src, cv::OutputArray dest);
 	CP_EXPORT void cvtColorBGR2OPP(cv::InputArray src, cv::OutputArray dest);
+	CP_EXPORT void cvtColorBGR2OPP(cv::InputArray src, std::vector<cv::Mat>& dest);
 	CP_EXPORT void cvtColorMatrix(cv::InputArray src, cv::OutputArray dest, cv::InputArray C);
 
 	//color correction colorcorrection whilebalance

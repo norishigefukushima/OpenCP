@@ -226,6 +226,21 @@ STATIC_INLINE void get_simd_width_end(const int cv_depth, const int channels, co
 	}
 }
 
+
+STATIC_INLINE __m128i get_sse_residualmask_epi32(const int width)
+{
+	const int rem = width - get_simd_floor(width, 4);
+	__m128i ret = _mm_undefined_si128();
+	switch (rem)
+	{
+	case 0: ret = _mm_cmpeq_epi32(_mm_set1_epi32(0), _mm_setzero_si128()); break;
+	case 1: ret = _mm_cmpeq_epi32(_mm_setr_epi32(0, 1, 1, 1), _mm_setzero_si128()); break;
+	case 2: ret = _mm_cmpeq_epi32(_mm_setr_epi32(0, 0, 1, 1), _mm_setzero_si128()); break;
+	case 3: ret = _mm_cmpeq_epi32(_mm_setr_epi32(0, 0, 0, 1), _mm_setzero_si128()); break;
+	}
+	return ret;
+}
+
 STATIC_INLINE __m256i get_simd_residualmask_epi32(const int width)
 {
 	const int rem = width - get_simd_floor(width, 8);
@@ -1010,6 +1025,12 @@ STATIC_INLINE __m256d _mm256_cvtepi16hi_pd(__m128i src)
 STATIC_INLINE __m256 _mm256_cvtepu8_ps(__m128i src)
 {
 	return _mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(src));
+}
+
+//opencp uchar(high)->int
+STATIC_INLINE __m256i _mm256_cvtepu8hi_epi32(__m128i src)
+{
+	return _mm256_cvtepu8_epi32(_mm_shuffle_epi32(src, _MM_SHUFFLE(1, 0, 3, 2)));
 }
 
 //opencp uchar->floatx2
