@@ -437,6 +437,20 @@ inline unsigned long long get_simd512_residualmask_epi8(const int width)
 	return ULLONG_MAX >> ((64 - (width % 64)) % 64);
 }
 
+STATIC_INLINE void get_simd512_residualmask32_epi32(const int width, unsigned short& mask0, unsigned short& mask1)
+{
+	const int rem = width - get_simd_floor(width, 32);
+	if (rem > 15)
+	{
+		mask0 = USHRT_MAX;
+		mask1 = USHRT_MAX >> ((16 - (width % 16)) % 16);
+	}
+	else
+	{
+		mask0 = USHRT_MAX >> ((16 - (width % 16)) % 16);
+		mask1 = USHRT_MAX;
+	}
+}
 #pragma endregion
 
 #pragma region transpose
