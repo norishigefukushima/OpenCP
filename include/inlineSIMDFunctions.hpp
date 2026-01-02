@@ -439,16 +439,22 @@ inline unsigned long long get_simd512_residualmask_epi8(const int width)
 
 STATIC_INLINE void get_simd512_residualmask32_epi32(const int width, unsigned short& mask0, unsigned short& mask1)
 {
-	const int rem = width - get_simd_floor(width, 32);
-	if (rem > 15)
+	const int rem = width & 31;  // width % 32
+
+	if (rem == 0)
 	{
-		mask0 = USHRT_MAX;
-		mask1 = USHRT_MAX >> ((16 - (width % 16)) % 16);
+		mask0 = 0;
+		mask1 = 0;
+	}
+	else if (rem <= 16)
+	{
+		mask0 = (uint16_t)((1u << rem) - 1u);
+		mask1 = 0;
 	}
 	else
 	{
-		mask0 = USHRT_MAX >> ((16 - (width % 16)) % 16);
-		mask1 = USHRT_MAX;
+		mask0 = 0xFFFF;
+		mask1 = (uint16_t)((1u << (rem - 16)) - 1u);
 	}
 }
 #pragma endregion
