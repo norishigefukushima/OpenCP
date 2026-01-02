@@ -1029,6 +1029,14 @@ STATIC_INLINE __m256d _mm256_cvtepu83_pd(__m128i src)
 	return _mm256_cvtps_pd(_mm_cvtepi32_ps(_mm_cvtepu8_epi32(_mm_shuffle_epi32(src, _MM_SHUFFLE(3, 3, 3, 3)))));
 }
 
+
+
+//opencp ushort->float (low 8 elements)
+STATIC_INLINE __m256 _mm256_cvtepu16_ps(__m128i src)
+{
+	return _mm256_cvtepi32_ps(_mm256_cvtepu16_epi32(src));
+}
+
 //opencp short->double (low 4 elements)
 STATIC_INLINE __m256d _mm256_cvtepi16_pd(__m128i src)
 {
@@ -1051,6 +1059,11 @@ STATIC_INLINE __m256 _mm256_cvtepu8_ps(__m128i src)
 STATIC_INLINE __m256i _mm256_cvtepu8hi_epi32(__m128i src)
 {
 	return _mm256_cvtepu8_epi32(_mm_shuffle_epi32(src, _MM_SHUFFLE(1, 0, 3, 2)));
+}
+
+STATIC_INLINE __m256 _mm256_cvtepu8hi_ps(__m128i src)
+{
+	return _mm256_cvtepu8_ps(_mm_shuffle_epi32(src, _MM_SHUFFLE(1, 0, 3, 2)));
 }
 
 //opencp uchar->floatx2
@@ -1144,16 +1157,31 @@ STATIC_INLINE __m128i _mm256_cvtepi16_epu8(__m256i src)
 	return _mm256_castsi256_si128(_mm256_permute4x64_epi64(_mm256_packus_epi16(src, _mm256_setzero_si256()), _MM_SHUFFLE(3, 1, 2, 0)));
 }
 
+//opencp int->ushort
 STATIC_INLINE __m128i _mm256_cvtepi32_epu16(__m256i src)
 {
 	return _mm256_castsi256_si128(_mm256_permute4x64_epi64(_mm256_packus_epi32(src, _mm256_setzero_si256()), _MM_SHUFFLE(3, 1, 2, 0)));
 }
 
-STATIC_INLINE __m256i _mm256_cvepi32x2_epi16(__m256i src1, __m256i src2)
+//opencp float->ushort
+STATIC_INLINE __m128i _mm256_cvtps_epu16(__m256 src)
+{	
+	return _mm256_cvtepi32_epu16(_mm256_cvtps_epi32(src));
+}
+
+//opencp intx2->ushort
+STATIC_INLINE __m256i _mm256_cvtepi32x2_epu16(__m256i src1, __m256i src2)
 {
 	return _mm256_permute4x64_epi64(_mm256_packs_epi32(src1, src2), _MM_SHUFFLE(3, 1, 2, 0));
 }
 
+//opencp floatx2->ushort
+STATIC_INLINE __m256i _mm256_cvtps_epi16(__m256 src1, __m256 src2)
+{
+	return _mm256_cvtepi32x2_epu16(_mm256_cvtps_epi32(src1), _mm256_cvtps_epi32(src2));
+}
+
+//opencp doublex2->float
 STATIC_INLINE __m256 _mm256_cvtpdx2_ps(__m256d src1, __m256d src2)
 {
 	return _mm256_insertf128_ps(_mm256_castps128_ps256(_mm256_cvtpd_ps(src1)), _mm256_cvtpd_ps(src2), 1);
