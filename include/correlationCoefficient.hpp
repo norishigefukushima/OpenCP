@@ -3,16 +3,15 @@
 #include "common.hpp"
 #include "plot.hpp"
 
+#include <cstdint>
+#include <limits>
+
 namespace cp
 {
 	class CP_EXPORT PearsonCorrelationCoefficient
 	{
 		template<typename T>
-		double mean(std::vector<T>& s);
-		template<typename T>
-		double covariance(std::vector<T>& s1, std::vector<T>& s2);
-		template<typename T>
-		double stddev(std::vector<T>& v1);
+		double body(std::vector<T>& first, std::vector<T>& second);
 	public:
 		double compute(std::vector<int>& v1, std::vector<int>& v2);
 		double compute(std::vector<float>& v1, std::vector<float>& v2);
@@ -21,7 +20,7 @@ namespace cp
 
 	class CP_EXPORT KendallRankOrderCorrelationCoefficient
 	{
-		//not optimized but can be vectorized, not parallelization is off
+		// O(N log N) Kendall tau-b with exact tie correction.
 		template<typename T>
 		double body(std::vector<T>& x, std::vector<T>& y);
 	public:
@@ -31,9 +30,69 @@ namespace cp
 		double compute(std::vector<double>& x, std::vector<double>& y);
 	};
 
+	class CP_EXPORT ChatterjeeCorrelationCoefficient
+	{
+		template<typename T>
+		double body(std::vector<T>& predictor, std::vector<T>& response);
+	public:
+		double compute(std::vector<int>& predictor, std::vector<int>& response);
+		double compute(std::vector<float>& predictor, std::vector<float>& response);
+		double compute(std::vector<double>& predictor, std::vector<double>& response);
+	};
+
+	// Computes PLCC, SROCC, Kendall tau-b, and Chatterjee xi together.
+	// The reference-side statistics are cached and the candidate is argsorted
+	// only once per compute call.
+	class CP_EXPORT CorrelationCoefficientSet
+	{
+	public:
+		enum class Accumulation
+		{
+			Float32,
+			Float64
+		};
+		struct Result
+		{
+			double pearson = std::numeric_limits<double>::quiet_NaN();
+			double spearman = std::numeric_limits<double>::quiet_NaN();
+			double kendall = std::numeric_limits<double>::quiet_NaN();
+			double chatterjee = std::numeric_limits<double>::quiet_NaN();
+		};
+
+		void setReference(const std::vector<double>& reference);
+		Result compute(const std::vector<double>& predictor);
+		double computePearson(const std::vector<double>& predictor) const;
+		void setAccumulation(Accumulation value) noexcept { accumulation = value; }
+		Accumulation getAccumulation() const noexcept { return accumulation; }
+
+	private:
+		std::vector<double> referenceCentered;
+		std::vector<float> referenceRank;
+		std::vector<size_t> referenceOrdinalRank;
+		std::vector<size_t> referenceLessEqualRank;
+		std::vector<size_t> referenceGreaterEqualRank;
+		std::vector<size_t> order;
+		std::vector<float> predictorRank;
+		std::vector<uint64_t> fenwick;
+		double computePearsonUnchecked(
+			const std::vector<double>& predictor) const noexcept;
+		double referenceVariance = 0.0;
+		double referenceTieScore = 0.0;
+		double referenceTiedPairs = 0.0;
+		double chatterjeeDenominator = 0.0;
+		Accumulation accumulation = Accumulation::Float32;
+	};
+
 
 	class CP_EXPORT SpearmanRankOrderCorrelationCoefficient
 	{
+	public:
+		enum class Accumulation
+		{
+			Float32,
+			Float64
+		};
+	private:
 		template<typename T>
 		double rankTransformUsingAverageTieScore(std::vector<T>& src, std::vector<float>& dst);
 		template<typename T>
@@ -69,8 +128,11 @@ namespace cp
 		std::vector<SpearmanOrder<int>> sporder32i;
 		std::vector<SpearmanOrder<float>> sporder32f;
 		std::vector<SpearmanOrder<double>> sporder64f;
+		Accumulation accumulation = Accumulation::Float32;
 	public:
 		SpearmanRankOrderCorrelationCoefficient();
+		void setAccumulation(Accumulation value) noexcept { accumulation = value; }
+		Accumulation getAccumulation() const noexcept { return accumulation; }
 		void setReference(std::vector<int>& ref, const bool ignoreTie = false);
 		void setReference(std::vector<float>& ref, const bool ignoreTie = false);
 		void setReference(std::vector<double>& ref, const bool ignoreTie = false);
